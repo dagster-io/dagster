@@ -1,9 +1,9 @@
 ---
-title: Software-Defined Assets | Dagster
+title: Software-defined assets | Dagster
 description: A software-defined asset is a description of how to compute the contents of a particular data asset.
 ---
 
-# Software-Defined Assets
+# Software-defined assets
 
 <Note>
   Prefer videos? Check out our{" "}
@@ -29,7 +29,7 @@ A software-defined asset includes the following:
 
   **Note**: A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/graphs).
 
-**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable using [IO managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
+**Materializing** an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit) or by invoking Python APIs. By default, assets are materialized to pickle files on your local filesystem, but materialization behavior is fully customizable using [I/O managers](/concepts/io-management/io-managers#applying-io-managers-to-assets). It's possible to materialize an asset in multiple storage environments, such as production and staging.
 
 ---
 
@@ -147,38 +147,44 @@ def my_derived_asset(a_source_asset):
 
 **Note**: The source asset's asset key must be provided as the argument to downstream assets. In the previous example, the asset key is `a_source_asset` and not `my_source_asset`.
 
-You can also re-use assets across repositories by including them as source assets:
+You can also re-use assets across [code locations](/concepts/code-locations) by including them as source assets. Consider this example for `code_location_1`:
 
-```python file=/concepts/assets/cross_repository_asset.py
-from dagster import AssetKey, SourceAsset, asset, repository
+```python file=/concepts/assets/cross_cl_code_location_1.py
+# code_location_1.py
+from dagster import Definitions, asset
 
 
 @asset
-def repository_a_asset():
+def code_location_1_asset():
     return 5
 
 
-@repository
-def repository_a():
-    return [repository_a_asset]
+defs = Definitions(assets=[code_location_1_asset])
+```
 
+And then in `code_location_2`, we've included `code_location_1_asset` as a source asset:
 
-repository_a_source_asset = SourceAsset(key=AssetKey("repository_a_asset"))
+```python file=/concepts/assets/cross_cl_code_location_2.py
+# code_location_2.py
+
+from dagster import AssetKey, Definitions, SourceAsset, asset
+
+code_location_1_source_asset = SourceAsset(key=AssetKey("code_location_1_asset"))
 
 
 @asset
-def repository_b_asset(repository_a_asset):
-    return repository_a_asset + 6
+def code_location_2_asset(code_location_1_asset):
+    return code_location_1_asset + 6
 
 
-@repository
-def repository_b():
-    return [repository_b_asset, repository_a_source_asset]
+defs = Definitions(
+    assets=[code_location_2_asset, code_location_1_source_asset],
+)
 ```
 
 Using source assets has a few advantages over having the code inside of an asset's op load the data:
 
-- **Dagit can show asset lineage that includes the source assets**. If a different asset definition in a different repository in the same [workspace](/concepts/code-locations/workspace-files) has the same asset key as a <PyObject object="SourceAsset" />, Dagit can represent the asset lineage across those repositories.
+- **Dagit can show asset lineage that includes the source assets**. If different asset definitions in different code locations have the same asset key as a <PyObject object="SourceAsset" /> and both code locations are loaded into Dagit, Dagit can represent the asset lineage across the code locations. This can be accomplished using [workspace files](/concepts/code-locations/workspace-files).
 - **Dagster can use data-loading code factored into an <PyObject object="IOManager" /> to load the contents of the source asset**.
 - **Asset dependencies can be written in a consistent way,** independent of whether they're downstream from a source asset or a derived asset. This makes it easy to swap out a source asset for a derived asset and vice versa.
 
@@ -303,56 +309,94 @@ Once you've defined a set of assets, you can:
 
 To view and materialize assets in Dagit, you can point it at a module that contains asset definitions or lists of asset definitions as module-level attributes:
 
-    dagit -m module_with_assets
+```shell
+dagit -m module_with_assets
+```
 
-If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jobs) that target the assets, you can place the assets and jobs together inside a [repository](/concepts/repositories-workspaces/repositories).
+If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jobs) that target the assets, you can place the assets and jobs together inside a <PyObject object="Definitions" /> object. For example:
+
+```python
+defs = Definitions(
+    assets=[asset_1, asset_2],
+    jobs=[asset_job],
+)
+```
+
+A <PyObject object="Definitions" /> object defines a code location, which is a collection of assets, jobs, resources, and schedules. Refer to the [Code locations documentation](/concepts/code-locations) for more info.
 
 ### Viewing assets in Dagit
 
-- [All assets](#all-assets)
+- [Viewing all assets](#asset-catalog)
 - [Details for an asset](#asset-details)
 - [Dependency graph](#dependency-graph)
-- [Upstream changes](#upstream-changed-indicator)
+- [Upstream changes](#upstream-changed)
 
-#### All assets
+<TabGroup>
+<TabItem name="Asset catalog (all assets)">
 
-To view a list of all your assets, click **Assets** in the top-right corner of the page. This opens the Assets page:
+#### Asset catalog
 
-<Image
-alt="Assets page"
-src="/images/concepts/assets/software-defined-assets/catalog.png"
-width={2662}
-height={1506}
-/>
+To view a list of all your assets, click **Assets** in the top navigation. This opens the **Asset catalog**:
 
-#### Asset Details
-
-View the Asset Details page for an asset by clicking on its name:
+<!-- ![Asset catalog page in Dagit](/images/concepts/dagit/all-assets.png) -->
 
 <Image
-alt="Asset Details"
-src="/images/concepts/assets/software-defined-assets/details.png"
-width={2662}
-height={1506}
+alt="Asset catalog page in Dagit"
+src="/images/concepts/dagit/all-assets.png"
+width={3574}
+height={1962}
 />
+
+</TabItem>
+<TabItem name="Asset details">
+
+#### Asset details
+
+View the **Asset details** page for an asset by clicking on its name:
+
+<!-- ![Asset details page in Dagit](/images/concepts/dagit/asset.png) -->
+
+<Image
+alt="Asset details page in Dagit"
+src="/images/concepts/dagit/asset.png"
+width={3574}
+height={1962}
+/>
+
+</TabItem>
+<TabItem name="Dependency graph">
 
 #### Dependency graph
 
 To view a graph of all assets and their dependencies, you can:
 
-- Click the graph icon to the upper-left of the Asset Catalog
-- Click **View in Graph** on any asset
+- Click **View global asset lineage** in the [**Asset catalog**](#asset-catalog)
+- Click the **Lineage tab** in the [**Asset details** page](#asset-details)
+
+<!-- ![Asset lineage graph](/images/concepts/assets/software-defined-assets/graph.png) -->
 
 <Image
-alt="Asset Graph"
+alt="Asset lineage graph"
 src="/images/concepts/assets/software-defined-assets/graph.png"
-width={2662}
-height={1506}
+width={3574}
+height={1962}
 />
 
-#### Upstream changed indicator
+</TabItem>
+<TabItem name="Upstream changed indicator">
 
-On occasion, you might see an **upstream changed** indicator on an asset in the dependency graph or on the Asset Details page:
+#### Upstream changed
+
+<Note>
+  Currently, the <strong>upstream changed</strong> indicator won't display in
+  the following scenarios:
+  <ul>
+    <li>The upstream asset is in another code location definition or job</li>
+    <li>The assets are partitioned</li>
+  </ul>
+</Note>
+
+On occasion, you might see an **upstream changed** indicator on an asset in the dependency graph or on the **Asset Details** page:
 
 <Image
 alt="Asset Graph with an upstream changed indicator"
@@ -372,21 +416,15 @@ In this case, the contents of `comment_stories` may be outdated, as the most rec
 
 You can resolve this issue by re-materializing the downstream asset. This will re-compute the contents with the most recent data/changes to its upstream dependency.
 
-<Note>
-  Currently, the <strong>upstream changed</strong> indicator won't display in
-  the following scenarios:
-  <ul>
-    <li>The upstream asset is in another repository or job</li>
-    <li>The assets are partitioned</li>
-  </ul>
-</Note>
+</TabItem>
+</TabGroup>
 
 ### Materializing assets in Dagit
 
 In Dagit, you can launch runs that materialize assets by:
 
-- Navigating to the [**Asset Details** page](#asset-details) for the asset and click the **Materialize** button in the upper right corner.
-- Navigating to the graph view of the [**Assets** page](#all-assets) and clicking the **Materialize** button in the upper right corner. You can also click on assets to collect a subset to materialize.
+- Navigating to the [**Asset details** page](#asset-details) for the asset and clicking the **Materialize** button in the upper right corner.
+- Navigating to the graph view of the [**Asset catalog** page](#asset-catalog) and clicking the **Materialize** button in the upper right corner. You can also click on individual assets to collect a subset to materialize.
 
 ---
 
@@ -408,7 +446,7 @@ To help keep your assets tidy, you can organize them into groups. Grouping asset
 In Dagster, there are two ways to assign assets to groups:
 
 - [By specifying a group name on an individual asset](#on-individual-assets)
-- [By using the group_name argument when calling `load_assets_from_package_module`](#from-assets-in-a-sub-module) (**recommended**)
+- [By using the `group_name` argument when calling `load_assets_from_package_module`](#from-assets-in-a-sub-module) (**recommended**)
 
 By default, assets that aren't assigned to a group will be placed in a group named `default`. Use Dagit to [view these assets](#viewing-asset-groups-in-dagit).
 
@@ -427,7 +465,7 @@ def nabisco_cereals():
 **This recommended approach** constructs a group of assets from a specified module in your project. Using the `load_assets_from_package_module` function, you can import all assets in a module and apply a grouping:
 
 ```python file=/concepts/assets/asset_group_module.py startafter=start_example endbefore=end_example
-import my_package.cereal as cereal
+from my_package import cereal
 
 cereal_assets = load_assets_from_package_module(
     cereal,
@@ -439,29 +477,24 @@ If any of the assets in the module already has a `group_name` explicitly set on 
 
 ### Viewing asset groups in Dagit
 
-To view your asset groups in Dagit, open the left navigation by clicking the **menu icon in the top left corner**. As asset groups are grouped in repositories, you may need to open a repository to view its asset groups:
+To view your asset groups in Dagit, open the left navigation by clicking the **menu icon in the top left corner**. As asset groups are grouped in code locations, you may need to open a code location to view its asset groups.
 
-<Image
-alt="Asset Groups in Dagit left navigation"
-src="/images/concepts/assets/asset-groups-in-sidenav.png"
-width={903}
-height={454}
-/>
+Click the asset group to open a dependency graph for all assets in the group. For example, in the following image, the dependency graph for the `activity_analytics` asset group is currently displayed:
 
-Click the asset group to open a dependency graph for all assets in the group:
+<!-- ![Dependency graph for an asset group](/images/concepts/assets/asset-group-dependency-graph.png) -->
 
 <Image
 alt="Dependency graph for an asset group"
 src="/images/concepts/assets/asset-group-dependency-graph.png"
-width={1899}
-height={945}
+width={3574}
+height={1962}
 />
 
 ---
 
 ## Testing
 
-When writing unit tests, you can treat the function decorated by `@asset` as a regular Python function.
+When writing unit tests, you can treat the function decorated by <PyObject object="asset" decorator /> as a regular Python function.
 
 Consider a simple asset with no upstream dependencies:
 
@@ -518,20 +551,18 @@ def test_uses_context():
 
 ## Loading asset values outside of Dagster runs
 
-It's sometimes useful to load an asset as a Python object outside of a Dagster run, e.g. if you want to do exploratory data analysis on it inside a Jupyter notebook. For this, you can use <PyObject object="RepositoryDefinition" method="load_asset_value" />:
+It's sometimes useful to load an asset as a Python object outside of a Dagster run, such as performing exploratory analysis on data inside a Jupyter notebook.
+
+For this, you can use <PyObject object="Definitions" method="load_asset_value" />:
 
 ```python file=/concepts/assets/load_asset_values.py startafter=single_asset_start_marker endbefore=single_asset_end_marker dedent=4
-@repository
-def repo():
-    return [load_assets_from_current_module()]
-
-asset1_value = repo.load_asset_value(AssetKey("asset1"))
+asset1_value = defs.load_asset_value(AssetKey("asset1"))
 ```
 
-If you want to load the values of multiple assets, it's more efficient to use <PyObject object="RepositoryDefinition" method="get_asset_value_loader" />, which avoids spinning up resources separately for each asset:
+To load the values of multiple assets, use <PyObject object="Definitions" method="get_asset_value_loader" />, which avoids spinning up resources separately for each asset:
 
 ```python file=/concepts/assets/load_asset_values.py startafter=multiple_asset_start_marker endbefore=multiple_asset_end_marker dedent=4
-with repo.get_asset_value_loader() as loader:
+with defs.get_asset_value_loader() as loader:
     asset1_value = loader.load_asset_value(AssetKey("asset1"))
     asset2_value = loader.load_asset_value(AssetKey("asset2"))
 ```
@@ -604,11 +635,11 @@ Interested in learning more about software-defined assets and working through a 
 
 For more examples of software-defined assets, check out these examples:
 
-- In the [SDA Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
+- In the [Fully Featured Project example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
 
   - [Defining an asset](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/activity_analytics/activity_forecast.py)
   - [Loading assets from dbt](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/\__init\_\_.py)
-  - [Per-asset IO manager](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/core/items.py)
+  - [Per-asset I/O manager](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/core/items.py)
   - [Partitioned assets](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/core/items.py)
 
 - In the [Modern Data Stack example](https://github.com/dagster-io/dagster/tree/master/examples/assets_modern_data_stack):

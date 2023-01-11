@@ -16,22 +16,22 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
-import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
-  LaunchPartitionBackfill,
-  LaunchPartitionBackfillVariables,
-} from '../instance/types/LaunchPartitionBackfill';
+  ConfigPartitionSelectionQueryQuery,
+  ConfigPartitionSelectionQueryQueryVariables,
+  LaunchBackfillParams,
+  LaunchPartitionBackfillMutation,
+  LaunchPartitionBackfillMutationVariables,
+  PartitionDefinitionForLaunchAssetFragment,
+} from '../graphql/graphql';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {
-  ConfigPartitionSelectionQuery,
-  ConfigPartitionSelectionQueryVariables,
-} from '../launchpad/types/ConfigPartitionSelectionQuery';
 import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
@@ -42,7 +42,6 @@ import {RepoAddress} from '../workspace/types';
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
 import {explodePartitionKeysInRanges, mergedAssetHealth} from './MultipartitioningSupport';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
-import {LaunchAssetExecutionAssetNodeFragment_partitionDefinition} from './types/LaunchAssetExecutionAssetNodeFragment';
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
 import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
@@ -54,7 +53,7 @@ interface Props {
   assets: {
     assetKey: AssetKey;
     opNames: string[];
-    partitionDefinition: LaunchAssetExecutionAssetNodeFragment_partitionDefinition | null;
+    partitionDefinition: PartitionDefinitionForLaunchAssetFragment | null;
   }[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
 }
@@ -96,7 +95,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
-  const {canLaunchPartitionBackfill} = usePermissions();
+  const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
   const [launching, setLaunching] = React.useState(false);
   const [previewCount, setPreviewCount] = React.useState(0);
   const morePreviewsCount = partitionedAssets.length - previewCount;
@@ -159,8 +158,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
     if (allSelected.length === 1) {
       const {data: tagAndConfigData} = await client.query<
-        ConfigPartitionSelectionQuery,
-        ConfigPartitionSelectionQueryVariables
+        ConfigPartitionSelectionQueryQuery,
+        ConfigPartitionSelectionQueryQueryVariables
       >({
         query: CONFIG_PARTITION_SELECTION_QUERY,
         fetchPolicy: 'network-only',
@@ -221,20 +220,26 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         setOpen(false);
       }
     } else {
+      const selectorUnlessGraph:
+        | LaunchBackfillParams['selector']
+        | undefined = !isHiddenAssetGroupJob(assetJobName)
+        ? {
+            partitionSetName: partitionSet.name,
+            repositorySelector: {
+              repositoryLocationName: repoAddress.location,
+              repositoryName: repoAddress.name,
+            },
+          }
+        : undefined;
+
       const {data: launchBackfillData} = await client.mutate<
-        LaunchPartitionBackfill,
-        LaunchPartitionBackfillVariables
+        LaunchPartitionBackfillMutation,
+        LaunchPartitionBackfillMutationVariables
       >({
         mutation: LAUNCH_PARTITION_BACKFILL_MUTATION,
         variables: {
           backfillParams: {
-            selector: {
-              partitionSetName: partitionSet.name,
-              repositorySelector: {
-                repositoryLocationName: repoAddress.location,
-                repositoryName: repoAddress.name,
-              },
-            },
+            selector: selectorUnlessGraph,
             assetSelection: assets.map((a) => ({path: a.assetKey.path})),
             partitionNames: allSelected.map((k) => k.partitionKey),
             fromFailure: false,

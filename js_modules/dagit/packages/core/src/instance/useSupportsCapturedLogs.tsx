@@ -1,16 +1,16 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 
-import {InstanceSupportsCapturedLogs} from './types/InstanceSupportsCapturedLogs';
+import {graphql} from '../graphql';
 
 export const useSupportsCapturedLogs = () => {
-  const {data} = useQuery<InstanceSupportsCapturedLogs>(INSTANCE_SUPPORTS_CAPTURED_LOGS);
+  const {data} = useQuery(INSTANCE_SUPPORTS_CAPTURED_LOGS);
   return !!data?.instance.hasCapturedLogManager;
 };
 
-const INSTANCE_SUPPORTS_CAPTURED_LOGS = gql`
+const INSTANCE_SUPPORTS_CAPTURED_LOGS = graphql(`
   query InstanceSupportsCapturedLogs {
     instance {
       hasCapturedLogManager
     }
   }
-`;
+`);

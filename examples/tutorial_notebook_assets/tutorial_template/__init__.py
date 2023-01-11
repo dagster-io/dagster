@@ -1,1 +1,1 @@
-from .repository import template_tutorial
+from .repository import template_tutorial as template_tutorial

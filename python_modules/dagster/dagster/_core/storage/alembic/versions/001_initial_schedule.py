@@ -1,4 +1,4 @@
-"""Base revision -- noop
+"""Base revision -- noop.
 
 Revision ID: da7cd32b690d
 Revises: 567bc23fd1ac

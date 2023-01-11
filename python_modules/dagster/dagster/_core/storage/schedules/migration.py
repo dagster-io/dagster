@@ -24,7 +24,6 @@ def add_selector_id_to_jobs_table(storage, print_fn=None):
     Utility method that calculates the selector_id for each stored instigator state, and writes
     it to the jobs table.
     """
-
     if print_fn:
         print_fn("Querying storage.")
 
@@ -40,7 +39,7 @@ def add_selector_id_to_jobs_table(storage, print_fn=None):
             ).order_by(JobTable.c.id.asc())
         ).fetchall()
 
-        for (row_id, state_str, create_timestamp, update_timestamp) in tqdm(rows):
+        for row_id, state_str, create_timestamp, update_timestamp in tqdm(rows):
             state = deserialize_as(state_str, InstigatorState)
             selector_id = state.selector_id
 
@@ -87,13 +86,11 @@ def add_selector_id_to_ticks_table(storage, print_fn=None):
     Utility method that calculates the selector_id for each stored instigator state, and writes
     it to the jobs table.
     """
-
     if print_fn:
         print_fn("Querying storage.")
 
     instigator_states = storage.all_instigator_state()
     for state in tqdm(instigator_states):
-
         with storage.connect() as conn:
             conn.execute(
                 JobTickTable.update()  # pylint: disable=no-value-for-parameter

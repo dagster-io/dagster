@@ -1,8 +1,7 @@
 import pandas as pd
+from dagster import build_op_context
 from development_to_production.assets import comments, items, stories
 from development_to_production.resources import StubHNClient
-
-from dagster import build_op_context
 
 
 def test_items():

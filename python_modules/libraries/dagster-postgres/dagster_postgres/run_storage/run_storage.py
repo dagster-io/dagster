@@ -1,8 +1,7 @@
 from typing import Mapping
 
-import sqlalchemy as db
-
 import dagster._check as check
+import sqlalchemy as db
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.runs import (
     DaemonHeartbeatsTable,
@@ -158,7 +157,6 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:
-
             # insert or update if already present, using postgres specific on_conflict
             conn.execute(
                 db.dialects.postgresql.insert(DaemonHeartbeatsTable)

@@ -75,7 +75,12 @@ def asset_requires_resource(context):
 
 #### Providing resources to software-defined assets
 
-Resources can be provided to software-defined assets by passing them <PyObject object="Definitions" />. The resources provided to <PyObject object="Definitions" /> are automatically bound to the assets.
+How resources are provided to assets depends on how you're organizing your code definitions in Dagster.
+
+<TabGroup>
+<TabItem name="Using Definitions (recommended)">
+
+Resources can be provided to software-defined assets by passing them to a <PyObject object="Definitions" /> object. The resources provided to <PyObject object="Definitions" /> are automatically bound to the assets.
 
 ```python file=/concepts/resources/resources.py startafter=start_asset_provide_resource endbefore=end_asset_provide_resource
 from dagster import Definitions
@@ -88,6 +93,30 @@ defs = Definitions(
 ```
 
 When defining asset jobs (using <PyObject object="define_asset_job" />), you don't need to provide resources to the job directly. The job will make use of the resources provided to the assets.
+
+</TabItem>
+<TabItem name="Using @repository">
+
+For those still using <PyObject object="repository" decorator /> to organize definitions, you have to use <PyObject object="with_resources" /> to provide resources to assets. This function takes in a sequence of assets and returns transformed versions of those assets with the provided resources specified.
+
+```python file=/concepts/resources/resources.py startafter=start_asset_provide_resource_using_repository endbefore=end_asset_provide_resource_using_repository
+from dagster import repository, with_resources
+
+
+@repository
+def repo():
+    return [
+        *with_resources(
+            definitions=[asset_requires_resource],
+            resource_defs={"foo": foo_resource},
+        )
+    ]
+```
+
+**Note**: The `with_resources` function returns a copy of each asset, bound to the provided resources. Attempting to load a module containing an asset redefined via `with_resources` in the outermost scope along with the original asset may result in an `"asset is defined multiple times"` error. In this case, you may need to place your `with_resources` call within a repository definition.
+
+</TabItem>
+</TabGroup>
 
 ---
 
@@ -323,33 +352,6 @@ def connect():
 ```
 
 ---
-
-## Providing resources to assets while using `@repository`
-
-For those still using <PyObject object="repository"/> to organize definitions, you have to use <PyObject object="with_resources" /> to provide resources to assets. This function takes in a sequence of assets and returns transformed versions of those assets with the provided resources specified.
-
-```python file=/concepts/resources/resources.py startafter=start_asset_provide_resource_using_repository endbefore=end_asset_provide_resource_using_repository
-from dagster import repository, with_resources
-
-
-@repository
-def repo():
-    return [
-        *with_resources(
-            definitions=[asset_requires_resource],
-            resource_defs={"foo": foo_resource},
-        )
-    ]
-```
-
-<Note>
-  The <code>with_resources</code> function returns a copy of each asset, bound
-  to the provided resources. Attempting to load a module containing an asset
-  redefined via <code>with_resources</code> in the outermost scope along with
-  the original asset may result in a "asset is defined multiple times" error. In
-  this case, you may need to place your <code>with_resource</code> call within a
-  repository definition.
-</Note>
 
 ## See it in action
 

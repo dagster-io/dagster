@@ -1,7 +1,6 @@
 # pylint: skip-file
-from dagster_graphql import DagsterGraphQLClient
-
 from dagster import graph, op, pipeline, repository, solid
+from dagster_graphql import DagsterGraphQLClient
 
 
 @solid

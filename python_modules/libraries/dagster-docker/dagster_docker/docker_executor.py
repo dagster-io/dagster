@@ -1,14 +1,13 @@
 from typing import Iterator, Optional, cast
 
-import docker
-from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
-
 import dagster._check as check
-from dagster import executor
+import docker
+from dagster import Field, IntSource, executor
 from dagster._annotations import experimental
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.events import DagsterEvent, EngineEventData, MetadataEntry
 from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.execution.tags import get_tag_concurrency_limits_config
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import StepDelegatingExecutor
@@ -21,7 +20,9 @@ from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes.utils import hash_str
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
+
+from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 from .container_context import DockerContainerContext
 
@@ -32,6 +33,15 @@ from .container_context import DockerContainerContext
         DOCKER_CONFIG_SCHEMA,
         {
             "retries": get_retries_config(),
+            "max_concurrent": Field(
+                IntSource,
+                is_required=False,
+                description=(
+                    "Limit on the number of containers that will run concurrently within the scope "
+                    "of a Dagster run. Note that this limit is per run, not global."
+                ),
+            ),
+            "tag_concurrency_limits": get_tag_concurrency_limits_config(),
         },
     ),
     requirements=multiple_process_executor_requirements(),
@@ -62,7 +72,6 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     If you're using the DockerRunLauncher, configuration set on the containers created by the run
     launcher will also be set on the containers that are created for each step.
     """
-
     config = init_context.executor_config
     image = check.opt_str_elem(config, "image")
     registry = check.opt_dict_elem(config, "registry", key_type=str)
@@ -71,6 +80,8 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     networks = check.opt_list_elem(config, "networks", of_type=str)
     container_kwargs = check.opt_dict_elem(config, "container_kwargs", key_type=str)
     retries = check.dict_elem(config, "retries", key_type=str)
+    max_concurrent = check.opt_int_elem(config, "max_concurrent")
+    tag_concurrency_limits = check.opt_list_elem(config, "tag_concurrency_limits")
 
     validate_docker_config(network, networks, container_kwargs)
 
@@ -87,6 +98,8 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     return StepDelegatingExecutor(
         DockerStepHandler(image, container_context),
         retries=check.not_none(RetryMode.from_config(retries)),
+        max_concurrent=max_concurrent,
+        tag_concurrency_limits=tag_concurrency_limits,
     )
 
 
@@ -253,7 +266,8 @@ class DockerStepHandler(StepHandler):
             container_info = container.wait(timeout=0.1)
         except Exception as e:
             raise Exception(
-                f"Container status is {container.status}. Raised exception attempting to get its return code."
+                f"Container status is {container.status}. Raised exception attempting to get its"
+                " return code."
             ) from e
 
         ret_code = container_info.get("StatusCode")

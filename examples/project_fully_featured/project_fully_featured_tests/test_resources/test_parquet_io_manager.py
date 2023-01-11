@@ -3,12 +3,11 @@ import os
 import tempfile
 
 import pandas
+from dagster import asset, materialize
 from dagster_pyspark import pyspark_resource
 from project_fully_featured.partitions import hourly_partitions
 from project_fully_featured.resources.parquet_io_manager import local_partitioned_parquet_io_manager
 from pyspark.sql import DataFrame as SparkDF
-
-from dagster import asset, materialize
 
 
 def test_io_manager():

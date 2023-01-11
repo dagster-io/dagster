@@ -1,7 +1,6 @@
 import typing
 
 import pytest
-
 from dagster import DagsterTypeCheckDidNotPass, In, Out, op
 from dagster._legacy import execute_solid
 

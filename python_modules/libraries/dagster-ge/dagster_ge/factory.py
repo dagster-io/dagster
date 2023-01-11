@@ -2,10 +2,6 @@ import datetime
 from typing import Any, Dict
 
 import great_expectations as ge
-from dagster_pandas import DataFrame
-from great_expectations.render.renderer import ValidationResultsPageRenderer
-from great_expectations.render.view import DefaultMarkdownPageView
-
 from dagster import (
     ExpectationResult,
     In,
@@ -15,9 +11,13 @@ from dagster import (
     Out,
     Output,
     StringSource,
+    _check as check,
+    op,
+    resource,
 )
-from dagster import _check as check
-from dagster import op, resource
+from dagster_pandas import DataFrame
+from great_expectations.render.renderer import ValidationResultsPageRenderer
+from great_expectations.render.view import DefaultMarkdownPageView
 
 try:
     # ge < v0.13.0
@@ -58,6 +58,7 @@ def ge_validation_op_factory(
         batch_kwargs (Optional[dict]): overrides the `batch_kwargs` parameter when calling the
             `ge_data_context`'s `get_batch` method. Defaults to `{"dataset": dataset}`, where
             `dataset` is the input to the generated op.
+
     Returns:
         An op that takes in a set of data and yields both an expectation with relevant metadata
         and an output with all the metadata (for user processing)
@@ -138,7 +139,7 @@ def ge_validation_op_factory_v3(
     runtime_method_type="batch_data",
     extra_kwargs=None,
 ):
-    """Generates ops for interacting with GE (v3 API)
+    """Generates ops for interacting with GE (v3 API).
 
     Args:
         name (str): the name of the op
@@ -174,7 +175,6 @@ def ge_validation_op_factory_v3(
         an output with all the metadata (for user processing)
 
     """
-
     check.str_param(datasource_name, "datasource_name")
     check.str_param(data_connector_name, "data_connector_name")
     check.str_param(suite_name, "suite_name")

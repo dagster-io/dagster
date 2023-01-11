@@ -71,6 +71,7 @@ def materializes_asset_sensor():
 
 # end_asset_job_sensor_marker
 
+
 # start_running_in_code
 @sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
 def my_running_sensor():
@@ -283,6 +284,7 @@ def instance_sensor():
 
 
 # end_instance_sensor
+
 
 # start_sensor_logging
 @sensor(job=the_job)

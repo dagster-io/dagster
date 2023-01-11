@@ -104,7 +104,8 @@ def rename_warning(
     Common utility for managing backwards compatibility of renaming.
     """
     warnings.warn(
-        '"{old_name}" is deprecated and will be removed in {breaking_version}, use "{new_name}" instead.'.format(
+        '"{old_name}" is deprecated and will be removed in {breaking_version}, use "{new_name}"'
+        " instead.".format(
             old_name=old_name,
             new_name=new_name,
             breaking_version=breaking_version,
@@ -128,7 +129,7 @@ def experimental_warning(message: str, stacklevel: int = 3) -> None:
 
 
 def experimental_fn_warning(name: str, stacklevel: int = 3) -> None:
-    """Utility for warning that a function is experimental"""
+    """Utility for warning that a function is experimental."""
     warnings.warn(
         '"{name}" is an experimental function. It may break in future versions, even between dot'
         " releases. {help}".format(name=name, help=EXPERIMENTAL_WARNING_HELP),
@@ -138,10 +139,12 @@ def experimental_fn_warning(name: str, stacklevel: int = 3) -> None:
 
 
 def experimental_decorator_warning(name: str, stacklevel: int = 3) -> None:
-    """Utility for warning that a decorator is experimental"""
+    """Utility for warning that a decorator is experimental."""
     warnings.warn(
-        f'"{name}" is an experimental decorator. It may break in future versions, even between dot'
-        f" releases. {EXPERIMENTAL_WARNING_HELP}",
+        (
+            f'"{name}" is an experimental decorator. It may break in future versions, even between'
+            f" dot releases. {EXPERIMENTAL_WARNING_HELP}"
+        ),
         ExperimentalWarning,
         stacklevel=stacklevel,
     )
@@ -169,7 +172,7 @@ def experimental_class_warning(name: str, stacklevel: int = 3) -> None:
 
 
 def experimental_arg_warning(arg_name: str, fn_name: str, stacklevel: int = 3) -> None:
-    """Utility for warning that an argument to a function is experimental"""
+    """Utility for warning that an argument to a function is experimental."""
     warnings.warn(
         '"{arg_name}" is an experimental argument to function "{fn_name}". '
         "It may break in future versions, even between dot releases. {help}".format(
@@ -181,17 +184,19 @@ def experimental_arg_warning(arg_name: str, fn_name: str, stacklevel: int = 3) -
 
 
 def experimental_functionality_warning(desc: str, stacklevel: int = 3) -> None:
-    """Utility for warning that a particular functionality is experimental"""
+    """Utility for warning that a particular functionality is experimental."""
     warnings.warn(
-        f"{desc} is currently experimental functionality. It may break in future versions, even "
-        f"between dot releases. {EXPERIMENTAL_WARNING_HELP}",
+        (
+            f"{desc} is currently experimental functionality. It may break in future versions, even"
+            f" between dot releases. {EXPERIMENTAL_WARNING_HELP}"
+        ),
         ExperimentalWarning,
         stacklevel=stacklevel,
     )
 
 
 def experimental_class_param_warning(param_name: str, class_name: str, stacklevel=3) -> None:
-    """Utility for warning that an argument to a constructor is experimental"""
+    """Utility for warning that an argument to a constructor is experimental."""
     warnings.warn(
         (
             f'"{param_name}" is an experimental parameter to the class "{class_name}". It may '

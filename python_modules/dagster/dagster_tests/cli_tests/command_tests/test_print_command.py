@@ -1,6 +1,5 @@
 import pytest
 from click.testing import CliRunner
-
 from dagster._cli.job import execute_print_command, job_print_command
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
@@ -37,7 +36,6 @@ def test_print_command(gen_pipeline_args):
 @pytest.mark.parametrize("job_cli_args", valid_external_job_target_cli_args())
 def test_job_print_command_cli(job_cli_args):
     with instance_for_test():
-
         runner = CliRunner()
 
         result = runner.invoke(job_print_command, job_cli_args)

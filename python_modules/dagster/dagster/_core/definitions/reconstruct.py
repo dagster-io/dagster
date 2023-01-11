@@ -363,7 +363,7 @@ class ReconstructablePipeline(
         return self.get_python_origin().get_id()
 
     def get_module(self) -> Optional[str]:
-        """Return the module the pipeline is found in, the origin is a module code pointer"""
+        """Return the module the pipeline is found in, the origin is a module code pointer."""
         pointer = self.get_python_origin().get_repo_pointer()
         if isinstance(pointer, ModuleCodePointer):
             return pointer.module
@@ -411,26 +411,25 @@ def reconstructable(target: Callable[..., "PipelineDefinition"]) -> Reconstructa
     specify your own reconstruction strategy.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster import job, reconstructable
 
-        from dagster import job, reconstructable
+            @job
+            def foo_job():
+                ...
 
-        @job
-        def foo_job():
-            ...
-
-        reconstructable_foo_job = reconstructable(foo_job)
+            reconstructable_foo_job = reconstructable(foo_job)
 
 
-        @graph
-        def foo():
-            ...
+            @graph
+            def foo():
+                ...
 
-        def make_bar_job():
-            return foo.to_job()
+            def make_bar_job():
+                return foo.to_job()
 
-        reconstructable_bar_job = reconstructable(make_bar_job)
+            reconstructable_bar_job = reconstructable(make_bar_job)
     """
     from dagster._core.definitions import JobDefinition, PipelineDefinition
 
@@ -526,40 +525,39 @@ def build_reconstructable_job(
             job. Values of the dict must be JSON serializable.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            # module: mymodule
 
-        # module: mymodule
+            from dagster import JobDefinition, job, build_reconstructable_job
 
-        from dagster import JobDefinition, job, build_reconstructable_job
+            class JobFactory:
+                def make_job(*args, **kwargs):
 
-        class JobFactory:
-            def make_job(*args, **kwargs):
+                    @job
+                    def _job(...):
+                        ...
 
-                @job
-                def _job(...):
-                    ...
+                    return _job
 
-                return _job
+            def reconstruct_job(*args):
+                factory = JobFactory()
+                return factory.make_job(*args)
 
-        def reconstruct_job(*args):
             factory = JobFactory()
-            return factory.make_job(*args)
 
-        factory = JobFactory()
+            foo_job_args = (...,...)
 
-        foo_job_args = (...,...)
+            foo_job_kwargs = {...:...}
 
-        foo_job_kwargs = {...:...}
+            foo_job = factory.make_job(*foo_job_args, **foo_job_kwargs)
 
-        foo_job = factory.make_job(*foo_job_args, **foo_job_kwargs)
-
-        reconstructable_foo_job = build_reconstructable_job(
-            'mymodule',
-            'reconstruct_job',
-            foo_job_args,
-            foo_job_kwargs,
-        )
+            reconstructable_foo_job = build_reconstructable_job(
+                'mymodule',
+                'reconstruct_job',
+                foo_job_args,
+                foo_job_kwargs,
+            )
     """
     check.str_param(reconstructor_module_name, "reconstructor_module_name")
     check.str_param(reconstructor_function_name, "reconstructor_function_name")
@@ -642,10 +640,8 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
         ),
     ):
         raise DagsterInvariantViolationError(
-            (
-                "Loadable attributes must be either a JobDefinition, GraphDefinition, "
-                f"PipelineDefinition, AssetGroup, or RepositoryDefinition. Got {repr(definition)}."
-            )
+            "Loadable attributes must be either a JobDefinition, GraphDefinition, "
+            f"PipelineDefinition, AssetGroup, or RepositoryDefinition. Got {repr(definition)}."
         )
     return definition  # type: ignore
 
@@ -684,11 +680,11 @@ def def_from_pointer(
     if isinstance(
         target,
         (
-            PipelineDefinition,
-            RepositoryDefinition,
-            PendingRepositoryDefinition,
-            GraphDefinition,
             AssetGroup,
+            GraphDefinition,
+            PipelineDefinition,
+            PendingRepositoryDefinition,
+            RepositoryDefinition,
         ),
     ) or not callable(target):
         return _check_is_loadable(target)  # type: ignore
@@ -716,8 +712,8 @@ def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
         return target
 
     raise DagsterInvariantViolationError(
-        "CodePointer ({str}) must resolve to a JobDefinition (or PipelineDefinition for legacy code). "
-        "Received a {type}".format(str=pointer.describe(), type=type(target))
+        "CodePointer ({str}) must resolve to a JobDefinition (or PipelineDefinition for legacy"
+        " code). Received a {type}".format(str=pointer.describe(), type=type(target))
     )
 
 

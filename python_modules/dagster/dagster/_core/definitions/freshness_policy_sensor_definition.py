@@ -41,7 +41,6 @@ class FreshnessPolicySensorCursor(
     )
 ):
     def __new__(cls, minutes_late_by_key_str: Mapping[str, Optional[float]]):
-
         return super(FreshnessPolicySensorCursor, cls).__new__(
             cls,
             minutes_late_by_key_str=check.mapping_param(
@@ -163,7 +162,6 @@ def build_freshness_policy_sensor_context(
             )
             freshness_policy_sensor_to_invoke(context)
     """
-
     return FreshnessPolicySensorContext(
         sensor_name=sensor_name,
         asset_key=asset_key,
@@ -200,7 +198,6 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         description: Optional[str] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
-
         check.str_param(name, "name")
         check.inst_param(asset_selection, "asset_selection", AssetSelection)
         check.opt_int_param(minimum_interval_seconds, "minimum_interval_seconds")
@@ -212,7 +209,6 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         )
 
         def _wrapped_fn(context: SensorEvaluationContext):
-
             if context.repository_def is None:
                 raise DagsterInvalidInvocationError(
                     "The `repository_def` property on the `SensorEvaluationContext` passed into a "
@@ -265,7 +261,8 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
                 if result is not None:
                     raise DagsterInvalidDefinitionError(
-                        "Functions decorated by `@freshness_policy_sensor` may not return or yield a value."
+                        "Functions decorated by `@freshness_policy_sensor` may not return or yield"
+                        " a value."
                     )
 
             context.update_cursor(
@@ -284,8 +281,8 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         if is_context_provided(self._freshness_policy_sensor_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
-                    "Freshness policy sensor function expected context argument, but no context argument "
-                    "was provided when invoking."
+                    "Freshness policy sensor function expected context argument, but no context"
+                    " argument was provided when invoking."
                 )
             if len(args) + len(kwargs) > 1:
                 raise DagsterInvalidInvocationError(
@@ -302,7 +299,8 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
             else:
                 if context_param_name not in kwargs:
                     raise DagsterInvalidInvocationError(
-                        f"Freshness policy sensor invocation expected argument '{context_param_name}'."
+                        "Freshness policy sensor invocation expected argument"
+                        f" '{context_param_name}'."
                     )
                 context = check.opt_inst_param(
                     kwargs[context_param_name],
@@ -356,7 +354,6 @@ def freshness_policy_sensor(
     def inner(
         fn: Callable[[FreshnessPolicySensorContext], None]
     ) -> FreshnessPolicySensorDefinition:
-
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 

@@ -1,11 +1,10 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, KeysView, List, Mapping, Sequence, cast
 
-from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
-from graphene import ResolveInfo
-
-from dagster import AssetKey
-from dagster import _check as check
+from dagster import (
+    AssetKey,
+    _check as check,
+)
 from dagster._config import validate_config
 from dagster._core.definitions import create_run_config_schema
 from dagster._core.errors import DagsterRunNotFoundError
@@ -14,8 +13,8 @@ from dagster._core.host_representation import PipelineSelector
 from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
 from dagster._legacy import DagsterRunStatus, PipelineDefinition
+from graphene import ResolveInfo
 
-from .events import from_event_record
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
 
@@ -148,6 +147,8 @@ def add_all_upstream_keys(
 
 
 def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Sequence[str]]):
+    from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
+
     from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.logs.events import GrapheneMaterializationEvent
     from ..schema.pipelines.pipeline import GrapheneRun
@@ -355,6 +356,7 @@ def get_step_stats(graphene_info, run_id, step_keys=None):
 def get_logs_for_run(graphene_info, run_id, cursor=None, limit=None):
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.pipelines.pipeline import GrapheneEventConnection
+    from .events import from_event_record
 
     instance = graphene_info.context.instance
     run = instance.get_run_by_id(run_id)

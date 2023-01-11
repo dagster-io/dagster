@@ -12,7 +12,6 @@ class HNAPIClient:
 
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
         """Fetches a single item from the Hacker News API by item id."""
-
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         item = requests.get(item_url, timeout=5).json()
         return item

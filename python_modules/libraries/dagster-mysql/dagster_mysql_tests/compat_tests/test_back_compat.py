@@ -5,13 +5,21 @@ import tempfile
 from urllib.parse import urlparse
 
 import pytest
-from sqlalchemy import create_engine, inspect
-
-from dagster import AssetKey, AssetMaterialization, AssetObservation, Output, job, op
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    AssetObservation,
+    DagsterEventType,
+    EventRecordsFilter,
+    Output,
+    job,
+    op,
+)
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._utils import file_relative_path
+from sqlalchemy import create_engine, inspect
 
 
 def get_columns(instance, table_name: str):
@@ -128,7 +136,6 @@ def test_asset_observation_backcompat(conn_string):
 
 def test_jobs_selector_id_migration(conn_string):
     import sqlalchemy as db
-
     from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
     from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
@@ -206,7 +213,6 @@ def test_add_bulk_actions_columns(conn_string):
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
-
             assert get_columns(instance, "bulk_actions") & new_columns == set()
             assert get_indexes(instance, "bulk_actions") & new_indexes == set()
 
@@ -231,7 +237,6 @@ def test_add_kvs_table(conn_string):
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
-
             assert "kvs" not in get_tables(instance)
 
             instance.upgrade()
@@ -271,6 +276,37 @@ def test_add_asset_event_tags_table(conn_string):
             ):
                 instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"]))
 
+            assert (
+                len(
+                    instance.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            asset_key=AssetKey("a"),
+                            tags={"dagster/foo": "bar"},
+                        )
+                    )
+                )
+                == 1
+            )
+            # test version that doesn't support intersect:
+            mysql_version = instance._event_storage._mysql_version
+            try:
+                instance._event_storage._mysql_version = "8.0.30"
+                assert (
+                    len(
+                        instance.get_event_records(
+                            EventRecordsFilter(
+                                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                                asset_key=AssetKey("a"),
+                                tags={"dagster/foo": "bar"},
+                            )
+                        )
+                    )
+                    == 1
+                )
+            finally:
+                instance._event_storage._mysql_version = mysql_version
+
             instance.upgrade()
             assert "asset_event_tags" in get_tables(instance)
             asset_job.execute_in_process(instance=instance)
@@ -301,7 +337,6 @@ def test_add_cached_status_data_column(conn_string):
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
-
             assert get_columns(instance, "asset_keys") & new_columns == set()
 
             instance.upgrade()

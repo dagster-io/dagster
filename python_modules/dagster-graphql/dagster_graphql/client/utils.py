@@ -9,7 +9,7 @@ class DagsterGraphQLClientError(Exception):
 
 
 class ReloadRepositoryLocationStatus(Enum):
-    """This enum describes the status of a GraphQL mutation to reload a Dagster repository location
+    """This enum describes the status of a GraphQL mutation to reload a Dagster repository location.
 
     Args:
         Enum (str): can be either `ReloadRepositoryLocationStatus.SUCCESS`

@@ -1,16 +1,15 @@
-import {gql} from '@apollo/client';
 import {Group, Table} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
+import {graphql} from '../graphql';
+import {DaemonStatusForListFragment} from '../graphql/graphql';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
 import {DaemonHealth} from './DaemonHealth';
-import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from './types/DaemonHealthFragment';
 
 interface DaemonLabelProps {
-  daemon: DaemonStatus;
+  daemon: DaemonStatusForListFragment;
 }
 
 const DaemonLabel = (props: DaemonLabelProps) => {
@@ -34,7 +33,7 @@ const DaemonLabel = (props: DaemonLabelProps) => {
 };
 
 interface Props {
-  daemonStatuses: DaemonStatus[] | undefined;
+  daemonStatuses: DaemonStatusForListFragment[] | undefined;
   showTimestampColumn?: boolean;
 }
 
@@ -92,20 +91,23 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
   );
 };
 
-export const DAEMON_HEALTH_FRAGMENT = gql`
+export const DAEMON_HEALTH_FRAGMENT = graphql(`
   fragment DaemonHealthFragment on DaemonHealth {
     id
     allDaemonStatuses {
       id
-      daemonType
-      required
-      healthy
-      lastHeartbeatErrors {
-        __typename
-        ...PythonErrorFragment
-      }
-      lastHeartbeatTime
+      ...DaemonStatusForList
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+
+  fragment DaemonStatusForList on DaemonStatus {
+    id
+    daemonType
+    required
+    healthy
+    lastHeartbeatErrors {
+      ...PythonErrorFragment
+    }
+    lastHeartbeatTime
+  }
+`);

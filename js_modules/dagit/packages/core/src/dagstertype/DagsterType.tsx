@@ -1,19 +1,15 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, FontFamily, Tag} from '@dagster-io/ui';
 import {Spacing} from '@dagster-io/ui/src/components/types';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {gqlTypePredicate} from '../app/Util';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {graphql} from '../graphql';
+import {DagsterTypeFragmentFragment, MetadataEntryFragmentFragment} from '../graphql/graphql';
 import {TableSchema} from '../metadata/TableSchema';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
 import {Description} from '../pipelines/Description';
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 
-import {DagsterTypeFragment} from './types/DagsterTypeFragment';
-
-export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}) => {
+export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragmentFragment[]}) => {
   const tableSchema = type.metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'));
   if (tableSchema) {
     return 'table';
@@ -22,11 +18,11 @@ export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}
   }
 };
 
-export const DagsterTypeKindTag: React.FC<{type: DagsterTypeFragment}> = (kind) => {
+export const DagsterTypeKindTag: React.FC<{type: DagsterTypeFragmentFragment}> = (kind) => {
   return <Tag intent="primary">{kind}</Tag>;
 };
 
-const _DagsterTypeName: React.FC<{type: DagsterTypeFragment; className?: string}> = ({
+const _DagsterTypeName: React.FC<{type: DagsterTypeFragmentFragment; className?: string}> = ({
   type,
   className,
 }) => {
@@ -43,7 +39,7 @@ export const DagsterTypeName = styled(_DagsterTypeName)`
 `;
 
 export const DagsterTypeSummary: React.FC<{
-  type: DagsterTypeFragment;
+  type: DagsterTypeFragmentFragment;
   horizontalPadding?: Spacing;
 }> = ({type, horizontalPadding}) => {
   horizontalPadding = horizontalPadding || 0;
@@ -78,7 +74,7 @@ export const DagsterTypeSummary: React.FC<{
 };
 
 // NOTE: Because you can't have a recursive fragment, inner types are limited.
-export const DAGSTER_TYPE_FRAGMENT = gql`
+export const DAGSTER_TYPE_FRAGMENT = graphql(`
   fragment DagsterTypeFragment on DagsterType {
     ..._DagsterTypeFragment
     innerTypes {
@@ -110,6 +106,4 @@ export const DAGSTER_TYPE_FRAGMENT = gql`
       }
     }
   }
-  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
-  ${METADATA_ENTRY_FRAGMENT}
-`;
+`);

@@ -1,15 +1,15 @@
-import {gql} from '@apollo/client';
 import {Box, ButtonLink, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
+import {graphql} from '../graphql';
+import {AssetLineageFragmentFragment} from '../graphql/graphql';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {AssetLineageFragment} from './types/AssetLineageFragment';
 
 const AssetLineageInfoElement: React.FC<{
-  lineage_info: AssetLineageFragment;
+  lineage_info: AssetLineageFragmentFragment;
   timestamp: string;
 }> = ({lineage_info, timestamp}) => {
   const partition_list_label = lineage_info.partitions.length === 1 ? 'Partition' : 'Partitions';
@@ -60,7 +60,7 @@ const AssetLineageInfoElement: React.FC<{
 const MAX_COLLAPSED = 5;
 
 export const AssetLineageElements: React.FC<{
-  elements: AssetLineageFragment[];
+  elements: AssetLineageFragmentFragment[];
   timestamp: string;
 }> = ({elements, timestamp}) => {
   const [collapsed, setCollapsed] = React.useState(true);
@@ -79,11 +79,11 @@ export const AssetLineageElements: React.FC<{
   );
 };
 
-export const ASSET_LINEAGE_FRAGMENT = gql`
+export const ASSET_LINEAGE_FRAGMENT = graphql(`
   fragment AssetLineageFragment on AssetLineageInfo {
     assetKey {
       path
     }
     partitions
   }
-`;
+`);

@@ -1,5 +1,4 @@
-import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, CaptionMono, Caption, Spinner} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, Caption, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
@@ -8,16 +7,17 @@ import {withMiddleTruncation} from '../app/Util';
 import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag';
 import {isAssetStale} from '../assets/StaleTag';
 import {OpTags} from '../graph/OpTags';
+import {graphql} from '../graphql';
+import {AssetNodeFragmentFragment} from '../graphql/graphql';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
 import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
-import {AssetNodeFragment} from './types/AssetNodeFragment';
 
 export const AssetNode: React.FC<{
-  definition: AssetNodeFragment;
+  definition: AssetNodeFragmentFragment;
   liveData?: LiveDataForNode;
   selected: boolean;
 }> = React.memo(({definition, selected, liveData}) => {
@@ -57,7 +57,7 @@ export const AssetNode: React.FC<{
               <StatsRow>
                 <span>Observed</span>
                 {liveData?.lastObservation ? (
-                  <CaptionMono style={{textAlign: 'right'}}>
+                  <Caption style={{textAlign: 'right'}}>
                     <AssetRunLink
                       runId={liveData.lastObservation.runId}
                       event={{stepKey, timestamp: liveData.lastObservation.timestamp}}
@@ -67,7 +67,7 @@ export const AssetNode: React.FC<{
                         timeFormat={{showSeconds: false, showTimezone: false}}
                       />
                     </AssetRunLink>
-                  </CaptionMono>
+                  </Caption>
                 ) : (
                   <span>–</span>
                 )}
@@ -105,7 +105,7 @@ export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, 
       borderBottomLeftRadius: 6,
       borderBottomRightRadius: 6,
       whiteSpace: 'nowrap',
-      lineHeight: 12,
+      lineHeight: '12px',
       height: 24,
     }}
     flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
@@ -116,7 +116,7 @@ export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, 
 );
 
 export const AssetNodeStatusRow: React.FC<{
-  definition: AssetNodeFragment;
+  definition: AssetNodeFragmentFragment;
   liveData: LiveDataForNode | undefined;
   stepKey: string;
 }> = ({definition, liveData, stepKey}) => {
@@ -158,15 +158,17 @@ export const AssetNodeStatusRow: React.FC<{
   }
 
   const lastMaterializationLink = lastMaterialization ? (
-    <AssetRunLink
-      runId={lastMaterialization.runId}
-      event={{stepKey, timestamp: lastMaterialization.timestamp}}
-    >
-      <TimestampDisplay
-        timestamp={Number(lastMaterialization.timestamp) / 1000}
-        timeFormat={{showSeconds: false, showTimezone: false}}
-      />
-    </AssetRunLink>
+    <Caption>
+      <AssetRunLink
+        runId={lastMaterialization.runId}
+        event={{stepKey, timestamp: lastMaterialization.timestamp}}
+      >
+        <TimestampDisplay
+          timestamp={Number(lastMaterialization.timestamp) / 1000}
+          timeFormat={{showSeconds: false, showTimezone: false}}
+        />
+      </AssetRunLink>
+    </Caption>
   ) : undefined;
 
   if (runWhichFailedToMaterialize || late) {
@@ -212,7 +214,7 @@ export const AssetNodeStatusRow: React.FC<{
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
   liveData?: LiveDataForNode;
-  definition: AssetNodeFragment;
+  definition: AssetNodeFragmentFragment;
 }> = ({selected, definition, liveData}) => {
   const {isSource, assetKey} = definition;
   const displayName = assetKey.path[assetKey.path.length - 1];
@@ -251,7 +253,7 @@ export const AssetNodeMinimal: React.FC<{
   );
 };
 
-export const ASSET_NODE_LIVE_FRAGMENT = gql`
+export const ASSET_NODE_LIVE_FRAGMENT = graphql(`
   fragment AssetNodeLiveFragment on AssetNode {
     id
     opNames
@@ -262,30 +264,46 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
       path
     }
     assetMaterializations(limit: 1) {
-      timestamp
-      runId
+      ...AssetNodeLiveMaterialization
     }
     freshnessPolicy {
-      maximumLagMinutes
-      cronSchedule
+      ...AssetNodeLiveFreshnessPolicy
     }
     freshnessInfo {
-      currentMinutesLate
+      ...AssetNodeLiveFreshnessInfo
     }
     assetObservations(limit: 1) {
-      timestamp
-      runId
+      ...AssetNodeLiveObservation
     }
     currentLogicalVersion
     projectedLogicalVersion
   }
-`;
+
+  fragment AssetNodeLiveFreshnessPolicy on FreshnessPolicy {
+    maximumLagMinutes
+    cronSchedule
+  }
+
+  fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {
+    currentMinutesLate
+  }
+
+  fragment AssetNodeLiveMaterialization on MaterializationEvent {
+    timestamp
+    runId
+  }
+
+  fragment AssetNodeLiveObservation on ObservationEvent {
+    timestamp
+    runId
+  }
+`);
 
 // Note: This fragment should only contain fields that are needed for
 // useAssetGraphData and the Asset DAG. Some pages of Dagit request this
 // fragment for every AssetNode on the instance. Add fields with care!
 //
-export const ASSET_NODE_FRAGMENT = gql`
+export const ASSET_NODE_FRAGMENT = graphql(`
   fragment AssetNodeFragment on AssetNode {
     id
     graphName
@@ -298,10 +316,14 @@ export const ASSET_NODE_FRAGMENT = gql`
     isObservable
     isSource
     assetKey {
-      path
+      ...AssetNodeKey
     }
   }
-`;
+
+  fragment AssetNodeKey on AssetKey {
+    path
+  }
+`);
 
 const AssetInsetForHoverEffect = styled.div`
   padding: 10px 4px 2px 4px;

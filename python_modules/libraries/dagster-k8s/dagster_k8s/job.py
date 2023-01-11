@@ -6,16 +6,22 @@ import string
 from collections import namedtuple
 from typing import Any, List, Mapping, Optional, Sequence
 
-import kubernetes
-
 import dagster._check as check
-from dagster import Array, BoolSource, Field, Noneable, StringSource
-from dagster import __version__ as dagster_version
+import kubernetes
+from dagster import (
+    Array,
+    BoolSource,
+    Field,
+    Noneable,
+    StringSource,
+    __version__ as dagster_version,
+)
 from dagster._config import Permissive, Shape, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.utils import parse_env_var
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozentags, merge_dicts
+from dagster._utils import frozentags
+from dagster._utils.merger import merge_dicts
 
 from .models import k8s_model_from_dict, k8s_snake_case_dict
 from .utils import sanitize_k8s_label
@@ -67,7 +73,10 @@ DEFAULT_JOB_SPEC_CONFIG = {
 class UserDefinedDagsterK8sConfig(
     namedtuple(
         "_UserDefinedDagsterK8sConfig",
-        "container_config pod_template_spec_metadata pod_spec_config job_config job_metadata job_spec_config",
+        (
+            "container_config pod_template_spec_metadata pod_spec_config job_config job_metadata"
+            " job_spec_config"
+        ),
     )
 ):
     def __new__(
@@ -79,7 +88,6 @@ class UserDefinedDagsterK8sConfig(
         job_metadata=None,
         job_spec_config=None,
     ):
-
         container_config = check.opt_dict_param(container_config, "container_config", key_type=str)
         pod_template_spec_metadata = check.opt_dict_param(
             pod_template_spec_metadata, "pod_template_spec_metadata", key_type=str
@@ -208,9 +216,11 @@ def get_job_name_from_run_id(run_id, resume_attempt_number=None):
 class DagsterK8sJobConfig(
     namedtuple(
         "_K8sJobTaskConfig",
-        "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
-        "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-        "volume_mounts volumes labels resources scheduler_name security_context",
+        (
+            "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
+            "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
+            "volume_mounts volumes labels resources scheduler_name security_context"
+        ),
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -314,32 +324,39 @@ class DagsterK8sJobConfig(
     @classmethod
     def config_type_run_launcher(cls):
         """Configuration intended to be set on the Dagster instance for the run launcher."""
-
         return merge_dicts(
             DagsterK8sJobConfig.config_type_job(),
             {
                 "instance_config_map": Field(
                     StringSource,
                     is_required=True,
-                    description="The ``name`` of an existing Volume to mount into the pod in order to "
-                    "provide a ConfigMap for the Dagster instance. This Volume should contain a "
-                    "``dagster.yaml`` with appropriate values for run storage, event log storage, etc.",
+                    description=(
+                        "The ``name`` of an existing Volume to mount into the pod in order to"
+                        " provide a ConfigMap for the Dagster instance. This Volume should contain"
+                        " a ``dagster.yaml`` with appropriate values for run storage, event log"
+                        " storage, etc."
+                    ),
                 ),
                 "postgres_password_secret": Field(
                     StringSource,
                     is_required=False,
-                    description="The name of the Kubernetes Secret where the postgres password can be "
-                    "retrieved. Will be mounted and supplied as an environment variable to the Job Pod."
-                    'Secret must contain the key ``"postgresql-password"`` which will be exposed in '
-                    "the Job environment as the environment variable ``DAGSTER_PG_PASSWORD``.",
+                    description=(
+                        "The name of the Kubernetes Secret where the postgres password can be"
+                        " retrieved. Will be mounted and supplied as an environment variable to the"
+                        ' Job Pod.Secret must contain the key ``"postgresql-password"`` which will'
+                        " be exposed in the Job environment as the environment variable"
+                        " ``DAGSTER_PG_PASSWORD``."
+                    ),
                 ),
                 "dagster_home": Field(
                     StringSource,
                     is_required=False,
                     default_value=DAGSTER_HOME_DEFAULT,
-                    description="The location of DAGSTER_HOME in the Job container; this is where the "
-                    "``dagster.yaml`` file will be mounted from the instance ConfigMap specified here. "
-                    "Defaults to /opt/dagster/dagster_home.",
+                    description=(
+                        "The location of DAGSTER_HOME in the Job container; this is where the"
+                        " ``dagster.yaml`` file will be mounted from the instance ConfigMap"
+                        " specified here. Defaults to /opt/dagster/dagster_home."
+                    ),
                 ),
                 "load_incluster_config": Field(
                     bool,
@@ -355,12 +372,23 @@ class DagsterK8sJobConfig(
                     Noneable(str),
                     is_required=False,
                     default_value=None,
-                    description="The kubeconfig file from which to load config. Defaults to using the default kubeconfig.",
+                    description=(
+                        "The kubeconfig file from which to load config. Defaults to using the"
+                        " default kubeconfig."
+                    ),
                 ),
                 "fail_pod_on_run_failure": Field(
                     bool,
                     is_required=False,
-                    description="Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails",
+                    description=(
+                        "Whether the launched Kubernetes Jobs and Pods should fail if the Dagster"
+                        " run fails"
+                    ),
+                ),
+                "run_k8s_config": Field(
+                    USER_DEFINED_K8S_CONFIG_SCHEMA,
+                    is_required=False,
+                    description="Raw Kubernetes configuration for launched runs.",
                 ),
             },
         )
@@ -370,16 +398,18 @@ class DagsterK8sJobConfig(
         """Configuration intended to be set when creating a k8s job (e.g. in an executor that runs
         each op in its own k8s job, or a run launcher that create a k8s job for the run worker).
         Shares most of the schema with the container_context, but for back-compat reasons,
-        'namespace' is called 'job_namespace'."""
-
+        'namespace' is called 'job_namespace'.
+        """
         return merge_dicts(
             {
                 "job_image": Field(
                     Noneable(StringSource),
                     is_required=False,
-                    description="Docker image to use for launched Jobs. If this field is empty, "
-                    "the image that was used to originally load the Dagster repository will be used. "
-                    '(Ex: "mycompany.com/dagster-k8s-image:latest").',
+                    description=(
+                        "Docker image to use for launched Jobs. If this field is empty, the image"
+                        " that was used to originally load the Dagster repository will be used."
+                        ' (Ex: "mycompany.com/dagster-k8s-image:latest").'
+                    ),
                 ),
             },
             DagsterK8sJobConfig.config_type_container(),
@@ -396,8 +426,10 @@ class DagsterK8sJobConfig(
             "image_pull_secrets": Field(
                 Noneable(Array(Shape({"name": StringSource}))),
                 is_required=False,
-                description="Specifies that Kubernetes should get the credentials from "
-                "the Secrets named in this list.",
+                description=(
+                    "Specifies that Kubernetes should get the credentials from "
+                    "the Secrets named in this list."
+                ),
             ),
             "service_account_name": Field(
                 Noneable(StringSource),
@@ -407,24 +439,31 @@ class DagsterK8sJobConfig(
             "env_config_maps": Field(
                 Noneable(Array(StringSource)),
                 is_required=False,
-                description="A list of custom ConfigMapEnvSource names from which to draw "
-                "environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
-                "https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container",
+                description=(
+                    "A list of custom ConfigMapEnvSource names from which to draw "
+                    "environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
+                    "https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container"
+                ),
             ),
             "env_secrets": Field(
                 Noneable(Array(StringSource)),
                 is_required=False,
-                description="A list of custom Secret names from which to draw environment "
-                "variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
-                "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables",
+                description=(
+                    "A list of custom Secret names from which to draw environment "
+                    "variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
+                    "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables"
+                ),
             ),
             "env_vars": Field(
                 Noneable(Array(str)),
                 is_required=False,
-                description="A list of environment variables to inject into the Job. Each can be "
-                "of the form KEY=VALUE or just KEY (in which case the value will be pulled from "
-                "the current process). Default: ``[]``. See: "
-                "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables",
+                description=(
+                    "A list of environment variables to inject into the Job. Each can be "
+                    "of the form KEY=VALUE or just KEY (in which case the value will be pulled"
+                    " from "
+                    "the current process). Default: ``[]``. See: "
+                    "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables"
+                ),
             ),
             "volume_mounts": Field(
                 Array(
@@ -443,8 +482,11 @@ class DagsterK8sJobConfig(
                 ),
                 is_required=False,
                 default_value=[],
-                description="A list of volume mounts to include in the job's container. Default: ``[]``. See: "
-                "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core",
+                description=(
+                    "A list of volume mounts to include in the job's container. Default: ``[]``."
+                    " See: "
+                    "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core"
+                ),
             ),
             "volumes": Field(
                 Array(
@@ -456,15 +498,19 @@ class DagsterK8sJobConfig(
                 ),
                 is_required=False,
                 default_value=[],
-                description="A list of volumes to include in the Job's Pod. Default: ``[]``. For the many "
-                "possible volume source types that can be included, see: "
-                "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core",
+                description=(
+                    "A list of volumes to include in the Job's Pod. Default: ``[]``. For the many "
+                    "possible volume source types that can be included, see: "
+                    "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core"
+                ),
             ),
             "labels": Field(
                 dict,
                 is_required=False,
-                description="Labels to apply to all created pods. See: "
-                "https://kubernetes.io/docs/concepts/overview/working-with-objects/labels",
+                description=(
+                    "Labels to apply to all created pods. See: "
+                    "https://kubernetes.io/docs/concepts/overview/working-with-objects/labels"
+                ),
             ),
             "resources": Field(
                 Noneable(
@@ -474,20 +520,26 @@ class DagsterK8sJobConfig(
                     }
                 ),
                 is_required=False,
-                description="Compute resource requirements for the container. See: "
-                "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+                description=(
+                    "Compute resource requirements for the container. See: "
+                    "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/"
+                ),
             ),
             "scheduler_name": Field(
                 Noneable(StringSource),
                 is_required=False,
-                description="Use a custom Kubernetes scheduler for launched Pods. See:"
-                "https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/",
+                description=(
+                    "Use a custom Kubernetes scheduler for launched Pods. See:"
+                    "https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/"
+                ),
             ),
             "security_context": Field(
                 dict,
                 is_required=False,
-                description="Security settings for the container. See:"
-                "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container",
+                description=(
+                    "Security settings for the container. See:"
+                    "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-capabilities-for-a-container"
+                ),
             ),
         }
 
@@ -499,9 +551,27 @@ class DagsterK8sJobConfig(
                 "namespace": Field(
                     Noneable(StringSource),
                     is_required=False,
-                    description="The namespace into which to launch Kubernetes resources. Note that any "
-                    "other required resources (such as the service account) must be "
-                    "present in this namespace.",
+                    description=(
+                        "The namespace into which to launch Kubernetes resources. Note that any "
+                        "other required resources (such as the service account) must be "
+                        "present in this namespace."
+                    ),
+                ),
+                "run_k8s_config": Field(
+                    USER_DEFINED_K8S_CONFIG_SCHEMA,
+                    is_required=False,
+                    description="Raw Kubernetes configuration for launched runs.",
+                ),
+                "server_k8s_config": Field(
+                    Shape(
+                        {
+                            "container_config": Permissive(),
+                            "pod_spec_config": Permissive(),
+                            "pod_template_spec_metadata": Permissive(),
+                        }
+                    ),
+                    is_required=False,
+                    description="Raw Kubernetes configuration for launched code servers.",
                 ),
             },
         )
@@ -632,7 +702,7 @@ def construct_dagster_k8s_job(
 
     container_config = copy.deepcopy(user_defined_k8s_config.container_config)
 
-    if args != None:
+    if args is not None:
         container_config["args"] = args
 
     user_defined_env_vars = container_config.pop("env", [])

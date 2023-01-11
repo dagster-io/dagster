@@ -1,9 +1,10 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, CursorPaginationControls, CursorPaginationProps, NonIdealState} from '@dagster-io/ui';
 import React from 'react';
 
-import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/BackfillTable';
-import {RepositorySelector} from '../types/globalTypes';
+import {graphql} from '../graphql';
+import {RepositorySelector} from '../graphql/graphql';
+import {BackfillTable} from '../instance/BackfillTable';
 import {Loading} from '../ui/Loading';
 
 const BACKFILL_PAGE_SIZE = 10;
@@ -39,6 +40,22 @@ export const JobBackfillsTable = ({
   return (
     <Loading queryResult={queryResult}>
       {({partitionSetOrError}) => {
+        if (partitionSetOrError.__typename === 'PartitionSetNotFoundError') {
+          return (
+            <Box margin={{vertical: 20}}>
+              <NonIdealState title="Partition set not found." icon="no-results" />
+            </Box>
+          );
+        }
+
+        if (partitionSetOrError.__typename === 'PythonError') {
+          return (
+            <Box margin={{vertical: 20}}>
+              <NonIdealState title="An error occurred." icon="no-results" />
+            </Box>
+          );
+        }
+
         const {backfills, pipelineName} = partitionSetOrError;
 
         if (!backfills.length) {
@@ -88,7 +105,7 @@ export const JobBackfillsTable = ({
   );
 };
 
-const JOB_BACKFILLS_QUERY = gql`
+const JOB_BACKFILLS_QUERY = graphql(`
   query JobBackfillsQuery(
     $partitionSetName: String!
     $repositorySelector: RepositorySelector!
@@ -108,5 +125,4 @@ const JOB_BACKFILLS_QUERY = gql`
       }
     }
   }
-  ${BACKFILL_TABLE_FRAGMENT}
-`;
+`);

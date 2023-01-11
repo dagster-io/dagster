@@ -1,9 +1,8 @@
 import os
 
-from dagster_aws.ssm import parameter_store_resource
-
 from dagster import build_init_resource_context
 from dagster._core.test_utils import environ
+from dagster_aws.ssm import parameter_store_resource
 
 
 def test_parameter_store_resource(mock_ssm_client):

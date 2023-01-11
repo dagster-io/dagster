@@ -29,7 +29,6 @@ def test_write_read_stream():
 
 
 def test_write_empty_stream():
-
     with safe_tempfile_path() as f:
         with ipc_write_stream(f) as _:
             pass

@@ -8,14 +8,15 @@ from typing import Optional, Sequence
 
 import click
 import click_spinner
-from dagster_managed_elements.types import ManagedElementDiff, ManagedElementReconciler
-
 from dagster._utils.backcompat import ExperimentalWarning
+
+from dagster_managed_elements.types import ManagedElementDiff, ManagedElementReconciler
 
 
 def _deepgetattr(obj, attr: str):
     """
     Recursive getattr that allows for nested attributes.
+
     https://stackoverflow.com/a/14324459
     """
     return functools.reduce(getattr, attr.split("."), obj)
@@ -114,14 +115,21 @@ def main():
 
 @main.command(
     name="check",
-    help="Checks whether configuration for the specified reconcilers are in sync with the current state, and prints a diff if not.",
+    help=(
+        "Checks whether configuration for the specified reconcilers are in sync with the current"
+        " state, and prints a diff if not."
+    ),
 )
 @click.option(
     "--module",
     "-m",
     type=str,
     required=True,
-    help="Module containing the reconcilers to check.\nOptionally can include a colon and a comma-separated list of attribute paths to check specific reconcilers, otherwise all reconcilers in the module root will be checked, e.g. `my_module:reconciler1,reconciler2`",
+    help=(
+        "Module containing the reconcilers to check.\nOptionally can include a colon and a"
+        " comma-separated list of attribute paths to check specific reconcilers, otherwise all"
+        " reconcilers in the module root will be checked, e.g. `my_module:reconciler1,reconciler2`"
+    ),
 )
 @click.option(
     "--working-directory",
@@ -133,8 +141,9 @@ def main():
     "--include-all-secrets",
     is_flag=True,
     help=(
-        "Whether to include all secrets in the diff, acting as if all secrets will be pushed to the remote state."
-        " Secrets cannot be retrieved and diffed against the remote state, so this option simulates the diff if this flag is included to the apply command."
+        "Whether to include all secrets in the diff, acting as if all secrets will be pushed to the"
+        " remote state. Secrets cannot be retrieved and diffed against the remote state, so this"
+        " option simulates the diff if this flag is included to the apply command."
     ),
 )
 def check_cmd(module, working_directory, include_all_secrets):
@@ -156,7 +165,11 @@ def check_cmd(module, working_directory, include_all_secrets):
     "-m",
     type=str,
     required=True,
-    help="Module containing the reconcilers to apply.\nOptionally can include a colon and a comma-separated list of attribute paths to apply specific reconcilers, otherwise all reconcilers in the module root will be checked, e.g. `my_module:reconciler1,reconciler2`",
+    help=(
+        "Module containing the reconcilers to apply.\nOptionally can include a colon and a"
+        " comma-separated list of attribute paths to apply specific reconcilers, otherwise all"
+        " reconcilers in the module root will be checked, e.g. `my_module:reconciler1,reconciler2`"
+    ),
 )
 @click.option(
     "--working-directory",
@@ -168,9 +181,10 @@ def check_cmd(module, working_directory, include_all_secrets):
     "--include-all-secrets",
     is_flag=True,
     help=(
-        "Whether to push all secret values to the remote state, or only those that aren't already present."
-        " Secrets cannot be retrieved and diffed against the remote state, so this option is required when a secret is changed."
-        " If False, secrets that are already present in the remote state will not be pushed."
+        "Whether to push all secret values to the remote state, or only those that aren't already"
+        " present. Secrets cannot be retrieved and diffed against the remote state, so this option"
+        " is required when a secret is changed. If False, secrets that are already present in the"
+        " remote state will not be pushed."
     ),
 )
 def apply_cmd(module, working_directory, include_all_secrets):

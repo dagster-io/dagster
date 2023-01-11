@@ -1,8 +1,9 @@
-import {gql} from '@apollo/client';
 import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
+
+import {graphql} from '../graphql';
 
 interface ITypeWithTooltipProps {
   type: {
@@ -27,13 +28,13 @@ export const TypeWithTooltip = (props: ITypeWithTooltipProps) => {
   return <TypeName>{displayName}</TypeName>;
 };
 
-export const DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT = gql`
+export const DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT = graphql(`
   fragment DagsterTypeWithTooltipFragment on DagsterType {
     name
     displayName
     description
   }
-`;
+`);
 
 const TypeLink = styled(Link)`
   :hover {

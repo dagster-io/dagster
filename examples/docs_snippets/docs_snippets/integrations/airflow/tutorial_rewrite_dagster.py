@@ -3,13 +3,13 @@ import time
 from datetime import datetime, timedelta
 
 from dagster import (
+    Definitions,
     In,
     Nothing,
     RetryPolicy,
     ScheduleDefinition,
     job,
     op,
-    repository,
     schedule,
 )
 
@@ -36,6 +36,7 @@ def templated(context, ds: datetime):
 
 # end_ops
 
+
 # start_job
 @job(tags={"dagster/max_retries": 1, "dag_name": "example"})
 def tutorial_job():
@@ -50,10 +51,10 @@ def tutorial_job():
 schedule = ScheduleDefinition(job=tutorial_job, cron_schedule="@daily")
 # end_schedule
 
+
 # start_repo
-@repository
-def rewrite_repo():
-    return [tutorial_job, schedule]
-
-
+defs = Definitions(
+    jobs=[tutorial_job],
+    schedules=[schedule],
+)
 # end_repo

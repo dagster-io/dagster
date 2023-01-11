@@ -14,6 +14,7 @@ Why not pickle?
   (in memory, not human readable, etc) just handle the json case effectively.
 """
 
+import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
 from inspect import Parameter, signature
@@ -62,7 +63,8 @@ class WhitelistMap(NamedTuple):
         serializer: Optional[Type["NamedTupleSerializer"]],
         args_for_class: Mapping[str, Parameter],
     ):
-        """
+        """Register a tuple in the whitelist map.
+
         Args:
             name: The class name of the namedtuple to register
             nt: The namedtuple class to register.
@@ -267,7 +269,6 @@ class NamedTupleSerializer(Serializer):
             whitelist_map: current map of whitelisted serdes objects
             descent_path: the path to the current node from the root
         """
-
         raise NotImplementedError()
 
 
@@ -340,7 +341,7 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer):
 
 
 def serialize_dagster_namedtuple(nt: tuple, **json_kwargs) -> str:
-    """Serialize a whitelisted named tuple to a json encoded string"""
+    """Serialize a whitelisted named tuple to a json encoded string."""
     check.tuple_param(nt, "nt")
     return _serialize_dagster_namedtuple(nt, whitelist_map=_WHITELIST_MAP, **json_kwargs)
 
@@ -358,7 +359,9 @@ def serialize_value(val: Any, whitelist_map: WhitelistMap = _WHITELIST_MAP) -> s
 
 def pack_value(val: Any) -> Any:
     """
-    Transform a value in to a json serializable form. The following types are transformed in to dicts:
+    Transform a value in to a json serializable form.
+
+    The following types are transformed in to dicts:
         * whitelisted named tuples
         * whitelisted enums
         * set
@@ -377,7 +380,10 @@ def pack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -
         klass_name = val.__class__.__name__
         if not whitelist_map.has_tuple_entry(klass_name):
             raise SerializationError(
-                f"Can only serialize whitelisted namedtuples, received {val}.{_path_msg(descent_path)}",
+                (
+                    "Can only serialize whitelisted namedtuples, received"
+                    f" {val}.{_path_msg(descent_path)}"
+                ),
             )
         val = cast(NamedTuple, val)
         _, serializer, _ = whitelist_map.get_tuple_entry(klass_name)
@@ -386,7 +392,10 @@ def pack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -
         klass_name = val.__class__.__name__
         if not whitelist_map.has_enum_entry(klass_name):
             raise SerializationError(
-                f"Can only serialize whitelisted Enums, received {klass_name}.{_path_msg(descent_path)}",
+                (
+                    "Can only serialize whitelisted Enums, received"
+                    f" {klass_name}.{_path_msg(descent_path)}"
+                ),
             )
         _, enum_serializer = whitelist_map.get_enum_entry(klass_name)
         return {"__enum__": enum_serializer.value_to_storage_str(val, whitelist_map, descent_path)}
@@ -423,13 +432,18 @@ def pack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -
 def deserialize_json_to_dagster_namedtuple(
     json_str: str,
 ) -> tuple:
-    """Deserialize a json encoded string in to a whitelisted named tuple"""
-    dagster_namedtuple = _deserialize_json(
-        check.str_param(json_str, "json_str"), whitelist_map=_WHITELIST_MAP
-    )
+    """Deserialize a json encoded string in to a whitelisted named tuple."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+
+        dagster_namedtuple = _deserialize_json(
+            check.str_param(json_str, "json_str"), whitelist_map=_WHITELIST_MAP
+        )
+
     if not isinstance(dagster_namedtuple, tuple):
         raise DeserializationError(
-            f"Output of deserialized json_str was not expected type of tuple. Received type {type(dagster_namedtuple)}."
+            "Output of deserialized json_str was not expected type of tuple. Received type"
+            f" {type(dagster_namedtuple)}."
         )
 
     return dagster_namedtuple
@@ -468,7 +482,7 @@ def _deserialize_json(json_str: str, whitelist_map: WhitelistMap):
 
 
 def deserialize_value(val: str, whitelist_map: WhitelistMap = _WHITELIST_MAP) -> Any:
-    """Deserialize a json encoded string in to its original value"""
+    """Deserialize a json encoded string in to its original value."""
     return unpack_inner_value(
         seven.json.loads(check.str_param(val, "val")),
         whitelist_map=whitelist_map,
@@ -477,7 +491,7 @@ def deserialize_value(val: str, whitelist_map: WhitelistMap = _WHITELIST_MAP) ->
 
 
 def unpack_value(val: Any) -> Any:
-    """Convert a packed value in to its original form"""
+    """Convert a packed value in to its original form."""
     return unpack_inner_value(
         val,
         whitelist_map=_WHITELIST_MAP,
@@ -559,7 +573,6 @@ def register_serdes_tuple_fallbacks(
     Manually provide remappings for named tuples.
     Used to manage loading previously types that no longer exist.
     """
-
     for class_name, klass in fallback_map.items():
         serializer = cast(
             Type[NamedTupleSerializer],
@@ -583,7 +596,6 @@ def register_serdes_enum_fallbacks(
     Manually provide remappings for named tuples.
     Used to manage loading previously types that no longer exist.
     """
-
     serializer: Type[EnumSerializer] = DefaultEnumSerializer
     for class_name, klass in fallback_map.items():
         if not klass or not issubclass(klass, Enum):
@@ -620,7 +632,6 @@ def _check_serdes_tuple_class_invariants(klass, sig_params):
     value_params = dunder_new_params[1:]
 
     for index, field in enumerate(klass._fields):
-
         if index >= len(value_params):
             error_msg = (
                 "Missing parameters to __new__. You have declared fields "
@@ -669,7 +680,7 @@ def _root(val: Any) -> str:
 
 
 def replace_storage_keys(storage_dict: Dict[str, Any], key_mapping: Mapping[str, str]):
-    """returns a version of the storage dict that replaces all the keys"""
+    """Returns a version of the storage dict that replaces all the keys."""
     result = {}
     for key, value in storage_dict.items():
         if key not in key_mapping:

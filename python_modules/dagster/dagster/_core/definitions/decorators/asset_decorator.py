@@ -18,6 +18,7 @@ from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.resource_output import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
@@ -110,6 +111,9 @@ def asset(
     about the upstream assets it depends on. The upstream assets are inferred from the arguments
     to the decorated function. The name of the argument designates the name of the upstream asset.
 
+    An asset has an op inside it to represent the function that computes it. The name of the op
+    will be the segments of the asset key, separated by double-underscores.
+
     Args:
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
             decorated function. The asset's name must be a valid name in dagster (ie only contains
@@ -160,7 +164,6 @@ def asset(
             output when given the same inputs.
 
     Examples:
-
         .. code-block:: python
 
             @asset
@@ -173,7 +176,10 @@ def asset(
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         check.invariant(
             not (io_manager_key and io_manager_def),
-            "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please provide one or the other. ",
+            (
+                "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please"
+                " provide one or the other. "
+            ),
         )
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "asset")
@@ -263,8 +269,16 @@ class _Asset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            required_resource_keys = set(self.required_resource_keys).union(
+            arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
+            decorator_resource_keys = set(self.required_resource_keys).union(
                 set(self.resource_defs.keys())
+            )
+            check.param_invariant(
+                len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
+                (
+                    "Cannot specify resource requirements in both @asset decorator and as arguments"
+                    " to the decorated function"
+                ),
             )
 
             if isinstance(self.io_manager, str):
@@ -292,7 +306,9 @@ class _Asset:
                 description=self.description,
                 ins=dict(asset_ins.values()),
                 out=out,
-                required_resource_keys=required_resource_keys,
+                # Any resource requirements specified as arguments will be identified as
+                # part of the Op definition instantiation
+                required_resource_keys=decorator_resource_keys,
                 tags={
                     **({"kind": self.compute_kind} if self.compute_kind else {}),
                     **(self.op_tags or {}),
@@ -405,6 +421,7 @@ def multi_asset(
     )
 
     required_resource_keys = set(required_resource_keys).union(set(resource_defs.keys()))
+
     for out in outs.values():
         if isinstance(out, Out) and not isinstance(out, AssetOut):
             deprecation_warning(
@@ -414,28 +431,41 @@ def multi_asset(
             )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-
         op_name = name or fn.__name__
         asset_ins = build_asset_ins(
             fn, ins or {}, non_argument_deps=_make_asset_keys(non_argument_deps)
         )
         asset_outs = build_asset_outs(outs)
 
+        arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
+        check.param_invariant(
+            len(required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
+            (
+                "Cannot specify resource requirements in both @multi_asset decorator and as"
+                " arguments to the decorated function"
+            ),
+        )
+
         # validate that the asset_deps make sense
         valid_asset_deps = set(asset_ins.keys()) | set(asset_outs.keys())
         for out_name, asset_keys in asset_deps.items():
             check.invariant(
                 out_name in outs,
-                f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for multi-asset "
-                f"{op_name}. Must be one of the outs for this multi-asset {list(outs.keys())}.",
+                (
+                    f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for"
+                    f" multi-asset {op_name}. Must be one of the outs for this multi-asset"
+                    f" {list(outs.keys())}."
+                ),
             )
             invalid_asset_deps = asset_keys.difference(valid_asset_deps)
             check.invariant(
                 not invalid_asset_deps,
-                f"Invalid asset dependencies: {invalid_asset_deps} specified in `internal_asset_deps` "
-                f"argument for multi-asset '{op_name}' on key '{out_name}'. Each specified asset key "
-                "must be associated with an input to the asset or produced by this asset. Valid "
-                f"keys: {valid_asset_deps}",
+                (
+                    f"Invalid asset dependencies: {invalid_asset_deps} specified in"
+                    f" `internal_asset_deps` argument for multi-asset '{op_name}' on key"
+                    f" '{out_name}'. Each specified asset key must be associated with an input to"
+                    f" the asset or produced by this asset. Valid keys: {valid_asset_deps}"
+                ),
             )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
@@ -471,8 +501,10 @@ def multi_asset(
         if group_name:
             check.invariant(
                 not group_names_by_key,
-                "Cannot set group_name parameter on multi_asset if one or more of the AssetOuts "
-                "supplied to this multi_asset have a group_name defined.",
+                (
+                    "Cannot set group_name parameter on multi_asset if one or more of the AssetOuts"
+                    " supplied to this multi_asset have a group_name defined."
+                ),
             )
             group_names_by_key = {
                 asset_key: group_name for asset_key in keys_by_output_name.values()
@@ -512,7 +544,7 @@ def build_asset_ins(
     non_argument_deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
     """
-    Creates a mapping from AssetKey to (name of input, In object)
+    Creates a mapping from AssetKey to (name of input, In object).
     """
     non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
 
@@ -521,18 +553,31 @@ def build_asset_ins(
         "context"
     )
     input_params = params[1:] if is_context_provided else params
+
+    # Filter config, resource args
+    resource_arg_names = {arg.name for arg in get_resource_args(fn)}
+
+    new_input_args = []
+    for input_arg in input_params:
+        if input_arg.name != "config" and input_arg.name not in resource_arg_names:
+            new_input_args.append(input_arg)
+    input_params = new_input_args
+
     non_var_input_param_names = [
         param.name
-        for param in input_params
+        for param in new_input_args
         if param.kind == funcsigs.Parameter.POSITIONAL_OR_KEYWORD
     ]
-    has_kwargs = any(param.kind == funcsigs.Parameter.VAR_KEYWORD for param in input_params)
+    has_kwargs = any(param.kind == funcsigs.Parameter.VAR_KEYWORD for param in new_input_args)
 
     all_input_names = set(non_var_input_param_names) | asset_ins.keys()
 
     if not has_kwargs:
-        for in_key in asset_ins.keys():
-            if in_key not in non_var_input_param_names:
+        for in_key, asset_in in asset_ins.items():
+            if in_key not in non_var_input_param_names and (
+                not isinstance(asset_in.dagster_type, DagsterType)
+                or not asset_in.dagster_type.is_nothing
+            ):
                 raise DagsterInvalidDefinitionError(
                     f"Key '{in_key}' in provided ins dict does not correspond to any of the names "
                     "of the arguments to the decorated function"
@@ -573,7 +618,7 @@ def build_asset_outs(
     asset_outs: Mapping[str, Union[Out, AssetOut]]
 ) -> Mapping[AssetKey, Tuple[str, Out]]:
     """
-    Creates a mapping from AssetKey to (name of output, Out object)
+    Creates a mapping from AssetKey to (name of output, Out object).
     """
     outs_by_asset_key: Dict[AssetKey, Tuple[str, Out]] = {}
     for output_name, asset_out in asset_outs.items():

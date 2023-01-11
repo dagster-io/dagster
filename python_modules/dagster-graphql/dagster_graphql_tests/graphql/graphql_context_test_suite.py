@@ -4,12 +4,8 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from unittest.mock import patch
 
-import pytest
-from dagster_graphql import DagsterGraphQLClient
-from dagster_graphql.test.utils import execute_dagster_graphql
-from graphql import DocumentNode, print_ast
-
 import dagster._check as check
+import pytest
 from dagster import file_relative_path
 from dagster._core.instance import DagsterInstance, InstanceType
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -28,9 +24,12 @@ from dagster._core.workspace.load_target import (
     WorkspaceFileTarget,
 )
 from dagster._grpc.server import GrpcServerProcess
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster._utils.test import FilesystemTestScheduler
 from dagster._utils.test.postgres_instance import TestPostgresInstance
+from dagster_graphql import DagsterGraphQLClient
+from dagster_graphql.test.utils import execute_dagster_graphql
+from graphql import DocumentNode, print_ast
 
 
 def get_main_loadable_target_origin():
@@ -289,8 +288,10 @@ class EnvironmentManagers:
     def managed_grpc(target=None, location_name="test"):
         @contextmanager
         def _mgr_fn(instance, read_only):
-            """Goes out of process via grpc"""
-            loadable_target_origin = target if target != None else get_main_loadable_target_origin()
+            """Goes out of process via grpc."""
+            loadable_target_origin = (
+                target if target is not None else get_main_loadable_target_origin()
+            )
             with WorkspaceProcessContext(
                 instance,
                 (
@@ -323,7 +324,7 @@ class EnvironmentManagers:
                 instance_ref=instance.get_ref(),
                 location_name=location_name,
                 loadable_target_origin=target
-                if target != None
+                if target is not None
                 else get_main_loadable_target_origin(),
             )
             try:
@@ -349,7 +350,7 @@ class EnvironmentManagers:
     def multi_location():
         @contextmanager
         def _mgr_fn(instance, read_only):
-            """Goes out of process but same process as host process"""
+            """Goes out of process but same process as host process."""
             with WorkspaceProcessContext(
                 instance,
                 WorkspaceFileTarget(paths=[file_relative_path(__file__, "multi_location.yaml")]),
@@ -364,7 +365,7 @@ class EnvironmentManagers:
     def lazy_repository():
         @contextmanager
         def _mgr_fn(instance, read_only):
-            """Goes out of process but same process as host process"""
+            """Goes out of process but same process as host process."""
             with WorkspaceProcessContext(
                 instance,
                 PythonFileTarget(
@@ -432,7 +433,6 @@ class GraphQLContextVariant:
     with MarkedMembers that produce its members.
 
     Args:
-
     marked_instance_mgr (MarkedManager): The manager_fn
     within it must be a contextmanager that takes zero arguments and yields
     a DagsterInstance
@@ -638,14 +638,14 @@ class GraphQLContextVariant:
     @staticmethod
     def all_readonly_variants():
         """
-        Return all read only variants. If you try to run any mutation these will error
+        Return all read only variants. If you try to run any mutation these will error.
         """
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.read_only)
 
     @staticmethod
     def all_non_launchable_variants():
         """
-        Return all non_launchable variants. If you try to start or launch these will error
+        Return all non_launchable variants. If you try to start or launch these will error.
         """
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.non_launchable)
 
@@ -718,8 +718,7 @@ def graphql_context_variants_fixture(context_variants):
 
 def make_graphql_context_test_suite(context_variants):
     """
-        Arguments:
-
+    Arguments:
         context_variants (List[GraphQLContextVariant]): List of runs to run per test in this class.
 
         This is the base class factory for test suites in the dagster-graphql test.
@@ -736,7 +735,6 @@ def make_graphql_context_test_suite(context_variants):
         for more details.
 
     Example:
-
     class TestAThing(
         make_graphql_context_test_suite(
             context_variants=[GraphQLContextVariant.in_memory_in_process_start()]

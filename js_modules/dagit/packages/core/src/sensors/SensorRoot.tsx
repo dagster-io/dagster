@@ -1,23 +1,21 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Tab, Tabs, Page, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {graphql} from '../graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {SensorDetails} from './SensorDetails';
-import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorPreviousRuns} from './SensorPreviousRuns';
-import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRootQuery';
 
 export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   useTrackPageView();
@@ -31,9 +29,8 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   };
 
   const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
-  const queryResult = useQuery<SensorRootQuery, SensorRootQueryVariables>(SENSOR_ROOT_QUERY, {
+  const queryResult = useQuery(SENSOR_ROOT_QUERY, {
     variables: {sensorSelector},
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
@@ -92,7 +89,7 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   );
 };
 
-const SENSOR_ROOT_QUERY = gql`
+const SENSOR_ROOT_QUERY = graphql(`
   query SensorRootQuery($sensorSelector: SensorSelector!) {
     sensorOrError(sensorSelector: $sensorSelector) {
       __typename
@@ -113,7 +110,4 @@ const SENSOR_ROOT_QUERY = gql`
       }
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-  ${SENSOR_FRAGMENT}
-  ${INSTANCE_HEALTH_FRAGMENT}
-`;
+`);

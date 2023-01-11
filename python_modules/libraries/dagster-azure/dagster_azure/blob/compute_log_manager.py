@@ -5,8 +5,13 @@ from typing import Optional, Sequence
 from azure.identity import DefaultAzureCredential
 
 import dagster._seven as seven
-from dagster import Field, Noneable, Permissive, StringSource
-from dagster import _check as check
+from dagster import (
+    Field,
+    Noneable,
+    Permissive,
+    StringSource,
+    _check as check,
+)
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,

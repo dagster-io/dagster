@@ -349,8 +349,9 @@ def test_selector_within_dict_no_subfields():
     )
     assert not result.success
     assert len(result.errors) == 1
-    assert result.errors[0].message == (
-        "Must specify a field at path root:selector if more than one field "
+    assert (
+        result.errors[0].message
+        == "Must specify a field at path root:selector if more than one field "
         "is defined. Defined fields: ['option_one', 'option_two']"
     )
 

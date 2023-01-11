@@ -1,5 +1,25 @@
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, cast
 
+import dagster._check as check
+from dagster import AssetKey, ResourceDefinition
+from dagster._annotations import experimental, public
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.execution.context.init import build_init_resource_context
+from dagster._utils.merger import deep_merge_dicts
+from dagster_managed_elements import (
+    ManagedElementCheckResult,
+    ManagedElementDiff,
+    ManagedElementError,
+)
+from dagster_managed_elements.types import (
+    SECRET_MASK_VALUE,
+    ManagedElementReconciler,
+    is_key_secret,
+)
+from dagster_managed_elements.utils import UNSET, diff_dicts
+
 from dagster_airbyte.asset_defs import (
     AirbyteConnectionMetadata,
     AirbyteInstanceCacheableAssetsDefinition,
@@ -17,25 +37,6 @@ from dagster_airbyte.managed.types import (
 )
 from dagster_airbyte.resources import AirbyteResource
 from dagster_airbyte.utils import is_basic_normalization_operation
-from dagster_managed_elements import (
-    ManagedElementCheckResult,
-    ManagedElementDiff,
-    ManagedElementError,
-)
-from dagster_managed_elements.types import (
-    SECRET_MASK_VALUE,
-    ManagedElementReconciler,
-    is_key_secret,
-)
-from dagster_managed_elements.utils import UNSET, diff_dicts
-
-import dagster._check as check
-from dagster import AssetKey, ResourceDefinition
-from dagster._annotations import experimental, public
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.execution.context.init import build_init_resource_context
-from dagster._utils.merger import deep_merge_dicts
 
 
 def gen_configured_stream_json(
@@ -165,7 +166,6 @@ def reconcile_sources(
     Generates a diff of the configured and existing sources and reconciles them to match the
     configured state if dry_run is False.
     """
-
     diff = ManagedElementDiff()
 
     initialized_sources: Dict[str, InitializedAirbyteSource] = {}
@@ -254,7 +254,6 @@ def reconcile_destinations(
     Generates a diff of the configured and existing destinations and reconciles them to match the
     configured state if dry_run is False.
     """
-
     diff = ManagedElementDiff()
 
     initialized_destinations: Dict[str, InitializedAirbyteDestination] = {}
@@ -498,7 +497,6 @@ def reconcile_connections_pre(
     sources and destinations that are being deleted or recreated before Airbyte will allow us to
     delete or recreate them.
     """
-
     diff = ManagedElementDiff()
 
     existing_connections_raw = cast(
@@ -548,7 +546,6 @@ def reconcile_connections_post(
     """
     Creates new and modifies existing connections based on the config if dry_run is False.
     """
-
     existing_connections_raw = cast(
         Dict[str, List[Dict[str, Any]]],
         check.not_none(
@@ -704,6 +701,9 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
         connections: Iterable[AirbyteConnection],
         connection_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connection_to_asset_key_fn: Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]],
+        connection_to_freshness_policy_fn: Optional[
+            Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+        ],
     ):
         defined_conn_names = {conn.name for conn in connections}
         super().__init__(
@@ -715,6 +715,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
             connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
             connection_filter=lambda conn: conn.name in defined_conn_names,
             connection_to_asset_key_fn=connection_to_asset_key_fn,
+            connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
         )
         self._connections: List[AirbyteConnection] = list(connections)
 
@@ -744,6 +745,9 @@ def load_assets_from_connections(
     connection_to_asset_key_fn: Optional[
         Callable[[AirbyteConnectionMetadata, str], AssetKey]
     ] = None,
+    connection_to_freshness_policy_fn: Optional[
+        Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]
+    ] = None,
 ) -> CacheableAssetsDefinition:
     """
     Loads Airbyte connection assets from a configured AirbyteResource instance, checking against a list of AirbyteConnection objects.
@@ -768,6 +772,8 @@ def load_assets_from_connections(
         connection_to_asset_key_fn (Optional[Callable[[AirbyteConnectionMetadata, str], AssetKey]]): Optional function which
             takes in connection metadata and table name and returns an asset key for the table. If None, the default asset
             key is based on the table name. Any asset key prefix will be applied to the output of this function.
+        connection_to_freshness_policy_fn (Optional[Callable[[AirbyteConnectionMetadata], Optional[FreshnessPolicy]]]): Optional function which
+            takes in connection metadata and returns a freshness policy for the connection. If None, no freshness policy will be applied.
 
     **Examples:**
 
@@ -791,7 +797,6 @@ def load_assets_from_connections(
         ]
         airbyte_assets = load_assets_from_connections(airbyte_instance, airbyte_connections)
     """
-
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
@@ -815,4 +820,5 @@ def load_assets_from_connections(
         connection_to_io_manager_key_fn=connection_to_io_manager_key_fn,
         connections=check.iterable_param(connections, "connections", of_type=AirbyteConnection),
         connection_to_asset_key_fn=connection_to_asset_key_fn,
+        connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
     )

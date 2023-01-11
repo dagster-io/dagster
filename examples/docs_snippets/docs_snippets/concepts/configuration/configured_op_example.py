@@ -17,6 +17,7 @@ configured_example = configured(example, name="configured_example")(
     {"iterations": 6, "word": "wheaties"}
 )
 
+
 # This example is partially configured: `iterations` is passed through
 # The decorator yields an op named 'another_configured_example' (from the decorated function)
 # with `int` as the `config_schema`.

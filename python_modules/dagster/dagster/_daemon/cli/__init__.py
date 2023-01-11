@@ -1,12 +1,7 @@
 import os
 import sys
-import threading
-import time
-import warnings
-from contextlib import ExitStack
 
 import click
-import pendulum
 
 from dagster import __version__ as dagster_version
 from dagster._cli.workspace.cli_target import get_workspace_load_target, workspace_target_argument
@@ -14,15 +9,14 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
-    DagsterDaemonController,
-    all_daemons_healthy,
+    DagsterDaemonController as DagsterDaemonController,
     all_daemons_live,
     daemon_controller_from_instance,
     debug_daemon_heartbeats,
     get_daemon_statuses,
 )
 from dagster._daemon.daemon import get_telemetry_daemon_session_id
-from dagster._utils.interrupts import capture_interrupts, raise_interrupts_as
+from dagster._utils.interrupts import capture_interrupts
 
 
 def _get_heartbeat_tolerance():
@@ -101,7 +95,7 @@ def debug_heartbeat_dump_command():
     commands={"heartbeat": debug_heartbeat_command, "heartbeat-dump": debug_heartbeat_dump_command}
 )
 def debug_group():
-    "Daemon debugging utils"
+    """Daemon debugging utils."""
 
 
 def create_dagster_daemon_cli():
@@ -115,7 +109,7 @@ def create_dagster_daemon_cli():
     @click.group(commands=commands)
     @click.version_option(version=dagster_version)
     def group():
-        "CLI tools for working with the dagster daemon process."
+        """CLI tools for working with the dagster daemon process."""
 
     return group
 

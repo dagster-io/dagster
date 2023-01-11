@@ -2,13 +2,16 @@ import os
 import warnings
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Type, cast
 
-from dagster import Array, Bool
-from dagster import _check as check
+from dagster import (
+    Array,
+    Bool,
+    _check as check,
+)
 from dagster._config import Field, Permissive, ScalarUnion, Selector, StringSource, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config
 from dagster._serdes import class_from_code_pointer
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_globs
 
 if TYPE_CHECKING:
@@ -36,9 +39,9 @@ def dagster_instance_config(
 
     if not os.path.exists(config_yaml_path) and is_dagster_home_set():
         warnings.warn(
-            f"No dagster instance configuration file ({config_filename}) found at "
-            f"{base_dir}. Defaulting to loading and storing all metadata with {base_dir}. "
-            f"If this is the desired behavior, create an empty {config_filename} file in {base_dir}."
+            f"No dagster instance configuration file ({config_filename}) found at {base_dir}."
+            f" Defaulting to loading and storing all metadata with {base_dir}. If this is the"
+            f" desired behavior, create an empty {config_filename} file in {base_dir}."
         )
 
     dagster_config_dict = merge_dicts(load_yaml_from_globs(config_yaml_path) or {}, overrides)

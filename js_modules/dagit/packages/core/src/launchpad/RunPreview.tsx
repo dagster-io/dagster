@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {
@@ -19,20 +18,19 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
+import {graphql} from '../graphql';
 import {
-  ConfigEditorRunConfigSchemaFragment,
-  ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
-} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+  CompositeConfigTypeForSchemaFragment,
+  ConfigEditorRunConfigSchemaFragmentFragment,
+  RunPreviewValidationErrorsFragment,
+  RunPreviewValidationFragmentFragment,
+} from '../graphql/graphql';
 
 import {LaunchpadType} from './LaunchpadRoot';
-import {
-  RunPreviewValidationFragment,
-  RunPreviewValidationFragment_RunConfigValidationInvalid_errors,
-} from './types/RunPreviewValidationFragment';
 
-type ValidationError = RunPreviewValidationFragment_RunConfigValidationInvalid_errors;
+type ValidationError = RunPreviewValidationErrorsFragment;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;
 
 function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
@@ -201,11 +199,11 @@ const ScaffoldConfigButton = ({
 };
 
 interface RunPreviewProps {
-  validation: RunPreviewValidationFragment | null;
+  validation: RunPreviewValidationFragmentFragment | null;
   document: any | null;
   launchpadType: LaunchpadType;
 
-  runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
+  runConfigSchema?: ConfigEditorRunConfigSchemaFragmentFragment;
   onHighlightPath: (path: string[]) => void;
   onRemoveExtraPaths: (paths: string[]) => void;
   onScaffoldMissingConfig: () => void;
@@ -232,7 +230,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
 
     const {allConfigTypes, rootConfigType} = runConfigSchema;
     const children: {
-      [fieldName: string]: ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType;
+      [fieldName: string]: CompositeConfigTypeForSchemaFragment;
     } = {};
 
     const root = allConfigTypes.find((t) => t.key === rootConfigType.key);
@@ -458,47 +456,12 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
   );
 };
 
-export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
+export const RUN_PREVIEW_VALIDATION_FRAGMENT = graphql(`
   fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
     __typename
     ... on RunConfigValidationInvalid {
       errors {
-        __typename
-        reason
-        message
-        stack {
-          entries {
-            __typename
-            ... on EvaluationStackPathEntry {
-              fieldName
-            }
-            ... on EvaluationStackListItemEntry {
-              listIndex
-            }
-            ... on EvaluationStackMapKeyEntry {
-              mapKey
-            }
-            ... on EvaluationStackMapValueEntry {
-              mapKey
-            }
-          }
-        }
-        ... on MissingFieldConfigError {
-          field {
-            name
-          }
-        }
-        ... on MissingFieldsConfigError {
-          fields {
-            name
-          }
-        }
-        ... on FieldNotDefinedConfigError {
-          fieldName
-        }
-        ... on FieldsNotDefinedConfigError {
-          fieldNames
-        }
+        ...RunPreviewValidationErrors
       }
     }
     ... on PipelineNotFoundError {
@@ -510,8 +473,44 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
     ...PythonErrorFragment
   }
 
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+  fragment RunPreviewValidationErrors on PipelineConfigValidationError {
+    reason
+    message
+    stack {
+      entries {
+        __typename
+        ... on EvaluationStackPathEntry {
+          fieldName
+        }
+        ... on EvaluationStackListItemEntry {
+          listIndex
+        }
+        ... on EvaluationStackMapKeyEntry {
+          mapKey
+        }
+        ... on EvaluationStackMapValueEntry {
+          mapKey
+        }
+      }
+    }
+    ... on MissingFieldConfigError {
+      field {
+        name
+      }
+    }
+    ... on MissingFieldsConfigError {
+      fields {
+        name
+      }
+    }
+    ... on FieldNotDefinedConfigError {
+      fieldName
+    }
+    ... on FieldsNotDefinedConfigError {
+      fieldNames
+    }
+  }
+`);
 
 const SectionTitle = styled.div`
   color: ${Colors.Gray400};

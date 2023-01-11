@@ -1,10 +1,9 @@
 import os
 
 import pytest
-from dagstermill.examples.repository import hello_world
-
 from dagster import job
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagstermill.examples.repository import hello_world
 
 from .test_ops import exec_for_test
 

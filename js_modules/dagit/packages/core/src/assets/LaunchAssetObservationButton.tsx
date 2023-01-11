@@ -3,9 +3,14 @@ import {Button, Spinner, Tooltip, Icon} from '@dagster-io/ui';
 import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
+import {
+  LaunchAssetExecutionAssetNodeFragmentFragment,
+  LaunchAssetLoaderQueryQuery,
+  LaunchAssetLoaderQueryQueryVariables,
+  LaunchPipelineExecutionMutationVariables,
+} from '../graphql/graphql';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
@@ -16,11 +21,6 @@ import {
   LAUNCH_ASSET_LOADER_QUERY,
 } from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
-import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionAssetNodeFragment';
-import {
-  LaunchAssetLoaderQuery,
-  LaunchAssetLoaderQueryVariables,
-} from './types/LaunchAssetLoaderQuery';
 
 type ObserveAssetsState =
   | {type: 'none'}
@@ -28,7 +28,7 @@ type ObserveAssetsState =
   | {type: 'error'; error: string}
   | {
       type: 'single-run';
-      executionParams: LaunchPipelineExecutionVariables['executionParams'];
+      executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
 export const LaunchAssetObservationButton: React.FC<{
@@ -36,7 +36,7 @@ export const LaunchAssetObservationButton: React.FC<{
   intent?: 'primary' | 'none';
   preferredJobName?: string;
 }> = ({assetKeys, preferredJobName, intent = 'none'}) => {
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
@@ -66,7 +66,10 @@ export const LaunchAssetObservationButton: React.FC<{
     }
     setState({type: 'loading'});
 
-    const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
+    const result = await client.query<
+      LaunchAssetLoaderQueryQuery,
+      LaunchAssetLoaderQueryQueryVariables
+    >({
       query: LAUNCH_ASSET_LOADER_QUERY,
       variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
     });
@@ -114,7 +117,7 @@ export const LaunchAssetObservationButton: React.FC<{
 
 async function stateForObservingAssets(
   _client: ApolloClient<any>,
-  assets: LaunchAssetExecutionAssetNodeFragment[],
+  assets: LaunchAssetExecutionAssetNodeFragmentFragment[],
   _forceLaunchpad: boolean,
   preferredJobName?: string,
 ): Promise<ObserveAssetsState> {

@@ -1,6 +1,5 @@
-from dagster_graphql import DagsterGraphQLClient
-
 from dagster import graph, job, op, repository
+from dagster_graphql import DagsterGraphQLClient
 
 
 @op

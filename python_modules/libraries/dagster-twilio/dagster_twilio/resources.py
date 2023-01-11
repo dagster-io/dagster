@@ -1,6 +1,5 @@
-from twilio.rest import Client
-
 from dagster import Field, StringSource, resource
+from twilio.rest import Client
 
 
 @resource(

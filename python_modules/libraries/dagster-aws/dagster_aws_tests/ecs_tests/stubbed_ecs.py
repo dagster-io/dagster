@@ -93,7 +93,7 @@ class StubStorage:
 class StubbedEcs:
     """
     A class that stubs ECS responses using botocore's Stubber:
-    https://botocore.amazonaws.com/v1/documentation/api/latest/reference/stubber.html
+    https://botocore.amazonaws.com/v1/documentation/api/latest/reference/stubber.html.
 
     Stubs are minimally sufficient for testing existing Dagster ECS behavior;
     consequently, not all endpoints are stubbed and not all stubbed endpoints
@@ -184,7 +184,7 @@ class StubbedEcs:
     @stubbed
     def list_account_settings(self, **kwargs):
         """
-        Only taskLongArnFormat has a default value
+        Only taskLongArnFormat has a default value.
         """
         if kwargs.get("effectiveSettings"):
             account_settings = {
@@ -248,7 +248,7 @@ class StubbedEcs:
     def list_tasks(self, **kwargs):
         """
         Only filtering by family and cluster is stubbed.
-        TODO: Pagination
+        TODO: Pagination.
         """
         cluster = self._cluster(kwargs.get("cluster"))
         family = kwargs.get("family")
@@ -295,12 +295,14 @@ class StubbedEcs:
         if not self.storage.register_task_definition_locks[family].acquire(blocking=False):
             self.stubber.add_client_error(
                 method="register_task_definition",
-                service_message="Too many concurrent attempts to create a new revision of the specified family.",
+                service_message=(
+                    "Too many concurrent attempts to create a new revision of the specified family."
+                ),
                 expected_params={**kwargs},
             )
         else:
             # Sleep for long enough that we hit the lock
-            time.sleep(0.01)
+            time.sleep(0.2)
             # Family must be <= 255 characters. Alphanumeric, dash, and underscore only.
             if len(family) > 255 or not re.match(r"^[\w\-]+$", family):
                 self.stubber.add_client_error(
@@ -491,7 +493,7 @@ class StubbedEcs:
     @stubbed
     def tag_resource(self, **kwargs):
         """
-        Only task tagging is stubbed; other resources won't work
+        Only task tagging is stubbed; other resources won't work.
         """
         tags = kwargs.get("tags")
         arn = kwargs.get("resourceArn")

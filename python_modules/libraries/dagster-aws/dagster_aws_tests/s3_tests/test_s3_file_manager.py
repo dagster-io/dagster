@@ -3,9 +3,8 @@ from unittest import mock
 
 import pytest
 from botocore import exceptions
-from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_file_manager, s3_resource
-
 from dagster import DagsterResourceFunctionError, In, Out, build_op_context, configured, job, op
+from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_file_manager, s3_resource
 
 
 def test_s3_file_manager_write(mock_s3_resource, mock_s3_bucket):
@@ -131,7 +130,6 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
 
 
 def test_s3_file_manager_resource_with_profile():
-
     resource_config = {
         "use_unsigned_session": True,
         "region_name": "us-west-1",

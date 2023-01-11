@@ -3,7 +3,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useViewport} from '../gantt/useViewport';
-import {RunStatus} from '../types/globalTypes';
+import {RunStatus} from '../graphql/graphql';
 
 import {assembleIntoSpans} from './SpanRepresentation';
 
@@ -128,7 +128,7 @@ export const PartitionStatus: React.FC<{
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [onSelect, selected, currentSelectionRange, getRangeSelection, toPartitionName]);
+  }, [onSelect, selected, selectedSet, currentSelectionRange, getRangeSelection, toPartitionName]);
 
   const selectedSpans = React.useMemo(
     () =>

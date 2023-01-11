@@ -95,11 +95,11 @@ def resolve_assets_def_deps(
 
                 if not warned:
                     experimental_warning(
-                        f"Asset {next(iter(assets_def.keys)).to_string()}'s dependency "
-                        f"'{upstream_key.path[-1]}' was resolved to upstream asset "
-                        f"{resolved_key.to_string()}, because the name matches and they're in the same "
-                        "group. This is experimental functionality that may change in a future "
-                        "release"
+                        f"Asset {next(iter(assets_def.keys)).to_string()}'s dependency"
+                        f" '{upstream_key.path[-1]}' was resolved to upstream asset"
+                        f" {resolved_key.to_string()}, because the name matches and they're in the"
+                        " same group. This is experimental functionality that may change in a"
+                        " future release"
                     )
 
                     warned = True

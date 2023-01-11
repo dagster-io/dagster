@@ -3,9 +3,9 @@ import random
 from typing import Dict
 from unittest import mock
 
-from dagster_azure.blob import FakeBlobServiceClient
-
 from dagster import resource
+
+from dagster_azure.blob import FakeBlobServiceClient
 
 from .resources import ADLS2Resource
 from .utils import ResourceNotFoundError
@@ -61,7 +61,6 @@ class FakeADLS2ServiceClient:
     """
 
     def __init__(self, account_name, credential="fake-creds"):
-
         self._account_name = account_name
         self._credential = mock.MagicMock()
         self._credential.account_key = credential

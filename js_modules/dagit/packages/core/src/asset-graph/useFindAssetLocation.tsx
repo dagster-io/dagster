@@ -1,16 +1,17 @@
-import {gql, useApolloClient} from '@apollo/client';
+import {useApolloClient} from '@apollo/client';
 import React from 'react';
 
 import {AssetKey} from '../assets/types';
-import {AssetKeyInput} from '../types/globalTypes';
+import {graphql} from '../graphql';
+import {
+  AssetForNavigationQueryQuery,
+  AssetForNavigationQueryQueryVariables,
+  AssetKeyInput,
+} from '../graphql/graphql';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
 import {isHiddenAssetGroupJob} from './Utils';
-import {
-  AssetForNavigationQuery,
-  AssetForNavigationQueryVariables,
-} from './types/AssetForNavigationQuery';
 
 export interface AssetLocation {
   assetKey: AssetKey;
@@ -25,7 +26,10 @@ export function useFindAssetLocation() {
 
   return React.useCallback(
     async (key: AssetKeyInput): Promise<AssetLocation> => {
-      const {data} = await apollo.query<AssetForNavigationQuery, AssetForNavigationQueryVariables>({
+      const {data} = await apollo.query<
+        AssetForNavigationQueryQuery,
+        AssetForNavigationQueryQueryVariables
+      >({
         query: ASSET_FOR_NAVIGATION_QUERY,
         variables: {key},
       });
@@ -47,7 +51,7 @@ export function useFindAssetLocation() {
   );
 }
 
-const ASSET_FOR_NAVIGATION_QUERY = gql`
+const ASSET_FOR_NAVIGATION_QUERY = graphql(`
   query AssetForNavigationQuery($key: AssetKeyInput!) {
     assetOrError(assetKey: $key) {
       __typename
@@ -70,4 +74,4 @@ const ASSET_FOR_NAVIGATION_QUERY = gql`
       }
     }
   }
-`;
+`);

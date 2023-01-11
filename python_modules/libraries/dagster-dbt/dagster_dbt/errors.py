@@ -2,8 +2,12 @@ import warnings
 from abc import ABC
 from typing import Any, Mapping, Optional, Sequence
 
-from dagster import DagsterInvariantViolationError, Failure, MetadataValue
-from dagster import _check as check
+from dagster import (
+    DagsterInvariantViolationError,
+    Failure,
+    MetadataValue,
+    _check as check,
+)
 
 
 class DagsterDbtError(Failure, ABC):
@@ -42,7 +46,8 @@ class DagsterDbtCliRuntimeError(DagsterDbtError, ABC):
             )
         if raw_output is not None:
             warnings.warn(
-                "`raw_output` is a deprecated argument to DagsterDbtCliRuntimeError and will be discarded"
+                "`raw_output` is a deprecated argument to DagsterDbtCliRuntimeError and will be"
+                " discarded"
             )
         metadata = {"Parsed CLI Messages": "\n".join(messages or [])}
         super().__init__(description, metadata=metadata)

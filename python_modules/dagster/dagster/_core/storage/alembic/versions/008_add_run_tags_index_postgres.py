@@ -1,4 +1,4 @@
-"""add run tags index
+"""add run tags index.
 
 Revision ID: c9159e740d7e
 Revises: c34498c29964
@@ -22,7 +22,7 @@ def upgrade():
     has_tables = inspector.get_table_names()
     if "run_tags" in has_tables:
         indices = [x.get("name") for x in inspector.get_indexes("run_tags")]
-        if not "idx_run_tags" in indices:
+        if "idx_run_tags" not in indices:
             op.create_index("idx_run_tags", "run_tags", ["key", "value"], unique=False)
 
 

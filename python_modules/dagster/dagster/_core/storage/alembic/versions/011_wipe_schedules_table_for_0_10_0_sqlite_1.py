@@ -1,4 +1,4 @@
-"""empty message
+"""empty message.
 
 Revision ID: b22f16781a7c
 Revises: b32a4f3036d2
@@ -6,9 +6,8 @@ Create Date: 2020-06-10 09:05:47.963960
 
 """
 from alembic import op
-from sqlalchemy import inspect
-
 from dagster._core.storage.migration.utils import get_currently_upgrading_instance, has_table
+from sqlalchemy import inspect
 
 # alembic magic breaks pylint
 # pylint: disable=no-member

@@ -56,7 +56,7 @@ class StepOutput(
         ],
     )
 ):
-    """Holds the information for an ExecutionStep to process its outputs"""
+    """Holds the information for an ExecutionStep to process its outputs."""
 
     def __new__(
         cls,
@@ -108,7 +108,7 @@ class StepOutputData(
         ],
     )
 ):
-    """Serializable payload of information for the result of processing a step output"""
+    """Serializable payload of information for the result of processing a step output."""
 
     def __new__(
         cls,
@@ -148,7 +148,7 @@ class StepOutputHandle(
         [("step_key", str), ("output_name", str), ("mapping_key", Optional[str])],
     )
 ):
-    """A reference to a specific output that has or will occur within the scope of an execution"""
+    """A reference to a specific output that has or will occur within the scope of an execution."""
 
     def __new__(cls, step_key: str, output_name: str = "result", mapping_key: Optional[str] = None):
         return super(StepOutputHandle, cls).__new__(
@@ -197,11 +197,11 @@ class UnresolvedStepOutputHandle(
         )
 
     def resolve(self, map_key) -> StepOutputHandle:
-        """Return a resolved StepOutputHandle"""
+        """Return a resolved StepOutputHandle."""
         return StepOutputHandle(
             self.unresolved_step_handle.resolve(map_key).to_key(), self.output_name
         )
 
     def get_step_output_handle_with_placeholder(self) -> StepOutputHandle:
-        """Return a StepOutputHandle with a unresolved step key as a placeholder"""
+        """Return a StepOutputHandle with a unresolved step key as a placeholder."""
         return StepOutputHandle(self.unresolved_step_handle.to_key(), self.output_name)

@@ -1,8 +1,7 @@
 import pandas as pd
-from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
-
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -33,12 +32,12 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
     def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame):
         """Stores the pandas DataFrame in duckdb."""
-
         conn = _connect_duckdb(context).cursor()
 
         conn.execute(f"create schema if not exists {table_slice.schema};")
         conn.execute(
-            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from obj;"
+            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
+            " obj;"
         )
         if not conn.fetchall():
             # table was not created, therefore already exists. Insert the data

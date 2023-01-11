@@ -2,10 +2,9 @@ import {CustomTooltipProvider} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import React, {useState} from 'react';
 
+import {RunMetadataProviderMessageFragmentFragment, RunStatus} from '../graphql/graphql';
 import {extractMetadataFromLogs} from '../runs/RunMetadataProvider';
-import {RunMetadataProviderMessageFragment} from '../runs/types/RunMetadataProviderMessageFragment';
 import {StorybookProvider} from '../testing/StorybookProvider';
-import {RunStatus} from '../types/globalTypes';
 
 import {IGanttNode} from './Constants';
 import {GanttChart, GanttChartLoadingState} from './GanttChart';
@@ -82,7 +81,7 @@ const GRAPH: IGanttNode[] = [
   },
 ];
 
-const LOGS: RunMetadataProviderMessageFragment[] = [
+const LOGS: RunMetadataProviderMessageFragmentFragment[] = [
   {
     message: '',
     timestamp: '0',

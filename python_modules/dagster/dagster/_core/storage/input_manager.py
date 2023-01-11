@@ -45,7 +45,8 @@ class IInputManagerDefinition:
     @abstractmethod
     def input_config_schema(self) -> IDefinitionConfigSchema:
         """The schema for per-input configuration for inputs that are managed by this
-        input manager"""
+        input manager.
+        """
 
 
 class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
@@ -85,7 +86,9 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         return self._input_config_schema
 
     def copy_for_configured(
-        self, description: Optional[str], config_schema: CoercableToConfigSchema, _
+        self,
+        description: Optional[str],
+        config_schema: CoercableToConfigSchema,
     ) -> "InputManagerDefinition":
         return InputManagerDefinition(
             config_schema=config_schema,
@@ -149,7 +152,6 @@ def input_manager(
         def csv_loader(context):
             return read_csv(context.config["path"])
     """
-
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         return _InputManagerDecoratorCallable()(config_schema)
 

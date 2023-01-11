@@ -13,11 +13,15 @@ from typing import Any, Generator, Mapping, NamedTuple, Optional, Sequence, Type
 import pendulum
 import yaml
 
-from dagster import Permissive, Shape
-from dagster import _check as check
-from dagster import fs_io_manager
+from dagster import (
+    Permissive,
+    Shape,
+    _check as check,
+    fs_io_manager,
+)
 from dagster._config import Array, Field
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     InProcessRepositoryLocationOrigin,
@@ -32,9 +36,10 @@ from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._legacy import ModeDefinition, pipeline, solid
 from dagster._serdes import ConfigurableClass
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
-from dagster._utils import Counter, merge_dicts, traced, traced_counter
+from dagster._utils import Counter, traced, traced_counter
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import configure_loggers
+from dagster._utils.merger import merge_dicts
 
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 
@@ -53,7 +58,7 @@ def assert_namedtuples_equal(
 ) -> None:
     exclude_fields = exclude_fields or []
     for field in type(t1)._fields:
-        if not field in exclude_fields:
+        if field not in exclude_fields:
             assert getattr(t1, field) == getattr(t2, field)
 
 
@@ -98,7 +103,7 @@ def nesting_graph_pipeline(depth, num_children, *args, **kwargs):
 @contextmanager
 def environ(env):
     """Temporarily set environment variables inside the context manager and
-    fully restore previous environment afterwards
+    fully restore previous environment afterwards.
     """
     previous_values = {key: os.getenv(key) for key in env}
     for key, value in env.items():
@@ -135,7 +140,7 @@ def instance_for_test(
 
     Args:
         overrides (Optional[Mapping[str, Any]]):
-            Config to provide to instance (config format follows that typically found in an `instance.yaml` file).
+            Config to provide to instance (config format follows that typically found in an `instance.yaml` file).
         set_dagster_home (Optional[bool]):
             If set to True, the `$DAGSTER_HOME` environment variable will be
             overridden to be the directory used by this instance for the
@@ -204,7 +209,7 @@ TEST_PIPELINE_NAME = "_test_pipeline_"
 
 
 def create_run_for_test(
-    instance,
+    instance: DagsterInstance,
     pipeline_name=TEST_PIPELINE_NAME,
     run_id=None,
     run_config=None,
@@ -222,21 +227,23 @@ def create_run_for_test(
     pipeline_code_origin=None,
 ):
     return instance.create_run(
-        pipeline_name,
-        run_id,
-        run_config,
-        mode,
-        solids_to_execute,
-        step_keys_to_execute,
-        status,
-        tags,
-        root_run_id,
-        parent_run_id,
-        pipeline_snapshot,
-        execution_plan_snapshot,
-        parent_pipeline_snapshot,
+        pipeline_name=pipeline_name,
+        run_id=run_id,
+        run_config=run_config,
+        mode=mode,
+        solids_to_execute=solids_to_execute,
+        step_keys_to_execute=step_keys_to_execute,
+        status=status,
+        tags=tags,
+        root_run_id=root_run_id,
+        parent_run_id=parent_run_id,
+        pipeline_snapshot=pipeline_snapshot,
+        execution_plan_snapshot=execution_plan_snapshot,
+        parent_pipeline_snapshot=parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline_origin,
         pipeline_code_origin=pipeline_code_origin,
+        asset_selection=None,
+        solid_selection=None,
     )
 
 
@@ -390,11 +397,12 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
 
 
 class MockedRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None, bad_run_ids=None):
+    def __init__(self, inst_data=None, bad_run_ids=None, bad_user_code_run_ids=None):
         self._inst_data = inst_data
         self._queue = []
         self._launched_run_ids = set()
-        self._bad_run_ids = bad_run_ids
+        self.bad_run_ids = bad_run_ids or set()
+        self.bad_user_code_run_ids = bad_user_code_run_ids or set()
 
         super().__init__()
 
@@ -403,8 +411,11 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(run, "run", DagsterRun)
         check.invariant(run.status == DagsterRunStatus.STARTING)
 
-        if self._bad_run_ids and run.run_id in self._bad_run_ids:
+        if run.run_id in self.bad_run_ids:
             raise Exception(f"Bad run {run.run_id}")
+
+        if run.run_id in self.bad_user_code_run_ids:
+            raise DagsterUserCodeUnreachableError(f"User code error launching run {run.run_id}")
 
         self._queue.append(run)
         self._launched_run_ids.add(run.run_id)
@@ -418,7 +429,12 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return Shape({"bad_run_ids": Field(Array(str), is_required=False)})
+        return Shape(
+            {
+                "bad_run_ids": Field(Array(str), is_required=False),
+                "bad_user_code_run_ids": Field(Array(str), is_required=False),
+            }
+        )
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
@@ -546,7 +562,8 @@ def create_test_daemon_workspace_context(
     workspace_load_target: WorkspaceLoadTarget,
     instance: DagsterInstance,
 ):
-    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
+    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests.
+    """
     from dagster._daemon.controller import create_daemon_grpc_server_registry
 
     configure_loggers()

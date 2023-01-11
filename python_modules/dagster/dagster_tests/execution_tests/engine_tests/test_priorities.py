@@ -29,7 +29,6 @@ def priority_test():
 
 
 def test_priorities():
-
     result = execute_pipeline(
         priority_test,
     )

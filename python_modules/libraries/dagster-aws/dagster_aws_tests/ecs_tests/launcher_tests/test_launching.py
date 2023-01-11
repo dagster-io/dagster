@@ -1,5 +1,4 @@
 # pylint: disable=protected-access
-# pylint: disable=unused-variable
 
 import copy
 from concurrent.futures import ThreadPoolExecutor
@@ -7,15 +6,14 @@ from concurrent.futures import ThreadPoolExecutor
 import dagster_aws
 import pytest
 from botocore.exceptions import ClientError
-from dagster_aws.ecs import EcsEventualConsistencyTimeout
-from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
-from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
-
 from dagster._check import CheckError
 from dagster._core.code_pointer import FileCodePointer
 from dagster._core.events import MetadataEntry
 from dagster._core.launcher.base import WorkerStatus
 from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster_aws.ecs import EcsEventualConsistencyTimeout
+from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
+from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
@@ -201,7 +199,7 @@ def test_task_definition_registration(
     ecs, instance, workspace, run, other_workspace, other_run, secrets_manager, monkeypatch
 ):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
-    initial_tasks = ecs.list_tasks()["taskArns"]
+    _initial_tasks = ecs.list_tasks()["taskArns"]
 
     instance.launch_run(run.run_id, workspace)
 
@@ -246,7 +244,9 @@ def test_task_definition_registration(
 
 
 @pytest.mark.skip(
-    "https://buildkite.com/dagster/dagster/builds/42816#018530eb-8d74-4934-bbbc-4acb6db1cdaf"
+    "This remains occassionally flaky on older versions of Python. See"
+    " https://github.com/dagster-io/dagster/pull/11290 "
+    "https://linear.app/elementl/issue/CLOUD-2093/re-enable-flaky-ecs-task-registration-race-condition-tests"
 )
 def test_task_definition_registration_race_condition(ecs, instance, workspace, run):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -264,7 +264,6 @@ def test_task_definition_registration_race_condition(ecs, instance, workspace, r
 
 
 def test_reuse_task_definition(instance, ecs):
-
     image = "image"
     secrets = []
     environment = [
@@ -576,7 +575,6 @@ def test_launching_custom_task_definition(
     with instance_cm(
         {"task_definition": task_definition_arn, "container_name": container_name}
     ) as instance:
-
         run = instance.create_run_for_pipeline(
             pipeline,
             external_pipeline_origin=external_pipeline.get_external_origin(),
@@ -695,7 +693,6 @@ def test_container_context_run_resources(
     launch_run_with_container_context,
     container_context_config,
 ):
-
     existing_tasks = ecs.list_tasks()["taskArns"]
 
     launch_run_with_container_context(instance)
@@ -804,7 +801,6 @@ def test_overrides_too_long(
     pipeline,
     external_pipeline,
 ):
-
     large_container_context = {i: "boom" for i in range(10000)}
 
     mock_pipeline_code_origin = PipelinePythonOrigin(

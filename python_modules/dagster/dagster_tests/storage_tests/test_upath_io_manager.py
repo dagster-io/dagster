@@ -5,8 +5,6 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
-from upath import UPath
-
 from dagster import (
     AllPartitionMapping,
     AssetIn,
@@ -30,11 +28,12 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions import build_assets_job
 from dagster._core.storage.upath_io_manager import UPathIOManager
+from upath import UPath
 
 
 class DummyIOManager(UPathIOManager):
     """
-    This IOManager simply outputs the object path without loading or writing anything
+    This IOManager simply outputs the object path without loading or writing anything.
     """
 
     def dump_to_path(self, context: OutputContext, obj: str, path: UPath):

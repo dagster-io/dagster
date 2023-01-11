@@ -1,16 +1,15 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {PageHeader, Tabs, Tag, Heading, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {graphql} from '../graphql';
 import {explorerPathToString, ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
-import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotQuery';
-
-const SNAPSHOT_PARENT_QUERY = gql`
+const SNAPSHOT_PARENT_QUERY = graphql(`
   query SnapshotQuery($snapshotId: String!) {
     pipelineSnapshotOrError(snapshotId: $snapshotId) {
       ... on PipelineSnapshot {
@@ -19,7 +18,7 @@ const SNAPSHOT_PARENT_QUERY = gql`
       }
     }
   }
-`;
+`);
 
 interface SnapshotNavProps {
   activeTab?: string;
@@ -38,7 +37,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   const isJob = !!currentPipelineState?.isJob;
   const currentSnapshotID = currentPipelineState?.pipelineSnapshotId;
 
-  const {data, loading} = useQuery<SnapshotQuery, SnapshotQueryVariables>(SNAPSHOT_PARENT_QUERY, {
+  const {data, loading} = useQuery(SNAPSHOT_PARENT_QUERY, {
     variables: {snapshotId},
   });
 

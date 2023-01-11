@@ -59,7 +59,7 @@ def _get_asset_lineage_from_fns(
 class StepInputData(
     NamedTuple("_StepInputData", [("input_name", str), ("type_check_data", TypeCheckData)])
 ):
-    """ "Serializable payload of information for the result of processing a step input"""
+    """Serializable payload of information for the result of processing a step input."""
 
     def __new__(cls, input_name: str, type_check_data: TypeCheckData):
         return super(StepInputData, cls).__new__(
@@ -75,7 +75,7 @@ class StepInput(
         [("name", str), ("dagster_type_key", str), ("source", "StepInputSource")],
     )
 ):
-    """Holds information for how to prepare an input for an ExecutionStep"""
+    """Holds information for how to prepare an input for an ExecutionStep."""
 
     def __new__(cls, name, dagster_type_key, source):
         return super(StepInput, cls).__new__(
@@ -104,7 +104,7 @@ def join_and_hash(*args: Optional[str]) -> Optional[str]:
 
 
 class StepInputSource(ABC):
-    """How to load the data for a step input"""
+    """How to load the data for a step input."""
 
     @property
     def step_key_dependencies(self) -> Set[str]:
@@ -135,7 +135,7 @@ class StepInputSource(ABC):
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
-        """See resolve_step_versions in resolve_versions.py for explanation of step_versions"""
+        """See resolve_step_versions in resolve_versions.py for explanation of step_versions."""
         raise NotImplementedError()
 
 
@@ -151,7 +151,7 @@ class FromSourceAsset(
     StepInputSource,
 ):
     """
-    Load input value from an asset
+    Load input value from an asset.
     """
 
     def load_input_object(
@@ -260,12 +260,16 @@ class FromSourceAsset(
         )
         if input_asset_key is None:
             check.failed(
-                f"Must have an asset key associated with input {self.input_name} to load it using FromSourceAsset",
+                (
+                    f"Must have an asset key associated with input {self.input_name} to load it"
+                    " using FromSourceAsset"
+                ),
             )
         input_manager_key = pipeline_def.asset_layer.io_manager_key_for_asset(input_asset_key)
         if input_manager_key is None:
             check.failed(
-                f"Must have an io_manager associated with asset {input_asset_key} to load it using FromSourceAsset"
+                f"Must have an io_manager associated with asset {input_asset_key} to load it using"
+                " FromSourceAsset"
             )
         return {input_manager_key}
 
@@ -294,9 +298,11 @@ class FromRootInputManager(
 
         check.invariant(
             step_context.solid_handle == self.solid_handle and input_def.name == self.input_name,
-            "RootInputManager source must be op input and not one along composition mapping. "
-            f"Loading for op {step_context.solid_handle}.{input_def.name} "
-            f"but source is {self.solid_handle}.{self.input_name}.",
+            (
+                "RootInputManager source must be op input and not one along composition mapping. "
+                f"Loading for op {step_context.solid_handle}.{input_def.name} "
+                f"but source is {self.solid_handle}.{self.input_name}."
+            ),
         )
 
         input_def = step_context.solid_def.input_def_named(input_def.name)
@@ -483,10 +489,12 @@ class FromStepOutput(
             input_manager = getattr(step_context.resources, manager_key)
             check.invariant(
                 isinstance(input_manager, InputManager),
-                f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
-                f'the manager "{manager_key}" to load it, but it is not an InputManager. '
-                f"Please ensure that the resource returned for resource key "
-                f'"{manager_key}" is an InputManager.',
+                (
+                    f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
+                    f'the manager "{manager_key}" to load it, but it is not an InputManager. '
+                    "Please ensure that the resource returned for resource key "
+                    f'"{manager_key}" is an InputManager.'
+                ),
             )
         else:
             manager_key = step_context.execution_plan.get_manager_key(
@@ -495,11 +503,13 @@ class FromStepOutput(
             input_manager = step_context.get_io_manager(source_handle)
             check.invariant(
                 isinstance(input_manager, IOManager),
-                f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
-                f'the manager of upstream output "{source_handle.output_name}" from step '
-                f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
-                f"Please ensure that the resource returned for resource key "
-                f'"{manager_key}" is an IOManager.',
+                (
+                    f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
+                    f'the manager of upstream output "{source_handle.output_name}" from step '
+                    f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
+                    "Please ensure that the resource returned for resource key "
+                    f'"{manager_key}" is an IOManager.'
+                ),
             )
         load_input_context = self.get_load_context(step_context, input_def)
         yield from _load_input_with_input_manager(input_manager, load_input_context)
@@ -619,10 +629,7 @@ class FromConfig(
     ) -> Any:
         with user_code_error_boundary(
             DagsterTypeLoadingError,
-            msg_fn=lambda: (
-                f'Error occurred while loading input "{self.input_name}" of '
-                f'step "{step_context.step.key}":'
-            ),
+            msg_fn=lambda: f'Error occurred while loading input "{self.input_name}" of step "{step_context.step.key}":',
             log_manager=step_context.log,
         ):
             dagster_type = self.get_associated_input_def(step_context.pipeline_def).dagster_type
@@ -642,7 +649,6 @@ class FromConfig(
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
     ) -> Optional[str]:
-
         config_data = self.get_associated_config(resolved_run_config)
         input_def = self.get_associated_input_def(pipeline_def)
         dagster_type = input_def.dagster_type
@@ -670,7 +676,6 @@ class FromDirectInputValue(
     def load_input_object(
         self, step_context: "StepExecutionContext", _input_def: InputDefinition
     ) -> Any:
-
         pipeline_def = step_context.pipeline_def
         if not pipeline_def.is_job:
             raise DagsterInvariantViolationError(
@@ -744,7 +749,8 @@ class FromMultipleSources(
     ),
     StepInputSource,
 ):
-    """This step input is fans-in multiple sources in to a single input. The input will receive a list."""
+    """This step input is fans-in multiple sources in to a single input. The input will receive a list.
+    """
 
     def __new__(
         cls,
@@ -849,10 +855,7 @@ def _load_input_with_input_manager(input_manager: "InputManager", context: "Inpu
     step_context = cast(StepExecutionContext, context.step_context)
     with op_execution_error_boundary(
         DagsterExecutionLoadInputError,
-        msg_fn=lambda: (
-            f'Error occurred while loading input "{context.name}" of '
-            f'step "{step_context.step.key}":'
-        ),
+        msg_fn=lambda: f'Error occurred while loading input "{context.name}" of step "{step_context.step.key}":',
         step_context=step_context,
         step_key=step_context.step.key,
         input_name=context.name,
@@ -1034,14 +1037,24 @@ class FromDynamicCollect(
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
 
-    def resolve(self, mapping_keys):
+    def resolve(self, mapping_keys: Optional[Sequence[str]]):
+        if mapping_keys is None:
+            # None means that the dynamic output was skipped, so create
+            # a dependency on the dynamic output that will continue cascading the skip
+            return FromStepOutput(
+                step_output_handle=StepOutputHandle(
+                    step_key=self.resolved_by_step_key,
+                    output_name=self.resolved_by_output_name,
+                ),
+                fan_in=False,
+            )
         return FromMultipleSources(
             sources=[self.source.resolve(map_key) for map_key in mapping_keys],
         )
 
 
 class UnresolvedMappedStepInput(NamedTuple):
-    """Holds information for how to resolve a StepInput once the upstream mapping is done"""
+    """Holds information for how to resolve a StepInput once the upstream mapping is done."""
 
     name: str
     dagster_type_key: str
@@ -1063,13 +1076,13 @@ class UnresolvedMappedStepInput(NamedTuple):
         )
 
     def get_step_output_handle_deps_with_placeholders(self) -> Sequence[StepOutputHandle]:
-        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys"""
-
+        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys.
+        """
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 
 class UnresolvedCollectStepInput(NamedTuple):
-    """Holds information for how to resolve a StepInput once the upstream mapping is done"""
+    """Holds information for how to resolve a StepInput once the upstream mapping is done."""
 
     name: str
     dagster_type_key: str
@@ -1083,7 +1096,7 @@ class UnresolvedCollectStepInput(NamedTuple):
     def resolved_by_output_name(self) -> str:
         return self.source.resolved_by_output_name
 
-    def resolve(self, mapping_keys: Sequence[str]) -> StepInput:
+    def resolve(self, mapping_keys: Optional[Sequence[str]]) -> StepInput:
         return StepInput(
             name=self.name,
             dagster_type_key=self.dagster_type_key,
@@ -1091,8 +1104,8 @@ class UnresolvedCollectStepInput(NamedTuple):
         )
 
     def get_step_output_handle_deps_with_placeholders(self) -> Sequence[StepOutputHandle]:
-        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys"""
-
+        """Return StepOutputHandles with placeholders, unresolved step keys and None mapping keys.
+        """
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 
@@ -1115,5 +1128,5 @@ class FromRootInputConfig(
     StepInputSource,
 ):
     """
-    DEPRECATED replaced by FromConfig with None node handle
+    DEPRECATED replaced by FromConfig with None node handle.
     """

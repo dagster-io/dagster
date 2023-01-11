@@ -2,7 +2,6 @@ from typing import Optional
 from unittest import mock
 
 import pytest
-
 from dagster import (
     AssetIn,
     AssetKey,
@@ -54,7 +53,6 @@ def test_sensor_context_backcompat():
 
 
 def test_sensor_invocation_args():
-
     # Test no arg invocation
     @sensor(job_name="foo_pipeline")
     def basic_sensor_no_arg():
@@ -95,16 +93,20 @@ def test_sensor_invocation_args():
     # pass context with no args
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Sensor evaluation function expected context argument, but no context argument was "
-        "provided when invoking.",
+        match=(
+            "Sensor evaluation function expected context argument, but no context argument was "
+            "provided when invoking."
+        ),
     ):
         basic_sensor_with_context()  # pylint: disable=no-value-for-parameter
 
     # pass context with too many args
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Sensor invocation received multiple arguments. Only a first positional context "
-        "parameter should be provided when invoking.",
+        match=(
+            "Sensor invocation received multiple arguments. Only a first positional context "
+            "parameter should be provided when invoking."
+        ),
     ):
         basic_sensor_with_context(  # pylint: disable=redundant-keyword-arg
             context, _arbitrary_context=None
@@ -285,7 +287,7 @@ def test_freshness_policy_sensor():
     @freshness_policy_sensor(asset_selection=AssetSelection.all())
     def freshness_sensor(context):
         assert context.minutes_late == 10
-        assert context.previous_minutes_late == None
+        assert context.previous_minutes_late is None
 
     context = build_freshness_policy_sensor_context(
         sensor_name="status_sensor",
@@ -306,7 +308,7 @@ def test_freshness_policy_sensor_params_out_of_order():
     )
     def freshness_sensor(context):
         assert context.minutes_late == 10
-        assert context.previous_minutes_late == None
+        assert context.previous_minutes_late is None
 
     context = build_freshness_policy_sensor_context(
         sensor_name="some_name",
@@ -554,10 +556,10 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
 def test_multi_asset_sensor_all_partitions_materialized():
     @multi_asset_sensor(asset_keys=[july_asset.key])
     def asset_sensor(context):
-        assert context.all_partitions_materialized(july_asset.key) == False
+        assert context.all_partitions_materialized(july_asset.key) is False
         assert (
             context.all_partitions_materialized(july_asset.key, ["2022-07-10", "2022-07-11"])
-            == True
+            is True
         )
 
     with instance_for_test() as instance:
@@ -1121,7 +1123,7 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
     @multi_asset_sensor(asset_keys=[my_asset.key])
     def my_sensor(context):
         if not evaluated:
-            assert context.latest_materialization_records_by_key()[my_asset.key] == None
+            assert context.latest_materialization_records_by_key()[my_asset.key] is None
         else:
             # Test that materialization exists
             assert context.latest_materialization_records_by_key()[

@@ -10,13 +10,15 @@ For more information on getting started, see the `Airflow integration guide </in
 Run Airflow on Dagster
 ======================
 
+.. autofunction:: make_dagster_definitions_from_airflow_dags_path
+
+.. autofunction:: make_dagster_definitions_from_airflow_dag_bag
+
 .. autofunction:: make_dagster_job_from_airflow_dag
 
 .. autofunction:: make_dagster_repo_from_airflow_dags_path
 
 .. autofunction:: make_dagster_repo_from_airflow_dag_bag
-
-.. autofunction:: make_dagster_repo_from_airflow_example_dags
 
 .. autofunction:: airflow_operator_to_op
 

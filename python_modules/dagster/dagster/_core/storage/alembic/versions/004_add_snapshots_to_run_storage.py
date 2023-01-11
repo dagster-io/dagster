@@ -1,4 +1,4 @@
-"""add snapshots to run storage
+"""add snapshots to run storage.
 
 Revision ID: c63a27054f08
 Revises: 3b1e175a2be3
@@ -7,9 +7,8 @@ Create Date: 2020-04-09 05:57:20.639458
 """
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy import inspect
-
 from dagster._core.storage.migration.utils import has_column, has_table
+from sqlalchemy import inspect
 
 # alembic magic breaks pylint
 # pylint: disable=no-member

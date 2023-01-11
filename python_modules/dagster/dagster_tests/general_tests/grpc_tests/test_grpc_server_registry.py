@@ -3,7 +3,6 @@ import threading
 import time
 
 import pytest
-
 from dagster import file_relative_path, repository
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
@@ -114,7 +113,6 @@ def test_process_server_registry(instance):
 
         start_time = time.time()
         while True:
-
             # Registry should return a new server endpoint after 5 seconds
             endpoint_three = registry.get_grpc_endpoint(origin)
 

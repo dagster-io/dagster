@@ -1,1 +1,1 @@
-from .event_log import MySQLEventLogStorage
+from .event_log import MySQLEventLogStorage as MySQLEventLogStorage

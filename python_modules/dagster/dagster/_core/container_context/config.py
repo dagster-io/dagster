@@ -9,9 +9,11 @@ SHARED_CONTAINER_CONTEXT_SCHEMA = Permissive(
         "env_vars": Field(
             [str],
             is_required=False,
-            description="The list of environment variables names to include in the container. "
-            "Each can be of the form KEY=VALUE or just KEY (in which case the value will be pulled "
-            "from the local environment)",
+            description=(
+                "The list of environment variables names to include in the container. Each can be"
+                " of the form KEY=VALUE or just KEY (in which case the value will be pulled from"
+                " the local environment)"
+            ),
         ),
     }
 )

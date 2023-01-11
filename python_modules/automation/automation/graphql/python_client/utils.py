@@ -2,10 +2,9 @@ import os
 import re
 from typing import AbstractSet, Dict, NamedTuple, Tuple, cast
 
+import dagster._check as check
 import dagster_graphql_tests
 from dagster_graphql.client import client_queries
-
-import dagster._check as check
 
 
 class LegacyQueryHistoryInfo(NamedTuple):
@@ -20,7 +19,7 @@ class LegacyQueryHistoryInfo(NamedTuple):
 
 
 def get_queries() -> Dict[str, str]:
-    """Helper function to index the graphql client's queries
+    """Helper function to index the graphql client's queries.
 
     Returns:
         Dict[str, str]: dictionary - key is variable (query) name

@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Sequence, Type, Union
 
 import dagster._check as check
 from dagster._annotations import experimental, public
-from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.execution.build_resources import wrap_resources_for_execution
@@ -45,8 +45,8 @@ def create_repository_using_definitions_args(
     """
     For users who, for the time being, want to continue to use multiple named repositories in
     a single code location, you can use this function. The behavior (e.g. applying resources to
-    all assets) are identical to :py:class:`Definitions` but this returns a named repository."""
-
+    all assets) are identical to :py:class:`Definitions` but this returns a named repository.
+    """
     return _create_repository_using_definitions_args(
         name=name,
         assets=assets,
@@ -189,8 +189,8 @@ class Definitions:
     def get_job_def(self, name: str) -> JobDefinition:
         """Get a job definition by name. If you passed in a an :py:class:`UnresolvedAssetJobDefinition`
         (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
-        from this function."""
-
+        from this function.
+        """
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
 
@@ -262,6 +262,26 @@ class Definitions:
             instance=instance,
         )
 
+    def get_all_job_defs(self) -> Sequence[JobDefinition]:
+        """Get all the Job definitions in the code location."""
+        return self.get_repository_def().get_all_jobs()
+
+    def has_implicit_global_asset_job_def(self) -> bool:
+        return self.get_repository_def().has_implicit_global_asset_job_def()
+
+    def get_implicit_global_asset_job_def(self) -> JobDefinition:
+        """A useful conveninence method when there is a single defined global asset job.
+        This occurs when all assets in the code location use a single partitioning scheme.
+        If there are multiple partitioning schemes you must use get_implicit_job_def_for_assets
+        instead to access to the correct implicit asset one.
+        """
+        return self.get_repository_def().get_implicit_global_asset_job_def()
+
+    def get_implicit_job_def_for_assets(
+        self, asset_keys: Iterable[AssetKey]
+    ) -> Optional[JobDefinition]:
+        return self.get_repository_def().get_base_job_for_assets(asset_keys)
+
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:
         """
@@ -280,5 +300,6 @@ class Definitions:
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
         """This method is used internally to access the inner repository during the loading process
         at CLI entry points. We explicitly do not want to resolve the pending repo because the entire
-        point is to defer that resolution until later."""
+        point is to defer that resolution until later.
+        """
         return self._created_pending_or_normal_repo

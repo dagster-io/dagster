@@ -4,7 +4,6 @@ import warnings
 from tempfile import TemporaryDirectory
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,
@@ -35,6 +34,9 @@ from dagster._core.test_utils import instance_for_test
 @pytest.fixture(autouse=True)
 def check_experimental_warnings():
     with warnings.catch_warnings(record=True) as record:
+        # turn off any outer warnings filters
+        warnings.resetwarnings()
+
         yield
 
         for w in record:
@@ -42,7 +44,7 @@ def check_experimental_warnings():
             # resource_defs and io_manager_def arguments.
             if "resource_defs" in w.message.args[0] or "io_manager_def" in w.message.args[0]:
                 continue
-            assert False, f"Unexpected warning: {w.message.args[0]}"
+            assert False, f"Unexpected warning: {str(w)}"
 
 
 def test_basic_materialize():
@@ -126,7 +128,9 @@ def test_materialize_conflicting_resources():
     with instance_for_test() as instance:
         with pytest.raises(
             DagsterInvalidDefinitionError,
-            match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+            match=(
+                "Conflicting versions of resource with key 'foo' were provided to different assets."
+            ),
         ):
             materialize([first, second], instance=instance)
 
@@ -173,7 +177,9 @@ def test_materialize_source_asset_conflicts():
     with instance_for_test() as instance:
         with pytest.raises(
             DagsterInvalidDefinitionError,
-            match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+            match=(
+                "Conflicting versions of resource with key 'foo' were provided to different assets."
+            ),
         ):
             materialize([the_asset, the_source], instance=instance)
 

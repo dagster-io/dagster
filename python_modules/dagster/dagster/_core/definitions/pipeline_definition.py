@@ -24,8 +24,9 @@ from dagster._core.errors import (
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.utils import str_format_set
-from dagster._utils import frozentags, merge_dicts
+from dagster._utils import frozentags
 from dagster._utils.backcompat import experimental_class_warning
+from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
 from .dependency import (
@@ -110,7 +111,6 @@ class PipelineDefinition:
         _parent_pipeline_def (INTERNAL ONLY): Used for tracking pipelines created using solid subsets.
 
     Examples:
-
         .. code-block:: python
 
             @solid
@@ -604,7 +604,6 @@ class PipelineDefinition:
 
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PipelineDefinition":
         """Apply a set of hooks to all solid instances within the pipeline."""
-
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         pipeline_def = PipelineDefinition(
@@ -632,8 +631,8 @@ class PipelineDefinition:
             )
         else:
             msg = (
-                f"Attempted to call pipeline '{self.name}' directly. Pipelines should be invoked by "
-                "using an execution API function (e.g. `execute_pipeline`)."
+                f"Attempted to call pipeline '{self.name}' directly. Pipelines should be invoked by"
+                " using an execution API function (e.g. `execute_pipeline`)."
             )
         raise DagsterInvariantViolationError(msg)
 
@@ -686,7 +685,6 @@ def _get_pipeline_subset_def(
     Build a pipeline which is a subset of another pipeline.
     Only includes the solids which are in solids_to_execute.
     """
-
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
     graph = pipeline_def.graph
@@ -761,8 +759,9 @@ def _get_pipeline_subset_def(
         # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
         # we re-raise a DagsterInvalidSubsetError.
         raise DagsterInvalidSubsetError(
-            f"The attempted subset {str_format_set(solids_to_execute)} for {pipeline_def.target_type} "
-            f"{pipeline_def.name} results in an invalid {pipeline_def.target_type}"
+            f"The attempted subset {str_format_set(solids_to_execute)} for"
+            f" {pipeline_def.target_type} {pipeline_def.name} results in an invalid"
+            f" {pipeline_def.target_type}"
         ) from exc
 
 

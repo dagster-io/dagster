@@ -1,6 +1,8 @@
 from unittest import mock
 
 import pytest
+from dagster._legacy import execute_pipeline
+from dagster._seven import json
 from dagster_graphql.implementation.fetch_pipelines import _get_pipeline_snapshot_from_instance
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.test.utils import (
@@ -8,9 +10,6 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
-
-from dagster._legacy import execute_pipeline
-from dagster._seven import json
 
 from .repo import noop_pipeline
 
@@ -55,6 +54,7 @@ query PipelineSnapshotQueryByActivePipelineName($activePipelineSelector: Pipelin
     }
 }
 """
+
 
 # makes snapshot tests much easier to debug
 def pretty_dump(data):

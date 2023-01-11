@@ -1,15 +1,15 @@
-import {gql} from '@apollo/client';
 import {Box, Checkbox, Colors, Icon, NonIdealState, Table, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {graphql} from '../graphql';
+import {RunsFilter, RunTableRunFragmentFragment} from '../graphql/graphql';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {RunsFilter} from '../types/globalTypes';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,
@@ -23,25 +23,18 @@ import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {RunTags} from './RunTags';
-import {
-  assetKeysForRun,
-  RunStateSummary,
-  RunTime,
-  RUN_TIME_FRAGMENT,
-  titleForRun,
-} from './RunUtils';
+import {assetKeysForRun, RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
-import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 interface RunTableProps {
-  runs: RunTableRunFragment[];
+  runs: RunTableRunFragmentFragment[];
   filter?: RunsFilter;
   onAddTag?: (token: RunFilterToken) => void;
   nonIdealState?: React.ReactNode;
   actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
   additionalColumnHeaders?: React.ReactNode[];
-  additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
+  additionalColumnsForRow?: (run: RunTableRunFragmentFragment) => React.ReactNode[];
 }
 
 export const RunTable = (props: RunTableProps) => {
@@ -50,7 +43,7 @@ export const RunTable = (props: RunTableProps) => {
 
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
 
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
+  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissionsDEPRECATED();
   const canTerminateOrDelete =
     canTerminatePipelineExecution.enabled || canDeletePipelineRun.enabled;
 
@@ -153,7 +146,7 @@ export const RunTable = (props: RunTableProps) => {
   );
 };
 
-export const RUN_TABLE_RUN_FRAGMENT = gql`
+export const RUN_TABLE_RUN_FRAGMENT = graphql(`
   fragment RunTableRunFragment on Run {
     id
     runId
@@ -184,12 +177,10 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     }
     ...RunTimeFragment
   }
-
-  ${RUN_TIME_FRAGMENT}
-`;
+`);
 
 const RunRow: React.FC<{
-  run: RunTableRunFragment;
+  run: RunTableRunFragmentFragment;
   canTerminateOrDelete: boolean;
   onAddTag?: (token: RunFilterToken) => void;
   checked?: boolean;

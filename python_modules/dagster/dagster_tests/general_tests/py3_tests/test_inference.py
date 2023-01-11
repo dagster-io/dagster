@@ -1,7 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
-
 from dagster import (
     DagsterInvalidDefinitionError,
     DagsterType,
@@ -27,9 +26,9 @@ from dagster._legacy import (
 def test_infer_solid_description_from_docstring():
     @solid
     def my_solid(_):
-        """Here is some docstring"""
+        """Here is some docstring."""
 
-    assert my_solid.description == "Here is some docstring"
+    assert my_solid.description == "Here is some docstring."
 
 
 def test_infer_solid_description_no_docstring():
@@ -43,7 +42,7 @@ def test_infer_solid_description_no_docstring():
 def test_docstring_does_not_override():
     @solid(description="abc")
     def my_solid(_):
-        """Here is some docstring"""
+        """Here is some docstring."""
 
     assert my_solid.description == "abc"
 
@@ -157,7 +156,7 @@ def test_kitchen_sink():
         s: str,
         x: Any,
         o: Optional[str],
-        l: List[str],
+        m: List[str],
         c: Custom,
     ):  # pylint: disable=unused-argument
         pass
@@ -171,7 +170,7 @@ def test_kitchen_sink():
     assert sink.input_defs[2].name == "f"
     assert sink.input_defs[2].dagster_type.unique_name == "Float"
 
-    assert sink.input_defs[3].name == "l"
+    assert sink.input_defs[3].name == "m"
     assert sink.input_defs[3].dagster_type.kind == DagsterTypeKind.LIST
 
     assert sink.input_defs[4].name == "n"
@@ -280,7 +279,7 @@ def test_infer_input_description_from_docstring_failure():
     def my_solid(_arg1):
         """
         Args:
-            _arg1 - description of arg
+            _arg1 - description of arg.
         """
 
     assert my_solid
@@ -291,7 +290,7 @@ def test_infer_input_description_from_docstring_rest():
     def rest(_context, hello: str, optional: int = 5):
         """
         :param str hello: hello world param
-        :param int optional: optional param, defaults to 5
+        :param int optional: optional param, defaults to 5.
         """
         return hello + str(optional)
 
@@ -312,7 +311,7 @@ def test_infer_descriptions_from_docstring_numpy():
     @solid
     def good_numpy(_context, hello: str, optional: int = 5):
         """
-        Test
+        Test.
 
         Parameters
         ----------
@@ -342,7 +341,7 @@ def test_infer_descriptions_from_docstring_google():
     @solid
     def good_google(_context, hello: str, optional: int = 5):
         """
-        Test
+        Test.
 
         Args:
             hello       (str): hello world param
@@ -372,7 +371,7 @@ def test_infer_output_description_from_docstring_failure():
     def google() -> int:
         """
         Returns:
-            int - a number
+            int - a number.
         """
         return 1
 
@@ -387,12 +386,12 @@ def test_infer_output_description_from_docstring_numpy():
         Returns
         -------
         int
-            a number
+            a number.
         """
         return 1
 
     props = infer_output_props(numpy.compute_fn.decorated_fn)
-    assert props.description == "a number"
+    assert props.description == "a number."
     assert props.annotation == int
 
 
@@ -400,12 +399,12 @@ def test_infer_output_description_from_docstring_rest():
     @solid
     def rest(_context) -> int:
         """
-        :return int: a number
+        :return int: a number.
         """
         return 1
 
     props = infer_output_props(rest.compute_fn.decorated_fn)
-    assert props.description == "a number"
+    assert props.description == "a number."
     assert props.annotation == int
 
 
@@ -414,13 +413,13 @@ def test_infer_output_description_from_docstring_google():
     def google(_context) -> int:
         """
         Returns:
-            int: a number
+            int: a number.
         """
         return 1
 
     props = infer_output_props(google.compute_fn.decorated_fn)
 
-    assert props.description == "a number"
+    assert props.description == "a number."
     assert props.annotation == int
 
 

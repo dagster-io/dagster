@@ -1,24 +1,24 @@
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {AssetTableFragment} from '../assets/types/AssetTableFragment';
 import {AssetViewType} from '../assets/useAssetView';
+import {AssetTableFragmentFragment} from '../graphql/graphql';
 import {Container, Inner} from '../ui/VirtualizedTable';
 
 import {VirtualizedAssetCatalogHeader, VirtualizedAssetRow} from './VirtualizedAssetRow';
 import {buildRepoAddress} from './buildRepoAddress';
 
 type Row =
-  | {type: 'asset'; path: string[]; asset: AssetTableFragment}
-  | {type: 'folder'; path: string[]; assets: AssetTableFragment[]};
+  | {type: 'asset'; path: string[]; asset: AssetTableFragmentFragment}
+  | {type: 'folder'; path: string[]; assets: AssetTableFragmentFragment[]};
 
 interface Props {
   headerCheckbox: React.ReactNode;
   prefixPath: string[];
-  groups: {[path: string]: AssetTableFragment[]};
+  groups: {[path: string]: AssetTableFragmentFragment[]};
   checkedPaths: Set<string>;
   onToggleFactory: (path: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
-  onWipe: (assets: AssetTableFragment[]) => void;
+  onWipe: (assets: AssetTableFragmentFragment[]) => void;
   showRepoColumn: boolean;
   view?: AssetViewType;
 }

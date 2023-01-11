@@ -46,8 +46,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterType
-from dagster._utils import merge_dicts
 from dagster._utils.forked_pdb import ForkedPdb
+from dagster._utils.merger import merge_dicts
 
 from .compute import OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
@@ -149,7 +149,6 @@ class UnboundOpExecutionContext(OpExecutionContext):
         """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
 
         Example:
-
         .. code-block:: python
 
             @solid
@@ -230,7 +229,6 @@ class UnboundOpExecutionContext(OpExecutionContext):
         self,
         op_def_or_invocation: Union[OpDefinition, PendingNodeInvocation],
     ) -> "BoundOpExecutionContext":
-
         op_def = (
             op_def_or_invocation
             if isinstance(op_def_or_invocation, OpDefinition)
@@ -239,9 +237,9 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
         _validate_resource_requirements(self._resource_defs, op_def)
 
-        from dagster._core.definitions.resource_invocation import _resolve_bound_config
+        from dagster._core.definitions.resource_invocation import resolve_bound_config
 
-        solid_config = _resolve_bound_config(self.solid_config, op_def)
+        solid_config = resolve_bound_config(self.solid_config, op_def)
 
         return BoundOpExecutionContext(
             op_def=op_def,
@@ -287,7 +285,6 @@ class UnboundOpExecutionContext(OpExecutionContext):
                 expectation_results = [event for event in all_user_events if isinstance(event, ExpectationResult)]
                 ...
         """
-
         return self._user_events
 
     def get_output_metadata(
@@ -316,7 +313,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
 def _validate_resource_requirements(
     resource_defs: Mapping[str, ResourceDefinition], op_def: OpDefinition
 ) -> None:
-    """Validate correctness of resources against required resource keys"""
+    """Validate correctness of resources against required resource keys."""
     if cast(DecoratedOpFunction, op_def.compute_fn).has_context_arg():
         for requirement in op_def.get_resource_requirements():
             if not requirement.is_io_manager_requirement:
@@ -400,7 +397,6 @@ class BoundOpExecutionContext(OpExecutionContext):
         """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
 
         Example:
-
         .. code-block:: python
 
             @solid
@@ -488,7 +484,6 @@ class BoundOpExecutionContext(OpExecutionContext):
         return f'solid "{self.op_def.name}"'
 
     def log_event(self, event: UserEvent) -> None:
-
         check.inst_param(
             event,
             "event",
@@ -563,7 +558,9 @@ class BoundOpExecutionContext(OpExecutionContext):
             output_name = output_def.name
         elif output_name is None:
             raise DagsterInvariantViolationError(
-                "Attempted to log metadata without providing output_name, but multiple outputs exist. Please provide an output_name to the invocation of `context.add_output_metadata`."
+                "Attempted to log metadata without providing output_name, but multiple outputs"
+                " exist. Please provide an output_name to the invocation of"
+                " `context.add_output_metadata`."
             )
         else:
             output_def = self.op_def.output_def_named(output_name)
@@ -575,21 +572,26 @@ class BoundOpExecutionContext(OpExecutionContext):
                 else f"output '{output_def.name}' with mapping_key '{mapping_key}'"
             )
             raise DagsterInvariantViolationError(
-                f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log output metadata for {output_desc} which has already been yielded. Metadata must be logged before the output is yielded."
+                f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log output"
+                f" metadata for {output_desc} which has already been yielded. Metadata must be"
+                " logged before the output is yielded."
             )
         if output_def.is_dynamic and not mapping_key:
             raise DagsterInvariantViolationError(
-                f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log metadata for dynamic output '{output_def.name}' without providing a mapping key. When logging metadata for a dynamic output, it is necessary to provide a mapping key."
+                f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log metadata"
+                f" for dynamic output '{output_def.name}' without providing a mapping key. When"
+                " logging metadata for a dynamic output, it is necessary to provide a mapping key."
             )
 
         output_name = output_def.name
         if output_name in self._output_metadata:
             if not mapping_key or mapping_key in self._output_metadata[output_name]:
                 raise DagsterInvariantViolationError(
-                    f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log metadata for output '{output_name}' more than once."
+                    f"In {self.op_def.node_type_str} '{self.op_def.name}', attempted to log"
+                    f" metadata for output '{output_name}' more than once."
                 )
         if mapping_key:
-            if not output_name in self._output_metadata:
+            if output_name not in self._output_metadata:
                 self._output_metadata[output_name] = {}
             self._output_metadata[output_name][mapping_key] = metadata
 
@@ -632,7 +634,6 @@ def build_op_context(
             with build_op_context(resources={"foo": context_manager_resource}) as context:
                 op_to_invoke(context)
     """
-
     if op_config and config:
         raise DagsterInvalidInvocationError(
             "Attempted to invoke ``build_op_context`` with both ``op_config``, and its "
@@ -686,7 +687,6 @@ def build_solid_context(
             with build_solid_context(resources={"foo": context_manager_resource}) as context:
                 solid_to_invoke(context)
     """
-
     if solid_config and config:
         raise DagsterInvalidInvocationError(
             "Attempted to invoke ``build_solid_context`` with both ``solid_config``, and its "

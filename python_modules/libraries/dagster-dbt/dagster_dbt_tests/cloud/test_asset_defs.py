@@ -4,12 +4,6 @@ from typing import List, Optional
 
 import pytest
 import responses
-from dagster_dbt import (
-    DagsterDbtCloudJobInvariantViolationError,
-    dbt_cloud_resource,
-    load_assets_from_dbt_cloud_job,
-)
-
 from dagster import (
     AssetKey,
     AssetSelection,
@@ -22,6 +16,11 @@ from dagster import (
     file_relative_path,
 )
 from dagster._core.test_utils import instance_for_test
+from dagster_dbt import (
+    DagsterDbtCloudJobInvariantViolationError,
+    dbt_cloud_resource,
+    load_assets_from_dbt_cloud_job,
+)
 
 from ..utils import assert_assets_match_project
 
@@ -152,7 +151,7 @@ def test_load_assets_from_dbt_cloud_job(
         + after_dbt_materialization_command
     )
     _add_dbt_cloud_job_responses(
-        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_cloud_api_base_url=dbt_cloud_service.api_v2_base_url,
         dbt_commands=dbt_commands,
     )
 
@@ -161,7 +160,7 @@ def test_load_assets_from_dbt_cloud_job(
     )
 
     mock_run_job_and_poll = mocker.patch(
-        "dagster_dbt.cloud.resources.DbtCloudResourceV2.run_job_and_poll",
+        "dagster_dbt.cloud.resources.DbtCloudResource.run_job_and_poll",
         wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # pylint: disable=protected-access
     )
 
@@ -228,7 +227,7 @@ def test_invalid_dbt_cloud_job_commands(dbt_cloud, dbt_cloud_service, invalid_db
     )
 
     _add_dbt_cloud_job_responses(
-        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_cloud_api_base_url=dbt_cloud_service.api_v2_base_url,
         dbt_commands=invalid_dbt_commands,
     )
 
@@ -245,7 +244,7 @@ def test_empty_assets_dbt_cloud_job(dbt_cloud, dbt_cloud_service):
     )
 
     _add_dbt_cloud_job_responses(
-        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_cloud_api_base_url=dbt_cloud_service.api_v2_base_url,
         dbt_commands=["dbt build"],
         run_results_json=empty_run_results_json,
     )
@@ -257,7 +256,7 @@ def test_empty_assets_dbt_cloud_job(dbt_cloud, dbt_cloud_service):
 @responses.activate
 def test_custom_groups(dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
-        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_cloud_api_base_url=dbt_cloud_service.api_v2_base_url,
         dbt_commands=["dbt build"],
     )
 
@@ -282,7 +281,7 @@ def test_custom_groups(dbt_cloud, dbt_cloud_service):
 @responses.activate
 def test_node_info_to_asset_key(dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
-        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_cloud_api_base_url=dbt_cloud_service.api_v2_base_url,
         dbt_commands=["dbt build"],
     )
 
@@ -307,7 +306,7 @@ def test_node_info_to_asset_key(dbt_cloud, dbt_cloud_service):
 @responses.activate
 def test_custom_freshness_policy(dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
-        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_cloud_api_base_url=dbt_cloud_service.api_v2_base_url,
         dbt_commands=["dbt build"],
     )
 
@@ -332,7 +331,7 @@ def test_custom_freshness_policy(dbt_cloud, dbt_cloud_service):
 @responses.activate
 def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
     _add_dbt_cloud_job_responses(
-        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_cloud_api_base_url=dbt_cloud_service.api_v2_base_url,
         dbt_commands=["dbt build"],
     )
 
@@ -347,7 +346,7 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
     )
 
     mock_run_job_and_poll = mocker.patch(
-        "dagster_dbt.cloud.resources.DbtCloudResourceV2.run_job_and_poll",
+        "dagster_dbt.cloud.resources.DbtCloudResource.run_job_and_poll",
         wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # pylint: disable=protected-access
     )
 
@@ -360,7 +359,8 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
         job_id=DBT_CLOUD_JOB_ID,
         cause="Generating software-defined assets for Dagster.",
         steps_override=[
-            f"dbt compile --vars '{json.dumps({'run_date': partition_def.get_last_partition_key()})}'"
+            "dbt compile --vars"
+            f" '{json.dumps({'run_date': partition_def.get_last_partition_key()})}'"
         ],
     )
 
@@ -415,7 +415,7 @@ def test_subsetting(
     mocker, dbt_cloud, dbt_cloud_service, asset_selection, expected_dbt_asset_names
 ):
     _add_dbt_cloud_job_responses(
-        dbt_cloud_api_base_url=dbt_cloud_service.api_base_url,
+        dbt_cloud_api_base_url=dbt_cloud_service.api_v2_base_url,
         dbt_commands=["dbt build"],
     )
 
@@ -425,7 +425,7 @@ def test_subsetting(
     )
 
     mock_run_job_and_poll = mocker.patch(
-        "dagster_dbt.cloud.resources.DbtCloudResourceV2.run_job_and_poll",
+        "dagster_dbt.cloud.resources.DbtCloudResource.run_job_and_poll",
         wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # pylint: disable=protected-access
     )
 

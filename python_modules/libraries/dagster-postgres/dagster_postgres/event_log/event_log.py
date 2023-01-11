@@ -1,8 +1,7 @@
 from typing import Optional
 
-import sqlalchemy as db
-
 import dagster._check as check
+import sqlalchemy as db
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
@@ -152,6 +151,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
+
         Args:
             event (EventLogEntry): The event to store.
         """

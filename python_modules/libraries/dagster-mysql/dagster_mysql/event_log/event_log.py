@@ -1,7 +1,5 @@
-import sqlalchemy as db
-from packaging.version import parse
-
 import dagster._check as check
+import sqlalchemy as db
 from dagster._core.storage.config import mysql_config
 from dagster._core.storage.event_log import (
     AssetKeyTable,
@@ -18,6 +16,7 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from packaging.version import parse
 
 from ..utils import (
     create_mysql_connection,

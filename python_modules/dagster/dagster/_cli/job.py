@@ -25,13 +25,11 @@ from dagster._cli.workspace.cli_target import (
     python_job_target_argument,
 )
 from dagster._core.definitions.pipeline_base import IPipeline
+from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.backfill import (
-    BulkActionStatus,
-    PartitionBackfill,
-    create_backfill_run,
-)
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.execution.job_backfill import create_backfill_run
 from dagster._core.host_representation import (
     ExternalPipeline,
     ExternalRepository,
@@ -47,12 +45,13 @@ from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
 from dagster._legacy import PipelineDefinition, execute_pipeline
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
-from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._utils.interrupts import capture_interrupts
-from dagster._utils.yaml_utils import dump_run_config_yaml
+from dagster._utils.merger import merge_dicts
+from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
 
 from .config_scaffolder import scaffold_pipeline_config
 from .utils import get_instance_for_service
@@ -107,23 +106,23 @@ def execute_list_command(cli_args, print_fn):
 
 def get_job_in_same_python_env_instructions(command_name):
     return (
-        "This commands targets a job. The job can be specified in a number of ways:"
-        "\n\n1. dagster job {command_name} -f /path/to/file.py -a define_some_job"
-        "\n\n2. dagster job {command_name} -m a_module.submodule -a define_some_job"
-        "\n\n3. dagster job {command_name} -f /path/to/file.py -a define_some_repo -j <<job_name>>"
-        "\n\n4. dagster job {command_name} -m a_module.submodule -a define_some_repo -j <<job_name>>"
+        "This commands targets a job. The job can be specified in a number of ways:\n\n1. dagster"
+        " job {command_name} -f /path/to/file.py -a define_some_job\n\n2. dagster job"
+        " {command_name} -m a_module.submodule -a define_some_job\n\n3. dagster job {command_name}"
+        " -f /path/to/file.py -a define_some_repo -j <<job_name>>\n\n4. dagster job {command_name}"
+        " -m a_module.submodule -a define_some_repo -j <<job_name>>"
     ).format(command_name=command_name)
 
 
 def get_job_instructions(command_name):
     return (
-        "This commands targets a job. The job can be specified in a number of ways:"
-        "\n\n1. dagster job {command_name} -j <<job_name>> (works if .{default_filename} exists)"
-        "\n\n2. dagster job {command_name} -j <<job_name>> -w path/to/{default_filename}"
-        "\n\n3. dagster job {command_name} -f /path/to/file.py -a define_some_job"
-        "\n\n4. dagster job {command_name} -m a_module.submodule -a define_some_job"
-        "\n\n5. dagster job {command_name} -f /path/to/file.py -a define_some_repo -j <<job_name>>"
-        "\n\n6. dagster job {command_name} -m a_module.submodule -a define_some_repo -j <<job_name>>"
+        "This commands targets a job. The job can be specified in a number of ways:\n\n1. dagster"
+        " job {command_name} -j <<job_name>> (works if .{default_filename} exists)\n\n2. dagster"
+        " job {command_name} -j <<job_name>> -w path/to/{default_filename}\n\n3. dagster job"
+        " {command_name} -f /path/to/file.py -a define_some_job\n\n4. dagster job {command_name} -m"
+        " a_module.submodule -a define_some_job\n\n5. dagster job {command_name} -f"
+        " /path/to/file.py -a define_some_repo -j <<job_name>>\n\n6. dagster job {command_name} -m"
+        " a_module.submodule -a define_some_repo -j <<job_name>>"
     ).format(command_name=command_name, default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
 
 
@@ -351,7 +350,6 @@ def get_tags_from_args(kwargs):
 
 
 def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
-
     config = cast(Tuple[str, ...], kwargs.get("config"))  # files
     config_json = kwargs.get("config_json")
 
@@ -416,8 +414,9 @@ def do_execute_command(
 
 @job_cli.command(
     name="launch",
-    help="Launch a job using the run launcher configured on the Dagster instance.\n\n{instructions}".format(
-        instructions=get_job_instructions("launch")
+    help=(
+        "Launch a job using the run launcher configured on the Dagster instance.\n\n{instructions}"
+        .format(instructions=get_job_instructions("launch"))
     ),
 )
 @job_target_argument
@@ -556,6 +555,7 @@ def _create_external_pipeline_run(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        asset_selection=None,
     )
 
 
@@ -566,7 +566,7 @@ def _check_execute_external_pipeline_args(
     preset: Optional[str],
     tags: Optional[Mapping[str, str]],
     solid_selection: Optional[Sequence[str]],
-) -> Tuple[Mapping[str, object], str, Mapping[str, object], Optional[Sequence[str]]]:
+) -> Tuple[Mapping[str, object], str, Mapping[str, str], Optional[Sequence[str]]]:
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     run_config = check.opt_mapping_param(run_config, "run_config")
     check.opt_str_param(mode, "mode")
@@ -597,8 +597,8 @@ def _check_execute_external_pipeline_args(
         if pipeline_preset.solid_selection is not None:
             check.invariant(
                 solid_selection is None or solid_selection == pipeline_preset.solid_selection,
-                "The solid_selection set in preset '{preset}', {preset_subset}, does not agree with "
-                "the `solid_selection` argument: {solid_selection}".format(
+                "The solid_selection set in preset '{preset}', {preset_subset}, does not agree with"
+                " the `solid_selection` argument: {solid_selection}".format(
                     preset=preset,
                     preset_subset=pipeline_preset.solid_selection,
                     solid_selection=solid_selection,
@@ -644,7 +644,7 @@ def _check_execute_external_pipeline_args(
     return (
         run_config,
         mode,
-        tags,
+        validate_tags(tags),
         solid_selection,
     )
 
@@ -807,7 +807,6 @@ def _execute_backfill_command_at_location(
     if noprompt or click.confirm(
         "Do you want to proceed with the backfill ({} partitions)?".format(len(partition_names))
     ):
-
         print_fn("Launching runs... ")
 
         backfill_id = make_new_backfill_id()
@@ -907,9 +906,9 @@ def print_partition_format(partitions, indent_level):
     return "\n" + "\n".join(lines)
 
 
-def split_chunk(l, n):
-    for i in range(0, len(l), n):
-        yield l[i : i + n]
+def split_chunk(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i : i + n]
 
 
 def validate_partition_slice(partition_names, name, value):

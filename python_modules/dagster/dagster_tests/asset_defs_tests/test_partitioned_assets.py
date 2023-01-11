@@ -1,10 +1,9 @@
 import warnings
 from typing import Optional
 
+import dagster._check as check
 import pendulum
 import pytest
-
-import dagster._check as check
 from dagster import (
     AssetMaterialization,
     AssetOut,
@@ -39,6 +38,9 @@ from dagster._core.test_utils import assert_namedtuple_lists_equal
 @pytest.fixture(autouse=True)
 def check_experimental_warnings():
     with warnings.catch_warnings(record=True) as record:
+        # turn off any outer warnings filters
+        warnings.resetwarnings()
+
         yield
 
         for w in record:
@@ -576,7 +578,10 @@ def test_mismatched_job_partitioned_config_with_asset_partitions():
 
     with pytest.raises(
         CheckError,
-        match="Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition than supplied for 'partitions_def'.",
+        match=(
+            "Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition"
+            " than supplied for 'partitions_def'."
+        ),
     ):
         define_asset_job("job", config=myconfig).resolve([asset1], [])
 

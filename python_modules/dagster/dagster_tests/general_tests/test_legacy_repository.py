@@ -1,9 +1,8 @@
 """
-Repository of test pipelines
+Repository of test pipelines.
 """
 
 import pytest
-
 from dagster import Int, fs_io_manager, repository, resource
 from dagster._check import CheckError
 from dagster._legacy import ModeDefinition, PipelineDefinition, PresetDefinition, solid

@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {
   Button,
   Colors,
@@ -21,10 +20,11 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
+import {graphql} from '../graphql';
+import {RunDetailsFragmentFragment, RunFragmentFragment, RunStatus} from '../graphql/graphql';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePathFromRunDetails, workspacePipelinePath} from '../workspace/workspacePath';
 
@@ -33,8 +33,6 @@ import {RunTags} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
 import {TimeElapsed} from './TimeElapsed';
-import {RunDetailsFragment} from './types/RunDetailsFragment';
-import {RunFragment} from './types/RunFragment';
 
 export const timingStringForStatus = (status?: RunStatus) => {
   switch (status) {
@@ -69,7 +67,7 @@ const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
 export const RunDetails: React.FC<{
   loading: boolean;
-  run: RunDetailsFragment | undefined;
+  run: RunDetailsFragmentFragment | undefined;
 }> = ({loading, run}) => {
   return (
     <MetadataTable
@@ -127,13 +125,16 @@ export const RunDetails: React.FC<{
 
 type VisibleDialog = 'config' | 'delete' | 'terminate' | null;
 
-export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
+export const RunConfigDialog: React.FC<{run: RunFragmentFragment; isJob: boolean}> = ({
+  run,
+  isJob,
+}) => {
   const {runConfigYaml} = run;
   const [visibleDialog, setVisibleDialog] = React.useState<VisibleDialog>(null);
 
   const {rootServerURI} = React.useContext(AppContext);
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
+  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissionsDEPRECATED();
 
   const copy = useCopyToClipboard();
   const history = useHistory();
@@ -283,11 +284,11 @@ const CodeMirrorContainer = styled.div`
   }
 `;
 
-export const RUN_DETAILS_FRAGMENT = gql`
+export const RUN_DETAILS_FRAGMENT = graphql(`
   fragment RunDetailsFragment on Run {
     id
     startTime
     endTime
     status
   }
-`;
+`);

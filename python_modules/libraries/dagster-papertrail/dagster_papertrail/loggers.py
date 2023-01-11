@@ -26,7 +26,6 @@ def papertrail_logger(init_context):
     active Papertrail account with URL and port.
 
     Example:
-
     .. code-block:: python
 
         @job(logger_defs={

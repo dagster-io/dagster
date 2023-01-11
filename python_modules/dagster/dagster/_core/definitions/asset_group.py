@@ -24,17 +24,13 @@ from dagster._core.errors import (
     DagsterUnmetExecutorRequirementsError,
 )
 from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .asset_layer import build_asset_selection_job
 from .assets import AssetsDefinition
 from .assets_job import check_resources_satisfy_requirements
 from .job_definition import JobDefinition, default_job_io_manager_with_fs_io_manager_schema
-from .load_assets_from_modules import (
-    assets_and_source_assets_from_modules,
-    assets_and_source_assets_from_package_module,
-    prefix_assets,
-)
+from .load_assets_from_modules import assets_from_modules, assets_from_package_module, prefix_assets
 from .resource_definition import ResourceDefinition
 from .source_asset import SourceAsset
 
@@ -69,7 +65,6 @@ class AssetGroup:
             use when re-materializing assets in this group.
 
     Examples:
-
         .. code-block:: python
 
             from dagster import AssetGroup, asset, AssetIn, AssetKey, SourceAsset, resource
@@ -173,7 +168,6 @@ class AssetGroup:
             description (Optional[str]): A description of the job.
 
         Examples:
-
             .. code-block:: python
 
                 from dagster import AssetGroup
@@ -186,7 +180,6 @@ class AssetGroup:
 
                 job_with_multiple_selections = the_asset_group.build_job(selection=["*some_asset", "other_asset++"])
         """
-
         from dagster._core.selector.subset_selector import parse_asset_selection
 
         check.str_param(name, "name")
@@ -256,9 +249,7 @@ class AssetGroup:
         Returns:
             AssetGroup: An asset group with all the assets in the package.
         """
-        assets, source_assets = assets_and_source_assets_from_package_module(
-            package_module, extra_source_assets
-        )
+        assets, source_assets, _ = assets_from_package_module(package_module, extra_source_assets)
         return AssetGroup(
             assets=assets,
             source_assets=source_assets,
@@ -320,7 +311,7 @@ class AssetGroup:
         Returns:
             AssetGroup: An asset group with all the assets defined in the given modules.
         """
-        assets, source_assets = assets_and_source_assets_from_modules(modules, extra_source_assets)
+        assets, source_assets, _ = assets_from_modules(modules, extra_source_assets)
 
         return AssetGroup(
             assets=assets,
@@ -500,8 +491,8 @@ def _validate_resource_reqs_for_asset_group(
         missing_resource_keys = list(set(required_resource_keys) - present_resource_keys)
         if missing_resource_keys:
             raise DagsterInvalidDefinitionError(
-                f"AssetGroup is missing required resource keys for asset '{asset_def.node_def.name}'. "
-                f"Missing resource keys: {missing_resource_keys}"
+                "AssetGroup is missing required resource keys for asset"
+                f" '{asset_def.node_def.name}'. Missing resource keys: {missing_resource_keys}"
             )
 
         for output_name, asset_key in asset_def.keys_by_output_name.items():
@@ -510,9 +501,9 @@ def _validate_resource_reqs_for_asset_group(
             )
             if output_def.io_manager_key and output_def.io_manager_key not in present_resource_keys:
                 raise DagsterInvalidDefinitionError(
-                    f"Output '{output_def.name}' with AssetKey '{asset_key}' "
-                    f"requires io manager '{output_def.io_manager_key}' but was "
-                    f"not provided on asset group. Provided resources: {sorted(list(present_resource_keys))}"
+                    f"Output '{output_def.name}' with AssetKey '{asset_key}' requires io manager"
+                    f" '{output_def.io_manager_key}' but was not provided on asset group. Provided"
+                    f" resources: {sorted(list(present_resource_keys))}"
                 )
 
     for source_asset in source_assets:

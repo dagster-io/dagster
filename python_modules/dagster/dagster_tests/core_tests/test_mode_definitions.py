@@ -1,12 +1,6 @@
 import logging
 
 import pytest
-from dagster_tests.general_tests.test_legacy_repository import (
-    define_multi_mode_pipeline,
-    define_multi_mode_with_resources_pipeline,
-    define_single_mode_pipeline,
-)
-
 from dagster import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -20,6 +14,12 @@ from dagster._check import CheckError
 from dagster._core.utils import coerce_valid_log_level
 from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline, solid
 from dagster._utils.test import execute_solids_within_pipeline
+
+from dagster_tests.general_tests.test_legacy_repository import (
+    define_multi_mode_pipeline,
+    define_multi_mode_with_resources_pipeline,
+    define_single_mode_pipeline,
+)
 
 
 def test_default_mode_definition():
@@ -95,7 +95,8 @@ def test_mode_double_default_name():
         )
 
     assert (
-        str(ide.value) == 'Two modes seen with the name "default" in "double_default". '
+        str(ide.value)
+        == 'Two modes seen with the name "default" in "double_default". '
         "Modes must have unique names."
     )
 
@@ -109,8 +110,8 @@ def test_mode_double_given_name():
         )
 
     assert (
-        str(ide.value) == 'Two modes seen with the name "given" in "double_given". '
-        "Modes must have unique names."
+        str(ide.value)
+        == 'Two modes seen with the name "given" in "double_given". Modes must have unique names.'
     )
 
 
@@ -163,7 +164,6 @@ def test_execute_multi_mode_with_resources():
 
 
 def test_mode_with_resource_deps():
-
     called = {"count": 0}
 
     @resource
@@ -212,7 +212,6 @@ def test_mode_with_resource_deps():
 
 
 def test_subset_with_mode_definitions():
-
     called = {"a": 0, "b": 0}
 
     @resource

@@ -3,7 +3,6 @@ from typing import Callable, Optional, Sequence
 
 import pendulum
 import pytest
-
 from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -797,6 +796,17 @@ def test_static_partition_keys_in_range():
         partitions.get_partition_keys_in_range(
             PartitionKeyRange(start="foo", end="nonexistent_key")
         )
+
+
+def test_unique_identifier():
+    assert (
+        StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
+        != StaticPartitionsDefinition(["a", "b"]).serializable_unique_identifier
+    )
+    assert (
+        StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
+        == StaticPartitionsDefinition(["a", "b", "c"]).serializable_unique_identifier
+    )
 
 
 def test_static_partitions_subset():

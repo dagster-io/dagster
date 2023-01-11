@@ -2,7 +2,6 @@ import time
 from unittest import mock
 
 import pytest
-
 from dagster._core.errors import (
     DagsterRepositoryLocationLoadError,
     DagsterRepositoryLocationNotFoundError,
@@ -14,7 +13,6 @@ from dagster._utils.error import SerializableErrorInfo
 
 
 def test_get_repository_location():
-
     mock_loc = mock.MagicMock()
 
     error_info = SerializableErrorInfo(message="oopsie", stack=[], cls_name="Exception")

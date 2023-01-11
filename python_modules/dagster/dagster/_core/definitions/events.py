@@ -112,7 +112,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
 
     def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
         """
-        E.g. '["first_component", "second_component"]'
+        E.g. '["first_component", "second_component"]'.
         """
         if not self.path:
             return None
@@ -122,7 +122,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
 
     def to_user_string(self) -> str:
         """
-        E.g. "first_component/second_component"
+        E.g. "first_component/second_component".
         """
         return ASSET_KEY_DELIMITER.join(self.path)
 
@@ -167,6 +167,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         if asset_key and asset_key.get("path"):
             return AssetKey(asset_key["path"])
         return None
+
+    def to_graphql_input(self) -> Mapping[str, Sequence[str]]:
+        return {"path": self.path}
 
     @staticmethod
     def from_coerceable(arg: "CoercibleToAssetKey") -> "AssetKey":
@@ -244,7 +247,6 @@ class Output(Generic[T]):
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries,
@@ -313,7 +315,6 @@ class DynamicOutput(Generic[T]):
         metadata_entries: Optional[Sequence[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
@@ -488,8 +489,8 @@ class AssetMaterialization(
         invalid_tags = [tag for tag in tags or {} if not tag.startswith(SYSTEM_TAG_PREFIX)]
         if len(invalid_tags) > 0:
             check.failed(
-                f"Invalid tags: {tags} Users should not pass values into the tags argument for AssetMaterializations. "
-                "The tags argument is reserved for system-populated tags."
+                f"Invalid tags: {tags} Users should not pass values into the tags argument for"
+                " AssetMaterializations. The tags argument is reserved for system-populated tags."
             )
 
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
@@ -750,7 +751,6 @@ class TypeCheck(
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
-
         metadata_entries = check.opt_sequence_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
@@ -816,7 +816,6 @@ class RetryRequested(Exception):
             to the up_for_retry state
 
     Example:
-
         .. code-block:: python
 
             @op

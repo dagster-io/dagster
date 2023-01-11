@@ -1,7 +1,6 @@
 import re
 
 import pytest
-
 from dagster import (
     Any,
     DagsterInvalidDefinitionError,
@@ -39,7 +38,7 @@ def test_no_parens_solid():
     def hello_world():
         called["yup"] = True
 
-    result = execute_in_graph(hello_world)
+    execute_in_graph(hello_world)
 
     assert called["yup"]
 
@@ -51,7 +50,7 @@ def test_empty_solid():
     def hello_world():
         called["yup"] = True
 
-    result = execute_in_graph(hello_world)
+    execute_in_graph(hello_world)
 
     assert called["yup"]
 
@@ -240,9 +239,7 @@ def test_any_config_field():
         assert context.op_config == conf_value
         called["yup"] = True
 
-    result = execute_in_graph(
-        hello_world, run_config={"solids": {"hello_world": {"config": conf_value}}}
-    )
+    execute_in_graph(hello_world, run_config={"solids": {"hello_world": {"config": conf_value}}})
 
     assert called["yup"]
 
@@ -262,66 +259,66 @@ def test_solid_config_no_arg():
 def test_solid_docstring():
     @op
     def foo_op(_):
-        """FOO_DOCSTRING"""
+        """FOO_DOCSTRING."""
         return
 
     @op
     def bar_op():
-        """BAR_DOCSTRING"""
+        """BAR_DOCSTRING."""
         return
 
     @op(name="baz")
     def baz_op(_):
-        """BAZ_DOCSTRING"""
+        """BAZ_DOCSTRING."""
         return
 
     @op(name="quux")
     def quux_op():
-        """QUUX_DOCSTRING"""
+        """QUUX_DOCSTRING."""
         return
 
     @graph
     def comp_graph():
-        """COMP_DOCSTRING"""
+        """COMP_DOCSTRING."""
         foo_op()
 
     @job
     def the_job():
-        """THE_DOCSTRING"""
+        """THE_DOCSTRING."""
         quux_op()
 
     @op
     def the_op():
-        """OP_DOCSTRING"""
+        """OP_DOCSTRING."""
 
     @graph
     def the_graph():
-        """GRAPH_DOCSTRING"""
+        """GRAPH_DOCSTRING."""
         the_op()
 
-    assert foo_op.__doc__ == "FOO_DOCSTRING"
-    assert foo_op.description == "FOO_DOCSTRING"
+    assert foo_op.__doc__ == "FOO_DOCSTRING."
+    assert foo_op.description == "FOO_DOCSTRING."
     assert foo_op.__name__ == "foo_op"
-    assert bar_op.__doc__ == "BAR_DOCSTRING"
-    assert bar_op.description == "BAR_DOCSTRING"
+    assert bar_op.__doc__ == "BAR_DOCSTRING."
+    assert bar_op.description == "BAR_DOCSTRING."
     assert bar_op.__name__ == "bar_op"
-    assert baz_op.__doc__ == "BAZ_DOCSTRING"
-    assert baz_op.description == "BAZ_DOCSTRING"
+    assert baz_op.__doc__ == "BAZ_DOCSTRING."
+    assert baz_op.description == "BAZ_DOCSTRING."
     assert baz_op.__name__ == "baz_op"
-    assert quux_op.__doc__ == "QUUX_DOCSTRING"
-    assert quux_op.description == "QUUX_DOCSTRING"
+    assert quux_op.__doc__ == "QUUX_DOCSTRING."
+    assert quux_op.description == "QUUX_DOCSTRING."
     assert quux_op.__name__ == "quux_op"
-    assert comp_graph.__doc__ == "COMP_DOCSTRING"
-    assert comp_graph.description == "COMP_DOCSTRING"
+    assert comp_graph.__doc__ == "COMP_DOCSTRING."
+    assert comp_graph.description == "COMP_DOCSTRING."
     assert comp_graph.__name__ == "comp_graph"
-    assert the_job.__doc__ == "THE_DOCSTRING"
-    assert the_job.description == "THE_DOCSTRING"
+    assert the_job.__doc__ == "THE_DOCSTRING."
+    assert the_job.description == "THE_DOCSTRING."
     assert the_job.__name__ == "the_job"
-    assert the_op.__doc__ == "OP_DOCSTRING"
-    assert the_op.description == "OP_DOCSTRING"
+    assert the_op.__doc__ == "OP_DOCSTRING."
+    assert the_op.description == "OP_DOCSTRING."
     assert the_op.__name__ == "the_op"
-    assert the_graph.__doc__ == "GRAPH_DOCSTRING"
-    assert the_graph.description == "GRAPH_DOCSTRING"
+    assert the_graph.__doc__ == "GRAPH_DOCSTRING."
+    assert the_graph.description == "GRAPH_DOCSTRING."
     assert the_graph.__name__ == "the_graph"
 
 
@@ -334,7 +331,7 @@ def test_solid_yields_single_bare_value():
         DagsterInvariantViolationError,
         match="yielded a value of type <class 'int'>",
     ):
-        result = execute_in_graph(return_iterator)
+        execute_in_graph(return_iterator)
 
 
 def test_solid_yields_multiple_bare_values():
@@ -347,7 +344,7 @@ def test_solid_yields_multiple_bare_values():
         DagsterInvariantViolationError,
         match="yielded a value of type <class 'int'>",
     ):
-        result = execute_in_graph(return_iterator)
+        execute_in_graph(return_iterator)
 
 
 def test_solid_returns_iterator():
@@ -362,7 +359,7 @@ def test_solid_returns_iterator():
     with pytest.raises(
         DagsterInvariantViolationError, match="yielded a value of type <class 'int'>"
     ):
-        result = execute_in_graph(return_iterator)
+        execute_in_graph(return_iterator)
 
 
 def test_input_default():

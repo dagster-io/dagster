@@ -1,9 +1,15 @@
 import dask
 import dask.distributed
-
-from dagster import Executor, Field, Permissive, Selector, StringSource
-from dagster import _check as check
-from dagster import _seven, multiple_process_executor_requirements
+from dagster import (
+    Executor,
+    Field,
+    Permissive,
+    Selector,
+    StringSource,
+    _check as check,
+    _seven,
+    multiple_process_executor_requirements,
+)
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.events import DagsterEvent
@@ -119,7 +125,6 @@ def query_on_dask_worker(
     """Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
     """
-
     with DagsterInstance.from_ref(instance_ref) as instance:
         subset_pipeline = recon_pipeline.subset_for_execution_from_existing_pipeline(
             pipeline_run.solids_to_execute
@@ -224,7 +229,8 @@ class DaskExecutor(Executor):
             cluster = KubeCluster(**self.build_dict(pipeline_name))
         else:
             raise ValueError(
-                f"Must be providing one of the following ('existing', 'local', 'yarn', 'ssh', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube') not {cluster_type}"
+                "Must be providing one of the following ('existing', 'local', 'yarn', 'ssh',"
+                f" 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube') not {cluster_type}"
             )
 
         with dask.distributed.Client(cluster) as client:

@@ -1,6 +1,6 @@
 import 'chartjs-adapter-date-fns';
 
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Box,
   Checkbox,
@@ -22,30 +22,31 @@ import styled from 'styled-components/macro';
 import {TickLogDialog} from '../TickLogDialog';
 import {SharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ONE_MONTH, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
+import {graphql} from '../graphql';
+import {
+  HistoryTickFragment,
+  TickHistoryQueryQuery,
+  TickHistoryQueryQueryVariables,
+  InstigationTickStatus,
+  InstigationType,
+} from '../graphql/graphql';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {TickTag, TICK_TAG_FRAGMENT} from './InstigationTick';
-import {RunStatusLink, RUN_STATUS_FRAGMENT} from './InstigationUtils';
+import {TickTag} from './InstigationTick';
+import {RunStatusLink} from './InstigationUtils';
 import {LiveTickTimeline} from './LiveTickTimeline';
 import {TickDetailsDialog} from './TickDetailsDialog';
-import {RunStatusFragment} from './types/RunStatusFragment';
-import {
-  TickHistoryQuery,
-  TickHistoryQueryVariables,
-  TickHistoryQuery_instigationStateOrError_InstigationState_ticks,
-} from './types/TickHistoryQuery';
 
 Chart.register(zoomPlugin);
 
-type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
+type InstigationTick = HistoryTickFragment;
 
 const TRUNCATION_THRESHOLD = 100;
 const TRUNCATION_BUFFER = 5;
@@ -111,8 +112,8 @@ export const TicksTable = ({
     .filter((status) => shownStates[status])
     .map((status) => status as InstigationTickStatus);
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
-    TickHistoryQuery,
-    TickHistoryQueryVariables
+    TickHistoryQueryQuery,
+    TickHistoryQueryQueryVariables
   >({
     nextCursorForResult: (data) => {
       if (data.instigationStateOrError.__typename !== 'InstigationState') {
@@ -239,7 +240,7 @@ export const TicksTable = ({
                 ) : null}
                 <td>
                   {tick.runIds.length ? (
-                    tick.runs.map((run: RunStatusFragment) => (
+                    tick.runs.map((run) => (
                       <>
                         <RunStatusLink key={run.id} run={run} />
                       </>
@@ -288,15 +289,11 @@ export const TickHistoryTimeline = ({
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
 
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
-  const queryResult = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(
-    JOB_TICK_HISTORY_QUERY,
-    {
-      variables: {instigationSelector, limit: 15},
-      fetchPolicy: 'cache-and-network',
-      partialRefetch: true,
-      notifyOnNetworkStatusChange: true,
-    },
-  );
+  const queryResult = useQuery(JOB_TICK_HISTORY_QUERY, {
+    variables: {instigationSelector, limit: 15},
+    partialRefetch: true,
+    notifyOnNetworkStatusChange: true,
+  });
 
   useQueryRefreshAtInterval(queryResult, pollingPaused ? ONE_MONTH : 1000);
   const {data} = queryResult;
@@ -361,7 +358,7 @@ export const TickHistoryTimeline = ({
   );
 };
 
-const JOB_TICK_HISTORY_QUERY = gql`
+const JOB_TICK_HISTORY_QUERY = graphql(`
   query TickHistoryQuery(
     $instigationSelector: InstigationSelector!
     $dayRange: Int
@@ -375,35 +372,41 @@ const JOB_TICK_HISTORY_QUERY = gql`
         id
         instigationType
         nextTick {
-          timestamp
+          ...NextTickForHistoy
         }
         ticks(dayRange: $dayRange, limit: $limit, cursor: $cursor, statuses: $statuses) {
           id
-          status
-          timestamp
-          cursor
-          skipReason
-          runIds
-          runs {
-            id
-            status
-            ...RunStatusFragment
-          }
-          originRunIds
-          error {
-            ...PythonErrorFragment
-          }
-          logKey
-          ...TickTagFragment
+          ...HistoryTick
         }
       }
       ...PythonErrorFragment
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-  ${TICK_TAG_FRAGMENT}
-  ${RUN_STATUS_FRAGMENT}
-`;
+
+  fragment NextTickForHistoy on FutureInstigationTick {
+    timestamp
+  }
+
+  fragment HistoryTick on InstigationTick {
+    id
+    status
+    timestamp
+    cursor
+    skipReason
+    runIds
+    runs {
+      id
+      status
+      ...RunStatusFragment
+    }
+    originRunIds
+    error {
+      ...PythonErrorFragment
+    }
+    logKey
+    ...TickTagFragment
+  }
+`);
 
 const CopyButton = styled.button`
   background: transparent;

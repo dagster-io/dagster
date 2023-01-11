@@ -1,7 +1,14 @@
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, cast
 
-from dagster import Array, Field, Noneable, Permissive, Shape, StringSource
-from dagster import _check as check
+from dagster import (
+    Array,
+    Field,
+    Noneable,
+    Permissive,
+    Shape,
+    StringSource,
+    _check as check,
+)
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
@@ -18,9 +25,11 @@ SHARED_ECS_SCHEMA = {
     "env_vars": Field(
         [StringSource],
         is_required=False,
-        description="List of environment variable names to include in the ECS task. "
-        "Each can be of the form KEY=VALUE or just KEY (in which case the value will be pulled "
-        "from the current process)",
+        description=(
+            "List of environment variable names to include in the ECS task. "
+            "Each can be of the form KEY=VALUE or just KEY (in which case the value will be pulled "
+            "from the current process)"
+        ),
     ),
     "run_resources": Field(
         Permissive(

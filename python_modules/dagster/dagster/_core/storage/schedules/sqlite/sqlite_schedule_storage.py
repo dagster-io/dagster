@@ -3,8 +3,10 @@ from contextlib import contextmanager
 from packaging.version import parse
 from sqlalchemy.pool import NullPool
 
-from dagster import StringSource
-from dagster import _check as check
+from dagster import (
+    StringSource,
+    _check as check,
+)
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -23,7 +25,7 @@ MINIMUM_SQLITE_BATCH_VERSION = "3.25.0"
 
 
 class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
-    """Local SQLite backed schedule storage"""
+    """Local SQLite backed schedule storage."""
 
     def __init__(self, conn_string, inst_data=None):
         check.str_param(conn_string, "conn_string")

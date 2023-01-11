@@ -3,14 +3,6 @@ import sys
 
 import pendulum
 import pytest
-from dagster_graphql.test.utils import (
-    execute_dagster_graphql,
-    infer_repository_selector,
-    infer_schedule_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
-
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
@@ -24,6 +16,13 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    infer_repository_selector,
+    infer_schedule_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
 
 from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 
@@ -171,6 +170,7 @@ mutation(
     scheduleOriginId: $scheduleOriginId,
     scheduleSelectorId: $scheduleSelectorId
   ) {
+    __typename
     ... on PythonError {
       message
       className
@@ -673,3 +673,25 @@ class TestSchedulePermissions(ReadonlyGraphQLContextTestMatrix):
         assert result.data
 
         assert result.data["startSchedule"]["__typename"] == "UnauthorizedError"
+
+    def test_stop_schedule_failure(self, graphql_context):
+        schedule_selector = infer_schedule_selector(graphql_context, "running_in_code_schedule")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SCHEDULE_STATE_QUERY,
+            variables={"scheduleSelector": schedule_selector},
+        )
+
+        schedule_origin_id = result.data["scheduleOrError"]["scheduleState"]["id"]
+        schedule_selector_id = result.data["scheduleOrError"]["scheduleState"]["selectorId"]
+
+        stop_result = execute_dagster_graphql(
+            graphql_context,
+            STOP_SCHEDULES_QUERY,
+            variables={
+                "scheduleOriginId": schedule_origin_id,
+                "scheduleSelectorId": schedule_selector_id,
+            },
+        )
+        assert stop_result.data["stopRunningSchedule"]["__typename"] == "UnauthorizedError"

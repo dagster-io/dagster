@@ -127,7 +127,7 @@ def generate_asset_dep_graph(
 
 
 def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph:
-    """'pipeline to dependency graph. It currently only supports top-level solids.
+    """Pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
         pipeline (PipelineDefinition): The pipeline to execute.
@@ -364,7 +364,8 @@ def convert_dot_seperated_string_to_dict(
 
 
 def parse_op_selection(job_def: "JobDefinition", op_selection: Sequence[str]) -> Mapping[str, Any]:
-    """
+    """Parse  an op selection into a nested dictionary.
+
     Examples:
         ["subgraph.return_one", "subgraph.adder", "subgraph.add_one", "add_one"]
         => {"subgraph": {{"return_one": LeafNodeSelection}, {"adder": LeafNodeSelection}, {"add_one": LeafNodeSelection}}, "add_one": LeafNodeSelection}
@@ -476,7 +477,10 @@ def parse_step_selection(
     invalid_keys = [key for key in step_keys if key not in step_deps]
     if invalid_keys:
         raise DagsterExecutionStepNotFoundError(
-            f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}: {', '.join(invalid_keys)}",
+            (
+                f"Step selection refers to unknown step{'s' if len(invalid_keys)> 1 else ''}:"
+                f" {', '.join(invalid_keys)}"
+            ),
             step_keys=invalid_keys,
         )
 
@@ -499,7 +503,7 @@ def parse_asset_selection(
     source_assets: Sequence["SourceAsset"],
     asset_selection: Sequence[str],
 ) -> AbstractSet[AssetKey]:
-    """Find assets that match the given selection query
+    """Find assets that match the given selection query.
 
     Args:
         assets_defs (Sequence[Assetsdefinition]): A set of AssetsDefinition objects to select over

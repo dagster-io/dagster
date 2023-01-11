@@ -15,7 +15,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -100,7 +100,7 @@ const SingleRepoSummary: React.FC<{repo: RepoSelectorOption; onlyRepo: boolean}>
 }) => {
   const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
   const isDunder = repoAddress.name === DUNDER_REPO_NAME;
-  const {canReloadRepositoryLocation} = usePermissions();
+  const {canReloadRepositoryLocation} = usePermissionsForLocation(repoAddress.location);
   return (
     <Group direction="row" spacing={4} alignItems="center">
       <SingleRepoNameLink

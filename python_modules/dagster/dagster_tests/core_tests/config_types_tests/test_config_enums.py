@@ -1,7 +1,6 @@
 from enum import Enum as PythonEnum
 
 import pytest
-
 from dagster import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -128,8 +127,9 @@ def test_native_enum_not_allowed_as_default_value():
         def _enum_direct(_):
             pass
 
-    assert str(exc_info.value) == (
-        "You have passed into a python enum value as the default value into "
+    assert (
+        str(exc_info.value)
+        == "You have passed into a python enum value as the default value into "
         "of a config enum type NativeEnum. You must pass in the underlying string "
         "represention as the default value. One of ['FOO', 'BAR']."
     )
@@ -205,8 +205,9 @@ def test_dict_enum_with_bad_default():
         def _enum_bad_dict(_):
             pass
 
-    assert str(exc_info.value) == (
-        "You have passed into a python enum value as the default value into "
+    assert (
+        str(exc_info.value)
+        == "You have passed into a python enum value as the default value into "
         "of a config enum type NativeEnum. You must pass in the underlying string "
         "represention as the default value. One of ['FOO', 'BAR']."
     )

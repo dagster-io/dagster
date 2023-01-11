@@ -1,4 +1,4 @@
-"""initial revision for mysql support
+"""initial revision for mysql support.
 
 Revision ID: ba4050312958
 Revises: 521d4caca7ad

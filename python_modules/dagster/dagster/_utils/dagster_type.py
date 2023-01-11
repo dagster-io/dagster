@@ -27,12 +27,10 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
 
 
     Examples:
-
         .. code-block:: python
 
             assert check_dagster_type(Dict[Any, Any], {'foo': 'bar'}).success
     """
-
     if is_typing_type(dagster_type):
         raise DagsterInvariantViolationError(
             (

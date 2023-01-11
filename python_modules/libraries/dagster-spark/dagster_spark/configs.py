@@ -1,4 +1,4 @@
-"""Spark Configuration
+"""Spark Configuration.
 
 In this file we define the key configuration parameters for submitting Spark jobs. Spark can be run
 in a variety of deployment contexts. See the Spark documentation at
@@ -17,7 +17,6 @@ def define_spark_config():
     See the Spark documentation for reference:
         https://spark.apache.org/docs/latest/submitting-applications.html
     """
-
     master_url = Field(
         StringSource,
         description="The master URL for the cluster (e.g. spark://23.195.26.187:7077)",
@@ -54,7 +53,10 @@ def define_spark_config():
 
     spark_home = Field(
         StringSource,
-        description="The path to your spark installation. Defaults to $SPARK_HOME at runtime if not provided.",
+        description=(
+            "The path to your spark installation. Defaults to $SPARK_HOME at runtime if not"
+            " provided."
+        ),
         is_required=False,
     )
 

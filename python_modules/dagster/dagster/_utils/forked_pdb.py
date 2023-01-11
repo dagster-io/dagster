@@ -1,10 +1,10 @@
-import pdb
+import pdb  # noqa: T100
 import sys
 
 
 # From https://stackoverflow.com/questions/4716533/how-to-attach-debugger-to-a-python-subproccess
 class ForkedPdb(pdb.Pdb):
-    """A pdb subclass that may be used from a forked multiprocessing child
+    """A pdb subclass that may be used from a forked multiprocessing child.
 
     **Examples**:
 

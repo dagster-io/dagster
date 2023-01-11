@@ -1,12 +1,23 @@
+# pylint: disable=protected-access
+
 import multiprocessing
 from os import path
 
 import pytest
-
-from dagster import DagsterInstance, ExecutorRequirement
-from dagster import _check as check
-from dagster import execute_job, job, multiprocess_executor, op, reconstructable
-from dagster._core.definitions.executor_definition import executor
+from dagster import (
+    DagsterInstance,
+    ExecutorRequirement,
+    _check as check,
+    execute_job,
+    job,
+    multiprocess_executor,
+    op,
+    reconstructable,
+)
+from dagster._core.definitions.executor_definition import (
+    _core_multiprocess_executor_creation,
+    executor,
+)
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
@@ -185,7 +196,6 @@ def configured_executor_job():
 
 
 def test_in_process_executor_dict_config_configured():
-
     with instance_for_test() as instance:
         assert execute_job(reconstructable(configured_executor_job), instance=instance).success
 
@@ -201,9 +211,7 @@ def multiproc_test():
 
 
 def test_multiproc():
-
     with instance_for_test() as instance:
-
         result = execute_job(
             reconstructable(multiproc_test),
             run_config={
@@ -234,7 +242,6 @@ def one_but_needs_config():
 
 
 def test_defaulting_behavior():
-
     with instance_for_test() as instance:
         with pytest.raises(DagsterInvalidConfigError):
             execute_job(reconstructable(one_but_needs_config), instance=instance)
@@ -252,7 +259,6 @@ def job_executor_failing():
 
 def test_failing_executor_initialization():
     with instance_for_test() as instance:
-
         result = execute_job(
             reconstructable(job_executor_failing), instance=instance, raise_on_error=False
         )
@@ -266,7 +272,6 @@ def test_failing_executor_initialization():
 
 
 def test_multiprocess_executor_default():
-
     executor = MultiprocessExecutor(
         max_concurrent=2,
         retries=RetryMode.DISABLED,
@@ -290,3 +295,20 @@ def test_multiprocess_executor_default():
         )
 
         assert executor._max_concurrent == 12345  # pylint: disable=protected-access
+
+
+def test_multiprocess_executor_config():
+    tag_concurrency_limits = [{"key": "database", "value": "tiny", "limit": 2}]
+
+    executor = _core_multiprocess_executor_creation(
+        {
+            "retries": {
+                "disabled": {},
+            },
+            "max_concurrent": 2,
+            "tag_concurrency_limits": tag_concurrency_limits,
+        }
+    )
+    assert executor._retries == RetryMode.DISABLED
+    assert executor._max_concurrent == 2
+    assert executor._tag_concurrency_limits == tag_concurrency_limits

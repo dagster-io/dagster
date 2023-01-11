@@ -1,4 +1,4 @@
-import {gql, useLazyQuery, useMutation, useQuery} from '@apollo/client';
+import {useLazyQuery, useMutation, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -23,19 +23,16 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
+import {graphql} from '../graphql';
+import {LaunchPartitionBackfillMutation, RunStatus} from '../graphql/graphql';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
-import {
-  LaunchPartitionBackfill,
-  LaunchPartitionBackfillVariables,
-} from '../instance/types/LaunchPartitionBackfill';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagContainer, TagEditor} from '../launchpad/TagEditor';
-import {RunStatus} from '../types/globalTypes';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -52,11 +49,6 @@ import {
   TopLabel,
   TopLabelTilted,
 } from './RunMatrixUtils';
-import {PartitionStatusQuery, PartitionStatusQueryVariables} from './types/PartitionStatusQuery';
-import {
-  PartitionsBackfillSelectorQuery,
-  PartitionsBackfillSelectorQueryVariables,
-} from './types/PartitionsBackfillSelectorQuery';
 
 const OVERSCROLL = 200;
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
@@ -114,10 +106,8 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     };
   }, [onLaunch]);
 
-  const {loading, data} = useQuery<
-    PartitionsBackfillSelectorQuery,
-    PartitionsBackfillSelectorQueryVariables
-  >(PARTITIONS_BACKFILL_SELECTOR_QUERY, {
+  const {loading, data} = useQuery(PARTITIONS_BACKFILL_SELECTOR_QUERY, {
+    fetchPolicy: 'network-only',
     variables: {
       repositorySelector,
       partitionSetName,
@@ -126,19 +116,17 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
         pipelineName,
       },
     },
-    fetchPolicy: 'network-only',
   });
 
-  const [queryStatuses, {loading: statusesLoading, data: statusesData}] = useLazyQuery<
-    PartitionStatusQuery,
-    PartitionStatusQueryVariables
-  >(PARTITION_STATUS_QUERY, {
-    variables: {
-      repositorySelector,
-      partitionSetName,
+  const [queryStatuses, {loading: statusesLoading, data: statusesData}] = useLazyQuery(
+    PARTITION_STATUS_QUERY,
+    {
+      variables: {
+        repositorySelector,
+        partitionSetName,
+      },
     },
-    fetchPolicy: 'cache-and-network',
-  });
+  );
 
   if (!data || loading) {
     return (
@@ -211,7 +199,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     onLaunch?.(backfillId, query);
   };
 
-  const onError = (data: LaunchPartitionBackfill | null | undefined) => {
+  const onError = (data: LaunchPartitionBackfillMutation | null | undefined) => {
     showBackfillErrorToast(data);
   };
 
@@ -539,7 +527,7 @@ const LaunchBackfillButton: React.FC<{
   fromFailure?: boolean;
   tags?: PipelineRunTag[];
   onSuccess?: (backfillId: string) => void;
-  onError: (data: LaunchPartitionBackfill | null | undefined) => void;
+  onError: (data: LaunchPartitionBackfillMutation | null | undefined) => void;
   onSubmit: () => void;
   repoAddress: RepoAddress;
 }> = ({
@@ -555,10 +543,7 @@ const LaunchBackfillButton: React.FC<{
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);
-  const [launchBackfill, {loading}] = useMutation<
-    LaunchPartitionBackfill,
-    LaunchPartitionBackfillVariables
-  >(LAUNCH_PARTITION_BACKFILL_MUTATION);
+  const [launchBackfill, {loading}] = useMutation(LAUNCH_PARTITION_BACKFILL_MUTATION);
 
   React.useEffect(() => {
     mounted.current = true;
@@ -631,7 +616,7 @@ const LaunchBackfillButton: React.FC<{
   );
 };
 
-const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
+const PARTITIONS_BACKFILL_SELECTOR_QUERY = graphql(`
   query PartitionsBackfillSelectorQuery(
     $partitionSetName: String!
     $repositorySelector: RepositorySelector!
@@ -708,10 +693,9 @@ const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
       runQueuingSupported
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);
 
-const PARTITION_STATUS_QUERY = gql`
+const PARTITION_STATUS_QUERY = graphql(`
   query PartitionStatusQuery($partitionSetName: String!, $repositorySelector: RepositorySelector!) {
     partitionSetOrError(
       partitionSetName: $partitionSetName
@@ -737,10 +721,9 @@ const PARTITION_STATUS_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+`);
 
-function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | undefined) {
+function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | null | undefined) {
   const result = data?.launchPartitionBackfill;
 
   let errors = <></>;
@@ -780,7 +763,7 @@ function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | un
   );
 }
 
-export function showBackfillErrorToast(data: LaunchPartitionBackfill | null | undefined) {
+export function showBackfillErrorToast(data: LaunchPartitionBackfillMutation | null | undefined) {
   SharedToaster.show({
     message: messageForLaunchBackfillError(data),
     icon: 'error',

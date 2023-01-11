@@ -4,7 +4,6 @@ from .utils import sample_run_details, sample_run_results
 
 
 def test_timestamps():
-
     run_details = sample_run_details()["data"]
 
     dbt_cloud_output = DbtCloudOutput(run_details, sample_run_results())
@@ -17,7 +16,6 @@ def test_timestamps():
 
 
 def test_included_related():
-
     run_details = sample_run_details()["data"]
     dbt_cloud_output = DbtCloudOutput(run_details, sample_run_results())
     assert dbt_cloud_output.job_name is None

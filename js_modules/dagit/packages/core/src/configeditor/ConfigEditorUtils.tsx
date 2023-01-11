@@ -1,52 +1,59 @@
-import {gql} from '@apollo/client';
 import {YamlModeValidationResult} from '@dagster-io/ui';
 import yaml from 'yaml';
 
-import {ConfigEditorValidationFragment} from './types/ConfigEditorValidationFragment';
+import {graphql} from '../graphql';
+import {ConfigEditorValidationFragmentFragment} from '../graphql/graphql';
 
-export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
+export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = graphql(`
   fragment ConfigEditorRunConfigSchemaFragment on RunConfigSchema {
     rootConfigType {
       key
     }
     allConfigTypes {
-      __typename
-      key
-      description
-      isSelector
-      typeParamKeys
-      ... on RegularConfigType {
-        givenName
-      }
-      ... on MapConfigType {
-        keyLabelName
-      }
-      ... on EnumConfigType {
-        givenName
-        values {
-          value
-          description
-        }
-      }
-      ... on CompositeConfigType {
-        fields {
-          name
-          description
-          isRequired
-          configTypeKey
-          defaultValueAsJson
-        }
-      }
-      ... on ScalarUnionConfigType {
-        key
-        scalarTypeKey
-        nonScalarTypeKey
-      }
+      ...AllConfigTypesForEditor
     }
   }
-`;
 
-export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
+  fragment AllConfigTypesForEditor on ConfigType {
+    key
+    description
+    isSelector
+    typeParamKeys
+    ... on RegularConfigType {
+      givenName
+    }
+    ... on MapConfigType {
+      keyLabelName
+    }
+    ... on EnumConfigType {
+      givenName
+      values {
+        value
+        description
+      }
+    }
+    ... on CompositeConfigType {
+      ...CompositeConfigTypeForSchema
+    }
+    ... on ScalarUnionConfigType {
+      key
+      scalarTypeKey
+      nonScalarTypeKey
+    }
+  }
+
+  fragment CompositeConfigTypeForSchema on CompositeConfigType {
+    fields {
+      name
+      description
+      isRequired
+      configTypeKey
+      defaultValueAsJson
+    }
+  }
+`);
+
+export const CONFIG_EDITOR_VALIDATION_FRAGMENT = graphql(`
   fragment ConfigEditorValidationFragment on PipelineConfigValidationResult {
     __typename
     ... on RunConfigValidationInvalid {
@@ -74,7 +81,7 @@ export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
       }
     }
   }
-`;
+`);
 
 type StackEntry =
   | {
@@ -110,7 +117,7 @@ export function errorStackToYamlPath(entries: StackEntry[]) {
 
 export function responseToYamlValidationResult(
   configYaml: string,
-  response: ConfigEditorValidationFragment,
+  response: ConfigEditorValidationFragmentFragment,
 ): YamlModeValidationResult {
   if (response.__typename !== 'RunConfigValidationInvalid') {
     return {isValid: true};

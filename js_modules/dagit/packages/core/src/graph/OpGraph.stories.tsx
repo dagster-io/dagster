@@ -1,12 +1,12 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
+import {OpGraphOpFragmentFragment} from '../graphql/graphql';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 import {OpGraph} from './OpGraph';
 import {SVGViewport} from './SVGViewport';
 import {getFullOpLayout} from './asyncGraphLayout';
-import {OpGraphOpFragment} from './types/OpGraphOpFragment';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -36,7 +36,7 @@ function buildEdge(descriptor: string): Edge {
 }
 
 function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], edges: Edge[]) {
-  const result: OpGraphOpFragment = {
+  const result: OpGraphOpFragmentFragment = {
     __typename: 'Solid',
     name: sname,
     definition: {
@@ -89,7 +89,7 @@ function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], e
 function buildBasicDAG() {
   const edges = ['A:out=>B:in', 'B:out1=>C:in', 'B:out2=>D:in1', 'C:out=>D:in2'].map(buildEdge);
 
-  const ops: OpGraphOpFragment[] = [
+  const ops: OpGraphOpFragmentFragment[] = [
     buildGraphSolidFragment('A', [], ['out'], edges),
     buildGraphSolidFragment('B', ['in'], ['out1', 'out2'], edges),
     buildGraphSolidFragment('C', ['in'], ['out'], edges),
@@ -123,7 +123,7 @@ export const FanOut = () => {
     edges.push(buildEdge(`A:out=>B${ii}:in`));
     edges.push(buildEdge(`B${ii}:out=>C:in`));
   }
-  const ops: OpGraphOpFragment[] = [];
+  const ops: OpGraphOpFragmentFragment[] = [];
   ops.push(buildGraphSolidFragment('A', ['in'], ['out'], edges));
   ops.push(buildGraphSolidFragment('C', ['in'], ['out'], edges));
   for (let ii = 0; ii < 60; ii++) {

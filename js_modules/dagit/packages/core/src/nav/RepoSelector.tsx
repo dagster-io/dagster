@@ -15,7 +15,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -43,7 +43,7 @@ interface Props {
 
 export const RepoSelector: React.FC<Props> = (props) => {
   const {onBrowse, onToggle, options, selected} = props;
-  const {canReloadRepositoryLocation} = usePermissions();
+  const {canReloadRepositoryLocation} = usePermissionsDEPRECATED();
 
   const optionCount = options.length;
   const selectedCount = selected.length;

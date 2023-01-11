@@ -1,7 +1,6 @@
 import warnings
 
 import pytest
-
 from dagster import (
     DependencyDefinition,
     GraphDefinition,
@@ -138,7 +137,6 @@ def test_args():
 
 
 def test_arg_fails():
-
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @graph
@@ -154,7 +152,6 @@ def test_arg_fails():
 
 
 def test_mult_out_fail():
-
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @graph
@@ -551,7 +548,6 @@ def test_alias_invoked(recwarn):
 
 
 def test_alias_not_invoked():
-
     with pytest.warns(UserWarning, match="received an uninvoked op") as record:
 
         @job
@@ -563,7 +559,6 @@ def test_alias_not_invoked():
 
 
 def test_tag_invoked():
-
     # See: https://docs.pytest.org/en/7.0.x/how-to/capture-warnings.html#additional-use-cases-of-warnings-in-tests
     with warnings.catch_warnings():
         warnings.simplefilter("error", category=UserWarning)
@@ -576,7 +571,6 @@ def test_tag_invoked():
 
 
 def test_tag_not_invoked():
-
     with pytest.warns(
         UserWarning,
         match="uninvoked op",
@@ -604,7 +598,6 @@ def test_tag_not_invoked():
 
 
 def test_with_hooks_invoked():
-
     with warnings.catch_warnings():
         warnings.simplefilter("error", category=UserWarning)
 

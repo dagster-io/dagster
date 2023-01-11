@@ -1,10 +1,10 @@
-import {gql} from '@apollo/client';
 import {Tabs, TokenizingFieldValue} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 
-import {RunStatus} from '../types/globalTypes';
+import {graphql} from '../graphql';
+import {RunStatus} from '../graphql/graphql';
 import {TabLink} from '../ui/TabLink';
 
 import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
@@ -73,7 +73,7 @@ export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   return 'all';
 };
 
-export const RUN_TABS_COUNT_QUERY = gql`
+export const RUN_TABS_COUNT_QUERY = graphql(`
   query RunTabsCountQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
     queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
       ... on Runs {
@@ -86,4 +86,4 @@ export const RUN_TABS_COUNT_QUERY = gql`
       }
     }
   }
-`;
+`);
