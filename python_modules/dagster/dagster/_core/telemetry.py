@@ -217,8 +217,6 @@ class TelemetryEntry(
         metadata = check.opt_mapping_param(metadata, "metadata")
         run_storage_id = check.opt_str_param(run_storage_id, "run_storage_id", default="")
 
-        print("!!!!!!!!!", get_is_known_ci_env())
-
         return super(TelemetryEntry, cls).__new__(
             cls,
             action=action,
