@@ -529,7 +529,7 @@ def log_action(
         )
 
 
-def log_step_event(event: DagsterEvent, pipeline_context: PlanOrchestrationContext):
+def log_dagster_event(event: DagsterEvent, pipeline_context: PlanOrchestrationContext):
     if not any((event.is_step_start, event.is_step_success, event.is_step_failure)):
         return
 
