@@ -323,6 +323,7 @@ def test_dagit_logs(_, caplog):
                         "dagster_version",
                         "os_desc",
                         "os_platform",
+                        "is_known_ci_env",
                     ]
                 )
 
