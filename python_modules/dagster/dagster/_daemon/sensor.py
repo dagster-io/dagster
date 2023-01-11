@@ -8,7 +8,6 @@ from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from typing import Dict, Generator, List, Mapping, NamedTuple, Optional, Sequence, Union
-from dagster._scheduler.stale import resolve_asset_selection
 
 import pendulum
 
@@ -35,6 +34,7 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, Run
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._scheduler.stale import resolve_asset_selection
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
 

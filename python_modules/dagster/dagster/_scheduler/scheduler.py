@@ -605,7 +605,7 @@ def _schedule_runs_at_time(
         return
 
     for run_request in schedule_execution_data.run_requests:
-        asset_selection = resolve_asset_selection(workspace_process_context, run_request, external_schedule.pipeline_name)  # type: ignore
+        asset_selection = resolve_asset_selection(workspace_process_context, run_request, external_schedule)  # type: ignore
         if (
             asset_selection is not None and len(asset_selection) == 0
         ):  # asset selection is empty set after filtering for stale

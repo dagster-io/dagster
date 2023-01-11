@@ -1,7 +1,6 @@
 from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
-
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.logical_version import (
     DEFAULT_LOGICAL_VERSION,
@@ -10,7 +9,11 @@ from dagster._core.definitions.logical_version import (
     extract_logical_version_from_entry,
 )
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.host_representation.external import ExternalRepository, ExternalSchedule, ExternalSensor
+from dagster._core.host_representation.external import (
+    ExternalRepository,
+    ExternalSchedule,
+    ExternalSensor,
+)
 from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
@@ -28,7 +31,9 @@ def resolve_asset_selection(
         asset_selection = (
             run_request.asset_selection
             if run_request.asset_selection is not None
-            else _get_assets_for_job(check.not_none(instigator.pipeline_name), key_to_node_map.values())
+            else _get_assets_for_job(
+                check.not_none(instigator.pipeline_name), key_to_node_map.values()
+            )
         )
         resolver = CachingProjectedLogicalVersionResolver(
             context.instance, repositories, key_to_node_map

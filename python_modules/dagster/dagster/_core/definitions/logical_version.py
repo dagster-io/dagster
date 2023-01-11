@@ -237,7 +237,6 @@ class CachingProjectedLogicalVersionResolver:
             else:
                 logical_version = extract_logical_version_from_entry(materialization)
                 provenance = extract_logical_version_provenance_from_entry(materialization)
-                print("IS PROVENANCE STALE", self._is_provenance_stale(node, provenance))
                 if (
                     logical_version is None  # old materialization event before logical versions
                     or provenance is None  # should never happen
