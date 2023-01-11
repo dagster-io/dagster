@@ -1,6 +1,6 @@
 import faker from 'faker';
 
-import {RepositoryLocationLoadStatus} from '../types/globalTypes';
+import {RepositoryLocationLoadStatus} from '../graphql/graphql';
 
 export const hyphenatedName = (wordCount = 2) =>
   faker.random.words(wordCount).replace(/ /g, '-').toLowerCase();

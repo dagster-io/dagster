@@ -28,6 +28,7 @@ import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx'
 import AmazonEcsEnvVarsConfiguration from './includes/dagster-cloud/agents/AmazonEcsEnvVarsConfiguration.mdx';
 import DockerEnvVarsConfiguration from './includes/dagster-cloud/agents/DockerEnvVarsConfiguration.mdx';
 import K8sEnvVarsConfiguration from './includes/dagster-cloud/agents/K8sEnvVarsConfiguration.mdx';
+import DagsterVersion from './includes/dagster/DagsterVersion.mdx';
 import DbtModelAssetExplanation from './includes/dagster/integrations/DbtModelAssetExplanation.mdx';
 
 export const SearchIndexContext = React.createContext(null);
@@ -756,6 +757,7 @@ export default {
   Icons,
   ReferenceTable,
   ReferenceTableItem,
+  DagsterVersion,
   AddGitubRepositorySecret,
   GenerateAgentToken,
   BDCreateConfigureAgent,

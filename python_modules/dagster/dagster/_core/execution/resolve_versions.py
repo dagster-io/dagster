@@ -79,7 +79,6 @@ def resolve_step_versions(
         Dict[str, Optional[str]]: A dictionary that maps the key of an execution step to a version.
             If a step has no computed version, then the step key maps to None.
     """
-
     resource_versions = {}
     resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs
 
@@ -131,7 +130,6 @@ def resolve_step_versions(
         resource_versions_for_solid = []
         for resource_key in solid_def.required_resource_keys:
             if resource_key not in resource_versions:
-
                 resource_config = resolved_run_config.resources[resource_key].config
                 resource_config_version = resolve_config_version(resource_config)
 
@@ -148,13 +146,11 @@ def resolve_step_versions(
                     ).get_resource_version(resource_version_context)
 
                 if resource_def_version is not None:
-
                     check_valid_version(resource_def_version)
                     resource_versions[resource_key] = join_and_hash(
                         resource_config_version, resource_def_version
                     )
                 else:
-
                     resource_versions[resource_key] = join_and_hash(resource_config)
 
             if resource_versions[resource_key] is not None:

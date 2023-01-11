@@ -2,7 +2,6 @@ from dagster import repository
 
 
 def scope_logged_job():
-
     # start_python_logger
     import logging
 
@@ -28,7 +27,6 @@ def scope_logged_job():
 
 
 def scope_logged_job2():
-
     # start_get_logger
     from dagster import get_dagster_logger, graph, op
 

@@ -4,8 +4,10 @@ import sys
 import click
 
 import dagster._check as check
-from dagster import DagsterInvariantViolationError
-from dagster import __version__ as dagster_version
+from dagster import (
+    DagsterInvariantViolationError,
+    __version__ as dagster_version,
+)
 from dagster._cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     get_external_repository_from_repo_location,
@@ -92,16 +94,14 @@ def check_repo_and_scheduler(repository: ExternalRepository, instance: DagsterIn
 
     if not os.getenv("DAGSTER_HOME"):
         raise click.UsageError(
-            (
-                "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
-                "environment variable to be set to an existing directory in your filesystem "
-                "that contains your dagster instance configuration file (dagster.yaml).\n"
-                "You can resolve this error by exporting the environment variable."
-                "For example, you can run the following command in your shell or "
-                "include it in your shell configuration file:\n"
-                '\texport DAGSTER_HOME="~/dagster_home"'
-                "\n\n"
-            )
+            "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
+            "environment variable to be set to an existing directory in your filesystem "
+            "that contains your dagster instance configuration file (dagster.yaml).\n"
+            "You can resolve this error by exporting the environment variable."
+            "For example, you can run the following command in your shell or "
+            "include it in your shell configuration file:\n"
+            '\texport DAGSTER_HOME="~/dagster_home"'
+            "\n\n"
         )
 
 
@@ -307,7 +307,8 @@ def execute_preview_command(
                 if not sensor_runtime_data.run_requests:
                     if sensor_runtime_data.skip_message:
                         print_fn(
-                            "Sensor returned false for {sensor_name}, skipping: {skip_message}".format(
+                            "Sensor returned false for {sensor_name}, skipping: {skip_message}"
+                            .format(
                                 sensor_name=external_sensor.name,
                                 skip_message=sensor_runtime_data.skip_message,
                             )

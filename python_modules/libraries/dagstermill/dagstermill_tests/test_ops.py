@@ -6,13 +6,6 @@ from contextlib import contextmanager
 
 import nbformat
 import pytest
-from dagstermill import DagstermillError
-from dagstermill.compat import ExecutionError
-from dagstermill.examples.repository import custom_io_mgr_key_job
-from dagstermill.factory import define_dagstermill_op
-from jupyter_client.kernelspec import NoSuchKernel
-from nbconvert.preprocessors import ExecutePreprocessor
-
 from dagster import job
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
@@ -20,6 +13,12 @@ from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path, safe_tempfile_path
+from dagstermill import DagstermillError
+from dagstermill.compat import ExecutionError
+from dagstermill.examples.repository import custom_io_mgr_key_job
+from dagstermill.factory import define_dagstermill_op
+from jupyter_client.kernelspec import NoSuchKernel
+from nbconvert.preprocessors import ExecutePreprocessor
 
 DAGSTER_PANDAS_PRESENT = importlib.util.find_spec("dagster_pandas") is not None
 SKLEARN_PRESENT = importlib.util.find_spec("sklearn") is not None
@@ -533,7 +532,6 @@ def test_retries(capsys):
     with exec_for_test(
         "retries_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
-
         assert result.result_for_node("yield_retry").retry_attempts == 1
 
         # the raise_retry op should trigger a warning to use yield_event
@@ -568,9 +566,8 @@ def test_failure(capsys):
 
 @pytest.mark.notebook_test
 def test_hello_world_graph():
-    from dagstermill.examples.repository import build_hello_world_job
-
     from dagster import reconstructable
+    from dagstermill.examples.repository import build_hello_world_job
 
     with instance_for_test() as instance:
         result = None

@@ -3,16 +3,15 @@ import sys
 import textwrap
 
 import pytest
-
 from dagster import DagsterEvent
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
 from dagster._core.execution.plan.objects import ErrorSource, StepFailureData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.log_manager import (
+    DagsterLoggingMetadata,
     DagsterLogHandler,
     DagsterLogManager,
-    DagsterLoggingMetadata,
     DagsterMessageProps,
     construct_log_string,
 )
@@ -42,7 +41,8 @@ def test_construct_log_string_for_event():
 
     assert (
         construct_log_string(logging_metadata=logging_metadata, message_props=dagster_message_props)
-        == 'my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded output "result" of type "Any" for step "solid2". (Type check passed).'
+        == "my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded"
+        ' output "result" of type "Any" for step "solid2". (Type check passed).'
     )
 
 
@@ -134,7 +134,10 @@ def test_construct_log_string_with_error_raise_from():
     error = None
     try:
         try:
-            raise ValueError("inner error")
+            try:
+                raise ValueError("inner error")
+            except ValueError:
+                raise ValueError("middle error")
         except ValueError as e:
             raise ValueError("outer error") from e
     except ValueError:
@@ -154,9 +157,21 @@ def test_construct_log_string_with_error_raise_from():
 
     assert log_string.startswith(expected_start)
 
-    expected_substr = textwrap.dedent(
+    expected_cause_substr = textwrap.dedent(
         """
         The above exception was caused by the following exception:
+        ValueError: middle error
+
+        Stack Trace:
+          File "
+        """
+    ).strip()
+
+    assert expected_cause_substr in log_string
+
+    expected_context_substr = textwrap.dedent(
+        """
+        The above exception occurred during handling of the following exception:
         ValueError: inner error
 
         Stack Trace:
@@ -164,7 +179,7 @@ def test_construct_log_string_with_error_raise_from():
         """
     ).strip()
 
-    assert expected_substr in log_string
+    assert expected_context_substr in log_string
 
 
 @pytest.mark.parametrize("use_handler", [True, False])

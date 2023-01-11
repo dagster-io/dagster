@@ -312,7 +312,6 @@ class OpDefinition(NodeDefinition):
         name: str,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
-        config_or_config_fn: Any,
     ) -> "OpDefinition":
         return OpDefinition(
             name=name,
@@ -390,15 +389,15 @@ class OpDefinition(NodeDefinition):
 
             if not isinstance(self.compute_fn, DecoratedOpFunction):
                 raise DagsterInvalidInvocationError(
-                    f"Attemped to invoke {node_label} that was not constructed using the `@{node_label}` "
-                    f"decorator. Only {node_label}s constructed using the `@{node_label}` decorator can be "
-                    "directly invoked."
+                    f"Attemped to invoke {node_label} that was not constructed using the"
+                    f" `@{node_label}` decorator. Only {node_label}s constructed using the"
+                    f" `@{node_label}` decorator can be directly invoked."
                 )
             if self.compute_fn.has_context_arg():
                 if len(args) + len(kwargs) == 0:
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.name}' has context argument, but no context "
-                        "was provided when invoking."
+                        f"Compute function of {node_label} '{self.name}' has context argument, but"
+                        " no context was provided when invoking."
                     )
                 if len(args) > 0:
                     if args[0] is not None and not isinstance(args[0], UnboundOpExecutionContext):
@@ -428,8 +427,8 @@ class OpDefinition(NodeDefinition):
             else:
                 if len(args) > 0 and isinstance(args[0], UnboundOpExecutionContext):
                     raise DagsterInvalidInvocationError(
-                        f"Compute function of {node_label} '{self.name}' has no context argument, but "
-                        "context was provided when invoking."
+                        f"Compute function of {node_label} '{self.name}' has no context argument,"
+                        " but context was provided when invoking."
                     )
                 return op_invocation_result(self, None, *args, **kwargs)
 

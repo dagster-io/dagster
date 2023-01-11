@@ -16,7 +16,7 @@ def check_output(cmd: List[str], dry_run: bool = True, cwd: Optional[str] = None
 
 
 def which_(exe: str) -> Optional[str]:
-    """Uses distutils to look for an executable, mimicking unix which"""
+    """Uses distutils to look for an executable, mimicking unix which."""
     # https://github.com/PyCQA/pylint/issues/73
     return spawn.find_executable(exe)
 

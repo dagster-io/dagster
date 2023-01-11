@@ -12,7 +12,8 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {WorkspaceDisplayMetadataFragment} from '../graphql/graphql';
 import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
 import {
   buildReloadFnForLocation,
@@ -66,12 +67,19 @@ export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
     <>
       {repositories.map((repository) => {
         const repoAddress = buildRepoAddress(repository.name, name);
+        const allMetadata = [...locationNode.displayMetadata, ...repository.displayMetadata];
         return (
           <tr key={repoAddressAsHumanString(repoAddress)}>
-            <td style={{maxWidth: '400px', fontWeight: 500}}>
-              <Link to={workspacePathFromAddress(repoAddress)}>
-                <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} />
-              </Link>
+            <td style={{maxWidth: '400px'}}>
+              <Box flex={{direction: 'column', gap: 4}}>
+                <div style={{fontWeight: 500}}>
+                  <Link to={workspacePathFromAddress(repoAddress)}>
+                    <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} />
+                  </Link>
+                </div>
+                <ImageName metadata={allMetadata} />
+                <ModuleOrPackageOrFile metadata={allMetadata} />
+              </Box>
             </td>
             <td>
               <LocationStatus location={repository.name} locationOrError={locationNode} />
@@ -93,6 +101,42 @@ export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
       })}
     </>
   );
+};
+
+export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({metadata}) => {
+  const imageKV = metadata.find(({key}) => key === 'image');
+  if (imageKV) {
+    return (
+      <Box
+        flex={{direction: 'row', gap: 4}}
+        style={{width: '100%', color: Colors.Gray700, fontSize: 12}}
+      >
+        <span style={{fontWeight: 500}}>image:</span>
+        <MiddleTruncate text={imageKV.value} />
+      </Box>
+    );
+  }
+  return null;
+};
+
+export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({
+  metadata,
+}) => {
+  const imageKV = metadata.find(
+    ({key}) => key === 'module_name' || key === 'package_name' || key === 'python_file',
+  );
+  if (imageKV) {
+    return (
+      <Box
+        flex={{direction: 'row', gap: 4}}
+        style={{width: '100%', color: Colors.Gray700, fontSize: 12}}
+      >
+        <span style={{fontWeight: 500}}>{imageKV.key}:</span>
+        <MiddleTruncate text={imageKV.value} />
+      </Box>
+    );
+  }
+  return null;
 };
 
 const LocationStatus: React.FC<{
@@ -158,7 +202,7 @@ const ReloadButton: React.FC<{
   location: string;
 }> = (props) => {
   const {location} = props;
-  const {canReloadRepositoryLocation} = usePermissions();
+  const {canReloadRepositoryLocation} = usePermissionsForLocation(location);
 
   if (!canReloadRepositoryLocation.enabled) {
     return (

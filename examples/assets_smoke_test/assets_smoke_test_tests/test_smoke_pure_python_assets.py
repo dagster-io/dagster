@@ -1,7 +1,6 @@
 from assets_smoke_test import pure_python_assets
-from pandas import DataFrame, Series
-
 from dagster import InMemoryIOManager, TableSchema, load_assets_from_modules, materialize
+from pandas import DataFrame, Series
 
 
 def empty_dataframe_from_column_schema(column_schema: TableSchema) -> DataFrame:

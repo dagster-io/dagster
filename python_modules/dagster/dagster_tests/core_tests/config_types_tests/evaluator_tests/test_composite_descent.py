@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -219,7 +218,8 @@ def test_mix_layer_computed_mapping():
     )
     assert (
         'Error 1: Invalid scalar at path root:layer_three_wrap:config:number. Value "a_string"'
-    ) in str(exc_info.value)
+        in str(exc_info.value)
+    )
 
     result = execute_pipeline(
         layered_config,
@@ -479,7 +479,6 @@ def test_new_nested_solids_no_mapping():
 
 
 def test_new_multiple_overrides_pipeline():
-
     result = execute_pipeline(
         wrap_pipeline,
         {
@@ -848,7 +847,9 @@ def test_configuring_graph_with_no_config_mapping():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Only graphs utilizing config mapping can be pre-configured. The graph "
-        '"graph_without_config_fn"',
+        match=(
+            "Only graphs utilizing config mapping can be pre-configured. The graph "
+            '"graph_without_config_fn"'
+        ),
     ):
         configured(graph_without_config_fn, name="configured_graph")({})

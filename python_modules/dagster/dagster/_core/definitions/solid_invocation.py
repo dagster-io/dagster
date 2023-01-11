@@ -54,10 +54,15 @@ def op_invocation_result(
         check.failed("solid invocation only works with decorated solid fns")
 
     compute_fn = cast(DecoratedOpFunction, compute_fn)
-    result = (
-        compute_fn.decorated_fn(bound_context, **input_dict)
-        if compute_fn.has_context_arg()
-        else compute_fn.decorated_fn(**input_dict)
+
+    from ..execution.plan.compute_generator import invoke_compute_fn
+
+    result = invoke_compute_fn(
+        compute_fn.decorated_fn,
+        bound_context,
+        input_dict,
+        compute_fn.has_context_arg(),
+        compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None,
     )
 
     return _type_check_output_wrapper(op_def, result, bound_context)
@@ -70,7 +75,6 @@ def _check_invocation_requirements(
 
     If no context was provided, then construct an enpty UnboundSolidExecutionContext
     """
-
     # Check resource requirements
     if (
         solid_def.required_resource_keys
@@ -79,17 +83,18 @@ def _check_invocation_requirements(
     ):
         node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
         raise DagsterInvalidInvocationError(
-            f'{node_label} "{solid_def.name}" has required resources, but no context was provided. '
-            f"Use the `build_{node_label}_context` function to construct a context with the required "
-            "resources."
+            f'{node_label} "{solid_def.name}" has required resources, but no context was provided.'
+            f" Use the `build_{node_label}_context` function to construct a context with the"
+            " required resources."
         )
 
     # Check config requirements
     if not context and solid_def.config_schema.as_field().is_required:
         node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
         raise DagsterInvalidInvocationError(
-            f'{node_label} "{solid_def.name}" has required config schema, but no context was provided. '
-            f"Use the `build_{node_label}_context` function to create a context with config."
+            f'{node_label} "{solid_def.name}" has required config schema, but no context was'
+            f" provided. Use the `build_{node_label}_context` function to create a context with"
+            " config."
         )
 
 
@@ -132,14 +137,16 @@ def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundOpEx
 
         node_label = solid_def.node_type_str
         raise DagsterInvalidInvocationError(
-            f"Too many input arguments were provided for {node_label} '{context.alias}'. {suggestion}"
+            f"Too many input arguments were provided for {node_label} '{context.alias}'."
+            f" {suggestion}"
         )
 
     # If more args were provided than the function has positional args, then fail early.
     positional_inputs = cast("DecoratedOpFunction", solid_def.compute_fn).positional_inputs()
     if len(args) > len(positional_inputs):
         raise DagsterInvalidInvocationError(
-            f"{solid_def.node_type_str} '{solid_def.name}' has {len(positional_inputs)} positional inputs, but {len(args)} positional inputs were provided."
+            f"{solid_def.node_type_str} '{solid_def.name}' has {len(positional_inputs)} positional"
+            f" inputs, but {len(args)} positional inputs were provided."
         )
 
     input_dict = {}
@@ -169,7 +176,6 @@ def _resolve_inputs(solid_def: "OpDefinition", args, kwargs, context: "BoundOpEx
     op_label = context.describe_op()
 
     for input_name, val in input_dict.items():
-
         input_def = input_defs_by_name[input_name]
         dagster_type = input_def.dagster_type
         type_check = do_type_check(context.for_type(dagster_type), dagster_type, val)
@@ -195,7 +201,6 @@ def _type_check_output_wrapper(
     If the solid result is itself a generator, then wrap in a fxn that will type check and yield
     outputs.
     """
-
     output_defs = {output_def.name: output_def for output_def in solid_def.output_defs}
 
     # Async generator case
@@ -213,7 +218,8 @@ def _type_check_output_wrapper(
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
                         raise DagsterInvariantViolationError(
-                            f"When yielding outputs from a {solid_def.node_type_str} generator, they should be wrapped in an `Output` object."
+                            f"When yielding outputs from a {solid_def.node_type_str} generator,"
+                            " they should be wrapped in an `Output` object."
                         )
                     else:
                         output_def = output_defs[event.output_name]
@@ -222,14 +228,16 @@ def _type_check_output_wrapper(
                             output_def, DynamicOutputDefinition
                         ):
                             raise DagsterInvariantViolationError(
-                                f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded an output '{output_def.name}' multiple times."
+                                f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded"
+                                f" an output '{output_def.name}' multiple times."
                             )
                         outputs_seen.add(output_def.name)
                     yield event
             for output_def in solid_def.output_defs:
                 if output_def.name not in outputs_seen and output_def.is_required:
                     raise DagsterInvariantViolationError(
-                        f"Invocation of {solid_def.node_type_str} '{context.alias}' did not return an output for non-optional output '{output_def.name}'"
+                        f"Invocation of {solid_def.node_type_str} '{context.alias}' did not return"
+                        f" an output for non-optional output '{output_def.name}'"
                     )
 
         return to_gen(result)
@@ -257,7 +265,8 @@ def _type_check_output_wrapper(
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
                         raise DagsterInvariantViolationError(
-                            f"When yielding outputs from a {solid_def.node_type_str} generator, they should be wrapped in an `Output` object."
+                            f"When yielding outputs from a {solid_def.node_type_str} generator,"
+                            " they should be wrapped in an `Output` object."
                         )
                     else:
                         output_def = output_defs[event.output_name]
@@ -266,7 +275,8 @@ def _type_check_output_wrapper(
                             output_def, DynamicOutputDefinition
                         ):
                             raise DagsterInvariantViolationError(
-                                f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded an output '{output_def.name}' multiple times."
+                                f"Invocation of {solid_def.node_type_str} '{context.alias}' yielded"
+                                f" an output '{output_def.name}' multiple times."
                             )
                         outputs_seen.add(output_def.name)
                     yield output
@@ -277,7 +287,8 @@ def _type_check_output_wrapper(
                     and not output_def.is_dynamic
                 ):
                     raise DagsterInvariantViolationError(
-                        f"Invocation of {solid_def.node_type_str} '{context.alias}' did not return an output for non-optional output '{output_def.name}'"
+                        f"Invocation of {solid_def.node_type_str} '{context.alias}' did not return"
+                        f" an output for non-optional output '{output_def.name}'"
                     )
 
         return type_check_gen(result)

@@ -13,7 +13,6 @@ class TempfileManager:
         self.dirs = []
 
     def tempfile(self):
-
         temporary_file = tempfile.NamedTemporaryFile("w+b", delete=False)
         self.files.append(temporary_file)
         self.paths.append(temporary_file.name)

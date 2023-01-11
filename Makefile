@@ -25,35 +25,11 @@ check_black:
 	black --check --fast \
     examples/docs_snippets
 
+ruff:
+	ruff --fix .
 
-# NOTE: We use `git ls-files` instead of isort's built-in recursive discovery
-# because it is much faster. Note that we also need to skip files with `git
-# ls-files` (the `:!:` directives are exclued patterns). Even isort
-# `--skip`/`--filter-files` is very slow.
-isort:
-	isort \
-    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
-      ':!:examples/docs_snippets' \
-      ':!:*/snapshots/*.py'`
-	isort \
-   `git ls-files 'examples/docs_snippets/*.py'`
-
-check_isort:
-	isort --check \
-    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
-      ':!:examples/docs_snippets' \
-      ':!:*/snapshots/*.py'`
-	isort --check \
-    `git ls-files 'examples/docs_snippets/*.py'`
-
-pylint:
-	pylint \
-    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' \
-      'helm/*.py' 'python_modules/*.py' 'scripts/*.py' \
-      ':!:examples/with_airflow' \
-      ':!:python_modules/libraries/dagster-airflow' \
-      ':!:vendor' \
-      ':!:*/snapshots/*.py'`
+check_ruff:
+	ruff .
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict \

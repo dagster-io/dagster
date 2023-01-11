@@ -1,9 +1,10 @@
-import {gql} from '@apollo/client';
 import {ConfigSchema} from '@dagster-io/ui';
+
+import {graphql} from '../graphql';
 
 export type {ConfigSchema as ConfigTypeSchema};
 
-export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
+export const CONFIG_TYPE_SCHEMA_FRAGMENT = graphql(`
   fragment ConfigTypeSchemaFragment on ConfigType {
     __typename
     ... on EnumConfigType {
@@ -37,4 +38,4 @@ export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
       keyLabelName
     }
   }
-`;
+`);

@@ -15,10 +15,10 @@ import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
+import {ScheduleFragmentFragment, InstigationStatus, InstigationType} from '../graphql/graphql';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -26,12 +26,11 @@ import {SchedulePartitionStatus} from './SchedulePartitionStatus';
 import {ScheduleSwitch} from './ScheduleSwitch';
 import {TimestampDisplay} from './TimestampDisplay';
 import {humanCronString} from './humanCronString';
-import {ScheduleFragment} from './types/ScheduleFragment';
 
 const TIME_FORMAT = {showSeconds: false, showTimezone: true};
 
 export const ScheduleDetails: React.FC<{
-  schedule: ScheduleFragment;
+  schedule: ScheduleFragmentFragment;
   repoAddress: RepoAddress;
   refreshState: QueryRefreshState;
 }> = (props) => {

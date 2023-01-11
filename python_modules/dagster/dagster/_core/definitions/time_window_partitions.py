@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 from datetime import datetime
@@ -58,7 +59,7 @@ class TimeWindowPartitionsDefinition(
         ],
     ),
 ):
-    """
+    r"""
     A set of partitions where each partitions corresponds to a time window.
 
     The provided cron_schedule determines the bounds of the time windows. E.g. a cron_schedule of
@@ -106,8 +107,10 @@ class TimeWindowPartitionsDefinition(
         if cron_schedule is not None:
             check.invariant(
                 schedule_type is None and not minute_offset and not hour_offset and not day_offset,
-                "If cron_schedule argument is provided, then schedule_type, minute_offset, "
-                "hour_offset, and day_offset can't also be provided",
+                (
+                    "If cron_schedule argument is provided, then schedule_type, minute_offset, "
+                    "hour_offset, and day_offset can't also be provided"
+                ),
             )
         else:
             if schedule_type is None:
@@ -162,7 +165,10 @@ class TimeWindowPartitionsDefinition(
             f"{schedule_str}, starting {self.start.strftime(self.fmt)} {self.timezone}."
         )
         if self.end_offset != 0:
-            partition_def_str += f" End offsetted by {self.end_offset} partition{'' if self.end_offset == 1 else 's'}."
+            partition_def_str += (
+                " End offsetted by"
+                f" {self.end_offset} partition{'' if self.end_offset == 1 else 's'}."
+            )
         return partition_def_str
 
     def __eq__(self, other):
@@ -371,7 +377,8 @@ class TimeWindowPartitionsDefinition(
         the minute/hour/day offset of the partitioning.
 
         This is useful e.g. if you have partitions that span midnight to midnight but you want to
-        schedule a job that runs at 2 am."""
+        schedule a job that runs at 2 am.
+        """
         if (
             minute_of_hour is None
             and hour_of_day is None
@@ -383,7 +390,8 @@ class TimeWindowPartitionsDefinition(
         schedule_type = self.schedule_type
         if schedule_type is None:
             check.failed(
-                f"{self.cron_schedule} does not support minute_of_hour/hour_of_day/day_of_week/day_of_month arguments"
+                f"{self.cron_schedule} does not support"
+                " minute_of_hour/hour_of_day/day_of_week/day_of_month arguments"
             )
 
         minute_of_hour = cast(
@@ -484,7 +492,7 @@ class TimeWindowPartitionsDefinition(
             return prev_next.strftime(self.fmt)
 
     def less_than(self, partition_key1: str, partition_key2: str) -> bool:
-        """Returns true if the partition_key1 is earlier than partition_key2"""
+        """Returns true if the partition_key1 is earlier than partition_key2."""
         return self.start_time_for_partition_key(
             partition_key1
         ) < self.start_time_for_partition_key(partition_key2)
@@ -494,6 +502,10 @@ class TimeWindowPartitionsDefinition(
 
     def deserialize_subset(self, serialized: str) -> "TimeWindowPartitionsSubset":
         return TimeWindowPartitionsSubset.from_serialized(self, serialized)
+
+    @property
+    def serializable_unique_identifier(self) -> str:
+        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
@@ -1180,6 +1192,6 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
         return any(
             time_window.start >= included_time_window.start
-            and time_window.start <= included_time_window.end
+            and time_window.start < included_time_window.end
             for included_time_window in self._included_time_windows
         )

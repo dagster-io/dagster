@@ -253,7 +253,6 @@ def test_deep_scalar():
 
 
 def test_deep_mixed_level_errors():
-
     value = {
         "level_one_string_field": "foo",
         "level_one_not_defined": "kjsdkfjd",
@@ -332,8 +331,9 @@ def test_selector_within_dict_no_subfields():
     result = validate_config(Shape({"selector": Field(ExampleSelector)}), {"selector": {}})
     assert not result.success
     assert len(result.errors) == 1
-    assert result.errors[0].message == (
-        "Must specify a field at path root:selector if more than one field "
+    assert (
+        result.errors[0].message
+        == "Must specify a field at path root:selector if more than one field "
         "is defined. Defined fields: ['option_one', 'option_two']"
     )
 
@@ -603,7 +603,6 @@ def test_permissive_dict_with_fields():
 
 
 def test_scalar_or_dict():
-
     int_or_dict = ScalarUnion(scalar_type=int, non_scalar_schema=Shape({"a_string": str}))
 
     assert validate_config(int_or_dict, 2).success

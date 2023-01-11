@@ -94,7 +94,6 @@ class AirbyteSyncMode(ABC):
 
         https://docs.airbyte.com/understanding-airbyte/connections/incremental-append-dedup/
         """
-
         cursor_field = check.opt_str_param(cursor_field, "cursor_field")
         if isinstance(primary_key, str):
             primary_key = [primary_key]
@@ -259,23 +258,21 @@ class AirbyteConnection:
                 namespace will be that string.
 
         Example:
+            .. code-block:: python
 
-        .. code-block:: python
+                from dagster_airbyte.managed.generated.sources import FileSource
+                from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
+                from dagster_airbyte import AirbyteConnection, AirbyteSyncMode
 
-            from dagster_airbyte.managed.generated.sources import FileSource
-            from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
-            from dagster_airbyte import AirbyteConnection, AirbyteSyncMode
+                cereals_csv_source = FileSource(...)
+                local_json_destination = LocalJsonDestination(...)
 
-            cereals_csv_source = FileSource(...)
-            local_json_destination = LocalJsonDestination(...)
-
-            cereals_connection = AirbyteConnection(
-                name="download-cereals",
-                source=cereals_csv_source,
-                destination=local_json_destination,
-                stream_config={"cereals": AirbyteSyncMode.full_refresh_overwrite()},
-            )
-
+                cereals_connection = AirbyteConnection(
+                    name="download-cereals",
+                    source=cereals_csv_source,
+                    destination=local_json_destination,
+                    stream_config={"cereals": AirbyteSyncMode.full_refresh_overwrite()},
+                )
         """
         self.name = check.str_param(name, "name")
         self.source = check.inst_param(source, "source", AirbyteSource)
@@ -316,7 +313,6 @@ class InitializedAirbyteConnection:
         init_sources: Mapping[str, InitializedAirbyteSource],
         init_dests: Mapping[str, InitializedAirbyteDestination],
     ):
-
         source = next(
             (
                 source.source

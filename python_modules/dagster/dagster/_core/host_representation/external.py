@@ -88,7 +88,8 @@ class ExternalRepository:
             self._deferred_snapshots = True
             if ref_to_data_fn is None:
                 check.failed(
-                    "ref_to_data_fn is required when ExternalRepositoryData is loaded with deferred snapshots"
+                    "ref_to_data_fn is required when ExternalRepositoryData is loaded with deferred"
+                    " snapshots"
                 )
 
             self._ref_to_data_fn = ref_to_data_fn
@@ -562,14 +563,16 @@ class ExternalSchedule:
         return self.get_external_origin().get_id()
 
     @property
-    def selector_id(self) -> str:
-        return create_snapshot_id(
-            InstigatorSelector(
-                self.handle.location_name,
-                self.handle.repository_name,
-                self._external_schedule_data.name,
-            )
+    def selector(self) -> InstigatorSelector:
+        return InstigatorSelector(
+            self.handle.location_name,
+            self.handle.repository_name,
+            self._external_schedule_data.name,
         )
+
+    @property
+    def selector_id(self) -> str:
+        return create_snapshot_id(self.selector)
 
     @property
     def default_status(self) -> DefaultScheduleStatus:
@@ -686,14 +689,16 @@ class ExternalSensor:
         return self.get_external_origin().get_id()
 
     @property
-    def selector_id(self) -> str:
-        return create_snapshot_id(
-            InstigatorSelector(
-                self.handle.location_name,
-                self.handle.repository_name,
-                self._external_sensor_data.name,
-            )
+    def selector(self) -> InstigatorSelector:
+        return InstigatorSelector(
+            self.handle.location_name,
+            self.handle.repository_name,
+            self._external_sensor_data.name,
         )
+
+    @property
+    def selector_id(self) -> str:
+        return create_snapshot_id(self.selector)
 
     def get_current_instigator_state(
         self, stored_state: Optional["InstigatorState"]
@@ -783,7 +788,7 @@ class ExternalPartitionSet:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to compute the partition
         # names
-        return self._external_partition_set_data.external_partitions_data != None
+        return self._external_partition_set_data.external_partitions_data is not None
 
     def get_partition_names(self) -> Sequence[str]:
         check.invariant(self.has_partition_name_data())

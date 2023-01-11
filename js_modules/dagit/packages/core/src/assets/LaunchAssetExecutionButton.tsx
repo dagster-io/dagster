@@ -1,4 +1,4 @@
-import {ApolloClient, gql, useApolloClient} from '@apollo/client';
+import {ApolloClient, useApolloClient} from '@apollo/client';
 import {Box, Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
@@ -7,40 +7,35 @@ import React from 'react';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
   LiveData,
   toGraphId,
 } from '../asset-graph/Utils';
+import {graphql} from '../graphql';
+import {
+  LaunchAssetCheckUpstreamQueryQuery,
+  LaunchAssetCheckUpstreamQueryQueryVariables,
+  LaunchAssetExecutionAssetNodeFragmentFragment,
+  LaunchAssetLoaderQueryQuery,
+  LaunchAssetLoaderQueryQueryVariables,
+  LaunchAssetLoaderResourceQueryQuery,
+  LaunchAssetLoaderResourceQueryQueryVariables,
+  LaunchPipelineExecutionMutationVariables,
+} from '../graphql/graphql';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
-import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
-import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
-import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {isAssetMissing, isAssetStale} from './StaleTag';
 import {AssetKey} from './types';
-import {
-  LaunchAssetCheckUpstreamQuery,
-  LaunchAssetCheckUpstreamQueryVariables,
-} from './types/LaunchAssetCheckUpstreamQuery';
-import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionAssetNodeFragment';
-import {
-  LaunchAssetLoaderQuery,
-  LaunchAssetLoaderQueryVariables,
-} from './types/LaunchAssetLoaderQuery';
-import {
-  LaunchAssetLoaderResourceQuery,
-  LaunchAssetLoaderResourceQueryVariables,
-} from './types/LaunchAssetLoaderResourceQuery';
 
 type LaunchAssetsState =
   | {type: 'none'}
@@ -55,13 +50,13 @@ type LaunchAssetsState =
   | {
       type: 'partitions';
       jobName: string;
-      assets: LaunchAssetExecutionAssetNodeFragment[];
+      assets: LaunchAssetExecutionAssetNodeFragmentFragment[];
       upstreamAssetKeys: AssetKey[];
       repoAddress: RepoAddress;
     }
   | {
       type: 'single-run';
-      executionParams: LaunchPipelineExecutionVariables['executionParams'];
+      executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
 const countOrBlank = (k: unknown[]) => (k.length > 1 ? ` (${k.length})` : '');
@@ -127,12 +122,15 @@ export const LaunchAssetExecutionButton: React.FC<{
   intent?: 'primary' | 'none';
   preferredJobName?: string;
 }> = ({scope, liveDataForStale, preferredJobName, intent = 'primary'}) => {
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
   const options = optionsForButton(scope, liveDataForStale);
   const firstOption = options[0];
+
+  const {MaterializeButton} = useLaunchPadHooks();
+
   if (!firstOption) {
     return <span />;
   }
@@ -150,8 +148,12 @@ export const LaunchAssetExecutionButton: React.FC<{
   return (
     <>
       <Box flex={{alignItems: 'center'}}>
-        <Tooltip content="Shift+click to add configuration" position="bottom-right">
-          <Button
+        <Tooltip
+          content="Shift+click to add configuration"
+          position="bottom-right"
+          useDisabledButtonTooltipFix
+        >
+          <MaterializeButton
             intent={intent}
             onClick={(e) => onClick(firstOption.assetKeys, e)}
             style={
@@ -167,7 +169,7 @@ export const LaunchAssetExecutionButton: React.FC<{
             icon={loading ? <Spinner purpose="body-text" /> : <Icon name="materialization" />}
           >
             {firstOption.label}
-          </Button>
+          </MaterializeButton>
         </Tooltip>
         {options.length > 1 && (
           <Popover
@@ -217,7 +219,10 @@ export const useMaterializationAction = (preferredJobName?: string) => {
     }
     setState({type: 'loading'});
 
-    const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
+    const result = await client.query<
+      LaunchAssetLoaderQueryQuery,
+      LaunchAssetLoaderQueryQueryVariables
+    >({
       query: LAUNCH_ASSET_LOADER_QUERY,
       variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
     });
@@ -310,7 +315,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
 
 async function stateForLaunchingAssets(
   client: ApolloClient<any>,
-  assets: LaunchAssetExecutionAssetNodeFragment[],
+  assets: LaunchAssetExecutionAssetNodeFragmentFragment[],
   forceLaunchpad: boolean,
   preferredJobName?: string,
 ): Promise<LaunchAssetsState> {
@@ -364,8 +369,8 @@ async function stateForLaunchingAssets(
   }
 
   const resourceResult = await client.query<
-    LaunchAssetLoaderResourceQuery,
-    LaunchAssetLoaderResourceQueryVariables
+    LaunchAssetLoaderResourceQueryQuery,
+    LaunchAssetLoaderResourceQueryQueryVariables
   >({
     query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
     variables: {
@@ -435,7 +440,7 @@ async function stateForLaunchingAssets(
 }
 
 export function getCommonJob(
-  assets: LaunchAssetExecutionAssetNodeFragment[],
+  assets: LaunchAssetExecutionAssetNodeFragmentFragment[],
   preferredJobName?: string,
 ) {
   const everyAssetHasJob = (jobName: string) => assets.every((a) => a.jobNames.includes(jobName));
@@ -443,7 +448,7 @@ export function getCommonJob(
   return jobsInCommon.find((name) => name === preferredJobName) || jobsInCommon[0] || null;
 }
 
-function getUpstreamAssetKeys(assets: LaunchAssetExecutionAssetNodeFragment[]) {
+function getUpstreamAssetKeys(assets: LaunchAssetExecutionAssetNodeFragmentFragment[]) {
   const assetKeys = new Set(assets.map((a) => JSON.stringify({path: a.assetKey.path})));
   return uniq(assets.flatMap((a) => a.dependencyKeys.map(({path}) => JSON.stringify({path}))))
     .filter((key) => !assetKeys.has(key))
@@ -452,7 +457,7 @@ function getUpstreamAssetKeys(assets: LaunchAssetExecutionAssetNodeFragment[]) {
 
 async function upstreamAssetsWithNoMaterializations(
   client: ApolloClient<any>,
-  assets: LaunchAssetExecutionAssetNodeFragment[],
+  assets: LaunchAssetExecutionAssetNodeFragmentFragment[],
 ) {
   const upstreamAssetKeys = getUpstreamAssetKeys(assets);
   if (upstreamAssetKeys.length === 0) {
@@ -460,8 +465,8 @@ async function upstreamAssetsWithNoMaterializations(
   }
 
   const result = await client.query<
-    LaunchAssetCheckUpstreamQuery,
-    LaunchAssetCheckUpstreamQueryVariables
+    LaunchAssetCheckUpstreamQueryQuery,
+    LaunchAssetCheckUpstreamQueryQueryVariables
   >({
     query: LAUNCH_ASSET_CHECK_UPSTREAM_QUERY,
     variables: {assetKeys: upstreamAssetKeys},
@@ -477,7 +482,7 @@ export function executionParamsForAssetJob(
   jobName: string,
   assets: {assetKey: AssetKey; opNames: string[]}[],
   tags: {key: string; value: string}[],
-): LaunchPipelineExecutionVariables['executionParams'] {
+): LaunchPipelineExecutionMutationVariables['executionParams'] {
   return {
     mode: 'default',
     executionMetadata: {
@@ -501,7 +506,7 @@ export function executionParamsForAssetJob(
   };
 }
 
-export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
+export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQueryQuery) {
   return {
     title: MULTIPLE_DEFINITIONS_WARNING,
     body: (
@@ -527,17 +532,14 @@ export function buildAssetCollisionsAlert(data: LaunchAssetLoaderQuery) {
   };
 }
 
-export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
+export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = graphql(`
   fragment LaunchAssetExecutionAssetNodeFragment on AssetNode {
     id
     opNames
     jobNames
     graphName
     partitionDefinition {
-      description
-      dimensionTypes {
-        name
-      }
+      ...PartitionDefinitionForLaunchAsset
     }
     isObservable
     isSource
@@ -560,10 +562,16 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
     }
     ...AssetNodeConfigFragment
   }
-  ${ASSET_NODE_CONFIG_FRAGMENT}
-`;
 
-export const LAUNCH_ASSET_LOADER_QUERY = gql`
+  fragment PartitionDefinitionForLaunchAsset on PartitionDefinition {
+    description
+    dimensionTypes {
+      name
+    }
+  }
+`);
+
+export const LAUNCH_ASSET_LOADER_QUERY = graphql(`
   query LaunchAssetLoaderQuery($assetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $assetKeys) {
       id
@@ -583,10 +591,9 @@ export const LAUNCH_ASSET_LOADER_QUERY = gql`
       }
     }
   }
-  ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
-`;
+`);
 
-const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
+const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = graphql(`
   query LaunchAssetLoaderResourceQuery(
     $pipelineName: String!
     $repositoryLocationName: String!
@@ -651,10 +658,9 @@ const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
       }
     }
   }
-  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
-`;
+`);
 
-const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
+const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = graphql(`
   query LaunchAssetCheckUpstreamQuery($assetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
       id
@@ -669,4 +675,4 @@ const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
       }
     }
   }
-`;
+`);

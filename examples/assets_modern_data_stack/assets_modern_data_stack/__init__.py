@@ -1,12 +1,11 @@
-from dagster_airbyte import airbyte_resource
-from dagster_dbt import dbt_cli_resource
-
 from dagster import (
     Definitions,
     ScheduleDefinition,
     define_asset_job,
     load_assets_from_package_module,
 )
+from dagster_airbyte import airbyte_resource
+from dagster_dbt import dbt_cli_resource
 
 from . import assets
 from .db_io_manager import db_io_manager

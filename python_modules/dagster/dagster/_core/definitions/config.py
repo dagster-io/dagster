@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Callable, Mapping, NamedTuple, Optional, Union, cast
+from typing import Any, Callable, Mapping, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._builtins import BuiltinEnum
@@ -13,9 +13,6 @@ from dagster._core.definitions.definition_config_schema import IDefinitionConfig
 from dagster._core.errors import DagsterInvalidConfigError
 
 from .definition_config_schema import convert_user_facing_definition_config_schema
-
-if TYPE_CHECKING:
-    from .pipeline_definition import PipelineDefinition
 
 
 def is_callable_valid_config_arg(config: Union[Callable[..., Any], Mapping[str, object]]) -> bool:
@@ -68,8 +65,8 @@ class ConfigMapping(
         )
 
     def resolve_from_unvalidated_config(self, config: Any) -> Any:
-        """Validates config against outer config schema, and calls mapping against validated config."""
-
+        """Validates config against outer config schema, and calls mapping against validated config.
+        """
         receive_processed_config_values = check.opt_bool_param(
             self.receive_processed_config_values, "receive_processed_config_values", default=True
         )

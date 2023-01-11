@@ -2,7 +2,6 @@ import re
 import warnings
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,
@@ -43,6 +42,9 @@ def _all_asset_keys(result):
 @pytest.fixture(autouse=True)
 def check_experimental_warnings():
     with warnings.catch_warnings(record=True) as record:
+        # turn off any outer warnings filters
+        warnings.resetwarnings()
+
         yield
 
         raises_warning = False
@@ -154,7 +156,10 @@ def test_asset_group_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"io manager with key 'foo' required by SourceAsset with key \[\"foo\"\] was not provided.",
+        match=(
+            r"io manager with key 'foo' required by SourceAsset with key \[\"foo\"\] was not"
+            r" provided."
+        ),
     ):
         AssetGroup([], source_assets=[source_asset_io_req])
 
@@ -182,7 +187,10 @@ def test_asset_group_requires_root_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="io manager with key 'blah' required by output 'result' of op 'asset_foo'' was not provided.",
+        match=(
+            "io manager with key 'blah' required by output 'result' of op 'asset_foo'' was not"
+            " provided."
+        ),
     ):
         AssetGroup([asset_foo])
 
@@ -378,7 +386,8 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
             (
                 DagsterInvalidSubsetError,
                 r"When building job, the AssetsDefinition 'abc_' contains asset keys "
-                r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\], but attempted to "
+                r"\[AssetKey\(\['a'\]\), AssetKey\(\['b'\]\), AssetKey\(\['c'\]\)\], but"
+                r" attempted to "
                 r"select only \[AssetKey\(\['a'\]\)\]",
             ),
         ),
@@ -486,7 +495,6 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
     ],
 )
 def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi, prefixes):
-
     _, io_manager_def = asset_aware_io_manager()
     group = AssetGroup(
         # for these, if we have multi assets, we'll always allow them to be subset
@@ -843,7 +851,6 @@ def test_asset_group_build_job_selection_multi_component():
     "job_selection,expected_nodes", [("*", "n1,n2,n3"), ("n2+", "n2,n3"), ("n1", "n1")]
 )
 def test_asset_group_io_managers(job_selection, expected_nodes):
-
     # we're testing that when this job is subset, the correct io managers are used to load each
     # source asset
     @io_manager(config_schema={"n": int})
@@ -989,7 +996,9 @@ def test_job_with_reserved_name():
     the_job = the_graph.to_job(name="__ASSET_JOB")
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Attempted to provide job called __ASSET_JOB to repository, which is a reserved name.",
+        match=(
+            "Attempted to provide job called __ASSET_JOB to repository, which is a reserved name."
+        ),
     ):
 
         @repository
@@ -1028,8 +1037,10 @@ def test_materialize_with_out_of_process_executor():
 
     with pytest.raises(
         DagsterUnmetExecutorRequirementsError,
-        match="'materialize' can only be invoked on AssetGroups which have no executor or have "
-        "the in_process_executor, but the AssetGroup had executor 'multiprocess'",
+        match=(
+            "'materialize' can only be invoked on AssetGroups which have no executor or have "
+            "the in_process_executor, but the AssetGroup had executor 'multiprocess'"
+        ),
     ):
         group.materialize()
 
@@ -1276,11 +1287,12 @@ def test_build_job_diff_resource_defs():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to "
-        "different assets. When constructing a job, all resource definitions "
-        "provided to assets must match by reference equality for a given key.",
+        match=(
+            "Conflicting versions of resource with key 'foo' were provided to "
+            "different assets. When constructing a job, all resource definitions "
+            "provided to assets must match by reference equality for a given key."
+        ),
     ):
-
         AssetGroup([the_asset, other_asset])
 
 
@@ -1314,6 +1326,10 @@ def test_graph_backed_asset_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to different assets. When constructing a job, all resource definitions provided to assets must match by reference equality for a given key.",
+        match=(
+            "Conflicting versions of resource with key 'foo' were provided to different assets."
+            " When constructing a job, all resource definitions provided to assets must match by"
+            " reference equality for a given key."
+        ),
     ):
         AssetGroup([the_asset, other_asset])

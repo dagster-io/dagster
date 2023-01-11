@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Any, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
 
 import click
-
 import dagster._check as check
 
 
@@ -52,7 +51,6 @@ class ModifiedDiffData(
     NamedTuple("_ModifiedDiffData", [("key", str), ("old_value", Any), ("new_value", Any)])
 ):
     def __new__(cls, key: str, old_value: Any, new_value: Any):
-
         return super(ModifiedDiffData, cls).__new__(
             cls, key=check.str_param(key, "key"), old_value=old_value, new_value=new_value
         )
@@ -184,7 +182,6 @@ class ManagedElementDiff(
         """
         Returns a tuple of additions, deletions, and modification entries associated with this diff object.
         """
-
         # Get top-level additions/deletions/modifications
         my_additions = [
             click.style(f"{' ' * indent}+ {k}: {_sanitize(k, v)}", fg="green")

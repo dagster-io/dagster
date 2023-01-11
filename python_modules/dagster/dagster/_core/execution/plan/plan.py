@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     FrozenSet,
@@ -18,8 +19,8 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions import (
     GraphDefinition,
-    IPipeline,
     InputDefinition,
+    IPipeline,
     JobDefinition,
     Node,
     NodeHandle,
@@ -118,9 +119,11 @@ class _PlanBuilder:
         if isinstance(pipeline, ReconstructablePipeline) and repository_load_data is not None:
             check.invariant(
                 pipeline.repository.repository_load_data == repository_load_data,
-                "When building an ExecutionPlan with explicit repository_load_data and a "
-                "ReconstructablePipeline, the repository_load_data on the pipeline must be identical "
-                "to passed-in repository_load_data.",
+                (
+                    "When building an ExecutionPlan with explicit repository_load_data and a"
+                    " ReconstructablePipeline, the repository_load_data on the pipeline must be"
+                    " identical to passed-in repository_load_data."
+                ),
             )
         self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
         self.resolved_run_config = check.inst_param(
@@ -179,8 +182,7 @@ class _PlanBuilder:
         self.step_output_map[key] = val
 
     def build(self) -> "ExecutionPlan":
-        """Builds the execution plan"""
-
+        """Builds the execution plan."""
         _check_persistent_storage_requirement(
             self.pipeline,
             self.mode_definition,
@@ -723,7 +725,7 @@ class ExecutionPlan(
 
     def get_step_by_key(self, key: str) -> IExecutionStep:
         check.str_param(key, "key")
-        if not key in self.step_dict_by_key:
+        if key not in self.step_dict_by_key:
             check.failed(f"plan has no step with key {key}")
         return self.step_dict_by_key[key]
 
@@ -767,10 +769,9 @@ class ExecutionPlan(
 
     def resolve(
         self,
-        mappings: Mapping[str, Mapping[str, Sequence[str]]],
+        mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]],
     ) -> Mapping[str, Set[str]]:
-        """Resolve any dynamic map or collect steps with the resolved dynamic mappings"""
-
+        """Resolve any dynamic map or collect steps with the resolved dynamic mappings."""
         previous = self.get_executable_step_deps()
 
         _update_from_resolved_dynamic_outputs(
@@ -805,7 +806,6 @@ class ExecutionPlan(
         bad_keys = []
 
         for handle in step_handles_to_validate_set:
-
             if handle not in self.step_dict:
                 # Ok if the entire dynamic step is selected to execute.
                 # https://github.com/dagster-io/dagster/issues/8000
@@ -834,7 +834,10 @@ class ExecutionPlan(
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(
-                f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}: {', '.join(bad_keys)}",
+                (
+                    f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}:"
+                    f" {', '.join(bad_keys)}"
+                ),
                 step_keys=bad_keys,
             )
 
@@ -946,7 +949,8 @@ class ExecutionPlan(
                 io_manager = getattr(resources, io_manager_key)
                 if not isinstance(io_manager, MemoizableIOManager):
                     raise DagsterInvariantViolationError(
-                        f"{pipeline_def.describe_target().capitalize()} uses memoization, but IO manager "
+                        f"{pipeline_def.describe_target().capitalize()} uses memoization, but IO"
+                        " manager "
                         f"'{io_manager_key}' is not a MemoizableIOManager. In order to use "
                         "memoization, all io managers need to subclass MemoizableIOManager. "
                         "Learn more about MemoizableIOManagers here: "
@@ -982,6 +986,8 @@ class ExecutionPlan(
         self,
         retry_mode: RetryMode,
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
+        max_concurrent: Optional[int] = None,
+        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
     ) -> "ActiveExecution":
         from .active import ActiveExecution
 
@@ -989,6 +995,8 @@ class ExecutionPlan(
             self,
             retry_mode,
             sort_key_fn,
+            max_concurrent,
+            tag_concurrency_limits,
         )
 
     def step_handle_for_single_step_plans(
@@ -1093,8 +1101,8 @@ class ExecutionPlan(
     ) -> "ExecutionPlan":
         if not execution_plan_snapshot.can_reconstruct_plan:
             raise DagsterInvariantViolationError(
-                "Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots "
-                "had enough information to fully reconstruct the ExecutionPlan"
+                "Tried to reconstruct an old ExecutionPlanSnapshot that was created before"
+                " snapshots had enough information to fully reconstruct the ExecutionPlan"
             )
 
         step_dict: Dict[StepHandleUnion, IExecutionStep] = {}
@@ -1187,7 +1195,7 @@ def _update_from_resolved_dynamic_outputs(
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
     resolvable_map: Dict[FrozenSet[str], Sequence[Union[StepHandle, UnresolvedStepHandle]]],
     step_handles_to_execute: Sequence[StepHandleUnion],
-    dynamic_mappings: Mapping[str, Mapping[str, Sequence[str]]],
+    dynamic_mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]],
 ) -> None:
     resolved_steps: List[ExecutionStep] = []
     key_sets_to_clear: List[FrozenSet[str]] = []
@@ -1269,10 +1277,10 @@ def _check_persistent_storage_requirement(
                 '@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])'
             )
         raise DagsterUnmetExecutorRequirementsError(
-            f"You have attempted to use an executor that uses multiple processes, but your {target} "
-            f"includes {node} outputs that will not be stored somewhere where other processes can "
-            "retrieve them. Please use a persistent IO manager for these outputs. E.g. with\n"
-            f"    {suggestion}"
+            "You have attempted to use an executor that uses multiple processes, but your"
+            f" {target} includes {node} outputs that will not be stored somewhere where other"
+            " processes can retrieve them. Please use a persistent IO manager for these outputs."
+            f" E.g. with\n    {suggestion}"
         )
 
 

@@ -1,4 +1,4 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
+import {useApolloClient, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -29,13 +29,20 @@ import {
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {tokenForAssetKey} from '../asset-graph/Utils';
+import {responseToYamlValidationResult} from '../configeditor/ConfigEditorUtils';
+import {graphql} from '../graphql';
 import {
-  CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
-  CONFIG_EDITOR_VALIDATION_FRAGMENT,
-  responseToYamlValidationResult,
-} from '../configeditor/ConfigEditorUtils';
+  ConfigEditorPipelinePresetFragment,
+  ConfigPartitionSelectionQueryQuery,
+  ConfigPartitionSelectionQueryQueryVariables,
+  LaunchpadSessionPartitionSetsFragmentFragment,
+  LaunchpadSessionPipelineFragmentFragment,
+  PipelineSelector,
+  PreviewConfigQueryQuery,
+  PreviewConfigQueryQueryVariables,
+  RepositorySelector,
+} from '../graphql/graphql';
 import {DagsterTag} from '../runs/RunTag';
-import {PipelineSelector, RepositorySelector} from '../types/globalTypes';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -49,42 +56,30 @@ import {useLaunchPadHooks} from './LaunchpadHooksContext';
 import {LaunchpadType} from './LaunchpadRoot';
 import {LoadingOverlay} from './LoadingOverlay';
 import {OpSelector} from './OpSelector';
-import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from './RunPreview';
+import {RunPreview} from './RunPreview';
 import {SessionSettingsBar} from './SessionSettingsBar';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
-import {ConfigEditorGeneratorPipelineFragment_presets} from './types/ConfigEditorGeneratorPipelineFragment';
-import {
-  ConfigPartitionSelectionQuery,
-  ConfigPartitionSelectionQueryVariables,
-} from './types/ConfigPartitionSelectionQuery';
-import {LaunchpadSessionPartitionSetsFragment} from './types/LaunchpadSessionPartitionSetsFragment';
-import {LaunchpadSessionPipelineFragment} from './types/LaunchpadSessionPipelineFragment';
-import {
-  PipelineExecutionConfigSchemaQuery,
-  PipelineExecutionConfigSchemaQueryVariables,
-} from './types/PipelineExecutionConfigSchemaQuery';
-import {PreviewConfigQuery, PreviewConfigQueryVariables} from './types/PreviewConfigQuery';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_CONFIG_FOR_PARTITION = `Generating configuration...`;
 const LOADING_CONFIG_SCHEMA = `Loading config schema...`;
 const LOADING_RUN_PREVIEW = `Checking config...`;
 
-type Preset = ConfigEditorGeneratorPipelineFragment_presets;
+type Preset = ConfigEditorPipelinePresetFragment;
 
 interface LaunchpadSessionProps {
   session: IExecutionSession;
   onSave: (changes: IExecutionSessionChanges) => void;
   launchpadType: LaunchpadType;
-  pipeline: LaunchpadSessionPipelineFragment;
-  partitionSets: LaunchpadSessionPartitionSetsFragment;
+  pipeline: LaunchpadSessionPipelineFragmentFragment;
+  partitionSets: LaunchpadSessionPartitionSetsFragmentFragment;
   repoAddress: RepoAddress;
   initialExecutionSessionState?: Partial<IExecutionSession>;
 }
 
 interface ILaunchpadSessionState {
-  preview: PreviewConfigQuery | null;
+  preview: PreviewConfigQueryQuery | null;
   previewLoading: boolean;
   previewedDocument: any | null;
   configLoading: boolean;
@@ -97,7 +92,7 @@ type Action =
   | {
       type: 'set-preview';
       payload: {
-        preview: PreviewConfigQuery | null;
+        preview: PreviewConfigQueryQuery | null;
         previewLoading: boolean;
         previewedDocument: string | null;
       };
@@ -188,12 +183,8 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     assetSelection: currentSession.assetSelection?.map(({assetKey: {path}}) => ({path})),
   };
 
-  const configResult = useQuery<
-    PipelineExecutionConfigSchemaQuery,
-    PipelineExecutionConfigSchemaQueryVariables
-  >(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
+  const configResult = useQuery(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
     variables: {selector: pipelineSelector, mode: currentSession?.mode},
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
   });
 
@@ -353,7 +344,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
 
     dispatch({type: 'preview-loading', payload: true});
 
-    const {data} = await client.query<PreviewConfigQuery, PreviewConfigQueryVariables>({
+    const {data} = await client.query<PreviewConfigQueryQuery, PreviewConfigQueryQueryVariables>({
       fetchPolicy: 'no-cache',
       query: PREVIEW_CONFIG_QUERY,
       variables: {
@@ -420,8 +411,8 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     try {
       const {base} = currentSession;
       const {data} = await client.query<
-        ConfigPartitionSelectionQuery,
-        ConfigPartitionSelectionQueryVariables
+        ConfigPartitionSelectionQueryQuery,
+        ConfigPartitionSelectionQueryQueryVariables
       >({
         query: CONFIG_PARTITION_SELECTION_QUERY,
         variables: {repositorySelector, partitionSetName, partitionName},
@@ -764,7 +755,7 @@ const deletePropertyPath = (obj: any, path: string) => {
 
 const sanitizeConfigYamlString = (yamlString: string) => (yamlString || '').trim() || '{}';
 
-const PREVIEW_CONFIG_QUERY = gql`
+const PREVIEW_CONFIG_QUERY = graphql(`
   query PreviewConfigQuery(
     $pipeline: PipelineSelector!
     $runConfigData: RunConfigData!
@@ -775,33 +766,30 @@ const PREVIEW_CONFIG_QUERY = gql`
       ...RunPreviewValidationFragment
     }
   }
-  ${RUN_PREVIEW_VALIDATION_FRAGMENT}
-  ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
-`;
+`);
 
 const SessionSettingsSpacer = styled.div`
   width: 5px;
 `;
 
-const RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT = gql`
-  fragment LaunchpadSessionRunConfigSchemaFragment on RunConfigSchemaOrError {
-    __typename
-    ... on RunConfigSchema {
-      ...ConfigEditorRunConfigSchemaFragment
-    }
-    ... on ModeNotFoundError {
-      message
-    }
-  }
-  ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
-`;
-
-export const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
+export const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = graphql(`
   query PipelineExecutionConfigSchemaQuery($selector: PipelineSelector!, $mode: String) {
     runConfigSchemaOrError(selector: $selector, mode: $mode) {
       ...LaunchpadSessionRunConfigSchemaFragment
     }
   }
 
-  ${RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT}
-`;
+  fragment LaunchpadSessionRunConfigSchemaFragment on RunConfigSchemaOrError {
+    __typename
+    ... on RunConfigSchema {
+      ...ConfigEditorRunConfigSchemaFragment
+    }
+    ... on ModeNotFoundError {
+      ...LaunchpadSessionModeNotFound
+    }
+  }
+
+  fragment LaunchpadSessionModeNotFound on ModeNotFoundError {
+    message
+  }
+`);

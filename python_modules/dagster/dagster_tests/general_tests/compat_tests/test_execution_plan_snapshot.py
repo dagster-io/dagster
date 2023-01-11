@@ -181,7 +181,6 @@ def _validate_execution_plan(plan):
 # Verify that an previously generated execution plan snapshot can still execute a
 # pipeline successfully
 def test_execution_plan_snapshot_backcompat():
-
     src_dir = file_relative_path(__file__, "test_execution_plan_snapshots/")
     snapshot_dirs = [f for f in os.listdir(src_dir) if not os.path.isfile(os.path.join(src_dir, f))]
     for snapshot_dir_path in snapshot_dirs:

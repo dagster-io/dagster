@@ -1,9 +1,8 @@
 import pyspark
-from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
-from pyspark.sql import SparkSession
-
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
+from pyspark.sql import SparkSession
 
 
 class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
@@ -39,11 +38,12 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         """Stores the given object at the provided filepath."""
         conn = _connect_duckdb(context).cursor()
 
-        pd_df = obj.toPandas()  # pylint: disable=unused-variable; pd_df is used in duckdb queries
+        pd_df = obj.toPandas()  # noqa: F841
 
         conn.execute(f"create schema if not exists {table_slice.schema};")
         conn.execute(
-            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from pd_df;"
+            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
+            " pd_df;"
         )
         if not conn.fetchall():
             # table was not created, therefore already exists. Insert the data

@@ -10,8 +10,8 @@ import {
 } from '../assets/MultipartitioningSupport';
 import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {useViewport} from '../gantt/useViewport';
+import {RepositorySelector} from '../graphql/graphql';
 import {DagsterTag} from '../runs/RunTag';
-import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 

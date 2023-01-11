@@ -1,14 +1,21 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {useLazyQuery} from '@apollo/client';
 import {Box, Button, Colors, Icon, MenuItem, Menu, Popover, Tag, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {graphql} from '../graphql';
+import {
+  PartitionStatusesForBackfillFragment,
+  BulkActionStatus,
+  RunStatus,
+  BackfillTableFragmentFragment,
+} from '../graphql/graphql';
 import {
   PartitionState,
   PartitionStatus,
@@ -19,21 +26,13 @@ import {AssetKeyTagCollection} from '../runs/AssetKeyTagCollection';
 import {inProgressStatuses} from '../runs/RunStatuses';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {BulkActionStatus, RunStatus} from '../types/globalTypes';
 import {LoadingOrNone, useDelayedRowQuery} from '../workspace/VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
 
-import {BackfillTableFragment} from './types/BackfillTableFragment';
-import {
-  SingleBackfillQuery,
-  SingleBackfillQueryVariables,
-  SingleBackfillQuery_partitionBackfillOrError_PartitionBackfill_partitionStatuses,
-} from './types/SingleBackfillQuery';
-
-type BackfillPartitionStatusData = SingleBackfillQuery_partitionBackfillOrError_PartitionBackfill_partitionStatuses;
+type BackfillPartitionStatusData = PartitionStatusesForBackfillFragment;
 
 export const BackfillRow = ({
   backfill,
@@ -44,20 +43,16 @@ export const BackfillRow = ({
   onShowStepStatus,
   onShowPartitionsRequested,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
   allPartitions?: string[];
-  onTerminateBackfill: (backfill: BackfillTableFragment) => void;
-  onResumeBackfill: (backfill: BackfillTableFragment) => void;
+  onTerminateBackfill: (backfill: BackfillTableFragmentFragment) => void;
+  onResumeBackfill: (backfill: BackfillTableFragmentFragment) => void;
   showBackfillTarget: boolean;
-  onShowStepStatus: (backfill: BackfillTableFragment) => void;
-  onShowPartitionsRequested: (backfill: BackfillTableFragment) => void;
+  onShowStepStatus: (backfill: BackfillTableFragmentFragment) => void;
+  onShowPartitionsRequested: (backfill: BackfillTableFragmentFragment) => void;
 }) => {
   const history = useHistory();
-  const [queryBackfill, queryResult] = useLazyQuery<
-    SingleBackfillQuery,
-    SingleBackfillQueryVariables
-  >(SINGLE_BACKFILL_QUERY, {
-    fetchPolicy: 'cache-and-network',
+  const [queryBackfill, queryResult] = useLazyQuery(SINGLE_BACKFILL_QUERY, {
     variables: {
       backfillId: backfill.backfillId,
     },
@@ -151,14 +146,14 @@ const BackfillMenu = ({
   onResumeBackfill,
   onShowStepStatus,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
   statusData: BackfillPartitionStatusData;
   history: any;
-  onTerminateBackfill: (backfill: BackfillTableFragment) => void;
-  onResumeBackfill: (backfill: BackfillTableFragment) => void;
-  onShowStepStatus: (backfill: BackfillTableFragment) => void;
+  onTerminateBackfill: (backfill: BackfillTableFragmentFragment) => void;
+  onResumeBackfill: (backfill: BackfillTableFragmentFragment) => void;
+  onShowStepStatus: (backfill: BackfillTableFragmentFragment) => void;
 }) => {
-  const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
+  const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissionsDEPRECATED();
   const runsUrl = runsPathWithFilters([
     {
       token: 'tag',
@@ -176,8 +171,7 @@ const BackfillMenu = ({
         <Menu>
           {canCancelPartitionBackfill.enabled ? (
             <>
-              {backfill.numRequested < statusData.results.length &&
-              backfill.status === BulkActionStatus.REQUESTED ? (
+              {backfill.numCancelable > 0 ? (
                 <MenuItem
                   text="Cancel backfill submission"
                   icon="cancel"
@@ -231,7 +225,7 @@ const BackfillRunStatus = ({
   statusData,
   history,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
   history: any;
   statusData: BackfillPartitionStatusData;
 }) => {
@@ -259,7 +253,7 @@ const BackfillRunStatus = ({
 };
 
 const BackfillTarget: React.FC<{
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
 }> = ({backfill}) => {
   const {assetSelection, partitionSet, partitionSetName} = backfill;
 
@@ -334,7 +328,7 @@ const BackfillRequested = ({
   onExpand,
 }: {
   allPartitions: string[];
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
   onExpand: () => void;
 }) => {
   return (
@@ -360,7 +354,7 @@ const BackfillStatus = ({
   backfill,
   statusData,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: BackfillTableFragmentFragment;
   statusData: BackfillPartitionStatusData;
 }) => {
   switch (backfill.status) {
@@ -407,19 +401,23 @@ const TagButton = styled.button`
   }
 `;
 
-export const SINGLE_BACKFILL_QUERY = gql`
+export const SINGLE_BACKFILL_QUERY = graphql(`
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
         partitionStatuses {
-          results {
-            id
-            partitionName
-            runId
-            runStatus
-          }
+          ...PartitionStatusesForBackfill
         }
       }
     }
   }
-`;
+
+  fragment PartitionStatusesForBackfill on PartitionStatuses {
+    results {
+      id
+      partitionName
+      runId
+      runStatus
+    }
+  }
+`);

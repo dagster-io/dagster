@@ -1,9 +1,8 @@
+import dagster._check as check
 from botocore import __version__ as botocore_version
 from botocore.config import Config
-from packaging import version
-
-import dagster._check as check
 from dagster import Field
+from packaging import version
 
 
 def construct_boto_client_retry_config(max_attempts):
@@ -25,8 +24,10 @@ BOTO3_SESSION_CONFIG = {
     ),
     "max_attempts": Field(
         int,
-        description="This provides Boto3's retry handler with a value of maximum retry attempts, "
-        "where the initial call counts toward the max_attempts value that you provide",
+        description=(
+            "This provides Boto3's retry handler with a value of maximum retry attempts, "
+            "where the initial call counts toward the max_attempts value that you provide"
+        ),
         is_required=False,
         default_value=5,
     ),

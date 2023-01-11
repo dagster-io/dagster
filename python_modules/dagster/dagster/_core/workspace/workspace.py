@@ -7,6 +7,7 @@ from dagster._utils.error import SerializableErrorInfo
 if TYPE_CHECKING:
     from dagster._core.host_representation import RepositoryLocation, RepositoryLocationOrigin
 
+
 # For locations that are loaded asynchronously
 class WorkspaceLocationLoadStatus(Enum):
     LOADING = "LOADING"  # Waiting for location to load or update
@@ -25,7 +26,8 @@ class WorkspaceLocationEntry(NamedTuple):
 class WorkspaceLocationStatusEntry(NamedTuple):
     """
     Slimmer version of WorkspaceLocationEntry, containing the minimum set of information required
-    to know whether the workspace needs reloading."""
+    to know whether the workspace needs reloading.
+    """
 
     location_name: str
     load_status: WorkspaceLocationLoadStatus
@@ -39,7 +41,8 @@ class IWorkspace(ABC):
 
     @abstractmethod
     def get_repository_location(self, location_name: str) -> "RepositoryLocation":
-        """Return the RepositoryLocation for the given location name, or raise an error if there is an error loading it."""
+        """Return the RepositoryLocation for the given location name, or raise an error if there is an error loading it.
+        """
 
     @abstractmethod
     def get_workspace_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:

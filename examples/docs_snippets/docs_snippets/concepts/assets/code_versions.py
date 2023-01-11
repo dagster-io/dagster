@@ -9,6 +9,7 @@ def asset_with_version():
 
 # end_single_asset
 
+
 # start_multi_asset
 @multi_asset(
     outs={

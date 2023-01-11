@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -85,74 +84,10 @@ def test_policies_available_equals_evaluation_time(
     expected_minutes_late,
 ):
     used_data_times = {AssetKey("root"): used_data_time}
-    available_data_times = {AssetKey("root"): evaluation_time}
 
     minutes_late = policy.minutes_late(
         evaluation_time=evaluation_time,
         used_data_times=used_data_times,
-        available_data_times=available_data_times,
     )
 
-    assert minutes_late == expected_minutes_late
-
-
-@pytest.mark.parametrize(
-    [
-        "policy",
-        "used_data_time",
-        "available_data_time",
-        "evaluation_time",
-        "expected_minutes_late",
-    ],
-    [
-        (
-            FreshnessPolicy(maximum_lag_minutes=30),
-            create_pendulum_time(2022, 1, 1, 1, 0),
-            None,
-            create_pendulum_time(2022, 1, 1, 3, 0),
-            # No data available for the upstream, so it's undefined if you're out of date
-            None,
-        ),
-        (
-            FreshnessPolicy(maximum_lag_minutes=30),
-            create_pendulum_time(2022, 1, 1, 1, 15),
-            create_pendulum_time(2022, 1, 1, 1, 15),
-            create_pendulum_time(2022, 1, 1, 3, 0),
-            # Have incorporated the latest data already, so you're not out of date
-            0,
-        ),
-        (
-            FreshnessPolicy(maximum_lag_minutes=30),
-            create_pendulum_time(2022, 1, 1, 1, 15),
-            create_pendulum_time(2022, 1, 1, 1, 30),
-            create_pendulum_time(2022, 1, 1, 1, 55),
-            # There's newer data available as of 1:30, but it's only 1:55, so you're not out of
-            # date yet
-            0,
-        ),
-        (
-            FreshnessPolicy(maximum_lag_minutes=30),
-            create_pendulum_time(2022, 1, 1, 1, 0),
-            create_pendulum_time(2022, 1, 1, 2, 0),
-            create_pendulum_time(2022, 1, 1, 3, 30),
-            # Expected to have 2:00 data by 2:30, but now it's 3:30, so you're 1hr out of date
-            60,
-        ),
-    ],
-)
-def test_policies_varied_available_time(
-    policy,
-    used_data_time,
-    available_data_time,
-    evaluation_time,
-    expected_minutes_late,
-):
-    used_data_times = {AssetKey("root"): used_data_time}
-    available_data_times = {AssetKey("root"): available_data_time}
-
-    minutes_late = policy.minutes_late(
-        evaluation_time=evaluation_time,
-        used_data_times=used_data_times,
-        available_data_times=available_data_times,
-    )
     assert minutes_late == expected_minutes_late

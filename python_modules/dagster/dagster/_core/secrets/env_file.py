@@ -29,7 +29,7 @@ class EnvFileLoader(SecretsLoader, ConfigurableClass):
         env_var_dict: Dict[str, str] = {
             key: check.not_none(val)
             for key, val in dotenv_values(env_file_path).items()
-            if val != None
+            if val is not None
         }
 
         if len(env_var_dict):

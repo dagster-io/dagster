@@ -9,7 +9,7 @@ import pytest
 import dagster._check as check
 from dagster import file_relative_path
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 BUILDKITE = bool(os.getenv("BUILDKITE"))
 
@@ -55,7 +55,7 @@ class TestPostgresInstance:
     @staticmethod
     def dagster_postgres_installed():
         try:
-            import dagster_postgres  # pylint: disable=unused-import
+            import dagster_postgres  # noqa: F401
         except ImportError:
             return False
         return True

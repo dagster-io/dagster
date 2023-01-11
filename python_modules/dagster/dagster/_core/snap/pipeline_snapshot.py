@@ -46,8 +46,8 @@ from .dep_snapshot import (
 from .mode import ModeDefSnap, build_mode_def_snap
 from .solid import (
     CompositeSolidDefSnap,
-    SolidDefSnap,
     SolidDefinitionsSnapshot,
+    SolidDefSnap,
     build_solid_definitions_snapshot,
 )
 
@@ -105,7 +105,7 @@ def _pipeline_snapshot_from_storage(
     v4:
         - add kwargs so that if future versions add new args, this version of deserialization will
         be able to ignore them. previously, new args would be passed to old versions and cause
-        deserialization errors
+        deserialization errors.
     """
     if graph_def_name is None:
         graph_def_name = name
@@ -350,9 +350,8 @@ def _construct_scalar_union_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
         len(config_type_snap.type_param_keys) == 2,
-        "Expect SCALAR_UNION to provide a scalar key and a non scalar key. Snapshot Provided: {}".format(
-            config_type_snap.type_param_keys
-        ),
+        "Expect SCALAR_UNION to provide a scalar key and a non scalar key. Snapshot Provided: {}"
+        .format(config_type_snap.type_param_keys),
     )
 
     return ScalarUnion(

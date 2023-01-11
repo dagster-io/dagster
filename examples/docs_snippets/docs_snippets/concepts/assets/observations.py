@@ -1,6 +1,6 @@
 # isort: skip_file
 # pylint: disable=reimported
-from dagster import op, job
+from dagster import job, op
 
 
 def read_df():
@@ -35,7 +35,7 @@ def observation_op(context):
 # end_observation_asset_marker_0
 
 # start_partitioned_asset_observation
-from dagster import op, AssetMaterialization
+from dagster import AssetMaterialization, op
 
 
 @op(config_schema={"date": str})
@@ -52,7 +52,7 @@ def partitioned_dataset_op(context):
 
 
 # start_observation_asset_marker_2
-from dagster import op, AssetObservation, MetadataValue
+from dagster import AssetObservation, MetadataValue, op
 
 
 @op

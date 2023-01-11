@@ -180,7 +180,6 @@ def pipeline(
             pipeline. Providing a VersionStrategy will enable memoization on the pipeline.
 
     Example:
-
         .. code-block:: python
 
             @solid(output_defs=[OutputDefinition(int, "two"), OutputDefinition(int, "four")])
@@ -205,7 +204,6 @@ def pipeline(
                 add_one(two)
                 mult_two(four)
     """
-
     if input_defs is not None:
         experimental_arg_warning("input_defs", "pipeline")
 

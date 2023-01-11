@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Box,
   Colors,
@@ -18,6 +18,8 @@ import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualize
 import styled from 'styled-components/macro';
 
 import {useTrackPageView} from '../app/analytics';
+import {graphql} from '../graphql';
+import {OpsRootUsedSolidFragment} from '../graphql/graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -25,12 +27,7 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
-import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
-import {
-  OpsRootQuery,
-  OpsRootQueryVariables,
-  OpsRootQuery_repositoryOrError_Repository_usedSolids,
-} from './types/OpsRootQuery';
+import {OpTypeSignature} from './OpTypeSignature';
 
 function flatUniq(arrs: string[][]) {
   const results: {[key: string]: boolean} = {};
@@ -42,7 +39,7 @@ function flatUniq(arrs: string[][]) {
   return Object.keys(results).sort((a, b) => a.localeCompare(b));
 }
 
-type Solid = OpsRootQuery_repositoryOrError_Repository_usedSolids;
+type Solid = OpsRootUsedSolidFragment;
 
 function searchSuggestionsForOps(solids: Solid[]): SuggestionProvider[] {
   return [
@@ -126,7 +123,7 @@ export const OpsRoot: React.FC<Props> = (props) => {
 
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<OpsRootQuery, OpsRootQueryVariables>(OPS_ROOT_QUERY, {
+  const queryResult = useQuery(OPS_ROOT_QUERY, {
     variables: {repositorySelector},
   });
 
@@ -315,31 +312,32 @@ const Container = styled.div`
   }
 `;
 
-const OPS_ROOT_QUERY = gql`
+const OPS_ROOT_QUERY = graphql(`
   query OpsRootQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {
         id
         usedSolids {
-          __typename
-          definition {
-            name
-            ...OpTypeSignatureFragment
-          }
-          invocations {
-            __typename
-            pipeline {
-              id
-              isJob
-              name
-            }
-          }
+          ...OpsRootUsedSolid
         }
       }
     }
   }
-  ${OP_TYPE_SIGNATURE_FRAGMENT}
-`;
+
+  fragment OpsRootUsedSolid on UsedSolid {
+    definition {
+      name
+      ...OpTypeSignatureFragment
+    }
+    invocations {
+      pipeline {
+        id
+        isJob
+        name
+      }
+    }
+  }
+`);
 
 const OpListItem = styled.div<{selected: boolean}>`
   background: ${({selected}) => (selected ? Colors.Gray100 : Colors.White)};

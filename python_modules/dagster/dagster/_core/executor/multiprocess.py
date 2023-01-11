@@ -2,10 +2,12 @@ import multiprocessing
 import os
 import sys
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
-from typing import Any, Dict, Iterator, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Optional, Sequence
 
-from dagster import MetadataEntry
-from dagster import _check as check
+from dagster import (
+    MetadataEntry,
+    _check as check,
+)
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
@@ -17,6 +19,7 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
 from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
+from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -24,7 +27,7 @@ from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
-from dagster._utils import start_termination_thread
+from dagster._utils import get_run_crash_explanation, start_termination_thread
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration, time_execution_scope
 
@@ -102,6 +105,7 @@ class MultiprocessExecutor(Executor):
         self,
         retries: RetryMode,
         max_concurrent: int,
+        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
         start_method: Optional[str] = None,
         explicit_forkserver_preload: Optional[Sequence[str]] = None,
     ):
@@ -113,6 +117,9 @@ class MultiprocessExecutor(Executor):
             )
 
         self._max_concurrent = check.int_param(max_concurrent, "max_concurrent")
+        self._tag_concurrency_limits = check.opt_list_param(
+            tag_concurrency_limits, "tag_concurrency_limits"
+        )
         start_method = check.opt_str_param(start_method, "start_method")
         valid_starts = multiprocessing.get_all_start_methods()
 
@@ -121,8 +128,10 @@ class MultiprocessExecutor(Executor):
 
         if start_method not in valid_starts:
             raise DagsterUnmetExecutorRequirementsError(
-                f"The selected start_method '{start_method}' is not available. "
-                f"Only {valid_starts} are valid options on {sys.platform} python {sys.version}.",
+                (
+                    f"The selected start_method '{start_method}' is not available. "
+                    f"Only {valid_starts} are valid options on {sys.platform} python {sys.version}."
+                ),
             )
         self._start_method = start_method
         self._explicit_forkserver_preload = explicit_forkserver_preload
@@ -162,6 +171,7 @@ class MultiprocessExecutor(Executor):
             multiproc_ctx.set_forkserver_preload(list(preload))
 
         limit = self._max_concurrent
+        tag_concurrency_limits = self._tag_concurrency_limits
 
         yield DagsterEvent.engine_event(
             plan_context,
@@ -173,11 +183,13 @@ class MultiprocessExecutor(Executor):
             ),
         )
 
-        # It would be good to implement a reference tracking algorithm here so we could
-        # garbage collect results that are no longer needed by any steps
-        # https://github.com/dagster-io/dagster/issues/811
         with time_execution_scope() as timer_result:
-            with execution_plan.start(retry_mode=self.retries) as active_execution:
+            with ActiveExecution(
+                execution_plan,
+                retry_mode=self.retries,
+                max_concurrent=limit,
+                tag_concurrency_limits=tag_concurrency_limits,
+            ) as active_execution:
                 active_iters: Dict[str, Iterator[DagsterEvent]] = {}
                 errors: Dict[int, SerializableErrorInfo] = {}
                 term_events: Dict[str, Any] = {}
@@ -187,8 +199,10 @@ class MultiprocessExecutor(Executor):
                     if active_execution.check_for_interrupts():
                         yield DagsterEvent.engine_event(
                             plan_context,
-                            "Multiprocess executor: received termination signal - "
-                            "forwarding to active child processes",
+                            (
+                                "Multiprocess executor: received termination signal - "
+                                "forwarding to active child processes"
+                            ),
                             EngineEventData.interrupted(list(term_events.keys())),
                         )
                         stopping = True
@@ -196,10 +210,9 @@ class MultiprocessExecutor(Executor):
                         for key, event in term_events.items():
                             event.set()
 
-                    # start iterators
-                    while len(active_iters) < limit and not stopping:
+                    while not stopping:
                         steps = active_execution.get_steps_to_execute(
-                            limit=(limit - len(active_iters))
+                            limit=(limit - len(active_iters)),
                         )
 
                         if not steps:
@@ -240,10 +253,10 @@ class MultiprocessExecutor(Executor):
                             )
                             yield DagsterEvent.engine_event(
                                 step_context,
-                                (
-                                    "Multiprocess executor: child process for step {step_key} "
-                                    "unexpectedly exited with code {exit_code}"
-                                ).format(step_key=key, exit_code=crash.exit_code),
+                                get_run_crash_explanation(
+                                    prefix=f"Multiprocess executor: child process for step {key}",
+                                    exit_code=crash.exit_code,
+                                ),
                                 EngineEventData.engine_error(serializable_error),
                             )
                             step_failure_event = DagsterEvent.step_failure_event(
@@ -291,7 +304,8 @@ class MultiprocessExecutor(Executor):
                     raise DagsterExecutionInterruptedError()
                 elif errs:
                     raise DagsterSubprocessError(
-                        "During multiprocess execution errors occurred in child processes:\n{error_list}".format(
+                        "During multiprocess execution errors occurred in child"
+                        " processes:\n{error_list}".format(
                             error_list="\n".join(
                                 [
                                     "In process {pid}: {err}".format(pid=pid, err=err.to_string())

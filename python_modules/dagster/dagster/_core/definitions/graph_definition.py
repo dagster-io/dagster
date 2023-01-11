@@ -156,7 +156,6 @@ class GraphDefinition(NodeDefinition):
             values provided at invocation time.
 
     Examples:
-
         .. code-block:: python
 
             @op
@@ -240,7 +239,6 @@ class GraphDefinition(NodeDefinition):
         self._dagster_type_dict = construct_dagster_type_dictionary([self])
 
     def _get_nodes_in_topological_order(self) -> Sequence[Node]:
-
         _forward_edges, backward_edges = _create_adjacency_lists(
             self.solids, self.dependency_structure
         )
@@ -382,7 +380,6 @@ class GraphDefinition(NodeDefinition):
         return self._dagster_type_dict[name]
 
     def get_input_mapping(self, input_name: str) -> InputMapping:
-
         check.str_param(input_name, "input_name")
         for mapping in self._input_mappings:
             if mapping.graph_input_name == input_name:
@@ -489,7 +486,6 @@ class GraphDefinition(NodeDefinition):
         name: str,
         description: Optional[str],
         config_schema: Any,
-        config_or_config_fn: Any,
     ):
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(
@@ -824,8 +820,8 @@ def _validate_in_mappings(
                 )
             else:
                 raise DagsterInvalidDefinitionError(
-                    f"In {class_name} '{name}' received unexpected type '{type(mapping)}' in input_mappings. "
-                    "Provide an InputMapping using InputMapping(...)"
+                    f"In {class_name} '{name}' received unexpected type '{type(mapping)}' in"
+                    " input_mappings. Provide an InputMapping using InputMapping(...)"
                 )
 
         input_defs_by_name[mapping.graph_input_name] = mapping.get_definition()
@@ -849,9 +845,9 @@ def _validate_in_mappings(
             maps_to = cast(FanInInputPointer, mapping.maps_to)
             if not dependency_structure.has_fan_in_deps(node_input):
                 raise DagsterInvalidDefinitionError(
-                    f"In {class_name} '{name}' input mapping target "
-                    f'"{maps_to.node_name}.{maps_to.input_name}" (index {maps_to.fan_in_index} of fan-in) '
-                    f"is not a MultiDependencyDefinition."
+                    f"In {class_name} '{name}' input mapping target"
+                    f' "{maps_to.node_name}.{maps_to.input_name}" (index'
+                    f" {maps_to.fan_in_index} of fan-in) is not a MultiDependencyDefinition."
                 )
             inner_deps = dependency_structure.get_fan_in_deps(node_input)
             if (maps_to.fan_in_index >= len(inner_deps)) or (
@@ -860,7 +856,7 @@ def _validate_in_mappings(
                 raise DagsterInvalidDefinitionError(
                     f"In {class_name} '{name}' input mapping target "
                     f'"{maps_to.node_name}.{maps_to.input_name}" index {maps_to.fan_in_index} in '
-                    f"the MultiDependencyDefinition is not a MappedInputPlaceholder"
+                    "the MultiDependencyDefinition is not a MappedInputPlaceholder"
                 )
             mapping_keys.add(f"{maps_to.node_name}.{maps_to.input_name}.{maps_to.fan_in_index}")
             target_input_types_by_graph_input_name[mapping.graph_input_name].add(
@@ -886,8 +882,9 @@ def _validate_in_mappings(
                     mapping_str = f"{node_input.node_name}.{node_input.input_name}.{idx}"
                     if mapping_str not in mapping_keys:
                         raise DagsterInvalidDefinitionError(
-                            f"Unsatisfied MappedInputPlaceholder at index {idx} in "
-                            f"MultiDependencyDefinition for '{node_input.node_name}.{node_input.input_name}'"
+                            f"Unsatisfied MappedInputPlaceholder at index {idx} in"
+                            " MultiDependencyDefinition for"
+                            f" '{node_input.node_name}.{node_input.input_name}'"
                         )
 
     # if the dagster type on a graph input is Any and all its target inputs have the
@@ -912,7 +909,6 @@ def _validate_out_mappings(
     output_defs: List[OutputDefinition] = []
     for mapping in output_mappings:
         if isinstance(mapping, OutputMapping):  # type: ignore
-
             target_solid = solid_dict.get(mapping.maps_from.solid_name)
             if target_solid is None:
                 raise DagsterInvalidDefinitionError(
@@ -943,11 +939,11 @@ def _validate_out_mappings(
                 and class_name != "GraphDefinition"
             ):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' output "
-                    "'{mapping.graph_output_name}' of type {mapping.dagster_type.display_name} "
-                    "maps from {mapping.maps_from.solid_name}.{mapping.maps_from.output_name} of different type "
-                    "{target_output.dagster_type.display_name}. OutputMapping source "
-                    "and destination must have the same type.".format(
+                    "In {class_name} '{name}' output '{mapping.graph_output_name}' of type"
+                    " {mapping.dagster_type.display_name} maps from"
+                    " {mapping.maps_from.solid_name}.{mapping.maps_from.output_name} of different"
+                    " type {target_output.dagster_type.display_name}. OutputMapping source and"
+                    " destination must have the same type.".format(
                         class_name=class_name,
                         mapping=mapping,
                         name=name,

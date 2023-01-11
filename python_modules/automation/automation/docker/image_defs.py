@@ -4,9 +4,9 @@ import os
 import shutil
 from typing import Callable, Dict, Iterator, List, Optional
 
-from automation.git import git_repo_root
-
 import dagster._check as check
+
+from automation.git import git_repo_root
 
 from .dagster_docker import DagsterDockerImage, default_images_path
 
@@ -206,7 +206,6 @@ def list_images(images_path: Optional[str] = None) -> List[DagsterDockerImage]:
     Returns:
         List[DagsterDockerImage]: A list of all images managed by this tool.
     """
-
     images_path = images_path or default_images_path()
     image_folders = [f.name for f in os.scandir(images_path) if f.is_dir()]
 

@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import pytest
-
 from dagster import job
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.plan import ExecutionPlan
@@ -136,7 +135,10 @@ def test_cant_load_old_snapshot():
     snapshot = deserialize_json_to_dagster_namedtuple(OLD_EXECUTION_PLAN_SNAPSHOT)
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots had enough information to fully reconstruct the ExecutionPlan",
+        match=(
+            "Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots"
+            " had enough information to fully reconstruct the ExecutionPlan"
+        ),
     ):
         ExecutionPlan.rebuild_from_snapshot("noop_job", snapshot)
 

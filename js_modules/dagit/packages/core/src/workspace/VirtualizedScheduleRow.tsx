@@ -1,4 +1,4 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {useLazyQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -15,22 +15,21 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {graphql} from '../graphql';
+import {InstigationStatus, InstigationType} from '../graphql/graphql';
 import {LastRunSummary} from '../instance/LastRunSummary';
-import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
+import {TickTag} from '../instigation/InstigationTick';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
-import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {errorDisplay} from '../schedules/SchedulesTable';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
-import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext';
 import {RepoAddress} from './types';
-import {SingleScheduleQuery, SingleScheduleQueryVariables} from './types/SingleScheduleQuery';
 import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS = '76px 1fr 1fr 148px 180px 80px';
@@ -47,11 +46,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
 
   const repo = useRepository(repoAddress);
 
-  const [querySchedule, queryResult] = useLazyQuery<
-    SingleScheduleQuery,
-    SingleScheduleQueryVariables
-  >(SINGLE_SCHEDULE_QUERY, {
-    fetchPolicy: 'cache-and-network',
+  const [querySchedule, queryResult] = useLazyQuery(SINGLE_SCHEDULE_QUERY, {
     variables: {
       selector: {
         repositoryName: repoAddress.name,
@@ -261,7 +256,7 @@ const ScheduleStringContainer = styled.div`
   }
 `;
 
-const SINGLE_SCHEDULE_QUERY = gql`
+const SINGLE_SCHEDULE_QUERY = graphql(`
   query SingleScheduleQuery($selector: ScheduleSelector!) {
     scheduleOrError(scheduleSelector: $selector) {
       ... on Schedule {
@@ -292,8 +287,4 @@ const SINGLE_SCHEDULE_QUERY = gql`
       }
     }
   }
-
-  ${SCHEDULE_SWITCH_FRAGMENT}
-  ${TICK_TAG_FRAGMENT}
-  ${RUN_TIME_FRAGMENT}
-`;
+`);

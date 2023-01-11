@@ -1,5 +1,4 @@
 import boto3
-
 import dagster._check as check
 
 MAX_KEYS = 1000

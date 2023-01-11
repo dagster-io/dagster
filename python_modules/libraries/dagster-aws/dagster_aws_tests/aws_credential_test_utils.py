@@ -9,7 +9,6 @@ def get_aws_creds():
     When running on Buildkite, the credentials are passed in the environment. When running locally,
     we need to fetch them from AWS Secrets Manager.
     """
-
     sm_client = boto3.client("secretsmanager", region_name="us-west-1")
 
     if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_SECRET_ACCESS_KEY"):

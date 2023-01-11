@@ -68,8 +68,11 @@ class DbClient:
 class DbIOManager(IOManager):
     def __init__(
         self,
+        *,
         type_handlers: Sequence[DbTypeHandler],
         db_client: DbClient,
+        database: str,
+        schema: Optional[str] = None,
         io_manager_name: Optional[str] = None,
     ):
         self._handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
@@ -78,13 +81,17 @@ class DbIOManager(IOManager):
             for handled_type in type_handler.supported_types:
                 check.invariant(
                     handled_type not in self._handlers_by_type,
-                    f"{self._io_manager_name} provided with two handlers for the same type. "
-                    f"Type: '{handled_type}'. Handler classes: '{type(type_handler)}' and "
-                    f"'{type(self._handlers_by_type.get(handled_type))}'.",
+                    (
+                        f"{self._io_manager_name} provided with two handlers for the same type. "
+                        f"Type: '{handled_type}'. Handler classes: '{type(type_handler)}' and "
+                        f"'{type(self._handlers_by_type.get(handled_type))}'."
+                    ),
                 )
 
                 self._handlers_by_type[handled_type] = type_handler
         self._db_client = db_client
+        self._database = database
+        self._schema = schema
 
     def handle_output(self, context: OutputContext, obj: object) -> None:
         table_slice = self._get_table_slice(context, context)
@@ -93,8 +100,12 @@ class DbIOManager(IOManager):
             obj_type = type(obj)
             check.invariant(
                 obj_type in self._handlers_by_type,
-                f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has handlers "
-                f"for types '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'",
+                (
+                    f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has"
+                    " handlers "
+                    "for types"
+                    f" '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'"
+                ),
             )
 
             self._db_client.delete_table_slice(context, table_slice)
@@ -105,7 +116,10 @@ class DbIOManager(IOManager):
         else:
             check.invariant(
                 context.dagster_type.is_nothing,
-                "Unexpected 'None' output value. If a 'None' value is intentional, set the output type to None.",
+                (
+                    "Unexpected 'None' output value. If a 'None' value is intentional, set the"
+                    " output type to None."
+                ),
             )
             # if obj is None, assume that I/O was handled in the op body
             handler_metadata = {}
@@ -118,8 +132,12 @@ class DbIOManager(IOManager):
         obj_type = context.dagster_type.typing_type
         check.invariant(
             obj_type in self._handlers_by_type,
-            f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has handlers "
-            f"for types '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'",
+            (
+                f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has"
+                " handlers "
+                "for types"
+                f" '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'"
+            ),
         )
         return self._handlers_by_type[obj_type].load_input(
             context, self._get_table_slice(context, cast(OutputContext, context.upstream_output))
@@ -136,21 +154,17 @@ class DbIOManager(IOManager):
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
-            if (
-                len(asset_key_path) > 1
-                and context.resource_config
-                and context.resource_config.get("schema")
-            ):
+            if len(asset_key_path) > 1 and self._schema:
                 raise DagsterInvalidDefinitionError(
                     f"Asset {asset_key_path} specifies a schema with "
                     f"its key prefixes {asset_key_path[:-1]}, but schema  "
-                    f"{context.resource_config.get('schema')} was also provided via run config. "
+                    f"{self._schema} was also provided via run config. "
                     "Schema can only be specified one way."
                 )
             elif len(asset_key_path) > 1:
                 schema = asset_key_path[-2]
-            elif context.resource_config and context.resource_config.get("schema"):
-                schema = cast(str, context.resource_config["schema"])
+            elif self._schema:
+                schema = self._schema
             else:
                 schema = "public"
             time_window = (
@@ -158,21 +172,17 @@ class DbIOManager(IOManager):
             )
         else:
             table = output_context.name
-            if (
-                output_context_metadata.get("schema")
-                and output_context.resource_config
-                and output_context.resource_config.get("schema")
-            ):
+            if output_context_metadata.get("schema") and self._schema:
                 raise DagsterInvalidDefinitionError(
                     f"Schema {output_context_metadata.get('schema')} "
                     "specified via output metadata, but conflicting schema "
-                    f"{output_context.resource_config.get('schema')} was provided via run_config. "
+                    f"{self._schema} was provided via run_config. "
                     "Schema can only be specified one way."
                 )
-            elif output_context.resource_config and output_context_metadata.get("schema"):
+            elif output_context_metadata.get("schema"):
                 schema = cast(str, output_context_metadata["schema"])
-            elif output_context.resource_config and output_context.resource_config.get("schema"):
-                schema = cast(str, output_context.resource_config["schema"])
+            elif self._schema:
+                schema = self._schema
             else:
                 schema = "public"
             time_window = None
@@ -194,7 +204,7 @@ class DbIOManager(IOManager):
         return TableSlice(
             table=table,
             schema=schema,
-            database=cast(Mapping[str, str], context.resource_config).get("database"),
+            database=self._database,
             partition=partition,
             columns=(context.metadata or {}).get("columns"),  # type: ignore  # (mypy bug)
         )

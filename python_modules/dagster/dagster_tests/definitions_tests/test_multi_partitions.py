@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import pytest
-
 from dagster import (
     AssetKey,
     DagsterEventType,

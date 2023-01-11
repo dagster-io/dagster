@@ -1,26 +1,16 @@
-# pylint: disable=unused-import
 import os
 import tempfile
 
 import docker
-import kubernetes
 import pytest
-from dagster_k8s.launcher import K8sRunLauncher
-from dagster_k8s_test_infra.cluster import (
-    dagster_instance_for_k8s_run_launcher,
-    define_cluster_provider_fixture,
-    helm_postgres_url_for_k8s_run_launcher,
-)
-from dagster_k8s_test_infra.helm import (
-    TEST_AWS_CONFIGMAP_NAME,
-    TEST_IMAGE_PULL_SECRET_NAME,
-    TEST_SECRET_NAME,
-    TEST_VOLUME_CONFIGMAP_NAME,
-)
-from dagster_k8s_test_infra.integration_utils import image_pull_policy
-from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
-from dagster._core.instance import DagsterInstance
+# fixtures: redundant alias marks them as used imports
+from dagster_k8s_test_infra.cluster import (
+    dagster_instance_for_k8s_run_launcher as dagster_instance_for_k8s_run_launcher,
+    define_cluster_provider_fixture as define_cluster_provider_fixture,
+    helm_postgres_url_for_k8s_run_launcher as helm_postgres_url_for_k8s_run_launcher,
+)
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 pytest_plugins = ["dagster_k8s_test_infra.helm"]
 

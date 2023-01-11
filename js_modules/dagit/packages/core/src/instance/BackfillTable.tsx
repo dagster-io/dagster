@@ -1,19 +1,19 @@
-import {gql, useMutation} from '@apollo/client';
+import {useMutation} from '@apollo/client';
 import {Group, Table} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissions} from '../app/Permissions';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {graphql} from '../graphql';
+import {BackfillTableFragmentFragment} from '../graphql/graphql';
 
 import {BackfillPartitionsRequestedDialog} from './BackfillPartitionsRequestedDialog';
 import {BackfillRow} from './BackfillRow';
 import {BackfillStepStatusDialog} from './BackfillStepStatusDialog';
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
 import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
-import {BackfillTableFragment} from './types/BackfillTableFragment';
-import {resumeBackfill, resumeBackfillVariables} from './types/resumeBackfill';
 
 export const BackfillTable = ({
   showBackfillTarget = true,
@@ -22,20 +22,24 @@ export const BackfillTable = ({
   refetch,
 }: {
   allPartitions?: string[];
-  backfills: BackfillTableFragment[];
+  backfills: BackfillTableFragmentFragment[];
   refetch: () => void;
   showBackfillTarget?: boolean;
 }) => {
-  const [terminationBackfill, setTerminationBackfill] = React.useState<BackfillTableFragment>();
-  const [stepStatusBackfill, setStepStatusBackfill] = React.useState<BackfillTableFragment>();
+  const [
+    terminationBackfill,
+    setTerminationBackfill,
+  ] = React.useState<BackfillTableFragmentFragment>();
+  const [
+    stepStatusBackfill,
+    setStepStatusBackfill,
+  ] = React.useState<BackfillTableFragmentFragment>();
   const [
     partitionsRequestedBackfill,
     setPartitionsRequestedBackfill,
-  ] = React.useState<BackfillTableFragment>();
-  const [resumeBackfill] = useMutation<resumeBackfill, resumeBackfillVariables>(
-    RESUME_BACKFILL_MUTATION,
-  );
-  const {canCancelPartitionBackfill} = usePermissions();
+  ] = React.useState<BackfillTableFragmentFragment>();
+  const [resumeBackfill] = useMutation(RESUME_BACKFILL_MUTATION);
+  const {canCancelPartitionBackfill} = usePermissionsDEPRECATED();
 
   const candidateId = terminationBackfill?.backfillId;
 
@@ -46,7 +50,7 @@ export const BackfillTable = ({
     }
   }, [backfills, candidateId, canCancelPartitionBackfill]);
 
-  const resume = async (backfill: BackfillTableFragment) => {
+  const resume = async (backfill: BackfillTableFragmentFragment) => {
     const {data} = await resumeBackfill({variables: {backfillId: backfill.backfillId}});
     if (data && data.resumePartitionBackfill.__typename === 'ResumeBackfillSuccess') {
       refetch();
@@ -94,7 +98,7 @@ export const BackfillTable = ({
           </tr>
         </thead>
         <tbody>
-          {backfills.map((backfill: BackfillTableFragment) => (
+          {backfills.map((backfill) => (
             <BackfillRow
               key={backfill.backfillId}
               showBackfillTarget={showBackfillTarget}
@@ -125,25 +129,18 @@ export const BackfillTable = ({
   );
 };
 
-export const BACKFILL_TABLE_FRAGMENT = gql`
+export const BACKFILL_TABLE_FRAGMENT = graphql(`
   fragment BackfillTableFragment on PartitionBackfill {
     backfillId
     status
-    numRequested
+    numCancelable
     partitionNames
     numPartitions
     timestamp
     partitionSetName
     partitionSet {
       id
-      name
-      mode
-      pipelineName
-      repositoryOrigin {
-        id
-        repositoryName
-        repositoryLocationName
-      }
+      ...PartitionSetForBackfillTable
     }
     assetSelection {
       path
@@ -152,5 +149,16 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
       ...PythonErrorFragment
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+
+  fragment PartitionSetForBackfillTable on PartitionSet {
+    id
+    name
+    mode
+    pipelineName
+    repositoryOrigin {
+      id
+      repositoryName
+      repositoryLocationName
+    }
+  }
+`);

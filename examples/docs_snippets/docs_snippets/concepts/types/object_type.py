@@ -4,12 +4,13 @@ from dagster import PythonObjectDagsterType, op
 # start_object_type
 class EvenType:
     def __init__(self, num):
-        assert num % 2 is 0
+        assert num % 2 == 0
         self.num = num
 
 
 EvenDagsterType = PythonObjectDagsterType(EvenType, name="EvenDagsterType")
 # end_object_type
+
 
 # start_use_object_type
 @op

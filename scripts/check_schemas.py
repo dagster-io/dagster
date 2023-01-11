@@ -23,10 +23,11 @@ def check_schema_compat(schema):
 
 
 def validate_column(column: Column):
-    """This function is used to validate individual DB columns in a a schema for cross-DBAPI compatibility
+    """This function is used to validate individual DB columns in a a schema for cross-DBAPI compatibility.
+
     i.e.:
         1. plain db.String not allowed (MySQL compatability)
-        2. db.Text + unique=True not allowed (MySQL compatability)
+        2. db.Text + unique=True not allowed (MySQL compatability).
     """
     if (
         isinstance(column.type, db.String)

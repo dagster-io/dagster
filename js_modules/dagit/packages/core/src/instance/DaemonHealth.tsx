@@ -11,10 +11,10 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from './types/DaemonHealthFragment';
+import {DaemonStatusForListFragment} from '../graphql/graphql';
 
 interface Props {
-  daemon: DaemonStatus;
+  daemon: DaemonStatusForListFragment;
 }
 
 const DaemonHealthTag = (props: Props) => {

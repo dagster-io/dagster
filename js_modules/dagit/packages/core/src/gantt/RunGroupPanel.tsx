@@ -1,24 +1,19 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, ButtonLink, Colors, Group, Icon, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {graphql} from '../graphql';
+import {RunGroupPanelRunFragment} from '../graphql/graphql';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
-import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {RunStateSummary, RunTime} from '../runs/RunUtils';
 
-import {
-  RunGroupPanelQuery,
-  RunGroupPanelQueryVariables,
-  RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
-} from './types/RunGroupPanelQuery';
-
-type Run = RunGroupPanelQuery_runGroupOrError_RunGroup_runs;
+type Run = RunGroupPanelRunFragment;
 
 function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   const stepsTag = run.tags.find((t) => t.key === DagsterTag.StepSelection);
@@ -29,14 +24,10 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
   runId,
   runStatusLastChangedAt,
 }) => {
-  const queryResult = useQuery<RunGroupPanelQuery, RunGroupPanelQueryVariables>(
-    RUN_GROUP_PANEL_QUERY,
-    {
-      variables: {runId},
-      fetchPolicy: 'cache-and-network',
-      notifyOnNetworkStatusChange: true,
-    },
-  );
+  const queryResult = useQuery(RUN_GROUP_PANEL_QUERY, {
+    variables: {runId},
+    notifyOnNetworkStatusChange: true,
+  });
 
   const {data, refetch} = queryResult;
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
@@ -138,7 +129,7 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
   );
 };
 
-const RUN_GROUP_PANEL_QUERY = gql`
+const RUN_GROUP_PANEL_QUERY = graphql(`
   query RunGroupPanelQuery($runId: ID!) {
     runGroupOrError(runId: $runId) {
       __typename
@@ -147,23 +138,26 @@ const RUN_GROUP_PANEL_QUERY = gql`
         rootRunId
         runs {
           id
-          runId
-          parentRunId
-          status
-          stepKeysToExecute
-          pipelineName
-          tags {
-            key
-            value
-          }
-          ...RunTimeFragment
+          ...RunGroupPanelRun
         }
       }
     }
   }
-  ${RUN_TIME_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+
+  fragment RunGroupPanelRun on Run {
+    id
+    runId
+    parentRunId
+    status
+    stepKeysToExecute
+    pipelineName
+    tags {
+      key
+      value
+    }
+    ...RunTimeFragment
+  }
+`);
 
 const RunGroupRun = styled(Link)<{selected: boolean}>`
   align-items: flex-start;

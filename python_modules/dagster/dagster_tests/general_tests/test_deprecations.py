@@ -4,7 +4,6 @@
 import re
 
 import pytest
-
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
@@ -17,7 +16,6 @@ from dagster._core.types.dagster_type import DagsterType
 
 
 def test_metadata_entries():
-
     metadata_entry = MetadataEntry("foo", None, MetadataValue.text("bar"))
 
     # We use `Output` as a stand-in for all events here, they all follow the same pattern of calling
@@ -30,7 +28,6 @@ def test_metadata_entries():
 
 
 def test_arbitrary_metadata():
-
     with pytest.warns(DeprecationWarning, match=re.escape("arbitrary metadata values")):
         OutputDefinition(metadata={"foo": object()})
 
@@ -39,6 +36,5 @@ def test_arbitrary_metadata():
 
 
 def test_metadata_entry_description():
-
     with pytest.warns(DeprecationWarning, match=re.escape('"description" attribute')):
         MetadataEntry("foo", "bar", MetadataValue.text("baz"))

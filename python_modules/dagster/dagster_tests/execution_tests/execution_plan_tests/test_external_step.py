@@ -6,7 +6,6 @@ from threading import Thread
 from typing import List
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,

@@ -37,7 +37,6 @@ def get_dynamic_job_resource_init_failure(
 
     @resource(config_schema={"path": str, "allowed_initializations": int})
     def resource_for_dynamic_step(init_context):
-
         # Get the count of successful initializations. If it is already at the
         # allowed initialization number, fail.
         with open(os.path.join(init_context.resource_config["path"], "count.pkl"), "rb") as f:
@@ -92,7 +91,6 @@ def get_dynamic_job_op_failure(
 
     @op(config_schema={"path": str, "allowed_runs": int})
     def mapped_op(context, x):
-
         # Get the count of successful initializations. If it is already at the
         # allowed initialization number, fail.
         with open(os.path.join(context.op_config["path"], "count.pkl"), "rb") as f:

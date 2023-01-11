@@ -5,7 +5,6 @@ import time
 from contextlib import contextmanager
 
 import requests
-
 from dagster import file_relative_path
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 
@@ -263,7 +262,6 @@ def test_deploy_docker():
 
 
 def _wait_for_run_status(run_id, dagit_host, desired_status):
-
     start_time = time.time()
 
     while True:

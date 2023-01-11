@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -20,9 +20,10 @@ import {PartitionHealthData, PartitionHealthDimension} from '../assets/usePartit
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
+import {graphql} from '../graphql';
+import {PartitionMatrixStepRunFragmentFragment, RunStatus} from '../graphql/graphql';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
-import {RunStatus} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -38,18 +39,7 @@ import {
   topLabelHeightForLabels,
   TopLabelTilted,
 } from './RunMatrixUtils';
-import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
-import {
-  PartitionStepStatusPipelineQuery,
-  PartitionStepStatusPipelineQueryVariables,
-} from './types/PartitionStepStatusPipelineQuery';
-import {
-  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
-  MatrixStep,
-  PartitionRuns,
-  useMatrixData,
-  MatrixData,
-} from './useMatrixData';
+import {MatrixStep, PartitionRuns, useMatrixData, MatrixData} from './useMatrixData';
 
 const BUFFER = 3;
 
@@ -151,10 +141,7 @@ export const PartitionPerOpStatus: React.FC<
   // Retrieve the pipeline's structure
   const repositorySelector = repoAddressToSelector(repoAddress);
   const pipelineSelector = {...repositorySelector, pipelineName};
-  const pipeline = useQuery<
-    PartitionStepStatusPipelineQuery,
-    PartitionStepStatusPipelineQueryVariables
-  >(PARTITION_STEP_STATUS_PIPELINE_QUERY, {
+  const pipeline = useQuery(PARTITION_STEP_STATUS_PIPELINE_QUERY, {
     variables: {pipelineSelector},
   });
 
@@ -381,7 +368,7 @@ const Divider = styled.div`
   border-top: 1px solid ${Colors.KeylineGray};
 `;
 
-export const PARTITION_STEP_STATUS_RUN_FRAGMENT = gql`
+export const PARTITION_STEP_STATUS_RUN_FRAGMENT = graphql(`
   fragment PartitionStepStatusRun on Run {
     id
     runId
@@ -395,11 +382,11 @@ export const PARTITION_STEP_STATUS_RUN_FRAGMENT = gql`
       status
     }
   }
-`;
+`);
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan
 // in the same way we construct the explorer graph
-const PARTITION_STEP_STATUS_PIPELINE_QUERY = gql`
+const PARTITION_STEP_STATUS_PIPELINE_QUERY = graphql(`
   query PartitionStepStatusPipelineQuery($pipelineSelector: PipelineSelector) {
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
@@ -411,8 +398,7 @@ const PARTITION_STEP_STATUS_PIPELINE_QUERY = gql`
       }
     }
   }
-  ${PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT}
-`;
+`);
 
 const TOOLTIP_STYLE = JSON.stringify({
   top: 20,
@@ -421,7 +407,7 @@ const TOOLTIP_STYLE = JSON.stringify({
 
 const PartitionSquare: React.FC<{
   step?: MatrixStep;
-  runs: PartitionMatrixStepRunFragment[];
+  runs: PartitionMatrixStepRunFragmentFragment[];
   runsLoaded: boolean;
   hovered: PartitionRunSelection | null;
   minUnix: number;

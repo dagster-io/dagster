@@ -19,8 +19,6 @@ from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
 from airflow.utils import db
-from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
-
 from dagster import (
     Array,
     DagsterInvariantViolationError,
@@ -32,14 +30,18 @@ from dagster import (
     Nothing,
     Out,
     ScheduleDefinition,
+    _check as check,
+    op,
+    repository,
+    resource,
 )
-from dagster import _check as check
-from dagster import op, repository, resource
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
 from dagster._legacy import ModeDefinition, PipelineDefinition
 from dagster._utils.schedules import is_valid_cron_schedule
+
+from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
 # pylint: disable=no-name-in-module,import-error
 if str(airflow_version) >= "2.0.0":
@@ -91,7 +93,7 @@ class Locker:
         self.fp.close()
 
 
-def create_airflow_connections(connections):
+def _create_airflow_connections(connections):
     with create_session() as session:
         for connection in connections:
             if session.query(Connection).filter(Connection.conn_id == connection.conn_id).first():
@@ -105,15 +107,14 @@ def create_airflow_connections(connections):
             logging.info(f"Imported connection {connection.conn_id}")
 
 
-def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
+def _contains_duplicate_task_names(dag_bag):
     check.inst_param(dag_bag, "dag_bag", DagBag)
-    check.bool_param(refresh_from_airflow_db, "refresh_from_airflow_db")
     seen_task_names = set()
 
     # To enforce predictable iteration order
     sorted_dag_ids = sorted(dag_bag.dag_ids)
     for dag_id in sorted_dag_ids:
-        dag = dag_bag.dags.get(dag_id) if not refresh_from_airflow_db else dag_bag.get_dag(dag_id)
+        dag = dag_bag.dags.get(dag_id)
         for task in dag.tasks:
             if task.task_id in seen_task_names:
                 return True
@@ -122,34 +123,17 @@ def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
     return False
 
 
-def make_dagster_repo_from_airflow_dag_bag(
+def _make_schedules_and_jobs_from_airflow_dag_bag(
     dag_bag,
-    repo_name,
-    refresh_from_airflow_db=False,
     use_airflow_template_context=False,
     mock_xcom=False,
-    use_ephemeral_airflow_db=False,
+    use_ephemeral_airflow_db=True,
     connections=None,
 ):
-    """Construct a Dagster repository corresponding to Airflow DAGs in DagBag.
-
-    Usage:
-        Create `make_dagster_repo.py`:
-            from dagster_airflow.dagster_pipeline_factory import make_dagster_repo_from_airflow_dag_bag
-            from airflow_home import my_dag_bag
-
-            def make_repo_from_dag_bag():
-                return make_dagster_repo_from_airflow_dag_bag(my_dag_bag, 'my_repo_name')
-
-        Use RepositoryDefinition as usual, for example:
-            `dagit -f path/to/make_dagster_repo.py -n make_repo_from_dag_bag`
+    """Construct Dagster Schedules and Jobs corresponding to Airflow DagBag.
 
     Args:
-        dag_path (str): Path to directory or file that contains Airflow Dags
-        repo_name (str): Name for generated RepositoryDefinition
-        refresh_from_airflow_db (bool): If True, will refresh DAG if expired via DagBag.get_dag(),
-            which requires access to initialized Airflow DB. If False (recommended), gets dag from
-            DagBag's dags dict without depending on Airflow DB. (default: False)
+        dag_bag (DagBag): Airflow DagBag Model
         use_airflow_template_context (bool): If True, will call get_template_context() on the
             Airflow TaskInstance model which requires and modifies the DagRun table. The use_airflow_template_context
             setting is ignored if use_ephemeral_airflow_db is True.
@@ -162,11 +146,10 @@ def make_dagster_repo_from_airflow_dag_bag(
             Airflow DB, if use_emphemeral_airflow_db is False this will be ignored.
 
     Returns:
-        RepositoryDefinition
+        - List[ScheduleDefinition]: The generated Dagster Schedules
+        - List[JobDefinition]: The generated Dagster Jobs
     """
     check.inst_param(dag_bag, "dag_bag", DagBag)
-    check.str_param(repo_name, "repo_name")
-    check.bool_param(refresh_from_airflow_db, "refresh_from_airflow_db")
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
     use_ephemeral_airflow_db = check.opt_bool_param(
@@ -174,17 +157,15 @@ def make_dagster_repo_from_airflow_dag_bag(
     )
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
 
-    use_unique_id = contains_duplicate_task_names(dag_bag, refresh_from_airflow_db)
+    use_unique_id = _contains_duplicate_task_names(dag_bag)
 
     job_defs = []
     schedule_defs = []
-    asset_defs = []
     count = 0
     # To enforce predictable iteration order
     sorted_dag_ids = sorted(dag_bag.dag_ids)
     for dag_id in sorted_dag_ids:
-        # Only call Airflow DB via dag_bag.get_dag(dag_id) if refresh_from_airflow_db is True
-        dag = dag_bag.dags.get(dag_id) if not refresh_from_airflow_db else dag_bag.get_dag(dag_id)
+        dag = dag_bag.dags.get(dag_id)
         if not use_unique_id:
             pipeline_def = make_dagster_pipeline_from_airflow_dag(
                 dag=dag,
@@ -218,17 +199,72 @@ def make_dagster_repo_from_airflow_dag_bag(
             dag=dag,
             job_def=job_def,
         )
-        asset_def = make_dagster_asset_from_airflow_dag(dag=dag, job_def=job_def)
         if schedule_def:
             schedule_defs.append(schedule_def)
-        elif asset_def:
-            asset_defs.append(asset_def)
         else:
             job_defs.append(job_def)
 
+    return schedule_defs, job_defs
+
+
+def make_dagster_repo_from_airflow_dag_bag(
+    dag_bag,
+    repo_name,
+    use_airflow_template_context=False,
+    mock_xcom=False,
+    use_ephemeral_airflow_db=False,
+    connections=None,
+):
+    """Construct a Dagster repository corresponding to Airflow DAGs in DagBag.
+
+    Usage:
+        Create `make_dagster_repo.py`:
+            from dagster_airflow.dagster_pipeline_factory import make_dagster_repo_from_airflow_dag_bag
+            from airflow_home import my_dag_bag
+
+            def make_repo_from_dag_bag():
+                return make_dagster_repo_from_airflow_dag_bag(my_dag_bag, 'my_repo_name')
+
+        Use RepositoryDefinition as usual, for example:
+            `dagit -f path/to/make_dagster_repo.py -n make_repo_from_dag_bag`
+
+    Args:
+        dag_bag (DagBag): Airflow DagBag Model
+        repo_name (str): Name for generated RepositoryDefinition
+        use_airflow_template_context (bool): If True, will call get_template_context() on the
+            Airflow TaskInstance model which requires and modifies the DagRun table. The use_airflow_template_context
+            setting is ignored if use_ephemeral_airflow_db is True.
+            (default: False)
+        mock_xcom (bool): If True, dagster will mock out all calls made to xcom, features that
+            depend on xcom may not work as expected. (default: False)
+        use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
+            database for each run. (default: False)
+        connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
+            Airflow DB, if use_emphemeral_airflow_db is False this will be ignored.
+
+    Returns:
+        RepositoryDefinition
+    """
+    check.inst_param(dag_bag, "dag_bag", DagBag)
+    check.str_param(repo_name, "repo_name")
+    check.bool_param(use_airflow_template_context, "use_airflow_template_context")
+    mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
+    use_ephemeral_airflow_db = check.opt_bool_param(
+        use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
+    )
+    connections = check.opt_list_param(connections, "connections", of_type=Connection)
+
+    schedules, jobs = _make_schedules_and_jobs_from_airflow_dag_bag(
+        dag_bag,
+        use_airflow_template_context,
+        mock_xcom,
+        use_ephemeral_airflow_db,
+        connections,
+    )
+
     @repository(name=repo_name)
     def _repo():
-        return [job_defs, schedule_defs]
+        return [jobs, schedules]
 
     return _repo
 
@@ -255,37 +291,10 @@ def make_dagster_schedule_from_airflow_dag(dag, job_def):
         )
 
 
-def make_dagster_asset_from_airflow_dag(dag, job_def):
-    """Construct a Dagster asset corresponding to an Airflow DAG.
-
-    Args:
-        dag (DAG): Airflow DAG
-        job_def (JobDefinition): Dagster pipeline corresponding to Airflow DAG
-
-    Returns:
-        AssetDefinition
-    """
-    check.inst_param(dag, "dag", DAG)
-    check.inst_param(job_def, "job_def", JobDefinition)
-
-    cron_schedule = dag.normalized_schedule_interval
-    if isinstance(dag.normalized_schedule_interval, str) and cron_schedule == "Dataset":
-        # TODO: add support for asset tags
-        return
-
-
 def make_dagster_repo_from_airflow_example_dags(
     repo_name="airflow_example_dags_repo", use_ephemeral_airflow_db=True
 ):
     """Construct a Dagster repository for Airflow's example DAGs.
-
-    Execution of the following Airflow example DAGs is not currently supported:
-            'example_external_task_marker_child',
-            'example_pig_operator',
-            'example_skip_dag',
-            'example_trigger_target_dag',
-            'example_xcom',
-            'test_utils',
 
     Usage:
 
@@ -301,7 +310,7 @@ def make_dagster_repo_from_airflow_example_dags(
     Args:
         repo_name (str): Name for generated RepositoryDefinition
         use_ephemeral_airflow_db (bool): If True, dagster will create an ephemeral sqlite airflow
-            database for each run. (default: False)
+            database for each run. (default: True)
 
     Returns:
         RepositoryDefinition
@@ -324,15 +333,12 @@ def make_dagster_repo_from_airflow_dags_path(
     dag_path,
     repo_name,
     safe_mode=True,
-    store_serialized_dags=False,
     use_airflow_template_context=False,
     mock_xcom=False,
     use_ephemeral_airflow_db=True,
     connections=None,
 ):
     """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
-
-    ``DagBag.get_dag()`` dependency requires Airflow DB to be initialized.
 
     Usage:
         Create ``make_dagster_repo.py``:
@@ -355,8 +361,6 @@ def make_dagster_repo_from_airflow_dags_path(
         include_examples (bool): True to include Airflow's example DAGs. (default: False)
         safe_mode (bool): True to use Airflow's default heuristic to find files that contain DAGs
             (ie find files that contain both b'DAG' and b'airflow') (default: True)
-        store_serialized_dags (bool): True to read Airflow DAGS from Airflow DB. False to read DAGS
-            from Python files. (default: False)
         use_airflow_template_context (bool): If True, will call get_template_context() on the
             Airflow TaskInstance model which requires and modifies the DagRun table. The use_airflow_template_context
             setting is ignored if use_ephemeral_airflow_db is True.
@@ -374,15 +378,14 @@ def make_dagster_repo_from_airflow_dags_path(
     check.str_param(dag_path, "dag_path")
     check.str_param(repo_name, "repo_name")
     check.bool_param(safe_mode, "safe_mode")
-    check.bool_param(store_serialized_dags, "store_serialized_dags")
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     mock_xcom = check.opt_bool_param(mock_xcom, "mock_xcom")
     use_ephemeral_airflow_db = check.opt_bool_param(
         use_ephemeral_airflow_db, "use_ephemeral_airflow_db"
     )
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
-    # add connections as environment variables so that dag evaluation works
-    create_airflow_connections(connections)
+    # add connections to airflow so that dag evaluation works
+    _create_airflow_connections(connections)
     try:
         dag_bag = DagBag(
             dag_folder=dag_path,
@@ -542,7 +545,7 @@ def make_dagster_pipeline_from_airflow_dag(
                 importlib.reload(airflow)
             if not airflow_initialized:
                 db.initdb()
-                create_airflow_connections(
+                _create_airflow_connections(
                     [Connection(**c) for c in context.resource_config["connections"]]
                 )
 
@@ -776,7 +779,8 @@ def make_dagster_solid_from_airflow_task(
             )
         except OverflowError:
             raise DagsterInvariantViolationError(
-                'Date "{execution_date_str}" exceeds the largest valid C integer on the system.'.format(
+                'Date "{execution_date_str}" exceeds the largest valid C integer on the system.'
+                .format(
                     execution_date_str=execution_date_str,
                 )
             )
@@ -829,7 +833,8 @@ def make_dagster_solid_from_airflow_task(
 
 def dagster_get_template_context(task_instance, task, execution_date):
     """
-    Modified from /airflow/models/taskinstance.py to not reference Airflow DB
+    Modified from /airflow/models/taskinstance.py to not reference Airflow DB.
+
     (1) Removes the following block, which queries DB, removes dagrun instances, recycles run_id
     if hasattr(task, 'dag'):
         if task.dag.params:

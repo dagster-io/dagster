@@ -1,9 +1,15 @@
 ---
-title: Executors | Dagster
+title: Executors | Dagster Docs
 description: Executors are responsible for executing steps within a job run.
 ---
 
 # Executors
+
+Executors are responsible for executing steps within a job run. Once a run has launched and the process for the run (the [run worker](/deployment/overview#job-execution-flow)) is allocated and started, the executor assumes responsibility for execution.
+
+Executors can range from single-process serial executors to managing per-step computational resources with a sophisticated control plane.
+
+---
 
 ## Relevant APIs
 
@@ -12,18 +18,22 @@ description: Executors are responsible for executing steps within a job run.
 | <PyObject object="executor" decorator /> | The decorator used to define executors. Defines an <PyObject object="ExecutorDefinition" />. |
 | <PyObject object="ExecutorDefinition" /> | An executor definition.                                                                      |
 
-## Overview
+---
 
-Executors are responsible for executing steps within a job run. Once a run has launched and the process for the run (the [run worker](/deployment/overview#job-execution-flow)) has been allocated and started, the executor assumes responsibility for execution. Executors can range from single-process serial executors all the way to managing per-step computational resources with a sophisticated control plane.
+## Specifying executors
 
-## Specifying Executors
+- [Directly on jobs](#directly-on-jobs)
+- [For a code location](#for-a-code-location)
 
-Every job has an executor. The default executor is the <PyObject object="multi_or_in_process_executor" />, which by default executes each step in its own process, but can be configured to execute each step within the same process.
+### Directly on jobs
 
-An executor can be specified directly on the job by supplying an <PyObject object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject object="job" decorator /> or <PyObject object="GraphDefinition" method="to_job" />.
+Every job has an executor. The default executor is the <PyObject object="multi_or_in_process_executor" />, which by default executes each step in its own process. This executor can be configured to execute each step within the same process.
+
+An executor can be specified directly on a job by supplying an <PyObject object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject object="job" decorator /> or <PyObject object="GraphDefinition" method="to_job" />:
 
 ```python file=/deploying/executors/executors.py startafter=start_executor_on_job endbefore=end_executor_on_job
-from dagster import multiprocess_executor, job, graph
+from dagster import graph, job, multiprocess_executor
+
 
 # Providing an executor using the job decorator
 @job(executor_def=multiprocess_executor)
@@ -40,10 +50,14 @@ def the_graph():
 other_job = the_graph.to_job(executor_def=multiprocess_executor)
 ```
 
-A default executor can be specified for all jobs and assets provided to a repository using the `default_executor_def` argument of <PyObject object="repository" decorator />. All jobs that don't specify an executor will use this default executor, but if a job explicitly specifies an executor, then the default provided to the repository will not be used.
+### For a code location
+
+To specify a default executor for all jobs and assets provided to a code location, supply the `executor` argument to the <PyObject object="Definitions" /> object.
+
+If a job explicitly specifies an executor, then that executor will be used. Otherwise, jobs that don't specify an executor will use the default provided to the code location:
 
 ```python file=/deploying/executors/executors.py startafter=start_executor_on_repo endbefore=end_executor_on_repo
-from dagster import multiprocess_executor, define_asset_job, asset, repository
+from dagster import multiprocess_executor, define_asset_job, asset, Definitions
 
 
 @asset
@@ -59,37 +73,107 @@ def op_job():
     ...
 
 
-# op_job and asset_job will both use the default_executor_def,
+# op_job and asset_job will both use the multiprocess_executor,
 # since neither define their own executor.
-@repository(default_executor_def=multiprocess_executor)
-def the_repo():
-    return [the_asset, asset_job, op_job]
+
+defs = Definitions(
+    assets=[the_asset], jobs=[asset_job, op_job], executor=multiprocess_executor
+)
 ```
 
-Executing a job via <PyObject object="JobDefinition" method="execute_in_process" />, overrides the job's executor and uses <PyObject object="in_process_executor" /> instead.
+**Note**: Executing a job via <PyObject object="JobDefinition" method="execute_in_process" /> overrides the job's executor and uses <PyObject object="in_process_executor" /> instead.
 
-Example executors include:
+---
 
-- <PyObject module="dagster" object="in_process_executor" />: Execution plan
-  executes serially within the run worker itself.
-- <PyObject module="dagster" object="multiprocess_executor" />: Each step
-  executes within its own spawned process. Has configurable level of
-  parallelism.
-- <PyObject module="dagster_dask" object="dask_executor" />: Executes each step
-  within a dask task.
-- <PyObject module="dagster_celery" object="celery_executor" />: Executes each
-  step within a celery task.
-- <PyObject module="dagster_docker" object="docker_executor" />: Executes each
-  step within a Docker container.
-- <PyObject module="dagster_k8s" object="k8s_job_executor" />: Executes each
-  step within an ephemeral kubernetes pod.
-- <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />:
-  Executes each step within a ephemeral kubernetes pod, using celery as a
-  control plane for prioritization and queuing.
-- <PyObject module="dagster_celery_docker" object="celery_docker_executor" />:
-  Executes each step within a Docker container, using celery as a control plane
-  for prioritization and queueing.
+## Example executors
 
-## Custom Executors
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "25%",
+        }}
+      >
+        Name
+      </th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <PyObject module="dagster" object="in_process_executor" />
+      </td>
+      <td>Execution plan executes serially within the run worker itself.</td>
+    </tr>
+    <tr>
+      <td>
+        <PyObject module="dagster" object="multiprocess_executor" />
+      </td>
+      <td>
+        Executes each step within its own spawned process. Has a configurable
+        level of parallelism.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <PyObject module="dagster_dask" object="dask_executor" />
+      </td>
+      <td>Executes each step within a Dask task.</td>
+    </tr>
+    <tr>
+      <td>
+        <PyObject module="dagster_celery" object="celery_executor" />
+      </td>
+      <td>Executes each step within a Celery task.</td>
+    </tr>
+    <tr>
+      <td>
+        <PyObject module="dagster_docker" object="docker_executor" />
+      </td>
+      <td>Executes each step within a Docker container.</td>
+    </tr>
+    <tr>
+      <td>
+        <PyObject module="dagster_k8s" object="k8s_job_executor" />
+      </td>
+      <td>Executes each step within an ephemeral Kubernetes pod.</td>
+    </tr>
+    <tr>
+      <td>
+        <PyObject
+          module="dagster_celery_k8s"
+          object="celery_k8s_job_executor"
+        />
+      </td>
+      <td>
+        Executes each step within a ephemeral Kubernetes pod, using Celery as a
+        control plane for prioritization and queuing.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <PyObject
+          module="dagster_celery_docker"
+          object="celery_docker_executor"
+        />
+      </td>
+      <td>
+        Executes each step within a Docker container, using Celery as a control
+        plane for prioritization and queueing.
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-The executor system is pluggable, and it is possible to write your own executor to target a different execution substrate. This is not well-documented, and the internal APIs continue to be in flux.
+---
+
+## Custom executors
+
+The executor system is pluggable, meaning it's possible to write your own executor to target a different execution substrate. Note that this is not currently well-documented and the internal APIs continue to be in flux.

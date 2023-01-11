@@ -13,7 +13,7 @@ from dagster._serdes import whitelist_for_serdes
 class RunShardedEventsCursor(NamedTuple):
     """Pairs an id-based event log cursor with a timestamp-based run cursor, for improved
     performance on run-sharded event log storages (e.g. the default SqliteEventLogStorage). For
-    run-sharded storages, the id field is ignored, since they may not be unique across shards
+    run-sharded storages, the id field is ignored, since they may not be unique across shards.
     """
 
     id: int
@@ -56,16 +56,7 @@ class EventLogRecord(NamedTuple):
 
     @property
     def asset_materialization(self) -> Optional[AssetMaterialization]:
-        dagster_event = self.event_log_entry.dagster_event
-        if (
-            dagster_event
-            and dagster_event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION
-        ):
-            materialization = dagster_event.step_materialization_data.materialization
-            if isinstance(materialization, AssetMaterialization):
-                return materialization
-
-        return None
+        return self.event_log_entry.asset_materialization
 
 
 @whitelist_for_serdes

@@ -2,11 +2,11 @@ import {Box, Colors, Icon, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
+import {RepositorySelector} from '../graphql/graphql';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
-import {RepositorySelector} from '../types/globalTypes';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';

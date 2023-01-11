@@ -97,7 +97,6 @@ def _get_user_code_error_str_lambda(
 
 
 class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
-
     parent_def: "ConfigurableDefinition"
     _current_field: Optional[Field]
     _config_fn: Callable[..., object]

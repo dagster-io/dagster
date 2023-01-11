@@ -26,11 +26,11 @@ from io import BytesIO
 from urllib.parse import urlparse
 
 import boto3
-from botocore.exceptions import WaiterError
-from dagster_aws.utils.mrjob.utils import _boto3_now, _wrap_aws_client, strip_microseconds
-
 import dagster
 import dagster._check as check
+from botocore.exceptions import WaiterError
+
+from dagster_aws.utils.mrjob.utils import _boto3_now, _wrap_aws_client, strip_microseconds
 
 from .types import EMR_CLUSTER_TERMINATED_STATES, EmrClusterState, EmrStepState
 
@@ -315,7 +315,6 @@ class EmrJobRunner:
 
     def _check_for_missing_default_iam_roles(self, log, cluster):
         """If cluster couldn't start due to missing IAM roles, tell user what to do."""
-
         check.dict_param(cluster, "cluster")
 
         reason = _get_reason(cluster)

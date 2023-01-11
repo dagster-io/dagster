@@ -1,11 +1,9 @@
-import {gql} from '@apollo/client';
 import {Colors, CaptionMono} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {graphql} from '../graphql';
+import {InstigationStatus, ScheduleFutureTicksFragmentFragment} from '../graphql/graphql';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {InstigationStatus} from '../types/globalTypes';
-
-import {ScheduleFutureTicksFragment} from './types/ScheduleFutureTicksFragment';
 
 const TIME_FORMAT = {
   showTimezone: true,
@@ -13,7 +11,7 @@ const TIME_FORMAT = {
 };
 
 interface Props {
-  schedules: ScheduleFutureTicksFragment[];
+  schedules: ScheduleFutureTicksFragmentFragment[];
 }
 
 export const NextTick = (props: Props) => {
@@ -58,7 +56,7 @@ export const NextTick = (props: Props) => {
   return null;
 };
 
-export const SCHEDULE_FUTURE_TICKS_FRAGMENT = gql`
+export const SCHEDULE_FUTURE_TICKS_FRAGMENT = graphql(`
   fragment ScheduleFutureTicksFragment on Schedule {
     id
     executionTimezone
@@ -72,4 +70,4 @@ export const SCHEDULE_FUTURE_TICKS_FRAGMENT = gql`
       }
     }
   }
-`;
+`);

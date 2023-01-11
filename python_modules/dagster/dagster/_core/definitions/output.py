@@ -241,7 +241,6 @@ class OutputDefinition:
             output_name (str): The name of the child solid's output from which to map this output.
 
         Examples:
-
             .. code-block:: python
 
                 output_mapping = OutputDefinition(Int).mapping_from('child_solid')
@@ -384,7 +383,6 @@ class OutputMapping(NamedTuple):
         dagster_type (Optional[DagsterType]): (Deprecated) The dagster type of the graph's output being mapped to. Users should not use this argument when instantiating the class.
 
     Examples:
-
         .. code-block:: python
 
             from dagster import OutputMapping, GraphDefinition, op, graph, GraphOut

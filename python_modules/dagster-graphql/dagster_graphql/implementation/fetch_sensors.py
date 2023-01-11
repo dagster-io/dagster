@@ -1,13 +1,18 @@
-from graphene import ResolveInfo
-
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
 from dagster._core.scheduler.instigation import InstigatorState, SensorInstigatorData
+from dagster._core.workspace.permissions import Permissions
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from graphene import ResolveInfo
 
 from .loader import RepositoryScopedBatchLoader
-from .utils import UserFacingGraphQLError, capture_error
+from .utils import (
+    UserFacingGraphQLError,
+    assert_permission,
+    assert_permission_for_location,
+    capture_error,
+)
 
 
 @capture_error
@@ -93,10 +98,24 @@ def stop_sensor(graphene_info, instigator_origin_id, instigator_selector_id):
         for repository in repository_location.get_repositories().values()
         for sensor in repository.get_external_sensors()
     }
+
+    external_sensor = external_sensors.get(instigator_origin_id)
+    if external_sensor:
+        assert_permission_for_location(
+            graphene_info,
+            Permissions.EDIT_SENSOR,
+            external_sensor.selector.location_name,
+        )
+    else:
+        assert_permission(
+            graphene_info,
+            Permissions.EDIT_SENSOR,
+        )
+
     state = instance.stop_sensor(
         instigator_origin_id,
         instigator_selector_id,
-        external_sensors.get(instigator_origin_id),
+        external_sensor,
     )
     return GrapheneStopSensorMutationResult(state)
 

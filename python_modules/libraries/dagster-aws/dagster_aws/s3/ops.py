@@ -9,9 +9,10 @@ from dagster import (
     Out,
     Output,
     StringSource,
+    _check as check,
+    dagster_type_loader,
+    op,
 )
-from dagster import _check as check
-from dagster import dagster_type_loader, op
 from dagster._core.types.dagster_type import PythonObjectDagsterType
 
 from .file_manager import S3FileHandle

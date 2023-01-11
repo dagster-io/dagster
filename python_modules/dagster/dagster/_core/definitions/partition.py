@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
@@ -30,7 +31,8 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
-from dagster._utils import frozenlist, merge_dicts
+from dagster._utils import frozenlist
+from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 from ..decorator_utils import get_function_params
@@ -157,7 +159,6 @@ def schedule_partition_range(
 
     partitions: List[Partition[datetime]] = []
     for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
-
         partition_time = execution_time_to_partition_fn(next_time)
 
         if partition_time.timestamp() > end_timestamp:
@@ -261,6 +262,10 @@ class PartitionsDefinition(ABC, Generic[T]):
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return DefaultPartitionsSubset.from_serialized(self, serialized)
 
+    @property
+    def serializable_unique_identifier(self) -> str:
+        return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
+
 
 class StaticPartitionsDefinition(
     PartitionsDefinition[str],
@@ -309,7 +314,7 @@ class ScheduleTimeBasedPartitionsDefinition(
         ],
     ),
 ):
-    """Computes the partitions backwards from the scheduled execution times"""
+    """Computes the partitions backwards from the scheduled execution times."""
 
     def __new__(  # pylint: disable=arguments-differ
         cls,
@@ -325,8 +330,7 @@ class ScheduleTimeBasedPartitionsDefinition(
         if end is not None:
             check.invariant(
                 start <= end,
-                f'Selected date range start "{start}" '
-                f'is after date range end "{end}"'.format(
+                f'Selected date range start "{start}" is after date range end "{end}"'.format(
                     start=start.strftime(fmt) if fmt is not None else start,
                     end=cast(datetime, end).strftime(fmt) if fmt is not None else end,
                 ),
@@ -340,15 +344,19 @@ class ScheduleTimeBasedPartitionsDefinition(
             execution_day = execution_day if execution_day is not None else 0
             check.invariant(
                 execution_day is not None and 0 <= execution_day <= 6,
-                f'Execution day "{execution_day}" must be between 0 and 6 for '
-                f'schedule type "{schedule_type}"',
+                (
+                    f'Execution day "{execution_day}" must be between 0 and 6 for '
+                    f'schedule type "{schedule_type}"'
+                ),
             )
         elif schedule_type is ScheduleType.MONTHLY:
             execution_day = execution_day if execution_day is not None else 1
             check.invariant(
                 execution_day is not None and 1 <= execution_day <= 31,
-                f'Execution day "{execution_day}" must be between 1 and 31 for '
-                f'schedule type "{schedule_type}"',
+                (
+                    f'Execution day "{execution_day}" must be between 1 and 31 for '
+                    f'schedule type "{schedule_type}"'
+                ),
             )
 
         return super(ScheduleTimeBasedPartitionsDefinition, cls).__new__(
@@ -457,7 +465,7 @@ class DynamicPartitionsDefinition(
 
 class PartitionSetDefinition(Generic[T]):
     """
-    Defines a partition set, representing the set of slices making up an axis of a pipeline
+    Defines a partition set, representing the set of slices making up an axis of a pipeline.
 
     Args:
         name (str): Name for this partition set
@@ -663,7 +671,6 @@ class PartitionSetDefinition(Generic[T]):
             PartitionScheduleDefinition: The generated PartitionScheduleDefinition for the partition
                 selector
         """
-
         check.str_param(schedule_name, "schedule_name")
         check.str_param(cron_schedule, "cron_schedule")
         check.opt_callable_param(should_execute, "should_execute")
@@ -901,8 +908,10 @@ class PartitionedConfig(Generic[T]):
         if isinstance(config, PartitionedConfig):
             check.invariant(
                 config.partitions_def == partitions_def,
-                "Can't supply a PartitionedConfig for 'config' with a different "
-                "PartitionsDefinition than supplied for 'partitions_def'.",
+                (
+                    "Can't supply a PartitionedConfig for 'config' with a different "
+                    "PartitionsDefinition than supplied for 'partitions_def'."
+                ),
             )
             return config
         else:
@@ -925,10 +934,9 @@ def static_partitioned_config(
 ) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig]:
     """Creates a static partitioned config for a job.
 
-    The provided partition_keys returns a static list of strings identifying the set of partitions,
-    given an optional datetime argument (representing the current time).  The list of partitions
-    is static, so while the run config returned by the decorated function may change over time, the
-    list of valid partition keys does not.
+    The provided partition_keys is a static list of strings identifying the set of partitions. The
+    list of partitions is static, so while the run config returned by the decorated function may
+    change over time, the list of valid partition keys does not.
 
     This has performance advantages over `dynamic_partitioned_config` in terms of loading different
     partition views in Dagit.
@@ -1015,15 +1023,15 @@ def cron_schedule_from_schedule_type_and_offsets(
     elif schedule_type is ScheduleType.DAILY:
         return f"{minute_offset} {hour_offset} * * *"
     elif schedule_type is ScheduleType.WEEKLY:
-        return f"{minute_offset} {hour_offset} * * {day_offset if day_offset != None else 0}"
+        return f"{minute_offset} {hour_offset} * * {day_offset if day_offset is not None else 0}"
     elif schedule_type is ScheduleType.MONTHLY:
-        return f"{minute_offset} {hour_offset} {day_offset if day_offset != None else 1} * *"
+        return f"{minute_offset} {hour_offset} {day_offset if day_offset is not None else 1} * *"
     else:
         check.assert_never(schedule_type)
 
 
 class PartitionsSubset(ABC):
-    """Represents a subset of the partitions within a PartitionsDefinition"""
+    """Represents a subset of the partitions within a PartitionsDefinition."""
 
     @abstractmethod
     def get_partition_keys_not_in_subset(

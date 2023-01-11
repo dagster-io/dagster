@@ -17,5 +17,4 @@ class InMemoryIOManager(IOManager):
 @io_manager(description="Built-in IO manager that stores and retrieves values in memory.")
 def mem_io_manager(_):
     """Built-in IO manager that stores and retrieves values in memory."""
-
     return InMemoryIOManager()

@@ -16,11 +16,6 @@ from typing import (
     Tuple,
 )
 
-from dagster_dbt.cli.types import DbtCliOutput
-from dagster_dbt.cli.utils import execute_cli
-from dagster_dbt.types import DbtOutput
-from dagster_dbt.utils import _get_input_name, _get_output_name, result_to_events
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -32,15 +27,21 @@ from dagster import (
     PartitionsDefinition,
     TableColumn,
     TableSchema,
+    _check as check,
+    get_dagster_logger,
+    op,
 )
-from dagster import _check as check
-from dagster import get_dagster_logger, op
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
+
+from dagster_dbt.cli.types import DbtCliOutput
+from dagster_dbt.cli.utils import execute_cli
+from dagster_dbt.types import DbtOutput
+from dagster_dbt.utils import _get_input_name, _get_output_name, result_to_events
 
 
 def _load_manifest_for_project(
@@ -91,7 +92,7 @@ def _select_unique_ids_from_manifest_json(
         ) from e
 
     class _DictShim(dict):
-        """Shim to enable hydrating a dictionary into a dot-accessible object"""
+        """Shim to enable hydrating a dictionary into a dot-accessible object."""
 
         def __getattr__(self, item):
             ret = super().get(item)
@@ -150,7 +151,7 @@ def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
 
 
 def _get_node_group_name(node_info: Mapping[str, Any]) -> Optional[str]:
-    """A node's group name is subdirectory that it resides in"""
+    """A node's group name is subdirectory that it resides in."""
     fqn = node_info.get("fqn", [])
     # the first component is the package name, and the last component is the model name
     if len(fqn) < 3:
@@ -170,7 +171,7 @@ def _get_node_description(node_info, display_raw_sql):
 
 def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
     metadata: Dict[str, Any] = {}
-    columns = node_info.get("columns", [])
+    columns = node_info.get("columns", {})
     if len(columns) > 0:
         metadata["table_schema"] = MetadataValue.table_schema(
             TableSchema(
@@ -197,23 +198,21 @@ def _get_node_freshness_policy(node_info: Mapping[str, Any]) -> Optional[Freshne
     return None
 
 
+def _is_non_asset_node(node_info):
+    # some nodes exist inside the dbt graph but are not assets
+    resource_type = node_info["resource_type"]
+    if resource_type == "metric":
+        return True
+    if resource_type == "model" and node_info.get("config", {}).get("materialized") == "ephemeral":
+        return True
+    return False
+
+
 def _get_deps(
     dbt_nodes: Mapping[str, Any],
     selected_unique_ids: AbstractSet[str],
     asset_resource_types: List[str],
 ) -> Mapping[str, FrozenSet[str]]:
-    def _replaceable_node(node_info):
-        # some nodes exist inside the dbt graph but are not assets
-        resource_type = node_info["resource_type"]
-        if resource_type == "metric":
-            return True
-        if (
-            resource_type == "model"
-            and node_info.get("config", {}).get("materialized") == "ephemeral"
-        ):
-            return True
-        return False
-
     def _valid_parent_node(node_info):
         # sources are valid parents, but not assets
         return node_info["resource_type"] in asset_resource_types + ["source"]
@@ -224,14 +223,14 @@ def _get_deps(
         node_resource_type = node_info["resource_type"]
 
         # skip non-assets, such as metrics, tests, and ephemeral models
-        if _replaceable_node(node_info) or node_resource_type not in asset_resource_types:
+        if _is_non_asset_node(node_info) or node_resource_type not in asset_resource_types:
             continue
 
         asset_deps[unique_id] = set()
         for parent_unique_id in node_info["depends_on"]["nodes"]:
             parent_node_info = dbt_nodes[parent_unique_id]
             # for metrics or ephemeral dbt models, BFS to find valid parents
-            if _replaceable_node(parent_node_info):
+            if _is_non_asset_node(parent_node_info):
                 visited = set()
                 replaced_parent_ids = set()
                 queue = parent_node_info["depends_on"]["nodes"]
@@ -242,7 +241,7 @@ def _get_deps(
                     visited.add(candidate_parent_id)
 
                     candidate_parent_info = dbt_nodes[candidate_parent_id]
-                    if _replaceable_node(candidate_parent_info):
+                    if _is_non_asset_node(candidate_parent_info):
                         queue.extend(candidate_parent_info["depends_on"]["nodes"])
                     elif _valid_parent_node(candidate_parent_info):
                         replaced_parent_ids.add(candidate_parent_id)

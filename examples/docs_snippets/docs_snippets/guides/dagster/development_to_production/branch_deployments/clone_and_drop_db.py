@@ -7,14 +7,17 @@ from dagster import In, Nothing, graph, op
 @op(required_resource_keys={"snowflake"})
 def drop_database_clone(context):
     context.resources.snowflake.execute_query(
-        f"DROP DATABASE IF EXISTS PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']}"
+        "DROP DATABASE IF EXISTS"
+        f" PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']}"
     )
 
 
 @op(required_resource_keys={"snowflake"}, ins={"start": In(Nothing)})
 def clone_production_database(context):
     context.resources.snowflake.execute_query(
-        f"CREATE DATABASE PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']} CLONE \"PRODUCTION\""
+        "CREATE DATABASE"
+        f" PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']} CLONE"
+        ' "PRODUCTION"'
     )
 
 

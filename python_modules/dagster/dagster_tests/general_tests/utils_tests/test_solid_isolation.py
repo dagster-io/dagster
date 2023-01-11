@@ -1,7 +1,6 @@
 import re
 
 import pytest
-
 from dagster import DagsterInvariantViolationError, DagsterTypeCheckDidNotPass, Field, Int, resource
 from dagster._core.definitions.decorators import graph
 from dagster._core.test_utils import nesting_graph_pipeline
@@ -165,7 +164,7 @@ def test_graphs():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Tried to get result for solid 'goodbye' in 'hello_graph'. No such top level " "solid"
+            "Tried to get result for solid 'goodbye' in 'hello_graph'. No such top level solid"
         ),
     ):
         _ = result.result_for_node("goodbye")

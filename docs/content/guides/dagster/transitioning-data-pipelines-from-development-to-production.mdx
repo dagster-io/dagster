@@ -101,9 +101,9 @@ Now we can add these assets to our <PyObject object="Definitions" /> object and 
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
 # __init__.py
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
-from development_to_production.assets import comments, items, stories
 
 from dagster import Definitions
+from development_to_production.assets import comments, items, stories
 
 # Note that storing passwords in configuration is bad practice. It will be resolved later in the guide.
 resources = {
@@ -307,7 +307,6 @@ class HNAPIClient:
 
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
         """Fetches a single item from the Hacker News API by item id."""
-
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         item = requests.get(item_url, timeout=5).json()
         return item

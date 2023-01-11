@@ -2,8 +2,6 @@
 
 from typing import Dict, List, Mapping, Sequence, Tuple, Union, cast, overload
 
-from typing_extensions import Literal
-
 from dagster import (
     AssetMaterialization,
     AssetsDefinition,
@@ -25,6 +23,7 @@ from dagster._core.definitions.logical_version import (
     compute_logical_version,
 )
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from typing_extensions import Literal
 
 # ########################
 # ##### HELPERS

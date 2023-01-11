@@ -3,18 +3,19 @@ import os
 import re
 from collections import namedtuple
 
-from airflow import DAG
-from airflow.models.baseoperator import BaseOperator
-from dagster_airflow.operators.util import check_storage_specified
-
 import dagster._check as check
 import dagster._seven as seven
+from airflow import DAG
+from airflow.models.baseoperator import BaseOperator
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.instance import DagsterInstance, is_dagster_home_set
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.config import is_dagster_home_set
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
 from dagster._utils.backcompat import canonicalize_backcompat_args
+
+from dagster_airflow.operators.util import check_storage_specified
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator
@@ -43,8 +44,9 @@ def _make_dag_description(pipeline_name):
 
 
 def _rename_for_airflow(name):
-    """Modify pipeline name for Airflow to meet constraints on DAG names:
-    https://github.com/apache/airflow/blob/1.10.3/airflow/utils/helpers.py#L52-L63
+    """Modify pipeline name for Airflow to meet constraints on DAG names.
+
+    See: https://github.com/apache/airflow/blob/1.10.3/airflow/utils/helpers.py#L52-L63
 
     Here, we just substitute underscores for illegal characters to avoid imposing Airflow's
     constraints on our naming schemes.
@@ -55,8 +57,10 @@ def _rename_for_airflow(name):
 class DagsterOperatorInvocationArgs(
     namedtuple(
         "DagsterOperatorInvocationArgs",
-        "recon_repo pipeline_name run_config mode step_keys instance_ref pipeline_snapshot "
-        "execution_plan_snapshot parent_pipeline_snapshot",
+        (
+            "recon_repo pipeline_name run_config mode step_keys instance_ref pipeline_snapshot "
+            "execution_plan_snapshot parent_pipeline_snapshot"
+        ),
     )
 ):
     def __new__(

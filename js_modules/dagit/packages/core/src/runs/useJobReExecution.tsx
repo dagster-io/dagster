@@ -2,6 +2,7 @@ import {useMutation} from '@apollo/client';
 import * as React from 'react';
 import {useHistory} from 'react-router';
 
+import {RunFragmentFragment} from '../graphql/graphql';
 import {showLaunchError} from '../launchpad/showLaunchError';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -11,18 +12,10 @@ import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   ReExecutionStyle,
 } from './RunUtils';
-import {
-  LaunchPipelineReexecution,
-  LaunchPipelineReexecutionVariables,
-} from './types/LaunchPipelineReexecution';
-import {RunFragment} from './types/RunFragment';
 
-export const useJobReExecution = (run: RunFragment | undefined | null) => {
+export const useJobReExecution = (run: RunFragmentFragment | undefined | null) => {
   const history = useHistory();
-  const [launchPipelineReexecution] = useMutation<
-    LaunchPipelineReexecution,
-    LaunchPipelineReexecutionVariables
-  >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
+  const [launchPipelineReexecution] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
   const repoMatch = useRepositoryForRun(run);
 
   return React.useCallback(

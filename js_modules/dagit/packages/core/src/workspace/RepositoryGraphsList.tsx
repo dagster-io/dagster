@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {useQuery} from '@apollo/client';
 import {Box, Colors, Group, NonIdealState, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -6,17 +6,14 @@ import styled from 'styled-components/macro';
 
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {graphql} from '../graphql';
 
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
-import {
-  RepositoryGraphsListQuery,
-  RepositoryGraphsListQueryVariables,
-} from './types/RepositoryGraphsListQuery';
 import {workspacePath} from './workspacePath';
 
-const REPOSITORY_GRAPHS_LIST_QUERY = gql`
+const REPOSITORY_GRAPHS_LIST_QUERY = graphql(`
   query RepositoryGraphsListQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       __typename
@@ -54,7 +51,7 @@ const REPOSITORY_GRAPHS_LIST_QUERY = gql`
       }
     }
   }
-`;
+`);
 
 interface Props {
   repoAddress: RepoAddress;
@@ -73,11 +70,7 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const {data, error, loading} = useQuery<
-    RepositoryGraphsListQuery,
-    RepositoryGraphsListQueryVariables
-  >(REPOSITORY_GRAPHS_LIST_QUERY, {
-    fetchPolicy: 'cache-and-network',
+  const {data, error, loading} = useQuery(REPOSITORY_GRAPHS_LIST_QUERY, {
     variables: {repositorySelector},
   });
 

@@ -65,7 +65,7 @@ def dbt_rpc_server(
     tries_remaining = RPC_ESTABLISH_RETRIES
     while True:
         poll_result = proc.poll()  # check on the child
-        if poll_result != None:
+        if poll_result is not None:
             raise Exception("DBT subprocess terminated before test could start.")
 
         try:
@@ -194,7 +194,11 @@ def rpc_logs():
         },
         {
             "timestamp": "2020-03-10T18:19:06.727723Z",
-            "message": "11:19:06 | 1 of 1 OK snapshotted snapshots_david_wallace.dagster.daily_fulfillment_forecast_snapshot [\u001b[32mSUCCESS 0\u001b[0m in 11.92s]",
+            "message": (
+                "11:19:06 | 1 of 1 OK snapshotted"
+                " snapshots_david_wallace.dagster.daily_fulfillment_forecast_snapshot"
+                " [\u001b[32mSUCCESS 0\u001b[0m in 11.92s]"
+            ),
             "channel": "dbt",
             "level": 11,
             "levelname": "INFO",

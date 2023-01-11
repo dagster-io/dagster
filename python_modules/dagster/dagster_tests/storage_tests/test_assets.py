@@ -23,6 +23,7 @@ def test_parse_asset_key_string():
 
 def test_backcompat_asset_read():
     src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+
     # should contain materialization events for asset keys a, b, c, d, e, f
     # events a and b have been wiped, but b has been rematerialized
     def _validate_instance_assets(instance):

@@ -1,4 +1,4 @@
-"""add run partition columns
+"""add run partition columns.
 
 Revision ID: f3e43ff66603
 Revises: 9483999bad92

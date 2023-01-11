@@ -24,7 +24,6 @@ from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import (
-    DependencyDefinition,
     DynamicCollectDependencyDefinition,
     IDependencyDefinition,
     MultiDependencyDefinition,
@@ -51,7 +50,7 @@ from dagster._core.selector.subset_selector import (
 )
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.utils import str_format_set
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
@@ -62,7 +61,7 @@ from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
 from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
 from .mode import ModeDefinition
-from .partition import PartitionSetDefinition, PartitionedConfig, PartitionsDefinition
+from .partition import PartitionedConfig, PartitionsDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
@@ -78,7 +77,6 @@ if TYPE_CHECKING:
 
 
 class JobDefinition(PipelineDefinition):
-
     _cached_partition_set: Optional["PartitionSetDefinition"]
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
     input_values: Mapping[str, object]
@@ -185,7 +183,10 @@ class JobDefinition(PipelineDefinition):
             elif isinstance(config, dict):
                 check.invariant(
                     len(_preset_defs) == 0,
-                    "Bad state: attempted to pass preset definitions to job alongside config dictionary.",
+                    (
+                        "Bad state: attempted to pass preset definitions to job alongside config"
+                        " dictionary."
+                    ),
                 )
                 presets = [PresetDefinition(name="default", run_config=config)]
                 # Using config mapping here is a trick to make it so that the preset will be used even
@@ -204,8 +205,8 @@ class JobDefinition(PipelineDefinition):
                 self._explicit_config = True
             elif config is not None:
                 check.failed(
-                    f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
-                    f"is an object of type {type(config)}"
+                    "config param must be a ConfigMapping, a PartitionedConfig, or a dictionary,"
+                    f" but is an object of type {type(config)}"
                 )
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -223,7 +224,8 @@ class JobDefinition(PipelineDefinition):
         for input_name in sorted(list(self.input_values.keys())):
             if not graph_def.has_input(input_name):
                 raise DagsterInvalidDefinitionError(
-                    f"Error when constructing JobDefinition '{name}': Input value provided for key '{input_name}', but job has no top-level input with that name."
+                    f"Error when constructing JobDefinition '{name}': Input value provided for key"
+                    f" '{input_name}', but job has no top-level input with that name."
                 )
 
         super(JobDefinition, self).__init__(
@@ -317,6 +319,7 @@ class JobDefinition(PipelineDefinition):
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
             input_values (Optional[Mapping[str, Any]]):
                 A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
+
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
 
@@ -330,7 +333,10 @@ class JobDefinition(PipelineDefinition):
 
         check.invariant(
             not (op_selection and asset_selection),
-            "op_selection and asset_selection cannot both be provided as args to execute_in_process",
+            (
+                "op_selection and asset_selection cannot both be provided as args to"
+                " execute_in_process"
+            ),
         )
 
         partition_key = check.opt_str_param(partition_key, "partition_key")
@@ -369,12 +375,14 @@ class JobDefinition(PipelineDefinition):
         if partition_key:
             if not self.partitioned_config:
                 check.failed(
-                    f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
+                    f"Provided partition key `{partition_key}` for job `{self._name}` without a"
+                    " partitioned config"
                 )
             partition_set = self.get_partition_set_def()
             if not partition_set:
                 check.failed(
-                    f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
+                    f"Provided partition key `{partition_key}` for job `{self._name}` without a"
+                    " partitioned config"
                 )
 
             partition = partition_set.get_partition(partition_key)
@@ -423,7 +431,10 @@ class JobDefinition(PipelineDefinition):
     ):
         check.invariant(
             not (op_selection and asset_selection),
-            "op_selection and asset_selection cannot both be provided as args to execute_in_process",
+            (
+                "op_selection and asset_selection cannot both be provided as args to"
+                " execute_in_process"
+            ),
         )
         if op_selection:
             return self._get_job_def_for_op_selection(op_selection)
@@ -535,13 +546,11 @@ class JobDefinition(PipelineDefinition):
             ) from exc
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
-
         mode = self.get_mode_definition()
         if not mode.partitioned_config:
             return None
 
         if not self._cached_partition_set:
-
             tags_fn = mode.partitioned_config.tags_for_partition_fn
             if not tags_fn:
                 tags_fn = lambda _: {}
@@ -616,7 +625,6 @@ class JobDefinition(PipelineDefinition):
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
         """Apply a set of hooks to all op instances within the job."""
-
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         job_def = JobDefinition(
@@ -655,7 +663,9 @@ class JobDefinition(PipelineDefinition):
     def get_direct_input_value(self, input_name: str) -> object:
         if input_name not in self.input_values:
             raise DagsterInvalidInvocationError(
-                f"On job '{self.name}', attempted to retrieve input value for input named '{input_name}', but no value was provided. Provided input values: {sorted(list(self.input_values.keys()))}"
+                f"On job '{self.name}', attempted to retrieve input value for input named"
+                f" '{input_name}', but no value was provided. Provided input values:"
+                f" {sorted(list(self.input_values.keys()))}"
             )
         return self.input_values[input_name]
 
@@ -855,17 +865,20 @@ def default_job_io_manager(init_context: "InitResourceContext"):
             attr = getattr(module, attribute_name)
             check.invariant(
                 isinstance(attr, IOManagerDefinition),
-                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE must specify an IOManagerDefinition",
+                (
+                    "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
+                    " must specify an IOManagerDefinition"
+                ),
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
-                return resources.io_manager
+                return resources.io_manager  # type: ignore
         except Exception as e:
             if not silence_failures:
                 raise
             else:
                 warnings.warn(
-                    f"Failed to load io manager override with module: {module_name} attribute: {attribute_name}: {e}\n"
-                    "Falling back to default io manager."
+                    f"Failed to load io manager override with module: {module_name} attribute:"
+                    f" {attribute_name}: {e}\nFalling back to default io manager."
                 )
 
     # normally, default to the fs_io_manager
@@ -893,17 +906,20 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
             attr = getattr(module, attribute_name)
             check.invariant(
                 isinstance(attr, IOManagerDefinition),
-                "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE must specify an IOManagerDefinition",
+                (
+                    "DAGSTER_DEFAULT_IO_MANAGER_MODULE and DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE"
+                    " must specify an IOManagerDefinition"
+                ),
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
-                return resources.io_manager
+                return resources.io_manager  # type: ignore
         except Exception as e:
             if not silence_failures:
                 raise
             else:
                 warnings.warn(
-                    f"Failed to load io manager override with module: {module_name} attribute: {attribute_name}: {e}\n"
-                    "Falling back to default io manager."
+                    f"Failed to load io manager override with module: {module_name} attribute:"
+                    f" {attribute_name}: {e}\nFalling back to default io manager."
                 )
     from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 

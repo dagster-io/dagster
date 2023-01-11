@@ -2,14 +2,13 @@ import time
 
 import pytest
 import yaml
+from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.test_utils import instance_for_test
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_tests.storage_tests.utils.event_log_storage import (
     TestEventLogStorage,
     create_test_event_log_record,
 )
-
-from dagster._core.storage.event_log.base import EventLogCursor
-from dagster._core.test_utils import instance_for_test
 
 
 class TestPostgresEventLogStorage(TestEventLogStorage):

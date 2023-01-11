@@ -24,7 +24,7 @@
     ]
   },
   {
-    "title": "Tutorials",
+    "title": "Tutorial",
     "icon": "Tutorials",
     "path": "/tutorial",
     "children": [
@@ -33,42 +33,24 @@
         "path": "/tutorial/setup"
       },
       {
-        "title": "Assets",
-        "children": [
-          {
-            "title": "Defining an Asset",
-            "path": "/tutorial/assets/defining-an-asset"
-          },
-          {
-            "title": "Building Graphs of Assets",
-            "path": "/tutorial/assets/asset-graph"
-          },
-          {
-            "title": "Assets without Arguments and Return Values",
-            "path": "/tutorial/assets/non-argument-deps"
-          },
-          {
-            "title": "Testing Assets",
-            "path": "/tutorial/assets/testing-assets"
-          }
-        ]
+        "title": "Defining an asset",
+        "path": "/tutorial/assets/defining-an-asset"
       },
       {
-        "title": "Ops and Jobs",
-        "children": [
-          {
-            "title": "Writing, Executing a Single-Op Job",
-            "path": "/tutorial/ops-jobs/single-op-job"
-          },
-          {
-            "title": "Connecting Ops In Jobs",
-            "path": "/tutorial/ops-jobs/connecting-ops"
-          },
-          {
-            "title": "Testing Ops and Jobs",
-            "path": "/tutorial/ops-jobs/testable"
-          }
-        ]
+        "title": "Building graphs of assets",
+        "path": "/tutorial/assets/asset-graph"
+      },
+      {
+        "title": "Assets without arguments and return values",
+        "path": "/tutorial/assets/non-argument-deps"
+      },
+      {
+        "title": "Testing assets",
+        "path": "/tutorial/assets/testing-assets"
+      },
+      {
+        "title": "Next steps",
+        "path": "/tutorial/assets/next-steps"
       }
     ]
   },
@@ -79,6 +61,7 @@
     "children": [
       {
         "title": "Assets",
+        "path": "/concepts/assets/software-defined-assets",
         "children": [
           {
             "title": "Software-Defined Assets",
@@ -104,6 +87,7 @@
       },
       {
         "title": "Ops",
+        "path": "/concepts/ops-jobs-graphs/ops",
         "children": [
           {
             "title": "Ops",
@@ -125,6 +109,7 @@
       },
       {
         "title": "Graphs",
+        "path": "/concepts/ops-jobs-graphs/graphs",
         "children": [
           {
             "title": "Graphs",
@@ -142,6 +127,7 @@
       },
       {
         "title": "Jobs",
+        "path": "/concepts/ops-jobs-graphs/jobs",
         "children": [
           {
             "title": "Jobs",
@@ -184,6 +170,7 @@
       },
       {
         "title": "IO Management",
+        "path": "/concepts/io-management/io-managers",
         "children": [
           {
             "title": "IO Managers",
@@ -197,6 +184,7 @@
       },
       {
         "title": "Configuration",
+        "path": "/concepts/configuration/config-schema",
         "children": [
           {
             "title": "Run Configuration",
@@ -210,15 +198,11 @@
       },
       {
         "title": "Resources",
-        "children": [
-          {
-            "title": "Resources",
-            "path": "/concepts/resources"
-          }
-        ]
+        "path": "/concepts/resources"
       },
       {
         "title": "Code locations",
+        "path": "/concepts/code-locations",
         "children": [
           {
             "title": "Code locations",
@@ -249,12 +233,7 @@
       },
       {
         "title": "Dagster Types",
-        "children": [
-          {
-            "title": "Dagster Types",
-            "path": "/concepts/types"
-          }
-        ]
+        "path": "/concepts/types"
       },
       {
         "title": "Logging",
@@ -271,12 +250,7 @@
       },
       {
         "title": "Testing",
-        "children": [
-          {
-            "title": "Testing",
-            "path": "/concepts/testing"
-          }
-        ]
+        "path": "/concepts/testing"
       }
     ]
   },
@@ -339,21 +313,7 @@
         "children": [
           {
             "title": "Getting started",
-            "path": "/dagster-cloud/getting-started",
-            "children": [
-              {
-                "title": "Serverless Deployment",
-                "path": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment"
-              },
-              {
-                "title": "Hybrid Deployment",
-                "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment"
-              },
-              {
-                "title": "Environment variables and secrets",
-                "path": "/dagster-cloud/developing-testing/environment-variables-and-secrets"
-              }
-            ]
+            "path": "/dagster-cloud/getting-started"
           },
           {
             "title": "Deployment types",
@@ -575,6 +535,10 @@
             "path": "/integrations/airflow/from-airflow-to-dagster"
           },
           {
+            "title": "Airflow Migration Guide",
+            "path": "/integrations/airflow/migrating-to-dagster"
+          },
+          {
             "title": "Reference",
             "path": "/integrations/airflow/reference"
           }
@@ -700,6 +664,24 @@
             "path": "/guides/dagster/dagster_type_factories"
           },
           {
+            "title": "Intro to ops and jobs",
+            "path": "/guides/dagster/intro-to-ops-jobs",
+            "children": [
+              {
+                "title": "Write and execute a single-op job",
+                "path": "/guides/dagster/intro-to-ops-jobs/single-op-job"
+              },
+              {
+                "title": "Connecting ops in jobs",
+                "path": "/guides/dagster/intro-to-ops-jobs/connecting-ops"
+              },
+              {
+                "title": "Testing ops and jobs",
+                "path": "/guides/dagster/intro-to-ops-jobs/testable"
+              }
+            ]
+          },
+          {
             "title": "Migrating to graphs, jobs, ops",
             "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
             "isExternalLink": true
@@ -732,10 +714,6 @@
         "title": "Experimental features",
         "path": "/guides/experimental-features",
         "children": [
-          {
-            "title": "Versioning and memoization",
-            "path": "/guides/dagster/memoization"
-          },
           {
             "title": "Using custom run coordinators",
             "path": "/guides/dagster/run-attribution"
@@ -825,7 +803,7 @@
             "path": "/_apidocs/dynamic"
           },
           {
-            "title": "Versioning & Memoization",
+            "title": "Job Versioning & Memoization (Deprecated)",
             "path": "/_apidocs/memoization"
           },
           {

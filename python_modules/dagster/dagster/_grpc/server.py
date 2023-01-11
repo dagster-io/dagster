@@ -32,7 +32,12 @@ from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environ
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import deserialize_as, serialize_dagster_namedtuple, whitelist_for_serdes
 from dagster._serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
-from dagster._utils import find_free_port, frozenlist, safe_tempfile_path_unmanaged
+from dagster._utils import (
+    find_free_port,
+    frozenlist,
+    get_run_crash_explanation,
+    safe_tempfile_path_unmanaged,
+)
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from .__generated__ import api_pb2
@@ -223,7 +228,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         self._entry_point = (
             frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))  # type: ignore
-            if entry_point != None
+            if entry_point is not None
             else DEFAULT_DAGSTER_ENTRY_POINT
         )
 
@@ -303,10 +308,9 @@ class DagsterApiServer(DagsterApiServicer):
                         if not run or run.is_finished:
                             continue
 
-                        # the process died in an unexpected manner. inform the system
-                        message = (
-                            f"Run execution process for {run.run_id} unexpectedly "
-                            f"exited with exit code {process.exitcode}."
+                        message = get_run_crash_explanation(
+                            prefix=f"Run execution process for {run.run_id}",
+                            exit_code=process.exitcode,
                         )
 
                         instance.report_engine_event(message, run, cls=self.__class__)
@@ -862,8 +866,10 @@ class DagsterGrpcServer:
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.invariant(
             max_workers is None or max_workers > 1 if heartbeat else True,
-            "max_workers must be greater than 1 or set to None if heartbeat is True. "
-            "If set to None, the server will use the gRPC default.",
+            (
+                "max_workers must be greater than 1 or set to None if heartbeat is True. "
+                "If set to None, the server will use the gRPC default."
+            ),
         )
 
         check.opt_bool_param(inject_env_vars_from_instance, "inject_env_vars_from_instance")
@@ -1011,12 +1017,14 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
 
         if timeout > 0 and (time.time() - start_time > timeout):
             raise Exception(
-                f"Timed out waiting for gRPC server to start after {timeout}s with arguments: \"{' '.join(subprocess_args)}\". Most recent connection error: {str(last_error)}"
+                f"Timed out waiting for gRPC server to start after {timeout}s with arguments:"
+                f" \"{' '.join(subprocess_args)}\". Most recent connection error: {str(last_error)}"
             )
 
-        if server_process.poll() != None:
+        if server_process.poll() is not None:
             raise Exception(
-                f"gRPC server exited with return code {server_process.returncode} while starting up with the command: \"{' '.join(subprocess_args)}\""
+                f"gRPC server exited with return code {server_process.returncode} while starting up"
+                f" with the command: \"{' '.join(subprocess_args)}\""
             )
 
         sleep(0.1)
@@ -1165,8 +1173,10 @@ class GrpcServerProcess:
         check.int_param(startup_timeout, "startup_timeout")
         check.invariant(
             max_workers is None or max_workers > 1 if heartbeat else True,
-            "max_workers must be greater than 1 or set to None if heartbeat is True. "
-            "If set to None, the server will use the gRPC default.",
+            (
+                "max_workers must be greater than 1 or set to None if heartbeat is True. "
+                "If set to None, the server will use the gRPC default."
+            ),
         )
 
         if seven.IS_WINDOWS or force_port:

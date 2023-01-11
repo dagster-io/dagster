@@ -3,7 +3,6 @@ import datetime
 import tempfile
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,
@@ -403,8 +402,10 @@ def test_asset_both_io_manager_args_provided():
 
     with pytest.raises(
         CheckError,
-        match="Both io_manager_key and io_manager_def were provided to `@asset` "
-        "decorator. Please provide one or the other.",
+        match=(
+            "Both io_manager_key and io_manager_def were provided to `@asset` "
+            "decorator. Please provide one or the other."
+        ),
     ):
 
         @asset(io_manager_key="the_key", io_manager_def=the_io_manager)
@@ -478,7 +479,9 @@ def test_asset_invocation_resource_errors():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by op 'required_key_not_provided' was not provided.",
+        match=(
+            "resource with key 'foo' required by op 'required_key_not_provided' was not provided."
+        ),
     ):
         required_key_not_provided(build_op_context())
 

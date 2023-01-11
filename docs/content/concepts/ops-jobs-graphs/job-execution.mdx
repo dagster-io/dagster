@@ -191,3 +191,36 @@ def forkserver_job():
 ```
 
 Using forkserver is a great way to reduce per process overhead during multiprocess execution, but can cause issues with certain libraries. More details can be found [here](https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods).
+
+#### Op Concurrency limits
+
+In addition to the `max_concurrent` limit, you can use `tag_concurrency_limits` to specify limits on the number of ops with certain tags that can be executing at once within a single run.
+
+Limits can be specified for all ops with a certain tag key or key-value pair. If any limit would be exceeded by launching a op, then the op will stay queued. Asset jobs will look at the `op_tags` field on each asset in the job when checking them for tag concurrency limits.
+
+For example, the following job will execute at most two ops at once with the "database" tag equal to "redshift", while also ensuring that at most 4 ops execute at once:
+
+```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_tag_concurrency endbefore=end_tag_concurrency
+@job(
+    config={
+        "execution": {
+            "config": {
+                "multiprocess": {
+                    "max_concurrent": 4,
+                    "tag_concurrency_limits": [
+                        {
+                            "key": "database",
+                            "value": "redshift",
+                            "limit": 2,
+                        }
+                    ],
+                },
+            }
+        }
+    }
+)
+def tag_concurrency_job():
+    ...
+```
+
+**Note:** These limits are only applied on a per-run basis. You can apply op concurrency limits across multiple runs using the <PyObject module="dagster_celery" object="celery_executor" /> or <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />.

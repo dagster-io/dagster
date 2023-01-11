@@ -18,7 +18,7 @@ First, you'll download Dagster's `tutorial_dbt_dagster` example and configure th
 In this part, you'll:
 
 - [Download the `tutorial_dbt_dagster` example](#step-1-download-the-tutorial_dbt_dagster-example)
-- [Create a DuckDB connection profile](#step-2-create-a-duckdb-profile)
+- [Create a profile](#step-2-create-a-profile)
 - [Configure dbt model data sources](#step-3-configure-dbt-model-data-sources)
 
 ---
@@ -47,9 +47,24 @@ Let's get started by downloading the [`tutorial_dbt_dagster` example](https://gi
 
 ---
 
-## Step 2: Create a DuckDB profile
+## Step 2: Create a profile
 
-In this step, you'll add a DuckDB profile to the dbt project. Profiles in dbt allow you to connect dbt to a database - in this case, that's DuckDB.
+<Note>
+  We assume you use DuckDB as your data warehouse in order to run the tutorial
+  entirely locally. If you plan on using a different data warehouse in
+  production, that's totally fine: Dagster can orchestrate dbt regardless of
+  what profile is configured. For example, we support dbt profiles for{" "}
+  <a href="https://docs.getdbt.com/reference/warehouse-setups/bigquery-setup">
+    BigQuery
+  </a>
+  , <a href="https://docs.getdbt.com/reference/warehouse-setups/redshift-setup">
+    Redshift
+  </a>, <a href="https://docs.getdbt.com/reference/warehouse-setups/snowflake-setup">
+    Snowflake
+  </a>, and more.
+</Note>
+
+In this step, you'll add a profile to the dbt project. Profiles in dbt allow you to connect dbt to a database - in this case, that's DuckDB.
 
 1. Open the `profiles.yml` file, located in `/tutorial_template/jaffle_shop/config`.
 

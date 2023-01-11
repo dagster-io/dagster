@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
-from dagstermill.factory import _clean_path_for_windows
-
 import dagster._check as check
 from dagster import AssetKey, AssetMaterialization
 from dagster._config import Field
@@ -12,6 +10,8 @@ from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager, io_manager
 from dagster._utils import mkdir_p
+
+from dagstermill.factory import _clean_path_for_windows
 
 
 class OutputNotebookIOManager(IOManager):
@@ -43,7 +43,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         return str(Path(self.base_dir, *keys).with_suffix(".ipynb"))
 
     def handle_output(self, context: OutputContext, obj: bytes):
-        """obj: bytes"""
+        """obj: bytes."""
         check.inst_param(context, "context", OutputContext)
 
         # the output notebook itself is stored at output_file_path

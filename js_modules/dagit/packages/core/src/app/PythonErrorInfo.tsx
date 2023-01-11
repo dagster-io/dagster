@@ -1,41 +1,47 @@
-import {gql} from '@apollo/client';
 import {Button, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {MetadataEntries} from '../metadata/MetadataEntry';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
-import {ErrorSource} from '../types/globalTypes';
-
+import {graphql} from '../graphql';
 import {
-  PythonErrorFragment,
-  PythonErrorFragment_causes as Cause,
-} from './types/PythonErrorFragment';
+  ErrorSource,
+  MetadataEntryFragmentFragment,
+  PythonErrorFragmentFragment,
+  PythonErrorChainFragment,
+} from '../graphql/graphql';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {MetadataEntries} from '../metadata/MetadataEntry';
 
 export type GenericError = {
   message: string;
   stack?: string[];
-  causes?: Cause[];
+  errorChain?: PythonErrorChainFragment[];
 };
 
 interface IPythonErrorInfoProps {
   showReload?: boolean;
   centered?: boolean;
-  error: GenericError | PythonErrorFragment;
-  failureMetadata?: {metadataEntries: MetadataEntryFragment[]} | null;
+  error: GenericError | PythonErrorFragmentFragment;
+  failureMetadata?: {metadataEntries: MetadataEntryFragmentFragment[]} | null;
   errorSource?: ErrorSource | null;
 }
 
 export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
-  const {message, stack = [], causes = []} = props.error;
+  const {message, stack = [], errorChain = []} = props.error;
 
   const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
   const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
   const metadataEntries = props.failureMetadata?.metadataEntries;
 
+  const PythonErrorInfoHeader = useLaunchPadHooks().PythonErrorInfoHeader;
+
   return (
     <>
-      {context}
+      {PythonErrorInfoHeader ? (
+        <PythonErrorInfoHeader error={props.error} fallback={context} />
+      ) : (
+        context
+      )}
       <Wrapper>
         <ErrorHeader>{message}</ErrorHeader>
         {metadataEntries ? (
@@ -44,11 +50,15 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
           </div>
         ) : null}
         {stack ? <Trace>{stack.join('')}</Trace> : null}
-        {causes.map((cause, ii) => (
+        {errorChain.map((chainLink, ii) => (
           <React.Fragment key={ii}>
-            <CauseHeader>The above exception was caused by the following exception:</CauseHeader>
-            <ErrorHeader>{cause.message}</ErrorHeader>
-            {stack ? <Trace>{cause.stack.join('')}</Trace> : null}
+            <CauseHeader>
+              {chainLink.isExplicitLink
+                ? 'The above exception was caused by the following exception:'
+                : 'The above exception occurred during handling of the following exception:'}
+            </CauseHeader>
+            <ErrorHeader>{chainLink.error.message}</ErrorHeader>
+            {stack ? <Trace>{chainLink.error.stack.join('')}</Trace> : null}
           </React.Fragment>
         ))}
         {props.showReload && (
@@ -72,23 +82,30 @@ const ErrorContext: React.FC<{errorSource: ErrorSource}> = ({errorSource}) => {
   }
 };
 
-export const UNAUTHORIZED_ERROR_FRAGMENT = gql`
+export const UNAUTHORIZED_ERROR_FRAGMENT = graphql(`
   fragment UnauthorizedErrorFragment on UnauthorizedError {
     message
   }
-`;
+`);
 
-export const PYTHON_ERROR_FRAGMENT = gql`
+export const PYTHON_ERROR_FRAGMENT = graphql(`
   fragment PythonErrorFragment on PythonError {
     __typename
     message
     stack
-    causes {
+    errorChain {
+      ...PythonErrorChain
+    }
+  }
+
+  fragment PythonErrorChain on ErrorChainLink {
+    isExplicitLink
+    error {
       message
       stack
     }
   }
-`;
+`);
 
 const ContextHeader = styled.h4`
   font-weight: 400;
@@ -100,7 +117,7 @@ const CauseHeader = styled.h3`
   margin: 1em 0 1em;
 `;
 
-const ErrorHeader = styled.h3`
+export const ErrorHeader = styled.h3`
   color: #b05c47;
   font-weight: 400;
   margin: 0.5em 0 0.25em;

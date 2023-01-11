@@ -25,7 +25,6 @@ def get_param_value(param_name, param_type) -> Any:
     """
     Simple utility to generate an input for a given parameter name and type.
     """
-
     if param_name == "name":
         return "test_name"
 
@@ -50,7 +49,6 @@ def test_destination_constructors():
     Sanity check that we can instantiate all of the generated AirbyteDestination classes
     and that they produce a reasonable-looking configuration JSON.
     """
-
     for source, obj in inspect.getmembers(destinations):
         if source == "GeneratedAirbyteDestination":
             continue
@@ -72,7 +70,6 @@ def test_source_constructors():
     Sanity check that we can instantiate all of the generated AirbyteSource classes
     and that they produce a reasonable-looking configuration JSON.
     """
-
     for source, obj in inspect.getmembers(sources):
         if source == "GeneratedAirbyteSource":
             continue

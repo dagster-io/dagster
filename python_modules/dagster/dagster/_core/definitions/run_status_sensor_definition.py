@@ -61,7 +61,6 @@ class RunStatusSensorCursor(
     )
 ):
     def __new__(cls, record_id, update_timestamp):
-
         return super(RunStatusSensorCursor, cls).__new__(
             cls,
             record_id=check.int_param(record_id, "record_id"),
@@ -208,7 +207,6 @@ def build_run_status_sensor_context(
             )
             run_status_sensor_to_invoke(context)
     """
-
     return RunStatusSensorContext(
         sensor_name=sensor_name,
         instance=dagster_instance,
@@ -373,7 +371,6 @@ class RunStatusSensorDefinition(SensorDefinition):
         request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     ):
-
         from dagster._core.event_api import RunShardedEventsCursor
         from dagster._core.host_representation.selector import (
             CodeLocationSelector,
@@ -732,7 +729,6 @@ def run_status_sensor(
     def inner(
         fn: Callable[["RunStatusSensorContext"], RawSensorEvaluationFunctionReturn]
     ) -> RunStatusSensorDefinition:
-
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
@@ -742,7 +738,8 @@ def run_status_sensor(
 
         if jobs and monitor_all_repositories:
             DagsterInvalidDefinitionError(
-                f"Cannot specify both monitor_all_repositories and {'monitored_jobs' if monitored_jobs else 'job_selection'}."
+                "Cannot specify both monitor_all_repositories and"
+                f" {'monitored_jobs' if monitored_jobs else 'job_selection'}."
             )
 
         return RunStatusSensorDefinition(

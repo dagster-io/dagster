@@ -1,1 +1,1 @@
-from builtins import *  # pylint: disable=W0622,W0401
+from builtins import *  # noqa: F403

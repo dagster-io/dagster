@@ -17,7 +17,7 @@ def test_pipeline_autoalias():
         echo(echo(echo(hello())))
 
     result = autopipe.execute_in_process()
-    assert result.success == True
+    assert result.success is True
     assert result.output_for_node("echo_3") == "hello"
     assert result.output_for_node("echo_2") == "hello"
     assert result.output_for_node("echo") == "hello"
@@ -34,7 +34,7 @@ def test_composite_autoalias():
         mega_echo(hello())
 
     result = autopipe.execute_in_process()
-    assert result.success == True
+    assert result.success is True
     assert result.output_for_node("mega_echo.echo_3") == "hello"
     assert result.output_for_node("mega_echo.echo_2") == "hello"
     assert result.output_for_node("mega_echo.echo") == "hello"

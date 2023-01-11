@@ -1,8 +1,18 @@
 import os
 
-from dagster import Enum, EnumValue, Failure, Field, In, Noneable, Nothing, Out, Permissive
-from dagster import _check as check
-from dagster import op
+from dagster import (
+    Enum,
+    EnumValue,
+    Failure,
+    Field,
+    In,
+    Noneable,
+    Nothing,
+    Out,
+    Permissive,
+    _check as check,
+    op,
+)
 
 from .utils import execute, execute_script_file
 
@@ -77,9 +87,8 @@ def create_shell_command_op(
     pipeline execution and pass them between ops, you should use ``shell_op`` instead.
 
     Examples:
-
-    .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_command_op.py
-       :language: python
+        .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_command_op.py
+           :language: python
 
 
     Args:
@@ -140,9 +149,8 @@ def create_shell_script_op(shell_script_path, name="create_shell_script_op", ins
 
 
     Examples:
-
-    .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_script_op.py
-       :language: python
+        .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_script_op.py
+           :language: python
 
 
     Args:

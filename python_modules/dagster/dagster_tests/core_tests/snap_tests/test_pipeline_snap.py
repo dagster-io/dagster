@@ -1,7 +1,6 @@
 import itertools
 
 import pytest
-
 from dagster import Field, In, Map, Nothing, Out, Permissive, Selector, Shape, job, op
 from dagster._config import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
 from dagster._core.snap import (
@@ -45,7 +44,6 @@ def test_empty_pipeline_snap_snapshot(snapshot):
 
 
 def test_empty_pipeline_snap_props(snapshot):
-
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(get_noop_pipeline())
 
     assert pipeline_snapshot.name == "noop_job"

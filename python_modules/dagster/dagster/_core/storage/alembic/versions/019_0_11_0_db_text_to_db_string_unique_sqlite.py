@@ -1,4 +1,4 @@
-"""0.11.0 db.Text to MySQLCompatabilityTypes.UniqueText for MySQL Support
+"""0.11.0 db.Text to MySQLCompatabilityTypes.UniqueText for MySQL Support.
 
 Revision ID: 72686963a802
 Revises: 3778078a3582
@@ -7,7 +7,6 @@ Create Date: 2021-03-11 15:02:29.174707
 """
 import sqlalchemy as sa
 from alembic import op
-
 from dagster._core.storage.migration.utils import has_table
 from dagster._core.storage.sql import MySQLCompatabilityTypes
 

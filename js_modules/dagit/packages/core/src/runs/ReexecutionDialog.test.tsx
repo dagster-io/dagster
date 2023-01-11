@@ -2,8 +2,8 @@ import {render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
+import {ReexecutionStrategy} from '../graphql/graphql';
 import {TestProvider} from '../testing/TestProvider';
-import {ReexecutionStrategy} from '../types/globalTypes';
 
 import {ReexecutionDialog} from './ReexecutionDialog';
 

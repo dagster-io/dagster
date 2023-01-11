@@ -1,5 +1,5 @@
 """
-Unit testing the Mlflow class
+Unit testing the Mlflow class.
 """
 # pylint: disable=redefined-outer-name
 import logging
@@ -13,9 +13,8 @@ from unittest.mock import MagicMock, patch
 import mlflow
 import pandas as pd
 import pytest
-from dagster_mlflow.resources import MlFlow, mlflow_tracking
-
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster_mlflow.resources import MlFlow, mlflow_tracking
 
 
 @pytest.fixture
@@ -172,7 +171,6 @@ def test_mlflow_meta_overloading():
 
 @patch("mlflow.start_run")
 def test_start_run(mock_start_run, context):
-
     with patch.object(MlFlow, "_setup"):
         # Given: a context  passed into the __init__ for MlFlow
         mlf = MlFlow(context)
@@ -257,7 +255,6 @@ def test_get_current_run_id(context, experiment, run_df):
 
 @patch("atexit.unregister")
 def test_setup(mock_atexit, context):
-
     with patch.object(MlFlow, "_setup"):
         # Given: a context  passed into the __init__ for MlFlow
         mlf = MlFlow(context)
@@ -284,7 +281,6 @@ def test_setup(mock_atexit, context):
 
 @pytest.mark.parametrize("run_id", [None, 0, "12"])
 def test_set_active_run(context, run_id):
-
     with patch.object(MlFlow, "_setup"):
         # Given: a context  passed into the __init__ for MlFlow
         mlf = MlFlow(context)

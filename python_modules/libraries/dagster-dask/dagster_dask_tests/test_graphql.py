@@ -1,13 +1,12 @@
+from dagster._cli.workspace import get_workspace_process_context_from_kwargs
+from dagster._core.test_utils import instance_for_test
+from dagster._utils import file_relative_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_subscription,
     infer_pipeline_selector,
 )
-
-from dagster._cli.workspace import get_workspace_process_context_from_kwargs
-from dagster._core.test_utils import instance_for_test
-from dagster._utils import file_relative_path
 
 
 def test_execute_hammer_through_dagit():

@@ -4,19 +4,20 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {
+  AssetMaterializationFragmentFragment,
+  AssetObservationFragmentFragment,
+} from '../graphql/graphql';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
-
-import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {AssetObservationFragment} from './types/AssetObservationFragment';
 
 /**
  * This component shows the metadata entries attached to an Asset Materialization or Observation event.
  * AssetNodes also have definition-time metadata, which is unrelated to this event metadata.
  */
 export const AssetEventMetadataEntriesTable: React.FC<{
-  event: AssetObservationFragment | AssetMaterializationFragment | null;
-  observations?: (AssetObservationFragment | AssetMaterializationFragment)[];
+  event: AssetObservationFragmentFragment | AssetMaterializationFragmentFragment | null;
+  observations?: (AssetObservationFragmentFragment | AssetMaterializationFragmentFragment)[];
 }> = ({event, observations}) => {
   if (!event || (!event.metadataEntries.length && !observations?.length)) {
     return <Caption color={Colors.Gray500}>No materializations</Caption>;

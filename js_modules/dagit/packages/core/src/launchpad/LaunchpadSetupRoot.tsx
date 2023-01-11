@@ -7,7 +7,7 @@ import {
   applyCreateSession,
   useExecutionSessionStorage,
 } from '../app/ExecutionSessionStorage';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -16,7 +16,7 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 export const LaunchpadSetupRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
   const {repoPath, pipelinePath} = useParams<{repoPath: string; pipelinePath: string}>();
 
   if (!canLaunchPipelineExecution.enabled) {

@@ -5,9 +5,8 @@ from unittest import mock
 import boto3
 import psycopg2
 import pytest
-from dagster_aws.redshift import FakeRedshiftResource, fake_redshift_resource, redshift_resource
-
 from dagster._legacy import ModeDefinition, execute_solid, solid
+from dagster_aws.redshift import FakeRedshiftResource, fake_redshift_resource, redshift_resource
 
 REDSHIFT_ENV = {
     "resources": {
@@ -149,7 +148,6 @@ def test_live_redshift(s3_bucket):
     REDSHIFT_PASSWORD - Redshift password
 
     """
-
     # Put file to load on S3
     file_key = uuid.uuid4().hex
     client = boto3.client("s3")
@@ -165,7 +163,8 @@ def test_live_redshift(s3_bucket):
         def error_callback(error, cursor, _log):
             assert (
                 str(error).strip()
-                == "Load into table 'venue1' failed.  Check 'stl_load_errors' system table for details."
+                == "Load into table 'venue1' failed.  Check 'stl_load_errors' system table for"
+                " details."
             )
             cursor.execute(REDSHIFT_FAILED_LOAD_QUERY)
             res = cursor.fetchall()

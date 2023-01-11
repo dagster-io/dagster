@@ -2,15 +2,15 @@ import json
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
-from dagster_fivetran import FivetranResource
-from dagster_managed_elements import ManagedElementCheckResult, ManagedElementDiff
-from dagster_managed_elements.types import ManagedElementReconciler, is_key_secret
-from dagster_managed_elements.utils import diff_dicts
-
 import dagster._check as check
 from dagster import ResourceDefinition
 from dagster._annotations import experimental
 from dagster._core.execution.context.init import build_init_resource_context
+from dagster_managed_elements import ManagedElementCheckResult, ManagedElementDiff
+from dagster_managed_elements.types import ManagedElementReconciler, is_key_secret
+from dagster_managed_elements.utils import diff_dicts
+
+from dagster_fivetran import FivetranResource
 
 from .types import (
     FivetranConnector,
@@ -93,7 +93,6 @@ def reconcile_connectors(
     should_delete: bool,
     ignore_secrets: bool,
 ) -> ManagedElementCheckResult:
-
     diff = ManagedElementDiff()
 
     for connector_name in set(config_connectors.keys()).union(existing_connectors.keys()):
@@ -173,7 +172,6 @@ def reconcile_destinations(
     Generates a diff of the configured and existing destinations and reconciles them to match the
     configured state if dry_run is False.
     """
-
     diff = ManagedElementDiff()
 
     initialized_destinations: Dict[str, InitializedFivetranDestination] = {}
@@ -222,7 +220,6 @@ def reconcile_destinations(
             existing_destination = None
 
         if configured_destination:
-
             base_destination_dict = {
                 "region": configured_destination.region,
                 "time_zone_offset": configured_destination.time_zone_offset,

@@ -24,9 +24,9 @@ except ImportError:
 
 
 class SnowflakeConnection:
-    """A connection to Snowflake that can execute queries. In
-    general this class should not be directly instantiated, but rather used as a resource in an op
-    or asset via the :py:func:`snowflake_resource`.
+    """A connection to Snowflake that can execute queries. In general this class should not be
+    directly instantiated, but rather used as a resource in an op or asset via the
+    :py:func:`snowflake_resource`.
     """
 
     def __init__(self, config: Mapping[str, str], log):  # pylint: disable=too-many-locals
@@ -152,7 +152,6 @@ class SnowflakeConnection:
                         "DROP DATABASE IF EXISTS MY_DATABASE"
                     )
         """
-
         check.str_param(sql, "sql")
         check.opt_inst_param(parameters, "parameters", (list, dict))
         check.bool_param(fetch_results, "fetch_results")
@@ -261,9 +260,8 @@ class SnowflakeConnection:
             "CREATE OR REPLACE TABLE {table} ( data VARIANT DEFAULT NULL);".format(table=table),
             "CREATE OR REPLACE FILE FORMAT parquet_format TYPE = 'parquet';",
             "PUT {src} @%{table};".format(src=src, table=table),
-            "COPY INTO {table} FROM @%{table} FILE_FORMAT = (FORMAT_NAME = 'parquet_format');".format(
-                table=table
-            ),
+            "COPY INTO {table} FROM @%{table} FILE_FORMAT = (FORMAT_NAME = 'parquet_format');"
+            .format(table=table),
         ]
 
         self.execute_queries(sql_queries)
@@ -280,41 +278,39 @@ def snowflake_resource(context):
     A simple example of loading data into Snowflake and subsequently querying that data is shown below:
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster import job, op
+            from dagster_snowflake import snowflake_resource
 
-        from dagster import job, op
-        from dagster_snowflake import snowflake_resource
+            @op(required_resource_keys={'snowflake'})
+            def get_one(context):
+                context.resources.snowflake.execute_query('SELECT 1')
 
-        @op(required_resource_keys={'snowflake'})
-        def get_one(context):
-            context.resources.snowflake.execute_query('SELECT 1')
+            @job(resource_defs={'snowflake': snowflake_resource})
+            def my_snowflake_job():
+                get_one()
 
-        @job(resource_defs={'snowflake': snowflake_resource})
-        def my_snowflake_job():
-            get_one()
-
-        my_snowflake_job.execute_in_process(
-            run_config={
-                'resources': {
-                    'snowflake': {
-                        'config': {
-                            'account': {'env': 'SNOWFLAKE_ACCOUNT'},
-                            'user': {'env': 'SNOWFLAKE_USER'},
-                            'password': {'env': 'SNOWFLAKE_PASSWORD'},
-                            'database': {'env': 'SNOWFLAKE_DATABASE'},
-                            'schema': {'env': 'SNOWFLAKE_SCHEMA'},
-                            'warehouse': {'env': 'SNOWFLAKE_WAREHOUSE'},
+            my_snowflake_job.execute_in_process(
+                run_config={
+                    'resources': {
+                        'snowflake': {
+                            'config': {
+                                'account': {'env': 'SNOWFLAKE_ACCOUNT'},
+                                'user': {'env': 'SNOWFLAKE_USER'},
+                                'password': {'env': 'SNOWFLAKE_PASSWORD'},
+                                'database': {'env': 'SNOWFLAKE_DATABASE'},
+                                'schema': {'env': 'SNOWFLAKE_SCHEMA'},
+                                'warehouse': {'env': 'SNOWFLAKE_WAREHOUSE'},
+                            }
                         }
                     }
                 }
-            }
-        )
-
+            )
     """
     return SnowflakeConnection(context.resource_config, context.log)
 
 
 def _filter_password(args):
-    """Remove password from connection args for logging"""
+    """Remove password from connection args for logging."""
     return {k: v for k, v in args.items() if k != "password"}

@@ -5,9 +5,8 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from wordcloud import STOPWORDS, WordCloud
-
 from dagster import MetadataValue, OpExecutionContext, asset
+from wordcloud import STOPWORDS, WordCloud
 
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")
@@ -31,7 +30,6 @@ def hackernews_topstories(
 
     API Docs: https://github.com/HackerNews/API#items
     """
-
     results = []
     for item_id in hackernews_topstory_ids["item_ids"]:
         item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
