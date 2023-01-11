@@ -186,9 +186,38 @@ def test_get_primary_and_secondary_dimensions():
     )
 
 
+def test_multipartitions_backcompat_subset_serialization():
+    partitions1 = StaticPartitionsDefinition(["a", "b", "c"])
+    partitions2 = StaticPartitionsDefinition(["x", "y", "z"])
+    composite = MultiPartitionsDefinition({"abc": partitions1, "xyz": partitions2})
+
+    partition_keys = [
+        MultiPartitionKey({"abc": "a", "xyz": "x"}),
+        MultiPartitionKey({"abc": "c", "xyz": "z"}),
+    ]
+    serialization = '["a|x", "c|z"]'
+    assert composite.deserialize_subset(serialization).get_partition_keys() == set(partition_keys)
+
+    version_1_serialization = r"""
+        {"version": 1, "serialized_subsets_by_primary_key": {"a": "{\"version\": 1, \"subset\": [\"x\"]}", "b": "{\"version\": 1, \"subset\": []}", "c": "{\"version\": 1, \"subset\": [\"z\"]}"}}
+        """
+    assert composite.deserialize_subset(version_1_serialization).get_partition_keys() == set(
+        partition_keys
+    )
+
+
 def test_multipartitions_subset_serialization():
-    # TODO test serialization / deserialization
-    pass
+    partitions1 = StaticPartitionsDefinition(["a", "b", "c"])
+    partitions2 = StaticPartitionsDefinition(["x", "y", "z"])
+    composite = MultiPartitionsDefinition({"abc": partitions1, "xyz": partitions2})
+
+    partition_keys = [
+        MultiPartitionKey({"abc": "a", "xyz": "x"}),
+        MultiPartitionKey({"abc": "c", "xyz": "z"}),
+    ]
+    assert composite.deserialize_subset(
+        composite.empty_subset().with_partition_keys(partition_keys).serialize()
+    ).get_partition_keys() == set(partition_keys)
 
 
 def test_multipartitions_subset_equality():

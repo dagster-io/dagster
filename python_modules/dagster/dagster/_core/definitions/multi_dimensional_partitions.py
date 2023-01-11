@@ -518,21 +518,32 @@ class MultiPartitionsSubset(PartitionsSubset):
             )
 
         data = json.loads(serialized)
-        if data.get("version") != cls.SERIALIZATION_VERSION:
-            raise DagsterInvalidDeserializationVersionError(
-                f"Attempted to deserialize partition subset with version {data.get('version')}, but"
-                f" only version {cls.SERIALIZATION_VERSION} is supported."
-            )
 
-        return MultiPartitionsSubset(
-            partitions_def=partitions_def,
-            subsets_by_primary_dimension_partition_key={
-                primary_key: partitions_def.secondary_dimension.partitions_def.deserialize_subset(
-                    subset
+        if isinstance(data, list):
+            # backcompat
+            return partitions_def.empty_subset().with_partition_keys(data)
+
+        else:
+            if not isinstance(data, dict):
+                check.failed("Serialized multipartitions subset must be an object")
+
+            if data.get("version") != cls.SERIALIZATION_VERSION:
+                raise DagsterInvalidDeserializationVersionError(
+                    f"Attempted to deserialize partition subset with version {data.get('version')},"
+                    f" but only version {cls.SERIALIZATION_VERSION} is supported."
                 )
-                for primary_key, subset in data["serialized_subsets_by_primary_key"].items()
-            },
-        )
+
+            return MultiPartitionsSubset(
+                partitions_def=partitions_def,
+                subsets_by_primary_dimension_partition_key={
+                    primary_key: partitions_def.secondary_dimension.partitions_def.deserialize_subset(
+                        subset
+                    )
+                    for primary_key, subset in data.get(
+                        "serialized_subsets_by_primary_key", {}
+                    ).items()
+                },
+            )
 
     def get_inverse_subset(
         self, current_time: Optional[datetime] = None
