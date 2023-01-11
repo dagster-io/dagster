@@ -112,7 +112,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
 
     def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
         """
-        E.g. '["first_component", "second_component"]'
+        E.g. '["first_component", "second_component"]'.
         """
         if not self.path:
             return None
@@ -122,7 +122,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
 
     def to_user_string(self) -> str:
         """
-        E.g. "first_component/second_component"
+        E.g. "first_component/second_component".
         """
         return ASSET_KEY_DELIMITER.join(self.path)
 

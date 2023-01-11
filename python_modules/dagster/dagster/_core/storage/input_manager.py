@@ -45,7 +45,7 @@ class IInputManagerDefinition:
     @abstractmethod
     def input_config_schema(self) -> IDefinitionConfigSchema:
         """The schema for per-input configuration for inputs that are managed by this
-        input manager
+        input manager.
         """
 
 

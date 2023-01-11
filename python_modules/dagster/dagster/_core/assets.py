@@ -8,7 +8,7 @@ from dagster._serdes import deserialize_json_to_dagster_namedtuple, whitelist_fo
 class AssetDetails(NamedTuple("_AssetDetails", [("last_wipe_timestamp", Optional[float])])):
     """
     Set of asset fields that do not change with every materialization.  These are generally updated
-    on some non-materialization action (e.g. wipe)
+    on some non-materialization action (e.g. wipe).
     """
 
     def __new__(cls, last_wipe_timestamp: Optional[float] = None):

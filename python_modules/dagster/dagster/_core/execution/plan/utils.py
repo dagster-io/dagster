@@ -26,7 +26,7 @@ def build_resources_for_manager(
 
 
 class RetryRequestedFromPolicy(RetryRequested):
-    """Subclass to indicate origin of retry request is policy"""
+    """Subclass to indicate origin of retry request is policy."""
 
 
 @contextmanager

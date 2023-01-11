@@ -166,7 +166,7 @@ def execute_core_compute(
 ) -> Iterator[SolidOutputUnion]:
     """
     Execute the user-specified compute for the solid. Wrap in an error boundary and do
-    all relevant logging and metrics tracking
+    all relevant logging and metrics tracking.
     """
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.mapping_param(inputs, "inputs", key_type=str)

@@ -582,12 +582,12 @@ class SqlEventLogStorage(EventLogStorage):
             print_fn(f"Finished data migration: {migration_name}")
 
     def reindex_events(self, print_fn=None, force=False):
-        """Call this method to run any data migrations across the event_log table"""
+        """Call this method to run any data migrations across the event_log table."""
         for migration_name, migration_fn in EVENT_LOG_DATA_MIGRATIONS.items():
             self._apply_migration(migration_name, migration_fn, print_fn, force)
 
     def reindex_assets(self, print_fn=None, force=False):
-        """Call this method to run any data migrations across the asset_keys table"""
+        """Call this method to run any data migrations across the asset_keys table."""
         for migration_name, migration_fn in ASSET_DATA_MIGRATIONS.items():
             self._apply_migration(migration_name, migration_fn, print_fn, force)
 
@@ -687,7 +687,7 @@ class SqlEventLogStorage(EventLogStorage):
         """Utility method to test representation of the record in the SQL table.  Returns all of
         the columns stored in the event log storage (as opposed to the deserialized `EventLogEntry`).
         This allows checking that certain fields are extracted to support performant lookups (e.g.
-        extracting `step_key` for fast filtering)
+        extracting `step_key` for fast filtering).
         """
         with self.run_connection(run_id=run_id) as conn:
             query = (

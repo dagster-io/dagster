@@ -40,7 +40,7 @@ class DbtRpcResource(DbtResource):
         logger: Optional[Any] = None,
         **_,
     ):
-        """Constructor
+        """Constructor.
 
         Args:
             host (str): The IP address of the host of the dbt RPC server. Default is ``"0.0.0.0"``.
@@ -517,7 +517,7 @@ class DbtRpcSyncResource(DbtRpcResource):
         poll_interval: int = 1,
         **_,
     ):
-        """Constructor
+        """Constructor.
 
         Args:
             host (str): The IP address of the host of the dbt RPC server. Default is ``"0.0.0.0"``.

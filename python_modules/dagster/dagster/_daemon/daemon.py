@@ -59,7 +59,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
     @abstractmethod
     def daemon_type(cls) -> str:
         """
-        returns: str
+        returns: str.
         """
 
     def __exit__(self, _exception_type, _exception_value, _traceback):

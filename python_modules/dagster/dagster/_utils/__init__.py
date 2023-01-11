@@ -125,7 +125,7 @@ def script_relative_path(file_path: str) -> str:
     Useful for testing with local files. Use a path relative to where the
     test resides and this function will return the absolute path
     of that file. Otherwise it will be relative to script that
-    ran the test
+    ran the test.
 
     Note: this is function is very, very expensive (on the order of 1
     millisecond per invocation) so this should only be used in performance

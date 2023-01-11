@@ -105,13 +105,13 @@ def test_multi_val_constraint():
 def test_multi_column_constraint():
     def col_val_three(value):
         """
-        returns values greater than or equal to 3
+        returns values greater than or equal to 3.
         """
         return (value >= 2, {})
 
     def col_val_two(value):
         """
-        returns values less than 2
+        returns values less than 2.
         """
         return (value < 2, {})
 
@@ -125,10 +125,10 @@ def test_multi_column_constraint():
     val = column_val.validate(df).metadata_entries[0].entry_data.data
     assert {
         "bar": {
-            "col_val_two": "values less than 2",
-            "col_val_three": "values greater than or equal to 3",
+            "col_val_two": "values less than 2.",
+            "col_val_three": "values greater than or equal to 3.",
         },
-        "baz": {"col_val_three": "values greater than or equal to 3"},
+        "baz": {"col_val_three": "values greater than or equal to 3."},
     } == val["expected"]
     assert {
         "bar": {"col_val_two": ["row 0", "row 1"], "col_val_three": ["row 2"]},
@@ -163,11 +163,11 @@ def test_aggregate_constraint():
 
 def test_multi_agg_constraint():
     def column_val_1(data):
-        """checks column mean equal to 1"""
+        """checks column mean equal to 1."""
         return (data.mean() == 1, {})
 
     def column_val_2(data):
-        """checks column mean equal to 1.5"""
+        """checks column mean equal to 1.5."""
         return (data.mean() == 1.5, {})
 
     df = DataFrame(
@@ -184,8 +184,8 @@ def test_multi_agg_constraint():
     )
     val = aggregate_val.validate(df).metadata_entries[0].entry_data.data
     assert val["expected"] == {
-        "bar": {"column_val_2": "checks column mean equal to 1.5"},
-        "foo": {"column_val_1": "checks column mean equal to 1"},
+        "bar": {"column_val_2": "checks column mean equal to 1.5."},
+        "foo": {"column_val_1": "checks column mean equal to 1."},
     }
     assert val["offending"] == {
         "bar": {"column_val_2": "a violation"},

@@ -16,7 +16,7 @@ def model_func(x, a, b):
     io_manager_key="model_io_manager",
 )
 def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
-    """Model parameters that best fit the observed data"""
+    """Model parameters that best fit the observed data."""
     df = daily_order_summary
     return tuple(
         optimize.curve_fit(
@@ -36,7 +36,7 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
 def predicted_orders(
     daily_order_summary: pd.DataFrame, order_forecast_model: Tuple[float, float]
 ) -> pd.DataFrame:
-    """Predicted orders for the next 30 days based on the fit paramters"""
+    """Predicted orders for the next 30 days based on the fit paramters."""
     a, b = order_forecast_model
     start_date = daily_order_summary.order_date.max()
     future_dates = pd.date_range(

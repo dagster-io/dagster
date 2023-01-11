@@ -544,7 +544,7 @@ def build_asset_ins(
     non_argument_deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
     """
-    Creates a mapping from AssetKey to (name of input, In object)
+    Creates a mapping from AssetKey to (name of input, In object).
     """
     non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
 
@@ -618,7 +618,7 @@ def build_asset_outs(
     asset_outs: Mapping[str, Union[Out, AssetOut]]
 ) -> Mapping[AssetKey, Tuple[str, Out]]:
     """
-    Creates a mapping from AssetKey to (name of output, Out object)
+    Creates a mapping from AssetKey to (name of output, Out object).
     """
     outs_by_asset_key: Dict[AssetKey, Tuple[str, Out]] = {}
     for output_name, asset_out in asset_outs.items():

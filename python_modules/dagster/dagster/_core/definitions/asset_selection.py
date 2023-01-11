@@ -85,7 +85,7 @@ class AssetSelection(ABC):
     @public  # type: ignore
     @staticmethod
     def groups(*group_strs) -> "GroupsAssetSelection":
-        """Returns a selection that includes assets that belong to any of the provided groups"""
+        """Returns a selection that includes assets that belong to any of the provided groups."""
         check.tuple_param(group_strs, "group_strs", of_type=str)
         return GroupsAssetSelection(*group_strs)
 

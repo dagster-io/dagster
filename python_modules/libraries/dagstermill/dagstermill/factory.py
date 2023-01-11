@@ -39,7 +39,7 @@ from .translator import DagsterTranslator
 
 def _clean_path_for_windows(notebook_path: str) -> str:
     """In windows, the notebook cant render in dagit unless the C: prefix is removed.
-    os.path.splitdrive will split the path into (drive, tail), so just return the tail
+    os.path.splitdrive will split the path into (drive, tail), so just return the tail.
     """
     return os.path.splitdrive(notebook_path)[1]
 
@@ -59,7 +59,7 @@ def _find_first_tagged_cell_index(nb, tag):
 # Typically, papermill injects the injected-parameters cell *below* the parameters cell
 # but we want to *replace* the parameters cell, which is what this function does.
 def replace_parameters(context, nb, parameters):
-    """Assigned parameters into the appropriate place in the input notebook
+    """Assigned parameters into the appropriate place in the input notebook.
 
     Args:
         nb (NotebookNode): Executable notebook object

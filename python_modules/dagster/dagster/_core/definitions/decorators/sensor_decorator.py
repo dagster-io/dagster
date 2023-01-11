@@ -199,7 +199,7 @@ def multi_asset_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
     """
-    Creates an asset sensor that can monitor multiple assets
+    Creates an asset sensor that can monitor multiple assets.
 
     The decorated function is used as the asset sensor's evaluation
     function.  The decorated function may:
