@@ -212,6 +212,11 @@ def get_task_definition_dict_from_current_task(
             *environment,
         ]
 
+    secret_names = set(secret.get("name") for secret in new_container_definition["secrets"])
+    for env in new_container_definition["environment"]:
+        if env.get("name") in secret_names:
+            new_container_definition["environment"].remove(env)
+
     if include_sidecars:
         container_definitions = current_task_definition_dict.get("containerDefinitions")
         container_definitions.remove(container_definition)
