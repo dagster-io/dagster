@@ -96,7 +96,7 @@ class AssetStatusCacheValue(
 
 def get_materialized_multipartitions(
     instance: DagsterInstance, asset_key: AssetKey, partitions_def: MultiPartitionsDefinition
-) -> Sequence[MultiPartitionKey]:
+) -> Sequence[str]:
     dimension_names = partitions_def.partition_dimension_names
     materialized_keys: List[MultiPartitionKey] = []
     for event_tags in instance.get_event_tags_for_asset(asset_key):
@@ -197,6 +197,7 @@ def _get_updated_status_cache(
         current_status_cache_value.partitions_def_id
         == partitions_def.serializable_unique_identifier
     )
+
     materialized_subset: PartitionsSubset = (
         partitions_def.deserialize_subset(
             current_status_cache_value.serialized_materialized_partition_subset
@@ -253,8 +254,17 @@ def _get_fresh_asset_status_cache_values(
             continue
 
         partitions_def = asset_graph.get_partitions_def(asset_key)
-        if cached_status_data is None or cached_status_data.partitions_def_id != (
-            partitions_def.serializable_unique_identifier if partitions_def else None
+        if (
+            cached_status_data is None
+            or cached_status_data.partitions_def_id
+            != (partitions_def.serializable_unique_identifier if partitions_def else None)
+            or (
+                partitions_def
+                and cached_status_data.serialized_materialized_partition_subset
+                and not partitions_def.can_deserialize_subset(
+                    cached_status_data.serialized_materialized_partition_subset
+                )
+            )
         ):
             event_records = instance.get_event_records(
                 event_records_filter=EventRecordsFilter(
