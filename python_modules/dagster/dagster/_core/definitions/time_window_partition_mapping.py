@@ -200,11 +200,7 @@ class TimeWindowPartitionMapping(
 
         return TimeWindowPartitionsSubset(
             to_partitions_def,
-            time_windows,
-            num_partitions=sum(
-                len(to_partitions_def.get_partition_keys_in_time_window(time_window))
-                for time_window in time_windows
-            ),
+            to_partitions_def.build_merged_subset_time_windows(time_windows),
         )
 
 

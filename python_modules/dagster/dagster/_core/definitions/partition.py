@@ -1053,11 +1053,12 @@ class PartitionsSubset(ABC):
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
         raise NotImplementedError()
 
-    @abstractmethod
     def with_partition_key_range(
         self, partition_key_range: PartitionKeyRange
     ) -> "PartitionsSubset":
-        raise NotImplementedError()
+        return self.with_partition_keys(
+            self.partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
 
     @abstractmethod
     def serialize(self) -> str:

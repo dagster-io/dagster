@@ -13,6 +13,7 @@ from typing import (
     Sequence,
     Union,
     cast,
+    Tuple
 )
 
 import pendulum
@@ -22,6 +23,7 @@ from dagster._annotations import PublicAttr, public
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
 
+from ..errors import DagsterInvalidDeserializationVersionError
 from .partition import (
     DEFAULT_DATE_FORMAT,
     Partition,
@@ -44,6 +46,20 @@ class TimeWindow(NamedTuple):
 
     start: PublicAttr[datetime]
     end: PublicAttr[datetime]
+
+
+class SubsetTimeWindow(NamedTuple):
+    """An interval that is closed at the start and open at the end.
+
+    Attributes:
+        start (datetime): A pendulum datetime that marks the start of the window.
+        end (datetime): A pendulum datetime that marks the end of the window.
+        length (int): The number of partitions included in the window.
+    """
+
+    start: PublicAttr[datetime]
+    end: PublicAttr[datetime]
+    length: int
 
 
 class TimeWindowPartitionsDefinition(
@@ -191,6 +207,14 @@ class TimeWindowPartitionsDefinition(
         )
         return next(iter(self._iterate_time_windows(partition_key_dt)))
 
+    def start_time_for_partition_key(self, partition_key: str) -> datetime:
+        partition_key_dt = pendulum.instance(
+            datetime.strptime(partition_key, self.fmt), tz=self.timezone
+        )
+        # the datetime format might not include granular components, so we need to recover them
+        # we make the assumption that the parsed partition key is <= the start datetime
+        return next(iter(self._iterate_time_windows(partition_key_dt))).start
+
     def time_windows_for_partition_keys(
         self,
         partition_keys: Sequence[str],
@@ -213,14 +237,6 @@ class TimeWindowPartitionsDefinition(
                 )
                 partition_key_time_windows.append(next(cur_windows_iterator))
         return partition_key_time_windows
-
-    def start_time_for_partition_key(self, partition_key: str) -> datetime:
-        partition_key_dt = pendulum.instance(
-            datetime.strptime(partition_key, self.fmt), tz=self.timezone
-        )
-        # the datetime format might not include granular components, so we need to recover them
-        # we make the assumption that the parsed partition key is <= the start datetime
-        return next(iter(self._iterate_time_windows(partition_key_dt))).start
 
     def get_next_partition_key(
         self, partition_key: str, current_time: Optional[datetime] = None
@@ -495,6 +511,49 @@ class TimeWindowPartitionsDefinition(
             yield TimeWindow(next_time, prev_time)
             prev_time = next_time
 
+    def build_merged_subset_time_windows(
+        self,
+        time_windows: Sequence[TimeWindow],
+    ) -> Sequence[SubsetTimeWindow]:
+        """
+        Given a list of time windows, merge overlapping time windows and build subset time window
+        objects.
+        """
+        if len(time_windows) == 0:
+            return []
+
+        def _merge_and_sort_time_windows(tws):
+            # Returns a merged list of time windows in sorted order
+            if len(tws) <= 1:
+                return tws
+
+            sorted_time_windows = sorted(tws, key=lambda tw: tw.start)
+            merged_time_windows = [sorted_time_windows[0]]
+            for tw in sorted_time_windows[1:]:
+                last_merged_tw = merged_time_windows[-1]
+                if last_merged_tw.start <= tw.start and tw.start <= last_merged_tw.end:
+                    merged_time_windows[-1] = TimeWindow(
+                        last_merged_tw.start, max(tw.end, last_merged_tw.end)
+                    )
+                else:
+                    merged_time_windows.append(tw)
+            return merged_time_windows
+
+        merged_and_sorted_windows = _merge_and_sort_time_windows(time_windows)
+
+        subset_time_windows = []
+        for tw in merged_and_sorted_windows:
+            cur_windows_iterator = iter(self._iterate_time_windows(tw.start))
+            num_partitions = 0
+            while True:
+                next_tw = next(cur_windows_iterator)
+                num_partitions += 1
+                if next_tw.end >= tw.end:
+                    break
+            subset_time_windows.append(SubsetTimeWindow(tw.start, tw.end, num_partitions))
+
+        return subset_time_windows
+
     def get_partition_key_for_timestamp(self, timestamp: float, end_closed: bool = False) -> str:
         """
         Args:
@@ -515,16 +574,19 @@ class TimeWindowPartitionsDefinition(
             return prev_next.strftime(self.fmt)
 
     def less_than(self, partition_key1: str, partition_key2: str) -> bool:
-        """Returns true if the partition_key1 is earlier than partition_key2."""
+        """Returns true if the partition_key1 is earlier than partition_key2"""
         return self.start_time_for_partition_key(
             partition_key1
         ) < self.start_time_for_partition_key(partition_key2)
 
     def empty_subset(self) -> "TimeWindowPartitionsSubset":
-        return TimeWindowPartitionsSubset(self, [], 0)
+        return TimeWindowPartitionsSubset(self, [])
 
-    def deserialize_subset(self, serialized: str) -> "TimeWindowPartitionsSubset":
+    def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return TimeWindowPartitionsSubset.from_serialized(self, serialized)
+
+    def can_deserialize_subset(self, serialized: str) -> bool:
+        return TimeWindowPartitionsSubset.can_deserialize(serialized)
 
     @property
     def serializable_unique_identifier(self) -> str:
@@ -1046,16 +1108,24 @@ def weekly_partitioned_config(
 
 
 class TimeWindowPartitionsSubset(PartitionsSubset):
+    # Every time we change the serialization format, we should increment the version number.
+    # This will ensure that we can gracefully degrade when deserializing old data.
+    SERIALIZATION_VERSION = 1
+
     def __init__(
         self,
         partitions_def: TimeWindowPartitionsDefinition,
-        included_time_windows: Sequence[TimeWindow],
-        num_partitions: int,
+        included_time_windows: Sequence[SubsetTimeWindow],
     ):
-        check.sequence_param(included_time_windows, "included_time_windows", of_type=TimeWindow)
-        self._partitions_def = partitions_def
-        self._included_time_windows = included_time_windows
-        self._num_partitions = num_partitions
+        """
+        Users should not directly call this method. Instead, call empty_subset().with_partition_keys().
+        """
+        self._partitions_def = check.inst_param(
+            partitions_def, "partitions_def", TimeWindowPartitionsDefinition
+        )
+        self._included_time_windows: Sequence[SubsetTimeWindow] = check.sequence_param(
+            included_time_windows, "included_time_windows", of_type=SubsetTimeWindow
+        )
 
     def _get_partition_time_windows_not_in_subset(
         self,
@@ -1111,31 +1181,57 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             partition_keys.extend(self._partitions_def.get_partition_keys_in_time_window(tw))
         return partition_keys
 
+    def get_inverse_subset(
+        self, current_time: Optional[datetime] = None
+    ) -> "TimeWindowPartitionsSubset":
+        """
+        Returns a new TimeWindowPartitionsSubset that contains all time windows that are not
+        included in this subset.
+        """
+        time_windows = self._get_partition_time_windows_not_in_subset(current_time=current_time)
+        return TimeWindowPartitionsSubset(
+            self._partitions_def,
+            self._partitions_def.build_merged_subset_time_windows(time_windows),
+        )
+
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
         return [
             pk
             for time_window in self._included_time_windows
-            for pk in self._partitions_def.get_partition_keys_in_time_window(time_window)
+            for pk in self._partitions_def.get_partition_keys_in_time_window(
+                TimeWindow(time_window.start, time_window.end)
+            )
+        ]
+
+    def get_partition_key_ranges_and_lengths(self) -> Sequence[Tuple[PartitionKeyRange, int]]:
+        return [
+            (self._partitions_def.get_partition_key_range_for_time_window(
+                TimeWindow(window.start, window.end)
+            ), window.length)
+            for window in self._included_time_windows
         ]
 
     def get_partition_key_ranges(
         self, current_time: Optional[datetime] = None
     ) -> Sequence[PartitionKeyRange]:
-        return [
-            self._partitions_def.get_partition_key_range_for_time_window(window)
-            for window in self._included_time_windows
-        ]
+        return [range_and_len[0] for range_and_len in self.get_partition_key_ranges_and_lengths()]
+
 
     @property
     def included_time_windows(self) -> Sequence[TimeWindow]:
-        return self._included_time_windows
+        return [TimeWindow(tw.start, tw.end) for tw in self._included_time_windows]
 
-    def with_partition_keys(self, partition_keys: Iterable[str]) -> "TimeWindowPartitionsSubset":
+
+    def with_partition_keys(
+        self,
+        partition_keys: Iterable[str],
+    ) -> "TimeWindowPartitionsSubset":
         result_windows = [*self._included_time_windows]
+
         time_windows = self._partitions_def.time_windows_for_partition_keys(
             list(partition_keys),
         )
-        num_added_partitions = 0
+
         for window in sorted(time_windows):
             # go in reverse order because it's more common to add partitions at the end than the
             # beginning
@@ -1154,74 +1250,110 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                     )
 
                     if merge_with_range and merge_with_later_range:
-                        result_windows[i] = TimeWindow(
-                            included_window.start, result_windows[i + 1].end
+                        result_windows[i] = SubsetTimeWindow(
+                            included_window.start,
+                            result_windows[i + 1].end,
+                            included_window.length + result_windows[i + 1].length + 1,
                         )
                         del result_windows[i + 1]
                     elif merge_with_range:
-                        result_windows[i] = TimeWindow(included_window.start, window.end)
+                        result_windows[i] = SubsetTimeWindow(
+                            included_window.start, window.end, included_window.length + 1
+                        )
                     elif merge_with_later_range:
-                        result_windows[i + 1] = TimeWindow(window.start, result_windows[i + 1].end)
+                        result_windows[i + 1] = SubsetTimeWindow(
+                            window.start,
+                            result_windows[i + 1].end,
+                            result_windows[i + 1].length + 1,
+                        )
                     else:
-                        result_windows.insert(i + 1, window)
+                        result_windows.insert(i + 1, SubsetTimeWindow(window.start, window.end, 1))
 
-                    num_added_partitions += 1
                     break
             else:
-                if result_windows and window.start == result_windows[0].start:
-                    result_windows[0] = TimeWindow(window.start, included_window.end)
-                else:
-                    result_windows.insert(0, window)
-
-                num_added_partitions += 1
+                if not (result_windows and window.start == result_windows[0].start):
+                    result_windows.insert(0, SubsetTimeWindow(window.start, window.end, 1))
 
         return TimeWindowPartitionsSubset(
-            self._partitions_def, result_windows, self._num_partitions + num_added_partitions
+            self._partitions_def,
+            result_windows,
         )
 
-    def with_partition_key_range(
-        self, partition_key_range: PartitionKeyRange
-    ) -> "PartitionsSubset":
-        return self.with_partition_keys(
-            self._partitions_def.get_partition_keys_in_range(partition_key_range)
-        )
-
-    @staticmethod
+    @classmethod
     def from_serialized(
-        partitions_def: TimeWindowPartitionsDefinition, serialized: str
-    ) -> "TimeWindowPartitionsSubset":
+        cls, partitions_def: PartitionsDefinition, serialized: str
+    ) -> "PartitionsSubset":
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            check.failed("Partitions definition must be a TimeWindowPartitionsDefinition")
+
         loaded = json.loads(serialized)
 
-        def tuples_to_time_windows(tuples):
-            return [
-                TimeWindow(
-                    pendulum.from_timestamp(tup[0], tz=partitions_def.timezone),
-                    pendulum.from_timestamp(tup[1], tz=partitions_def.timezone),
-                )
-                for tup in tuples
-            ]
+        old_serialization_version = (
+            True
+            if not isinstance(loaded, dict)
+            or ("version" not in loaded and loaded.get("version") != cls.SERIALIZATION_VERSION)
+            else False
+        )
 
-        if isinstance(loaded, list):
-            # backwards compatibility
-            time_windows = tuples_to_time_windows(loaded)
-            num_partitions = sum(
-                len(partitions_def.get_partition_keys_in_time_window(time_window))
-                for time_window in time_windows
-            )
+        if old_serialization_version:
+
+            def tuples_to_time_windows(tuples):
+                return [
+                    TimeWindow(
+                        pendulum.from_timestamp(tup[0], tz=partitions_def.timezone),
+                        pendulum.from_timestamp(tup[1], tz=partitions_def.timezone),
+                    )
+                    for tup in tuples
+                ]
+
+            if isinstance(loaded, list):
+                # backwards compatibility
+                time_windows = tuples_to_time_windows(loaded)
+            else:
+                # backwards compatibility
+                time_windows = tuples_to_time_windows(loaded["time_windows"])
+            subset_time_windows = cast(
+                TimeWindowPartitionsDefinition, partitions_def
+            ).build_merged_subset_time_windows(time_windows)
+
         else:
-            time_windows = tuples_to_time_windows(loaded["time_windows"])
-            num_partitions = loaded["num_partitions"]
+            if loaded.get("version") != cls.SERIALIZATION_VERSION:
+                raise DagsterInvalidDeserializationVersionError(
+                    "Attempted to deserialize time window partition subset with version"
+                    f" {loaded.get('version')} but only version {cls.SERIALIZATION_VERSION} is"
+                    " supported."
+                )
 
-        return TimeWindowPartitionsSubset(partitions_def, time_windows, num_partitions)
+            def tuples_to_subset_time_windows(tuples):
+                return [
+                    SubsetTimeWindow(
+                        pendulum.from_timestamp(tup[0], tz=partitions_def.timezone),
+                        pendulum.from_timestamp(tup[1], tz=partitions_def.timezone),
+                        tup[2],
+                    )
+                    for tup in tuples
+                ]
+
+            subset_time_windows = tuples_to_subset_time_windows(loaded["time_windows"])
+
+        return cls(partitions_def, subset_time_windows)
+
+    @classmethod
+    def can_deserialize(cls, serialized: str) -> bool:
+        # Check the version number to determine if the serialization format is supported
+        data = json.loads(serialized)
+        return data.get("version") == cls.SERIALIZATION_VERSION
 
     def serialize(self) -> str:
+        # Serialize version number, so attempting to deserialize old versions can be handled gracefully.
+        # Any time the serialization format changes, we should increment the version number.
         return json.dumps(
             {
+                "version": self.SERIALIZATION_VERSION,
                 "time_windows": [
-                    (window.start.timestamp(), window.end.timestamp())
+                    (window.start.timestamp(), window.end.timestamp(), window.length)
                     for window in self._included_time_windows
                 ],
-                "num_partitions": self._num_partitions,
             }
         )
 
@@ -1237,7 +1369,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         )
 
     def __len__(self) -> int:
-        return self._num_partitions
+        return sum(tw.length for tw in self._included_time_windows)
 
     def __contains__(self, partition_key: str) -> bool:
         time_window = self._partitions_def.time_window_for_partition_key(partition_key)
