@@ -87,7 +87,6 @@ class StubStorage:
         self.default_account_settings = {"taskLongArnFormat": "enabled"}
 
         self.register_task_definition_locks = defaultdict(threading.Lock)
-        # self.register_task_definition_locks["concurrent"].acquire(blocking=False)
 
 
 class StubbedEcs:
@@ -288,6 +287,8 @@ class StubbedEcs:
 
     @stubbed
     def register_task_definition(self, **kwargs):
+        client_error = False
+
         family = kwargs.get("family")
         # The ECS API raises an error if you make too many concurrent requests to
         # this endpoint so we've added this locking mechanism to our stub to make
@@ -300,6 +301,7 @@ class StubbedEcs:
                 ),
                 expected_params={**kwargs},
             )
+            client_error=True
         else:
             # Sleep for long enough that we hit the lock
             time.sleep(0.2)
@@ -308,6 +310,7 @@ class StubbedEcs:
                 self.stubber.add_client_error(
                     method="register_task_definition", expected_params={**kwargs}
                 )
+                client_error = True
 
             # Revisions are 1 indexed
             revision = len(self.storage.task_definitions[family]) + 1
@@ -335,13 +338,13 @@ class StubbedEcs:
                     **kwargs,
                 }
 
-                self.storage.task_definitions[family].append(task_definition)
-                # self.stubber.activate()
-                self.stubber.add_response(
-                    method="register_task_definition",
-                    service_response={"taskDefinition": task_definition},
-                    expected_params={**kwargs},
-                )
+                if not client_error:
+                    self.storage.task_definitions[family].append(task_definition)
+                    self.stubber.add_response(
+                        method="register_task_definition",
+                        service_response={"taskDefinition": task_definition},
+                        expected_params={**kwargs},
+                    )
             else:
                 self.stubber.add_client_error(
                     method="register_task_definition", expected_params={**kwargs}
