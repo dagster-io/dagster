@@ -33,6 +33,7 @@ EXPECTED_KEYS = set(
         "os_desc",
         "os_platform",
         "dagster_version",
+        "is_known_ci_env",
     ]
 )
 
