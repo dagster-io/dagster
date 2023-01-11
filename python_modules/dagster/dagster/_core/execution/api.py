@@ -62,7 +62,6 @@ from .results import PipelineExecutionResult
 # | execute_plan_iterator       | ExecutionPlan      | async | (2)         | no                      |
 # | execute_plan                | ExecutionPlan      | sync  | (2)         | no                      |
 # | reexecute_pipeline          | IPipeline          | sync  | yes         | yes                     |
-# | reexecute_pipeline_iterator | IPipeline          | async | yes         | yes                     |
 #
 # Notes on reexecution support:
 # (1) The appropriate bits must be set on the DagsterRun passed to this function. Specifically,
@@ -746,8 +745,6 @@ def reexecute_pipeline(
 
     Returns:
       :py:class:`PipelineExecutionResult`: The result of pipeline execution.
-
-    For the asynchronous version, see :py:func:`reexecute_pipeline_iterator`.
     """
     check.opt_sequence_param(step_selection, "step_selection", of_type=str)
 
@@ -814,105 +811,6 @@ def reexecute_pipeline(
             execute_instance,
             raise_on_error=raise_on_error,
         )
-    check.failed("Should not reach here.")
-
-
-def reexecute_pipeline_iterator(
-    pipeline: Union[IPipeline, PipelineDefinition],
-    parent_run_id: str,
-    run_config: Optional[Mapping[str, object]] = None,
-    step_selection: Optional[Sequence[str]] = None,
-    mode: Optional[str] = None,
-    preset: Optional[str] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    instance: Optional[DagsterInstance] = None,
-) -> Iterator[DagsterEvent]:
-    """Reexecute a pipeline iteratively.
-
-    Rather than package up the result of running a pipeline into a single object, like
-    :py:func:`reexecute_pipeline`, this function yields the stream of events resulting from pipeline
-    reexecution.
-
-    This is intended to allow the caller to handle these events on a streaming basis in whatever
-    way is appropriate.
-
-    Parameters:
-        pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
-        parent_run_id (str): The id of the previous run to reexecute. The run must exist in the
-            instance.
-        run_config (Optional[dict]): The configuration that parametrizes this run,
-            as a dict.
-        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
-            solid names) to execute. For example:
-
-            - ``['some_solid']``: selects ``some_solid`` itself.
-            - ``['*some_solid']``: select ``some_solid`` and all its ancestors (upstream dependencies).
-            - ``['*some_solid+++']``: select ``some_solid``, all its ancestors, and its descendants
-              (downstream dependencies) within 3 levels down.
-            - ``['*some_solid', 'other_solid_a', 'other_solid_b+']``: select ``some_solid`` and all its
-              ancestors, ``other_solid_a`` itself, and ``other_solid_b`` and its direct child solids.
-
-        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
-            and ``preset``.
-        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``.
-        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
-            logs.
-        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
-            an ephemeral instance will be used, and no artifacts will be persisted from the run.
-
-    Returns:
-      Iterator[DagsterEvent]: The stream of events resulting from pipeline reexecution.
-    """
-    check.opt_sequence_param(step_selection, "step_selection", of_type=str)
-
-    check.str_param(parent_run_id, "parent_run_id")
-
-    with ephemeral_instance_if_missing(instance) as execute_instance:
-        pipeline, repository_load_data = _pipeline_with_repository_load_data(pipeline)
-
-        (pipeline, run_config, mode, tags, _, _) = _check_execute_pipeline_args(
-            pipeline=pipeline,
-            run_config=run_config,
-            mode=mode,
-            preset=preset,
-            tags=tags,
-            solid_selection=None,
-        )
-        parent_pipeline_run = execute_instance.get_run_by_id(parent_run_id)
-        if parent_pipeline_run is None:
-            check.failed(
-                "No parent run with id {parent_run_id} found in instance.".format(
-                    parent_run_id=parent_run_id
-                ),
-            )
-
-        execution_plan: Optional[ExecutionPlan] = None
-        # resolve step selection DSL queries using parent execution information
-        if step_selection:
-            execution_plan = _resolve_reexecute_step_selection(
-                execute_instance,
-                pipeline,
-                mode,
-                run_config,
-                cast(DagsterRun, parent_pipeline_run),
-                step_selection,
-            )
-
-        pipeline_run = execute_instance.create_run_for_pipeline(
-            pipeline_def=pipeline.get_definition(),
-            run_config=run_config,
-            execution_plan=execution_plan,
-            mode=mode,
-            tags=tags,
-            solid_selection=parent_pipeline_run.solid_selection,
-            solids_to_execute=parent_pipeline_run.solids_to_execute,
-            root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
-            parent_run_id=parent_pipeline_run.run_id,
-            repository_load_data=repository_load_data,
-        )
-
-        return execute_run_iterator(pipeline, pipeline_run, execute_instance)
     check.failed("Should not reach here.")
 
 
