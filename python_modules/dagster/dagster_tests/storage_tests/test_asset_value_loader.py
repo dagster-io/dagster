@@ -250,7 +250,6 @@ def test_io_manager_with_config():
 def test_io_manager_resource_with_config():
     @resource(config_schema={"key": int})
     def io_resource(context):
-
         return context.resource_config["key"]
 
     class MyIOManager(IOManager):
@@ -276,6 +275,5 @@ def test_io_manager_resource_with_config():
 
     resource_config = {"io_resource": {"config": {"key": 5}}}
     with repo.get_asset_value_loader() as loader:
-
         value = loader.load_asset_value(AssetKey("asset1"), resource_config=resource_config)
         assert value == 5

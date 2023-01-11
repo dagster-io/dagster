@@ -156,7 +156,6 @@ def test_asset_value_loader_with_config():
 def test_asset_value_loader_with_resources():
     @resource(config_schema={"key": int})
     def io_resource(context):
-
         return context.resource_config["key"]
 
     class MyIOManager(IOManager):
