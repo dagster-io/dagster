@@ -72,6 +72,9 @@ class CachingInstanceQueryer:
 
         return asset_key in self.get_planned_materializations_for_run(run_id=run_id)
 
+    def run_has_tag(self, run_id: str, tag_key: str, tag_value: str) -> bool:
+        return cast(DagsterRun, self._get_run_by_id(run_id)).tags.get(tag_key) == tag_value
+
     def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         run_record = self._get_run_record_by_id(run_id=run_id)
         if run_record is not None:
@@ -606,3 +609,17 @@ class CachingInstanceQueryer:
             evaluation_time=evaluation_time,
             used_data_times=used_data_times,
         )
+
+    def get_latest_storage_id(self, event_type: DagsterEventType) -> Optional[int]:
+        """
+        Returns None if there are no events from that type in the event log.
+        """
+        records = list(
+            self.instance.get_event_records(
+                event_records_filter=EventRecordsFilter(event_type=event_type), limit=1
+            )
+        )
+        if records:
+            return records[0].storage_id
+        else:
+            return None
