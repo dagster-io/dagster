@@ -1,3 +1,7 @@
+## 1.0.9 (January 11, 2022)
+
+- Add `ignoreExternal` on `import/no-cycle` rule to repair lint times
+
 ## 1.0.8 (January 6, 2022)
 
 - Remove `missing-graphql-variables-type`, which is no longer needed now that we're using `graphql-codegen` instead of Apollo codegen.
