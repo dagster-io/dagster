@@ -40,6 +40,9 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
     "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
 }
 
+SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.13.22,net.snowflake:spark-snowflake_2.12:2.11.0-spark_3.3"
+# old "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
+
 
 @contextmanager
 def temporary_snowflake_table(schema_name: str, db_name: str, column_str: str) -> Iterator[str]:
@@ -61,7 +64,7 @@ def test_handle_output():
 
         spark = SparkSession.builder.config(
             key="spark.jars.packages",
-            value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+            value=SNOWFLAKE_JARS,
         ).getOrCreate()
         columns = ["col1", "col2"]
         data = [("a", "b")]
@@ -95,7 +98,7 @@ def test_load_input():
     with patch("pyspark.sql.DataFrameReader.load") as mock_read:
         spark = SparkSession.builder.config(
             key="spark.jars.packages",
-            value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+            value=SNOWFLAKE_JARS,
         ).getOrCreate()
         columns = ["col1", "col2"]
         data = [("a", "b")]
@@ -145,7 +148,7 @@ def test_io_manager_with_snowflake_pyspark():
         def emit_pyspark_df(_):
             spark = SparkSession.builder.config(
                 key="spark.jars.packages",
-                value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+                value=SNOWFLAKE_JARS,
             ).getOrCreate()
             columns = ["foo", "quux"]
             data = [("bar", 1), ("baz", 2)]

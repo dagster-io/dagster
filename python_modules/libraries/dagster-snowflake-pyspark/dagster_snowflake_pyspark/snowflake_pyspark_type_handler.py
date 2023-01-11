@@ -20,6 +20,8 @@ def _get_sf_options(config, table_slice):
         "dbtable": table_slice.table,
     }
 
+SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.13.22,net.snowflake:spark-snowflake_2.12:2.11.0-spark_3.3"
+# old "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
 class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
     """
@@ -60,7 +62,7 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         options = _get_sf_options(context.resource_config, table_slice)
         SparkSession.builder.config(
             key="spark.jars.packages",
-            value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+            value=SNOWFLAKE_JARS,
         ).getOrCreate()
 
         obj.write.format(SNOWFLAKE_CONNECTOR).options(**options).mode("append").save()
@@ -82,7 +84,7 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
 
         spark = SparkSession.builder.config(
             key="spark.jars.packages",
-            value="net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0",
+            value=SNOWFLAKE_JARS,
         ).getOrCreate()
         return spark.read.format(SNOWFLAKE_CONNECTOR).options(**options).load()
 
