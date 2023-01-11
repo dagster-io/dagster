@@ -6,12 +6,11 @@ from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context_creation_pipeline import scoped_pipeline_context
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.dagster_type import resolve_dagster_type
 
 from .typing_api import is_typing_type
-
-from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 
 
 def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:

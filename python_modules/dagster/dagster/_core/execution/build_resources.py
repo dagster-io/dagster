@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Mapping, Optional, cast, Union
+from typing import Any, Dict, Generator, Mapping, Optional, Union, cast
 
 import dagster._check as check
 from dagster._config import process_config

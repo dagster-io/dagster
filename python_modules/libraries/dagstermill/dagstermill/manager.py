@@ -140,7 +140,7 @@ class Manager:
 
         try:
             instance_ref = unpack_value(instance_ref_dict)
-            instance = DagsterInstance.from_ref(instance_ref)
+            instance = InstanceInterfaceInStepWorker(DagsterInstance.from_ref(instance_ref))
         except Exception as err:
             raise DagstermillError(
                 "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
@@ -299,7 +299,7 @@ class Manager:
             pipeline,
             run_config,
             pipeline_run,
-            DagsterInstance.ephemeral(),
+            InstanceInterfaceInStepWorker(DagsterInstance.ephemeral()),
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
             self.context = DagstermillExecutionContext(
