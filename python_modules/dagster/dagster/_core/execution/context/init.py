@@ -8,6 +8,7 @@ from dagster._core.definitions.resource_definition import (
     Resources,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun
@@ -51,14 +52,14 @@ class InitResourceContext:
         resource_config: Any,
         resources: Resources,
         resource_def: Optional[ResourceDefinition] = None,
-        instance: Optional[DagsterInstance] = None,
+        instance: Optional[InstanceInterfaceInStepWorker] = None,
         dagster_run: Optional[DagsterRun] = None,
         log_manager: Optional[DagsterLogManager] = None,
     ):
         self._resource_config = resource_config
         self._resource_def = resource_def
         self._log_manager = log_manager
-        self._instance = instance
+        self._instance = check.inst_param(instance, "instance", InstanceInterfaceInStepWorker)
         self._resources = resources
         self._dagster_run = dagster_run
 
@@ -79,7 +80,7 @@ class InitResourceContext:
 
     @public  # type: ignore
     @property
-    def instance(self) -> Optional[DagsterInstance]:
+    def instance(self) -> Optional[InstanceInterfaceInStepWorker]:
         return self._instance
 
     @property
@@ -161,7 +162,7 @@ class UnboundInitResourceContext(InitResourceContext):
             resource_config=resource_config,
             resources=resources,
             resource_def=None,
-            instance=instance,
+            instance=InstanceInterfaceInStepWorker(instance),
             dagster_run=None,
             log_manager=initialize_console_manager(None),
         )
@@ -254,6 +255,8 @@ def build_init_resource_context(
                 resource_to_init(context)
 
     """
+    instance = check.opt_inst_param(instance, "instance", DagsterInstance)
+
     return UnboundInitResourceContext(
         resource_config=check.opt_mapping_param(config, "config", key_type=str),
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),

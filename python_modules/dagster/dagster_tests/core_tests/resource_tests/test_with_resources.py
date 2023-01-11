@@ -638,7 +638,7 @@ def test_source_asset_default_io_manager(instance):
             "DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE": "foo_io_manager_def",
         }
     ):
-        assert execute_job(reconstructable(create_asset_job), instance).success
+        assert execute_job(reconstructable(create_asset_job), instance, raise_on_error=True).success
 
     with environ(
         {
@@ -648,4 +648,7 @@ def test_source_asset_default_io_manager(instance):
             "DAGSTER_DEFAULT_IO_MANAGER_ATTRIBUTE": "foo_io_manager_def",
         }
     ):
-        assert not execute_job(reconstructable(create_asset_job), instance).success
+        assert not execute_job(
+            reconstructable(create_asset_job),
+            instance,
+        ).success

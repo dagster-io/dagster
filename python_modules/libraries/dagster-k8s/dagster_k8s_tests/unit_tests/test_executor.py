@@ -10,6 +10,7 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
 from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster._core.storage.fs_io_manager import fs_io_manager
@@ -116,7 +117,7 @@ def _step_handler_context(pipeline, pipeline_run, instance, executor):
         plan_data=PlanData(
             pipeline=pipeline,
             pipeline_run=pipeline_run,
-            instance=instance,
+            instance=InstanceInterfaceInStepWorker(instance),
             execution_plan=execution_plan,
             raise_on_error=True,
             retry_mode=RetryMode.DISABLED,

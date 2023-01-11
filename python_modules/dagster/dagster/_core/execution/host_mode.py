@@ -18,6 +18,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
@@ -110,7 +111,7 @@ def host_mode_execution_context_event_generator(
             plan_data=PlanData(
                 pipeline=pipeline,
                 pipeline_run=pipeline_run,
-                instance=instance,
+                instance=InstanceInterfaceInStepWorker(instance),
                 execution_plan=execution_plan,
                 raise_on_error=raise_on_error,
                 retry_mode=executor.retries,

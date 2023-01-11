@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Mapping, Optional, cast
+from typing import Any, Dict, Generator, Mapping, Optional, cast, Union
 
 import dagster._check as check
 from dagster._config import process_config
@@ -38,10 +38,13 @@ def get_mapped_resource_config(
     return config_map_resources(resource_defs, config_value)
 
 
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
+
+
 @contextmanager
 def build_resources(
     resources: Mapping[str, Any],
-    instance: Optional[DagsterInstance] = None,
+    instance: Optional[Union[DagsterInstance, InstanceInterfaceInStepWorker]] = None,
     resource_config: Optional[Mapping[str, Any]] = None,
     pipeline_run: Optional[DagsterRun] = None,
     log_manager: Optional[DagsterLogManager] = None,
@@ -83,13 +86,21 @@ def build_resources(
 
     """
     resources = check.mapping_param(resources, "resource_defs", key_type=str)
-    instance = check.opt_inst_param(instance, "instance", DagsterInstance)
+    instance = check.opt_inst_param(
+        instance, "instance", (DagsterInstance, InstanceInterfaceInStepWorker)
+    )
     resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)
     log_manager = check.opt_inst_param(log_manager, "log_manager", DagsterLogManager)
     resource_defs = wrap_resources_for_execution(resources)
     mapped_resource_config = get_mapped_resource_config(resource_defs, resource_config)
 
-    with ephemeral_instance_if_missing(instance) as dagster_instance:
+    instance_to_yield = (
+        instance.get_inner_instance_for_framework()
+        if isinstance(instance, InstanceInterfaceInStepWorker)
+        else instance
+    )
+
+    with ephemeral_instance_if_missing(instance_to_yield) as dagster_instance:
         resources_manager = resource_initialization_manager(
             resource_defs=resource_defs,
             resource_configs=mapped_resource_config,
@@ -97,7 +108,7 @@ def build_resources(
             execution_plan=None,
             pipeline_run=pipeline_run,
             resource_keys_to_init=set(resource_defs.keys()),
-            instance=dagster_instance,
+            instance=InstanceInterfaceInStepWorker(dagster_instance),
             emit_persistent_events=False,
         )
         try:

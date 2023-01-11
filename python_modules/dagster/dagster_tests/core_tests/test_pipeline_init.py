@@ -61,6 +61,9 @@ def gen_basic_resource_pipeline(called=None, cleaned=None):
     )
 
 
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
+
+
 def test_clean_event_generator_exit():
     """Testing for generator cleanup
     (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
@@ -69,7 +72,7 @@ def test_clean_event_generator_exit():
     from dagster._core.execution.context.init import InitResourceContext
 
     pipeline_def = gen_basic_resource_pipeline()
-    instance = DagsterInstance.ephemeral()
+    instance = InstanceInterfaceInStepWorker(DagsterInstance.ephemeral())
     execution_plan = create_execution_plan(pipeline_def)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan

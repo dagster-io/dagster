@@ -19,12 +19,14 @@ from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster._core.execution.plan.execute_plan import dagster_event_sequence_for_step
 from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.file_manager import LocalFileHandle, LocalFileManager
 from dagster._serdes import deserialize_value
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
+
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.step import ExecutionStep
@@ -183,9 +185,9 @@ def external_instance_from_step_run_ref(
 
 
 def step_run_ref_to_step_context(
-    step_run_ref: StepRunRef, instance: DagsterInstance
+    step_run_ref: StepRunRef, instance: InstanceInterfaceInStepWorker
 ) -> StepExecutionContext:
-    check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(instance, "instance", InstanceInterfaceInStepWorker)
 
     pipeline = step_run_ref.recon_pipeline
 
@@ -237,7 +239,9 @@ def run_step_from_ref(
     step_run_ref: StepRunRef, instance: DagsterInstance
 ) -> Iterator[DagsterEvent]:
     check.inst_param(instance, "instance", DagsterInstance)
-    step_context = step_run_ref_to_step_context(step_run_ref, instance)
+    step_context = step_run_ref_to_step_context(
+        step_run_ref, InstanceInterfaceInStepWorker(instance)
+    )
 
     # The step should be forced to run locally with respect to the remote process that this step
     # context is being deserialized in

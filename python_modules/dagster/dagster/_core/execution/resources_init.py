@@ -36,6 +36,7 @@ from dagster._core.execution.plan.inputs import (
 )
 from dagster._core.execution.plan.plan import ExecutionPlan, StepHandleUnion
 from dagster._core.execution.plan.step import ExecutionStep, IExecutionStep
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun
@@ -55,7 +56,7 @@ def resource_initialization_manager(
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[DagsterRun],
     resource_keys_to_init: Optional[AbstractSet[str]],
-    instance: Optional[DagsterInstance],
+    instance: Optional[InstanceInterfaceInStepWorker],
     emit_persistent_events: Optional[bool],
 ):
     generator = resource_initialization_event_generator(
@@ -224,6 +225,9 @@ def _core_resource_initialization_event_generator(
         raise dagster_user_error
 
 
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
+
+
 def resource_initialization_event_generator(
     resource_defs: Mapping[str, ResourceDefinition],
     resource_configs: Mapping[str, ResourceConfig],
@@ -231,7 +235,7 @@ def resource_initialization_event_generator(
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[DagsterRun],
     resource_keys_to_init: Optional[AbstractSet[str]],
-    instance: Optional[DagsterInstance],
+    instance: Optional[InstanceInterfaceInStepWorker],
     emit_persistent_events: Optional[bool],
 ):
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
@@ -240,7 +244,7 @@ def resource_initialization_event_generator(
     )
     check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.opt_inst_param(pipeline_run, "pipeline_run", DagsterRun)
-    check.opt_inst_param(instance, "instance", DagsterInstance)
+    check.opt_inst_param(instance, "instance", InstanceInterfaceInStepWorker)
 
     if execution_plan and execution_plan.step_handle_for_single_step_plans():
         step = execution_plan.get_step(

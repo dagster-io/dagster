@@ -50,6 +50,7 @@ from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, S
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 from dagster._core.executor.base import Executor
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.io_manager import IOManager
@@ -73,7 +74,6 @@ if TYPE_CHECKING:
     from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState
-    from dagster._core.instance import DagsterInstance
 
     from .hook import HookContext
 
@@ -122,7 +122,7 @@ class IPlanContext(ABC):
         return self.pipeline_name
 
     @property
-    def instance(self) -> "DagsterInstance":
+    def instance(self) -> InstanceInterfaceInStepWorker:
         return self.plan_data.instance
 
     @property
@@ -168,7 +168,7 @@ class PlanData(NamedTuple):
 
     pipeline: IPipeline
     pipeline_run: DagsterRun
-    instance: "DagsterInstance"
+    instance: InstanceInterfaceInStepWorker
     execution_plan: "ExecutionPlan"
     raise_on_error: bool = False
     retry_mode: RetryMode = RetryMode.DISABLED

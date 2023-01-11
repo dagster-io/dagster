@@ -11,6 +11,8 @@ from dagster._core.types.dagster_type import resolve_dagster_type
 
 from .typing_api import is_typing_type
 
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
+
 
 def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
     """Test a custom Dagster type.
@@ -44,7 +46,7 @@ def check_dagster_type(dagster_type: Any, value: Any) -> TypeCheck:
     pipeline = InMemoryPipeline(PipelineDefinition([], "empty"))
     pipeline_def = pipeline.get_definition()
 
-    instance = DagsterInstance.ephemeral()
+    instance = InstanceInterfaceInStepWorker(DagsterInstance.ephemeral())
     execution_plan = create_execution_plan(pipeline)
     pipeline_run = instance.create_run_for_pipeline(pipeline_def)
     with scoped_pipeline_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:

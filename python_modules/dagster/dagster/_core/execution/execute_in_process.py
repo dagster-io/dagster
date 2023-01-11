@@ -5,6 +5,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.types.dagster_type import DagsterTypeKind
@@ -67,7 +68,7 @@ def core_execute_in_process(
                 pipeline=pipeline,
                 execution_plan=execution_plan,
                 pipeline_run=run,
-                instance=execute_instance,
+                instance=InstanceInterfaceInStepWorker(execute_instance),
                 run_config=run_config,
                 executor_defs=None,
                 output_capture=output_capture if output_capturing_enabled else None,

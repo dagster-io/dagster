@@ -59,6 +59,9 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     )
 
 
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
+
+
 class UnboundOpExecutionContext(OpExecutionContext):
     """The ``context`` object available as the first argument to a solid's compute function when
     being invoked directly. Can also be used as a context manager.
@@ -82,6 +85,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         self._instance_provided = (
             check.opt_inst_param(instance, "instance", DagsterInstance) is not None
         )
+
         # Construct ephemeral instance if missing
         self._instance_cm = ephemeral_instance_if_missing(instance)
         # Pylint can't infer that the ephemeral_instance context manager has an __enter__ method,
@@ -106,6 +110,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         self._partition_key = partition_key
         self._user_events: List[UserEvent] = []
         self._output_metadata: Dict[str, Any] = {}
+        self._instance_for_worker = InstanceInterfaceInStepWorker(self._instance)
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -141,8 +146,8 @@ class UnboundOpExecutionContext(OpExecutionContext):
         raise DagsterInvalidPropertyError(_property_msg("pipeline_run", "property"))
 
     @property
-    def instance(self) -> DagsterInstance:
-        return self._instance
+    def instance(self) -> InstanceInterfaceInStepWorker:
+        return self._instance_for_worker
 
     @property
     def pdb(self) -> ForkedPdb:
@@ -390,6 +395,7 @@ class BoundOpExecutionContext(OpExecutionContext):
 
     @property
     def instance(self) -> DagsterInstance:
+        # TODO return interface in step worker
         return self._instance
 
     @property

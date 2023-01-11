@@ -3,6 +3,7 @@ from typing import Mapping, NamedTuple
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions import ExecutorDefinition, IPipeline
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 from dagster._core.instance import DagsterInstance
 
 
@@ -39,7 +40,7 @@ class InitExecutorContext(
             job=check.inst_param(job, "job", IPipeline),
             executor_def=check.inst_param(executor_def, "executor_def", ExecutorDefinition),
             executor_config=check.mapping_param(executor_config, "executor_config", key_type=str),
-            instance=check.inst_param(instance, "instance", DagsterInstance),
+            instance=check.inst_param(instance, "instance", InstanceInterfaceInStepWorker),
         )
 
     @property

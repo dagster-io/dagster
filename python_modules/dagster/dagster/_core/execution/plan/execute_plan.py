@@ -33,7 +33,9 @@ def inner_plan_execution_iterator(
 ) -> Iterator[DagsterEvent]:
     check.inst_param(pipeline_context, "pipeline_context", PlanExecutionContext)
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
-    compute_log_manager = pipeline_context.instance.compute_log_manager
+    compute_log_manager = (
+        pipeline_context.instance.get_inner_instance_for_framework().compute_log_manager
+    )
     step_keys = [step.key for step in execution_plan.get_steps_to_execute_in_topo_order()]
     with execution_plan.start(retry_mode=pipeline_context.retry_mode) as active_execution:
         with ExitStack() as capture_stack:

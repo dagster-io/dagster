@@ -31,6 +31,7 @@ from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
@@ -80,6 +81,8 @@ def execute_run_iterator(
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
+
+    instance: InstanceInterfaceInStepWorker = InstanceInterfaceInStepWorker(instance)
 
     if pipeline_run.status == DagsterRunStatus.CANCELED:
         # This can happen if the run was force-terminated while it was starting
@@ -267,7 +270,9 @@ def execute_run(
                 pipeline_run.asset_selection,
             )
 
-    execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
+    instance_for_worker: InstanceInterfaceInStepWorker = InstanceInterfaceInStepWorker(instance)
+
+    execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance_for_worker)
     if isinstance(pipeline, ReconstructablePipeline):
         pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
 
@@ -281,7 +286,7 @@ def execute_run(
             pipeline=pipeline,
             execution_plan=execution_plan,
             pipeline_run=pipeline_run,
-            instance=instance,
+            instance=instance_for_worker,
             run_config=pipeline_run.run_config,
             raise_on_error=raise_on_error,
             executor_defs=None,
@@ -299,7 +304,7 @@ def execute_run(
             pipeline,
             pipeline_run.run_config,
             pipeline_run,
-            instance,
+            instance_for_worker,
         ),
         output_capture=output_capture,
     )
@@ -944,7 +949,7 @@ def execute_plan_iterator(
                 execution_plan=execution_plan,
                 run_config=run_config,
                 pipeline_run=pipeline_run,
-                instance=instance,
+                instance=InstanceInterfaceInStepWorker(instance),
             ),
         )
     )
@@ -990,7 +995,7 @@ def _check_pipeline(pipeline: Union[PipelineDefinition, IPipeline]) -> IPipeline
 
 
 def _get_execution_plan_from_run(
-    pipeline: IPipeline, pipeline_run: DagsterRun, instance: DagsterInstance
+    pipeline: IPipeline, pipeline_run: DagsterRun, instance: InstanceInterfaceInStepWorker
 ) -> ExecutionPlan:
     execution_plan_snapshot = None
     if (

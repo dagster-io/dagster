@@ -35,6 +35,7 @@ from dagster._core.execution.resources_init import (
     resource_initialization_manager,
 )
 from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
@@ -109,7 +110,7 @@ class ContextCreationData(NamedTuple):
     pipeline_run: DagsterRun
     mode_def: ModeDefinition
     executor_def: ExecutorDefinition
-    instance: DagsterInstance
+    instance: InstanceInterfaceInStepWorker
     resource_keys_to_init: AbstractSet[str]
     execution_plan: ExecutionPlan
 
@@ -123,8 +124,9 @@ def create_context_creation_data(
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     pipeline_run: DagsterRun,
-    instance: DagsterInstance,
+    instance: InstanceInterfaceInStepWorker,
 ) -> "ContextCreationData":
+    check.inst_param(instance, "instance", InstanceInterfaceInStepWorker)
     pipeline_def = pipeline.get_definition()
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=pipeline_run.mode)
 
@@ -148,6 +150,7 @@ def create_context_creation_data(
 def create_plan_data(
     context_creation_data: "ContextCreationData", raise_on_error: bool, retry_mode: RetryMode
 ) -> PlanData:
+    check.inst(context_creation_data.instance, InstanceInterfaceInStepWorker)
     return PlanData(
         pipeline=context_creation_data.pipeline,
         pipeline_run=context_creation_data.pipeline_run,
@@ -208,7 +211,7 @@ def execution_context_event_generator(
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     pipeline_run: DagsterRun,
-    instance: DagsterInstance,
+    instance: InstanceInterfaceInStepWorker,
     retry_mode: RetryMode,
     scoped_resources_builder_cm: Optional[
         Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
@@ -230,7 +233,7 @@ def execution_context_event_generator(
 
     run_config = check.mapping_param(run_config, "run_config", key_type=str)
     pipeline_run = check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
-    instance = check.inst_param(instance, "instance", DagsterInstance)
+    instance = check.inst_param(instance, "instance", InstanceInterfaceInStepWorker)
 
     raise_on_error = check.bool_param(raise_on_error, "raise_on_error")
 
@@ -283,12 +286,13 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         execution_plan: ExecutionPlan,
         run_config: Mapping[str, object],
         pipeline_run: DagsterRun,
-        instance: DagsterInstance,
+        instance: InstanceInterfaceInStepWorker,
         raise_on_error: Optional[bool] = False,
         output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
         executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
         resume_from_failure=False,
     ):
+        check.inst_param(instance, "instance", InstanceInterfaceInStepWorker)
         event_generator = context_event_generator(
             pipeline,
             execution_plan,
@@ -312,13 +316,14 @@ def orchestration_context_event_generator(
     execution_plan: ExecutionPlan,
     run_config: Mapping[str, object],
     pipeline_run: DagsterRun,
-    instance: DagsterInstance,
+    instance: InstanceInterfaceInStepWorker,
     raise_on_error: bool,
     executor_defs: Optional[Sequence[ExecutorDefinition]],
     output_capture: Optional[Mapping["StepOutputHandle", Any]],
     resume_from_failure: bool = False,
 ) -> Generator[Union[DagsterEvent, PlanOrchestrationContext], None, None]:
     check.invariant(executor_defs is None)
+    check.inst_param(instance, "instance", InstanceInterfaceInStepWorker)
     context_creation_data = create_context_creation_data(
         pipeline,
         execution_plan,
@@ -379,7 +384,7 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
         execution_plan: ExecutionPlan,
         run_config: Mapping[str, object],
         pipeline_run: DagsterRun,
-        instance: DagsterInstance,
+        instance: InstanceInterfaceInStepWorker,
         retry_mode: RetryMode,
         scoped_resources_builder_cm: Optional[
             Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
@@ -387,6 +392,7 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
         raise_on_error: Optional[bool] = False,
         output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
     ):
+        check.inst_param(instance, "instance", InstanceInterfaceInStepWorker)
         super(PlanExecutionContextManager, self).__init__(
             execution_context_event_generator(
                 pipeline,
@@ -432,7 +438,7 @@ def scoped_pipeline_context(
     pipeline: IPipeline,
     run_config: Mapping[str, object],
     pipeline_run: DagsterRun,
-    instance: DagsterInstance,
+    instance: InstanceInterfaceInStepWorker,
     scoped_resources_builder_cm: Callable[
         ..., EventGenerationManager[ScopedResourcesBuilder]
     ] = resource_initialization_manager,
@@ -449,7 +455,7 @@ def scoped_pipeline_context(
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.mapping_param(run_config, "run_config", key_type=str)
     check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
-    check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(instance, "instance", InstanceInterfaceInStepWorker)
     check.callable_param(scoped_resources_builder_cm, "scoped_resources_builder_cm")
 
     initialization_manager = PlanExecutionContextManager(

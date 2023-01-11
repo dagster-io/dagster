@@ -61,6 +61,9 @@ class DagstermillResourceEventGenerationManager(EventGenerationManager):
         ]
 
 
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
+
+
 class Manager:
     def __init__(self):
         self.pipeline = None
@@ -93,7 +96,7 @@ class Manager:
             execution_plan=execution_plan,
             pipeline_run=pipeline_run,
             resource_keys_to_init=resource_keys_to_init,
-            instance=instance,
+            instance=InstanceInterfaceInStepWorker(instance),
             emit_persistent_events=emit_persistent_events,
         )
         self.resource_manager = DagstermillResourceEventGenerationManager(
