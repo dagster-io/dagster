@@ -33,6 +33,8 @@ from dagster._core.definitions.reconstruct import (
     get_ephemeral_repository_name,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.instance import DagsterInstance
 from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
@@ -48,6 +50,9 @@ DAEMON_ALIVE = "daemon_alive"
 SCHEDULED_RUN_CREATED = "scheduled_run_created"
 SENSOR_RUN_CREATED = "sensor_run_created"
 BACKFILL_RUN_CREATED = "backfill_run_created"
+STEP_START_EVENT = "step_start_event"
+STEP_SUCCESS_EVENT = "step_success_event"
+STEP_FAILURE_EVENT = "step_failure_event"
 OS_DESC = platform.platform()
 OS_PLATFORM = platform.system()
 
@@ -520,6 +525,40 @@ def log_action(
                 metadata=metadata,
                 run_storage_id=run_storage_id,
             )._asdict()
+        )
+
+
+def log_step_event(event: DagsterEvent, pipeline_context: PlanOrchestrationContext):
+    if event.is_step_start:
+        log_action(
+            instance=pipeline_context.instance,
+            action=STEP_START_EVENT,
+            client_time=datetime.datetime.now(),
+            metadata={
+                "run_id_hash": hash_name(pipeline_context.run_id),
+                "step_key_hash": hash_name(event.step_key),
+            },
+        )
+    elif event.is_step_success:
+        log_action(
+            instance=pipeline_context.instance,
+            action=STEP_SUCCESS_EVENT,
+            client_time=datetime.datetime.now(),
+            metadata={
+                "run_id_hash": hash_name(pipeline_context.run_id),
+                "step_key_hash": hash_name(event.step_key),
+                "duration_ms": event.event_specific_data.duration_ms,
+            },
+        )
+    elif event.is_step_failure:
+        log_action(
+            instance=pipeline_context.instance,
+            action=STEP_FAILURE_EVENT,
+            client_time=datetime.datetime.now(),
+            metadata={
+                "run_id_hash": hash_name(pipeline_context.run_id),
+                "step_key_hash": hash_name(event.step_key),
+            },
         )
 
 

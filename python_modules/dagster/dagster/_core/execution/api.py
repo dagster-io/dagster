@@ -35,7 +35,7 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.telemetry import log_repo_stats, telemetry_wrapper
+from dagster._core.telemetry import log_repo_stats, log_step_event, telemetry_wrapper
 from dagster._core.utils import str_format_set
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
@@ -1095,6 +1095,9 @@ def pipeline_execution_iterator(
                 failed_steps.append(event.step_key)
             elif event.is_resource_init_failure and event.step_key:
                 failed_steps.append(event.step_key)
+
+            # Telemetry
+            log_step_event(event, pipeline_context)
 
             yield event
     except GeneratorExit:
