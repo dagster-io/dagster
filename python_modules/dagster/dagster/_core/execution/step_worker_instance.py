@@ -110,6 +110,9 @@ class InstanceInterfaceInStepWorker:
             event_records_filter=event_records_filter, limit=limit, ascending=ascending
         )
 
+    def handle_new_event(self, *args, **kwargs):
+        return self._instance.handle_new_event(*args, **kwargs)
+
     def report_engine_event(
         self,
         message,

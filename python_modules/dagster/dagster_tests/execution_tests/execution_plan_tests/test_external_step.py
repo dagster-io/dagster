@@ -301,6 +301,9 @@ def define_sleepy_pipeline():
     return sleepy_pipeline
 
 
+from dagster._core.execution.step_worker_instance import InstanceInterfaceInStepWorker
+
+
 def initialize_step_context(scratch_dir, instance):
     pipeline_run = DagsterRun(
         pipeline_name="foo_pipeline",
@@ -318,7 +321,7 @@ def initialize_step_context(scratch_dir, instance):
         execution_plan=plan,
         run_config=pipeline_run.run_config,
         pipeline_run=pipeline_run,
-        instance=instance,
+        instance=InstanceInterfaceInStepWorker(instance),
         retry_mode=RetryMode.DISABLED,
     )
     for _ in initialization_manager.prepare_context():
@@ -340,7 +343,9 @@ def test_step_context_to_step_run_ref():
         assert step_run_ref.run_config == step_context.pipeline_run.run_config
         assert step_run_ref.run_id == step_context.pipeline_run.run_id
 
-        rehydrated_step_context = step_run_ref_to_step_context(step_run_ref, instance)
+        rehydrated_step_context = step_run_ref_to_step_context(
+            step_run_ref, InstanceInterfaceInStepWorker(instance)
+        )
         rehydrated_step = rehydrated_step_context.step
         assert rehydrated_step.pipeline_name == step.pipeline_name
         assert rehydrated_step.step_inputs == step.step_inputs
