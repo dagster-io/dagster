@@ -20,7 +20,8 @@ export const CommunityNux = () => {
   );
 };
 
-const TIMEOUT = 5000;
+// Wait 1 second before trying to show Nux
+const TIMEOUT = 1000;
 
 const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
   const [shouldShowNux, setShouldShowNux] = React.useState(false);
@@ -157,6 +158,7 @@ const useCommuniyNuxIframe = ({width, height}: Props) => {
                 top: parentRect.top,
                 zIndex: 21,
                 overflow: 'hidden',
+                border: 'none',
               }
             : {width, height, left: '-999999px', position: 'absolute', zIndex: 0}
         }
