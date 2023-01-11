@@ -8,7 +8,7 @@ This project follows an important pattern in data engineering: ETL (Extract-Tran
 - Transforms the data to be easier to explore
 - Loads the transformed data into a report to visualize it.
 
-To productionize this project, the pipeline is scheduled to run daily and is ready to be deployed to Dagster Cloud of your self-hosted Dagster instance.
+To productionize this project, the pipeline is scheduled to run daily and is ready to be deployed to [Dagster Cloud](https://docs.dagster.io/dagster-cloud) or your [self-hosted Dagster instance](https://docs.dagster.io/deployment#deploying-to-your-infrastructure).
 
 *New to Dagster? Learn to build this project from scratch with the [Dagster Tutorial](https://docs.dagster.io/tutorial).*
 
