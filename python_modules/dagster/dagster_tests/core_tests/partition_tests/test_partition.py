@@ -822,3 +822,22 @@ def test_static_partitions_subset():
     assert len(with_some_partitions) == 2
     assert len(deserialized) == 2
     assert "bar" in with_some_partitions
+
+
+def test_static_partitions_subset_backwards_compat():
+    partitions = StaticPartitionsDefinition(["foo", "bar", "baz", "qux"])
+    serialization = '["baz", "foo"]'
+
+    deserialized = partitions.deserialize_subset(serialization)
+    assert deserialized.get_partition_keys() == {"baz", "foo"}
+
+
+def test_static_partitions_subset_current_version_serialization():
+    partitions = StaticPartitionsDefinition(["foo", "bar", "baz", "qux"])
+    serialization = partitions.empty_subset().with_partition_keys(["foo", "baz"]).serialize()
+    deserialized = partitions.deserialize_subset(serialization)
+    assert deserialized.get_partition_keys() == {"baz", "foo"}
+
+    serialization = '{"version": 1, "subset": ["foo", "baz"]}'
+    deserialized = partitions.deserialize_subset(serialization)
+    assert deserialized.get_partition_keys() == {"baz", "foo"}

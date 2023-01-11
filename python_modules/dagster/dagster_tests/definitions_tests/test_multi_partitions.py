@@ -6,15 +6,13 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     EventRecordsFilter,
+    MultiPartitionKey,
     StaticPartitionsDefinition,
     asset,
     define_asset_job,
     repository,
 )
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-)
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
@@ -167,3 +165,161 @@ def test_tags_multi_dimensional_partitions():
             )
         )
         assert len(materializations) == 1
+
+
+multipartitions_def = MultiPartitionsDefinition(
+    {
+        "date": DailyPartitionsDefinition(start_date="2015-01-01"),
+        "static": StaticPartitionsDefinition(["a", "b", "c", "d"]),
+    }
+)
+
+
+def test_get_primary_and_secondary_dimensions():
+    assert multipartitions_def.primary_dimension.name == "static"
+    assert multipartitions_def.secondary_dimension.name == "date"
+
+    assert multipartitions_def.empty_subset().with_partition_keys(
+        [MultiPartitionKey({"static": "a", "date": "2015-01-01"})]
+    ).subsets_by_primary_dimension_partition_key.keys() == set(
+        multipartitions_def.primary_dimension.partitions_def.get_partition_keys()
+    )
+
+
+def test_multipartitions_subset_serialization():
+    # TODO test serialization / deserialization
+    pass
+
+
+def test_multipartitions_subset_equality():
+    assert multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "a", "date": "2015-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    ) == multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "a", "date": "2015-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    )
+
+    assert multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "c", "date": "2015-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    ) != multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "a", "date": "2015-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    )
+
+    assert multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "a", "date": "2015-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    ) != multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "a", "date": "2016-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    "initial, added",
+    [
+        (["------", "+-----", "------", "------"], ["+-----", "+-----", "------", "------"]),
+        (
+            ["+--+--", "------", "------", "------"],
+            ["+-----", "------", "------", "------"],
+        ),
+        (
+            ["+------", "-+-----", "-++--+-", "+-+++++"],
+            ["-+-----", "-+-----", "+-+-+-+", "+++----"],
+        ),
+        (
+            ["+-----+", "------+", "-+++---", "-------"],
+            ["+++++++", "-+-+-+-", "-++----", "----+++"],
+        ),
+    ],
+)
+def test_multipartitions_subset_addition(initial, added):
+    assert len(initial) == len(added)
+
+    static_keys = ["a", "b", "c", "d"]
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "static": StaticPartitionsDefinition(static_keys),
+        }
+    )
+    full_date_set_keys = daily_partitions_def.get_partition_keys(
+        current_time=datetime(year=2015, month=1, day=30)
+    )[: max(len(keys) for keys in initial)]
+    current_day = daily_partitions_def.get_partition_keys(
+        current_time=datetime(year=2015, month=1, day=30)
+    )[: max(len(keys) for keys in initial) + 1][-1]
+
+    initial_subset_keys = []
+    added_subset_keys = []
+    expected_keys_not_in_updated_subset = []
+    for i in range(len(initial)):
+        for j in range(len(initial[i])):
+            if initial[i][j] == "+":
+                initial_subset_keys.append(
+                    MultiPartitionKey({"date": full_date_set_keys[j], "static": static_keys[i]})
+                )
+
+            if added[i][j] == "+":
+                added_subset_keys.append(
+                    MultiPartitionKey({"date": full_date_set_keys[j], "static": static_keys[i]})
+                )
+
+            if initial[i][j] != "+" and added[i][j] != "+":
+                expected_keys_not_in_updated_subset.append(
+                    MultiPartitionKey({"date": full_date_set_keys[j], "static": static_keys[i]})
+                )
+
+    initial_subset = multipartitions_def.empty_subset().with_partition_keys(initial_subset_keys)
+    added_subset = initial_subset.with_partition_keys(added_subset_keys)
+
+    for i in range(len(initial)):
+        selected_days = [
+            full_date_set_keys[j] for j in range(len(initial[i])) if initial[i][j] == "+"
+        ]
+        assert (
+            initial_subset.subsets_by_primary_dimension_partition_key[
+                static_keys[i]
+            ].get_partition_keys()
+            == daily_partitions_def.empty_subset()
+            .with_partition_keys(selected_days)
+            .get_partition_keys()
+        )
+        selected_and_added_days = [
+            full_date_set_keys[j] for j in range(len(added[i])) if added[i][j] == "+"
+        ] + selected_days
+        assert (
+            added_subset.subsets_by_primary_dimension_partition_key[
+                static_keys[i]
+            ].get_partition_keys()
+            == daily_partitions_def.empty_subset()
+            .with_partition_keys(selected_and_added_days)
+            .get_partition_keys()
+        )
+
+    assert set(
+        added_subset.get_partition_keys_not_in_subset(
+            current_time=datetime.strptime(current_day, "%Y-%m-%d")
+        )
+    ) == set(expected_keys_not_in_updated_subset)
+
+    assert set(
+        added_subset.get_inverse_subset(
+            current_time=datetime.strptime(current_day, daily_partitions_def.fmt)
+        ).get_partition_keys()
+    ) == set(expected_keys_not_in_updated_subset)

@@ -11,9 +11,9 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Tuple,
     Union,
     cast,
-    Tuple
 )
 
 import pendulum

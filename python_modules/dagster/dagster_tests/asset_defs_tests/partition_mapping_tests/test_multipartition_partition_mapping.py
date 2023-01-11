@@ -18,14 +18,11 @@ def test_get_downstream_partitions_single_key_in_range():
         ),
         downstream_partitions_def=downstream_partitions_def,
     )
-    assert result == DefaultPartitionsSubset(
-        downstream_partitions_def,
-        {
-            MultiPartitionKey({"abc": "a", "123": "1"}),
-            MultiPartitionKey({"abc": "a", "123": "2"}),
-            MultiPartitionKey({"abc": "a", "123": "3"}),
-        },
-    )
+    assert result.get_partition_keys() == {
+        MultiPartitionKey({"abc": "a", "123": "1"}),
+        MultiPartitionKey({"abc": "a", "123": "2"}),
+        MultiPartitionKey({"abc": "a", "123": "3"}),
+    }
 
     downstream_partitions_def = MultiPartitionsDefinition(
         {"abc": upstream_partitions_def, "xyz": StaticPartitionsDefinition(["x", "y", "z"])}
@@ -39,14 +36,11 @@ def test_get_downstream_partitions_single_key_in_range():
         ),
         downstream_partitions_def=downstream_partitions_def,
     )
-    assert result == DefaultPartitionsSubset(
-        downstream_partitions_def,
-        {
-            MultiPartitionKey({"abc": "b", "xyz": "x"}),
-            MultiPartitionKey({"abc": "b", "xyz": "y"}),
-            MultiPartitionKey({"abc": "b", "xyz": "z"}),
-        },
-    )
+    assert result.get_partition_keys() == {
+        MultiPartitionKey({"abc": "b", "xyz": "x"}),
+        MultiPartitionKey({"abc": "b", "xyz": "y"}),
+        MultiPartitionKey({"abc": "b", "xyz": "z"}),
+    }
 
 
 def test_get_downstream_partitions_multiple_keys_in_range():
@@ -63,17 +57,14 @@ def test_get_downstream_partitions_multiple_keys_in_range():
         ),
         downstream_partitions_def=downstream_partitions_def,
     )
-    assert result == DefaultPartitionsSubset(
-        downstream_partitions_def,
-        {
-            MultiPartitionKey({"abc": "a", "123": "1"}),
-            MultiPartitionKey({"abc": "a", "123": "2"}),
-            MultiPartitionKey({"abc": "a", "123": "3"}),
-            MultiPartitionKey({"abc": "b", "123": "1"}),
-            MultiPartitionKey({"abc": "b", "123": "2"}),
-            MultiPartitionKey({"abc": "b", "123": "3"}),
-        },
-    )
+    assert result.get_partition_keys() == {
+        MultiPartitionKey({"abc": "a", "123": "1"}),
+        MultiPartitionKey({"abc": "a", "123": "2"}),
+        MultiPartitionKey({"abc": "a", "123": "3"}),
+        MultiPartitionKey({"abc": "b", "123": "1"}),
+        MultiPartitionKey({"abc": "b", "123": "2"}),
+        MultiPartitionKey({"abc": "b", "123": "3"}),
+    }
 
 
 def test_get_upstream_single_dimension_to_multi_partition_mapping():
@@ -107,4 +98,4 @@ def test_get_upstream_single_dimension_to_multi_partition_mapping():
         ),
         upstream_partitions_def,
     )
-    assert result == DefaultPartitionsSubset(upstream_partitions_def, {"a", "b"})
+    assert result.get_partition_keys() == {"a", "b"}
