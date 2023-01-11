@@ -110,7 +110,7 @@ def test_asset_value_loader():
             return 5
 
     @io_manager()
-    def my_io_manager(context):
+    def my_io_manager():
         return MyIOManager()
 
     @asset
@@ -167,7 +167,7 @@ def test_asset_value_loader_with_resources():
             return context.resources.io_resource
 
     @io_manager(required_resource_keys={"io_resource"})
-    def my_io_manager(context):
+    def my_io_manager():
         return MyIOManager()
 
     @asset

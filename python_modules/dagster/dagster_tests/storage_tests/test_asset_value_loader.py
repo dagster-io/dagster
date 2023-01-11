@@ -261,7 +261,7 @@ def test_io_manager_resource_with_config():
             return context.resources.io_resource
 
     @io_manager(required_resource_keys={"io_resource"})
-    def my_io_manager(context):
+    def my_io_manager():
         return MyIOManager()
 
     @asset
