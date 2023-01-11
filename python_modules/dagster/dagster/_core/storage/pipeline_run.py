@@ -727,6 +727,10 @@ class RunRecord(
             end_time=check.opt_float_param(end_time, "end_time"),
         )
 
+    @property
+    def dagster_run(self) -> DagsterRun:
+        return self.pipeline_run
+
 
 @whitelist_for_serdes
 class RunPartitionData(

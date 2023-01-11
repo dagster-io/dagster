@@ -9,7 +9,7 @@ from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import serializable_error_info_from_exc_info
 from starlette.concurrency import (
@@ -40,7 +40,7 @@ def _force_mark_as_canceled(instance: DagsterInstance, run_id):
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import GrapheneTerminateRunSuccess
 
-    reloaded_record = instance.get_run_records(RunsFilter(run_ids=[run_id]))[0]
+    reloaded_record = check.not_none(instance.get_run_record_by_id(run_id))
 
     if not reloaded_record.pipeline_run.is_finished:
         message = (
@@ -48,12 +48,12 @@ def _force_mark_as_canceled(instance: DagsterInstance, run_id):
             "computational resources created by the run may not have been fully cleaned up."
         )
         instance.report_run_canceled(reloaded_record.pipeline_run, message=message)
-        reloaded_record = instance.get_run_records(RunsFilter(run_ids=[run_id]))[0]
+        reloaded_record = check.not_none(instance.get_run_record_by_id(run_id))
 
     return GrapheneTerminateRunSuccess(GrapheneRun(reloaded_record))
 
 
-def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
+def terminate_pipeline_execution(graphene_info: "HasContext", run_id, terminate_policy):
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import (
@@ -66,17 +66,16 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
 
     instance = graphene_info.context.instance
 
-    records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
+    record = instance.get_run_record_by_id(run_id)
 
     force_mark_as_canceled = (
         terminate_policy == GrapheneTerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY
     )
 
-    if not records:
+    if not record:
         assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
         return GrapheneRunNotFoundError(run_id)
 
-    record = records[0]
     run = record.pipeline_run
     graphene_run = GrapheneRun(record)
 
@@ -179,17 +178,16 @@ async def gen_events_for_run(
     check.str_param(run_id, "run_id")
     after_cursor = check.opt_str_param(after_cursor, "after_cursor")
     instance = graphene_info.context.instance
-    records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
+    record = instance.get_run_record_by_id(run_id)
 
-    if not records:
+    if not record:
         yield GraphenePipelineRunLogsSubscriptionFailure(
             missingRunId=run_id,
             message="Could not load run with id {}".format(run_id),
         )
         return
 
-    record = records[0]
-    run = record.pipeline_run
+    run = record.dagster_run
 
     dont_send_past_records = False
     # special sigil cursor that signals to start watching for updates only after the current point in time

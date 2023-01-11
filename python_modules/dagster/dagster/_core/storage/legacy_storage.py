@@ -190,9 +190,6 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     ) -> Mapping[str, Mapping[str, Union[Iterable["DagsterRun"], int]]]:
         return self._storage.run_storage.get_run_groups(filters, cursor, limit)
 
-    def get_run_by_id(self, run_id: str) -> Optional["DagsterRun"]:
-        return self._storage.run_storage.get_run_by_id(run_id)
-
     def get_run_records(
         self,
         filters: Optional["RunsFilter"] = None,
