@@ -101,7 +101,7 @@ class SnowflakeConnection:
                 self.sqlalchemy_engine_args["private_key"] = self.__snowflake_private_key(config)
 
         else:
-            self.conn_args: Dict[str, Any] = {
+            self.conn_args = {
                 k: config.get(k)
                 for k in (
                     "account",
