@@ -261,7 +261,12 @@ def get_or_create_dir_from_dagster_home(target_dir):
 
     dagster_home_logs_path = os.path.join(dagster_home_path, target_dir)
     if not os.path.exists(dagster_home_logs_path):
-        os.makedirs(dagster_home_logs_path)
+        try:
+            os.makedirs(dagster_home_logs_path)
+        except FileExistsError:
+            # let FileExistsError pass to avoid race condition when multiple places on the same
+            # machine try to create this dir
+            pass
     return dagster_home_logs_path
 
 
