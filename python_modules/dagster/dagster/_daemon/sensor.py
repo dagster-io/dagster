@@ -8,6 +8,7 @@ from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from typing import Dict, Generator, List, Mapping, NamedTuple, Optional, Sequence, Union
+from dagster._scheduler.stale import resolve_asset_selection
 
 import pendulum
 
@@ -627,6 +628,16 @@ def _evaluate_sensor(
     )
 
     for run_request in sensor_runtime_data.run_requests:
+        asset_selection = resolve_asset_selection(workspace_process_context, run_request, external_sensor)  # type: ignore
+        if (
+            asset_selection is not None and len(asset_selection) == 0
+        ):  # asset selection is empty set after filtering for stale
+            continue
+        elif asset_selection is not None:
+            run_request = run_request.with_replaced_attrs(
+                asset_selection=asset_selection, stale_assets_only=False
+            )
+
         target_data: ExternalTargetData = check.not_none(
             external_sensor.get_target_data(run_request.job_name)
         )
