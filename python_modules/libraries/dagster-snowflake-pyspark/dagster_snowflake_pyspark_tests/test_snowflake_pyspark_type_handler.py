@@ -131,46 +131,48 @@ def test_build_snowflake_pyspark_io_manager():
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_io_manager_with_snowflake_pyspark():
-    with temporary_snowflake_table(
-        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-        db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="foo string, quux integer",
-    ) as table_name:
+    # with temporary_snowflake_table(
+    #     schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
+    #     db_name="TEST_SNOWFLAKE_IO_MANAGER",
+    #     column_str="foo string, quux integer",
+    # ) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
 
-        @op(
-            out={
-                table_name: Out(
-                    dagster_type=DataFrame, io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
-                )
-            },
-        )
-        def emit_pyspark_df(_):
-            spark = SparkSession.builder.config(
-                key="spark.jars.packages",
-                value=SNOWFLAKE_JARS,
-            ).getOrCreate()
-            columns = ["foo", "quux"]
-            data = [("bar", 1), ("baz", 2)]
-            df = spark.createDataFrame(data).toDF(*columns)
-            return df
+    table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
 
-        @op
-        def read_pyspark_df(df: DataFrame):
-            assert set(df.schema.fields) == {"foo", "quux"}
-            assert df.count() == 2
+    @op(
+        out={
+            table_name: Out(
+                dagster_type=DataFrame, io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
+            )
+        },
+    )
+    def emit_pyspark_df(_):
+        spark = SparkSession.builder.config(
+            key="spark.jars.packages",
+            value=SNOWFLAKE_JARS,
+        ).getOrCreate()
+        columns = ["foo", "quux"]
+        data = [("bar", 1), ("baz", 2)]
+        df = spark.createDataFrame(data).toDF(*columns)
+        return df
 
-        @job(
-            resource_defs={"snowflake": snowflake_pyspark_io_manager.configured(
-                {
-                    **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-                    "database": "TEST_SNOWFLAKE_IO_MANAGER",
-                }
-            )}
-        )
-        def io_manager_test_pipeline():
-            read_pyspark_df(emit_pyspark_df())
+    @op
+    def read_pyspark_df(df: DataFrame):
+        assert set(df.schema.fields) == {"foo", "quux"}
+        assert df.count() == 2
 
-        res = io_manager_test_pipeline.execute_in_process()
-        assert res.success
+    @job(
+        resource_defs={"snowflake": snowflake_pyspark_io_manager.configured(
+            {
+                **SHARED_BUILDKITE_SNOWFLAKE_CONF,
+                "database": "TEST_SNOWFLAKE_IO_MANAGER",
+            }
+        )}
+    )
+    def io_manager_test_pipeline():
+        read_pyspark_df(emit_pyspark_df())
+
+    res = io_manager_test_pipeline.execute_in_process()
+    assert res.success
