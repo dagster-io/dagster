@@ -998,7 +998,7 @@ class SqlEventLogStorage(EventLogStorage):
                     last_run_id=row[3],
                     asset_details=AssetDetails.from_db_string(row[4]),
                     cached_status=AssetStatusCacheValue.from_db_string(row[5])
-                    if self.has_asset_key_col("cached_status_data")
+                    if self.can_cache_asset_status_data()
                     else None,
                 ),
             )
@@ -1234,7 +1234,7 @@ class SqlEventLogStorage(EventLogStorage):
     def update_asset_cached_status_data(
         self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
     ) -> None:
-        if self.has_asset_key_col("cached_status_data"):
+        if self.can_cache_asset_status_data():
             with self.index_connection() as conn:
                 conn.execute(
                     AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
@@ -1544,7 +1544,7 @@ class SqlEventLogStorage(EventLogStorage):
                     wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp),
                 )
             )
-        if self.has_asset_key_col("cached_status_data"):
+        if self.can_cache_asset_status_data():
             values.update(dict(cached_status_data=None))
         return values
 

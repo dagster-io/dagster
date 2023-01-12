@@ -529,6 +529,31 @@ def test_time_window_partiitons_deserialize_backwards_compatible():
     assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
     assert "2015-01-02" in deserialized
 
+    serialized = (
+        '{"time_windows": [[1420156800.0, 1420243200.0], [1420329600.0, 1420416000.0]],'
+        ' "num_partitions": 2}'
+    )
+    deserialized = partitions_def.deserialize_subset(serialized)
+    assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
+    assert "2015-01-02" in deserialized
+
+
+def test_current_time_window_partitions_serialization():
+    partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    serialized = (
+        partitions_def.empty_subset().with_partition_keys(["2015-01-02", "2015-01-04"]).serialize()
+    )
+    deserialized = partitions_def.deserialize_subset(serialized)
+    assert partitions_def.deserialize_subset(serialized)
+    assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
+
+    serialized = (
+        '{"version": 1, "time_windows": [[1420156800.0, 1420243200.0], [1420329600.0,'
+        ' 1420416000.0]], "num_partitions": 2}'
+    )
+    assert partitions_def.deserialize_subset(serialized)
+    assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
+
 
 def test_time_window_partitions_contains():
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")

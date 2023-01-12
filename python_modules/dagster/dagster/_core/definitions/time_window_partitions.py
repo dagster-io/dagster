@@ -22,6 +22,7 @@ from dagster._annotations import PublicAttr, public
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
 
+from ..errors import DagsterInvalidDeserializationVersionError
 from .partition import (
     DEFAULT_DATE_FORMAT,
     Partition,
@@ -523,8 +524,11 @@ class TimeWindowPartitionsDefinition(
     def empty_subset(self) -> "TimeWindowPartitionsSubset":
         return TimeWindowPartitionsSubset(self, [], 0)
 
-    def deserialize_subset(self, serialized: str) -> "TimeWindowPartitionsSubset":
+    def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return TimeWindowPartitionsSubset.from_serialized(self, serialized)
+
+    def supports_deserialization(self, serialized: str) -> bool:
+        return TimeWindowPartitionsSubset.supports_deserialization(serialized)
 
     @property
     def serializable_unique_identifier(self) -> str:
@@ -1046,14 +1050,23 @@ def weekly_partitioned_config(
 
 
 class TimeWindowPartitionsSubset(PartitionsSubset):
+    # Every time we change the serialization format, we should increment the version number.
+    # This will ensure that we can gracefully degrade when deserializing old data.
+    SERIALIZATION_VERSION = 1
+
     def __init__(
         self,
         partitions_def: TimeWindowPartitionsDefinition,
         included_time_windows: Sequence[TimeWindow],
         num_partitions: int,
     ):
+        """
+        Users should not directly call this method. Instead, call empty_subset().with_partition_keys().
+        """
+        self._partitions_def = check.inst_param(
+            partitions_def, "partitions_def", TimeWindowPartitionsDefinition
+        )
         check.sequence_param(included_time_windows, "included_time_windows", of_type=TimeWindow)
-        self._partitions_def = partitions_def
         self._included_time_windows = included_time_windows
         self._num_partitions = num_partitions
 
@@ -1185,10 +1198,13 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             self._partitions_def.get_partition_keys_in_range(partition_key_range)
         )
 
-    @staticmethod
+    @classmethod
     def from_serialized(
-        partitions_def: TimeWindowPartitionsDefinition, serialized: str
-    ) -> "TimeWindowPartitionsSubset":
+        cls, partitions_def: PartitionsDefinition, serialized: str
+    ) -> "PartitionsSubset":
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            check.failed("Partitions definition must be a TimeWindowPartitionsDefinition")
+
         loaded = json.loads(serialized)
 
         def tuples_to_time_windows(tuples):
@@ -1207,15 +1223,29 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                 len(partitions_def.get_partition_keys_in_time_window(time_window))
                 for time_window in time_windows
             )
-        else:
+        elif isinstance(loaded, dict) and (
+            "version" not in loaded or loaded["version"] == cls.SERIALIZATION_VERSION
+        ):  # version 1
             time_windows = tuples_to_time_windows(loaded["time_windows"])
             num_partitions = loaded["num_partitions"]
+        else:
+            raise DagsterInvalidDeserializationVersionError(
+                f"Attempted to deserialize partition subset with version {loaded.get('version')},"
+                f" but only version {cls.SERIALIZATION_VERSION} is supported."
+            )
 
         return TimeWindowPartitionsSubset(partitions_def, time_windows, num_partitions)
+
+    @classmethod
+    def supports_deserialization(cls, serialized: str) -> bool:
+        # Check the version number to determine if the serialization format is supported
+        data = json.loads(serialized)
+        return data.get("version") == cls.SERIALIZATION_VERSION
 
     def serialize(self) -> str:
         return json.dumps(
             {
+                "version": self.SERIALIZATION_VERSION,
                 "time_windows": [
                     (window.start.timestamp(), window.end.timestamp())
                     for window in self._included_time_windows

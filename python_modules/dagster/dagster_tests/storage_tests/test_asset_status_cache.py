@@ -11,7 +11,10 @@ from dagster import (
     define_asset_job,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_values
+from dagster._core.storage.partition_status_cache import (
+    AssetStatusCacheValue,
+    get_and_update_asset_status_cache_values,
+)
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import Counter, traced_counter
 
@@ -262,3 +265,48 @@ def test_dynamic_partitions_status_not_cached():
             created_instance, asset_graph, asset_key
         )[asset_key]
         assert cached_status.serialized_materialized_partition_subset is None
+
+
+def test_rebuild_when_unsupported_serialization_version():
+    static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    @asset(partitions_def=static_partitions_def)
+    def asset1():
+        return 1
+
+    asset_key = AssetKey("asset1")
+    asset_graph = AssetGraph.from_assets([asset1])
+    asset_job = define_asset_job("asset_job").resolve([asset1], [])
+
+    with instance_for_test() as created_instance:
+        traced_counter.set(Counter())
+        asset_records = list(created_instance.get_asset_records([AssetKey("asset1")]))
+        assert len(asset_records) == 0
+
+        asset_job.execute_in_process(instance=created_instance, partition_key="a")
+        created_instance.update_asset_cached_status_data(
+            asset_key,
+            AssetStatusCacheValue(
+                latest_storage_id=0,
+                partitions_def_id=static_partitions_def.serializable_unique_identifier,
+                serialized_materialized_partition_subset=(
+                    '{"version": -1, "subset": ["nonexistent"]}'
+                ),
+            ),
+        )
+        asset_records = list(created_instance.get_asset_records([AssetKey("asset1")]))
+        assert len(asset_records) == 1
+
+        asset_job.execute_in_process(instance=created_instance, partition_key="c")
+
+        cached_status = get_and_update_asset_status_cache_values(
+            created_instance, asset_graph, asset_key
+        )[asset_key]
+
+        assert cached_status.serialized_materialized_partition_subset is not None
+        assert static_partitions_def.deserialize_subset(
+            cached_status.serialized_materialized_partition_subset
+        ).get_partition_keys() == {"a", "c"}
+
+        counts = traced_counter.get().counts()
+        assert counts.get("DagsterInstance.get_materialization_count_by_partition") == 1
