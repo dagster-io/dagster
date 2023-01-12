@@ -41,7 +41,7 @@ Software-defined assets wrap objects to enable data engineers to do more with th
 
 As a Dagster user, you're able to build assets in code.
 
-```python file=/intro_tutorial/basics/hackernews.py startafter=start_topstories_asset_marker endbefore=end_topstories_asset_marker
+```python file=/intro_tutorial/basics/hackernews/hackernews.py startafter=start_topstories_asset_marker endbefore=end_topstories_asset_marker
 @asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstories(
     context: OpExecutionContext, hackernews_topstory_ids: List[int]
@@ -85,6 +85,7 @@ height={514}
 Asset-based orchestration may seem like a new way to approach data orchestration, but it is similar to traditional task-based orchestration. Under the hood, assets are a wrapper around Dagster's task-based framework. Therefore, all work done with SDAs can also done with tasks.
 
 Dagster's best practices believe that data engineers should use assets most of the time. However, users are able to use Dagster's Ops and Jobs' task-based framework when assets are not the right fit. Some common situations to use the task-based framework are when you are:
+
 - Sending emails
 - Generating assets you do not know of ahead of time
 
