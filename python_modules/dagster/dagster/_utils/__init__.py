@@ -576,6 +576,20 @@ def find_free_port() -> int:
         return s.getsockname()[1]
 
 
+def is_port_in_use(host, port) -> bool:
+    # Similar to the socket options that uvicorn uses to bind ports:
+    # https://github.com/encode/uvicorn/blob/62f19c1c39929c84968712c371c9b7b96a041dec/uvicorn/config.py#L565-L566
+    sock = socket.socket(family=socket.AF_INET)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        sock.bind((host, port))
+        return False
+    except socket.error as e:
+        return e.errno == errno.EADDRINUSE
+    finally:
+        sock.close()
+
+
 @contextlib.contextmanager
 def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Iterator[None]:
     to_restore = [path for path in sys.path]
