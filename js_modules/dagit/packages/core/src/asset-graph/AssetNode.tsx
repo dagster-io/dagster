@@ -181,7 +181,19 @@ export const AssetNodeStatusRow: React.FC<{
             ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
             : 'Failed'}
         </Caption>
-        {lastMaterializationLink}
+
+        {runWhichFailedToMaterialize ? (
+          <Caption>
+            <AssetRunLink runId={runWhichFailedToMaterialize.id}>
+              <TimestampDisplay
+                timestamp={Number(runWhichFailedToMaterialize.endTime)}
+                timeFormat={{showSeconds: false, showTimezone: false}}
+              />
+            </AssetRunLink>
+          </Caption>
+        ) : (
+          lastMaterializationLink
+        )}
       </AssetNodeStatusBox>
     );
   }

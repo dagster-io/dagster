@@ -166,6 +166,7 @@ export const ASSET_LATEST_INFO_FRAGMENT = graphql(`
 
   fragment AssetLatestInfoRun on Run {
     status
+    endTime
     id
   }
 `);
