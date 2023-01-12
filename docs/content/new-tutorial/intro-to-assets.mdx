@@ -48,7 +48,9 @@ def hackernews_topstories(
 ) -> pd.DataFrame:
     results = []
     for item_id in hackernews_topstory_ids:
-        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
+        item = requests.get(
+            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        ).json()
         results.append(item)
 
     df = pd.DataFrame(results)
@@ -61,6 +63,13 @@ def hackernews_topstories(
     )
     return df
 ```
+
+<Image
+alt="A materialized asset"
+src="/images/tutorial/simple-asset.png"
+width={251}
+height={121}
+/>
 
 As shown in the sample asset above, assets are a framework that wraps around your existing Python code and allows you to add more information and metadata about it.
 
