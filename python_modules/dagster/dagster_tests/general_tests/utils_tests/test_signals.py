@@ -1,6 +1,6 @@
 from signal import Signals
 
-from dagster._utils import get_run_crash_explanation
+from dagster._utils import get_run_crash_explanation, get_terminate_signal
 
 
 def test_get_run_crash_explanation():
@@ -12,5 +12,5 @@ def test_get_run_crash_explanation():
     assert (
         "foo was terminated by signal 9 (SIGKILL). This usually indicates that the process was"
         " killed by the operating system due to running out of memory."
-        in get_run_crash_explanation("foo", -Signals.SIGKILL)
+        in get_run_crash_explanation("foo", -get_terminate_signal())
     )

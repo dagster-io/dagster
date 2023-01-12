@@ -669,6 +669,12 @@ def traced(func: T_Callable) -> T_Callable:
     return cast(T_Callable, inner)
 
 
+def get_terminate_signal():
+    if sys.platform == "win32":
+        return signal.SIGTERM
+    return signal.SIGKILL
+
+
 def get_run_crash_explanation(prefix: str, exit_code: int):
     # As per https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess.returncode
     # negative exit code means a posix signal
@@ -676,7 +682,7 @@ def get_run_crash_explanation(prefix: str, exit_code: int):
         posix_signal = -exit_code
         signal_str = Signals(posix_signal).name
         exit_clause = f"was terminated by signal {posix_signal} ({signal_str})."
-        if posix_signal == Signals.SIGKILL:
+        if posix_signal == get_terminate_signal():
             exit_clause = (
                 exit_clause
                 + " This usually indicates that the process was"

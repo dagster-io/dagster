@@ -1,7 +1,6 @@
 import asyncio
 import os
 import re
-import signal
 import sys
 import tempfile
 import time
@@ -36,7 +35,7 @@ from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._legacy import ModeDefinition, pipeline, solid
 from dagster._serdes import ConfigurableClass
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
-from dagster._utils import Counter, traced, traced_counter
+from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import configure_loggers
 from dagster._utils.merger import merge_dicts
@@ -505,12 +504,6 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
     @staticmethod
     def from_config_value(inst_data, config_value):
         return TestSecretsLoader(inst_data=inst_data, **config_value)
-
-
-def get_terminate_signal():
-    if sys.platform == "win32":
-        return signal.SIGTERM
-    return signal.SIGKILL
 
 
 def get_crash_signals():
