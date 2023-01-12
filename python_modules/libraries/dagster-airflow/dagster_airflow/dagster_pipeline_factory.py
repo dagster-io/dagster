@@ -19,8 +19,6 @@ from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
 from airflow.utils import db
-from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
-
 from dagster import (
     Array,
     DagsterInvariantViolationError,
@@ -32,14 +30,18 @@ from dagster import (
     Nothing,
     Out,
     ScheduleDefinition,
+    _check as check,
+    op,
+    repository,
+    resource,
 )
-from dagster import _check as check
-from dagster import op, repository, resource
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
 from dagster._legacy import ModeDefinition, PipelineDefinition
 from dagster._utils.schedules import is_valid_cron_schedule
+
+from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
 # pylint: disable=no-name-in-module,import-error
 if str(airflow_version) >= "2.0.0":
