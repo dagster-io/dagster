@@ -11,6 +11,7 @@ from dagster import MetadataValue, OpExecutionContext, asset
 
 # start_topstory_ids_asset_marker
 
+
 @asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstory_ids() -> List[int]:
     """
@@ -22,9 +23,11 @@ def hackernews_topstory_ids() -> List[int]:
     top_100_newstories = requests.get(newstories_url).json()
     return top_100_newstories
 
+
 # start_topstory_ids_asset_marker
 
 # start_topstories_asset_marker
+
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstories(
@@ -32,7 +35,9 @@ def hackernews_topstories(
 ) -> pd.DataFrame:
     results = []
     for item_id in hackernews_topstory_ids:
-        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
+        item = requests.get(
+            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        ).json()
         results.append(item)
 
     df = pd.DataFrame(results)
@@ -45,7 +50,9 @@ def hackernews_topstories(
     )
     return df
 
+
 # end_topstories_asset_marker
+
 
 @asset(group_name="hackernews", compute_kind="Plot")
 def hackernews_topstories_word_cloud(
@@ -60,7 +67,9 @@ def hackernews_topstories_word_cloud(
     stopwords = set(STOPWORDS)
     stopwords.update(["Ask", "Show", "HN"])
     titles_text = " ".join([str(item) for item in hackernews_topstories["title"]])
-    titles_cloud = WordCloud(stopwords=stopwords, background_color="white").generate(titles_text)
+    titles_cloud = WordCloud(stopwords=stopwords, background_color="white").generate(
+        titles_text
+    )
 
     # Generate the word cloud image
     plt.figure(figsize=(8, 8), facecolor=None)
