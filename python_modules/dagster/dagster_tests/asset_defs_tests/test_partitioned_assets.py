@@ -590,13 +590,13 @@ def test_partition_range_single_run():
     partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
     @asset(partitions_def=partitions_def)
-    def upstream_asset(context) -> None:
+    def upstream_asset(context):
         assert context.asset_partition_key_range_for_output() == PartitionKeyRange(
             start="2020-01-01", end="2020-01-03"
         )
 
     @asset(partitions_def=partitions_def, non_argument_deps={"upstream_asset"})
-    def downstream_asset(context) -> None:
+    def downstream_asset(context):
         assert context.asset_partition_key_range_for_input("upstream_asset") == PartitionKeyRange(
             start="2020-01-01", end="2020-01-03"
         )

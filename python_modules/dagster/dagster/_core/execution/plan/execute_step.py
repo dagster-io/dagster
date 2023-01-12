@@ -65,7 +65,7 @@ from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
 from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
-from dagster._core.types.dagster_type import DagsterType
+from dagster._core.types.dagster_type import DagsterType, Nothing
 from dagster._utils import ensure_gen, iterate_with_context
 from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
 from dagster._utils.timing import time_execution_scope
@@ -492,6 +492,9 @@ def _get_output_asset_materializations(
     step_context: StepExecutionContext,
 ) -> Iterator[AssetMaterialization]:
     all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
+
+    if output_def.dagster_type is Nothing:
+        return
 
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
