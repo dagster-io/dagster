@@ -5,11 +5,11 @@ import {
   Checkbox,
   Colors,
   DialogBody,
-  DialogBodySection,
   DialogFooter,
   Icon,
   NonIdealState,
   Spinner,
+  Subheading,
   Tooltip,
 } from '@dagster-io/ui';
 import * as React from 'react';
@@ -34,9 +34,11 @@ import {RepoAddress} from '../workspace/types';
 
 import {
   DaemonNotRunningAlert,
+  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
   showBackfillErrorToast,
   showBackfillSuccessToast,
   UsingDefaultLauncherAlert,
+  USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT,
 } from './BackfillMessaging';
 import {DimensionRangeWizard} from './DimensionRangeWizard';
 import {PartitionStateCheckboxes} from './PartitionStateCheckboxes';
@@ -167,8 +169,8 @@ export const BackfillPartitionSelector: React.FC<{
   return (
     <>
       <DialogBody>
-        <Box flex={{direction: 'column', gap: 32}}>
-          <DialogBodySection title="Partitions">
+        <Box flex={{direction: 'column', gap: 24}}>
+          <Section title="Partitions">
             <Box>
               Select partitions to materialize. Click and drag to select a range on the timeline.
             </Box>
@@ -199,10 +201,10 @@ export const BackfillPartitionSelector: React.FC<{
               }
               onChange={setStateFilters}
             />
-          </DialogBodySection>
+          </Section>
 
           {failedPartitions.length ? (
-            <DialogBodySection title="Reexecution">
+            <Section title="Reexecution">
               <Checkbox
                 checked={options.fromFailure}
                 disabled={!selected.every(isFailed)}
@@ -231,10 +233,10 @@ export const BackfillPartitionSelector: React.FC<{
                   </Box>
                 }
               />
-            </DialogBodySection>
+            </Section>
           ) : null}
 
-          <DialogBodySection
+          <Section
             title={
               <Box flex={{display: 'inline-flex', alignItems: 'center'}}>
                 <Box margin={{right: 4}}>Step subset</Box>
@@ -263,9 +265,9 @@ export const BackfillPartitionSelector: React.FC<{
                 </div>
               ) : null}
             </Box>
-          </DialogBodySection>
+          </Section>
 
-          <DialogBodySection title="Tags">
+          <Section title="Tags">
             <TagEditor
               tagsFromSession={tags}
               onChange={setTags}
@@ -281,11 +283,13 @@ export const BackfillPartitionSelector: React.FC<{
                 <Button onClick={() => setTagEditorOpen(true)}>Add tags to backfill runs</Button>
               </div>
             )}
-          </DialogBodySection>
+          </Section>
 
-          <DaemonNotRunningAlert instance={instance} />
+          <Box flex={{direction: 'column', gap: 16}}>
+            <DaemonNotRunningAlert instance={instance} />
 
-          <UsingDefaultLauncherAlert instance={instance} />
+            <UsingDefaultLauncherAlert instance={instance} />
+          </Box>
         </Box>
       </DialogBody>
       <DialogFooter>
@@ -450,4 +454,25 @@ const BACKFILL_SELECTOR_QUERY = gql`
   }
 
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT}
+  ${USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT}
 `;
+
+export const Section = ({
+  title,
+  children,
+}: {
+  title: string | React.ReactNode;
+  children: React.ReactNode;
+}) => (
+  <Box flex={{direction: 'column', gap: 4}}>
+    <Subheading>{title}</Subheading>
+    <Box
+      flex={{direction: 'column', gap: 8}}
+      padding={{top: 16}}
+      border={{width: 1, color: Colors.KeylineGray, side: 'top'}}
+    >
+      {children}
+    </Box>
+  </Box>
+);

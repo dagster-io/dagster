@@ -18,7 +18,7 @@ const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | null | undefined) {
   const result = data?.launchPartitionBackfill;
 
-  let errors = <></>;
+  let errors: React.ReactNode = undefined;
   if (result?.__typename === 'PythonError' || result?.__typename === 'PartitionSetNotFoundError') {
     errors = <PythonErrorInfo error={result} />;
   } else if (result?.__typename === 'InvalidStepError') {
@@ -132,13 +132,13 @@ export const UsingDefaultLauncherAlert: React.FC<{
       intent="warning"
       title={
         <div>
-          Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for launching
+          Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> to launch
           backfills without a queued run coordinator is not advised.
         </div>
       }
       description={
         <div>
-          Check your instance configuration in <code>dagster.yaml</code> to either configure the{' '}
+          Check your instance configuration in <code>dagster.yaml</code> to configure the{' '}
           <a
             href="https://docs.dagster.io/deployment/run-coordinator"
             target="_blank"
@@ -146,7 +146,7 @@ export const UsingDefaultLauncherAlert: React.FC<{
           >
             queued run coordinator
           </a>{' '}
-          or to configure a run launcher more appropriate for launching a large number of jobs.
+          or a run launcher more appropriate for launching a large number of jobs.
         </div>
       }
     />

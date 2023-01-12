@@ -1,16 +1,15 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
-  Alert,
   Box,
   Button,
   ButtonLink,
   Colors,
   Dialog,
   DialogBody,
-  DialogBodySection,
   DialogFooter,
   DialogHeader,
   Tooltip,
+  Alert,
 } from '@dagster-io/ui';
 import reject from 'lodash/reject';
 import React from 'react';
@@ -38,10 +37,13 @@ import {
 } from '../launchpad/types/ConfigEditorConfigPicker.types';
 import {
   DaemonNotRunningAlert,
+  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
   showBackfillErrorToast,
   showBackfillSuccessToast,
   UsingDefaultLauncherAlert,
+  USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT,
 } from '../partitions/BackfillMessaging';
+import {Section} from '../partitions/BackfillSelector';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
@@ -362,8 +364,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           setSelections={setSelections}
         />
 
-        <Box flex={{direction: 'column', gap: 32}} style={{marginTop: 32}}>
-          <DialogBodySection title="Tags">
+        <Box flex={{direction: 'column', gap: 16}} style={{marginTop: 24}}>
+          <Section title="Tags">
             <TagEditor
               tagsFromSession={tags}
               onChange={setTags}
@@ -381,7 +383,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                 </Button>
               </div>
             )}
-          </DialogBodySection>
+          </Section>
 
           {instance && keysFiltered.length > 1 && <DaemonNotRunningAlert instance={instance} />}
 
@@ -490,4 +492,7 @@ const LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY = gql`
       ...UsingDefaultLauncherAlertInstanceFragment
     }
   }
+
+  ${DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT}
+  ${USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT}
 `;

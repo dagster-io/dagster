@@ -61,26 +61,6 @@ export const DialogBody: React.FC = (props) => {
   );
 };
 
-// The subheadings used in the backfill modals
-export const DialogBodySection = ({
-  title,
-  children,
-}: {
-  title: string | React.ReactNode;
-  children: React.ReactNode;
-}) => (
-  <Box flex={{direction: 'column', gap: 8}}>
-    <strong style={{display: 'block'}}>{title}</strong>
-    <Box
-      flex={{direction: 'column', gap: 8}}
-      padding={{top: 16}}
-      border={{width: 1, color: Colors.KeylineGray, side: 'top'}}
-    >
-      {children}
-    </Box>
-  </Box>
-);
-
 interface DialogFooterProps {
   topBorder?: boolean;
   left?: React.ReactFragment;
