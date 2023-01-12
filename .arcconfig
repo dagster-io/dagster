@@ -1,4 +1,0 @@
-{
-    "phabricator.uri" : "https://dagster.phacility.com",
-    "load": ["pinterest-linters"]
-}
