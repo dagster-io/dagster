@@ -125,10 +125,11 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     const anyCurrentlyLoading = currentlyLoading.length > 0;
 
     // If this is a fresh pageload and any locations are loading, show the spinner but not the toaster.
-    if (!previousEntriesById) {
+    if (!previousEntries.length) {
       if (anyCurrentlyLoading) {
         setShowSpinner(true);
       }
+      reloadWorkspaceQuietly();
       return;
     }
 
