@@ -1,21 +1,23 @@
-import {useApolloClient} from '@apollo/client';
+import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
-  Dialog,
-  DialogHeader,
-  DialogBody,
+  Alert,
   Box,
   Button,
   ButtonLink,
-  DialogFooter,
-  Tooltip,
   Colors,
-  Alert,
+  Dialog,
+  DialogBody,
+  DialogBodySection,
+  DialogFooter,
+  DialogHeader,
+  Tooltip,
 } from '@dagster-io/ui';
 import reject from 'lodash/reject';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -29,11 +31,17 @@ import {
 } from '../instance/types/BackfillUtils.types';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
 } from '../launchpad/types/ConfigEditorConfigPicker.types';
-import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/BackfillSelector';
+import {
+  DaemonNotRunningAlert,
+  showBackfillErrorToast,
+  showBackfillSuccessToast,
+  UsingDefaultLauncherAlert,
+} from '../partitions/BackfillMessaging';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
@@ -47,6 +55,7 @@ import {PartitionDefinitionForLaunchAssetFragment} from './types/LaunchAssetExec
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
+
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -99,6 +108,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
   const [launching, setLaunching] = React.useState(false);
+
+  const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
+  const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
+
   const [previewCount, setPreviewCount] = React.useState(0);
   const morePreviewsCount = partitionedAssets.length - previewCount;
 
@@ -141,6 +154,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const history = useHistory();
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
+
+  const instanceResult = useQuery(LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY);
+  const instance = instanceResult.data?.instance;
 
   // Find the partition set name. This seems like a bit of a hack, unclear
   // how it would work if there were two different partition spaces in the asset job
@@ -203,13 +219,13 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         return;
       }
 
-      const tags = [...partition.tagsOrError.results];
+      const allTags = [...partition.tagsOrError.results, ...tags];
       const runConfigData = partition.runConfigOrError.yaml || '';
 
       const result = await launchWithTelemetry(
         {
           executionParams: {
-            ...executionParamsForAssetJob(repoAddress, assetJobName, assets, tags),
+            ...executionParamsForAssetJob(repoAddress, assetJobName, assets, allTags),
             runConfigData,
             mode: partition.mode,
           },
@@ -245,7 +261,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             assetSelection: assets.map((a) => ({path: a.assetKey.path})),
             partitionNames: keysFiltered.map((k) => k.partitionKey),
             fromFailure: false,
-            tags: [],
+            tags,
           },
         },
       });
@@ -345,7 +361,34 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           selections={selections}
           setSelections={setSelections}
         />
+
+        <Box flex={{direction: 'column', gap: 32}} style={{marginTop: 32}}>
+          <DialogBodySection title="Tags">
+            <TagEditor
+              tagsFromSession={tags}
+              onChange={setTags}
+              open={tagEditorOpen}
+              onRequestClose={() => setTagEditorOpen(false)}
+            />
+            {tags.length ? (
+              <div style={{border: `1px solid ${Colors.Gray300}`, borderRadius: 8, padding: 3}}>
+                <TagContainer tagsFromSession={tags} onRequestEdit={() => setTagEditorOpen(true)} />
+              </div>
+            ) : (
+              <div>
+                <Button onClick={() => setTagEditorOpen(true)}>
+                  {keysFiltered.length > 1 ? 'Add tags to backfill runs' : 'Add tags'}
+                </Button>
+              </div>
+            )}
+          </DialogBodySection>
+
+          {instance && keysFiltered.length > 1 && <DaemonNotRunningAlert instance={instance} />}
+
+          {instance && keysFiltered.length > 1 && <UsingDefaultLauncherAlert instance={instance} />}
+        </Box>
       </DialogBody>
+
       <DialogFooter
         left={partitionSet && <RunningBackfillsNotice partitionSetName={partitionSet.name} />}
       >
@@ -439,3 +482,12 @@ const UpstreamUnavailableWarning: React.FC<{
     </Box>
   );
 };
+
+const LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY = gql`
+  query LaunchAssetChoosePartitionsQuery {
+    instance {
+      ...DaemonNotRunningAlertInstanceFragment
+      ...UsingDefaultLauncherAlertInstanceFragment
+    }
+  }
+`;
