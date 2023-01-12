@@ -51,7 +51,7 @@ export async function logTelemetry(
       variables: {
         action,
         metadata: JSON.stringify(metadata),
-        clientTime: Date.now(),
+        clientTime: String(Date.now()),
         clientId: clientID(),
       },
     }),
