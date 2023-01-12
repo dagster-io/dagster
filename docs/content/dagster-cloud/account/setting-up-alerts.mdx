@@ -12,9 +12,12 @@ In this guide, we'll walk you through configuring job alerts in Dagster Cloud.
 
 ## Understanding alert policies
 
-Alert policies define which jobs will trigger an alert, the conditions under which an alert will be sent, and how the alert will be sent.
+Alert policies define which events will trigger an alert, the conditions under which an alert will be sent, and how the alert will be sent.
 
-An alert policy includes a set of configured tags. If an alert policy has no configured tags, all jobs will be eligible for that alert. Otherwise, only jobs that contain all the tags for a given alert policy are eligible for that alert.
+Currently, alerts can be triggered by job run failure/success, or schedule/sensor tick failure.
+
+- **Job run based alert policies** include a set of configured tags. If an alert policy has no configured tags, all jobs will be eligible for that alert. Otherwise, only jobs that contain all the tags for a given alert policy are eligible for that alert.
+- **Alert policies created for schedule/sensor tick failure will apply to all schedules/sensors**. However, you will only receive alerts when the schedule/sensor changes from a state of succeeding to failing, so subsequent failures will not trigger new alerts.
 
 Alert policies are configured on a per deployment basis. For example, alerts configured in a `prod` deployment are only applicable to jobs in that deployment.
 
@@ -44,33 +47,38 @@ Currently, Slack and email notifications are supported.
 
 4. Click **+ Create alert policy**.
 
-5. In the **Create alert policy** window, fill in the following:
+5. From the **Alert Policy Type** drop-down, select **Run Alert** or **Schedule/Sensor Alert**.
+
+6. In the **Create alert policy** window, fill in the following:
 
    - **Alert policy name** - Enter a name for the alert policy. For example, `slack_urgent_failure`
    - **Description** - Enter a description for the alert policy
-   - **Tags** - Add tag(s) for the alert policy. Jobs with these tags will trigger the alert. For example: `level:critical` or `team:sales`
-   - **Events** - Select whether the alert should trigger on job success, failure, or both
-   - **Notification service** - Select the service for the alert policy:
 
-     - **Slack** - If you haven't connected Slack, click **Connect** to add the Dagster Cloud Slack app to your workspace. After the installation completes, invite the `@Dagster Cloud` bot user to the desired channel.
+For run-based alerts, fill out these additional options:
 
-       You can then configure the alert policy to message this channel. **Note**: Only messaging one channel per alert policy is currently supported:
+- **Tags** - Add tag(s) for the alert policy. Jobs with these tags will trigger the alert. For example: `level:critical` or `team:sales`
+- **Events** - Select whether the alert should trigger on job success, failure, or both
+- **Notification service** - Select the service for the alert policy:
 
-       <Image
-       alt="Slack alert configured to alert the sales-notifications channel"
-       src="/images/dagster-cloud/alerts/cloud-slack-alert-creation.png"
-       width={1580}
-       height={511}
-       />
+  - **Slack** - If you haven't connected Slack, click **Connect** to add the Dagster Cloud Slack app to your workspace. After the installation completes, invite the `@Dagster Cloud` bot user to the desired channel.
 
-     - **Email** - Email alerts can be sent to one or more recipients. For example:
+    You can then configure the alert policy to message this channel. **Note**: Only messaging one channel per alert policy is currently supported:
 
-       <Image
-       alt="Email alert configured to alert two recipients"
-       src="/images/dagster-cloud/alerts/cloud-email-alert-creation.png"
-       width={1571}
-       height={514}
-       />
+    <Image
+    alt="Slack alert configured to alert the sales-notifications channel"
+    src="/images/dagster-cloud/alerts/cloud-slack-alert-creation.png"
+    width={1580}
+    height={511}
+    />
+
+  - **Email** - Email alerts can be sent to one or more recipients. For example:
+
+    <Image
+    alt="Email alert configured to alert two recipients"
+    src="/images/dagster-cloud/alerts/cloud-email-alert-creation.png"
+    width={1571}
+    height={514}
+    />
 
 6. When finished, click **Save policy**.
 
@@ -221,3 +229,7 @@ def important_computation():
 def important_job():
     important_computation()
 ```
+
+### Compatible event types
+
+When creating an alert policy using the CLI, only certain `event_types` can be specified together. You can specify multiple job run-based event types together (`JOB_SUCCESS`, `JOB_FAILURE`), or a tick-based event type (`TICK_FAILURE`), but attempting to mix these will result in an error.
