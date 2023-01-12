@@ -133,7 +133,10 @@ from dagster._core.definitions.decorators.sensor_decorator import (
 from dagster._core.definitions.decorators.source_asset_decorator import (
     observable_source_asset as observable_source_asset,
 )
-from dagster._core.definitions.definitions_class import Definitions as Definitions
+from dagster._core.definitions.definitions_class import (
+    Definitions as Definitions,
+    create_repository_using_definitions_args as create_repository_using_definitions_args,
+)
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
     MultiDependencyDefinition as MultiDependencyDefinition,
