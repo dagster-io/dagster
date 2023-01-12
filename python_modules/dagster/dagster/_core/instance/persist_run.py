@@ -14,7 +14,7 @@ def persist_run(
     repository_location: RepositoryLocation,
     pipeline_selector: PipelineSelector,
     run_config: Mapping[str, object],
-    context_specific_tags: Mapping[str, str],
+    run_tags: Mapping[str, str],
     explicit_mode: Optional[str],
 ) -> DagsterRun:
     """
@@ -46,8 +46,6 @@ def persist_run(
         instance=instance,
     )
 
-    run_tags = validate_tags({**external_pipeline.tags, **context_specific_tags})
-
     return instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
@@ -62,7 +60,7 @@ def persist_run(
         run_config=run_config,
         mode=mode,
         step_keys_to_execute=external_execution_plan.step_keys_in_plan,
-        tags=run_tags,
+        tags=validate_tags({**external_pipeline.tags, **run_tags}),
         root_run_id=None,
         parent_run_id=None,
         status=DagsterRunStatus.NOT_STARTED,

@@ -833,7 +833,7 @@ def _create_sensor_run(
         repository_location=repo_location,
         pipeline_selector=pipeline_selector,
         run_config=run_request.run_config,
-        context_specific_tags={
+        run_tags={
             **run_request.tags,
             **DagsterRun.tags_for_sensor(external_sensor),
             **({RUN_KEY_TAG: run_request.run_key} if run_request.run_key else {}),
