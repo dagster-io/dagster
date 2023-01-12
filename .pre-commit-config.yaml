@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/psf/black
-  rev: 22.12.0
+  rev: refs/tags/22.12.0:refs/tags/22.12.0
   hooks:
     - id: black-jupyter
 - repo: https://github.com/charliermarsh/ruff-pre-commit
