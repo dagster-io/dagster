@@ -113,6 +113,7 @@ def execute_scheduler_iteration_loop(
     logger: logging.Logger,
     max_catchup_runs: int,
     max_tick_retries: int,
+    shutdown_event: threading.Event,
 ):
     schedule_state_lock = threading.Lock()
     scheduler_run_futures: Dict[str, Future] = {}
@@ -160,7 +161,7 @@ def execute_scheduler_iteration_loop(
             if next_minute_time > end_time:
                 # Sleep until the beginning of the next minute, plus a small epsilon to
                 # be sure that we're past the start of the minute
-                time.sleep(next_minute_time - end_time + 0.001)
+                shutdown_event.wait(next_minute_time - end_time + 0.001)
                 yield
 
 
