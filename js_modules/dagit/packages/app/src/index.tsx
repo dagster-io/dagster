@@ -71,7 +71,6 @@ ReactDOM.render(
     </AppTopNav>
     <App>
       <ContentRoot />
-      <CommunityNux />
     </App>
   </AppProvider>,
   document.getElementById('root'),
