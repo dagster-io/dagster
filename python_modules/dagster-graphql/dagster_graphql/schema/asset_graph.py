@@ -45,7 +45,7 @@ from dagster_graphql.schema.solids import (
 from ..implementation.fetch_assets import (
     # get_1d_run_length_encoded_materialized_partitions,
     # get_2d_run_length_encoded_materialized_partitions,
-    build_partition_materialization_status,
+    build_materialized_partitions,
     get_freshness_info,
     get_materialized_partitions_subset,
 )
@@ -61,10 +61,10 @@ from .errors import GrapheneAssetNotFoundError
 from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
 from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
 from .pipelines.pipeline import (
-    GrapheneDefaultPartitionStatus1D,
-    GrapheneTimeWindowPartitionStatus1D,
-    GraphenePartitionMaterializationStatus,
-    GraphenePartitionStatus2D,
+    GrapheneDefaultPartitions,
+    GrapheneTimePartitions,
+    GrapheneMultiPartitions,
+    GrapheneMaterializedPartitions,
     GraphenePipeline,
     GrapheneRun,
 )
@@ -196,7 +196,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneMaterializationEvent)),
         partitions=graphene.List(graphene.String),
     )
-    partitionMaterializationStatus = graphene.NonNull(GraphenePartitionMaterializationStatus)
+    materializedPartitions = graphene.NonNull(GrapheneMaterializedPartitions)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
@@ -660,23 +660,16 @@ class GrapheneAssetNode(graphene.ObjectType):
             for event in ordered_materializations
         ]
 
-    def resolve_partitionMaterializationStatus(
+    def resolve_materializedPartitions(
         self, graphene_info
-    ) -> Union[
-        GrapheneTimeWindowPartitionStatus1D,
-        GrapheneDefaultPartitionStatus1D,
-        GraphenePartitionStatus2D,
-    ]:
+    ) -> Union[GrapheneDefaultPartitions, GrapheneTimePartitions, GrapheneMultiPartitions]:
         asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
         asset_key = self._external_asset_node.asset_key
         materialized_partition_subset = get_materialized_partitions_subset(
             graphene_info.context.instance, asset_key, asset_graph=asset_graph
         )
 
-        if materialized_partition_subset is None:  # Unpartitioned asset
-            return GrapheneDefaultPartitionStatus1D(materializedRanges=[], unmaterializedRanges=[])
-        else:
-            return build_partition_materialization_status(materialized_partition_subset)
+        return build_materialized_partitions(materialized_partition_subset)
         #     if isinstance(materialized_partition_subset, TimeWindowPartitionsSubset):
         #         return GrapheneTimeWindowPartitionStatus1D(
         #             materializedRanges=[
