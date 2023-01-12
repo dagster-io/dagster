@@ -415,8 +415,9 @@ def _get_dbt_op(
                     node_info_to_asset_key=node_info_to_asset_key,
                     manifest_json=manifest_json,
                     extra_metadata=extra_metadata,
-                    # generate_asset_outputs=True,
-                    generate_asset_outputs=False,
+                    generate_asset_outputs=True,
+                    generate_materializations=True,
+                    # generate_asset_outputs=False,
                 )
 
     return _dbt_op

@@ -75,6 +75,7 @@ def result_to_events(
     node_info_to_asset_key: Optional[Callable[[Mapping[str, Any]], AssetKey]] = None,
     manifest_json: Optional[Mapping[str, Any]] = None,
     extra_metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+    generate_materializations: bool = True,
     generate_asset_outputs: bool = False,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation, Output]]:
     """
@@ -130,7 +131,8 @@ def result_to_events(
                 output_name=_get_output_name(node_info),
                 metadata=metadata,
             )
-        else:
+
+        if generate_materializations:
             yield AssetMaterialization(
                 asset_key=node_info_to_asset_key(node_info),
                 description=f"dbt node: {unique_id}",
