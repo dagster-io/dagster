@@ -21,16 +21,23 @@ from airflow.settings import LOG_FORMAT
 from airflow.utils import db
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
-from dagster import (Array, DagsterInvariantViolationError,
-                     DependencyDefinition, Field, In, JobDefinition,
-                     MultiDependencyDefinition, Nothing, Out,
-                     ScheduleDefinition)
+from dagster import (
+    Array,
+    DagsterInvariantViolationError,
+    DependencyDefinition,
+    Field,
+    In,
+    JobDefinition,
+    MultiDependencyDefinition,
+    Nothing,
+    Out,
+    ScheduleDefinition,
+)
 from dagster import _check as check
 from dagster import op, repository, resource
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
-from dagster._core.instance import (AIRFLOW_EXECUTION_DATE_STR,
-                                    IS_AIRFLOW_INGEST_PIPELINE_STR)
+from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
 from dagster._legacy import ModeDefinition, PipelineDefinition
 from dagster._utils.schedules import is_valid_cron_schedule
 
@@ -281,7 +288,7 @@ def make_dagster_schedule_from_airflow_dag(dag, job_def):
             job=job_def,
             cron_schedule=cron_schedule,
             description=schedule_description,
-            execution_timezone=dag.timezone,
+            execution_timezone=str(dag.timezone),
         )
 
 
