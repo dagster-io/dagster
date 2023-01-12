@@ -11,7 +11,7 @@ from .test_cli_commands import (
     default_cli_test_instance,
     launch_command_contexts,
     memoizable_job,
-    non_existant_python_origin_target_args,
+    non_existant_python_file_workspace_args,
     python_bar_cli_args,
     valid_external_job_target_cli_args,
 )
@@ -49,7 +49,7 @@ def test_launch_pipeline(gen_pipeline_args):
 
 def test_launch_non_existant_file():
     with default_cli_test_instance() as instance:
-        kwargs = non_existant_python_origin_target_args()
+        kwargs = non_existant_python_file_workspace_args()
 
         with pytest.raises(click.UsageError, match="Error loading location"):
             run_launch(kwargs, instance)
@@ -255,3 +255,10 @@ def test_job_launch_handles_pipeline():
 
         # dont care if its a pipeline and not a job
         execute_launch_command(instance, pipeline_kwargs)
+
+
+def test_launch_command_help():
+    runner = CliRunner()
+    result = runner.invoke(job_launch_command, ["--help"])
+
+    assert "multiple times" in result.stdout
