@@ -2,9 +2,8 @@ import pendulum
 import pytest
 from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
-from dagster_airflow.dagster_pipeline_factory import make_dagster_schedule_from_airflow_dag
-
 from dagster import job
+from dagster_airflow.dagster_pipeline_factory import make_dagster_schedule_from_airflow_dag
 
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
