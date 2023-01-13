@@ -39,7 +39,7 @@ from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
-from dagster._utils.merger import merge_dicts
+from dagster._utils.merger import deep_merge_dicts
 
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
@@ -412,7 +412,7 @@ def _get_dbt_op(
                 kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
 
             # merge in any additional kwargs from the config
-            kwargs = merge_dicts(kwargs, context.op_config)
+            kwargs = deep_merge_dicts(kwargs, context.op_config)
 
             if use_build_command:
                 dbt_output = dbt_resource.build(**kwargs)
