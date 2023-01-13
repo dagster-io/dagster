@@ -98,17 +98,17 @@ class GrapheneTimePartitionRange(graphene.ObjectType):
 
 
 class GrapheneTimePartitions(graphene.ObjectType):
-    materializedRanges = non_null_list(GrapheneTimePartitionRange)
+    ranges = non_null_list(GrapheneTimePartitionRange)
 
     class Meta:
-        name = "TimePartitionStatus1D"
+        name = "TimePartitions"
 
 
 class GrapheneDefaultPartitions(graphene.ObjectType):
-    materializedPartitions = non_null_list(graphene.String)
+    partitions = non_null_list(graphene.String)
 
     class Meta:
-        name = "DefaultPartitionStatus1D"
+        name = "DefaultPartitions"
 
 
 class GraphenePartitionStatus1D(graphene.Union):
@@ -133,7 +133,7 @@ class GrapheneMultiPartitionRange(graphene.ObjectType):
 
 
 class GrapheneMultiPartitions(graphene.ObjectType):
-    materializedRanges = non_null_list(GrapheneMultiPartitionRange)
+    ranges = non_null_list(GrapheneMultiPartitionRange)
 
     class Meta:
         name = "MultiPartitions"
@@ -143,6 +143,14 @@ class GrapheneMaterializedPartitions(graphene.Union):
     class Meta:
         types = (GrapheneDefaultPartitions, GrapheneMultiPartitions, GrapheneTimePartitions)
         name = "MaterializedPartitions"
+
+
+class GraphenePartitionStats(graphene.ObjectType):
+    numMaterialized = graphene.NonNull(graphene.Int)
+    numPartitions = graphene.NonNull(graphene.Int)
+
+    class Meta:
+        name = "PartitionStats"
 
 
 class GrapheneAsset(graphene.ObjectType):

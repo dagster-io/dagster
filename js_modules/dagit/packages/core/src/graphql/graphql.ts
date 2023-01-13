@@ -189,6 +189,7 @@ export type AssetNode = {
   jobNames: Array<Scalars['String']>;
   jobs: Array<Pipeline>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
+  materializedPartitions: MaterializedPartitions;
   metadataEntries: Array<MetadataEntry>;
   op: Maybe<SolidDefinition>;
   opName: Maybe<Scalars['String']>;
@@ -197,7 +198,7 @@ export type AssetNode = {
   partitionDefinition: Maybe<PartitionDefinition>;
   partitionKeys: Array<Scalars['String']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
-  partitionMaterializationStatus: PartitionMaterializationStatus;
+  partitionStats: Maybe<PartitionStats>;
   projectedLogicalVersion: Maybe<Scalars['String']>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
@@ -221,6 +222,12 @@ export type AssetNodeAssetObservationsArgs = {
 
 export type AssetNodeLatestMaterializationByPartitionArgs = {
   partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+};
+
+
+export type AssetNodePartitionKeysByDimensionArgs = {
+  endIdx?: InputMaybe<Scalars['Int']>;
+  startIdx?: InputMaybe<Scalars['Int']>;
 };
 
 export type AssetNodeDefinitionCollision = {
@@ -867,10 +874,9 @@ export type DagsterTypeNotFoundError = Error & {
 
 export type DagsterTypeOrError = DagsterTypeNotFoundError | PipelineNotFoundError | PythonError | RegularDagsterType;
 
-export type DefaultPartitionStatus1D = {
-  __typename: 'DefaultPartitionStatus1D';
-  materializedPartitions: Array<Scalars['String']>;
-  unmaterializedPartitions: Array<Scalars['String']>;
+export type DefaultPartitions = {
+  __typename: 'DefaultPartitions';
+  partitions: Array<Scalars['String']>;
 };
 
 export type DeletePipelineRunResult = DeletePipelineRunSuccess | PythonError | RunNotFoundError | UnauthorizedError;
@@ -888,6 +894,7 @@ export type DeleteRunMutation = {
 export type DimensionDefinitionType = {
   __typename: 'DimensionDefinitionType';
   description: Scalars['String'];
+  isPrimaryDimension: Scalars['Boolean'];
   name: Scalars['String'];
   type: PartitionDefinitionType;
 };
@@ -1792,6 +1799,15 @@ export type MaterializationEvent = DisplayableEvent & MessageEvent & StepEvent &
   timestamp: Scalars['String'];
 };
 
+export type MaterializedPartitionRange2D = {
+  __typename: 'MaterializedPartitionRange2D';
+  primaryDimEnd: Scalars['String'];
+  primaryDimStart: Scalars['String'];
+  secondaryDim: PartitionStatus1D;
+};
+
+export type MaterializedPartitions = DefaultPartitions | MultiPartitions | TimePartitions;
+
 export type MessageEvent = {
   eventType: Maybe<DagsterEventType>;
   level: LogLevel;
@@ -1849,6 +1865,11 @@ export type ModeNotFoundError = Error & {
   __typename: 'ModeNotFoundError';
   message: Scalars['String'];
   mode: Scalars['String'];
+};
+
+export type MultiPartitions = {
+  __typename: 'MultiPartitions';
+  ranges: Array<MaterializedPartitionRange2D>;
 };
 
 export type NoModeProvidedError = Error & {
@@ -2032,6 +2053,7 @@ export type PartitionDefinition = {
   __typename: 'PartitionDefinition';
   description: Scalars['String'];
   dimensionTypes: Array<DimensionDefinitionType>;
+  timeWindowMetadata: Maybe<TimePartitionsDefinitionMetadata>;
   type: PartitionDefinitionType;
 };
 
@@ -2040,8 +2062,6 @@ export enum PartitionDefinitionType {
   STATIC = 'STATIC',
   TIME_WINDOW = 'TIME_WINDOW'
 }
-
-export type PartitionMaterializationStatus = DefaultPartitionStatus1D | PartitionStatus2D | TimeWindowPartitionStatus1D;
 
 export type PartitionRun = {
   __typename: 'PartitionRun';
@@ -2110,6 +2130,12 @@ export type PartitionSets = {
 
 export type PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError;
 
+export type PartitionStats = {
+  __typename: 'PartitionStats';
+  numMaterialized: Scalars['Int'];
+  numPartitions: Scalars['Int'];
+};
+
 export type PartitionStatus = {
   __typename: 'PartitionStatus';
   id: Scalars['String'];
@@ -2119,18 +2145,7 @@ export type PartitionStatus = {
   runStatus: Maybe<RunStatus>;
 };
 
-export type PartitionStatus1D = DefaultPartitionStatus1D | TimeWindowPartitionStatus1D;
-
-export type PartitionStatus2D = {
-  __typename: 'PartitionStatus2D';
-  primaryDimKeyStatuses: Array<PartitionStatusPrimaryKey>;
-};
-
-export type PartitionStatusPrimaryKey = {
-  __typename: 'PartitionStatusPrimaryKey';
-  primaryDimKey: Scalars['String'];
-  secondaryDimStatus: Array<PartitionStatus1D>;
-};
+export type PartitionStatus1D = DefaultPartitions | TimePartitions;
 
 export type PartitionStatuses = {
   __typename: 'PartitionStatuses';
@@ -3398,15 +3413,23 @@ export type TickEvaluation = {
 
 export type TimePartitionRange = {
   __typename: 'TimePartitionRange';
-  end: Scalars['String'];
-  length: Scalars['Int'];
-  start: Scalars['String'];
+  endKey: Scalars['String'];
+  endTime: Scalars['Float'];
+  startKey: Scalars['String'];
+  startTime: Scalars['Float'];
 };
 
-export type TimeWindowPartitionStatus1D = {
-  __typename: 'TimeWindowPartitionStatus1D';
-  materializedRanges: Array<TimePartitionRange>;
-  unmaterializedRanges: Array<TimePartitionRange>;
+export type TimePartitions = {
+  __typename: 'TimePartitions';
+  ranges: Array<TimePartitionRange>;
+};
+
+export type TimePartitionsDefinitionMetadata = {
+  __typename: 'TimePartitionsDefinitionMetadata';
+  endKey: Scalars['String'];
+  endTime: Scalars['Float'];
+  startKey: Scalars['String'];
+  startTime: Scalars['Float'];
 };
 
 export type TypeCheck = DisplayableEvent & {
@@ -3711,7 +3734,7 @@ export type PartitionHealthQueryQueryVariables = Exact<{
 }>;
 
 
-export type PartitionHealthQueryQuery = { __typename: 'DagitQuery', assetNodeOrError: { __typename: 'AssetNode', id: string, partitionKeysByDimension: Array<{ __typename: 'DimensionPartitionKeys', name: string, partitionKeys: Array<string> }>, partitionMaterializationStatus: { __typename: 'DefaultPartitionStatus1D', materializedPartitions: Array<string>, unmaterializedPartitions: Array<string> } | { __typename: 'PartitionStatus2D', primaryDimKeyStatuses: Array<{ __typename: 'PartitionStatusPrimaryKey', primaryDimKey: string, secondaryDimStatus: Array<{ __typename: 'DefaultPartitionStatus1D', materializedPartitions: Array<string>, unmaterializedPartitions: Array<string> } | { __typename: 'TimeWindowPartitionStatus1D', materializedRanges: Array<{ __typename: 'TimePartitionRange', start: string, end: string, length: number }> }> }> } | { __typename: 'TimeWindowPartitionStatus1D', materializedRanges: Array<{ __typename: 'TimePartitionRange', start: string, end: string, length: number }> } } | { __typename: 'AssetNotFoundError' } };
+export type PartitionHealthQueryQuery = { __typename: 'DagitQuery', assetNodeOrError: { __typename: 'AssetNode', id: string, partitionKeysByDimension: Array<{ __typename: 'DimensionPartitionKeys', name: string, partitionKeys: Array<string> }>, materializedPartitions: { __typename: 'DefaultPartitions', partitions: Array<string> } | { __typename: 'MultiPartitions', ranges: Array<{ __typename: 'MaterializedPartitionRange2D', primaryDimStart: string, primaryDimEnd: string, secondaryDim: { __typename: 'DefaultPartitions', partitions: Array<string> } | { __typename: 'TimePartitions', ranges: Array<{ __typename: 'TimePartitionRange', startTime: number, endTime: number, startKey: string, endKey: string }> } }> } | { __typename: 'TimePartitions', ranges: Array<{ __typename: 'TimePartitionRange', startTime: number, endTime: number, startKey: string, endKey: string }> } } | { __typename: 'AssetNotFoundError' } };
 
 export type AssetJobPartitionSetsQueryQueryVariables = Exact<{
   pipelineName: Scalars['String'];
@@ -5356,7 +5379,7 @@ export const LaunchAssetLoaderQueryDocument = {"kind":"Document","definitions":[
 export const LaunchAssetLoaderResourceQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"LaunchAssetLoaderResourceQuery"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pipelineName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"repositoryLocationName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"repositoryName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"partitionSetsOrError"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"pipelineName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pipelineName"}}},{"kind":"Argument","name":{"kind":"Name","value":"repositorySelector"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"repositoryName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"repositoryName"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"repositoryLocationName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"repositoryLocationName"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PythonError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PipelineNotFoundError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PartitionSets"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"pipelineOrError"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"params"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"pipelineName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pipelineName"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"repositoryName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"repositoryName"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"repositoryLocationName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"repositoryLocationName"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PythonError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InvalidSubsetError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PipelineNotFoundError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"message"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Pipeline"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"modes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"resources"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"configField"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"isRequired"}},{"kind":"Field","name":{"kind":"Name","value":"configType"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ConfigTypeSchemaFragment"}},{"kind":"Field","name":{"kind":"Name","value":"recursiveConfigTypes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ConfigTypeSchemaFragment"}}]}}]}}]}}]}}]}}]}}]}}]}},...ConfigTypeSchemaFragmentFragmentDoc.definitions]} as unknown as DocumentNode<LaunchAssetLoaderResourceQueryQuery, LaunchAssetLoaderResourceQueryQueryVariables>;
 export const LaunchAssetCheckUpstreamQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"LaunchAssetCheckUpstreamQuery"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"assetKeys"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AssetKeyInput"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assetNodes"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"assetKeys"},"value":{"kind":"Variable","name":{"kind":"Name","value":"assetKeys"}}},{"kind":"Argument","name":{"kind":"Name","value":"loadMaterializations"},"value":{"kind":"BooleanValue","value":true}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"assetKey"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"path"}}]}},{"kind":"Field","name":{"kind":"Name","value":"isSource"}},{"kind":"Field","name":{"kind":"Name","value":"opNames"}},{"kind":"Field","name":{"kind":"Name","value":"graphName"}},{"kind":"Field","name":{"kind":"Name","value":"assetMaterializations"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"runId"}}]}}]}}]}}]} as unknown as DocumentNode<LaunchAssetCheckUpstreamQueryQuery, LaunchAssetCheckUpstreamQueryQueryVariables>;
 export const RunningBackfillsNoticeQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RunningBackfillsNoticeQuery"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"partitionBackfillsOrError"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"status"},"value":{"kind":"EnumValue","value":"REQUESTED"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PartitionBackfills"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"partitionSetName"}},{"kind":"Field","name":{"kind":"Name","value":"backfillId"}}]}}]}}]}}]}}]} as unknown as DocumentNode<RunningBackfillsNoticeQueryQuery, RunningBackfillsNoticeQueryQueryVariables>;
-export const PartitionHealthQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PartitionHealthQuery"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"assetKey"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AssetKeyInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assetNodeOrError"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"assetKey"},"value":{"kind":"Variable","name":{"kind":"Name","value":"assetKey"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AssetNode"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"partitionKeysByDimension"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"partitionKeys"}}]}},{"kind":"Field","name":{"kind":"Name","value":"partitionMaterializationStatus"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"TimeWindowPartitionStatus1D"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"materializedRanges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}},{"kind":"Field","name":{"kind":"Name","value":"length"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DefaultPartitionStatus1D"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"materializedPartitions"}},{"kind":"Field","name":{"kind":"Name","value":"unmaterializedPartitions"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PartitionStatus2D"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"primaryDimKeyStatuses"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"primaryDimKey"}},{"kind":"Field","name":{"kind":"Name","value":"secondaryDimStatus"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"TimeWindowPartitionStatus1D"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"materializedRanges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"end"}},{"kind":"Field","name":{"kind":"Name","value":"length"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DefaultPartitionStatus1D"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"materializedPartitions"}},{"kind":"Field","name":{"kind":"Name","value":"unmaterializedPartitions"}}]}}]}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<PartitionHealthQueryQuery, PartitionHealthQueryQueryVariables>;
+export const PartitionHealthQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PartitionHealthQuery"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"assetKey"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AssetKeyInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assetNodeOrError"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"assetKey"},"value":{"kind":"Variable","name":{"kind":"Name","value":"assetKey"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AssetNode"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"partitionKeysByDimension"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"partitionKeys"}}]}},{"kind":"Field","name":{"kind":"Name","value":"materializedPartitions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"TimePartitions"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ranges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}},{"kind":"Field","name":{"kind":"Name","value":"startKey"}},{"kind":"Field","name":{"kind":"Name","value":"endKey"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DefaultPartitions"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"partitions"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"MultiPartitions"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ranges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"primaryDimStart"}},{"kind":"Field","name":{"kind":"Name","value":"primaryDimEnd"}},{"kind":"Field","name":{"kind":"Name","value":"secondaryDim"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"TimePartitions"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ranges"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"startTime"}},{"kind":"Field","name":{"kind":"Name","value":"endTime"}},{"kind":"Field","name":{"kind":"Name","value":"startKey"}},{"kind":"Field","name":{"kind":"Name","value":"endKey"}}]}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"DefaultPartitions"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"partitions"}}]}}]}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<PartitionHealthQueryQuery, PartitionHealthQueryQueryVariables>;
 export const AssetJobPartitionSetsQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AssetJobPartitionSetsQuery"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pipelineName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"repositoryName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"repositoryLocationName"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"partitionSetsOrError"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"pipelineName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pipelineName"}}},{"kind":"Argument","name":{"kind":"Name","value":"repositorySelector"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"repositoryName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"repositoryName"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"repositoryLocationName"},"value":{"kind":"Variable","name":{"kind":"Name","value":"repositoryLocationName"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"PythonErrorFragment"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PipelineNotFoundError"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PartitionSets"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"Field","name":{"kind":"Name","value":"results"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"mode"}},{"kind":"Field","name":{"kind":"Name","value":"solidSelection"}}]}}]}}]}}]}},...PythonErrorFragmentFragmentDoc.definitions,...PythonErrorChainFragmentDoc.definitions]} as unknown as DocumentNode<AssetJobPartitionSetsQueryQuery, AssetJobPartitionSetsQueryQueryVariables>;
 export const AssetEventsQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AssetEventsQuery"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"assetKey"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AssetKeyInput"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"before"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"partitionInLast"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assetOrError"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"assetKey"},"value":{"kind":"Variable","name":{"kind":"Name","value":"assetKey"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Asset"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"key"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"path"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assetObservations"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"beforeTimestampMillis"},"value":{"kind":"Variable","name":{"kind":"Name","value":"before"}}},{"kind":"Argument","name":{"kind":"Name","value":"partitionInLast"},"value":{"kind":"Variable","name":{"kind":"Name","value":"partitionInLast"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AssetObservationFragment"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assetMaterializations"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"beforeTimestampMillis"},"value":{"kind":"Variable","name":{"kind":"Name","value":"before"}}},{"kind":"Argument","name":{"kind":"Name","value":"partitionInLast"},"value":{"kind":"Variable","name":{"kind":"Name","value":"partitionInLast"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AssetMaterializationFragment"}}]}},{"kind":"Field","name":{"kind":"Name","value":"definition"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"partitionKeys"}}]}}]}}]}}]}},...AssetObservationFragmentFragmentDoc.definitions,...MetadataEntryFragmentFragmentDoc.definitions,...TableSchemaFragmentFragmentDoc.definitions,...ConstraintsForTableColumnFragmentDoc.definitions,...TableSchemaForMetadataEntryFragmentDoc.definitions,...AssetMaterializationFragmentFragmentDoc.definitions,...AssetLineageFragmentFragmentDoc.definitions]} as unknown as DocumentNode<AssetEventsQueryQuery, AssetEventsQueryQueryVariables>;
 export const RunGroupPanelQueryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"RunGroupPanelQuery"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"runId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"runGroupOrError"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"runId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"runId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"PythonErrorFragment"}},{"kind":"InlineFragment","typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"RunGroup"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rootRunId"}},{"kind":"Field","name":{"kind":"Name","value":"runs"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"FragmentSpread","name":{"kind":"Name","value":"RunGroupPanelRun"}}]}}]}}]}}]}},...PythonErrorFragmentFragmentDoc.definitions,...PythonErrorChainFragmentDoc.definitions,...RunGroupPanelRunFragmentDoc.definitions,...RunTimeFragmentFragmentDoc.definitions]} as unknown as DocumentNode<RunGroupPanelQueryQuery, RunGroupPanelQueryQueryVariables>;

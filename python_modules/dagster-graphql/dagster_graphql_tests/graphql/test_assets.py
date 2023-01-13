@@ -1,6 +1,7 @@
 import os
 import time
 from typing import List, Optional
+import datetime
 
 from dagster import AssetKey, DagsterEventType
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
@@ -176,10 +177,10 @@ GET_ASSET_PARTITIONS = """
 """
 
 GET_PARTITIONS_BY_DIMENSION = """
-    query AssetNodeQuery($assetKeys: [AssetKeyInput!]) {
+    query AssetNodeQuery($assetKeys: [AssetKeyInput!], $startIdx: Int, $endIdx: Int) {
         assetNodes(assetKeys: $assetKeys) {
             id
-            partitionKeysByDimension {
+            partitionKeysByDimension(startIdx: $startIdx, endIdx: $endIdx) {
                 name
                 partitionKeys
             }
@@ -271,11 +272,16 @@ GET_1D_MATERIALIZED_PARTITIONS = """
         assetNodes(pipeline: $pipelineSelector) {
             id
             materializedPartitions {
-                ... on MaterializedPartitions1D {
+                ... on TimePartitions {
                     ranges {
-                        start
-                        end
+                        startTime
+                        endTime
+                        startKey
+                        endKey
                     }
+                }
+                ... on DefaultPartitions {
+                    partitions
                 }
             }
         }
@@ -287,16 +293,37 @@ GET_2D_MATERIALIZED_PARTITIONS = """
         assetNodes(pipeline: $pipelineSelector) {
             id
             materializedPartitions {
-                ... on MaterializedPartitions2D {
+                ... on MultiPartitions {
                     ranges {
                         primaryDimStart
                         primaryDimEnd
-                        secondaryDimRanges {
-                            start
-                            end
+                        secondaryDim {
+                            ... on TimePartitions {
+                                ranges {
+                                    startTime
+                                    endTime
+                                    startKey
+                                    endKey
+                                }
+                            }
+                            ... on DefaultPartitions {
+                                partitions
+                            }
                         }
                     }
                 }
+            }
+        }
+    }
+"""
+
+GET_PARTITION_STATS = """
+    query AssetNodeQuery($pipelineSelector: PipelineSelector!) {
+        assetNodes(pipeline: $pipelineSelector) {
+            id
+            partitionStats {
+                numMaterialized
+                numPartitions
             }
         }
     }
@@ -830,7 +857,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert asset_node["latestMaterializationByPartition"][1] is None
 
-<<<<<<< HEAD
+
     def test_materialization_used_data(self, graphql_context):
         def get_response_by_asset(response):
             return {stat["assetKey"]["path"][0]: stat for stat in response}
@@ -861,10 +888,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert used_data[0]["assetKey"]["path"] == ["asset_one"]
         assert used_data[0]["timestamp"] == timestamp_a1
 
-    def test_materialization_count_by_partition(self, graphql_context):
-=======
-    def test_materialization_status_by_partition(self, graphql_context):
->>>>>>> 033ef54108 (update cache upon dagit read)
+    def test_materialized_default_partitions(self, graphql_context):
         # test for unpartitioned asset
         selector = infer_pipeline_selector(graphql_context, "two_assets_job")
         result = execute_dagster_graphql(
@@ -875,8 +899,21 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["assetNodes"]
 
-        materialized_ranges = result.data["assetNodes"][0]["materializedPartitions"]["ranges"]
-        assert len(materialized_ranges) == 0
+        materialized_partitions = result.data["assetNodes"][0]["materializedPartitions"][
+            "partitions"
+        ]
+        assert len(materialized_partitions) == 0
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_STATS,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert result.data["assetNodes"]
+        assert len(result.data["assetNodes"]) == 2
+        assert result.data["assetNodes"][0]["partitionStats"] == None
+        assert result.data["assetNodes"][1]["partitionStats"] == None
 
         # Test for static partitioned asset with partitions [a, b, c, d]
         # First test that no partitions are materialized
@@ -889,10 +926,23 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["assetNodes"]
 
-        materialized_ranges = result.data["assetNodes"][0]["materializedPartitions"]["ranges"]
-        assert len(materialized_ranges) == 0
+        materialized_partitions = result.data["assetNodes"][0]["materializedPartitions"][
+            "partitions"
+        ]
+        assert len(materialized_partitions) == 0
 
-        # Test that when partition a is materialized that the materialized ranges are [(a, a)]
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_STATS,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert result.data["assetNodes"]
+        assert len(result.data["assetNodes"]) == 1
+        assert result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 0
+        assert result.data["assetNodes"][0]["partitionStats"]["numPartitions"] == 4
+
+        # Test that when partition a is materialized that the materialized partitions are a
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="a")
 
         selector = infer_pipeline_selector(graphql_context, "partition_materialization_job")
@@ -905,13 +955,12 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["assetNodes"]
         asset_node = result.data["assetNodes"][0]
-        materialized_ranges = asset_node["materializedPartitions"]["ranges"]
+        materialized_partitions = asset_node["materializedPartitions"]["partitions"]
 
-        assert len(materialized_ranges) == 1
-        assert materialized_ranges[0]["start"] == "a"
-        assert materialized_ranges[0]["end"] == "a"
+        assert len(materialized_partitions) == 1
+        assert materialized_partitions[0] == "a"
 
-        # Test that when partition c is materialized that the materialized ranges are [(a, a), (c, c)]
+        # Test that when partition c is materialized that the materialized partitions are a, c
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="c")
 
         result = execute_dagster_graphql(
@@ -923,16 +972,66 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["assetNodes"]
         asset_node = result.data["assetNodes"][0]
+        materialized_partitions = asset_node["materializedPartitions"]["partitions"]
+
+        assert len(materialized_partitions) == 2
+        assert set(materialized_partitions) == {"a", "c"}
+
+    def test_materialized_time_partitions(self, graphql_context):
+        def _get_datetime_float(dt_str):
+            return (
+                datetime.datetime.strptime(dt_str, "%Y-%m-%d-%H:%M")
+                .replace(tzinfo=datetime.timezone.utc)
+                .timestamp()
+            )
+
+        # Test for hourly partitioned asset
+        # First test that no partitions are materialized
+        selector = infer_pipeline_selector(graphql_context, "time_partitioned_assets_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_1D_MATERIALIZED_PARTITIONS,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert result.data["assetNodes"]
+
+        materialized_ranges = result.data["assetNodes"][0]["materializedPartitions"]["ranges"]
+        assert len(materialized_ranges) == 0
+
+        time_0 = "2021-07-05-00:00"
+        time_1 = "2021-07-05-01:00"
+        time_2 = "2021-07-05-02:00"
+        time_3 = "2021-07-05-03:00"
+
+        # Test that when partition a is materialized that the materialized partitions are a
+        _create_partitioned_run(
+            graphql_context, "time_partitioned_assets_job", partition_key=time_0
+        )
+
+        selector = infer_pipeline_selector(graphql_context, "time_partitioned_assets_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_1D_MATERIALIZED_PARTITIONS,
+            variables={"pipelineSelector": selector},
+        )
+
+        assert result.data
+        assert result.data["assetNodes"]
+        asset_node = result.data["assetNodes"][0]
         materialized_ranges = asset_node["materializedPartitions"]["ranges"]
 
-        assert len(materialized_ranges) == 2
-        assert materialized_ranges[0]["start"] == "a"
-        assert materialized_ranges[0]["end"] == "a"
-        assert materialized_ranges[1]["start"] == "c"
-        assert materialized_ranges[1]["end"] == "c"
+        assert len(materialized_ranges) == 1
+        assert materialized_ranges[0]["startKey"] == time_0
+        assert materialized_ranges[0]["endKey"] == time_0
+        assert materialized_ranges[0]["startTime"] == _get_datetime_float(time_0)
+        assert materialized_ranges[0]["endTime"] == _get_datetime_float(time_1)
 
-        # Test that when partition d is materialized that the materialized ranges are [(a, a), (c, d)]
-        _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="d")
+        # Test that when partition 2021-07-05-02:00 is materialized that there are two materialized ranges
+        time_2 = "2021-07-05-02:00"
+        _create_partitioned_run(
+            graphql_context, "time_partitioned_assets_job", partition_key=time_2
+        )
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -946,10 +1045,36 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         materialized_ranges = asset_node["materializedPartitions"]["ranges"]
 
         assert len(materialized_ranges) == 2
-        assert materialized_ranges[0]["start"] == "a"
-        assert materialized_ranges[0]["end"] == "a"
-        assert materialized_ranges[1]["start"] == "c"
-        assert materialized_ranges[1]["end"] == "d"
+        assert materialized_ranges[0]["startKey"] == time_0
+        assert materialized_ranges[0]["endKey"] == time_0
+        assert materialized_ranges[0]["startTime"] == _get_datetime_float(time_0)
+        assert materialized_ranges[0]["endTime"] == _get_datetime_float(time_1)
+        assert materialized_ranges[1]["startKey"] == time_2
+        assert materialized_ranges[1]["endKey"] == time_2
+        assert materialized_ranges[1]["startTime"] == _get_datetime_float(time_2)
+        assert materialized_ranges[1]["endTime"] == _get_datetime_float(time_3)
+
+        # Test that when partition 2021-07-05-01:00 is materialized that we have one range
+        _create_partitioned_run(
+            graphql_context, "time_partitioned_assets_job", partition_key=time_1
+        )
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_1D_MATERIALIZED_PARTITIONS,
+            variables={"pipelineSelector": selector},
+        )
+
+        assert result.data
+        assert result.data["assetNodes"]
+        asset_node = result.data["assetNodes"][0]
+        materialized_ranges = asset_node["materializedPartitions"]["ranges"]
+
+        assert len(materialized_ranges) == 1
+        assert materialized_ranges[0]["startKey"] == time_0
+        assert materialized_ranges[0]["endKey"] == time_2
+        assert materialized_ranges[0]["startTime"] == _get_datetime_float(time_0)
+        assert materialized_ranges[0]["endTime"] == _get_datetime_float(time_3)
 
     def test_asset_observations(self, graphql_context):
         _create_run(graphql_context, "observation_job")
@@ -1280,6 +1405,40 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert dimensions[1]["name"] == "date"
         assert dimensions[1]["partitionKeys"][0] == "2022-01-01"
 
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITIONS_BY_DIMENSION,
+            variables={
+                "assetKeys": [{"path": ["multipartitions_1"]}],
+                "startIdx": 2,
+                "endIdx": 3,
+            },
+        )
+        assert result.data
+        dimensions = result.data["assetNodes"][0]["partitionKeysByDimension"]
+        assert len(dimensions) == 2
+        assert dimensions[0]["name"] == "ab"
+        assert dimensions[0]["partitionKeys"] == ["a", "b", "c"]
+        assert dimensions[1]["name"] == "date"
+        assert len(dimensions[1]["partitionKeys"]) == 1
+        assert dimensions[1]["partitionKeys"][0] == "2022-01-03"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITIONS_BY_DIMENSION,
+            variables={
+                "assetKeys": [{"path": ["upstream_time_partitioned_asset"]}],
+                "startIdx": 2,
+                "endIdx": 3,
+            },
+        )
+        assert result.data
+        dimensions = result.data["assetNodes"][0]["partitionKeysByDimension"]
+        assert len(dimensions) == 1
+        assert dimensions[0]["name"] == "default"
+        assert len(dimensions[0]["partitionKeys"]) == 1
+        assert dimensions[0]["partitionKeys"][0] == "2021-05-05-03:00"
+
     def test_multipartitions_get_materialization_status(self, graphql_context):
         # Test that when unmaterialized, no materialized partitions are returned
         selector = infer_pipeline_selector(graphql_context, "multipartitions_job")
@@ -1324,17 +1483,13 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         for range_idx, date in [(0, "2022-01-01"), (1, "2022-01-03")]:
             assert ranges[range_idx]["primaryDimStart"] == date
             assert ranges[range_idx]["primaryDimEnd"] == date
-            assert len(ranges[range_idx]["secondaryDimRanges"]) == 2
-            assert ranges[range_idx]["secondaryDimRanges"][0]["start"] == "a"
-            assert ranges[range_idx]["secondaryDimRanges"][0]["end"] == "a"
-            assert ranges[range_idx]["secondaryDimRanges"][1]["start"] == "c"
-            assert ranges[range_idx]["secondaryDimRanges"][1]["end"] == "c"
+            assert len(ranges[range_idx]["secondaryDim"]["partitions"]) == 2
+            assert set(ranges[range_idx]["secondaryDim"]["partitions"]) == set(["a", "c"])
         # 2022-01-04 should only have a materialized
         assert ranges[2]["primaryDimStart"] == "2022-01-04"
         assert ranges[2]["primaryDimEnd"] == "2022-01-04"
-        assert len(ranges[2]["secondaryDimRanges"]) == 1
-        assert ranges[2]["secondaryDimRanges"][0]["start"] == "a"
-        assert ranges[2]["secondaryDimRanges"][0]["end"] == "a"
+        assert len(ranges[2]["secondaryDim"]["partitions"]) == 1
+        assert ranges[2]["secondaryDim"]["partitions"][0] == "a"
         # multipartitions_2 should have no materialized partitions
         assert result.data["assetNodes"][1]["materializedPartitions"]["ranges"] == []
 
@@ -1367,15 +1522,13 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         # 2022-01-01...2022-01-03 should have a...c materialized
         assert ranges[0]["primaryDimStart"] == "2022-01-01"
         assert ranges[0]["primaryDimEnd"] == "2022-01-03"
-        assert len(ranges[0]["secondaryDimRanges"]) == 1
-        assert ranges[0]["secondaryDimRanges"][0]["start"] == "a"
-        assert ranges[0]["secondaryDimRanges"][0]["end"] == "c"
+        assert len(ranges[0]["secondaryDim"]["partitions"]) == 3
+        assert set(ranges[0]["secondaryDim"]["partitions"]) == set(["a", "b", "c"])
         # 2022-01-04 should have a...b materialized
         assert ranges[1]["primaryDimStart"] == "2022-01-04"
         assert ranges[1]["primaryDimEnd"] == "2022-01-04"
-        assert len(ranges[1]["secondaryDimRanges"]) == 1
-        assert ranges[1]["secondaryDimRanges"][0]["start"] == "a"
-        assert ranges[1]["secondaryDimRanges"][0]["end"] == "b"
+        assert len(ranges[1]["secondaryDim"]["partitions"]) == 2
+        assert set(ranges[1]["secondaryDim"]["partitions"]) == set(["a", "b"])
         # multipartitions_2 should have no materialized partitions
         assert result.data["assetNodes"][1]["materializedPartitions"]["ranges"] == []
 
@@ -1602,10 +1755,16 @@ def get_partitioned_asset_repo():
     def abc_asset(_):
         return 1
 
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+
+    @asset(partitions_def=daily_partitions_def)
+    def daily_asset(_):
+        return 1
+
     multipartitions_def = MultiPartitionsDefinition(
         {
             "abcd": static_partitions_def,
-            "date": DailyPartitionsDefinition(start_date="2022-01-01"),
+            "date": daily_partitions_def,
         }
     )
 
@@ -1618,6 +1777,8 @@ def get_partitioned_asset_repo():
         return [
             abc_asset,
             define_asset_job("abc_asset_job", AssetSelection.keys("abc_asset")),
+            daily_asset,
+            define_asset_job("daily_asset_job", AssetSelection.keys("daily_asset")),
             multipartitions_asset,
             define_asset_job(
                 "multipartitions_job",
@@ -1645,7 +1806,7 @@ def test_1d_materialized_subset_backcompat():
             )
             assert result.data
             assert len(result.data["assetNodes"]) == 1
-            assert result.data["assetNodes"][0]["materializedPartitions"]["ranges"] == []
+            assert result.data["assetNodes"][0]["materializedPartitions"]["partitions"] == []
 
             for partition in ["a", "c", "d"]:
                 _create_partitioned_run(graphql_context, "abc_asset_job", partition)
@@ -1656,12 +1817,37 @@ def test_1d_materialized_subset_backcompat():
                 variables={"pipelineSelector": abc_selector},
             )
             assert result.data
+            assert set(result.data["assetNodes"][0]["materializedPartitions"]["partitions"]) == {
+                "a",
+                "c",
+                "d",
+            }
+
+            abc_selector = infer_pipeline_selector(graphql_context, "daily_asset_job")
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_1D_MATERIALIZED_PARTITIONS,
+                variables={"pipelineSelector": abc_selector},
+            )
+            assert result.data
+            assert len(result.data["assetNodes"]) == 1
+            assert result.data["assetNodes"][0]["materializedPartitions"]["ranges"] == []
+
+            for partition in ["2022-03-03", "2022-03-05", "2022-03-06"]:
+                _create_partitioned_run(graphql_context, "daily_asset_job", partition)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_1D_MATERIALIZED_PARTITIONS,
+                variables={"pipelineSelector": abc_selector},
+            )
+            assert result.data
             ranges = result.data["assetNodes"][0]["materializedPartitions"]["ranges"]
             assert len(ranges) == 2
-            assert ranges[0]["start"] == "a"
-            assert ranges[0]["end"] == "a"
-            assert ranges[1]["start"] == "c"
-            assert ranges[1]["end"] == "d"
+            assert ranges[0]["startKey"] == "2022-03-03"
+            assert ranges[0]["endKey"] == "2022-03-03"
+            assert ranges[1]["startKey"] == "2022-03-05"
+            assert ranges[1]["endKey"] == "2022-03-06"
 
 
 def test_2d_materialized_subset_backcompat():
@@ -1708,16 +1894,10 @@ def test_2d_materialized_subset_backcompat():
 
             assert ranges[0]["primaryDimStart"] == "2022-03-03"
             assert ranges[0]["primaryDimEnd"] == "2022-03-04"
-            assert len(ranges[0]["secondaryDimRanges"]) == 2
-            assert ranges[0]["secondaryDimRanges"][0]["start"] == "a"
-            assert ranges[0]["secondaryDimRanges"][0]["end"] == "a"
-            assert ranges[0]["secondaryDimRanges"][1]["start"] == "c"
-            assert ranges[0]["secondaryDimRanges"][1]["end"] == "c"
+            assert len(ranges[0]["secondaryDim"]["partitions"]) == 2
+            assert set(ranges[0]["secondaryDim"]["partitions"]) == {"a", "c"}
 
             assert ranges[1]["primaryDimStart"] == "2022-03-06"
             assert ranges[1]["primaryDimEnd"] == "2022-03-06"
-            assert len(ranges[1]["secondaryDimRanges"]) == 2
-            assert ranges[1]["secondaryDimRanges"][0]["start"] == "a"
-            assert ranges[1]["secondaryDimRanges"][0]["end"] == "a"
-            assert ranges[1]["secondaryDimRanges"][1]["start"] == "c"
-            assert ranges[1]["secondaryDimRanges"][1]["end"] == "c"
+            assert len(ranges[1]["secondaryDim"]["partitions"]) == 2
+            assert set(ranges[1]["secondaryDim"]["partitions"]) == {"a", "c"}

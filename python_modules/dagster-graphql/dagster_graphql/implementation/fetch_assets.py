@@ -24,6 +24,7 @@ from dagster import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
     PartitionKeyRange,
+    PartitionsDefinition,
 )
 from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -65,7 +66,6 @@ if TYPE_CHECKING:
         GrapheneTimePartitions,
         GrapheneDefaultPartitions,
         GrapheneMultiPartitions,
-        GraphenePartitionStatus2D,
     )
     from ..schema.util import HasContext
 
@@ -359,7 +359,12 @@ def get_materialized_partitions_subset(
                 )[asset_key].items()
                 if count > 0
             ]
-        return partitions_def.empty_subset().with_partition_keys(materialized_keys)
+
+        return (
+            partitions_def.empty_subset().with_partition_keys(materialized_keys)
+            if materialized_keys
+            else partitions_def.empty_subset()
+        )
 
 
 def build_materialized_partitions(
@@ -372,7 +377,7 @@ def build_materialized_partitions(
     )
 
     if materialized_partitions_subset is None:
-        return GrapheneDefaultPartitions(materializedRanges=[], unmaterializedRanges=[])
+        return GrapheneDefaultPartitions(partitions=[])
     elif isinstance(materialized_partitions_subset, TimeWindowPartitionsSubset):
         time_windows = materialized_partitions_subset.included_time_windows
         partition_ranges = materialized_partitions_subset.get_partition_key_ranges()
@@ -381,7 +386,7 @@ def build_materialized_partitions(
             check.failed("Expected time_windows and partition_ranges to be the same length")
 
         return GrapheneTimePartitions(
-            materializedRanges=[
+            ranges=[
                 GrapheneTimePartitionRange(
                     startTime=time_windows[i].start.timestamp(),
                     endTime=time_windows[i].end.timestamp(),
@@ -391,51 +396,14 @@ def build_materialized_partitions(
                 for i in range(len(time_windows))
             ]
         )
-    elif isinstance(materialized_partitions_subset, DefaultPartitionsSubset):
-        return GrapheneDefaultPartitions(
-            materializedPartitions=materialized_partitions_subset.get_partition_keys(),
-        )
     elif isinstance(materialized_partitions_subset, MultiPartitionsSubset):  # Multidimensional
         return get_2d_run_length_encoded_materialized_partitions(materialized_partitions_subset)
+    elif isinstance(materialized_partitions_subset, DefaultPartitionsSubset):
+        return GrapheneDefaultPartitions(
+            partitions=materialized_partitions_subset.get_partition_keys(),
+        )
     else:
         check.failed("Should not reach this point")
-
-
-# def get_1d_run_length_encoded_materialized_partitions(
-#     partitions_subset: PartitionsSubset,
-# ) -> "GrapheneMaterializedPartitions1D":
-#     from ..schema.pipelines.pipeline import (
-#         GrapheneMaterializedPartitionRange1D,
-#         GrapheneMaterializedPartitions1D,
-#     )
-
-#     return GrapheneMaterializedPartitions1D(
-#         ranges=[
-#             GrapheneMaterializedPartitionRange1D(start=range.start, end=range.end)
-#             for range in partitions_subset.get_partition_key_ranges()
-#         ]
-#     )
-
-
-# def _get_primary_and_secondary_dims(
-#     partitions_def: MultiPartitionsDefinition,
-# ) -> Tuple[PartitionDimensionDefinition, PartitionDimensionDefinition]:
-#     time_dimensions = [
-#         dim
-#         for dim in partitions_def.partitions_defs
-#         if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
-#     ]
-#     if len(time_dimensions) == 1:
-#         primary_dimension, secondary_dimension = time_dimensions[0], next(
-#             iter([dim for dim in partitions_def.partitions_defs if dim != time_dimensions[0]])
-#         )
-#     else:
-#         primary_dimension, secondary_dimension = (
-#             partitions_def.partitions_defs[0],
-#             partitions_def.partitions_defs[1],
-#         )
-
-#     return primary_dimension, secondary_dimension
 
 
 def get_2d_run_length_encoded_materialized_partitions(
