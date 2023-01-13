@@ -15,6 +15,7 @@ import ReactDOM from 'react-dom';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {CommunityNux} from './NUX/CommunityNux';
 import {extractInitializationData} from './extractInitializationData';
 import {telemetryLink} from './telemetryLink';
 
@@ -70,6 +71,7 @@ ReactDOM.render(
     </AppTopNav>
     <App>
       <ContentRoot />
+      <CommunityNux />
     </App>
   </AppProvider>,
   document.getElementById('root'),
