@@ -1,19 +1,20 @@
 # pylint: disable=print-call
 
-from contextlib import contextmanager
 import glob
 import os
 import pathlib
 import re
 import signal
 import subprocess
+from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 from time import sleep
 from typing import Dict, Optional
 
-from dagit_screenshot.defaults import DEFAULT_OUTPUT_ROOT
 from selenium import webdriver  # pylint: disable=import-error
 from selenium.webdriver.common.by import By
+
+from dagit_screenshot.defaults import DEFAULT_OUTPUT_ROOT
 
 # Time in seconds that we sleep waiting for a dagit route to load
 DAGIT_ROUTE_LOAD_TIME = 2
@@ -105,6 +106,8 @@ def generate_svg_for_file(code_path: str, destination_path: str, snippet_fn: Opt
             driver = webdriver.Chrome()
             driver.set_window_size(1024, 768)
             driver.get("http://localhost:3000")
+            driver.execute_script("window.localStorage.setItem('communityNux','1')")
+            driver.refresh()
 
             sleep(DAGIT_ROUTE_LOAD_TIME)  # wait for page to load
 

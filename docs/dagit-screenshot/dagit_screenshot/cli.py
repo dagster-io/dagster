@@ -1,6 +1,7 @@
 from typing import Optional
 
 import click
+
 from dagit_screenshot.commands.asset_svg import generate_svg as _svg
 from dagit_screenshot.commands.audit import audit as _audit
 from dagit_screenshot.commands.capture import capture as _capture
