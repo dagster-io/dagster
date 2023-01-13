@@ -311,7 +311,9 @@ def test_get_environment_variables():
         responses.GET,
         f"{SAMPLE_API_V3_PREFIX}/projects/{SAMPLE_PROJECT_ID}/environment-variables/job",
         json=sample_get_environment_variables(
-            environment_variable_id=3, name="DBT_DAGSTER_ENV_VAR"
+            environment_variable_id=3,
+            name="DBT_DAGSTER_ENV_VAR",
+            value="-1",
         ),
     )
 

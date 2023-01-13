@@ -315,7 +315,7 @@ def sample_run_results():
     }
 
 
-def sample_get_environment_variables(environment_variable_id: int, name: str):
+def sample_get_environment_variables(environment_variable_id: int, name: str, value: str):
     return {
         "status": {
             "code": 200,
@@ -327,7 +327,7 @@ def sample_get_environment_variables(environment_variable_id: int, name: str):
             name: {
                 "project": {"id": 1, "value": "-1"},
                 "environment": {"id": 2, "value": "-1"},
-                "job": {"id": environment_variable_id, "value": "100"},
+                "job": {"id": environment_variable_id, "value": value},
             },
         },
     }
