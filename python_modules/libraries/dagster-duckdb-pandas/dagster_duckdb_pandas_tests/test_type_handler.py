@@ -140,7 +140,7 @@ def test_not_supported_type(tmp_path):
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
     key_prefix=["my_schema"],
-    metadata={"partition_column": "time"},
+    metadata={"partition_expr": "time"},
     config_schema={"value": str},
 )
 def daily_partitioned(context):

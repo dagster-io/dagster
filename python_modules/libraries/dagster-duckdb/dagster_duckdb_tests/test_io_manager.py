@@ -32,7 +32,7 @@ def test_get_select_statement_partitioned():
                 table="table1",
                 partition=TablePartition(
                     time_window=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
-                    partition_column="my_timestamp_col",
+                    partition_expr="my_timestamp_col",
                 ),
                 columns=["apple", "banana"],
             )
@@ -57,7 +57,7 @@ def test_get_cleanup_statement_partitioned():
                 table="table1",
                 partition=TablePartition(
                     time_window=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
-                    partition_column="my_timestamp_col",
+                    partition_expr="my_timestamp_col",
                 ),
             )
         )
