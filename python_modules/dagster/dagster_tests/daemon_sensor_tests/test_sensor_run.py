@@ -1,4 +1,3 @@
-import os
 import random
 import string
 import sys
@@ -373,11 +372,6 @@ def run_request_asset_selection_sensor(_context):
     yield RunRequest(run_key=None, asset_selection=[AssetKey("a"), AssetKey("b")])
 
 
-@sensor(job=asset_job)
-def run_request_stale_asset_sensor(_context):
-    yield RunRequest(run_key=None, stale_assets_only=True)
-
-
 @sensor(job=hourly_asset_job)
 def partitioned_asset_selection_sensor(_context):
     return hourly_asset_job.run_request_for_partition(
@@ -549,7 +543,6 @@ def the_repo():
         instance_sensor,
         load_assets_from_current_module(),
         run_request_asset_selection_sensor,
-        run_request_stale_asset_sensor,
         weekly_asset_job,
         multi_asset_sensor_hourly_to_weekly,
         multi_asset_sensor_hourly_to_hourly,
@@ -765,20 +758,15 @@ def asset_sensor_repo():
 
 
 def get_sensor_executors():
-    is_buildkite = os.getenv("BUILDKITE") is not None
     return [
         pytest.param(
             None,
-            marks=pytest.mark.skipif(
-                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
-            ),
+            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="timeouts"),
             id="synchronous",
         ),
         pytest.param(
             SingleThreadPoolExecutor(),
-            marks=pytest.mark.skipif(
-                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
-            ),
+            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="timeouts"),
             id="threadpool",
         ),
     ]
@@ -1733,63 +1721,6 @@ def test_run_request_asset_selection_sensor(executor, instance, workspace_contex
             )
         }
         assert planned_asset_keys == {AssetKey("a"), AssetKey("b")}
-
-
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_run_request_stale_asset_selection_sensor_never_materialized(
-    executor, instance, workspace_context, external_repo
-):
-    freeze_datetime = to_timezone(
-        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
-        "US/Central",
-    )
-
-    with pendulum.test(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
-        instance.start_sensor(external_sensor)
-        evaluate_sensors(workspace_context, executor)
-        sensor_run = next((r for r in instance.get_runs() if r.pipeline_name == "abc"), None)
-        assert sensor_run is not None
-        assert sensor_run.asset_selection == {AssetKey("a"), AssetKey("b"), AssetKey("c")}
-
-
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_run_request_stale_asset_selection_sensor_empty(
-    executor, instance, workspace_context, external_repo
-):
-    freeze_datetime = to_timezone(
-        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
-        "US/Central",
-    )
-
-    materialize([a, b, c], instance=instance)
-
-    with pendulum.test(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
-        instance.start_sensor(external_sensor)
-        evaluate_sensors(workspace_context, executor)
-        sensor_run = next((r for r in instance.get_runs() if r.pipeline_name == "abc"), None)
-        assert sensor_run is None
-
-
-@pytest.mark.parametrize("executor", get_sensor_executors())
-def test_run_request_stale_asset_selection_sensor_subset(
-    executor, instance, workspace_context, external_repo
-):
-    freeze_datetime = to_timezone(
-        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
-        "US/Central",
-    )
-
-    materialize([a], instance=instance)
-
-    with pendulum.test(freeze_datetime):
-        external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
-        instance.start_sensor(external_sensor)
-        evaluate_sensors(workspace_context, executor)
-        sensor_run = next((r for r in instance.get_runs() if r.pipeline_name == "abc"), None)
-        assert sensor_run is not None
-        assert sensor_run.asset_selection == {AssetKey("b"), AssetKey("c")}
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
