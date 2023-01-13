@@ -2794,6 +2794,7 @@ type DagitMutation {
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
   stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
+  testInstigator(cursor: String, instigatorSelector: InstigatorSelector!): TestInstigatorResult!
   terminatePipelineExecution(
     runId: String!
     terminatePolicy: TerminateRunPolicy
@@ -2827,6 +2828,21 @@ input ReexecutionParams {
 enum ReexecutionStrategy {
   FROM_FAILURE
   ALL_STEPS
+}
+
+union TestInstigatorResult = InstigatorExecutionData | PythonError
+
+type InstigatorExecutionData {
+  cursor: String
+  runRequests: [RunRequest]
+  skipMessage: String
+}
+
+input InstigatorSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  name: String!
+  instigatorType: String!
 }
 
 union AssetWipeMutationResult =

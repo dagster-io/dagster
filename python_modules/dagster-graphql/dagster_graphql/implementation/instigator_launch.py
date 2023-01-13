@@ -22,11 +22,15 @@ def test_instigator(graphene_info, selector, cursor):
         repository_handle=repository.handle,
         name=external_sensor.name,
         cursor=cursor,
+        last_completion_time=None,
+        last_run_key=None,
     )
 
 
 def instigator_selector_from_gql_input(gql_data):
-    if gql_data["instigatorSelector"]["instigatorType"] == "SENSOR":
-        return SensorSelector.from_graphql_input(gql_data["instigatorSelector"]["instigatorType"])
+    if gql_data["instigatorType"] == "SENSOR":
+        gql_data = {**gql_data, "sensorName": gql_data["name"]}
+        return SensorSelector.from_graphql_input(gql_data)
     else:
-        return ScheduleSelector.from_graphql_input(gql_data["instigatorSelector"]["instigatorType"])
+        gql_data = {**gql_data, "scheduleName": gql_data["name"]}
+        return ScheduleSelector.from_graphql_input(gql_data)
