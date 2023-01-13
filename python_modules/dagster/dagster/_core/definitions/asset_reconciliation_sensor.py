@@ -265,9 +265,12 @@ def find_never_materialized_or_requested_root_asset_partitions(
     )
 
 
-def can_materialize_candidates_unit(
+def candidates_unit_within_allowable_time_window(
     asset_graph: AssetGraph, candidates_unit: Iterable[AssetKeyPartitionKey]
 ):
+    """A given time-window partition may only be materialized if its window ends within 1 day of the
+    latest window for that partition.
+    """
     representative_candidate = next(iter(candidates_unit), None)
     if not representative_candidate:
         return True
@@ -346,7 +349,7 @@ def determine_asset_partitions_to_reconcile(
         candidates_unit: Iterable[AssetKeyPartitionKey],
         to_reconcile: AbstractSet[AssetKeyPartitionKey],
     ) -> bool:
-        if not can_materialize_candidates_unit(asset_graph, candidates_unit):
+        if not candidates_unit_within_allowable_time_window(asset_graph, candidates_unit):
             return False
 
         if any(
