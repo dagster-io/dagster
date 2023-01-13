@@ -1,12 +1,13 @@
-import {useApolloClient, useSubscription} from '@apollo/client';
+import {gql, useApolloClient, useSubscription} from '@apollo/client';
 import {ButtonLink, Colors, Group, Icon, Caption} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {graphql} from '../graphql';
-import {LocationStateChangeEventType} from '../graphql/graphql';
+import {LocationStateChangeEventType} from '../graphql/types';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
-const LOCATION_STATE_CHANGE_SUBSCRIPTION = graphql(`
+import {LocationStateChangeSubscription} from './types/RepositoryLocationStateObserver.types';
+
+const LOCATION_STATE_CHANGE_SUBSCRIPTION = gql`
   subscription LocationStateChangeSubscription {
     locationStateChangeEvents {
       event {
@@ -17,7 +18,7 @@ const LOCATION_STATE_CHANGE_SUBSCRIPTION = graphql(`
       }
     }
   }
-`);
+`;
 
 export const RepositoryLocationStateObserver = () => {
   const client = useApolloClient();
@@ -25,7 +26,7 @@ export const RepositoryLocationStateObserver = () => {
   const [updatedLocations, setUpdatedLocations] = React.useState<string[]>([]);
   const totalMessages = updatedLocations.length;
 
-  useSubscription(LOCATION_STATE_CHANGE_SUBSCRIPTION, {
+  useSubscription<LocationStateChangeSubscription>(LOCATION_STATE_CHANGE_SUBSCRIPTION, {
     fetchPolicy: 'no-cache',
     onSubscriptionData: ({subscriptionData}) => {
       const changeEvents = subscriptionData.data?.locationStateChangeEvents;

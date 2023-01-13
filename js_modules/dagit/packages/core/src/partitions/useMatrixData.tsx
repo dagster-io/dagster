@@ -1,3 +1,4 @@
+import {gql} from '@apollo/client';
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
@@ -5,20 +6,21 @@ import {filterByQuery} from '../app/GraphQueryImpl';
 import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
-import {graphql} from '../graphql';
-import {
-  PartitionMatrixSolidHandleFragmentFragment,
-  PartitionMatrixStepRunFragmentFragment,
-  StepEventStatus,
-} from '../graphql/graphql';
+import {StepEventStatus} from '../graphql/types';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
+import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
+
+import {
+  PartitionMatrixStepRunFragment,
+  PartitionMatrixSolidHandleFragment,
+} from './types/useMatrixData.types';
 
 type StatusSquareColor = 'SUCCESS' | 'FAILURE' | 'MISSING' | 'FAILURE-MISSING' | 'SUCCESS-MISSING';
 
 export interface PartitionRuns {
   name: string;
   runsLoaded: boolean;
-  runs: PartitionMatrixStepRunFragmentFragment[];
+  runs: PartitionMatrixStepRunFragment[];
 }
 
 export interface DisplayOptions {
@@ -38,14 +40,11 @@ export interface MatrixStep {
 
 const MISSING_STEP_STATUSES = new Set([StepEventStatus.IN_PROGRESS, StepEventStatus.SKIPPED]);
 
-function getStartTime(a: PartitionMatrixStepRunFragmentFragment) {
+function getStartTime(a: PartitionMatrixStepRunFragment) {
   return a.startTime || 0;
 }
 
-function byStartTimeAsc(
-  a: PartitionMatrixStepRunFragmentFragment,
-  b: PartitionMatrixStepRunFragmentFragment,
-) {
+function byStartTimeAsc(a: PartitionMatrixStepRunFragment, b: PartitionMatrixStepRunFragment) {
   return getStartTime(a) - getStartTime(b);
 }
 
@@ -171,7 +170,7 @@ function buildMatrixData(
 }
 
 interface MatrixDataInputs {
-  solidHandles: PartitionMatrixSolidHandleFragmentFragment[] | false;
+  solidHandles: PartitionMatrixSolidHandleFragment[] | false;
   partitionNames: string[];
   partitions: PartitionRuns[];
   stepQuery: string;
@@ -216,7 +215,7 @@ export const useMatrixData = (inputs: MatrixDataInputs) => {
   return result;
 };
 
-export const PARTITION_MATRIX_STEP_RUN_FRAGMENT = graphql(`
+export const PARTITION_MATRIX_STEP_RUN_FRAGMENT = gql`
   fragment PartitionMatrixStepRunFragment on Run {
     id
     runId
@@ -234,9 +233,9 @@ export const PARTITION_MATRIX_STEP_RUN_FRAGMENT = graphql(`
       value
     }
   }
-`);
+`;
 
-export const PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT = graphql(`
+export const PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT = gql`
   fragment PartitionMatrixSolidHandleFragment on SolidHandle {
     handleID
     solid {
@@ -261,4 +260,6 @@ export const PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT = graphql(`
     }
     ...GraphExplorerSolidHandleFragment
   }
-`);
+
+  ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+`;

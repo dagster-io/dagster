@@ -8,7 +8,7 @@ import {
 import qs from 'qs';
 import * as React from 'react';
 
-import {RunStatus, RunsFilter} from '../graphql/graphql';
+import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
 

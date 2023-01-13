@@ -1,4 +1,4 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -18,14 +18,20 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
-import {graphql} from '../graphql';
-import {InstigationTickStatus, InstigationType, TickTagFragmentFragment} from '../graphql/graphql';
-import {RunTable} from '../runs/RunTable';
+import {InstigationType, InstigationTickStatus} from '../graphql/types';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
+
+import {
+  LaunchedRunListQuery,
+  LaunchedRunListQueryVariables,
+  TickTagFragment,
+} from './types/InstigationTick.types';
 
 export const TickTag: React.FC<{
-  tick: TickTagFragmentFragment;
+  tick: TickTagFragment;
   instigationType?: InstigationType;
 }> = ({tick, instigationType}) => {
   const [open, setOpen] = React.useState<boolean>(false);
@@ -120,13 +126,16 @@ export const TickTag: React.FC<{
 };
 
 export const RunList: React.FC<{runIds: string[]}> = ({runIds}) => {
-  const {data, loading} = useQuery(LAUNCHED_RUN_LIST_QUERY, {
-    variables: {
-      filter: {
-        runIds,
+  const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
+    LAUNCHED_RUN_LIST_QUERY,
+    {
+      variables: {
+        filter: {
+          runIds,
+        },
       },
     },
-  });
+  );
 
   if (loading || !data) {
     return (
@@ -198,7 +207,7 @@ const LinkButton = styled.button`
   padding: 0;
 `;
 
-export const TICK_TAG_FRAGMENT = graphql(`
+export const TICK_TAG_FRAGMENT = gql`
   fragment TickTagFragment on InstigationTick {
     id
     status
@@ -210,9 +219,11 @@ export const TICK_TAG_FRAGMENT = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
 
-const LAUNCHED_RUN_LIST_QUERY = graphql(`
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+const LAUNCHED_RUN_LIST_QUERY = gql`
   query LaunchedRunListQuery($filter: RunsFilter!) {
     pipelineRunsOrError(filter: $filter, limit: 500) {
       ... on PipelineRuns {
@@ -228,4 +239,7 @@ const LAUNCHED_RUN_LIST_QUERY = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+
+  ${RUN_TABLE_RUN_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;

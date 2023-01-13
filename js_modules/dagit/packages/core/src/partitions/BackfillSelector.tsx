@@ -1,4 +1,4 @@
-import {useMutation, useQuery} from '@apollo/client';
+import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -26,12 +26,15 @@ import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
-import {graphql} from '../graphql';
-import {LaunchPartitionBackfillMutation} from '../graphql/graphql';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
+import {
+  LaunchPartitionBackfillMutation,
+  LaunchPartitionBackfillMutationVariables,
+} from '../instance/types/BackfillUtils.types';
 import {LaunchButton} from '../launchpad/LaunchButton';
 import {TagEditor, TagContainer} from '../launchpad/TagEditor';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
+import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -39,6 +42,10 @@ import {RepoAddress} from '../workspace/types';
 import {PartitionRangeWizard} from './PartitionRangeWizard';
 import {PartitionStateCheckboxes} from './PartitionStateCheckboxes';
 import {PartitionState} from './PartitionStatus';
+import {
+  BackfillSelectorQuery,
+  BackfillSelectorQueryVariables,
+} from './types/BackfillSelector.types';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 
@@ -90,15 +97,18 @@ export const BackfillPartitionSelector: React.FC<{
   });
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const {data} = useQuery(BACKFILL_SELECTOR_QUERY, {
-    variables: {
-      pipelineSelector: {
-        ...repositorySelector,
-        pipelineName,
+  const {data} = useQuery<BackfillSelectorQuery, BackfillSelectorQueryVariables>(
+    BACKFILL_SELECTOR_QUERY,
+    {
+      variables: {
+        pipelineSelector: {
+          ...repositorySelector,
+          pipelineName,
+        },
       },
+      fetchPolicy: 'network-only',
     },
-    fetchPolicy: 'network-only',
-  });
+  );
 
   const mounted = React.useRef(true);
   React.useEffect(() => {
@@ -332,7 +342,10 @@ const LaunchBackfillButton: React.FC<{
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);
-  const [launchBackfill, {loading}] = useMutation(LAUNCH_PARTITION_BACKFILL_MUTATION);
+  const [launchBackfill, {loading}] = useMutation<
+    LaunchPartitionBackfillMutation,
+    LaunchPartitionBackfillMutationVariables
+  >(LAUNCH_PARTITION_BACKFILL_MUTATION);
 
   React.useEffect(() => {
     mounted.current = true;
@@ -405,7 +418,7 @@ const LaunchBackfillButton: React.FC<{
   );
 };
 
-const BACKFILL_SELECTOR_QUERY = graphql(`
+const BACKFILL_SELECTOR_QUERY = gql`
   query BackfillSelectorQuery($pipelineSelector: PipelineSelector!) {
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
@@ -413,7 +426,6 @@ const BACKFILL_SELECTOR_QUERY = graphql(`
         name
         solidHandles {
           handleID
-          ...GraphExplorerSolidHandleFragment
           solid {
             name
             definition {
@@ -434,6 +446,7 @@ const BACKFILL_SELECTOR_QUERY = graphql(`
               }
             }
           }
+          ...GraphExplorerSolidHandleFragment
         }
       }
     }
@@ -451,7 +464,9 @@ const BACKFILL_SELECTOR_QUERY = graphql(`
       runQueuingSupported
     }
   }
-`);
+
+  ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+`;
 
 function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | null | undefined) {
   const result = data?.launchPartitionBackfill;

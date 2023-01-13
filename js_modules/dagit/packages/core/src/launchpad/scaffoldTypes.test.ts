@@ -1,4 +1,4 @@
-import {AllConfigTypesForEditorFragment} from '../graphql/graphql';
+import {AllConfigTypesForEditorFragment} from '../configeditor/types/ConfigEditorUtils.types';
 
 import {createTypeLookup, scaffoldType} from './scaffoldType';
 

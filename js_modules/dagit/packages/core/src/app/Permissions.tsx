@@ -1,8 +1,7 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {graphql} from '../graphql';
-import {PermissionFragmentFragment} from '../graphql/graphql';
+import {PermissionFragment, PermissionsQuery} from './types/Permissions.types';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -47,8 +46,8 @@ const DEFAULT_PERMISSIONS = {
 };
 
 export const extractPermissions = (
-  permissions: PermissionFragmentFragment[],
-  fallback: PermissionFragmentFragment[] = [],
+  permissions: PermissionFragment[],
+  fallback: PermissionFragment[] = [],
 ) => {
   const permsMap: PermissionsFromJSON = {};
   for (const item of permissions) {
@@ -95,10 +94,10 @@ type PermissionsContextType = {
   locationPermissions?: Record<string, PermissionsMap>;
   loading: boolean;
   // Raw unscoped permission data, for Cloud extraction
-  rawUnscopedData?: PermissionFragmentFragment[];
+  rawUnscopedData?: PermissionFragment[];
 
   // todo dish: For Cloud compatibility, delete in favor of `rawUnscopedData`
-  data: PermissionFragmentFragment[];
+  data: PermissionFragment[];
 };
 
 export const PermissionsContext = React.createContext<PermissionsContextType>({
@@ -112,7 +111,7 @@ export const PermissionsContext = React.createContext<PermissionsContextType>({
 });
 
 export const PermissionsProvider: React.FC = (props) => {
-  const {data, loading} = useQuery(PERMISSIONS_QUERY, {
+  const {data, loading} = useQuery<PermissionsQuery>(PERMISSIONS_QUERY, {
     fetchPolicy: 'cache-first', // Not expected to change after initial load.
   });
 
@@ -176,7 +175,7 @@ export const usePermissionsDEPRECATED = useUnscopedPermissions;
 // todo dish: Temporary to pass Cloud build. Delete after Cloud callsites are updated.
 export const usePermissions = useUnscopedPermissions;
 
-const PERMISSIONS_QUERY = graphql(`
+const PERMISSIONS_QUERY = gql`
   query PermissionsQuery {
     unscopedPermissions: permissions {
       ...PermissionFragment
@@ -199,4 +198,4 @@ const PERMISSIONS_QUERY = graphql(`
     value
     disabledReason
   }
-`);
+`;

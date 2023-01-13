@@ -44,7 +44,7 @@ export function useQueryRefreshAtInterval(queryResult: QueryResult<any, any>, in
   // Sanity check - don't use this hook alongside a useQuery pollInterval
   if (queryResult.networkStatus === NetworkStatus.poll) {
     throw new Error(
-      'useQueryRefreshAtInterval is meant to replace useQuery({pollInterval}). Remove the pollInterval!',
+      'useQueryRefreshAtInterval is meant to replace useQuery<>({pollInterval}). Remove the pollInterval!',
     );
   }
 

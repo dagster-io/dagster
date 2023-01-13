@@ -1,11 +1,13 @@
+import {gql} from '@apollo/client';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {graphql} from '../graphql';
-import {StartSensorMutation, StopRunningSensorMutation} from '../graphql/graphql';
 
-export const START_SENSOR_MUTATION = graphql(`
+import {StartSensorMutation, StopRunningSensorMutation} from './types/SensorMutations.types';
+
+export const START_SENSOR_MUTATION = gql`
   mutation StartSensor($sensorSelector: SensorSelector!) {
     startSensor(sensorSelector: $sensorSelector) {
       __typename
@@ -19,9 +21,11 @@ export const START_SENSOR_MUTATION = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
 
-export const STOP_SENSOR_MUTATION = graphql(`
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const STOP_SENSOR_MUTATION = gql`
   mutation StopRunningSensor($jobOriginId: String!, $jobSelectorId: String!) {
     stopSensor(jobOriginId: $jobOriginId, jobSelectorId: $jobSelectorId) {
       __typename
@@ -34,7 +38,9 @@ export const STOP_SENSOR_MUTATION = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;
 
 export const displaySensorMutationErrors = (
   data: StartSensorMutation | StopRunningSensorMutation,

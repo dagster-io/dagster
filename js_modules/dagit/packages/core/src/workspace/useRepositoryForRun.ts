@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {RunFragmentForRepositoryMatchFragment} from '../graphql/graphql';
+import {RunFragmentForRepositoryMatchFragment} from '../runs/types/RunFragments.types';
 
 import {DagsterRepoOption, useRepositoryOptions} from './WorkspaceContext';
 import {findRepoContainingPipeline, repoContainsPipeline} from './findRepoContainingPipeline';
