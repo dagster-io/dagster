@@ -257,6 +257,9 @@ class MultiPartitionsDefinition(PartitionsDefinition):
             {dim.name: partition_key_strs[i] for i, dim in enumerate(self._partitions_defs)}
         )
 
+    def empty_subset(self) -> "MultiPartitionsSubset":
+        return MultiPartitionsSubset(self, set())
+
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return MultiPartitionsSubset.from_serialized(self, serialized)
 
