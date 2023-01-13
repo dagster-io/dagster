@@ -13,6 +13,7 @@ import {RunStatus, BulkActionStatus} from '../graphql/types';
 import {
   PartitionState,
   PartitionStatus,
+  PartitionStatusCountsOnly,
   runStatusToPartitionState,
 } from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -141,7 +142,6 @@ export const BackfillRow = ({
     </tr>
   );
 };
-
 const BackfillMenu = ({
   backfill,
   statusData,
@@ -223,6 +223,7 @@ const BackfillMenu = ({
     </Popover>
   );
 };
+const BACKFILL_PARTITIONS_COUNTS_THRESHOLD = 1000;
 
 const BackfillRunStatus = ({
   backfill,
@@ -241,7 +242,12 @@ const BackfillRunStatus = ({
     [statusData],
   );
 
-  return (
+  return statusData.results.length > BACKFILL_PARTITIONS_COUNTS_THRESHOLD ? (
+    <PartitionStatusCountsOnly
+      partitionNames={backfill.partitionNames}
+      partitionStateForKey={(key) => states[key]}
+    />
+  ) : (
     <PartitionStatus
       partitionNames={backfill.partitionNames}
       partitionStateForKey={(key) => states[key]}
@@ -269,48 +275,47 @@ const BackfillTarget: React.FC<{
     : null;
 
   const repo = useRepository(repoAddress);
+  const isHiddenAssetPartitionSet = isHiddenAssetGroupJob(partitionSetName || '');
 
-  if (!partitionSet || !repoAddress) {
+  const buildHeader = () => {
+    if (isHiddenAssetPartitionSet) {
+      return null;
+    }
+    if (partitionSet && repo) {
+      return (
+        <Link
+          style={{fontWeight: 500}}
+          to={workspacePipelinePath({
+            repoName: partitionSet.repositoryOrigin.repositoryName,
+            repoLocation: partitionSet.repositoryOrigin.repositoryLocationName,
+            pipelineName: partitionSet.pipelineName,
+            isJob: isThisThingAJob(repo, partitionSet.pipelineName),
+            path: `/partitions?partitionSet=${encodeURIComponent(partitionSet.name)}`,
+          })}
+        >
+          {partitionSet.name}
+        </Link>
+      );
+    }
     return <span style={{fontWeight: 500}}>{partitionSetName}</span>;
-  }
+  };
 
-  const isJob = !!(repo && isThisThingAJob(repo, partitionSet.pipelineName));
-  const isHiddenAssetJob = isHiddenAssetGroupJob(partitionSet.pipelineName);
-
-  const repoLink = (
-    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} style={{fontSize: '12px'}}>
-      <Icon name="repo" color={Colors.Gray400} />
-      <Link to={workspacePathFromAddress(repoAddress)}>
-        {repoAddressAsHumanString(repoAddress)}
-      </Link>
-    </Box>
-  );
-
-  if (isHiddenAssetJob) {
-    return (
-      <Box flex={{direction: 'column', gap: 8}}>
-        {repoLink}
-        <AssetKeyTagCollection assetKeys={assetSelection} modalTitle="Assets in backfill" />
+  const buildRepoLink = () =>
+    repoAddress ? (
+      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} style={{fontSize: '12px'}}>
+        <Icon name="repo" color={Colors.Gray400} />
+        <Link to={workspacePathFromAddress(repoAddress)}>
+          {repoAddressAsHumanString(repoAddress)}
+        </Link>
       </Box>
-    );
-  }
+    ) : undefined;
 
-  return (
-    <Box flex={{direction: 'column', gap: 8}}>
-      <Link
-        to={workspacePipelinePath({
-          repoName: partitionSet.repositoryOrigin.repositoryName,
-          repoLocation: partitionSet.repositoryOrigin.repositoryLocationName,
-          pipelineName: partitionSet.pipelineName,
-          isJob,
-          path: `/partitions?partitionSet=${encodeURIComponent(partitionSet.name)}`,
-        })}
-        style={{fontWeight: 500}}
-      >
-        {partitionSet.name}
-      </Link>
-      <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-        {repoLink}
+  const buildPipelineOrAssets = () => {
+    if (isHiddenAssetPartitionSet) {
+      return <AssetKeyTagCollection assetKeys={assetSelection} modalTitle="Assets in backfill" />;
+    }
+    if (partitionSet && repo) {
+      return (
         <PipelineReference
           showIcon
           size="small"
@@ -319,8 +324,19 @@ const BackfillTarget: React.FC<{
             name: partitionSet.repositoryOrigin.repositoryName,
             location: partitionSet.repositoryOrigin.repositoryLocationName,
           }}
-          isJob={isJob}
+          isJob={isThisThingAJob(repo, partitionSet.pipelineName)}
         />
+      );
+    }
+    return null;
+  };
+
+  return (
+    <Box flex={{direction: 'column', gap: 8}}>
+      {buildHeader()}
+      <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
+        {buildRepoLink()}
+        {buildPipelineOrAssets()}
       </Box>
     </Box>
   );
@@ -344,12 +360,20 @@ const BackfillRequested = ({
           </Tag>
         </TagButton>
       </div>
-      <PartitionStatus
-        partitionNames={allPartitions}
-        partitionStateForKey={() => PartitionState.QUEUED}
-        small
-        hideStatusTooltip
-      />
+      {allPartitions.length > BACKFILL_PARTITIONS_COUNTS_THRESHOLD ? (
+        <PartitionStatusCountsOnly
+          partitionNames={allPartitions}
+          partitionStateForKey={() => PartitionState.QUEUED}
+          small
+        />
+      ) : (
+        <PartitionStatus
+          partitionNames={allPartitions}
+          partitionStateForKey={() => PartitionState.QUEUED}
+          hideStatusTooltip
+          small
+        />
+      )}
     </Box>
   );
 };
@@ -409,6 +433,7 @@ export const SINGLE_BACKFILL_QUERY = gql`
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
+        backfillId
         partitionStatuses {
           ...PartitionStatusesForBackfill
         }
