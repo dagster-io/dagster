@@ -1,0 +1,37 @@
+---
+title: "Intro to the Dagster Tutorial: Getting set up | Dagster Docs"
+description: "Get set up for the intro to assets tutorial."
+noindex: True
+---
+
+# Intro to Dagster: Getting set up
+
+To complete this tutorial, you'll need:
+
+- **To install Python and pip.** This tutorial assumes that you have some familiarity with Python, but you should be able to follow along even if you’re coming from a different programming language. To check that Python and `pip` (Python's package manager) are already installed in your environment or install them, follow the instructions [here](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/).
+
+  <DagsterVersion />
+
+<!-- ^ Lives in: /next/components/mdx/includes/dagster/DagsterVersion.mdx -->
+
+- **To install Dagster, Dagit, and the `requests` library**:
+
+  ```shell
+  pip install dagster dagit requests
+  ```
+
+  This installs the following Python packages:
+
+  - `dagster` is the command line interface (CLI) tool to run Dagster. For more information, you can look at the [Dagster installation guide](/getting-started/install)
+  - `dagit` is the web-based UI for developing and operating Dagster jobs, including a DAG browser, a type-aware config editor, and a live execution interface.
+  - `requests` is not a part of Dagster, but you'll use it in the tutorial to download data from the internet.
+
+## Troubleshooting Installations
+
+If you are having issues with installing Dagster, Dagit, or any of its dependencies, you can look at the [Installation Troubleshooting Page](www.inserthere.com) for help and resources.
+
+---
+
+## Ready to get started?
+
+When you've fulfilled all the prerequistes for the tutorial, you can get started [creating your first asset](/update/link/in).

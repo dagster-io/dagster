@@ -11,7 +11,13 @@
       },
       {
         "title": "Installation",
-        "path": "/getting-started/install"
+        "path": "/getting-started/install",
+        "children": [
+          {
+            "title": "Troubleshooting",
+            "path": "/getting-started/installation/troubleshooting-installation"
+          }
+        ]
       },
       {
         "title": "Create a New Project",

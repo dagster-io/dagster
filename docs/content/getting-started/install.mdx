@@ -11,6 +11,9 @@ Dagster is a a data orchestrator. Learn what Dagster is all about on our [homepa
 
 ## Installing Dagster
 
+- `dagster` is the command line interface (CLI) tool to run Dagster. It also is the stateless, single-node, single-process and multi-process execution engines
+- `dagit` is the web-based UI for operating Dagster, including ways to visualize your DAGs, a type-aware config editor, and a live execution interface.
+
 To install Dagster and Dagit into an existing Python environment, run:
 
 ```bash
@@ -34,6 +37,13 @@ python --version
 pip --version
 ```
 
-We strongly recommend installing Dagster inside a Python virtualenv. If you are running Anaconda, you should install Dagster inside a Conda environment.
+We strongly recommend installing Dagster inside a Python virtual environment.
+
+- If you are unfamiliar with Python virtual environments, you can read more about them on [the official Python documentation](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
+- If you are running Anaconda, you should install Dagster inside a conda environment. The official conda [documentation for managing environments](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) can help you get set up.
+
+---
+
+## Contributing to Dagster
 
 If you would like to install Dagster from source, please see the section on [Contributing](/community/contributing).
