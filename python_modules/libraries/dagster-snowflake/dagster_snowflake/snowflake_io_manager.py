@@ -180,8 +180,12 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
 
 def _time_window_where_clause(table_partition: TablePartition) -> str:
     start_dt, end_dt = table_partition.time_window
-    start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
-    end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
+    if table_partition.partition_conversion is not None:
+        start_str = table_partition.partition_conversion(start_dt)
+        end_str = table_partition.partition_conversion(end_dt)
+    else:
+        start_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
+        end_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     # Snowflake BETWEEN is inclusive; start <= partition expr <= end. We don't want to remove the next partition so we instead
     # write this as start <= partition expr < end.
-    return f"""WHERE {table_partition.partition_column} >= '{start_dt_str}' AND {table_partition.partition_column} < '{end_dt_str}'"""
+    return f"""WHERE {table_partition.partition_column} >= '{start_str}' AND {table_partition.partition_column} < '{end_str}'"""

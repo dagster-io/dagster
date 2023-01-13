@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import (
+    Any,
+    Callable,
     Dict,
     Generic,
     Mapping,
@@ -27,6 +30,7 @@ T = TypeVar("T")
 class TablePartition(NamedTuple):
     time_window: TimeWindow
     partition_column: str
+    partition_conversion: Optional[Callable[[datetime], Any]]
 
 
 class TableSlice(NamedTuple):
@@ -203,9 +207,13 @@ class DbIOManager(IOManager):
                     f"Asset '{context.asset_key}' has partitions, but no 'partition_column'"
                     " metadata value, so we don't know what column to filter it on."
                 )
+            conversion = cast(
+                Callable[[datetime], Any], output_context_metadata.get("partition_key_conversion")
+            )
             partition = TablePartition(
                 time_window=time_window,
                 partition_column=partition_column,
+                partition_conversion=conversion,
             )
         else:
             partition = None
