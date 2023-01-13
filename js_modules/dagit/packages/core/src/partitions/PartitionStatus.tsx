@@ -1,5 +1,4 @@
 import {Box, Tooltip, Colors} from '@dagster-io/ui';
-import countBy from 'lodash/countBy';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -334,33 +333,6 @@ export const PartitionStatus: React.FC<{
         </Box>
       ) : null}
     </div>
-  );
-};
-
-export const PartitionStatusCountsOnly: React.FC<{
-  small?: boolean;
-  partitionNames: string[];
-  partitionStateForKey: (key: string) => PartitionState;
-}> = ({small, partitionNames, partitionStateForKey}) => {
-  const byState = countBy(partitionNames, partitionStateForKey);
-
-  const counts = Object.entries(byState)
-    .filter(([, count]) => count > 0)
-    .map(([state, count]) => `${count.toLocaleString()} ${state}`)
-    .join(', ');
-
-  return (
-    <PartitionSpansContainer
-      style={{
-        height: small ? 12 : 24,
-        textAlign: 'center',
-        lineHeight: small ? '12px' : '24px',
-        cursor: 'default',
-        fontSize: 12,
-      }}
-    >
-      {counts}
-    </PartitionSpansContainer>
   );
 };
 
