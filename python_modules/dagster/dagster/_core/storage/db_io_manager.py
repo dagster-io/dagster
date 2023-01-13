@@ -19,13 +19,14 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager
+from dagster._utils.backcompat import deprecation_warning
 
 T = TypeVar("T")
 
 
 class TablePartition(NamedTuple):
     time_window: TimeWindow
-    partition_expr: str
+    partition_column: str
 
 
 class TableSlice(NamedTuple):
@@ -189,14 +190,22 @@ class DbIOManager(IOManager):
 
         if time_window is not None:
             partition_expr = cast(str, output_context_metadata.get("partition_expr"))
-            if partition_expr is None:
+            partition_column = cast(str, output_context_metadata.get("partition_column"))
+            if partition_expr is not None:
+                deprecation_warning(
+                    "partition_expr metadata",
+                    "1.2.0",
+                    additional_warn_txt="Use partition_column metadata instead.",
+                )
+                partition_column = partition_expr
+            if partition_column is None:
                 raise ValueError(
-                    f"Asset '{context.asset_key}' has partitions, but no 'partition_expr' metadata "
-                    "value, so we don't know what column to filter it on."
+                    f"Asset '{context.asset_key}' has partitions, but no 'partition_column'"
+                    " metadata value, so we don't know what column to filter it on."
                 )
             partition = TablePartition(
                 time_window=time_window,
-                partition_expr=partition_expr,
+                partition_column=partition_column,
             )
         else:
             partition = None

@@ -184,4 +184,4 @@ def _time_window_where_clause(table_partition: TablePartition) -> str:
     end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     # Snowflake BETWEEN is inclusive; start <= partition expr <= end. We don't want to remove the next partition so we instead
     # write this as start <= partition expr < end.
-    return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+    return f"""WHERE {table_partition.partition_column} >= '{start_dt_str}' AND {table_partition.partition_column} < '{end_dt_str}'"""
