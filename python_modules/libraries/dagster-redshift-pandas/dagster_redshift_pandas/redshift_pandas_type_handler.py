@@ -10,11 +10,11 @@ from dagster_aws.redshift.io_manager import RedshiftDbClient
 
 
 @contextmanager
-def _connect_redshift_sqlalchemy(context):
+def _connect_redshift_sqlalchemy(context, table_slice):
     from sqlalchemy import create_engine
 
     config = context.resource_config
-    url = f"postgresql://{config['user']}:{config['password']}@{config['account']}.redshift.amazonaws.com:{config['port']}/{config['database']}"
+    url = f"postgresql://{config['user']}:{config['password']}@{config['account']}.redshift.amazonaws.com:{config['port']}/{config['database']}/{table_slice.schema}"
 
     engine = create_engine(url)
     conn = engine.connect()
@@ -47,7 +47,7 @@ class RedshiftPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def handle_output(
         self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame
     ) -> Mapping[str, RawMetadataValue]:
-        with _connect_redshift_sqlalchemy(context) as conn:
+        with _connect_redshift_sqlalchemy(context, table_slice) as conn:
             # TODO - create table if it doesn't exist
 
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
@@ -71,7 +71,7 @@ class RedshiftPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         }
 
     def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
-        with _connect_redshift_sqlalchemy(context) as conn:
+        with _connect_redshift_sqlalchemy(context, table_slice) as conn:
             result = pd.read_sql(sql=RedshiftDbClient.get_select_statement(table_slice), con=conn)
             result.columns = map(str.lower, result.columns)
             return result
