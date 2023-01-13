@@ -1,7 +1,7 @@
+from contextlib import contextmanager
 from typing import Sequence
 
 import redshift_connector
-
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -11,7 +11,7 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 
-BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+REDSHIFT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def build_redshift_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
@@ -22,6 +22,7 @@ def build_redshift_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
             DuckDB tables and an in-memory type - e.g. a Pandas DataFrame.
+
     Returns:
         IOManagerDefinition
     Examples:
@@ -63,15 +64,26 @@ def build_redshift_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
 
     @io_manager(
         config_schema={
-            "dataset": Field(
-                StringSource, description="Name of the schema to use.", is_required=False
+            "database": Field(StringSource, description="Name of the database to use."),
+            "account": Field(
+                StringSource,
+                description=(
+                    "Your Redshift account name. Should be of the form:"
+                    " examplecluster.abc123xyz789.us-west-1"
+                ),
             ),
-            "project": Field(StringSource),  # elementl-dev - sort of like the database?
-            "location": Field(StringSource, is_required=False),  # compute location? like us-east-2
+            "user": Field(StringSource, description="User login name."),
+            "password": Field(StringSource, description="User password."),
+            "port": Field(
+                StringSource,
+                description="Port of the Redshift cluster. Defaults to 5439.",
+                is_required=False,
+                default_value="5439",
+            ),
         }
     )
     def redshift_io_manager(init_context):
-        """IO Manager for storing outputs in a BigQuery database
+        """IO Manager for storing outputs in Redshift
         # TODO update doc string
         Assets will be stored in the schema and table name specified by their AssetKey.
         Subsequent materializations of an asset will overwrite previous materializations of that asset.
@@ -80,32 +92,32 @@ def build_redshift_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
         """
         return DbIOManager(
             type_handlers=type_handlers,
-            db_client=RedshiftClient(),
+            db_client=RedshiftDbClient(),
             io_manager_name="RedshiftIOManager",
-            database=init_context.resource_config["project"],
-            schema=init_context.resource_config.get("dataset"),
+            database=init_context.resource_config["database"],
+            schema=init_context.resource_config.get("schema"),
         )
 
     return redshift_io_manager
 
 
-class RedshiftClient(DbClient):
+class RedshiftDbClient(DbClient):
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
         print("IN DELETE")
-        conn = _connect_redshift(context)
-        try:
-            print("CLEANUP STATEMENT")
-            print(_get_cleanup_statement(table_slice))
-            conn.cursor().execute(_get_cleanup_statement(table_slice)).result()
-            print("DONE DELETE")
-        except Exception:  # TODO - find the real exception
-            # table doesn't exist yet, so ignore the error
-            pass
-        conn.close()
+        with _connect_redshift(context) as conn:
+            try:
+                print("CLEANUP STATEMENT")
+                print(_get_cleanup_statement(table_slice))
+                conn.cursor().execute(_get_cleanup_statement(table_slice))
+                print("DONE DELETE")
+            except Exception:  # TODO - find the real exception
+                # table doesn't exist yet, so ignore the error
+                pass
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
+        print("IN SELECT")
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
         if table_slice.partition:
             return (
@@ -113,11 +125,24 @@ class RedshiftClient(DbClient):
                 + _time_window_where_clause(table_slice.partition)
             )
         else:
-            return f"""SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}"""
+            stmt = f"""SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}"""
+            print("SELECT STATEMENT")
+            print(stmt)
+            return stmt
 
 
-def _connect_redshift(_):
-    return redshift_connector.connect()
+@contextmanager
+def _connect_redshift(context):
+    conn = redshift_connector.connect(
+        host=f"{context.resource_config['account']}.redshift.amazonaws.com",
+        database=context.resource_config["database"],
+        user=context.resource_config["user"],
+        password=context.resource_config["password"],
+    )
+
+    yield conn
+    conn.commit()
+    conn.close()
 
 
 def _get_cleanup_statement(table_slice: TableSlice) -> str:
@@ -136,6 +161,6 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
 
 def _time_window_where_clause(table_partition: TablePartition) -> str:
     start_dt, end_dt = table_partition.time_window
-    start_dt_str = start_dt.strftime(BIGQUERY_DATETIME_FORMAT)
-    end_dt_str = end_dt.strftime(BIGQUERY_DATETIME_FORMAT)
+    start_dt_str = start_dt.strftime(REDSHIFT_DATETIME_FORMAT)
+    end_dt_str = end_dt.strftime(REDSHIFT_DATETIME_FORMAT)
     return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
