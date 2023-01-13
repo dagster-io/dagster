@@ -258,17 +258,16 @@ class Field:
             A human-readable description of this config field.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
-
-        @op(
-            config_schema={
-                'word': Field(str, description='I am a word.'),
-                'repeats': Field(Int, default_value=1, is_required=False),
-            }
-        )
-        def repeat_word(context):
-            return context.op_config['word'] * context.op_config['repeats']
+            @op(
+                config_schema={
+                    'word': Field(str, description='I am a word.'),
+                    'repeats': Field(Int, default_value=1, is_required=False),
+                }
+            )
+            def repeat_word(context):
+                return context.op_config['word'] * context.op_config['repeats']
     """
 
     def _resolve_config_arg(self, config):
@@ -362,7 +361,7 @@ class Field:
     @public  # type: ignore
     @property
     def default_provided(self) -> bool:
-        """Was a default value provided
+        """Was a default value provided.
 
         Returns:
             bool: Yes or no

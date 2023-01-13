@@ -64,6 +64,7 @@ def test_compute_log_manager(
                 run_coordinator=DefaultRunCoordinator(),
                 run_launcher=SyncInMemoryRunLauncher(),
                 ref=InstanceRef.from_dir(temp_dir),
+                settings={"telemetry": {"enabled": False}},
             )
             result = simple.execute_in_process(instance=instance)
             capture_events = [

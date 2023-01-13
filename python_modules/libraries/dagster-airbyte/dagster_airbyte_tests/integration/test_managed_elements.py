@@ -48,7 +48,6 @@ def docker_compose_airbyte_instance_fixture(
     """
     Spins up an Airbyte instance using docker-compose, and tears it down after the test.
     """
-
     with docker_compose_cm(docker_compose_file, env_file=docker_compose_env_file) as hostnames:
         webapp_host = hostnames["airbyte-webapp"]
         webapp_port = "8000" if webapp_host == "localhost" else "80"
@@ -94,7 +93,6 @@ def empty_airbyte_instance_fixture(docker_compose_airbyte_instance):
     """
     Ensures that the docker-compose Airbyte instance is empty before running a test.
     """
-
     apply(TEST_ROOT_DIR, "empty_airbyte_stack:reconciler")
 
     yield docker_compose_airbyte_instance
@@ -161,6 +159,7 @@ def test_basic_integration(
                 "my_data_stream": {"syncMode": "full_refresh", "destinationSyncMode": "append"}
             },
             "destination namespace": "SAME_AS_SOURCE",
+            "prefix": None,
         },
     }
     expected_result = diff_dicts(
@@ -403,6 +402,35 @@ def test_change_destination_namespace(empty_airbyte_instance, airbyte_source_fil
     assert apply_result == expected_diff
 
     check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_namespace")
+    assert check_result == ManagedElementDiff()
+
+
+def test_change_destination_prefix(empty_airbyte_instance, airbyte_source_files):
+    # Set up example element and ensure no diff
+    apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler")
+    assert check_result == ManagedElementDiff()
+
+    # Change the destination prefix, ensure that we get the proper diff
+    expected_diff = diff_dicts(
+        {
+            "local-json-conn": {
+                "prefix": "my_prefix",
+            },
+        },
+        {
+            "local-json-conn": {
+                "prefix": None,
+            },
+        },
+    )
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_prefix")
+    assert check_result == expected_diff
+
+    apply_result = apply(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_prefix")
+    assert apply_result == expected_diff
+
+    check_result = check(TEST_ROOT_DIR, "example_airbyte_stack:reconciler_custom_prefix")
     assert check_result == ManagedElementDiff()
 
 

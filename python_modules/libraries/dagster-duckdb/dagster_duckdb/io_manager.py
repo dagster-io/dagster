@@ -26,7 +26,6 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
         IOManagerDefinition
 
     Examples:
-
         .. code-block:: python
 
             from dagster_duckdb import build_duckdb_io_manager
@@ -83,7 +82,7 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
         }
     )
     def duckdb_io_manager(init_context):
-        """IO Manager for storing outputs in a DuckDB database
+        """IO Manager for storing outputs in a DuckDB database.
 
         Assets will be stored in the schema and table name specified by their AssetKey.
         Subsequent materializations of an asset will overwrite previous materializations of that asset.

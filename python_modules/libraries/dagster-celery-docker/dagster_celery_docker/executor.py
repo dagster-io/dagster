@@ -140,7 +140,6 @@ def celery_docker_executor(init_context):
     In deployments where the celery_docker_job_executor is used all appropriate celery and dagster_celery
     commands must be invoked with the `-A dagster_celery_docker.app` argument.
     """
-
     exc_cfg = init_context.executor_config
 
     return CeleryDockerExecutor(

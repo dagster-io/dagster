@@ -3,11 +3,12 @@ import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {RunStatus, RunTimeFragmentFragment} from '../graphql/graphql';
+import {RunStatus} from '../graphql/types';
 import {StorybookProvider} from '../testing/StorybookProvider';
 import {generateRunMocks} from '../testing/generateRunMocks';
 
 import {RunStatusPez, RunStatusPezList} from './RunStatusPez';
+import {RunTimeFragment} from './types/RunUtils.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -52,7 +53,7 @@ export const List = () => {
       startTime: number;
       endTime: number;
     }[],
-  ): RunTimeFragmentFragment[] =>
+  ): RunTimeFragment[] =>
     inp.map((r) => ({...r, runId: r.id, updateTime: null, __typename: 'Run'}));
 
   const fakeRepo = 'a_repo.py';

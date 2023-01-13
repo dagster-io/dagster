@@ -55,7 +55,7 @@ class RetryWrapper:
         unwrap_methods=(),
     ):
         """
-        Wrap the given object
+        Wrap the given object.
 
         :param wrapped: the object to wrap
         :param retry_if: a method that takes an exception, and returns whether

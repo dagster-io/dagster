@@ -24,7 +24,6 @@ def secretsmanager_resource(context):
     The returned resource object is a SecretsManager client, an instance of `botocore.client.SecretsManager`.
 
     Example:
-
         .. code-block:: python
 
             from dagster import build_op_context, job, op
@@ -111,7 +110,6 @@ def secretsmanager_secrets_resource(context):
     their string values. Also optionally sets chosen secrets as environment variables.
 
     Example:
-
         .. code-block:: python
 
             import os

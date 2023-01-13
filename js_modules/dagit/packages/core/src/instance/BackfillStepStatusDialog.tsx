@@ -1,10 +1,6 @@
 import {Button, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {
-  BackfillTableFragmentFragment,
-  PartitionSetForBackfillTableFragment,
-} from '../graphql/graphql';
 import {PartitionPerOpStatus} from '../partitions/PartitionStepStatus';
 import {usePartitionStepQuery} from '../partitions/usePartitionStepQuery';
 import {DagsterTag} from '../runs/RunTag';
@@ -13,8 +9,13 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
+import {
+  BackfillTableFragment,
+  PartitionSetForBackfillTableFragment,
+} from './types/BackfillTable.types';
+
 interface Props {
-  backfill?: BackfillTableFragmentFragment;
+  backfill?: BackfillTableFragment;
   onClose: () => void;
 }
 
@@ -55,7 +56,7 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
 };
 
 interface ContentProps {
-  backfill: BackfillTableFragmentFragment;
+  backfill: BackfillTableFragment;
   partitionSet: PartitionSetForBackfillTableFragment;
   repoAddress: RepoAddress;
   onClose: () => void;

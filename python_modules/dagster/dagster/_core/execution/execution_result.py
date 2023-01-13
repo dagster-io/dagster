@@ -46,7 +46,6 @@ class ExecutionResult(ABC):
     @property
     def all_node_events(self) -> Sequence[DagsterEvent]:
         """List[DagsterEvent]: All dagster events from the execution."""
-
         step_events: List[DagsterEvent] = []
 
         for node_name in self.job_def.graph.node_dict.keys():
@@ -121,7 +120,7 @@ class ExecutionResult(ABC):
 
     def get_job_failure_event(self) -> DagsterEvent:
         """Returns a DagsterEvent with type DagsterEventType.PIPELINE_FAILURE if it ocurred during
-        execution
+        execution.
         """
         events = self.filter_events(
             lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE
@@ -134,7 +133,7 @@ class ExecutionResult(ABC):
 
     def get_job_success_event(self) -> DagsterEvent:
         """Returns a DagsterEvent with type DagsterEventType.PIPELINE_SUCCESS if it ocurred during
-        execution
+        execution.
         """
         events = self.filter_events(
             lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS

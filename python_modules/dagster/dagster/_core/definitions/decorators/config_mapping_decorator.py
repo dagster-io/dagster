@@ -62,7 +62,6 @@ def config_mapping(
 
 
     Examples:
-
         .. code-block:: python
 
             @op

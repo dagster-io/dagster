@@ -89,10 +89,6 @@ More advanced Dagster deployments will require deploying more than one container
 
 This service must have access to your `dagster.yaml` and `workspace.yaml` files, just like the Dagit container. You can also configure your code location server (gRPC server) so that your code can be updated and deployed separately in its own container, without needing to redeploy the other Dagster services. To enable this setup, include a container exposing a gRPC server at a port and add that port in your `workspace.yaml` file.
 
-In this passage you have a "code location server" "running a gRPC server" which isn't really right.
-
-I think in this context it is right to say the code location IS a grpc server.
-
 For example, your user code container might have the following Dockerfile:
 
 ```dockerfile file=/deploying/docker/Dockerfile_user_code

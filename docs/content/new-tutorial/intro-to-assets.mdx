@@ -41,7 +41,7 @@ Software-defined assets wrap objects to enable data engineers to do more with th
 
 As a Dagster user, you're able to build assets in code.
 
-```python file=/intro_tutorial/basics/hackernews/hackernews.py startafter=start_topstories_asset_marker endbefore=end_topstories_asset_marker
+```python file=/intro_tutorial/basics/hackernews/hackernews.py startafter=start_topstories_asset_marker endbefore=end_topstories_asset_marker dagimage=/images/asset-screenshots/hackernews_topstories_asset.svg
 @asset(group_name="hackernews", compute_kind="HackerNews API")
 def hackernews_topstories(
     context: OpExecutionContext, hackernews_topstory_ids: List[int]
@@ -64,23 +64,16 @@ def hackernews_topstories(
     return df
 ```
 
-<Image
-alt="A materialized asset"
-src="/images/tutorial/simple-asset.png"
-width={251}
-height={121}
-/>
-
 As shown in the sample asset above, assets are a framework that wraps around your existing Python code and allows you to add more information and metadata about it.
 
 ### Building a DAG of assets
 
-Defining multiple assets creates a DAG of what assets depend on other assets. This DAG, viewable in Dagster's web-based UI, helps you to:
+Defining multiple assets creates a DAG (directed acyclic graph) of what assets depend on other assets. This DAG, viewable in Dagster's web-based UI, helps you to:
 
 - Understand how your assets relate to each other
 - Empower you and your teammates to act, learn, and debug your pipelines
 
-Later in this tutorial, we'll walk you through using Dagster's UI to view and materialize assets, shown below.
+We'll walk you through using Dagster's UI to view and materialize assets later in the tutorial. Let's consider the following DAG which shows the lineage between three assets:
 
 <Image
 alt="An asset graph"

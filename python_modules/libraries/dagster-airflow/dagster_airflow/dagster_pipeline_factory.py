@@ -287,7 +287,10 @@ def make_dagster_schedule_from_airflow_dag(dag, job_def):
 
     if isinstance(dag.normalized_schedule_interval, str) and is_valid_cron_schedule(cron_schedule):
         return ScheduleDefinition(
-            job=job_def, cron_schedule=cron_schedule, description=schedule_description
+            job=job_def,
+            cron_schedule=cron_schedule,
+            description=schedule_description,
+            execution_timezone=dag.timezone.name,
         )
 
 
@@ -833,7 +836,8 @@ def make_dagster_solid_from_airflow_task(
 
 def dagster_get_template_context(task_instance, task, execution_date):
     """
-    Modified from /airflow/models/taskinstance.py to not reference Airflow DB
+    Modified from /airflow/models/taskinstance.py to not reference Airflow DB.
+
     (1) Removes the following block, which queries DB, removes dagrun instances, recycles run_id
     if hasattr(task, 'dag'):
         if task.dag.params:

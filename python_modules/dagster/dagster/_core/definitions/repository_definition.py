@@ -127,7 +127,6 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
                 even known until loaded.
 
         """
-
         for key, definition in definitions.items():
             check.invariant(
                 isinstance(definition, definition_class) or callable(definition),
@@ -987,7 +986,6 @@ class CachingRepositoryData(RepositoryData):
         Returns:
             PipelineDefinition: The pipeline/job definition corresponding to the given name.
         """
-
         check.str_param(pipeline_name, "pipeline_name")
 
         if self._jobs.has_definition(pipeline_name):
@@ -1007,7 +1005,6 @@ class CachingRepositoryData(RepositoryData):
         Returns:
             JobDefinition: The job definition corresponding to the given name.
         """
-
         check.str_param(job_name, "job_name")
         return self._jobs.get_definition(job_name)
 
@@ -1053,7 +1050,6 @@ class CachingRepositoryData(RepositoryData):
         Returns:
             PartitionSetDefinition: The partition set definition corresponding to the given name.
         """
-
         check.str_param(partition_set_name, "partition_set_name")
 
         return self._partition_sets.get_definition(partition_set_name)
@@ -1088,7 +1084,6 @@ class CachingRepositoryData(RepositoryData):
         Returns:
             ScheduleDefinition: The schedule definition corresponding to the given name.
         """
-
         check.str_param(schedule_name, "schedule_name")
 
         return self._schedules.get_definition(schedule_name)
@@ -1226,13 +1221,13 @@ class RepositoryDefinition:
 
     @property
     def pipeline_names(self) -> Sequence[str]:
-        """List[str]: Names of all pipelines/jobs in the repository"""
+        """List[str]: Names of all pipelines/jobs in the repository."""
         return self._repository_data.get_pipeline_names()
 
     @public  # type: ignore
     @property
     def job_names(self) -> Sequence[str]:
-        """List[str]: Names of all jobs in the repository"""
+        """List[str]: Names of all jobs in the repository."""
         return self._repository_data.get_job_names()
 
     def has_pipeline(self, name: str) -> bool:
@@ -1364,7 +1359,6 @@ class RepositoryDefinition:
         the same partitioning schema and one wants to access their corresponding implicit job
         easily.
         """
-
         if not self.has_job(ASSET_BASE_JOB_PREFIX):
             raise DagsterInvariantViolationError(
                 "There is no single global asset job, likely due to assets using "
@@ -1569,12 +1563,12 @@ class PendingRepositoryDefinition:
     def reconstruct_repository_definition(
         self, repository_load_data: RepositoryLoadData
     ) -> RepositoryDefinition:
-        """Use the provided RepositoryLoadData to construct and return a RepositoryDefinition"""
+        """Use the provided RepositoryLoadData to construct and return a RepositoryDefinition."""
         check.inst_param(repository_load_data, "repository_load_data", RepositoryLoadData)
         return self._get_repository_definition(repository_load_data)
 
     def compute_repository_definition(self) -> RepositoryDefinition:
-        """Compute the required RepositoryLoadData and use it to construct and return a RepositoryDefinition
+        """Compute the required RepositoryLoadData and use it to construct and return a RepositoryDefinition.
         """
         repository_load_data = self._compute_repository_load_data()
         return self._get_repository_definition(repository_load_data)

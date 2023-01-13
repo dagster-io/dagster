@@ -44,7 +44,6 @@ def bq_op_for_queries(sql_queries):
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """
-
     sql_queries = check.list_param(sql_queries, "sql queries", of_type=str)
     m = hashlib.sha1()
     for query in sql_queries:
@@ -171,7 +170,6 @@ def bq_delete_dataset(context):
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """
-
     (dataset, delete_contents, not_found_ok) = [
         context.op_config.get(k) for k in ("dataset", "delete_contents", "not_found_ok")
     ]

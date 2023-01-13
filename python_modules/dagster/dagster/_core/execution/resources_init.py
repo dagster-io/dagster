@@ -74,7 +74,7 @@ def resource_initialization_manager(
 def resolve_resource_dependencies(
     resource_defs: Mapping[str, ResourceDefinition]
 ) -> Mapping[str, AbstractSet[str]]:
-    """Generates a dictionary that maps resource key to resource keys it requires for initialization
+    """Generates a dictionary that maps resource key to resource keys it requires for initialization.
     """
     resource_dependencies = {
         key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
@@ -460,7 +460,6 @@ def _wrapped_resource_iterator(
     If the resource is a context manager, then resource initialization happens as the passed-in
     context manager opens. Resource teardown happens as the passed-in context manager closes (which will occur after all compute is finished).
     """
-
     # Context managers created using contextlib.contextdecorator are not usable as iterators.
     # Opening context manager and directly yielding preserves initialization/teardown behavior,
     # while also letting the context manager be used as an iterator.

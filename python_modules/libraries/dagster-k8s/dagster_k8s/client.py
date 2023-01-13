@@ -364,7 +364,10 @@ class DagsterKubernetesClient:
         job_name,
         namespace,
     ):
-        """Delete Kubernetes Job. We also need to delete corresponding pods due to:
+        """Delete Kubernetes Job.
+
+        We also need to delete corresponding pods due to:
+
         https://github.com/kubernetes-client/python/issues/234
 
         Args:

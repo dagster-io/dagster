@@ -98,7 +98,7 @@ class DataprocResource:
         ).execute()
 
     def wait_for_job(self, job_id, wait_timeout=TWENTY_MINUTES):
-        """This method polls job status every 5 seconds"""
+        """This method polls job status every 5 seconds."""  # noqa: D202
 
         # TODO: Add logging here print('Waiting for job ID {} to finish...'.format(job_id))
         def iter_fn():
@@ -123,7 +123,7 @@ class DataprocResource:
     def _iter_and_sleep_until_ready(
         callable_fn, max_wait_time_sec=TWENTY_MINUTES, iter_time=DEFAULT_ITER_TIME_SEC
     ):
-        """Iterates and sleeps until callable_fn returns true"""
+        """Iterates and sleeps until callable_fn returns true."""
         # Wait for cluster ready state
         ready, curr_iter = False, 0
         max_iter = max_wait_time_sec / iter_time

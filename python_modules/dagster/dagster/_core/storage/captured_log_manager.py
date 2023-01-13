@@ -182,7 +182,7 @@ class CapturedLogManager(ABC):
         cursor: Optional[str] = None,
         max_bytes: Optional[int] = None,
     ) -> CapturedLogData:
-        """Returns a chunk of the captured stdout logs for a given log key
+        """Returns a chunk of the captured stdout logs for a given log key.
 
         Args:
             log_key (List[String]): The log key identifying the captured logs
@@ -220,7 +220,7 @@ class CapturedLogManager(ABC):
     def subscribe(
         self, log_key: Sequence[str], cursor: Optional[str] = None
     ) -> CapturedLogSubscription:
-        """Registers an observable object for log data
+        """Registers an observable object for log data.
 
         Args:
             log_key (List[String]): The log key identifying the captured logs
@@ -231,7 +231,7 @@ class CapturedLogManager(ABC):
 
     @abstractmethod
     def unsubscribe(self, subscription: CapturedLogSubscription):
-        """Deregisters an observable object from receiving log updates
+        """Deregisters an observable object from receiving log updates.
 
         Args:
             subscription (CapturedLogSubscription): subscription object which manages when to send
@@ -239,5 +239,5 @@ class CapturedLogManager(ABC):
         """
 
     def build_log_key_for_run(self, run_id: str, step_key: str) -> Sequence[str]:
-        """Legacy adapter to translate run_id/key to captured log manager-based log_key"""
+        """Legacy adapter to translate run_id/key to captured log manager-based log_key."""
         return [run_id, "compute_logs", step_key]

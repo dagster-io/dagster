@@ -1,10 +1,10 @@
+import {gql} from '@apollo/client';
 import {YamlModeValidationResult} from '@dagster-io/ui';
 import yaml from 'yaml';
 
-import {graphql} from '../graphql';
-import {ConfigEditorValidationFragmentFragment} from '../graphql/graphql';
+import {ConfigEditorValidationFragment} from './types/ConfigEditorUtils.types';
 
-export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = graphql(`
+export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
   fragment ConfigEditorRunConfigSchemaFragment on RunConfigSchema {
     rootConfigType {
       key
@@ -51,9 +51,9 @@ export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = graphql(`
       defaultValueAsJson
     }
   }
-`);
+`;
 
-export const CONFIG_EDITOR_VALIDATION_FRAGMENT = graphql(`
+export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
   fragment ConfigEditorValidationFragment on PipelineConfigValidationResult {
     __typename
     ... on RunConfigValidationInvalid {
@@ -81,7 +81,7 @@ export const CONFIG_EDITOR_VALIDATION_FRAGMENT = graphql(`
       }
     }
   }
-`);
+`;
 
 type StackEntry =
   | {
@@ -117,7 +117,7 @@ export function errorStackToYamlPath(entries: StackEntry[]) {
 
 export function responseToYamlValidationResult(
   configYaml: string,
-  response: ConfigEditorValidationFragmentFragment,
+  response: ConfigEditorValidationFragment,
 ): YamlModeValidationResult {
   if (response.__typename !== 'RunConfigValidationInvalid') {
     return {isValid: true};

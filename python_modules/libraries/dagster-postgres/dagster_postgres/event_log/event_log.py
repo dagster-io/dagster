@@ -151,6 +151,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
+
         Args:
             event (EventLogEntry): The event to store.
         """

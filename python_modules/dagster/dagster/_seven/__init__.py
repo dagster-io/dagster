@@ -182,7 +182,6 @@ def is_subclass(child_type: Type[Any], parent_type: Type[Any]):
     example) pass inspect.isclass check above but then raise an exception if issubclass is called
     with the same class. This function provides a workaround for that issue.
     """
-
     if not inspect.isclass(child_type):
         return False
 

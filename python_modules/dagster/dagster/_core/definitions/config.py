@@ -67,7 +67,6 @@ class ConfigMapping(
     def resolve_from_unvalidated_config(self, config: Any) -> Any:
         """Validates config against outer config schema, and calls mapping against validated config.
         """
-
         receive_processed_config_values = check.opt_bool_param(
             self.receive_processed_config_values, "receive_processed_config_values", default=True
         )

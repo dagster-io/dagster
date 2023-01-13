@@ -48,13 +48,13 @@ def sample_dataframe_schema(**kwargs):
                     pa.Check.str_startswith("value_"),
                     pa.Check(
                         lambda s: s.str.split("_", expand=True).shape[1] == 2,
-                        description="Two words separated by underscore",
+                        description="Two words separated by underscore.",
                     ),
                 ],
             ),
         },
         checks=[
-            pa.Check(lambda df: df["a"].sum() > df["b"].sum(), description="sum(a) > sum(b)"),
+            pa.Check(lambda df: df["a"].sum() > df["b"].sum(), description="sum(a) > sum(b)."),
         ],
         **kwargs,
     )
@@ -79,12 +79,12 @@ def sample_schema_model(**config_attrs):
         def c_check(  # pylint: disable=no-self-argument
             cls, series: pa.typing.Series[str]
         ) -> pa.typing.Series[bool]:
-            """Two words separated by underscore"""
+            """Two words separated by underscore."""
             return series.str.split("_", expand=True).shape[1] == 2
 
         @pa.dataframe_check
         def a_gt_b(cls, df):  # pylint: disable=no-self-argument
-            """sum(a) > sum(b)"""
+            """sum(a) > sum(b)."""
             return df["a"].sum() > df["b"].sum()
 
         Config = make_schema_model_config(**config_attrs)
@@ -121,7 +121,7 @@ def test_pandera_schema_to_dagster_type(schema):
     schema_entry = dagster_type.metadata_entries[0]
     assert isinstance(schema_entry.entry_data, TableSchemaMetadataValue)
     assert schema_entry.entry_data.schema == TableSchema(
-        constraints=TableConstraints(other=["sum(a) > sum(b)"]),
+        constraints=TableConstraints(other=["sum(a) > sum(b)."]),
         columns=[
             TableColumn(
                 name="a",
@@ -143,7 +143,7 @@ def test_pandera_schema_to_dagster_type(schema):
                     nullable=False,
                     other=[
                         "str_startswith(value_)",
-                        "Two words separated by underscore",
+                        "Two words separated by underscore.",
                     ],
                 ),
             ),

@@ -148,7 +148,6 @@ def test_live_redshift(s3_bucket):
     REDSHIFT_PASSWORD - Redshift password
 
     """
-
     # Put file to load on S3
     file_key = uuid.uuid4().hex
     client = boto3.client("s3")

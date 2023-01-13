@@ -125,7 +125,6 @@ class AirbyteResource:
         Returns:
             Optional[Dict[str, Any]]: Parsed json data from the response to this request
         """
-
         url = self.api_base_url + endpoint
         headers = {"accept": "application/json"}
 

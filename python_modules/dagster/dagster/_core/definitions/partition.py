@@ -314,7 +314,7 @@ class ScheduleTimeBasedPartitionsDefinition(
         ],
     ),
 ):
-    """Computes the partitions backwards from the scheduled execution times"""
+    """Computes the partitions backwards from the scheduled execution times."""
 
     def __new__(  # pylint: disable=arguments-differ
         cls,
@@ -465,7 +465,7 @@ class DynamicPartitionsDefinition(
 
 class PartitionSetDefinition(Generic[T]):
     """
-    Defines a partition set, representing the set of slices making up an axis of a pipeline
+    Defines a partition set, representing the set of slices making up an axis of a pipeline.
 
     Args:
         name (str): Name for this partition set
@@ -671,7 +671,6 @@ class PartitionSetDefinition(Generic[T]):
             PartitionScheduleDefinition: The generated PartitionScheduleDefinition for the partition
                 selector
         """
-
         check.str_param(schedule_name, "schedule_name")
         check.str_param(cron_schedule, "cron_schedule")
         check.opt_callable_param(should_execute, "should_execute")
@@ -1032,7 +1031,7 @@ def cron_schedule_from_schedule_type_and_offsets(
 
 
 class PartitionsSubset(ABC):
-    """Represents a subset of the partitions within a PartitionsDefinition"""
+    """Represents a subset of the partitions within a PartitionsDefinition."""
 
     @abstractmethod
     def get_partition_keys_not_in_subset(

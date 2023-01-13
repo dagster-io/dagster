@@ -63,11 +63,17 @@ class DbtManifestAssetSelection(AssetSelection):
         )
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
+        dbt_nodes = {
+            **self.manifest_json["nodes"],
+            **self.manifest_json["sources"],
+            **self.manifest_json["metrics"],
+            **self.manifest_json["exposures"],
+        }
         keys = set()
         for unique_id in _select_unique_ids_from_manifest_json(
             manifest_json=self.manifest_json, select=self.select, exclude=self.exclude
         ):
-            node_info = self.manifest_json["nodes"][unique_id]
+            node_info = dbt_nodes[unique_id]
             if node_info["resource_type"] in self.resource_types and not _is_non_asset_node(
                 node_info
             ):

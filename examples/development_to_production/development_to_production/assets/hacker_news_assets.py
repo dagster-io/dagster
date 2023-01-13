@@ -9,7 +9,6 @@ from dagster import asset
 )
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
-
     hn_client = context.resources.hn_client
 
     max_id = hn_client.fetch_max_item_id()

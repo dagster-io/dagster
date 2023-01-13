@@ -107,7 +107,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     @public  # type: ignore
     @property
     def name(self) -> str:
-        """Name of the executor"""
+        """Name of the executor."""
         return self._name
 
     @public  # type: ignore
@@ -174,7 +174,6 @@ class ExecutorDefinition(NamedConfigurableDefinition):
 
         Returns (ConfigurableDefinition): A configured version of this object.
         """
-
         name = check.opt_str_param(name, "name")
 
         new_config_schema = ConfiguredDefinitionConfigSchema(

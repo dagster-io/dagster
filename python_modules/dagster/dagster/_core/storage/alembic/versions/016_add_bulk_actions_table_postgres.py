@@ -1,4 +1,4 @@
-"""add backfill table
+"""add backfill table.
 
 Revision ID: a914fb6ccdf9
 Revises: 0da417ae1b81

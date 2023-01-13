@@ -8,7 +8,7 @@ from scipy.sparse import coo_matrix
 
 @dataclass
 class IndexedCooMatrix:
-    """A matrix with indexes for the rows and columns"""
+    """A matrix with indexes for the rows and columns."""
 
     matrix: coo_matrix
 

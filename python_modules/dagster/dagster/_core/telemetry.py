@@ -1,5 +1,5 @@
 """As an open source project, we collect usage statistics to inform development priorities.
-For more information, check out the docs at https://docs.dagster.io/install#telemetry'
+For more information, check out the docs at https://docs.dagster.io/install#telemetry'.
 
 To see the logs we send, inspect $DAGSTER_HOME/logs/ if $DAGSTER_HOME is set or ~/.dagster/logs/
 
@@ -33,6 +33,9 @@ from dagster._core.definitions.reconstruct import (
     get_ephemeral_repository_name,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events import DagsterEvent
+from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.instance import DagsterInstance
 from dagster._utils.merger import merge_dicts
 from dagster.version import __version__ as dagster_module_version
@@ -48,6 +51,9 @@ DAEMON_ALIVE = "daemon_alive"
 SCHEDULED_RUN_CREATED = "scheduled_run_created"
 SENSOR_RUN_CREATED = "sensor_run_created"
 BACKFILL_RUN_CREATED = "backfill_run_created"
+STEP_START_EVENT = "step_start_event"
+STEP_SUCCESS_EVENT = "step_success_event"
+STEP_FAILURE_EVENT = "step_failure_event"
 OS_DESC = platform.platform()
 OS_PLATFORM = platform.system()
 
@@ -57,6 +63,17 @@ TELEMETRY_WHITELISTED_FUNCTIONS = {
     "execute_execute_command",
     "execute_launch_command",
     "_daemon_run_command",
+}
+
+KNOWN_CI_ENV_VAR_KEYS = {
+    "GITLAB_CI",  # https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+    "GITHUB_ACTION",  # https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
+    "BITBUCKET_BUILD_NUMBER",  # https://support.atlassian.com/bitbucket-cloud/docs/variables-and-secrets/
+    "JENKINS_URL",  # https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
+    "CODEBUILD_BUILD_ID"  # https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
+    "CIRCLECI",  # https://circleci.com/docs/variables/#built-in-environment-variables
+    "TRAVIS",  # https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
+    "BUILDKITE",  # https://buildkite.com/docs/pipelines/environment-variables
 }
 
 
@@ -127,6 +144,19 @@ def get_python_version():
     return "{}.{}.{}".format(version.major, version.minor, version.micro)
 
 
+def get_is_known_ci_env():
+    # Many CI tools will use `CI` key which lets us know for sure it's a CI env
+    if os.environ.get("CI") is True:
+        return True
+
+    # Otherwise looking for predefined env var keys of known CI tools
+    for env_var_key in KNOWN_CI_ENV_VAR_KEYS:
+        if env_var_key in os.environ:
+            return True
+
+    return False
+
+
 class TelemetryEntry(
     NamedTuple(
         "_TelemetryEntry",
@@ -142,6 +172,7 @@ class TelemetryEntry(
             ("os_desc", str),
             ("os_platform", str),
             ("run_storage_id", str),
+            ("is_known_ci_env", bool),
         ],
     )
 ):
@@ -199,6 +230,7 @@ class TelemetryEntry(
             os_desc=OS_DESC,
             os_platform=OS_PLATFORM,
             run_storage_id=run_storage_id,
+            is_known_ci_env=get_is_known_ci_env(),
         )
 
 
@@ -214,7 +246,7 @@ def _dagster_home_if_set():
 def get_or_create_dir_from_dagster_home(target_dir):
     """
     If $DAGSTER_HOME is set, return $DAGSTER_HOME/<target_dir>/
-    Otherwise, return ~/.dagster/<target_dir>/
+    Otherwise, return ~/.dagster/<target_dir>/.
 
     The 'logs' directory is used to cache logs before upload
 
@@ -229,7 +261,12 @@ def get_or_create_dir_from_dagster_home(target_dir):
 
     dagster_home_logs_path = os.path.join(dagster_home_path, target_dir)
     if not os.path.exists(dagster_home_logs_path):
-        os.makedirs(dagster_home_logs_path)
+        try:
+            os.makedirs(dagster_home_logs_path)
+        except FileExistsError:
+            # let FileExistsError pass to avoid race condition when multiple places on the same
+            # machine try to create this dir
+            pass
     return dagster_home_logs_path
 
 
@@ -521,6 +558,32 @@ def log_action(
                 run_storage_id=run_storage_id,
             )._asdict()
         )
+
+
+def log_dagster_event(event: DagsterEvent, pipeline_context: PlanOrchestrationContext):
+    if not any((event.is_step_start, event.is_step_success, event.is_step_failure)):
+        return
+
+    metadata = {
+        "run_id_hash": hash_name(pipeline_context.run_id),
+        "step_key_hash": hash_name(event.step_key),
+    }
+
+    if event.is_step_start:
+        action = STEP_START_EVENT
+    if event.is_step_success:
+        action = STEP_SUCCESS_EVENT
+        if isinstance(event.event_specific_data, StepSuccessData):  # make mypy happy
+            metadata["duration_ms"] = event.event_specific_data.duration_ms
+    if event.is_step_failure:
+        action = STEP_FAILURE_EVENT
+
+    log_action(
+        instance=pipeline_context.instance,
+        action=action,
+        client_time=datetime.datetime.now(),
+        metadata=metadata,
+    )
 
 
 TELEMETRY_TEXT = """

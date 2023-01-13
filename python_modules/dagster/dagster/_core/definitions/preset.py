@@ -203,7 +203,6 @@ class PresetDefinition(
 
     def with_additional_config(self, run_config):
         """Return a new PresetDefinition with additional config merged in to the existing config."""
-
         check.opt_nullable_dict_param(run_config, "run_config")
         if run_config is None:
             return self

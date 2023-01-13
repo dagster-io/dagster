@@ -159,6 +159,7 @@ class Map(ConfigType):
     type checked values. Unlike :py:class:`Shape` and :py:class:`Permissive`, scalar
     keys other than strings can be used, and unlike :py:class:`Permissive`, all
     values are type checked.
+
     Args:
         key_type (type):
             The type of keys this map can contain. Must be a scalar type.

@@ -72,7 +72,6 @@ def docker_executor(init_context: InitExecutorContext) -> Executor:
     If you're using the DockerRunLauncher, configuration set on the containers created by the run
     launcher will also be set on the containers that are created for each step.
     """
-
     config = init_context.executor_config
     image = check.opt_str_elem(config, "image")
     registry = check.opt_dict_elem(config, "registry", key_type=str)

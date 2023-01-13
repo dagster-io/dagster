@@ -1769,7 +1769,7 @@ class DagsterInstance:
         log_level: Union[str, int] = logging.INFO,
     ):
         """
-        Takes a DagsterEvent and stores it in persistent storage for the corresponding PipelineRun
+        Takes a DagsterEvent and stores it in persistent storage for the corresponding PipelineRun.
         """
         from dagster._core.events.log import EventLogEntry
 
@@ -1873,8 +1873,7 @@ class DagsterInstance:
         Args:
             run_id (str): The id of the run.
         """
-
-        from dagster._core.host_representation.origin import ExternalPipelineOrigin
+        from dagster._core.host_representation import ExternalPipelineOrigin
         from dagster._core.run_coordinator import SubmitRunContext
 
         run = self.get_run_by_id(run_id)
@@ -2206,11 +2205,11 @@ class DagsterInstance:
 
     # dagster daemon
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat"):
-        """Called on a regular interval by the daemon"""
+        """Called on a regular interval by the daemon."""
         self._run_storage.add_daemon_heartbeat(daemon_heartbeat)
 
     def get_daemon_heartbeats(self) -> Mapping[str, "DaemonHeartbeat"]:
-        """Latest heartbeats of all daemon types"""
+        """Latest heartbeats of all daemon types."""
         return self._run_storage.get_daemon_heartbeats()
 
     def wipe_daemon_heartbeats(self):

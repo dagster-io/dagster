@@ -46,7 +46,6 @@ def datadog_resource(context):
     resource.
 
     Examples:
-
         .. code-block:: python
 
             @op(required_resource_keys={'datadog'})

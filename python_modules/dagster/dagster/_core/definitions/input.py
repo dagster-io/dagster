@@ -260,7 +260,6 @@ class InputDefinition:
             fan_in_index (Optional[int]): The index in to a fanned in input, else None
 
         Examples:
-
             .. code-block:: python
 
                 input_mapping = InputDefinition('composite_input', Int).mapping_to(
@@ -294,7 +293,6 @@ class InputDefinition:
         Return a new InputDefinition that merges this ones properties with those inferred from type signature.
         This can update: dagster_type, description, and default_value if they are not set.
         """
-
         check.invariant(
             self.name == inferred.name,
             (
@@ -406,7 +404,6 @@ class InputMapping(NamedTuple):
             being mapped from. Users should not use this argument when instantiating the class.
 
     Examples:
-
         .. code-block:: python
 
             from dagster import InputMapping, GraphDefinition, op, graph

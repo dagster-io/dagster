@@ -63,7 +63,8 @@ class WhitelistMap(NamedTuple):
         serializer: Optional[Type["NamedTupleSerializer"]],
         args_for_class: Mapping[str, Parameter],
     ):
-        """
+        """Register a tuple in the whitelist map.
+
         Args:
             name: The class name of the namedtuple to register
             nt: The namedtuple class to register.
@@ -268,7 +269,6 @@ class NamedTupleSerializer(Serializer):
             whitelist_map: current map of whitelisted serdes objects
             descent_path: the path to the current node from the root
         """
-
         raise NotImplementedError()
 
 
@@ -341,7 +341,7 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer):
 
 
 def serialize_dagster_namedtuple(nt: tuple, **json_kwargs) -> str:
-    """Serialize a whitelisted named tuple to a json encoded string"""
+    """Serialize a whitelisted named tuple to a json encoded string."""
     check.tuple_param(nt, "nt")
     return _serialize_dagster_namedtuple(nt, whitelist_map=_WHITELIST_MAP, **json_kwargs)
 
@@ -359,7 +359,9 @@ def serialize_value(val: Any, whitelist_map: WhitelistMap = _WHITELIST_MAP) -> s
 
 def pack_value(val: Any) -> Any:
     """
-    Transform a value in to a json serializable form. The following types are transformed in to dicts:
+    Transform a value in to a json serializable form.
+
+    The following types are transformed in to dicts:
         * whitelisted named tuples
         * whitelisted enums
         * set
@@ -430,7 +432,7 @@ def pack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str) -
 def deserialize_json_to_dagster_namedtuple(
     json_str: str,
 ) -> tuple:
-    """Deserialize a json encoded string in to a whitelisted named tuple"""
+    """Deserialize a json encoded string in to a whitelisted named tuple."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
 
@@ -480,7 +482,7 @@ def _deserialize_json(json_str: str, whitelist_map: WhitelistMap):
 
 
 def deserialize_value(val: str, whitelist_map: WhitelistMap = _WHITELIST_MAP) -> Any:
-    """Deserialize a json encoded string in to its original value"""
+    """Deserialize a json encoded string in to its original value."""
     return unpack_inner_value(
         seven.json.loads(check.str_param(val, "val")),
         whitelist_map=whitelist_map,
@@ -489,7 +491,7 @@ def deserialize_value(val: str, whitelist_map: WhitelistMap = _WHITELIST_MAP) ->
 
 
 def unpack_value(val: Any) -> Any:
-    """Convert a packed value in to its original form"""
+    """Convert a packed value in to its original form."""
     return unpack_inner_value(
         val,
         whitelist_map=_WHITELIST_MAP,
@@ -571,7 +573,6 @@ def register_serdes_tuple_fallbacks(
     Manually provide remappings for named tuples.
     Used to manage loading previously types that no longer exist.
     """
-
     for class_name, klass in fallback_map.items():
         serializer = cast(
             Type[NamedTupleSerializer],
@@ -595,7 +596,6 @@ def register_serdes_enum_fallbacks(
     Manually provide remappings for named tuples.
     Used to manage loading previously types that no longer exist.
     """
-
     serializer: Type[EnumSerializer] = DefaultEnumSerializer
     for class_name, klass in fallback_map.items():
         if not klass or not issubclass(klass, Enum):

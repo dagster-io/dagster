@@ -1,4 +1,4 @@
-"""add columns action_type and selector_id to bulk_actions
+"""add columns action_type and selector_id to bulk_actions.
 
 Revision ID: 6860f830e40c
 Revises: 721d858e1dda

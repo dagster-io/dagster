@@ -61,7 +61,7 @@ _composition_stack: List["InProgressCompositionContext"] = []
 
 
 class MappedInputPlaceholder:
-    """Marker for holding places in fan-in lists where input mappings will feed"""
+    """Marker for holding places in fan-in lists where input mappings will feed."""
 
 
 def _not_invoked_warning(
@@ -130,7 +130,7 @@ def assert_in_composition(name: str, node_def: NodeDefinition) -> None:
 
 class InProgressCompositionContext:
     """This context captures invocations of solids within a
-    composition function such as @composite_solid or @pipeline
+    composition function such as @composite_solid or @pipeline.
     """
 
     name: str
@@ -754,7 +754,7 @@ class InvokedNodeOutputHandle:
 class DynamicFanIn(NamedTuple):
     """
     Type to signify collecting over a dynamic output, output by collect() on a
-    InvokedNodeDynamicOutputWrapper
+    InvokedNodeDynamicOutputWrapper.
     """
 
     solid_name: str

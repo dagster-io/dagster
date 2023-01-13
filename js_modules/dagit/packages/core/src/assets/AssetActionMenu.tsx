@@ -1,24 +1,26 @@
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
-import {AssetTableFragmentFragment} from '../graphql/graphql';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {useMaterializationAction} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {AssetTableFragment} from './types/AssetTableFragment.types';
 
 interface Props {
   repoAddress: RepoAddress | null;
-  asset: AssetTableFragmentFragment;
-  onWipe?: (assets: AssetTableFragmentFragment[]) => void;
+  asset: AssetTableFragment;
+  onWipe?: (assets: AssetTableFragment[]) => void;
 }
 
 export const AssetActionMenu: React.FC<Props> = (props) => {
   const {repoAddress, asset, onWipe} = props;
-  const {canWipeAssets, canLaunchPipelineExecution} = usePermissions();
+  const {canWipeAssets, canLaunchPipelineExecution} = usePermissionsForLocation(
+    repoAddress?.location,
+  );
   const {path} = asset.key;
 
   const {onClick, loading, launchpadElement} = useMaterializationAction();

@@ -43,7 +43,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         return str(Path(self.base_dir, *keys).with_suffix(".ipynb"))
 
     def handle_output(self, context: OutputContext, obj: bytes):
-        """obj: bytes"""
+        """obj: bytes."""
         check.inst_param(context, "context", OutputContext)
 
         # the output notebook itself is stored at output_file_path

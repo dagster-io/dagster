@@ -45,7 +45,6 @@ def s3_resource(context):
     The returned resource object is an S3 client, an instance of `botocore.client.S3`.
 
     Example:
-
         .. code-block:: python
 
             from dagster import build_op_context, job, op

@@ -65,7 +65,6 @@ class AssetGroup:
             use when re-materializing assets in this group.
 
     Examples:
-
         .. code-block:: python
 
             from dagster import AssetGroup, asset, AssetIn, AssetKey, SourceAsset, resource
@@ -169,7 +168,6 @@ class AssetGroup:
             description (Optional[str]): A description of the job.
 
         Examples:
-
             .. code-block:: python
 
                 from dagster import AssetGroup
@@ -182,7 +180,6 @@ class AssetGroup:
 
                 job_with_multiple_selections = the_asset_group.build_job(selection=["*some_asset", "other_asset++"])
         """
-
         from dagster._core.selector.subset_selector import parse_asset_selection
 
         check.str_param(name, "name")

@@ -149,7 +149,6 @@ class UnboundOpExecutionContext(OpExecutionContext):
         """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
 
         Example:
-
         .. code-block:: python
 
             @solid
@@ -286,7 +285,6 @@ class UnboundOpExecutionContext(OpExecutionContext):
                 expectation_results = [event for event in all_user_events if isinstance(event, ExpectationResult)]
                 ...
         """
-
         return self._user_events
 
     def get_output_metadata(
@@ -315,7 +313,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
 def _validate_resource_requirements(
     resource_defs: Mapping[str, ResourceDefinition], op_def: OpDefinition
 ) -> None:
-    """Validate correctness of resources against required resource keys"""
+    """Validate correctness of resources against required resource keys."""
     if cast(DecoratedOpFunction, op_def.compute_fn).has_context_arg():
         for requirement in op_def.get_resource_requirements():
             if not requirement.is_io_manager_requirement:
@@ -399,7 +397,6 @@ class BoundOpExecutionContext(OpExecutionContext):
         """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
 
         Example:
-
         .. code-block:: python
 
             @solid
@@ -637,7 +634,6 @@ def build_op_context(
             with build_op_context(resources={"foo": context_manager_resource}) as context:
                 op_to_invoke(context)
     """
-
     if op_config and config:
         raise DagsterInvalidInvocationError(
             "Attempted to invoke ``build_op_context`` with both ``op_config``, and its "
@@ -691,7 +687,6 @@ def build_solid_context(
             with build_solid_context(resources={"foo": context_manager_resource}) as context:
                 solid_to_invoke(context)
     """
-
     if solid_config and config:
         raise DagsterInvalidInvocationError(
             "Attempted to invoke ``build_solid_context`` with both ``solid_config``, and its "

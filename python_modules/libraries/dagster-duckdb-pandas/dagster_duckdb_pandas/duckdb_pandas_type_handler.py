@@ -32,7 +32,6 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
     def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame):
         """Stores the pandas DataFrame in duckdb."""
-
         conn = _connect_duckdb(context).cursor()
 
         conn.execute(f"create schema if not exists {table_slice.schema};")

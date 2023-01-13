@@ -1,4 +1,4 @@
-"""cascade run deletion
+"""cascade run deletion.
 
 Revision ID: 8f8dba68fd3b
 Revises: da7cd32b690d

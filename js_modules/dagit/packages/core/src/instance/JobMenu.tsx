@@ -1,18 +1,20 @@
-import {useLazyQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import {Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
-import {graphql} from '../graphql';
-import {RunTimeFragmentFragment} from '../graphql/graphql';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
+import {RUN_FRAGMENT} from '../runs/RunFragments';
+import {RunTimeFragment} from '../runs/types/RunUtils.types';
 import {useJobReExecution} from '../runs/useJobReExecution';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
+import {RunReExecutionQuery, RunReExecutionQueryVariables} from './types/JobMenu.types';
+
 interface Props {
-  job: {isJob: boolean; name: string; runs: RunTimeFragmentFragment[]};
+  job: {isJob: boolean; name: string; runs: RunTimeFragment[]};
   repoAddress: RepoAddress;
 }
 
@@ -23,8 +25,11 @@ interface Props {
 export const JobMenu = (props: Props) => {
   const {job, repoAddress} = props;
   const lastRun = job.runs.length ? job.runs[0] : null;
-  const {canLaunchPipelineReexecution} = usePermissions();
-  const [fetchHasExecutionPlan, {data}] = useLazyQuery(RUN_RE_EXECUTION_QUERY);
+  const {canLaunchPipelineReexecution} = usePermissionsForLocation(repoAddress.location);
+  const [fetchHasExecutionPlan, {data}] = useLazyQuery<
+    RunReExecutionQuery,
+    RunReExecutionQueryVariables
+  >(RUN_RE_EXECUTION_QUERY);
 
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data?.pipelineRunOrError : null;
 
@@ -103,7 +108,7 @@ export const JobMenu = (props: Props) => {
   );
 };
 
-const RUN_RE_EXECUTION_QUERY = graphql(`
+const RUN_RE_EXECUTION_QUERY = gql`
   query RunReExecutionQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
@@ -112,4 +117,6 @@ const RUN_RE_EXECUTION_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${RUN_FRAGMENT}
+`;

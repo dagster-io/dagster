@@ -354,7 +354,6 @@ def config_map_objects(
     applies config mapping to the result and the first executor_def with the same name on
     the mode_def.
     """
-
     config = config_value.get(keyed_by)
 
     check.opt_mapping_param(config, "config", key_type=str)

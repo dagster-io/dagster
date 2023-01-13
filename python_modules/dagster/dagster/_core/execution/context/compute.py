@@ -34,7 +34,7 @@ from .system import StepExecutionContext
 
 
 class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
-    """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext
+    """Base class for solid context implemented by SolidExecutionContext and DagstermillExecutionContext.
     """
 
     @abstractmethod
@@ -91,15 +91,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     purposes, use :py:func:`dagster.build_op_context`.
 
     Example:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster import op
 
-        from dagster import op
-
-        @op
-        def hello_world(context: OpExecutionContext):
-            context.log.info("Hello, world!")
-
+            @op
+            def hello_world(context: OpExecutionContext):
+                context.log.info("Hello, world!")
     """
 
     __slots__ = ["_step_execution_context"]
@@ -125,18 +123,18 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def pipeline_run(self) -> DagsterRun:
-        """PipelineRun: The current pipeline run"""
+        """PipelineRun: The current pipeline run."""
         return self._step_execution_context.pipeline_run
 
     @property
     def run(self) -> DagsterRun:
-        """DagsterRun: The current run"""
+        """DagsterRun: The current run."""
         return cast(DagsterRun, self.pipeline_run)
 
     @public  # type: ignore
     @property
     def instance(self) -> DagsterInstance:
-        """DagsterInstance: The current Dagster instance"""
+        """DagsterInstance: The current Dagster instance."""
         return self._step_execution_context.instance
 
     @public  # type: ignore
@@ -145,13 +143,11 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the op.
 
         Example:
+            .. code-block:: python
 
-        .. code-block:: python
-
-            @op
-            def debug(context):
-                context.pdb.set_trace()
-
+                @op
+                def debug(context):
+                    context.pdb.set_trace()
         """
         if self._pdb is None:
             self._pdb = ForkedPdb()
@@ -275,7 +271,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @public  # type: ignore
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run"""
+        """Whether the current run is a partitioned run."""
         return self._step_execution_context.has_partition_key
 
     @public  # type: ignore
@@ -509,7 +505,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             def log_materialization(context):
                 context.log_event(AssetMaterialization("foo"))
         """
-
         if isinstance(event, (AssetMaterialization, Materialization)):
             self._events.append(
                 DagsterEvent.asset_materialization(
@@ -593,7 +588,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         Which retry attempt is currently executing i.e. 0 for initial attempt, 1 for first retry, etc.
         """
-
         return self._step_execution_context.previous_attempt_count
 
     def describe_op(self):

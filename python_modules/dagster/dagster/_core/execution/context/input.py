@@ -322,7 +322,7 @@ class InputContext:
     @public  # type: ignore
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run"""
+        """Whether the current run is a partitioned run."""
         return self._partition_key is not None
 
     @public  # type: ignore
@@ -482,7 +482,6 @@ class InputContext:
 
         If consume_events has not yet been called, this will yield all logged events since the call to `handle_input`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
-
         events = self._events
         self._events = []
         yield from events
@@ -593,7 +592,6 @@ def build_input_context(
             being loaded.
 
     Examples:
-
         .. code-block:: python
 
             build_input_context()

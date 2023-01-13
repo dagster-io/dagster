@@ -35,7 +35,7 @@ from ..policy import RetryPolicy
 
 
 class DecoratedOpFunction(NamedTuple):
-    """Wrapper around the decorated solid function to provide commonly used util methods"""
+    """Wrapper around the decorated solid function to provide commonly used util methods."""
 
     decorated_fn: Callable[..., Any]
 
@@ -269,7 +269,6 @@ def solid(
 
 
     Examples:
-
         .. code-block:: python
 
             @solid
@@ -364,7 +363,6 @@ def resolve_checked_solid_fn_inputs(
         exclude_nothing (bool): True if Nothing type inputs should be excluded from compute_fn
             arguments.
     """
-
     explicit_names = set()
     if exclude_nothing:
         explicit_names = set(
@@ -509,7 +507,6 @@ def lambda_solid(
             :class:`OutputDefinition() <OutputDefinition>`.
 
     Examples:
-
     .. code-block:: python
 
         @lambda_solid

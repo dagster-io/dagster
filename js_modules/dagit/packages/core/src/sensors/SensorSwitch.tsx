@@ -1,10 +1,9 @@
-import {useMutation} from '@apollo/client';
+import {gql, useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
-import {graphql} from '../graphql';
-import {InstigationStatus, SensorSwitchFragmentFragment} from '../graphql/graphql';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {InstigationStatus} from '../graphql/types';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -13,16 +12,23 @@ import {
   START_SENSOR_MUTATION,
   STOP_SENSOR_MUTATION,
 } from './SensorMutations';
+import {
+  StartSensorMutation,
+  StartSensorMutationVariables,
+  StopRunningSensorMutation,
+  StopRunningSensorMutationVariables,
+} from './types/SensorMutations.types';
+import {SensorSwitchFragment} from './types/SensorSwitch.types';
 
 interface Props {
   repoAddress: RepoAddress;
-  sensor: SensorSwitchFragmentFragment;
+  sensor: SensorSwitchFragment;
   size?: 'small' | 'large';
 }
 
 export const SensorSwitch: React.FC<Props> = (props) => {
   const {repoAddress, sensor, size = 'large'} = props;
-  const {canStartSensor, canStopSensor} = usePermissions();
+  const {canStartSensor, canStopSensor} = usePermissionsForLocation(repoAddress.location);
 
   const {jobOriginId, name, sensorState} = sensor;
   const {status, selectorId} = sensorState;
@@ -31,10 +37,16 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     sensorName: name,
   };
 
-  const [startSensor, {loading: toggleOnInFlight}] = useMutation(START_SENSOR_MUTATION, {
+  const [startSensor, {loading: toggleOnInFlight}] = useMutation<
+    StartSensorMutation,
+    StartSensorMutationVariables
+  >(START_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
   });
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation(STOP_SENSOR_MUTATION, {
+  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<
+    StopRunningSensorMutation,
+    StopRunningSensorMutationVariables
+  >(STOP_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
   });
 
@@ -86,7 +98,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   );
 };
 
-export const SENSOR_SWITCH_FRAGMENT = graphql(`
+export const SENSOR_SWITCH_FRAGMENT = gql`
   fragment SensorSwitchFragment on Sensor {
     id
     jobOriginId
@@ -97,4 +109,4 @@ export const SENSOR_SWITCH_FRAGMENT = graphql(`
       status
     }
   }
-`);
+`;

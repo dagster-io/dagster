@@ -71,6 +71,7 @@ def test_daemon(instance: DagsterInstance, empty_workspace_context):
 
 def test_events_exceed_limit(instance: DagsterInstance, empty_workspace_context):
     daemon = TestEventLogConsumerDaemon()
+    list(daemon.run_iteration(empty_workspace_context))
 
     for _ in range(TEST_EVENT_LOG_FETCH_LIMIT + 1):
         run = create_run_for_test(instance, "test_pipeline")
@@ -85,6 +86,7 @@ def test_events_exceed_limit(instance: DagsterInstance, empty_workspace_context)
 
 def test_success_and_failure_events(instance: DagsterInstance, empty_workspace_context):
     daemon = TestEventLogConsumerDaemon()
+    list(daemon.run_iteration(empty_workspace_context))
 
     for _ in range(TEST_EVENT_LOG_FETCH_LIMIT + 1):
         run = create_run_for_test(instance, "foo")
@@ -105,10 +107,15 @@ SUCCESS_KEY = "EVENT_LOG_CONSUMER_CURSOR-PIPELINE_SUCCESS"
 
 
 def test_cursors(instance: DagsterInstance, empty_workspace_context):
+    assert instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY}) == {}
+
     daemon = TestEventLogConsumerDaemon()
     list(daemon.run_iteration(empty_workspace_context))
 
-    assert instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY}) == {}
+    assert instance.run_storage.kvs_get({FAILURE_KEY, SUCCESS_KEY}) == {
+        FAILURE_KEY: str(0),
+        SUCCESS_KEY: str(0),
+    }
 
     run1 = create_run_for_test(instance, "foo")
     run2 = create_run_for_test(instance, "foo")
@@ -144,6 +151,26 @@ def test_cursors(instance: DagsterInstance, empty_workspace_context):
     assert len(daemon.run_records) == 2
 
 
+def test_cursor_init(instance: DagsterInstance, empty_workspace_context):
+    instance.run_storage.wipe()
+    daemon = TestEventLogConsumerDaemon()
+
+    run1 = create_run_for_test(instance, "foo")
+    run2 = create_run_for_test(instance, "foo")
+
+    instance.report_run_failed(run1)
+    instance.report_run_failed(run2)
+
+    list(daemon.run_iteration(empty_workspace_context))
+    assert len(daemon.run_records) == 0, "Cursors init to latest event"
+
+    run3 = create_run_for_test(instance, "foo")
+    instance.report_run_failed(run3)
+
+    list(daemon.run_iteration(empty_workspace_context))
+    assert len(daemon.run_records) == 1
+
+
 def test_get_new_cursor():
     # hit fetch limit, uses max new_event_ids
     assert get_new_cursor(0, 20, 8, [3, 4, 5, 6, 7, 8, 9, 10]) == 10
@@ -158,7 +185,7 @@ def test_get_new_cursor():
     assert get_new_cursor(0, 20, 4, [1, 2, 3]) == 20
 
     # empty event log
-    assert get_new_cursor(0, None, 4, []) is None
+    assert get_new_cursor(0, None, 4, []) == 0
 
     # empty overall_max_event_id
     assert get_new_cursor(0, None, 5, [2, 3, 4]) == 4

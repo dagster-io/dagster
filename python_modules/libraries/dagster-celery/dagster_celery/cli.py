@@ -291,7 +291,7 @@ worker_cli = create_worker_cli_group()
 
 @click.group(commands={"worker": worker_cli, "status": status_command})
 def main():
-    """dagster-celery"""
+    """dagster-celery."""
 
 
 if __name__ == "__main__":

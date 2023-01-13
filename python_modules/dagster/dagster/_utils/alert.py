@@ -142,7 +142,6 @@ def make_email_on_run_failure_sensor(
             status can be overridden from Dagit or via the GraphQL API.
 
     Examples:
-
         .. code-block:: python
 
             email_on_run_failure = make_email_on_run_failure_sensor(
@@ -174,7 +173,6 @@ def make_email_on_run_failure_sensor(
 
 
     """
-
     from dagster._core.definitions.run_status_sensor_definition import (
         RunFailureSensorContext,
         run_failure_sensor,

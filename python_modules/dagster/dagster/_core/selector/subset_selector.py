@@ -364,7 +364,8 @@ def convert_dot_seperated_string_to_dict(
 
 
 def parse_op_selection(job_def: "JobDefinition", op_selection: Sequence[str]) -> Mapping[str, Any]:
-    """
+    """Parse  an op selection into a nested dictionary.
+
     Examples:
         ["subgraph.return_one", "subgraph.adder", "subgraph.add_one", "add_one"]
         => {"subgraph": {{"return_one": LeafNodeSelection}, {"adder": LeafNodeSelection}, {"add_one": LeafNodeSelection}}, "add_one": LeafNodeSelection}
@@ -502,7 +503,7 @@ def parse_asset_selection(
     source_assets: Sequence["SourceAsset"],
     asset_selection: Sequence[str],
 ) -> AbstractSet[AssetKey]:
-    """Find assets that match the given selection query
+    """Find assets that match the given selection query.
 
     Args:
         assets_defs (Sequence[Assetsdefinition]): A set of AssetsDefinition objects to select over

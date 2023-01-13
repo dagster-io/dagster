@@ -217,7 +217,6 @@ def build_airbyte_assets(
         upstream_assets (Optional[Set[AssetKey]]): A list of assets to add as sources.
         freshness_policy (Optional[FreshnessPolicy]): A freshness policy to apply to the assets
     """
-
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     # Generate a list of outputs, the set of destination tables plus any affiliated
@@ -315,7 +314,6 @@ def _get_normalization_tables_for_schema(
     For more information on Airbyte's normalization process, see:
     https://docs.airbyte.com/understanding-airbyte/basic-normalization/#nesting
     """
-
     out: Dict[str, AirbyteTableMetadata] = {}
     # Object types are broken into a new table, as long as they have children
 
@@ -415,7 +413,6 @@ class AirbyteConnectionMetadata(
         tables associated with each enabled stream and values representing any affiliated
         tables created by Airbyte's normalization process, if enabled.
         """
-
         tables: Dict[str, AirbyteTableMetadata] = {}
 
         enabled_streams = [
@@ -793,7 +790,6 @@ def load_assets_from_airbyte_instance(
             connection_filter=lambda meta: "snowflake" in meta.name,
         )
     """
-
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)
@@ -894,7 +890,6 @@ def load_assets_from_airbyte_project(
             connection_filter=lambda meta: "snowflake" in meta.name,
         )
     """
-
     if isinstance(key_prefix, str):
         key_prefix = [key_prefix]
     key_prefix = check.list_param(key_prefix or [], "key_prefix", of_type=str)

@@ -78,8 +78,10 @@ export const ProductTour: React.FC<Props> = ({
         <>
           <div />
           <ProductTourContainer flex={{direction: 'column', gap: 4}} padding={16} style={{width}}>
-            {media}
-            <Subheading style={{fontSize: '16px'}}>{title}</Subheading>
+            <Box flex={{direction: 'column', gap: 8}}>
+              {media}
+              <Subheading style={{fontSize: '16px'}}>{title}</Subheading>
+            </Box>
             <div>{description}</div>
             {actionsJsx}
           </ProductTourContainer>

@@ -62,9 +62,8 @@ def test_failure_midstream():
      \\
        C (fails) = D (skipped)
      //
-    B
+    B.
     """
-
     solid_a = create_root_success_solid("solid_a")
     solid_b = create_root_success_solid("solid_b")
 
@@ -103,9 +102,8 @@ def test_failure_propagation():
      //             \\
     A                F (skipped)
      \\             //
-      D (fails) == E (skipped)
+      D (fails) == E (skipped).
     """
-
     solid_a = create_root_success_solid("solid_a")
 
     @solid

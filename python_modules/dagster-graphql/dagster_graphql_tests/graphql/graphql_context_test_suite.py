@@ -288,7 +288,7 @@ class EnvironmentManagers:
     def managed_grpc(target=None, location_name="test"):
         @contextmanager
         def _mgr_fn(instance, read_only):
-            """Goes out of process via grpc"""
+            """Goes out of process via grpc."""
             loadable_target_origin = (
                 target if target is not None else get_main_loadable_target_origin()
             )
@@ -350,7 +350,7 @@ class EnvironmentManagers:
     def multi_location():
         @contextmanager
         def _mgr_fn(instance, read_only):
-            """Goes out of process but same process as host process"""
+            """Goes out of process but same process as host process."""
             with WorkspaceProcessContext(
                 instance,
                 WorkspaceFileTarget(paths=[file_relative_path(__file__, "multi_location.yaml")]),
@@ -365,7 +365,7 @@ class EnvironmentManagers:
     def lazy_repository():
         @contextmanager
         def _mgr_fn(instance, read_only):
-            """Goes out of process but same process as host process"""
+            """Goes out of process but same process as host process."""
             with WorkspaceProcessContext(
                 instance,
                 PythonFileTarget(
@@ -433,7 +433,6 @@ class GraphQLContextVariant:
     with MarkedMembers that produce its members.
 
     Args:
-
     marked_instance_mgr (MarkedManager): The manager_fn
     within it must be a contextmanager that takes zero arguments and yields
     a DagsterInstance
@@ -639,14 +638,14 @@ class GraphQLContextVariant:
     @staticmethod
     def all_readonly_variants():
         """
-        Return all read only variants. If you try to run any mutation these will error
+        Return all read only variants. If you try to run any mutation these will error.
         """
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.read_only)
 
     @staticmethod
     def all_non_launchable_variants():
         """
-        Return all non_launchable variants. If you try to start or launch these will error
+        Return all non_launchable variants. If you try to start or launch these will error.
         """
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.non_launchable)
 
@@ -720,7 +719,6 @@ def graphql_context_variants_fixture(context_variants):
 def make_graphql_context_test_suite(context_variants):
     """
     Arguments:
-
         context_variants (List[GraphQLContextVariant]): List of runs to run per test in this class.
 
         This is the base class factory for test suites in the dagster-graphql test.
@@ -737,7 +735,6 @@ def make_graphql_context_test_suite(context_variants):
         for more details.
 
     Example:
-
     class TestAThing(
         make_graphql_context_test_suite(
             context_variants=[GraphQLContextVariant.in_memory_in_process_start()]

@@ -1,17 +1,14 @@
+import {gql} from '@apollo/client';
 import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui';
 import {Spacing} from '@dagster-io/ui/src/components/types';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {graphql} from '../graphql';
-import {
-  ConstraintsForTableColumnFragment,
-  TableSchemaForMetadataEntryFragment,
-  TableSchemaFragmentFragment,
-} from '../graphql/graphql';
+import {TableSchemaForMetadataEntryFragment} from './types/MetadataEntry.types';
+import {TableSchemaFragment, ConstraintsForTableColumnFragment} from './types/TableSchema.types';
 
 export type ITableSchemaMetadataEntry = TableSchemaForMetadataEntryFragment;
-export type ITableSchema = TableSchemaFragmentFragment;
+export type ITableSchema = TableSchemaFragment;
 type ColumnConstraints = ConstraintsForTableColumnFragment;
 
 const MAX_CONSTRAINT_TAG_CHARS = 30;
@@ -115,7 +112,7 @@ const ArbitraryConstraintTag: React.FC<{constraint: string}> = ({constraint}) =>
   }
 };
 
-export const TABLE_SCHEMA_FRAGMENT = graphql(`
+export const TABLE_SCHEMA_FRAGMENT = gql`
   fragment TableSchemaFragment on TableSchema {
     __typename
     columns {
@@ -136,4 +133,4 @@ export const TABLE_SCHEMA_FRAGMENT = graphql(`
     unique
     other
   }
-`);
+`;

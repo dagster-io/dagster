@@ -126,7 +126,6 @@ def asset_sensor(
 
 
     Example:
-
         .. code-block:: python
 
             from dagster import AssetKey, EventLogEntry, SensorEvaluationContext, asset_sensor
@@ -147,7 +146,6 @@ def asset_sensor(
                     },
                 )
     """
-
     check.opt_str_param(name, "name")
 
     def inner(fn: AssetMaterializationFunction) -> AssetSensorDefinition:
@@ -201,7 +199,7 @@ def multi_asset_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
     """
-    Creates an asset sensor that can monitor multiple assets
+    Creates an asset sensor that can monitor multiple assets.
 
     The decorated function is used as the asset sensor's evaluation
     function.  The decorated function may:
@@ -233,7 +231,6 @@ def multi_asset_sensor(
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
     """
-
     check.opt_str_param(name, "name")
 
     def inner(fn: MultiAssetMaterializationFunction) -> MultiAssetSensorDefinition:

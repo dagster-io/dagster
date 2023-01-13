@@ -30,7 +30,6 @@ def hackernews_topstories(
 
     API Docs: https://github.com/HackerNews/API#items
     """
-
     results = []
     for item_id in hackernews_topstory_ids["item_ids"]:
         item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()

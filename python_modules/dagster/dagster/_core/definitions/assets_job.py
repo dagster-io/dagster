@@ -113,7 +113,6 @@ def build_assets_job(
         description (Optional[str]): A description of the job.
 
     Examples:
-
         .. code-block:: python
 
             @asset
@@ -234,7 +233,6 @@ def build_source_asset_observation_job(
         description (Optional[str]): A description of the job.
 
     Examples:
-
         .. code-block:: python
 
             @asset
@@ -553,7 +551,6 @@ def check_resources_satisfy_requirements(
 
     Note that resources provided on assets cannot satisfy resource requirements provided on other assets.
     """
-
     _ensure_resources_dont_conflict(assets, source_assets, resource_defs)
 
     all_assets: Sequence[Union[AssetsDefinition, SourceAsset]] = [*assets, *source_assets]

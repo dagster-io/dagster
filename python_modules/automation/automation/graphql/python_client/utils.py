@@ -19,7 +19,7 @@ class LegacyQueryHistoryInfo(NamedTuple):
 
 
 def get_queries() -> Dict[str, str]:
-    """Helper function to index the graphql client's queries
+    """Helper function to index the graphql client's queries.
 
     Returns:
         Dict[str, str]: dictionary - key is variable (query) name

@@ -249,7 +249,6 @@ class ExecuteStepArgs(
         Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
         be used to pass the args to Click using an env var.
         """
-
         return (
             _get_entry_point(self.pipeline_origin)
             + ["api", "execute_step"]

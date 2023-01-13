@@ -34,6 +34,7 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, Run
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._scheduler.stale import resolve_stale_assets
 from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
@@ -112,6 +113,7 @@ def execute_scheduler_iteration_loop(
     logger: logging.Logger,
     max_catchup_runs: int,
     max_tick_retries: int,
+    shutdown_event: threading.Event,
 ):
     schedule_state_lock = threading.Lock()
     scheduler_run_futures: Dict[str, Future] = {}
@@ -159,7 +161,7 @@ def execute_scheduler_iteration_loop(
             if next_minute_time > end_time:
                 # Sleep until the beginning of the next minute, plus a small epsilon to
                 # be sure that we're past the start of the minute
-                time.sleep(next_minute_time - end_time + 0.001)
+                shutdown_event.wait(next_minute_time - end_time + 0.001)
                 yield
 
 
@@ -196,6 +198,7 @@ def launch_scheduled_runs(
 
     schedules: Dict[str, ExternalSchedule] = {}
     error_locations = set()
+
     for location_entry in workspace_snapshot.values():
         repo_location = location_entry.repository_location
         if repo_location:
@@ -603,6 +606,16 @@ def _schedule_runs_at_time(
         return
 
     for run_request in schedule_execution_data.run_requests:
+        if run_request.stale_assets_only:
+            stale_assets = resolve_stale_assets(workspace_process_context, run_request, external_schedule)  # type: ignore
+            # asset selection is empty set after filtering for stale
+            if len(stale_assets) == 0:
+                continue
+            else:
+                run_request = run_request.with_replaced_attrs(
+                    asset_selection=stale_assets, stale_assets_only=False
+                )
+
         pipeline_selector = PipelineSelector(
             location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,

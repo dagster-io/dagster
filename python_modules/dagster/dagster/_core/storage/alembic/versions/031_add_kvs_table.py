@@ -1,4 +1,4 @@
-"""add kvs table
+"""add kvs table.
 
 Revision ID: 5e139331e376
 Revises: 6860f830e40c

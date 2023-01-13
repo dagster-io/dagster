@@ -2,12 +2,13 @@ import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
-import {InstigationTickStatus, TickTagFragmentFragment} from '../graphql/graphql';
+import {InstigationTickStatus} from '../graphql/types';
 
 import {TickTag} from './InstigationTick';
+import {TickTagFragment} from './types/InstigationTick.types';
 
 describe('TickTag', () => {
-  const tick: TickTagFragmentFragment = {
+  const tick: TickTagFragment = {
     __typename: 'InstigationTick',
     id: 'foobar',
     status: InstigationTickStatus.SUCCESS,

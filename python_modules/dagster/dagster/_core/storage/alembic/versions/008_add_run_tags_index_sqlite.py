@@ -1,4 +1,4 @@
-"""add run tags index
+"""add run tags index.
 
 Revision ID: 224640159acf
 Revises: c9159e740d7e

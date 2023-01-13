@@ -69,31 +69,29 @@ def fivetran_sync_op(context):
     communicate with the Fivetran API.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster import job
+            from dagster_fivetran import fivetran_resource, fivetran_sync_op
 
-        from dagster import job
-        from dagster_fivetran import fivetran_resource, fivetran_sync_op
+            my_fivetran_resource = fivetran_resource.configured(
+                {
+                    "api_key": {"env": "FIVETRAN_API_KEY"},
+                    "api_secret": {"env": "FIVETRAN_API_SECRET"},
+                }
+            )
 
-        my_fivetran_resource = fivetran_resource.configured(
-            {
-                "api_key": {"env": "FIVETRAN_API_KEY"},
-                "api_secret": {"env": "FIVETRAN_API_SECRET"},
-            }
-        )
+            sync_foobar = fivetran_sync_op.configured({"connector_id": "foobar"}, name="sync_foobar")
 
-        sync_foobar = fivetran_sync_op.configured({"connector_id": "foobar"}, name="sync_foobar")
+            @job(resource_defs={"fivetran": my_fivetran_resource})
+            def my_simple_fivetran_job():
+                sync_foobar()
 
-        @job(resource_defs={"fivetran": my_fivetran_resource})
-        def my_simple_fivetran_job():
-            sync_foobar()
-
-        @job(resource_defs={"fivetran": my_fivetran_resource})
-        def my_composed_fivetran_job():
-            final_foobar_state = sync_foobar(start_after=some_op())
-            other_op(final_foobar_state)
+            @job(resource_defs={"fivetran": my_fivetran_resource})
+            def my_composed_fivetran_job():
+                final_foobar_state = sync_foobar(start_after=some_op())
+                other_op(final_foobar_state)
     """
-
     fivetran_output = context.resources.fivetran.sync_and_poll(
         connector_id=context.op_config["connector_id"],
         poll_interval=context.op_config["poll_interval"],
@@ -179,7 +177,6 @@ def fivetran_resync_op(context):
     communicate with the Fivetran API.
 
     Examples:
-
     .. code-block:: python
 
         from dagster import job
@@ -212,7 +209,6 @@ def fivetran_resync_op(context):
             final_foobar_state = sync_foobar(start_after=some_op())
             other_op(final_foobar_state)
     """
-
     fivetran_output = context.resources.fivetran.resync_and_poll(
         connector_id=context.op_config["connector_id"],
         resync_parameters=context.op_config["resync_parameters"],

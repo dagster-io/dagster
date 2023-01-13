@@ -1,4 +1,4 @@
-"""add snapshots to run storage
+"""add snapshots to run storage.
 
 Revision ID: c63a27054f08
 Revises: 3b1e175a2be3

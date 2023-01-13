@@ -190,7 +190,6 @@ def op(
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
 
     Examples:
-
         .. code-block:: python
 
             @op
@@ -214,7 +213,6 @@ def op(
             def multi_out() -> Tuple[str, int]:
                 return 'cool', 4
     """
-
     code_version = canonicalize_backcompat_args(
         code_version, "code_version", version, "version", "2.0"
     )

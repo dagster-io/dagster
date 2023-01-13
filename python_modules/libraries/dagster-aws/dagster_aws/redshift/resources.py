@@ -207,7 +207,7 @@ class FakeRedshiftResource(_BaseRedshiftResource):
     QUERY_RESULT = [(1,)]
 
     def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
-        """Fake for execute_query; returns [self.QUERY_RESULT]
+        """Fake for execute_query; returns [self.QUERY_RESULT].
 
         Args:
             query (str): The query to execute.
@@ -240,7 +240,7 @@ class FakeRedshiftResource(_BaseRedshiftResource):
     def execute_queries(
         self, queries, fetch_results=False, cursor_factory=None, error_callback=None
     ):
-        """Fake for execute_queries; returns [self.QUERY_RESULT] * 3
+        """Fake for execute_queries; returns [self.QUERY_RESULT] * 3.
 
         Args:
             queries (List[str]): The queries to execute.
@@ -277,7 +277,6 @@ def define_redshift_config():
 
     https://docs.aws.amazon.com/redshift/latest/mgmt/connecting-to-cluster.html
     """
-
     return {
         "host": Field(StringSource, description="Redshift host", is_required=True),
         "port": Field(
@@ -336,7 +335,6 @@ def redshift_resource(context):
     cluster.
 
     Example:
-
         .. code-block:: python
 
             from dagster import build_op_context, op

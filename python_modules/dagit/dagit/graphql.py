@@ -72,9 +72,8 @@ class GraphQLServer(ABC):
         """
         fork of starlette GraphQLApp to allow for
             * our context type (crucial)
-            * our GraphiQL playground (could change)
+            * our GraphiQL playground (could change).
         """
-
         if request.method == "GET":
             # render graphiql
             if "text/html" in request.headers.get("Accept", ""):

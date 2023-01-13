@@ -100,7 +100,7 @@ def test_caching_instance_queryer(
     A = B = D = F
      \\  //
        C = E
-    B,C,D share an op
+    B,C,D share an op.
     """
 
     @asset

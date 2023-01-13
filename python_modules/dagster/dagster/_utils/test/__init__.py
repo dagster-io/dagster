@@ -295,7 +295,6 @@ def execute_solid_within_pipeline(
         Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
         solid.
     """
-
     return execute_solids_within_pipeline(
         pipeline_def,
         solid_names={solid_name},

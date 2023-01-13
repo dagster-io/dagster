@@ -1,4 +1,4 @@
-"""0.10.0 create new event log tables
+"""0.10.0 create new event log tables.
 
 Revision ID: 942138e33bf9
 Revises: a0234163e0e3

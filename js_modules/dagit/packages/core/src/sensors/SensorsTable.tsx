@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetLink} from '../assets/AssetLink';
-import {InstigationType, SensorFragmentFragment} from '../graphql/graphql';
+import {InstigationType} from '../graphql/types';
 import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -13,10 +13,11 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {humanizeSensorInterval} from './SensorDetails';
 import {SensorSwitch} from './SensorSwitch';
+import {SensorFragment} from './types/SensorFragment.types';
 
 export const SensorsTable: React.FC<{
   repoAddress: RepoAddress;
-  sensors: SensorFragmentFragment[];
+  sensors: SensorFragment[];
 }> = ({repoAddress, sensors}) => {
   const lastTick = 'Status of the last tick: One of `Started`, `Skipped`, `Requested`, `Failed`';
   const lastRun = 'The status of the last run requested by this sensor';
@@ -57,7 +58,7 @@ export const SensorsTable: React.FC<{
 
 const SensorRow: React.FC<{
   repoAddress: RepoAddress;
-  sensor: SensorFragmentFragment;
+  sensor: SensorFragment;
 }> = ({repoAddress, sensor}) => {
   const repo = useRepository(repoAddress);
   const {name, sensorState} = sensor;

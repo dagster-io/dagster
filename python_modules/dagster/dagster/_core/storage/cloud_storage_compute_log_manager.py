@@ -32,21 +32,21 @@ SUBSCRIPTION_POLLING_INTERVAL = 5
 
 class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
     """Abstract class that uses the local compute log manager to capture logs and stores them in
-    remote cloud storage
+    remote cloud storage.
     """
 
     @property
     @abstractmethod
     def local_manager(self) -> LocalComputeLogManager:
         """
-        Returns a LocalComputeLogManager
+        Returns a LocalComputeLogManager.
         """
 
     @property
     @abstractmethod
     def upload_interval(self) -> Optional[int]:
         """
-        Returns the interval in which partial compute logs are uploaded to cloud storage
+        Returns the interval in which partial compute logs are uploaded to cloud storage.
         """
 
     @abstractmethod
@@ -54,19 +54,19 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
         self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
     ):
         """
-        Deletes logs for a given log_key or prefix
+        Deletes logs for a given log_key or prefix.
         """
 
     @abstractmethod
     def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         """
-        Calculates a download url given a log key and compute io type
+        Calculates a download url given a log key and compute io type.
         """
 
     @abstractmethod
     def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         """
-        Returns a display path given a log key and compute io type
+        Returns a display path given a log key and compute io type.
         """
 
     @abstractmethod
@@ -74,7 +74,7 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
         self, log_key: Sequence[str], io_type: ComputeIOType, partial: bool = False
     ) -> bool:
         """
-        Returns whether the cloud storage contains logs for a given log key
+        Returns whether the cloud storage contains logs for a given log key.
         """
 
     @abstractmethod
@@ -82,14 +82,14 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
     ):
         """
-        Uploads the logs for a given log key from local storage to cloud storage
+        Uploads the logs for a given log key from local storage to cloud storage.
         """
 
     def download_from_cloud_storage(
         self, log_key: Sequence[str], io_type: ComputeIOType, partial=False
     ):
         """
-        Downloads the logs for a given log key from cloud storage to local storage
+        Downloads the logs for a given log key from cloud storage to local storage.
         """
 
     @contextmanager

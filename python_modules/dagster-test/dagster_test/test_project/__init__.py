@@ -145,7 +145,6 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
         the test that creates the ReconstructablePipeline. As a result the normal origin won't
         work, we need to inject this one.
         """
-
         return PipelinePythonOrigin(
             self.pipeline_name,
             RepositoryPythonOrigin(
@@ -180,7 +179,6 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
         """
-
         return PipelinePythonOrigin(
             self._pipeline_index.name,
             RepositoryPythonOrigin(
@@ -202,7 +200,6 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
         work, we need to inject this one.
         """
-
         return ExternalPipelineOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
                 repository_location_origin=InProcessRepositoryLocationOrigin(
@@ -238,7 +235,6 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
         gRPC server repo location origin. As a result the normal origin won't work, we need to
         inject this one.
         """
-
         return ExternalInstigatorOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
                 repository_location_origin=GrpcServerRepositoryLocationOrigin(

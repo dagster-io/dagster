@@ -241,7 +241,7 @@ def is_context_provided(
 
 
 class SensorDefinition:
-    """Define a sensor that initiates a set of runs based on some external state
+    """Define a sensor that initiates a set of runs based on some external state.
 
     Args:
         evaluation_fn (Callable[[SensorEvaluationContext]]): The core evaluation function for the
@@ -414,11 +414,11 @@ class SensorDefinition:
 
         Args:
             context (SensorEvaluationContext): The context with which to evaluate this sensor.
+
         Returns:
             SensorExecutionData: Contains list of run requests, or skip message if present.
 
         """
-
         context = check.inst_param(context, "context", SensorEvaluationContext)
 
         result = list(self._evaluation_fn(context))
@@ -628,14 +628,12 @@ def build_sensor_context(
         repository_def (Optional[RepositoryDefinition]): The repository that the sensor belongs to.
 
     Examples:
-
         .. code-block:: python
 
             context = build_sensor_context()
             my_sensor(context)
 
     """
-
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")

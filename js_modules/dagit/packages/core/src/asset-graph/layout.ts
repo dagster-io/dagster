@@ -3,7 +3,7 @@ import groupBy from 'lodash/groupBy';
 
 import {IBounds, IPoint} from '../graph/common';
 
-import {GraphData, GraphNode, GraphId, displayNameForAssetKey} from './Utils';
+import {GraphData, GraphNode, GraphId} from './Utils';
 
 export interface AssetLayout {
   id: GraphId;
@@ -123,7 +123,7 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
   // Add all the link nodes to the graph
   Object.keys(linksToAssetsOutsideGraphedSet).forEach((id) => {
-    g.setNode(id, getAssetLinkDimensions(id));
+    g.setNode(id, getAssetLinkDimensions());
   });
 
   dagre.layout(g);
@@ -199,9 +199,10 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   };
 };
 
-export const getAssetLinkDimensions = (id: string) => {
-  const path = JSON.parse(id);
-  return {width: displayNameForAssetKey({path}).length * 8 + 40, height: 40};
+export const ASSET_LINK_NAME_MAX_LENGTH = 10;
+
+export const getAssetLinkDimensions = () => {
+  return {width: 106, height: 40};
 };
 
 export const padBounds = (a: IBounds, padding: {x: number; top: number; bottom: number}) => {
@@ -221,13 +222,7 @@ export const extendBounds = (a: IBounds, b: IBounds) => {
   return {x: xmin, y: ymin, width: xmax - xmin, height: ymax - ymin};
 };
 
-export const ASSET_NODE_ICON_WIDTH = 20;
-export const ASSET_NODE_NAME_MAX_LENGTH = 32;
-const DISPLAY_NAME_PX_PER_CHAR = 8.0;
-
-export const assetNameMaxlengthForWidth = (width: number) => {
-  return (width - ASSET_NODE_ICON_WIDTH) / DISPLAY_NAME_PX_PER_CHAR;
-};
+export const ASSET_NODE_NAME_MAX_LENGTH = 28;
 
 export const getAssetNodeDimensions = (def: {
   assetKey: {path: string[]};
@@ -238,12 +233,7 @@ export const getAssetNodeDimensions = (def: {
   description?: string | null;
   computeKind: string | null;
 }) => {
-  const displayName = def.assetKey.path[def.assetKey.path.length - 1];
-  const width =
-    Math.max(
-      230,
-      Math.min(ASSET_NODE_NAME_MAX_LENGTH, displayName.length) * DISPLAY_NAME_PX_PER_CHAR,
-    ) + ASSET_NODE_ICON_WIDTH;
+  const width = 255;
 
   if (def.isSource && !def.isObservable) {
     return {width, height: 40};

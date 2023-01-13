@@ -1,8 +1,8 @@
 import {assertUnreachable} from '../app/Util';
 import {
   AllConfigTypesForEditorFragment,
-  ConfigEditorRunConfigSchemaFragmentFragment,
-} from '../graphql/graphql';
+  ConfigEditorRunConfigSchemaFragment,
+} from '../configeditor/types/ConfigEditorUtils.types';
 
 export const scaffoldType = (
   configTypeKey: string,
@@ -67,9 +67,7 @@ export const createTypeLookup = (allConfigTypes: AllConfigTypesForEditorFragment
   return typeLookup;
 };
 
-export const scaffoldPipelineConfig = (
-  configSchema: ConfigEditorRunConfigSchemaFragmentFragment,
-) => {
+export const scaffoldPipelineConfig = (configSchema: ConfigEditorRunConfigSchemaFragment) => {
   const {allConfigTypes, rootConfigType} = configSchema;
   const typeLookup = createTypeLookup(allConfigTypes);
   const config = scaffoldType(rootConfigType.key, typeLookup);

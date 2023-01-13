@@ -1,4 +1,4 @@
-"""Base revision for SQL-backed event log storage
+"""Base revision for SQL-backed event log storage.
 
 Revision ID: 567bc23fd1ac
 Revises:

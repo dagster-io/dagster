@@ -1,16 +1,18 @@
+import {gql} from '@apollo/client';
 import {Colors, Group, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {graphql} from '../graphql';
-import {InstigationStateFragmentFragment, RunStatusFragmentFragment} from '../graphql/graphql';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
-import {titleForRun} from '../runs/RunUtils';
+import {RUN_TIME_FRAGMENT, titleForRun} from '../runs/RunUtils';
+
+import {TICK_TAG_FRAGMENT} from './InstigationTick';
+import {InstigationStateFragment, RunStatusFragment} from './types/InstigationUtils.types';
 
 export const InstigatedRunStatus: React.FC<{
-  instigationState: InstigationStateFragmentFragment;
+  instigationState: InstigationStateFragment;
 }> = ({instigationState}) => {
   if (!instigationState.runs.length) {
     return <span style={{color: Colors.Gray300}}>None</span>;
@@ -18,7 +20,7 @@ export const InstigatedRunStatus: React.FC<{
   return <LastRunSummary run={instigationState.runs[0]} name={instigationState.name} />;
 };
 
-export const RunStatusLink: React.FC<{run: RunStatusFragmentFragment}> = ({run}) => (
+export const RunStatusLink: React.FC<{run: RunStatusFragment}> = ({run}) => (
   <Group direction="row" spacing={4} alignItems="center">
     <RunStatusIndicator status={run.status} />
     <Link to={`/runs/${run.runId}`} target="_blank" rel="noreferrer">
@@ -27,15 +29,15 @@ export const RunStatusLink: React.FC<{run: RunStatusFragmentFragment}> = ({run})
   </Group>
 );
 
-export const RUN_STATUS_FRAGMENT = graphql(`
+export const RUN_STATUS_FRAGMENT = gql`
   fragment RunStatusFragment on Run {
     id
     runId
     status
   }
-`);
+`;
 
-export const INSTIGATION_STATE_FRAGMENT = graphql(`
+export const INSTIGATION_STATE_FRAGMENT = gql`
   fragment InstigationStateFragment on InstigationState {
     id
     selectorId
@@ -66,7 +68,11 @@ export const INSTIGATION_STATE_FRAGMENT = graphql(`
     }
     runningCount
   }
-`);
+
+  ${RUN_STATUS_FRAGMENT}
+  ${RUN_TIME_FRAGMENT}
+  ${TICK_TAG_FRAGMENT}
+`;
 
 export const StatusTable = styled.table`
   font-size: 13px;

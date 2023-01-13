@@ -1,23 +1,26 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
+import {RunStatus} from '../graphql/types';
+
 import {
-  AssetGraphLiveQueryQuery,
-  AssetLatestInfoFragmentFragment,
-  AssetLatestInfoRunFragment,
-  AssetNodeForGraphQueryFragment,
   AssetNodeKeyFragment,
-  AssetNodeLiveFragmentFragment,
-  AssetNodeLiveFreshnessInfoFragment,
-  AssetNodeLiveFreshnessPolicyFragment,
+  AssetNodeLiveFragment,
   AssetNodeLiveMaterializationFragment,
+  AssetNodeLiveFreshnessPolicyFragment,
+  AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveObservationFragment,
-  RunStatus,
-} from '../graphql/graphql';
+} from './types/AssetNode.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
+import {
+  AssetLatestInfoFragment,
+  AssetLatestInfoRunFragment,
+  AssetGraphLiveQuery,
+} from './types/useLiveDataForAssetKeys.types';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 type AssetKey = AssetNodeKeyFragment;
-type AssetLiveNode = AssetNodeLiveFragmentFragment;
-type AssetLatestInfo = AssetLatestInfoFragmentFragment;
+type AssetLiveNode = AssetNodeLiveFragment;
+type AssetLatestInfo = AssetLatestInfoFragment;
 
 export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
 
@@ -163,7 +166,7 @@ export interface AssetDefinitionsForLiveData {
   };
 }
 
-export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQueryQuery) => {
+export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
   const data: LiveData = {};
 
   for (const liveNode of assetNodes) {

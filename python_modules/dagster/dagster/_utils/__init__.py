@@ -114,7 +114,6 @@ def file_relative_path(dunderfile: str, relative_path: str) -> str:
         file_relative_path(__file__, 'path/relative/to/file')
 
     """
-
     check.str_param(dunderfile, "dunderfile")
     check.str_param(relative_path, "relative_path")
 
@@ -126,7 +125,7 @@ def script_relative_path(file_path: str) -> str:
     Useful for testing with local files. Use a path relative to where the
     test resides and this function will return the absolute path
     of that file. Otherwise it will be relative to script that
-    ran the test
+    ran the test.
 
     Note: this is function is very, very expensive (on the order of 1
     millisecond per invocation) so this should only be used in performance
@@ -577,6 +576,20 @@ def find_free_port() -> int:
         return s.getsockname()[1]
 
 
+def is_port_in_use(host, port) -> bool:
+    # Similar to the socket options that uvicorn uses to bind ports:
+    # https://github.com/encode/uvicorn/blob/62f19c1c39929c84968712c371c9b7b96a041dec/uvicorn/config.py#L565-L566
+    sock = socket.socket(family=socket.AF_INET)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        sock.bind((host, port))
+        return False
+    except socket.error as e:
+        return e.errno == errno.EADDRINUSE
+    finally:
+        sock.close()
+
+
 @contextlib.contextmanager
 def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Iterator[None]:
     to_restore = [path for path in sys.path]
@@ -670,6 +683,12 @@ def traced(func: T_Callable) -> T_Callable:
     return cast(T_Callable, inner)
 
 
+def get_terminate_signal():
+    if sys.platform == "win32":
+        return signal.SIGTERM
+    return signal.SIGKILL
+
+
 def get_run_crash_explanation(prefix: str, exit_code: int):
     # As per https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess.returncode
     # negative exit code means a posix signal
@@ -677,7 +696,7 @@ def get_run_crash_explanation(prefix: str, exit_code: int):
         posix_signal = -exit_code
         signal_str = Signals(posix_signal).name
         exit_clause = f"was terminated by signal {posix_signal} ({signal_str})."
-        if posix_signal == Signals.SIGKILL:
+        if posix_signal == get_terminate_signal():
             exit_clause = (
                 exit_clause
                 + " This usually indicates that the process was"

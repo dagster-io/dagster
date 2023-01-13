@@ -1,13 +1,19 @@
-import {NetworkStatus, useQuery, useSubscription} from '@apollo/client';
+import {gql, NetworkStatus, useQuery, useSubscription} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import React from 'react';
 
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {graphql} from '../graphql';
-import {AssetKeyInput} from '../graphql/graphql';
+import {AssetKeyInput} from '../graphql/types';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 
+import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
 import {buildLiveData, tokenForAssetKey} from './Utils';
+import {
+  AssetGraphLiveQuery,
+  AssetGraphLiveQueryVariables,
+  AssetLiveRunLogsSubscription,
+  AssetLiveRunLogsSubscriptionVariables,
+} from './types/useLiveDataForAssetKeys.types';
 
 const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
@@ -19,11 +25,14 @@ const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
  * node that has changed is not in scope.
  */
 export function useLiveDataForAssetKeys(assetKeys: AssetKeyInput[]) {
-  const liveResult = useQuery(ASSETS_GRAPH_LIVE_QUERY, {
-    skip: assetKeys.length === 0,
-    variables: {assetKeys},
-    notifyOnNetworkStatusChange: true,
-  });
+  const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
+    ASSETS_GRAPH_LIVE_QUERY,
+    {
+      skip: assetKeys.length === 0,
+      variables: {assetKeys},
+      notifyOnNetworkStatusChange: true,
+    },
+  );
 
   const liveDataByNode = React.useMemo(() => {
     return liveResult.data ? buildLiveData(liveResult.data) : {};
@@ -114,44 +123,47 @@ const RunLogObserver: React.FC<{
     return () => console.log(`Unsubscribed from ${runId} after ${counter.current} messages`);
   }, [runId]);
 
-  useSubscription(ASSET_LIVE_RUN_LOGS_SUBSCRIPTION, {
-    fetchPolicy: 'no-cache',
-    variables: {runId},
-    onSubscriptionData: (data) => {
-      const logs = data.subscriptionData.data?.pipelineRunLogs;
-      if (logs?.__typename !== 'PipelineRunLogsSubscriptionSuccess') {
-        return;
-      }
+  useSubscription<AssetLiveRunLogsSubscription, AssetLiveRunLogsSubscriptionVariables>(
+    ASSET_LIVE_RUN_LOGS_SUBSCRIPTION,
+    {
+      fetchPolicy: 'no-cache',
+      variables: {runId},
+      onSubscriptionData: (data) => {
+        const logs = data.subscriptionData.data?.pipelineRunLogs;
+        if (logs?.__typename !== 'PipelineRunLogsSubscriptionSuccess') {
+          return;
+        }
 
-      counter.current += logs.messages.length;
+        counter.current += logs.messages.length;
 
-      if (
-        logs.messages.some((m) => {
-          if (
-            m.__typename === 'AssetMaterializationPlannedEvent' ||
-            m.__typename === 'MaterializationEvent' ||
-            m.__typename === 'ObservationEvent'
-          ) {
-            return m.assetKey && assetKeyTokens.has(tokenForAssetKey(m.assetKey));
-          }
-          if (
-            m.__typename === 'ExecutionStepFailureEvent' ||
-            m.__typename === 'ExecutionStepStartEvent'
-          ) {
-            return m.stepKey && assetStepKeys.has(m.stepKey);
-          }
-          return false;
-        })
-      ) {
-        callback();
-      }
+        if (
+          logs.messages.some((m) => {
+            if (
+              m.__typename === 'AssetMaterializationPlannedEvent' ||
+              m.__typename === 'MaterializationEvent' ||
+              m.__typename === 'ObservationEvent'
+            ) {
+              return m.assetKey && assetKeyTokens.has(tokenForAssetKey(m.assetKey));
+            }
+            if (
+              m.__typename === 'ExecutionStepFailureEvent' ||
+              m.__typename === 'ExecutionStepStartEvent'
+            ) {
+              return m.stepKey && assetStepKeys.has(m.stepKey);
+            }
+            return false;
+          })
+        ) {
+          callback();
+        }
+      },
     },
-  });
+  );
 
   return <span />;
 });
 
-export const ASSET_LATEST_INFO_FRAGMENT = graphql(`
+export const ASSET_LATEST_INFO_FRAGMENT = gql`
   fragment AssetLatestInfoFragment on AssetLatestInfo {
     assetKey {
       path
@@ -166,11 +178,12 @@ export const ASSET_LATEST_INFO_FRAGMENT = graphql(`
 
   fragment AssetLatestInfoRun on Run {
     status
+    endTime
     id
   }
-`);
+`;
 
-const ASSETS_GRAPH_LIVE_QUERY = graphql(`
+const ASSETS_GRAPH_LIVE_QUERY = gql`
   query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
       id
@@ -180,9 +193,12 @@ const ASSETS_GRAPH_LIVE_QUERY = graphql(`
       ...AssetLatestInfoFragment
     }
   }
-`);
 
-const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = graphql(`
+  ${ASSET_NODE_LIVE_FRAGMENT}
+  ${ASSET_LATEST_INFO_FRAGMENT}
+`;
+
+const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription AssetLiveRunLogsSubscription($runId: ID!) {
     pipelineRunLogs(runId: $runId, cursor: "HEAD") {
       __typename
@@ -214,4 +230,4 @@ const ASSET_LIVE_RUN_LOGS_SUBSCRIPTION = graphql(`
       }
     }
   }
-`);
+`;

@@ -1,11 +1,11 @@
 import * as React from 'react';
 
-import {
-  LaunchpadSessionPartitionSetsFragmentFragment,
-  LaunchpadSessionPipelineFragmentFragment,
-  AssetKeyInput,
-} from '../graphql/graphql';
+import {AssetKeyInput} from '../graphql/types';
 import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
+import {
+  LaunchpadSessionPipelineFragment,
+  LaunchpadSessionPartitionSetsFragment,
+} from '../launchpad/types/LaunchpadRoot.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -228,8 +228,8 @@ export const useInvalidateConfigsForRepo = () => {
 };
 
 export const useInitialDataForMode = (
-  pipeline: LaunchpadSessionPipelineFragmentFragment,
-  partitionSets: LaunchpadSessionPartitionSetsFragmentFragment,
+  pipeline: LaunchpadSessionPipelineFragment,
+  partitionSets: LaunchpadSessionPartitionSetsFragment,
 ) => {
   const {isJob, isAssetJob, presets} = pipeline;
   const partitionSetsForMode = partitionSets.results;

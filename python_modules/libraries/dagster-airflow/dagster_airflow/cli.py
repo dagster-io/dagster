@@ -135,7 +135,7 @@ def main():
 )
 @click.option("--job-name", type=click.STRING, help="The name of the job")
 def scaffold(module_name, pipeline_name, output_path, config, preset, job_name):
-    """Creates a DAG file for a specified dagster pipeline"""
+    """Creates a DAG file for a specified dagster pipeline."""
     job_name = canonicalize_backcompat_args(
         new_val=job_name,
         new_arg="job_name",

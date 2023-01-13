@@ -206,13 +206,13 @@ class DagsterType(RequiresResources):
     @public  # type: ignore
     @property
     def display_name(self) -> str:
-        """Either the name or key (if name is `None`) of the type, overridden in many subclasses"""
+        """Either the name or key (if name is `None`) of the type, overridden in many subclasses."""
         return cast(str, self._name or self.key)
 
     @public  # type: ignore
     @property
     def unique_name(self) -> t.Optional[str]:
-        """The unique name of this type. Can be None if the type is not unique, such as container types
+        """The unique name of this type. Can be None if the type is not unique, such as container types.
         """
         # TODO: docstring and body inconsistent-- can this be None or not?
         check.invariant(

@@ -319,6 +319,7 @@ class JobDefinition(PipelineDefinition):
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
             input_values (Optional[Mapping[str, Any]]):
                 A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
+
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
 
@@ -624,7 +625,6 @@ class JobDefinition(PipelineDefinition):
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
         """Apply a set of hooks to all op instances within the job."""
-
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         job_def = JobDefinition(

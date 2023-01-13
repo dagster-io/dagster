@@ -28,7 +28,6 @@ def get_tagged_secrets(secrets_manager, secrets_tags: Sequence[str]) -> Mapping[
     Return a dictionary of AWS Secrets Manager names to arns
     for any secret tagged with `secrets_tag`.
     """
-
     secrets = {}
     paginator = secrets_manager.get_paginator("list_secrets")
     for secrets_tag in secrets_tags:
@@ -50,7 +49,6 @@ def get_secrets_from_arns(secrets_manager, secret_arns: Sequence[str]) -> Mappin
     """
     Return a dictionary of AWS Secrets Manager names to arns.
     """
-
     secrets = {}
     for arn in secret_arns:
         name = secrets_manager.describe_secret(SecretId=arn)["Name"]

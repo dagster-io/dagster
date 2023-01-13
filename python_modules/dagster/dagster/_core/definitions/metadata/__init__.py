@@ -399,7 +399,6 @@ class MetadataValue(ABC):
         Args:
             value (float): The float value for a metadata entry.
         """
-
         return FloatMetadataValue(value)
 
     @public
@@ -423,7 +422,6 @@ class MetadataValue(ABC):
         Args:
             value (int): The int value for a metadata entry.
         """
-
         return IntMetadataValue(value)
 
     @public
@@ -447,7 +445,6 @@ class MetadataValue(ABC):
         Args:
             value (bool): The bool value for a metadata entry.
         """
-
         return BoolMetadataValue(value)
 
     @public
@@ -481,7 +478,6 @@ class MetadataValue(ABC):
         Args:
             asset_key (AssetKey): The asset key referencing the asset.
         """
-
         from dagster._core.definitions.events import AssetKey
 
         check.inst_param(asset_key, "asset_key", AssetKey)
@@ -1236,7 +1232,6 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-
         return MetadataEntry(label, description, FloatMetadataValue(value))
 
     @staticmethod
@@ -1259,7 +1254,6 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-
         return MetadataEntry(label, description, IntMetadataValue(value))
 
     @staticmethod
@@ -1292,7 +1286,6 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-
         from dagster._core.definitions.events import AssetKey
 
         check.inst_param(asset_key, "asset_key", AssetKey)

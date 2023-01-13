@@ -1,9 +1,9 @@
 import * as React from 'react';
 
 import {IconName} from '../../../ui/src';
-import {usePermissions} from '../app/Permissions';
-import {LaunchPipelineExecutionMutationVariables} from '../graphql/graphql';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {LaunchBehavior} from '../runs/RunUtils';
+import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 
 import {LaunchButton} from './LaunchButton';
 import {useLaunchPadHooks} from './LaunchpadHooksContext';
@@ -21,7 +21,7 @@ interface LaunchRootExecutionButtonProps {
 export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps> = (props) => {
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
 
   const onLaunch = async () => {
     const variables = props.getVariables();

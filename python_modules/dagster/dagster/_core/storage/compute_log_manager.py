@@ -28,7 +28,7 @@ class ComputeLogFileData(
         ],
     )
 ):
-    """Representation of a chunk of compute execution log data"""
+    """Representation of a chunk of compute execution log data."""
 
     def __new__(
         cls, path: str, data: Optional[str], cursor: int, size: int, download_url: Optional[str]
@@ -169,7 +169,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def on_subscribe(self, subscription):
-        """Hook for managing streaming subscriptions for log data from `dagit`
+        """Hook for managing streaming subscriptions for log data from `dagit`.
 
         Args:
             subscription (ComputeLogSubscription): subscription object which manages when to send
@@ -212,7 +212,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
 
 class ComputeLogSubscription:
     """Observable object that generates ComputeLogFileData objects as compute step execution logs
-    are written
+    are written.
     """
 
     def __init__(

@@ -1,3 +1,4 @@
+import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {
@@ -18,17 +19,19 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
-import {graphql} from '../graphql';
 import {
   CompositeConfigTypeForSchemaFragment,
-  ConfigEditorRunConfigSchemaFragmentFragment,
-  RunPreviewValidationErrorsFragment,
-  RunPreviewValidationFragmentFragment,
-} from '../graphql/graphql';
+  ConfigEditorRunConfigSchemaFragment,
+} from '../configeditor/types/ConfigEditorUtils.types';
 
 import {LaunchpadType} from './LaunchpadRoot';
+import {
+  RunPreviewValidationErrorsFragment,
+  RunPreviewValidationFragment,
+} from './types/RunPreview.types';
 
 type ValidationError = RunPreviewValidationErrorsFragment;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;
@@ -199,11 +202,11 @@ const ScaffoldConfigButton = ({
 };
 
 interface RunPreviewProps {
-  validation: RunPreviewValidationFragmentFragment | null;
+  validation: RunPreviewValidationFragment | null;
   document: any | null;
   launchpadType: LaunchpadType;
 
-  runConfigSchema?: ConfigEditorRunConfigSchemaFragmentFragment;
+  runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
   onHighlightPath: (path: string[]) => void;
   onRemoveExtraPaths: (paths: string[]) => void;
   onScaffoldMissingConfig: () => void;
@@ -456,7 +459,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
   );
 };
 
-export const RUN_PREVIEW_VALIDATION_FRAGMENT = graphql(`
+export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
   fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
     __typename
     ... on RunConfigValidationInvalid {
@@ -510,7 +513,9 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = graphql(`
       fieldNames
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;
 
 const SectionTitle = styled.div`
   color: ${Colors.Gray400};

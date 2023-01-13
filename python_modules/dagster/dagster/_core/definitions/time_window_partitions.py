@@ -492,7 +492,7 @@ class TimeWindowPartitionsDefinition(
             return prev_next.strftime(self.fmt)
 
     def less_than(self, partition_key1: str, partition_key2: str) -> bool:
-        """Returns true if the partition_key1 is earlier than partition_key2"""
+        """Returns true if the partition_key1 is earlier than partition_key2."""
         return self.start_time_for_partition_key(
             partition_key1
         ) < self.start_time_for_partition_key(partition_key2)

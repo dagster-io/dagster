@@ -104,7 +104,6 @@ def make_dagster_definitions_from_airflow_dag_bag(
     """Construct a Dagster definition corresponding to Airflow DAGs in DagBag.
 
     Usage:
-
         Create `make_dagster_definition.py`:
             from dagster_airflow import make_dagster_definition_from_airflow_dag_bag
             from airflow_home import my_dag_bag
@@ -127,10 +126,10 @@ def make_dagster_definitions_from_airflow_dag_bag(
             database for each run. (default: False)
         connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
             Airflow DB, if use_emphemeral_airflow_db is False this will be ignored.
+
     Returns:
         Definitions
     """
-
     schedules, jobs = _make_schedules_and_jobs_from_airflow_dag_bag(
         dag_bag,
         use_airflow_template_context,

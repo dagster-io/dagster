@@ -30,7 +30,7 @@ def test_wrong_input_value():
 
     @op
     def pass_str():
-        """not a dataframe"""
+        """not a dataframe."""
 
     @graph
     def input_fails():

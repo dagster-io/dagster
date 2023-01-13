@@ -1,4 +1,4 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import {
@@ -20,22 +20,25 @@ import styled from 'styled-components/macro';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {graphql} from '../graphql';
-import {
-  ConfigEditorGeneratorPipelineFragmentFragment,
-  ConfigEditorPipelinePresetFragment,
-  ConfigPartitionResultFragment,
-  PartitionSetForConfigEditorFragment,
-  RepositorySelector,
-} from '../graphql/graphql';
+import {RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-type Pipeline = ConfigEditorGeneratorPipelineFragmentFragment;
+import {
+  ConfigEditorGeneratorPipelineFragment,
+  ConfigEditorPipelinePresetFragment,
+  PartitionSetForConfigEditorFragment,
+  ConfigPartitionResultFragment,
+  ConfigPartitionsQuery,
+  ConfigPartitionsQueryVariables,
+} from './types/ConfigEditorConfigPicker.types';
+
+type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorPipelinePresetFragment;
 type PartitionSet = PartitionSetForConfigEditorFragment;
 type Partition = ConfigPartitionResultFragment;
@@ -149,10 +152,13 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     const {partitionSetName, value, onSelect, repoAddress} = props;
     const {basePath} = React.useContext(AppContext);
     const repositorySelector = repoAddressToSelector(repoAddress);
-    const {data, loading} = useQuery(CONFIG_PARTITIONS_QUERY, {
-      variables: {repositorySelector, partitionSetName},
-      fetchPolicy: 'network-only',
-    });
+    const {data, loading} = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
+      CONFIG_PARTITIONS_QUERY,
+      {
+        variables: {repositorySelector, partitionSetName},
+        fetchPolicy: 'network-only',
+      },
+    );
 
     const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsHumanString(
       repoAddress,
@@ -377,7 +383,7 @@ const PickerContainer = styled.div`
   gap: 6px;
 `;
 
-const CONFIG_PARTITIONS_QUERY = graphql(`
+const CONFIG_PARTITIONS_QUERY = gql`
   query ConfigPartitionsQuery(
     $repositorySelector: RepositorySelector!
     $partitionSetName: String!
@@ -404,9 +410,11 @@ const CONFIG_PARTITIONS_QUERY = graphql(`
   fragment ConfigPartitionResult on Partition {
     name
   }
-`);
 
-export const CONFIG_PARTITION_SELECTION_QUERY = graphql(`
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const CONFIG_PARTITION_SELECTION_QUERY = gql`
   query ConfigPartitionSelectionQuery(
     $repositorySelector: RepositorySelector!
     $partitionSetName: String!
@@ -442,9 +450,11 @@ export const CONFIG_PARTITION_SELECTION_QUERY = graphql(`
       }
     }
   }
-`);
 
-export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = graphql(`
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
   fragment ConfigEditorGeneratorPipelineFragment on Pipeline {
     id
     isJob
@@ -468,9 +478,9 @@ export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = graphql(`
       value
     }
   }
-`);
+`;
 
-export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = graphql(`
+export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = gql`
   fragment ConfigEditorGeneratorPartitionSetsFragment on PartitionSets {
     results {
       id
@@ -484,4 +494,4 @@ export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = graphql(`
     mode
     solidSelection
   }
-`);
+`;

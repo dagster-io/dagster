@@ -46,7 +46,6 @@ def watch_grpc_server_thread(
     events are called at most once, while `on_disconnected` and `on_reconnected` may be called
     multiple times in order to be properly handle intermittent network failures.
     """
-
     check.str_param(location_name, "location_name")
     check.inst_param(client, "client", DagsterGrpcClient)
     check.callable_param(on_disconnect, "on_disconnect")

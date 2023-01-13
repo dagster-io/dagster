@@ -1,18 +1,22 @@
+import {gql} from '@apollo/client';
 import {Colors, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {CellMeasurer, CellMeasurerCache, List, ListRowProps, ScrollParams} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
-import {graphql} from '../graphql';
-import {RunDagsterRunEventFragmentFragment} from '../graphql/graphql';
-
 import {LogFilter, LogsProviderLogs} from './LogsProvider';
-import {Structured, Unstructured} from './LogsRow';
+import {
+  LOGS_ROW_STRUCTURED_FRAGMENT,
+  LOGS_ROW_UNSTRUCTURED_FRAGMENT,
+  Structured,
+  Unstructured,
+} from './LogsRow';
 import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {logNodeLevel} from './logNodeLevel';
+import {RunDagsterRunEventFragment} from './types/RunFragments.types';
 
 const LOGS_PADDING_BOTTOM = 50;
 
@@ -33,8 +37,8 @@ interface ILogsScrollingTableSizedProps {
   width: number;
   height: number;
 
-  filteredNodes: (RunDagsterRunEventFragmentFragment & {clientsideKey: string})[];
-  textMatchNodes: (RunDagsterRunEventFragmentFragment & {clientsideKey: string})[];
+  filteredNodes: (RunDagsterRunEventFragment & {clientsideKey: string})[];
+  textMatchNodes: (RunDagsterRunEventFragment & {clientsideKey: string})[];
 
   filterKey: string;
   loading: boolean;
@@ -114,13 +118,16 @@ export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) =>
   );
 };
 
-export const LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT = graphql(`
+export const LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT = gql`
   fragment LogsScrollingTableMessageFragment on DagsterRunEvent {
     __typename
     ...LogsRowStructuredFragment
     ...LogsRowUnstructuredFragment
   }
-`);
+
+  ${LOGS_ROW_STRUCTURED_FRAGMENT}
+  ${LOGS_ROW_UNSTRUCTURED_FRAGMENT}
+`;
 
 class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedProps> {
   list = React.createRef<List>();

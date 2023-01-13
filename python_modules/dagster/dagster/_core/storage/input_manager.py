@@ -45,7 +45,7 @@ class IInputManagerDefinition:
     @abstractmethod
     def input_config_schema(self) -> IDefinitionConfigSchema:
         """The schema for per-input configuration for inputs that are managed by this
-        input manager
+        input manager.
         """
 
 
@@ -152,7 +152,6 @@ def input_manager(
         def csv_loader(context):
             return read_csv(context.config["path"])
     """
-
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         return _InputManagerDecoratorCallable()(config_schema)
 

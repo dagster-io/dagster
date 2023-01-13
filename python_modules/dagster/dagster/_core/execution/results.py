@@ -386,7 +386,7 @@ class OpExecutionResult:
 
     @property
     def compute_output_events_dict(self) -> Mapping[str, Sequence[DagsterEvent]]:
-        """Dict[str, List[DagsterEvent]]: All events of type ``STEP_OUTPUT``, keyed by output name
+        """Dict[str, List[DagsterEvent]]: All events of type ``STEP_OUTPUT``, keyed by output name.
         """
         results: DefaultDict[str, List[DagsterEvent]] = defaultdict(list)
         for se in self.output_events_during_compute:
@@ -448,7 +448,7 @@ class OpExecutionResult:
 
     @property
     def expectation_results_during_compute(self) -> Sequence[ExpectationResult]:
-        """List[ExpectationResult]: All expectation results yielded by the solid"""
+        """List[ExpectationResult]: All expectation results yielded by the solid."""
         return [
             cast(StepExpectationResultData, expt_event.event_specific_data).expectation_result
             for expt_event in self.expectation_events_during_compute
@@ -631,7 +631,7 @@ class OpExecutionResult:
 
     @property
     def retry_attempts(self) -> int:
-        """Number of times this step retried"""
+        """Number of times this step retried."""
         count = 0
         for step_event in self.compute_step_events:
             if step_event.event_type == DagsterEventType.STEP_RESTARTED:

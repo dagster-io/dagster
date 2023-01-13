@@ -1,3 +1,4 @@
+import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs} from '@blueprintjs/core';
 import {Checkbox, Colors, SplitPanelContainer, TextInput} from '@dagster-io/ui';
@@ -9,13 +10,8 @@ import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {OpGraph} from '../graph/OpGraph';
+import {OpGraph, OP_GRAPH_OP_FRAGMENT} from '../graph/OpGraph';
 import {useOpLayout} from '../graph/asyncGraphLayout';
-import {graphql} from '../graphql';
-import {
-  GraphExplorerFragmentFragment,
-  GraphExplorerSolidHandleFragmentFragment,
-} from '../graphql/graphql';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {RepoAddress} from '../workspace/types';
@@ -27,7 +23,9 @@ import {
   LoadingNotice,
 } from './GraphNotices';
 import {ExplorerPath} from './PipelinePathUtils';
+import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
+import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
 
 export interface GraphExplorerOptions {
   explodeComposites: boolean;
@@ -39,10 +37,10 @@ interface GraphExplorerProps {
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   options: GraphExplorerOptions;
   setOptions: (options: GraphExplorerOptions) => void;
-  container: GraphExplorerFragmentFragment;
+  container: GraphExplorerFragment;
   repoAddress?: RepoAddress;
-  handles: GraphExplorerSolidHandleFragmentFragment[];
-  parentHandle?: GraphExplorerSolidHandleFragmentFragment;
+  handles: GraphExplorerSolidHandleFragment[];
+  parentHandle?: GraphExplorerSolidHandleFragment;
   getInvocations?: (definitionName: string) => {handleID: string}[];
   isGraph: boolean;
 }
@@ -309,16 +307,18 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
   );
 };
 
-export const GRAPH_EXPLORER_FRAGMENT = graphql(`
+export const GRAPH_EXPLORER_FRAGMENT = gql`
   fragment GraphExplorerFragment on SolidContainer {
     id
     name
     description
     ...SidebarRootContainerFragment
   }
-`);
 
-export const GRAPH_EXPLORER_ASSET_NODE_FRAGMENT = graphql(`
+  ${SIDEBAR_ROOT_CONTAINER_FRAGMENT}
+`;
+
+export const GRAPH_EXPLORER_ASSET_NODE_FRAGMENT = gql`
   fragment GraphExplorerAssetNodeFragment on AssetNode {
     id
     opNames
@@ -326,9 +326,9 @@ export const GRAPH_EXPLORER_ASSET_NODE_FRAGMENT = graphql(`
       path
     }
   }
-`);
+`;
 
-export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = graphql(`
+export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
   fragment GraphExplorerSolidHandleFragment on SolidHandle {
     handleID
     solid {
@@ -340,7 +340,9 @@ export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = graphql(`
     name
     ...OpGraphOpFragment
   }
-`);
+
+  ${OP_GRAPH_OP_FRAGMENT}
+`;
 
 export const RightInfoPanel = styled.div`
   // Fixes major perofmance hit. To reproduce, add enough content to

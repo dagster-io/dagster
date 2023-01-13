@@ -11,10 +11,10 @@ from dagster._core.test_utils import (
     cleanup_test_instance,
     create_test_daemon_workspace_context,
     get_crash_signals,
-    get_terminate_signal,
 )
 from dagster._seven import IS_WINDOWS
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._utils import get_terminate_signal
 
 from .conftest import workspace_load_target
 from .test_scheduler_run import (

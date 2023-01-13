@@ -41,7 +41,6 @@ def rewrite_relative_links(root: str, file_data: Dict[str, object]) -> None:
 
     This method mutate the `file_data` in place.
     """
-
     file_body = file_data.get("body")
     assert isinstance(file_body, str)
     if not file_body:

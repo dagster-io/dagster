@@ -206,7 +206,6 @@ def _get_dependency_node_output_handles(
     belong in the same graph-backed asset node.
 
     Arguments:
-
     outputs_by_graph_handle: A mapping of every graph node handle to a dictionary with each out
         name as a key and a NodeOutputHandle containing the op output name and op node handle
     non_asset_inputs_by_node_handle: A mapping of all node handles to all upstream node handles
@@ -295,7 +294,6 @@ def asset_key_to_dep_node_handles(
     2. A mapping of each asset key to a list of node output handles that are upstream dependencies of the asset.
 
     Arguments:
-
     graph_def: The graph definition of the job, where each top level node is an asset.
     assets_defs_by_node_handle: A mapping of each node handle to the asset definition for that node.
     """
@@ -395,7 +393,7 @@ def _asset_mappings_for_node(
 ]:
     """
     Recursively iterate through all the sub-nodes of a Node to find any ops with asset info
-    encoded on their inputs/outputs
+    encoded on their inputs/outputs.
     """
     check.inst_param(node_def, "node_def", NodeDefinition)
     check.opt_inst_param(node_handle, "node_handle", NodeHandle)
@@ -556,7 +554,7 @@ class AssetLayer:
 
     @staticmethod
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
-        """Scrape asset info off of InputDefinition/OutputDefinition instances"""
+        """Scrape asset info off of InputDefinition/OutputDefinition instances."""
         check.inst_param(graph_def, "graph_def", GraphDefinition)
         asset_by_input, asset_by_output, asset_deps, io_manager_by_asset = _asset_mappings_for_node(
             graph_def, None

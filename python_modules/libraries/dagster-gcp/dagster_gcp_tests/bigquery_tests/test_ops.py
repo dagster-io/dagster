@@ -27,7 +27,7 @@ from google.cloud.exceptions import NotFound
 
 def dataset_exists(name):
     """Check if dataset exists - ensures we have properly cleaned up after tests and haven't leaked
-    any datasets
+    any datasets.
     """
     client = bigquery.Client()
     dataset_ref = client.dataset(name)
@@ -40,7 +40,7 @@ def dataset_exists(name):
 
 
 def get_dataset():
-    """Creates unique dataset names of the form: test_ds_83791a53"""
+    """Creates unique dataset names of the form: test_ds_83791a53."""
     return "test_ds_" + str(uuid.uuid4()).replace("-", "_")
 
 

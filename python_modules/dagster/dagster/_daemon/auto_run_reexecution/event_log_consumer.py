@@ -54,10 +54,13 @@ class EventLogConsumerDaemon(IntervalDaemon):
         for event_type in DAGSTER_EVENT_TYPES:
             yield
 
-            persisted_cursor = persisted_cursors[event_type]
+            cursor = persisted_cursors[event_type]
+            if cursor is None:
+                # if we don't have a cursor for this event type, start at the top of the event log and ignore older events. Otherwise enabling the daemon would result in retrying all old runs.
+                cursor = overall_max_event_id or 0
 
             events_by_log_id_for_type = instance.event_log_storage.get_logs_for_all_runs_by_log_id(
-                after_cursor=persisted_cursor,
+                after_cursor=cursor,
                 dagster_event_type={event_type},
                 limit=self._event_log_fetch_limit,
             )
@@ -65,14 +68,12 @@ class EventLogConsumerDaemon(IntervalDaemon):
             events.extend(events_by_log_id_for_type.values())
 
             # calculate the new cursor for this event type
-            new_cursor = get_new_cursor(
-                persisted_cursor,
+            new_cursors[event_type] = get_new_cursor(
+                cursor,
                 overall_max_event_id,
                 self._event_log_fetch_limit,
                 list(events_by_log_id_for_type.keys()),
             )
-            if new_cursor is not None:
-                new_cursors[event_type] = new_cursor
 
         if events:
             run_ids = list({event.run_id for event in events})
@@ -101,7 +102,7 @@ def _create_cursor_key(event_type: DagsterEventType):
 
 def _fetch_persisted_cursors(
     instance: DagsterInstance, event_types: Sequence[DagsterEventType], logger
-) -> Mapping[DagsterEventType, int]:
+) -> Dict[DagsterEventType, Optional[int]]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.sequence_param(event_types, "event_types", of_type=DagsterEventType)
 
@@ -110,25 +111,22 @@ def _fetch_persisted_cursors(
         {_create_cursor_key(event_type) for event_type in event_types}
     )
 
-    fetched_cursors = {}
+    fetched_cursors: Dict[DagsterEventType, Optional[int]] = {}
     for event_type in event_types:
         raw_cursor_value = persisted_cursors.get(_create_cursor_key(event_type))
+
         if raw_cursor_value is None:
-            logger.warn(
-                "No cursor for event type {}, starting from the beginning".format(event_type)
-            )
-            raw_cursor_value = "0"
-
-        try:
-            cursor_value = int(raw_cursor_value)
-        except ValueError:
-            # if this cursor got corrupted somehow, reset it to 0
-            logger.exception(
-                "Invalid cursor for event_type {}: {}".format(event_type, raw_cursor_value)
-            )
-            raise
-
-        fetched_cursors[event_type] = cursor_value
+            logger.warn("No cursor for event type {}, ignoring older events".format(event_type))
+            fetched_cursors[event_type] = None
+        else:
+            try:
+                cursor_value = int(raw_cursor_value)
+            except ValueError:
+                logger.exception(
+                    "Invalid cursor for event_type {}: {}".format(event_type, raw_cursor_value)
+                )
+                raise
+            fetched_cursors[event_type] = cursor_value
 
     return fetched_cursors
 
@@ -151,7 +149,7 @@ def get_new_cursor(
     overall_max_event_id: Optional[int],
     fetch_limit: int,
     new_event_ids: Sequence[int],
-) -> Optional[int]:
+) -> int:
     """
     Return the new cursor value for an event type, or None if one shouldn't be persisted. The cursor
     is guaranteed to be:
@@ -163,7 +161,6 @@ def get_new_cursor(
     This method optimizes for moving the cursor as far forward as possible, using
     overall_max_event_id.
     """
-
     check.int_param(persisted_cursor, "persisted_cursor")
     check.opt_int_param(overall_max_event_id, "overall_max_event_id")
     check.int_param(fetch_limit, "fetch_limit")
@@ -176,8 +173,9 @@ def get_new_cursor(
             # to the max event id of the new events.
             return max(new_event_ids)
 
-        # Event log is empty, don't bother setting a cursor.
-        return None
+        # Event log is empty, set the cursor to 0 so we pick up the next events. Otherwise we'd skip to
+        # the latest event if no cursor was set.
+        return 0
 
     if not new_event_ids:
         # No new events, so we can skip to overall_max_event_id because we queried that first, so we

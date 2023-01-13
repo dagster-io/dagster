@@ -16,22 +16,23 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
+import {LaunchBackfillParams} from '../graphql/types';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
-  ConfigPartitionSelectionQueryQuery,
-  ConfigPartitionSelectionQueryQueryVariables,
-  LaunchBackfillParams,
   LaunchPartitionBackfillMutation,
   LaunchPartitionBackfillMutationVariables,
-  PartitionDefinitionForLaunchAssetFragment,
-} from '../graphql/graphql';
-import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
+} from '../instance/types/BackfillUtils.types';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {
+  ConfigPartitionSelectionQuery,
+  ConfigPartitionSelectionQueryVariables,
+} from '../launchpad/types/ConfigEditorConfigPicker.types';
 import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
@@ -42,6 +43,7 @@ import {RepoAddress} from '../workspace/types';
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
 import {explodePartitionKeysInRanges, mergedAssetHealth} from './MultipartitioningSupport';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
+import {PartitionDefinitionForLaunchAssetFragment} from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
 import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
@@ -95,7 +97,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
-  const {canLaunchPartitionBackfill} = usePermissions();
+  const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
   const [launching, setLaunching] = React.useState(false);
   const [previewCount, setPreviewCount] = React.useState(0);
   const morePreviewsCount = partitionedAssets.length - previewCount;
@@ -158,8 +160,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
     if (allSelected.length === 1) {
       const {data: tagAndConfigData} = await client.query<
-        ConfigPartitionSelectionQueryQuery,
-        ConfigPartitionSelectionQueryQueryVariables
+        ConfigPartitionSelectionQuery,
+        ConfigPartitionSelectionQueryVariables
       >({
         query: CONFIG_PARTITION_SELECTION_QUERY,
         fetchPolicy: 'network-only',

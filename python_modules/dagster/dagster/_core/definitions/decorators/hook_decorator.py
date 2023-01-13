@@ -113,7 +113,6 @@ def event_list_hook(
             hook.
 
     Examples:
-
         .. code-block:: python
 
             @event_list_hook(required_resource_keys={'slack'})
@@ -171,7 +170,6 @@ def success_hook(
             hook.
 
     Examples:
-
         .. code-block:: python
 
             @success_hook(required_resource_keys={'slack'})
@@ -244,7 +242,6 @@ def failure_hook(
             hook.
 
     Examples:
-
         .. code-block:: python
 
             @failure_hook(required_resource_keys={'slack'})
