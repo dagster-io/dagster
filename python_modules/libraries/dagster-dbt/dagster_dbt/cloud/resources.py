@@ -205,13 +205,16 @@ class DbtCloudResource:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
-        if self._disable_schedule_on_trigger:
-            self._log.info("Disabling dbt Cloud job schedule.")
-            self.update_job(job_id, triggers={"schedule": False})
         self._log.info(f"Initializing run for job with job_id={job_id}")
         if "cause" not in kwargs:
             kwargs["cause"] = "Triggered via Dagster"
         resp = self.make_request("POST", f"{self._account_id}/jobs/{job_id}/run/", data=kwargs)
+
+        has_schedule: bool = resp.get("job", {}).get("triggers", {}).get("schedule", False)
+        if has_schedule and self._disable_schedule_on_trigger:
+            self._log.info("Disabling dbt Cloud job schedule.")
+            self.update_job(job_id, triggers={"schedule": False})
+
         self._log.info(
             f"Run initialized with run_id={resp['id']}. View this run in "
             f"the dbt Cloud UI: {resp['href']}"
