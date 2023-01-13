@@ -203,7 +203,7 @@ def execute_k8s_job(
         else None,
     )
 
-    container_config = container_config or {}
+    container_config = container_config.copy() if container_config else {}
     if command:
         container_config["command"] = command
 
