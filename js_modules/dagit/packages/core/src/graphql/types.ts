@@ -445,6 +445,7 @@ export type DagitMutation = {
   stopSensor: StopSensorMutationResultOrError;
   terminatePipelineExecution: TerminateRunResult;
   terminateRun: TerminateRunResult;
+  testInstigator: TestInstigatorResult;
   wipeAssets: AssetWipeMutationResult;
 };
 
@@ -532,6 +533,11 @@ export type DagitMutationTerminatePipelineExecutionArgs = {
 export type DagitMutationTerminateRunArgs = {
   runId: Scalars['String'];
   terminatePolicy?: InputMaybe<TerminateRunPolicy>;
+};
+
+export type DagitMutationTestInstigatorArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  instigatorSelector: InstigatorSelector;
 };
 
 export type DagitMutationWipeAssetsArgs = {
@@ -1552,6 +1558,20 @@ export enum InstigationType {
 }
 
 export type InstigationTypeSpecificData = ScheduleData | SensorData;
+
+export type InstigatorExecutionData = {
+  __typename: 'InstigatorExecutionData';
+  cursor: Maybe<Scalars['String']>;
+  runRequests: Maybe<Array<Maybe<RunRequest>>>;
+  skipMessage: Maybe<Scalars['String']>;
+};
+
+export type InstigatorSelector = {
+  instigatorType: Scalars['String'];
+  name: Scalars['String'];
+  repositoryLocationName: Scalars['String'];
+  repositoryName: Scalars['String'];
+};
 
 export type IntMetadataEntry = MetadataEntry & {
   __typename: 'IntMetadataEntry';
@@ -3577,6 +3597,8 @@ export type TerminateRunSuccess = TerminatePipelineExecutionSuccess & {
   __typename: 'TerminateRunSuccess';
   run: Run;
 };
+
+export type TestInstigatorResult = InstigatorExecutionData | PythonError;
 
 export type TextMetadataEntry = MetadataEntry & {
   __typename: 'TextMetadataEntry';
