@@ -90,14 +90,13 @@ def show(ctx, prefix: Optional[str]):
     _show(ctx.obj["spec_db"], prefix)
 
 
-def main():
-    dagit_screenshot(obj={})
-
-
 @dagit_screenshot.command(
     help="Reads a given markdown file and generates asset graph SVGs for code snippets."
 )
 @click.option("--target", "-t", help="Path to markdown file to process.")
-@click.pass_context
 def svg(target: str) -> None:
     _svg(target)
+
+
+def main():
+    dagit_screenshot(obj={})
