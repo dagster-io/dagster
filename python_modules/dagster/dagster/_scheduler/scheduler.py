@@ -34,7 +34,7 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, Run
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._scheduler.stale import resolve_asset_selection
+from dagster._scheduler.stale import resolve_stale_assets
 from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
@@ -605,22 +605,22 @@ def _schedule_runs_at_time(
         return
 
     for run_request in schedule_execution_data.run_requests:
-        asset_selection = resolve_asset_selection(workspace_process_context, run_request, external_schedule)  # type: ignore
-        if (
-            asset_selection is not None and len(asset_selection) == 0
-        ):  # asset selection is empty set after filtering for stale
-            continue
-        elif asset_selection is not None:
-            run_request = run_request.with_replaced_attrs(
-                asset_selection=asset_selection, stale_assets_only=False
-            )
+        if run_request.stale_assets_only:
+            stale_assets = resolve_stale_assets(workspace_process_context, run_request, external_schedule)  # type: ignore
+            # asset selection is empty set after filtering for stale
+            if len(stale_assets) == 0:
+                continue
+            else:
+                run_request = run_request.with_replaced_attrs(
+                    asset_selection=stale_assets, stale_assets_only=False
+                )
 
         pipeline_selector = PipelineSelector(
             location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,
             pipeline_name=external_schedule.pipeline_name,
             solid_selection=external_schedule.solid_selection,
-            asset_selection=asset_selection,
+            asset_selection=run_request.asset_selection,
         )
         external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
 
