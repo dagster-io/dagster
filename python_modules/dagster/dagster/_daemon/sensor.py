@@ -213,6 +213,7 @@ VERBOSE_LOGS_INTERVAL = 60
 def execute_sensor_iteration_loop(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
+    shutdown_event: threading.Event,
     until=None,
 ) -> TDaemonGenerator:
     """
@@ -265,7 +266,9 @@ def execute_sensor_iteration_loop(
 
             loop_duration = end_time - start_time
             sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            time.sleep(sleep_time)
+            shutdown_event.wait(sleep_time)
+
+            yield None
 
 
 def execute_sensor_iteration(

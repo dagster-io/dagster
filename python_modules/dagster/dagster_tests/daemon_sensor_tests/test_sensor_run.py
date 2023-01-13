@@ -5,6 +5,7 @@ import sys
 import tempfile
 import time
 from contextlib import ExitStack, contextmanager
+from unittest import mock
 
 import pendulum
 import pytest
@@ -1505,6 +1506,9 @@ def test_custom_interval_sensor_with_offset(
 
     monkeypatch.setattr(time, "sleep", fake_sleep)
 
+    shutdown_event = mock.MagicMock()
+    shutdown_event.wait.side_effect = fake_sleep
+
     with pendulum.test(freeze_datetime):
         # 60 second custom interval
         external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
@@ -1538,6 +1542,7 @@ def test_custom_interval_sensor_with_offset(
             execute_sensor_iteration_loop(
                 workspace_context,
                 get_default_daemon_logger("dagster.daemon.SensorDaemon"),
+                shutdown_event=shutdown_event,
                 until=freeze_datetime.add(seconds=65).timestamp(),
             )
         )
