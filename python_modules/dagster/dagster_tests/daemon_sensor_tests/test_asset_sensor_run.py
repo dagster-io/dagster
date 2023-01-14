@@ -55,7 +55,9 @@ def test_simple_parent_sensor(executor):
 
             evaluate_sensors(workspace_ctx, executor)
 
-            ticks = instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
+            ticks = list(
+                instance.get_ticks(y_sensor.get_external_origin_id(), y_sensor.selector_id)
+            )
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],

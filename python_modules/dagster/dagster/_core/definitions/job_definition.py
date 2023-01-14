@@ -17,6 +17,8 @@ from typing import (
     cast,
 )
 
+from typing_extensions import Self
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._config import Field, Shape, StringSource
@@ -428,7 +430,7 @@ class JobDefinition(PipelineDefinition):
         self,
         op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ):
+    ) -> Self:  # type: ignore  # fmt: skip
         check.invariant(
             not (op_selection and asset_selection),
             (
@@ -438,7 +440,7 @@ class JobDefinition(PipelineDefinition):
         )
         if op_selection:
             return self._get_job_def_for_op_selection(op_selection)
-        if asset_selection:  # asset_selection:
+        if asset_selection:
             return self._get_job_def_for_asset_selection(asset_selection)
         else:
             return self
@@ -446,7 +448,7 @@ class JobDefinition(PipelineDefinition):
     def _get_job_def_for_asset_selection(
         self,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> "JobDefinition":
+    ) -> Self:  # type: ignore  # fmt: skip
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
 
         nonexistent_assets = [
@@ -492,7 +494,7 @@ class JobDefinition(PipelineDefinition):
     def _get_job_def_for_op_selection(
         self,
         op_selection: Optional[Sequence[str]] = None,
-    ) -> "JobDefinition":
+    ) -> Self:  # type: ignore  # fmt: skip
         if not op_selection:
             return self
 

@@ -15,7 +15,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypeAlias, get_origin
+from typing_extensions import TypeAlias, get_args, get_origin
 
 import dagster._check as check
 from dagster._annotations import public
@@ -416,7 +416,7 @@ class OpDefinition(NodeDefinition):
                             f"'{context_param_name}', but no value for '{context_param_name}' was "
                             f"found when invoking. Provided kwargs: {kwargs}"
                         )
-                    context = kwargs[context_param_name]
+                    context = cast(UnboundOpExecutionContext, kwargs[context_param_name])
                     kwargs_sans_context = {
                         kwarg: val
                         for kwarg, val in kwargs.items()
@@ -441,9 +441,7 @@ def _resolve_output_defs_from_outs(
     from .decorators.solid_decorator import DecoratedOpFunction
 
     if isinstance(compute_fn, DecoratedOpFunction):
-        inferred_output_props = infer_output_props(
-            cast(DecoratedOpFunction, compute_fn).decorated_fn
-        )
+        inferred_output_props = infer_output_props(compute_fn.decorated_fn)
         annotation = inferred_output_props.annotation
         description = inferred_output_props.description
     else:
@@ -469,15 +467,15 @@ def _resolve_output_defs_from_outs(
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation for multiple outputs, but received non-tuple annotation."
         )
-    if annotation != inspect.Parameter.empty and not len(annotation.__args__) == len(outs):
+    if annotation != inspect.Parameter.empty and not len(get_args(annotation)) == len(outs):
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation to have number of entries matching the "
             f"number of outputs for more than one output. Expected {len(outs)} "
-            f"outputs but annotation has {len(annotation.__args__)}."
+            f"outputs but annotation has {len(get_args(annotation))}."
         )
     for idx, (name, cur_out) in enumerate(outs.items()):
         annotation_type = (
-            annotation.__args__[idx]
+            get_args(annotation)[idx]
             if annotation != inspect.Parameter.empty
             else inspect.Parameter.empty
         )

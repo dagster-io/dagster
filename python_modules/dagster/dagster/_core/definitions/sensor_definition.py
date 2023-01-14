@@ -216,7 +216,7 @@ class SensorEvaluationContext:
 
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest]],
+    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
     Sequence[RunRequest],
     SkipReason,
     RunRequest,
