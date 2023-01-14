@@ -252,7 +252,7 @@ def fetch_sources(graph: DependencyGraph, within_selection: AbstractSet[T]) -> A
         if node not in dp:
             dp[node] = any(
                 parent_node in within_selection or has_upstream_within_selection(parent_node)
-                for parent_node in graph["upstream"].get(node, set())
+                for parent_node in graph["upstream"].get(node, set()) - {node}
             )
         return dp[node]
 
