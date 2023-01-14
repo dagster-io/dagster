@@ -481,7 +481,6 @@ class CachingInstanceQueryer:
         self,
         asset_graph: AssetGraph,
         asset_key: AssetKey,
-        upstream_key: AbstractSet[AssetKey],
         current_time: datetime.datetime,
     ) -> Mapping[AssetKey, datetime.datetime]:
         """Returns a mapping containing the maximum upstream data time that the input asset will

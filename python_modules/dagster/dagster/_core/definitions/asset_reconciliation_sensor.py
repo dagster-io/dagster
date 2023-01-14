@@ -563,12 +563,12 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # cannot execute this asset, so if something consumes it, it should expect to
                 # recieve the current contents of the asset
                 execution_window_start = None
-                expected_data_times = {}
+                expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
             else:
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
                 in_progress_data_times = instance_queryer.get_in_progress_data_times_for_key(
-                    asset_graph, key, relevant_upstream_keys, current_time
+                    asset_graph, key, current_time
                 )
 
                 # if the latest run for this asset failed, then calculate the data times you would
