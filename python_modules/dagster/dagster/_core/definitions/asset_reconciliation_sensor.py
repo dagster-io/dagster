@@ -650,13 +650,14 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             current_data_times = get_current_data_times_for_key(
                 instance_queryer, asset_graph, relevant_upstream_keys, key
             )
+            expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
 
             # should not execute if key is not targeted or previous run failed
             if key not in target_asset_keys:
                 # cannot execute this asset, so if something consumes it, it should expect to
                 # recieve the current contents of the asset
                 execution_window_start = None
-                expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
+                expected_data_times = {}
             else:
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
