@@ -49,6 +49,7 @@ from .utils import check_valid_name
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetGroup, AssetsDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+    from dagster._core.definitions.target import ExecutableDefinition
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
@@ -1581,7 +1582,7 @@ def _process_and_validate_target(
     coerced_graphs: Dict[str, JobDefinition],
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
     pipelines_or_jobs: Dict[str, PipelineDefinition],
-    target: Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition],
+    target: "ExecutableDefinition",
 ):
     # This function modifies the state of coerced_graphs and unresolved_jobs
     targeter = (

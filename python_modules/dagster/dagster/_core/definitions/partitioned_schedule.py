@@ -11,6 +11,7 @@ from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 def build_schedule_from_partitioned_job(
+    # TODO: support executable?
     job: Union[JobDefinition, UnresolvedAssetJobDefinition],
     description: Optional[str] = None,
     name: Optional[str] = None,

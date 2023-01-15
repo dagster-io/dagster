@@ -32,12 +32,9 @@ from dagster._serdes import whitelist_for_serdes
 
 from ..decorator_utils import get_function_params
 from .asset_selection import AssetSelection
-from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
-from .pipeline_definition import PipelineDefinition
 from .run_request import PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -396,7 +393,7 @@ class SensorDefinition:
 
     @public  # type: ignore
     @property
-    def job(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
+    def job(self) -> ExecutableDefinition:
         if self._targets:
             if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
                 return self._targets[0].target
@@ -479,9 +476,7 @@ class SensorDefinition:
                 return True
         return False
 
-    def load_targets(
-        self,
-    ) -> Sequence[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+    def load_targets(self) -> Sequence[ExecutableDefinition]:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
