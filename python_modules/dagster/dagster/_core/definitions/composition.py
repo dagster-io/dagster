@@ -333,7 +333,7 @@ class PendingNodeInvocation:
         if is_in_composition():
             current_context().add_pending_invocation(self)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Any:
         from ..execution.context.invocation import UnboundOpExecutionContext
         from .decorators.solid_decorator import DecoratedOpFunction
         from .solid_invocation import op_invocation_result
@@ -374,7 +374,15 @@ class PendingNodeInvocation:
                 return op_invocation_result(self, None, *args, **kwargs)
 
         assert_in_composition(node_name, self.node_def)
-        input_bindings = {}
+        input_bindings: Dict[
+            str,
+            Union[
+                InvokedNodeOutputHandle,
+                InputMappingNode,
+                DynamicFanIn,
+                List[Union[InvokedNodeOutputHandle, InputMappingNode]],
+            ],
+        ] = {}
 
         # handle *args
         for idx, output_node in enumerate(args):
@@ -448,7 +456,9 @@ class PendingNodeInvocation:
                 )
 
         outputs = [output_def for output_def in self.node_def.output_defs]
-        invoked_output_handles = {}
+        invoked_output_handles: Dict[
+            str, Union[InvokedNodeDynamicOutputWrapper, InvokedNodeOutputHandle]
+        ] = {}
         for output_def in outputs:
             if output_def.is_dynamic:
                 invoked_output_handles[output_def.name] = InvokedNodeDynamicOutputWrapper(

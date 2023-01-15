@@ -756,7 +756,7 @@ def test_generic_output_op():
 
     @op
     def the_op_bad_type_match() -> Output[int]:
-        return Output("foo")  # type: ignore
+        return Output("foo")  # type: ignore  # (test error)
 
     with pytest.raises(
         DagsterTypeCheckDidNotPass,
@@ -780,7 +780,7 @@ def test_generic_output_op():
 def test_output_generic_correct_inner_type():
     @op
     def the_op_not_using_output() -> Output[int]:
-        return 42
+        return 42  # type: ignore  # (test error)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -803,7 +803,7 @@ def test_output_generic_correct_inner_type():
 
     @op
     def the_op_annotation_not_using_output() -> int:
-        return Output(42)
+        return Output(42)  # type: ignore  # (test error)
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -1313,7 +1313,7 @@ def test_output_return_no_annotation():
 def test_output_mismatch_tuple_lengths():
     @op(out={"out1": Out(), "out2": Out()})
     def the_op() -> Tuple[int, int]:
-        return (1, 2, 3)
+        return (1, 2, 3)  # type: ignore  # (test error)
 
     with pytest.raises(DagsterInvariantViolationError, match="Length mismatch"):
         execute_op_in_graph(the_op)

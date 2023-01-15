@@ -573,9 +573,9 @@ class CachingInstanceQueryer:
         ):
             return {}
 
-        run_failure_time = datetime.datetime.utcfromtimestamp(latest_run_record.end_time).replace(
-            tzinfo=datetime.timezone.utc
-        )
+        run_failure_time = datetime.datetime.utcfromtimestamp(
+            check.not_none(latest_run_record.end_time)
+        ).replace(tzinfo=datetime.timezone.utc)
         return {
             key: min(run_failure_time, data_time) if data_time is not None else None
             for key, data_time in self._get_in_progress_data_times_for_key_in_run(
