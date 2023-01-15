@@ -49,3 +49,28 @@ jobs:
           testResultsFiles: "**/test_results.xml"
           testRunTitle: "dagster $(TOXENV)"
         condition: succeededOrFailed()
+  - job: "dagster_daemon_integration_tests"
+    pool:
+      vmImage: "windows-2019"
+    strategy:
+      matrix:
+        ${{ each py_version in parameters.py3_versions }}:
+          ${{ replace(py_version, '.', '') }}-windows:
+            TOXENV: "py${{ replace(py_version, '.', '') }}-windows"
+            python.version: "${{ py_version }}"
+    variables:
+      PYTHONLEGACYWINDOWSSTDIO: "1"
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: "$(python.version)"
+          architecture: "x64"
+      - script: pip install "tox<4.0.0"
+        displayName: "Install tox"
+      - script: cd integration_tests\test_suites\daemon-test-suite && tox -e %TOXENV% && cd ..\..
+        displayName: "Run tests"
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFiles: "**/test_results.xml"
+          testRunTitle: "dagster-daemon-integration-tests $(TOXENV)"
+        condition: succeededOrFailed()

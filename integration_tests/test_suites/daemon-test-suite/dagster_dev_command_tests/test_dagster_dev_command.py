@@ -1,6 +1,4 @@
 import os
-import signal
-import subprocess
 import tempfile
 import time
 
@@ -8,6 +6,7 @@ import requests
 import yaml
 from dagster import DagsterEventType, DagsterInstance, EventRecordsFilter
 from dagster._core.test_utils import environ, new_cwd
+from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils import find_free_port
 
 
@@ -28,7 +27,7 @@ def test_dagster_dev_command_no_dagster_home():
 
                 dagit_port = find_free_port()
 
-                dev_process = subprocess.Popen(
+                dev_process = open_ipc_subprocess(
                     [
                         "dagster",
                         "dev",
@@ -104,5 +103,5 @@ def test_dagster_dev_command_no_dagster_home():
                             time.sleep(1)
 
                 finally:
-                    dev_process.send_signal(signal.SIGINT)
+                    interrupt_ipc_subprocess(dev_process)
                     dev_process.communicate()
