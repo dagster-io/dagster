@@ -346,7 +346,9 @@ def serialize_dagster_namedtuple(nt: tuple, **json_kwargs) -> str:
     return _serialize_dagster_namedtuple(nt, whitelist_map=_WHITELIST_MAP, **json_kwargs)
 
 
-def _serialize_dagster_namedtuple(nt: tuple, whitelist_map: WhitelistMap, **json_kwargs) -> str:
+def _serialize_dagster_namedtuple(
+    nt: Tuple[Any, ...], whitelist_map: WhitelistMap, **json_kwargs
+) -> str:
     return seven.json.dumps(pack_inner_value(nt, whitelist_map, _root(nt)), **json_kwargs)
 
 

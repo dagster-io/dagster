@@ -1200,7 +1200,7 @@ def test_add_asset_groups_different_resources():
     )
 
     with pytest.raises(DagsterInvalidDefinitionError):
-        group1 + group2  # pylint: disable=pointless-statement
+        group1 + group2  # type: ignore  # (test error)
 
 
 def test_add_asset_groups_different_executors():
@@ -1222,7 +1222,7 @@ def test_add_asset_groups_different_executors():
     )
 
     with pytest.raises(DagsterInvalidDefinitionError):
-        group1 + group2  # pylint: disable=pointless-statement
+        group1 + group2  # type: ignore  # (test error)
 
 
 def test_to_source_assets():

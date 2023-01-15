@@ -142,7 +142,7 @@ def load_yaml_from_path(
         return yaml.load(ff, Loader=loader)
 
 
-def load_run_config_yaml(yaml_str: str) -> object:
+def load_run_config_yaml(yaml_str: str) -> Mapping[str, object]:
     return yaml.load(yaml_str, Loader=DagsterRunConfigYamlLoader)
 
 

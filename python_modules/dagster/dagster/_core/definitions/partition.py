@@ -61,20 +61,21 @@ from .utils import check_valid_name, validate_tags
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
+T = TypeVar("T")
+
+
 RawPartitionFunction: TypeAlias = Union[
-    Callable[[Optional[datetime]], Sequence[Union[str, "Partition[Any]"]]],
-    Callable[[], Sequence[Union[str, "Partition"]]],
+    Callable[[Optional[datetime]], Sequence[Union[str, "Partition[T]"]]],
+    Callable[[], Sequence[Union[str, "Partition[T]"]]],
 ]
 
 PartitionFunction: TypeAlias = Callable[[Optional[datetime]], Sequence["Partition[Any]"]]
-PartitionTagsFunction: TypeAlias = Callable[["Partition"], Mapping[str, str]]
+PartitionTagsFunction: TypeAlias = Callable[["Partition[object]"], Mapping[str, str]]
 PartitionScheduleFunction: TypeAlias = Callable[[datetime], Mapping[str, Any]]
 PartitionSelectorFunction: TypeAlias = Callable[
-    [ScheduleEvaluationContext, "PartitionSetDefinition"],
-    Union["Partition", Sequence["Partition"], SkipReason],
+    [ScheduleEvaluationContext, "PartitionSetDefinition[T]"],
+    Union["Partition[T]", Sequence["Partition[T]"], SkipReason],
 ]
-
-T = TypeVar("T")
 
 
 class Partition(Generic[T]):
@@ -90,7 +91,7 @@ class Partition(Generic[T]):
 
     def __init__(self, value: T, name: Optional[str] = None):
         self._value = value
-        self._name = cast(str, check.opt_str_param(name, "name", str(value)))
+        self._name = check.str_param(name or str(value), "name")
 
     @property
     def value(self) -> T:
@@ -100,10 +101,12 @@ class Partition(Generic[T]):
     def name(self) -> str:
         return self._name
 
-    def __eq__(self, other) -> bool:
-        return (
-            isinstance(other, Partition) and self.value == other.value and self.name == other.name
-        )
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Partition):
+            return False
+        else:
+            other = cast(Partition[object], other)
+            return self.value == other.value and self.name == other.name
 
 
 def schedule_partition_range(
@@ -112,7 +115,7 @@ def schedule_partition_range(
     cron_schedule: str,
     fmt: str,
     timezone: Optional[str],
-    execution_time_to_partition_fn: Callable,
+    execution_time_to_partition_fn: Callable[[datetime], datetime],
     current_time: Optional[datetime],
 ) -> Sequence[Partition[datetime]]:
     if end and start > end:
@@ -196,10 +199,12 @@ class ScheduleType(Enum):
         else:
             check.failed(f"Unexpected ScheduleType {self}")
 
-    def __gt__(self, other):
+    def __gt__(self, other: "ScheduleType") -> bool:
+        check.inst(other, ScheduleType, "Cannot compare ScheduleType with non-ScheduleType")
         return self.ordinal > other.ordinal
 
-    def __lt__(self, other):
+    def __lt__(self, other: "ScheduleType") -> bool:
+        check.inst(other, ScheduleType, "Cannot compare ScheduleType with non-ScheduleType")
         return self.ordinal < other.ordinal
 
 

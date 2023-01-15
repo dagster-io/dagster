@@ -1,5 +1,7 @@
 from typing import Any, Callable, Mapping, NamedTuple, Optional, Union, cast
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 from dagster._builtins import BuiltinEnum
 from dagster._config import (
@@ -13,6 +15,8 @@ from dagster._core.definitions.definition_config_schema import IDefinitionConfig
 from dagster._core.errors import DagsterInvalidConfigError
 
 from .definition_config_schema import convert_user_facing_definition_config_schema
+
+ConfigMappingFn: TypeAlias = Callable[[Any], Any]
 
 
 def is_callable_valid_config_arg(config: Union[Callable[..., Any], Mapping[str, object]]) -> bool:
@@ -51,7 +55,7 @@ class ConfigMapping(
 
     def __new__(
         cls,
-        config_fn: Callable[[Any], Any],
+        config_fn: ConfigMappingFn,
         config_schema: Optional[Any] = None,
         receive_processed_config_values: Optional[bool] = None,
     ):
