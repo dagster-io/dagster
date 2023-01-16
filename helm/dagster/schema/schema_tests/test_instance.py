@@ -3,11 +3,6 @@ import tempfile
 
 import pytest
 import yaml
-from dagster._config import process_config, resolve_to_config_type
-from dagster._core.instance.config import retention_config_schema
-from dagster._core.instance.ref import InstanceRef
-from dagster._core.run_coordinator import QueuedRunCoordinator
-from dagster._core.test_utils import environ
 from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
 from dagster_azure.blob.compute_log_manager import AzureBlobComputeLogManager
 from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
@@ -15,10 +10,16 @@ from dagster_k8s import K8sRunLauncher
 from kubernetes.client import models
 from schema.charts.dagster.subschema.compute_log_manager import (
     AzureBlobComputeLogManager as AzureBlobComputeLogManagerModel,
+)
+from schema.charts.dagster.subschema.compute_log_manager import (
     ComputeLogManager,
     ComputeLogManagerConfig,
     ComputeLogManagerType,
+)
+from schema.charts.dagster.subschema.compute_log_manager import (
     GCSComputeLogManager as GCSComputeLogManagerModel,
+)
+from schema.charts.dagster.subschema.compute_log_manager import (
     S3ComputeLogManager as S3ComputeLogManagerModel,
 )
 from schema.charts.dagster.subschema.daemon import (
@@ -32,7 +33,11 @@ from schema.charts.dagster.subschema.daemon import (
 )
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
 from schema.charts.dagster.subschema.python_logs import PythonLogs
-from schema.charts.dagster.subschema.retention import Retention, TickRetention, TickRetentionByType
+from schema.charts.dagster.subschema.retention import (
+    Retention,
+    TickRetention,
+    TickRetentionByType,
+)
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,
     K8sRunLauncherConfig,
@@ -44,6 +49,12 @@ from schema.charts.dagster.subschema.run_launcher import (
 from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
+
+from dagster._config import process_config, resolve_to_config_type
+from dagster._core.instance.config import retention_config_schema
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.run_coordinator import QueuedRunCoordinator
+from dagster._core.test_utils import environ
 
 
 def to_camel_case(s: str) -> str:
@@ -575,6 +586,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
     storage_account = "account"
     container = "container"
     secret_key = "secret_key"
+    default_azure_credential = {"exclude_cli_credential": True}
     local_dir = "/dir"
     prefix = "prefix"
     upload_interval = 30
@@ -586,6 +598,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
                     storageAccount=storage_account,
                     container=container,
                     secretKey=secret_key,
+                    defaultAzureCredential=default_azure_credential,
                     localDir=local_dir,
                     prefix=prefix,
                     uploadInterval=upload_interval,
@@ -600,17 +613,18 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
 
     assert compute_logs_config["module"] == "dagster_azure.blob.compute_log_manager"
     assert compute_logs_config["class"] == "AzureBlobComputeLogManager"
+    assert compute_logs_config["config"].keys() == AzureBlobComputeLogManager.config_type().keys()
     assert compute_logs_config["config"] == {
         "storage_account": storage_account,
         "container": container,
         "secret_key": secret_key,
+        "default_azure_credential": default_azure_credential,
         "local_dir": local_dir,
         "prefix": prefix,
         "upload_interval": upload_interval,
     }
 
     # Test all config fields in configurable class
-    assert compute_logs_config["config"].keys() == AzureBlobComputeLogManager.config_type().keys()
 
 
 def test_gcs_compute_log_manager(template: HelmTemplate):

@@ -2,15 +2,11 @@ import os
 from contextlib import contextmanager
 from typing import Optional, Sequence
 
-import dagster._seven as seven
 from azure.identity import DefaultAzureCredential
-from dagster import (
-    Field,
-    Noneable,
-    Permissive,
-    StringSource,
-    _check as check,
-)
+
+import dagster._seven as seven
+from dagster import Field, Noneable, Permissive, StringSource
+from dagster import _check as check
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
@@ -126,6 +122,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             "default_azure_credential": Field(
                 Noneable(Permissive(description="keyword arguments for DefaultAzureCredential")),
                 is_required=False,
+                default_value=None
             ),
             "local_dir": Field(StringSource, is_required=False),
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
