@@ -40,7 +40,7 @@ spec:
         {{- toYaml $celeryK8sRunLauncherConfig.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-db-ready
-          image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
+          image: "{{ include "common.images.image" ( dict "imageRoot" .Values.postgresql.image ) }}"
           imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" $ | squote }}]
           securityContext:

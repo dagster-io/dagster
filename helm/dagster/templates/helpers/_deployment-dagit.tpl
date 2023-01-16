@@ -46,7 +46,7 @@ spec:
         {{- toYaml .Values.dagit.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-db-ready
-          image: {{ include "dagster.externalImage.name" .Values.postgresql.image | quote }}
+          image: "{{ include "common.images.image" ( dict "imageRoot" .Values.postgresql.image ) }}"
           imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
           securityContext:
