@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 from typing_extensions import Self
 
@@ -8,6 +8,7 @@ from dagster import (
     _check as check,
 )
 from dagster._config import EvaluateValueResult
+from dagster._config.config_schema import UserConfigSchema
 
 from .definition_config_schema import (
     CoercableToConfigSchema,
@@ -117,7 +118,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         self,
         config_or_config_fn: Any,
         name: str,
-        config_schema: Optional[Mapping[str, Any]] = None,
+        config_schema: Optional[UserConfigSchema] = None,
         description: Optional[str] = None,
     ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
         """
@@ -196,7 +197,7 @@ T_Configurable = TypeVar(
 
 def configured(
     configurable: T_Configurable,
-    config_schema: Optional[Mapping[str, Any]] = None,
+    config_schema: Optional[UserConfigSchema] = None,
     **kwargs: Any,
 ) -> Callable[[object], T_Configurable]:
     """

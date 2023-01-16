@@ -1,17 +1,21 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
 
 import {Graph, VirtualizedGraphTable} from './VirtualizedGraphTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
+import {
+  WorkspaceGraphsQuery,
+  WorkspaceGraphsQueryVariables,
+} from './types/WorkspaceGraphsRoot.types';
 
 export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -19,11 +23,14 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
   const [searchValue, setSearchValue] = React.useState('');
   const selector = repoAddressToSelector(repoAddress);
 
-  const queryResultOverview = useQuery(WORSKPACE_GRAPHS_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-    variables: {selector},
-  });
+  const queryResultOverview = useQuery<WorkspaceGraphsQuery, WorkspaceGraphsQueryVariables>(
+    WORSKPACE_GRAPHS_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+      variables: {selector},
+    },
+  );
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -139,7 +146,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
   );
 };
 
-const WORSKPACE_GRAPHS_QUERY = graphql(`
+const WORSKPACE_GRAPHS_QUERY = gql`
   query WorkspaceGraphsQuery($selector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $selector) {
       ... on Repository {
@@ -173,4 +180,6 @@ const WORSKPACE_GRAPHS_QUERY = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;

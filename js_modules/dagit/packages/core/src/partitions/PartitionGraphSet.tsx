@@ -1,8 +1,6 @@
+import {gql} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-
-import {graphql} from '../graphql';
-import {PartitionGraphSetRunFragmentFragment} from '../graphql/graphql';
 
 import {PartitionGraph} from './PartitionGraph';
 import {
@@ -16,12 +14,14 @@ import {
   getStepExpectationRateForRun,
   getStepExpectationSuccessForRun,
   getStepMaterializationCountForRun,
+  PARTITION_GRAPH_FRAGMENT,
   StepSelector,
 } from './PartitionGraphUtils';
+import {PartitionGraphSetRunFragment} from './types/PartitionGraphSet.types';
 
 const _reverseSortRunCompare = (
-  a: PartitionGraphSetRunFragmentFragment,
-  b: PartitionGraphSetRunFragmentFragment,
+  a: PartitionGraphSetRunFragment,
+  b: PartitionGraphSetRunFragment,
 ) => {
   if (!a.stats || a.stats.__typename !== 'RunStatsSnapshot' || !a.stats.startTime) {
     return 1;
@@ -33,7 +33,7 @@ const _reverseSortRunCompare = (
 };
 
 export const PartitionGraphSet: React.FC<{
-  partitions: {name: string; runs: PartitionGraphSetRunFragmentFragment[]}[];
+  partitions: {name: string; runs: PartitionGraphSetRunFragment[]}[];
   isJob: boolean;
 }> = React.memo(({partitions, isJob}) => {
   const allStepKeys = getStepKeys(partitions);
@@ -131,7 +131,7 @@ export const PartitionGraphSet: React.FC<{
   );
 });
 
-export const PARTITION_GRAPH_SET_RUN_FRAGMENT = graphql(`
+export const PARTITION_GRAPH_SET_RUN_FRAGMENT = gql`
   fragment PartitionGraphSetRunFragment on PipelineRun {
     id
     tags {
@@ -140,7 +140,9 @@ export const PARTITION_GRAPH_SET_RUN_FRAGMENT = graphql(`
     }
     ...PartitionGraphFragment
   }
-`);
+
+  ${PARTITION_GRAPH_FRAGMENT}
+`;
 
 const PartitionContentContainer = styled.div`
   display: flex;
@@ -149,7 +151,7 @@ const PartitionContentContainer = styled.div`
   margin: 0 auto;
 `;
 
-function getStepKeys(partitions: {name: string; runs: PartitionGraphSetRunFragmentFragment[]}[]) {
+function getStepKeys(partitions: {name: string; runs: PartitionGraphSetRunFragment[]}[]) {
   const allStepKeys = new Set<string>();
   partitions.forEach((partition) => {
     partition.runs.forEach((run) => {

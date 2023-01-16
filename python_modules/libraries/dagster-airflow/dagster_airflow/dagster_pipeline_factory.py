@@ -287,7 +287,10 @@ def make_dagster_schedule_from_airflow_dag(dag, job_def):
 
     if isinstance(dag.normalized_schedule_interval, str) and is_valid_cron_schedule(cron_schedule):
         return ScheduleDefinition(
-            job=job_def, cron_schedule=cron_schedule, description=schedule_description
+            job=job_def,
+            cron_schedule=cron_schedule,
+            description=schedule_description,
+            execution_timezone=dag.timezone.name,
         )
 
 

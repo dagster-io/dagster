@@ -125,14 +125,14 @@ def test_success_hook_with_resources(hook_decorator, is_event_list_hook):
     decorator = hook_decorator(required_resource_keys={"foo", "bar"})
     if is_event_list_hook:
 
-        def my_hook_reqs_resources(context, _):
+        def my_hook_reqs_resources(context, _):  # type: ignore  # (test rename)
             assert context.resources.foo == "foo"
             assert context.resources.bar == "bar"
 
         hook = decorator(my_hook_reqs_resources)
     else:
 
-        def my_hook_reqs_resources(context):  # type: ignore[misc]
+        def my_hook_reqs_resources(context):  # type: ignore  # (test rename)
             assert context.resources.foo == "foo"
             assert context.resources.bar == "bar"
 

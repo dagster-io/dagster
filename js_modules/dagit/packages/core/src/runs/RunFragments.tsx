@@ -1,6 +1,12 @@
-import {graphql} from '../graphql';
+import {gql} from '@apollo/client';
 
-export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = graphql(`
+import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
+
+import {LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT} from './LogsScrollingTable';
+import {RUN_DETAILS_FRAGMENT} from './RunDetails';
+import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from './RunMetadataProvider';
+
+export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
   fragment RunFragmentForRepositoryMatch on Run {
     id
     pipelineName
@@ -12,9 +18,9 @@ export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = graphql(`
       repositoryLocationName
     }
   }
-`);
+`;
 
-export const RunFragments = graphql(`
+export const RUN_FRAGMENT = gql`
   fragment RunFragment on Run {
     id
     runConfigYaml
@@ -48,8 +54,6 @@ export const RunFragments = graphql(`
       ...ExecutionPlanToGraphFragment
     }
     stepKeysToExecute
-    ...RunFragmentForRepositoryMatch
-    ...RunDetailsFragment
     updateTime
     stepStats {
       stepKey
@@ -65,8 +69,16 @@ export const RunFragments = graphql(`
         endTime
       }
     }
+    ...RunFragmentForRepositoryMatch
+    ...RunDetailsFragment
   }
 
+  ${EXECUTION_PLAN_TO_GRAPH_FRAGMENT}
+  ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
+  ${RUN_DETAILS_FRAGMENT}
+`;
+
+export const RUN_DAGSTER_RUN_EVENT_FRAGMENT = gql`
   fragment RunDagsterRunEventFragment on DagsterRunEvent {
     ... on MessageEvent {
       message
@@ -78,4 +90,7 @@ export const RunFragments = graphql(`
     ...LogsScrollingTableMessageFragment
     ...RunMetadataProviderMessageFragment
   }
-`);
+
+  ${LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT}
+  ${RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT}
+`;

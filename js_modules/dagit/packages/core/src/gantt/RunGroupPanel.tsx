@@ -1,17 +1,22 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonLink, Colors, Group, Icon, FontFamily} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {graphql} from '../graphql';
-import {RunGroupPanelRunFragment} from '../graphql/graphql';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
-import {RunStateSummary, RunTime} from '../runs/RunUtils';
+import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+
+import {
+  RunGroupPanelQuery,
+  RunGroupPanelQueryVariables,
+  RunGroupPanelRunFragment,
+} from './types/RunGroupPanel.types';
 
 type Run = RunGroupPanelRunFragment;
 
@@ -24,10 +29,13 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
   runId,
   runStatusLastChangedAt,
 }) => {
-  const queryResult = useQuery(RUN_GROUP_PANEL_QUERY, {
-    variables: {runId},
-    notifyOnNetworkStatusChange: true,
-  });
+  const queryResult = useQuery<RunGroupPanelQuery, RunGroupPanelQueryVariables>(
+    RUN_GROUP_PANEL_QUERY,
+    {
+      variables: {runId},
+      notifyOnNetworkStatusChange: true,
+    },
+  );
 
   const {data, refetch} = queryResult;
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
@@ -129,11 +137,10 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
   );
 };
 
-const RUN_GROUP_PANEL_QUERY = graphql(`
+const RUN_GROUP_PANEL_QUERY = gql`
   query RunGroupPanelQuery($runId: ID!) {
     runGroupOrError(runId: $runId) {
       __typename
-      ...PythonErrorFragment
       ... on RunGroup {
         rootRunId
         runs {
@@ -141,6 +148,7 @@ const RUN_GROUP_PANEL_QUERY = graphql(`
           ...RunGroupPanelRun
         }
       }
+      ...PythonErrorFragment
     }
   }
 
@@ -157,7 +165,10 @@ const RUN_GROUP_PANEL_QUERY = graphql(`
     }
     ...RunTimeFragment
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+  ${RUN_TIME_FRAGMENT}
+`;
 
 const RunGroupRun = styled(Link)<{selected: boolean}>`
   align-items: flex-start;

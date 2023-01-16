@@ -1,13 +1,17 @@
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Iterator
 
 from dagster._annotations import public
 from dagster._core.execution.retries import RetryMode
 
+if TYPE_CHECKING:
+    from dagster._core.events import DagsterEvent
 
-class Executor(ABC):  # pylint: disable=no-init
+
+class Executor(ABC):
     @public
     @abstractmethod
-    def execute(self, plan_context, execution_plan):
+    def execute(self, plan_context, execution_plan) -> Iterator["DagsterEvent"]:
         """
         For the given context and execution plan, orchestrate a series of sub plan executions in a way that satisfies the whole plan being executed.
 

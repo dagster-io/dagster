@@ -1,50 +1,53 @@
-import {QueryResult, useQuery} from '@apollo/client';
+import {gql, QueryResult, useQuery} from '@apollo/client';
 import {Box, TextInput, Suggest, MenuItem, Icon, ButtonGroup} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {graphql} from '../graphql';
-import {
-  AssetCatalogGroupTableNodeFragment,
-  AssetCatalogGroupTableQueryQuery,
-  AssetCatalogTableQueryQuery,
-  AssetGroupSelector,
-  AssetTableFragmentFragment,
-  PythonErrorFragmentFragment,
-} from '../graphql/graphql';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
+import {AssetGroupSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {ClearButton} from '../ui/ClearButton';
 import {LoadingSpinner} from '../ui/Loading';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
 import {AssetTable} from './AssetTable';
+import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
 import {AssetsEmptyState} from './AssetsEmptyState';
+import {AssetTableFragment} from './types/AssetTableFragment.types';
+import {
+  AssetCatalogTableQuery,
+  AssetCatalogGroupTableQuery,
+  AssetCatalogGroupTableNodeFragment,
+  AssetCatalogGroupTableQueryVariables,
+} from './types/AssetsCatalogTable.types';
 import {useAssetSearch} from './useAssetSearch';
 import {AssetViewType, useAssetView} from './useAssetView';
 
-type Asset = AssetTableFragmentFragment;
+type Asset = AssetTableFragment;
 
 function useAllAssets(
   groupSelector?: AssetGroupSelector,
 ): {
-  query:
-    | QueryResult<AssetCatalogTableQueryQuery, any>
-    | QueryResult<AssetCatalogGroupTableQueryQuery, any>;
+  query: QueryResult<AssetCatalogTableQuery, any> | QueryResult<AssetCatalogGroupTableQuery, any>;
   assets: Asset[] | undefined;
-  error: PythonErrorFragmentFragment | undefined;
+  error: PythonErrorFragment | undefined;
 } {
-  const assetsQuery = useQuery(ASSET_CATALOG_TABLE_QUERY, {
+  const assetsQuery = useQuery<AssetCatalogTableQuery>(ASSET_CATALOG_TABLE_QUERY, {
     skip: !!groupSelector,
     notifyOnNetworkStatusChange: true,
   });
-  const groupQuery = useQuery(ASSET_CATALOG_GROUP_TABLE_QUERY, {
-    skip: !groupSelector,
-    variables: {group: groupSelector},
-    notifyOnNetworkStatusChange: true,
-  });
+  const groupQuery = useQuery<AssetCatalogGroupTableQuery, AssetCatalogGroupTableQueryVariables>(
+    ASSET_CATALOG_GROUP_TABLE_QUERY,
+    {
+      skip: !groupSelector,
+      variables: {group: groupSelector},
+      notifyOnNetworkStatusChange: true,
+    },
+  );
 
   return React.useMemo(() => {
     if (groupSelector) {
@@ -239,7 +242,7 @@ const AssetGroupSuggest: React.FC<{
   );
 };
 
-const ASSET_CATALOG_TABLE_QUERY = graphql(`
+const ASSET_CATALOG_TABLE_QUERY = gql`
   query AssetCatalogTableQuery {
     assetsOrError {
       __typename
@@ -252,9 +255,12 @@ const ASSET_CATALOG_TABLE_QUERY = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
 
-const ASSET_CATALOG_GROUP_TABLE_QUERY = graphql(`
+  ${ASSET_TABLE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
   query AssetCatalogGroupTableQuery($group: AssetGroupSelector) {
     assetNodes(group: $group) {
       id
@@ -269,7 +275,9 @@ const ASSET_CATALOG_GROUP_TABLE_QUERY = graphql(`
     }
     ...AssetTableDefinitionFragment
   }
-`);
+
+  ${ASSET_TABLE_DEFINITION_FRAGMENT}
+`;
 
 // When we load the AssetCatalogTable for a particular asset group, we retrieve `assetNodes`,
 // not `assets`. To narrow the scope of this difference we coerce the nodes to look like

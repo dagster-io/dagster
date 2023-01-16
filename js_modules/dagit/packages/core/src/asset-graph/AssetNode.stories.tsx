@@ -1,12 +1,13 @@
 import {Box} from '@dagster-io/ui';
 import React from 'react';
 
-import {AssetNodeFragmentFragment, RunStatus} from '../graphql/graphql';
+import {RunStatus} from '../graphql/types';
 
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {LiveDataForNode} from './Utils';
+import {AssetNodeFragment} from './types/AssetNode.types';
 
-const ASSET_NODE_DEFINITION: AssetNodeFragmentFragment = {
+const ASSET_NODE_DEFINITION: AssetNodeFragment = {
   __typename: 'AssetNode',
   assetKey: {__typename: 'AssetKey', path: ['asset1']},
   computeKind: null,
@@ -21,7 +22,7 @@ const ASSET_NODE_DEFINITION: AssetNodeFragmentFragment = {
   opVersion: '1',
 };
 
-const SOURCE_ASSET_NODE_DEFINITION: AssetNodeFragmentFragment = {
+const SOURCE_ASSET_NODE_DEFINITION: AssetNodeFragment = {
   __typename: 'AssetNode',
   assetKey: {__typename: 'AssetKey', path: ['source_asset']},
   computeKind: null,
@@ -43,7 +44,7 @@ export const LiveStates = () => {
   const caseWithLiveData = (
     name: string,
     liveData: LiveDataForNode | undefined = undefined,
-    def: AssetNodeFragmentFragment = ASSET_NODE_DEFINITION,
+    def: AssetNodeFragment = ASSET_NODE_DEFINITION,
   ) => {
     return (
       <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
@@ -99,7 +100,12 @@ export const LiveStates = () => {
         lastMaterialization: null,
         lastMaterializationRunStatus: null,
         lastObservation: null,
-        runWhichFailedToMaterialize: {__typename: 'Run', id: 'ABCDEF', status: RunStatus.FAILURE},
+        runWhichFailedToMaterialize: {
+          __typename: 'Run',
+          id: 'ABCDEF',
+          status: RunStatus.FAILURE,
+          endTime: 1673301346,
+        },
         currentLogicalVersion: null,
         projectedLogicalVersion: null,
         freshnessInfo: null,

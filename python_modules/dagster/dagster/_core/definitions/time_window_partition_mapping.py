@@ -54,6 +54,28 @@ class TimeWindowPartitionMapping(
             and end_offset=1, then the downstream partition "2022-07-04" would map to the upstream
             partitions "2022-07-04" and "2022-07-05". Only permitted to be non-zero when the
             upstream and downstream PartitionsDefinitions are the same. Defaults to 0.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import DailyPartitionsDefinition, TimeWindowPartitionMapping, AssetIn, asset
+
+            partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+            @asset(partitions_def=partitions_def)
+            def asset1():
+                ...
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "asset1": AssetIn(
+                        partition_mapping=TimeWindowPartitionMapping(start_offset=-1)
+                    )
+                }
+            )
+            def asset2(asset1):
+                ...
     """
 
     def __new__(cls, start_offset: int = 0, end_offset: int = 0):

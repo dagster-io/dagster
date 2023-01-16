@@ -10,7 +10,7 @@ from .sensor_definition import (
     DefaultSensorStatus,
     RawSensorEvaluationFunctionReturn,
     SensorDefinition,
-    SensorExecutionContext,
+    SensorEvaluationContext,
 )
 from .target import ExecutableDefinition
 from .utils import check_valid_name
@@ -50,7 +50,7 @@ class AssetSensorDefinition(SensorDefinition):
         asset_key: AssetKey,
         job_name: Optional[str],
         asset_materialization_fn: Callable[
-            [SensorExecutionContext, "EventLogEntry"],
+            [SensorEvaluationContext, "EventLogEntry"],
             RawSensorEvaluationFunctionReturn,
         ],
         minimum_interval_seconds: Optional[int] = None,

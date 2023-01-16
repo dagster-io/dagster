@@ -10,8 +10,6 @@ from dagster._core.definitions import (
     PartitionSetDefinition as PartitionSetDefinition,
     PipelineDefinition as PipelineDefinition,
     PresetDefinition as PresetDefinition,
-    ScheduleExecutionContext as ScheduleExecutionContext,
-    SensorExecutionContext as SensorExecutionContext,
     build_assets_job as build_assets_job,
     daily_schedule as daily_schedule,
     default_executors as default_executors,
@@ -27,7 +25,6 @@ from dagster._core.execution.api import (
     execute_pipeline as execute_pipeline,
     execute_pipeline_iterator as execute_pipeline_iterator,
     reexecute_pipeline as reexecute_pipeline,
-    reexecute_pipeline_iterator as reexecute_pipeline_iterator,
 )
 from dagster._core.execution.context.compute import OpExecutionContext as OpExecutionContext
 from dagster._core.execution.context.invocation import build_solid_context as build_solid_context

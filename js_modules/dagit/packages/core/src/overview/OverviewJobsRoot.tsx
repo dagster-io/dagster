@@ -1,12 +1,11 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Heading, NonIdealState, PageHeader, Spinner, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
-import {OverviewJobsQueryQuery} from '../graphql/graphql';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -16,6 +15,7 @@ import {RepoAddress} from '../workspace/types';
 import {OverviewJobsTable} from './OverviewJobsTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
+import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/OverviewJobsRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewJobsRoot = () => {
@@ -26,10 +26,13 @@ export const OverviewJobsRoot = () => {
 
   const repoCount = allRepos.length;
 
-  const queryResultOverview = useQuery(OVERVIEW_JOBS_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-  });
+  const queryResultOverview = useQuery<OverviewJobsQuery, OverviewJobsQueryVariables>(
+    OVERVIEW_JOBS_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+    },
+  );
   const {data, loading} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
@@ -149,7 +152,7 @@ type RepoBucket = {
   }[];
 };
 
-const buildBuckets = (data?: OverviewJobsQueryQuery): RepoBucket[] => {
+const buildBuckets = (data?: OverviewJobsQuery): RepoBucket[] => {
   if (data?.workspaceOrError.__typename !== 'Workspace') {
     return [];
   }
@@ -186,7 +189,7 @@ const buildBuckets = (data?: OverviewJobsQueryQuery): RepoBucket[] => {
   return sortRepoBuckets(buckets);
 };
 
-export const OVERVIEW_JOBS_QUERY = graphql(`
+export const OVERVIEW_JOBS_QUERY = gql`
   query OverviewJobsQuery {
     workspaceOrError {
       ... on Workspace {
@@ -213,4 +216,6 @@ export const OVERVIEW_JOBS_QUERY = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;

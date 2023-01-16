@@ -190,7 +190,7 @@ class MultiprocessExecutor(Executor):
                 max_concurrent=limit,
                 tag_concurrency_limits=tag_concurrency_limits,
             ) as active_execution:
-                active_iters: Dict[str, Iterator[DagsterEvent]] = {}
+                active_iters: Dict[str, Iterator[Optional[DagsterEvent]]] = {}
                 errors: Dict[int, SerializableErrorInfo] = {}
                 term_events: Dict[str, Any] = {}
                 stopping: bool = False
@@ -335,7 +335,7 @@ def execute_step_out_of_process(
     retries: RetryMode,
     known_state: KnownExecutionState,
     repository_load_data: Optional[RepositoryLoadData],
-) -> Iterator[DagsterEvent]:
+) -> Iterator[Optional[DagsterEvent]]:
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
         pipeline_run=step_context.pipeline_run,

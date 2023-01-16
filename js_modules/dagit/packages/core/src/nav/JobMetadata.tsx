@@ -1,31 +1,35 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Button, ButtonLink, Colors, DialogFooter, Dialog, Table, Tag} from '@dagster-io/ui';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {tokenForAssetKey} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
-import {
-  JobMetadataAssetNodeFragment,
-  JobMetadataFragmentFragment,
-  RunMetadataFragmentFragment,
-} from '../graphql/graphql';
 import {DagsterTag} from '../runs/RunTag';
+import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {LatestRunTag} from './LatestRunTag';
 import {ScheduleOrSensorTag} from './ScheduleOrSensorTag';
+import {
+  JobMetadataAssetNodeFragment,
+  JobMetadataFragment,
+  JobMetadataQuery,
+  JobMetadataQueryVariables,
+  RunMetadataFragment,
+} from './types/JobMetadata.types';
 
 type JobMetadata = {
   assetNodes: JobMetadataAssetNodeFragment[] | null;
-  job: JobMetadataFragmentFragment | null;
-  runsForAssetScan: RunMetadataFragmentFragment[];
+  job: JobMetadataFragment | null;
+  runsForAssetScan: RunMetadataFragment[];
 };
 
 export function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
-  const {data} = useQuery(JOB_METADATA_QUERY, {
+  const {data} = useQuery<JobMetadataQuery, JobMetadataQueryVariables>(JOB_METADATA_QUERY, {
     variables: {
       runsFilter: {
         pipelineName,
@@ -82,7 +86,7 @@ export const JobMetadata: React.FC<Props> = (props) => {
 };
 
 const JobScheduleOrSensorTag: React.FC<{
-  job: JobMetadataFragmentFragment;
+  job: JobMetadataFragment;
   repoAddress: RepoAddress;
 }> = ({job, repoAddress}) => {
   const matchingSchedules = React.useMemo(() => {
@@ -175,7 +179,7 @@ const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) 
   );
 };
 
-const JOB_METADATA_QUERY = graphql(`
+const JOB_METADATA_QUERY = gql`
   query JobMetadataQuery($params: PipelineSelector!, $runsFilter: RunsFilter!) {
     pipelineOrError(params: $params) {
       ... on Pipeline {
@@ -234,4 +238,8 @@ const JOB_METADATA_QUERY = graphql(`
     }
     ...RunTimeFragment
   }
-`);
+
+  ${SCHEDULE_SWITCH_FRAGMENT}
+  ${SENSOR_SWITCH_FRAGMENT}
+  ${RUN_TIME_FRAGMENT}
+`;

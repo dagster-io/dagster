@@ -1,20 +1,23 @@
+import {gql} from '@apollo/client';
 import {Box, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {breakOnUnderscores} from '../app/Util';
-import {graphql} from '../graphql';
-import {SidebarRootContainerFragmentFragment} from '../graphql/graphql';
-import {MetadataEntry} from '../metadata/MetadataEntry';
+import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {useRepositoryOptions, findRepositoryAmongOptions} from '../workspace/WorkspaceContext';
 import {repoContainsPipeline} from '../workspace/findRepoContainingPipeline';
 import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
 import {SidebarSubhead, SidebarTitle, SidebarSection} from './SidebarComponents';
-import {SidebarResourcesSection} from './SidebarResourcesSection';
+import {
+  SidebarResourcesSection,
+  SIDEBAR_RESOURCES_SECTION_FRAGMENT,
+} from './SidebarResourcesSection';
+import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
 
 export const SidebarContainerOverview: React.FC<{
-  container: SidebarRootContainerFragmentFragment;
+  container: SidebarRootContainerFragment;
   repoAddress?: RepoAddress;
 }> = ({container, repoAddress}) => {
   const {options} = useRepositoryOptions();
@@ -81,7 +84,7 @@ export const SidebarContainerOverview: React.FC<{
   );
 };
 
-export const SIDEBAR_ROOT_CONTAINER_FRAGMENT = graphql(`
+export const SIDEBAR_ROOT_CONTAINER_FRAGMENT = gql`
   fragment SidebarRootContainerFragment on SolidContainer {
     id
     name
@@ -98,4 +101,7 @@ export const SIDEBAR_ROOT_CONTAINER_FRAGMENT = graphql(`
       }
     }
   }
-`);
+
+  ${SIDEBAR_RESOURCES_SECTION_FRAGMENT}
+  ${METADATA_ENTRY_FRAGMENT}
+`;

@@ -219,3 +219,6 @@ combine-as-imports = true
 # Imports of the form `from foo import bar as baz` show one `import bar as baz`
 # per line. Useful for __init__.py files that just re-export symbols.
 force-wrap-aliases = true
+
+[tool.dagster]
+module_name = "dagster_test.toys.repo"

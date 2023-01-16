@@ -1,7 +1,7 @@
 import {act, render, screen, waitFor, within} from '@testing-library/react';
 import * as React from 'react';
 
-import {InstigationStatus} from '../graphql/graphql';
+import {InstigationStatus} from '../graphql/types';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {TestProvider} from '../testing/TestProvider';
 

@@ -55,6 +55,7 @@ def test_compute_log_manager(mock_s3_bucket):
                 run_coordinator=DefaultRunCoordinator(),
                 run_launcher=DefaultRunLauncher(),
                 ref=InstanceRef.from_dir(temp_dir),
+                settings={"telemetry": {"enabled": False}},
             )
             result = simple.execute_in_process(instance=instance)
             capture_events = [
@@ -151,6 +152,7 @@ def test_compute_log_manager_skip_empty_upload(mock_s3_bucket):
                 run_coordinator=DefaultRunCoordinator(),
                 run_launcher=DefaultRunLauncher(),
                 ref=InstanceRef.from_dir(temp_dir),
+                settings={"telemetry": {"enabled": False}},
             )
             result = simple.execute_in_process(instance=instance)
             capture_events = [

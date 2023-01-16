@@ -1,6 +1,6 @@
-import {graphql} from '../graphql';
+import {gql} from '@apollo/client';
 
-export const ASSET_TABLE_DEFINITION_FRAGMENT = graphql(`
+export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
   fragment AssetTableDefinitionFragment on AssetNode {
     id
     groupName
@@ -18,9 +18,9 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = graphql(`
       }
     }
   }
-`);
+`;
 
-export const ASSET_TABLE_FRAGMENT = graphql(`
+export const ASSET_TABLE_FRAGMENT = gql`
   fragment AssetTableFragment on Asset {
     __typename
     id
@@ -32,4 +32,6 @@ export const ASSET_TABLE_FRAGMENT = graphql(`
       ...AssetTableDefinitionFragment
     }
   }
-`);
+
+  ${ASSET_TABLE_DEFINITION_FRAGMENT}
+`;

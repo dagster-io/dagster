@@ -3,7 +3,6 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {titleOfIO} from '../app/titleOfIO';
-import {OpGraphOpFragmentFragment} from '../graphql/graphql';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 import {ExternalConnectionNode} from './ExternalConnectionNode';
@@ -12,10 +11,11 @@ import {metadataForCompositeParentIO, PARENT_IN, PARENT_OUT, OpIOBox} from './Op
 import {SVGLabeledRect} from './SVGComponents';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {Edge} from './common';
+import {OpGraphOpFragment} from './types/OpGraph.types';
 
 interface ParentOpNodeProps {
   layout: OpGraphLayout;
-  op: OpGraphOpFragmentFragment;
+  op: OpGraphOpFragment;
   minified: boolean;
 
   highlightedEdges: Edge[];

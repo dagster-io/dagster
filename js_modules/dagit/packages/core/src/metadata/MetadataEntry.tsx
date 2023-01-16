@@ -1,3 +1,4 @@
+import {gql} from '@apollo/client';
 import {
   Box,
   Button,
@@ -19,14 +20,13 @@ import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {graphql} from '../graphql';
-import {MetadataEntryFragmentFragment} from '../graphql/graphql';
 import {NotebookButton} from '../ui/NotebookButton';
 
-import {TableSchema} from './TableSchema';
+import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
+import {MetadataEntryFragment} from './types/MetadataEntry.types';
 
 export interface IMetadataEntries {
-  metadataEntries: MetadataEntryFragmentFragment[];
+  metadataEntries: MetadataEntryFragment[];
 }
 
 export const LogRowStructuredContentTable: React.FC<{
@@ -55,7 +55,7 @@ export const LogRowStructuredContentTable: React.FC<{
 );
 
 export const MetadataEntries: React.FC<{
-  entries?: MetadataEntryFragmentFragment[];
+  entries?: MetadataEntryFragment[];
 }> = ({entries}) => {
   if (!entries || !entries.length) {
     return null;
@@ -71,7 +71,7 @@ export const MetadataEntries: React.FC<{
 };
 
 export const MetadataEntry: React.FC<{
-  entry: MetadataEntryFragmentFragment;
+  entry: MetadataEntryFragment;
   expandSmallValues?: boolean;
   repoLocation?: string;
 }> = ({entry, expandSmallValues, repoLocation}) => {
@@ -192,7 +192,7 @@ export const MetadataEntry: React.FC<{
   }
 };
 
-export const METADATA_ENTRY_FRAGMENT = graphql(`
+export const METADATA_ENTRY_FRAGMENT = gql`
   fragment MetadataEntryFragment on MetadataEntry {
     label
     description
@@ -254,7 +254,9 @@ export const METADATA_ENTRY_FRAGMENT = graphql(`
       ...TableSchemaFragment
     }
   }
-`);
+
+  ${TABLE_SCHEMA_FRAGMENT}
+`;
 
 const IconButton = styled.button`
   background: transparent;

@@ -105,7 +105,7 @@ def _define_failing_job(has_policy: bool, is_explicit: bool = True):
             if is_explicit:
                 raise Failure(description="some failure description", metadata={"foo": 1.23})
             else:
-                _ = "x" + 1
+                _ = "x" + 1  # type: ignore
         return context.retry_number
 
     @job(
