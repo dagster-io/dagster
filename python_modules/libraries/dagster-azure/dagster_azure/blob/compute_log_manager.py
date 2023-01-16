@@ -2,9 +2,8 @@ import os
 from contextlib import contextmanager
 from typing import Optional, Sequence
 
-from azure.identity import DefaultAzureCredential
-
 import dagster._seven as seven
+from azure.identity import DefaultAzureCredential
 from dagster import (
     Field,
     Noneable,
@@ -83,6 +82,10 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             default_azure_credential, "default_azure_credential"
         )
         check.opt_str_param(secret_key, "secret_key")
+        check.invariant(
+            secret_key is not None or default_azure_credential is not None,
+            "Missing config: need to provide one of secret_key or default_azure_credential",
+        )
 
         if default_azure_credential is None:
             self._blob_client = create_blob_client(storage_account, secret_key)
