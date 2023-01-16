@@ -96,51 +96,67 @@ class CouldNotBindGrpcServerToAddress(Exception):
 class LoadedRepositories:
     def __init__(
         self,
+        code_pointers_by_repo_name: Dict[str, CodePointer],
+        recon_repos_by_name: Dict[str, ReconstructableRepository],
+        repo_defs_by_name: Dict[str, RepositoryDefinition],
+        loadable_repository_symbols: List[LoadableRepositorySymbol],
+    ):
+        self._code_pointers_by_repo_name: Dict[str, CodePointer] = code_pointers_by_repo_name
+        self._recon_repos_by_name: Dict[str, ReconstructableRepository] = recon_repos_by_name
+        self._repo_defs_by_name: Dict[str, RepositoryDefinition] = repo_defs_by_name
+        self._loadable_repository_symbols: List[
+            LoadableRepositorySymbol
+        ] = loadable_repository_symbols
+
+    @staticmethod
+    def from_target_origin(
         loadable_target_origin: Optional[LoadableTargetOrigin],
         entry_point: Sequence[str],
         container_image: Optional[str] = None,
     ):
-        self._loadable_target_origin = loadable_target_origin
+        code_pointers_by_repo_name: Dict[str, CodePointer] = {}
+        recon_repos_by_name: Dict[str, ReconstructableRepository] = {}
+        repo_defs_by_name: Dict[str, RepositoryDefinition] = {}
+        loadable_repository_symbols: List[LoadableRepositorySymbol] = []
 
-        self._code_pointers_by_repo_name: Dict[str, CodePointer] = {}
-        self._recon_repos_by_name: Dict[str, ReconstructableRepository] = {}
-        self._repo_defs_by_name: Dict[str, RepositoryDefinition] = {}
-        self._loadable_repository_symbols: List[LoadableRepositorySymbol] = []
-
-        if not loadable_target_origin:
-            # empty workspace
-            return
-
-        loadable_targets = get_loadable_targets(
-            loadable_target_origin.python_file,
-            loadable_target_origin.module_name,
-            loadable_target_origin.package_name,
-            loadable_target_origin.working_directory,
-            loadable_target_origin.attribute,
-        )
-        for loadable_target in loadable_targets:
-            pointer = _get_code_pointer(loadable_target_origin, loadable_target)
-            recon_repo = ReconstructableRepository(
-                pointer,
-                container_image,
-                sys.executable,
-                entry_point=entry_point,
+        if loadable_target_origin:
+            loadable_targets = get_loadable_targets(
+                loadable_target_origin.python_file,
+                loadable_target_origin.module_name,
+                loadable_target_origin.package_name,
+                loadable_target_origin.working_directory,
+                loadable_target_origin.attribute,
             )
-            repo_def = recon_repo.get_definition()
-            # force load of all lazy constructed code artifacts to prevent
-            # any thread-safety issues loading them later on when serving
-            # definitions from multiple threads
-            repo_def.load_all_definitions()
-
-            self._code_pointers_by_repo_name[repo_def.name] = pointer
-            self._recon_repos_by_name[repo_def.name] = recon_repo
-            self._repo_defs_by_name[repo_def.name] = repo_def
-            self._loadable_repository_symbols.append(
-                LoadableRepositorySymbol(
-                    attribute=loadable_target.attribute,
-                    repository_name=repo_def.name,
+            for loadable_target in loadable_targets:
+                pointer = _get_code_pointer(loadable_target_origin, loadable_target)
+                recon_repo = ReconstructableRepository(
+                    pointer,
+                    container_image,
+                    sys.executable,
+                    entry_point=entry_point,
                 )
-            )
+                repo_def = recon_repo.get_definition()
+                # force load of all lazy constructed code artifacts to prevent
+                # any thread-safety issues loading them later on when serving
+                # definitions from multiple threads
+                repo_def.load_all_definitions()
+
+                code_pointers_by_repo_name[repo_def.name] = pointer
+                recon_repos_by_name[repo_def.name] = recon_repo
+                repo_defs_by_name[repo_def.name] = repo_def
+                loadable_repository_symbols.append(
+                    LoadableRepositorySymbol(
+                        attribute=loadable_target.attribute,
+                        repository_name=repo_def.name,
+                    )
+                )
+
+        return LoadedRepositories(
+            code_pointers_by_repo_name=code_pointers_by_repo_name,
+            recon_repos_by_name=recon_repos_by_name,
+            repo_defs_by_name=repo_defs_by_name,
+            loadable_repository_symbols=loadable_repository_symbols,
+        )
 
     @property
     def loadable_repository_symbols(self) -> Sequence[LoadableRepositorySymbol]:
@@ -253,7 +269,9 @@ class DagsterApiServer(DagsterApiServicer):
                 ) if instance_ref else DagsterInstance.get() as instance:
                     instance.inject_env_vars(location_name)
 
-            self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
+            self._loaded_repositories: Optional[
+                LoadedRepositories
+            ] = LoadedRepositories.from_target_origin(
                 loadable_target_origin,
                 self._entry_point,
                 self._container_image,

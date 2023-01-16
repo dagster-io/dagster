@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterator, Mapping, NamedTuple, Optional, Sequence
+from typing import Iterator, List, Mapping, NamedTuple, Optional, Sequence
 
 from dagster import (
     DagsterInstance,
@@ -7,6 +7,7 @@ from dagster import (
 )
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
+from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._grpc.types import ExecuteStepArgs
@@ -32,6 +33,10 @@ class StepHandlerContext:
         return self._execute_step_args
 
     @property
+    def step_keys(self) -> List[str]:
+        return [*self._steps_by_key.keys()]
+
+    @property
     def pipeline_run(self) -> DagsterRun:
         # lazy load
         if not self._pipeline_run:
@@ -50,6 +55,10 @@ class StepHandlerContext:
     @property
     def instance(self) -> DagsterInstance:
         return self._instance
+
+    @property
+    def known_state(self) -> Optional[KnownExecutionState]:
+        return self._execute_step_args.known_state
 
     def get_step_context(self, step_key: str) -> IStepContext:
         return self._plan_context.for_step(self._steps_by_key[step_key])

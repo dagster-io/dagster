@@ -2357,3 +2357,9 @@ class DagsterInstance:
             materialization = next(iter(materializations), None)
 
         return materialization or observation
+
+    def kvs_get(self, keys: Set[str]) -> Mapping[str, str]:
+        return self._run_storage.kvs_get(keys=keys)
+
+    def kvs_set(self, pairs: Mapping[str, str]) -> None:
+        return self._run_storage.kvs_set(pairs=pairs)

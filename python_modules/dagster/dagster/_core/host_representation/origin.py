@@ -195,7 +195,7 @@ class InProcessRepositoryLocationOrigin(
             InProcessRepositoryLocation,
         )
 
-        return InProcessRepositoryLocation(self)
+        return InProcessRepositoryLocation.from_in_process_origin(self)
 
 
 @whitelist_for_serdes
