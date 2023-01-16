@@ -139,6 +139,15 @@ class ExecutorDefinition(NamedConfigurableDefinition):
             requirements=self._requirements_fn,
         )
 
+    @staticmethod
+    def hardcoded_executor(executor: "Executor"):
+        return ExecutorDefinition(
+            # Executor name was only relevant in the pipeline/solid/mode world, so we
+            # can put a dummy value
+            name="__executor__",
+            executor_creation_fn=lambda _init_context: executor,
+        )
+
     # Backcompat: Overrides configured method to provide name as a keyword argument.
     # If no name is provided, the name is pulled off of this ExecutorDefinition.
     @public

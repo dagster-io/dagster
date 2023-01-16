@@ -36,6 +36,7 @@ from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
@@ -534,3 +535,27 @@ def test_unresolved_partitioned_asset_schedule():
     assert defs_with_implicit_job.get_job_def("job1").name == "job1"
     assert defs_with_implicit_job.get_job_def("job1").partitions_def == partitions_def
     assert defs_with_implicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
+
+
+def test_bare_executor():
+    @asset
+    def an_asset():
+        ...
+
+    class DummyExecutor(Executor):
+        def execute(self, plan_context, execution_plan):
+            ...
+
+        @property
+        def retries(self):
+            ...
+
+    executor_inst = DummyExecutor()
+
+    defs = Definitions(assets=[an_asset], executor=executor_inst)
+
+    job = defs.get_implicit_global_asset_job_def()
+    assert isinstance(job, JobDefinition)
+
+    # ignore typecheck because we know our implementation doesn't use the context
+    assert job.executor_def.executor_creation_fn(None) is executor_inst  # type: ignore
