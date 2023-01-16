@@ -35,6 +35,7 @@ from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
@@ -511,3 +512,27 @@ def test_implicit_job_with_source_assets():
     assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
     assert defs.has_implicit_global_asset_job_def()
     assert defs.get_implicit_global_asset_job_def()
+
+
+def test_bare_executor():
+    @asset
+    def an_asset():
+        ...
+
+    class DummyExecutor(Executor):
+        def execute(self, plan_context, execution_plan):
+            ...
+
+        @property
+        def retries(self):
+            ...
+
+    executor_inst = DummyExecutor()
+
+    defs = Definitions(assets=[an_asset], executor=executor_inst)
+
+    job = defs.get_implicit_global_asset_job_def()
+    assert isinstance(job, JobDefinition)
+
+    # ignore typecheck because we know our implementation doesn't use the context
+    assert job.executor_def.executor_creation_fn(None) is executor_inst  # type: ignore
