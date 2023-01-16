@@ -10,9 +10,11 @@ from .utils import (
     SAMPLE_ACCOUNT_ID,
     SAMPLE_API_PREFIX,
     SAMPLE_JOB_ID,
+    SAMPLE_PROJECT_ID,
     SAMPLE_RUN_ID,
     sample_job_details,
     sample_list_artifacts,
+    sample_list_job_details,
     sample_run_details,
     sample_run_results,
     sample_runs_details,
@@ -25,6 +27,14 @@ def get_dbt_cloud_resource(**kwargs):
             config={"auth_token": "some_auth_token", "account_id": SAMPLE_ACCOUNT_ID, **kwargs}
         )
     )
+
+
+@responses.activate
+def test_list_jobs():
+    dc_resource = get_dbt_cloud_resource()
+
+    responses.add(responses.GET, f"{SAMPLE_API_PREFIX}/jobs", json=sample_list_job_details())
+    assert dc_resource.list_jobs(SAMPLE_PROJECT_ID) == sample_list_job_details()["data"]
 
 
 def test_get_job():

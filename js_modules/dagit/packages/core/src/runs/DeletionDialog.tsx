@@ -4,10 +4,9 @@ import {ProgressBar} from '@blueprintjs/core';
 import {Button, Colors, DialogBody, DialogFooter, Dialog, Group, Icon, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DeleteMutation} from '../graphql/graphql';
-
 import {NavigationBlock} from './NavitationBlock';
 import {DELETE_MUTATION} from './RunUtils';
+import {DeleteMutation, DeleteMutationVariables} from './types/RunUtils.types';
 
 export interface Props {
   isOpen: boolean;
@@ -112,7 +111,7 @@ export const DeletionDialog = (props: Props) => {
     }
   }, [isOpen, selectedRuns]);
 
-  const [destroy] = useMutation(DELETE_MUTATION);
+  const [destroy] = useMutation<DeleteMutation, DeleteMutationVariables>(DELETE_MUTATION);
 
   const mutate = async () => {
     dispatch({type: 'start'});

@@ -2,7 +2,7 @@ import {act, render, RenderResult, screen, waitFor} from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
-import {LocationStateChangeEventType} from '../graphql/graphql';
+import {LocationStateChangeEventType} from '../graphql/types';
 import {TestProvider} from '../testing/TestProvider';
 import {HIDDEN_REPO_KEYS} from '../workspace/WorkspaceContext';
 import {DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';

@@ -167,13 +167,15 @@ def is_callable(obj: object, additional_message: Optional[str] = None) -> Callab
 # ##### CLASS
 # ########################
 
+T_Type = TypeVar("T_Type", bound=type)
+
 
 def class_param(
-    obj: object,
+    obj: T_Type,
     param_name: str,
     superclass: Optional[type] = None,
     additional_message: Optional[str] = None,
-) -> type:
+) -> T_Type:
     if not isinstance(obj, type):
         raise _param_class_mismatch_exception(
             obj, param_name, superclass, False, additional_message
@@ -1066,8 +1068,8 @@ def two_dim_mapping_param(
 def not_none_param(
     obj: Optional[T], param_name: str, additional_message: Optional[str] = None
 ) -> T:
-    additional_message = " " + additional_message if additional_message else ""
     if obj is None:
+        additional_message = " " + additional_message if additional_message else ""
         raise _param_invariant_exception(
             param_name, f"Param {param_name} cannot be none.{additional_message}"
         )

@@ -1,21 +1,24 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Tab, Tabs, Page, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {graphql} from '../graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {SensorDetails} from './SensorDetails';
+import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorPreviousRuns} from './SensorPreviousRuns';
+import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRoot.types';
 
 export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   useTrackPageView();
@@ -29,7 +32,7 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   };
 
   const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
-  const queryResult = useQuery(SENSOR_ROOT_QUERY, {
+  const queryResult = useQuery<SensorRootQuery, SensorRootQueryVariables>(SENSOR_ROOT_QUERY, {
     variables: {sensorSelector},
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
@@ -89,7 +92,7 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   );
 };
 
-const SENSOR_ROOT_QUERY = graphql(`
+const SENSOR_ROOT_QUERY = gql`
   query SensorRootQuery($sensorSelector: SensorSelector!) {
     sensorOrError(sensorSelector: $sensorSelector) {
       __typename
@@ -100,7 +103,6 @@ const SENSOR_ROOT_QUERY = graphql(`
       ...PythonErrorFragment
     }
     instance {
-      ...InstanceHealthFragment
       daemonHealth {
         id
         daemonStatus(daemonType: "SENSOR") {
@@ -108,6 +110,11 @@ const SENSOR_ROOT_QUERY = graphql(`
           healthy
         }
       }
+      ...InstanceHealthFragment
     }
   }
-`);
+
+  ${SENSOR_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+  ${INSTANCE_HEALTH_FRAGMENT}
+`;

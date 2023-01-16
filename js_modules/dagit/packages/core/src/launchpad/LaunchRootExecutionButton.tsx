@@ -2,8 +2,8 @@ import * as React from 'react';
 
 import {IconName} from '../../../ui/src';
 import {usePermissionsDEPRECATED} from '../app/Permissions';
-import {LaunchPipelineExecutionMutationVariables} from '../graphql/graphql';
 import {LaunchBehavior} from '../runs/RunUtils';
+import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 
 import {LaunchButton} from './LaunchButton';
 import {useLaunchPadHooks} from './LaunchpadHooksContext';

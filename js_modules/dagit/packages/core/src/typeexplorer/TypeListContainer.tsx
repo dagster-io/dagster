@@ -1,8 +1,7 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {graphql} from '../graphql';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {Loading} from '../ui/Loading';
 import {
@@ -13,7 +12,11 @@ import {
 import {findRepoContainingPipeline} from '../workspace/findRepoContainingPipeline';
 import {RepoAddress} from '../workspace/types';
 
-import {TypeList} from './TypeList';
+import {TypeList, TYPE_LIST_FRAGMENT} from './TypeList';
+import {
+  TypeListContainerQuery,
+  TypeListContainerQueryVariables,
+} from './types/TypeListContainer.types';
 
 interface ITypeListContainerProps {
   explorerPath: ExplorerPath;
@@ -37,10 +40,13 @@ export const TypeListContainer: React.FC<ITypeListContainerProps> = ({
     return buildPipelineSelector(repoAddress, pipelineName);
   }, [options, pipelineName, repoAddress, snapshotId]);
 
-  const queryResult = useQuery(TYPE_LIST_CONTAINER_QUERY, {
-    variables: {pipelineSelector: pipelineSelector!},
-    skip: !pipelineSelector,
-  });
+  const queryResult = useQuery<TypeListContainerQuery, TypeListContainerQueryVariables>(
+    TYPE_LIST_CONTAINER_QUERY,
+    {
+      variables: {pipelineSelector: pipelineSelector!},
+      skip: !pipelineSelector,
+    },
+  );
 
   if (!pipelineSelector) {
     return (
@@ -68,7 +74,7 @@ export const TypeListContainer: React.FC<ITypeListContainerProps> = ({
   );
 };
 
-const TYPE_LIST_CONTAINER_QUERY = graphql(`
+const TYPE_LIST_CONTAINER_QUERY = gql`
   query TypeListContainerQuery($pipelineSelector: PipelineSelector!) {
     pipelineOrError(params: $pipelineSelector) {
       __typename
@@ -82,4 +88,6 @@ const TYPE_LIST_CONTAINER_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${TYPE_LIST_FRAGMENT}
+`;

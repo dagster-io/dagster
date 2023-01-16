@@ -34,6 +34,7 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, Run
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._scheduler.stale import resolve_stale_assets
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
 
@@ -212,6 +213,7 @@ VERBOSE_LOGS_INTERVAL = 60
 def execute_sensor_iteration_loop(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
+    shutdown_event: threading.Event,
     until=None,
 ) -> TDaemonGenerator:
     """
@@ -264,7 +266,9 @@ def execute_sensor_iteration_loop(
 
             loop_duration = end_time - start_time
             sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            time.sleep(sleep_time)
+            shutdown_event.wait(sleep_time)
+
+            yield None
 
 
 def execute_sensor_iteration(
@@ -627,6 +631,16 @@ def _evaluate_sensor(
     )
 
     for run_request in sensor_runtime_data.run_requests:
+        if run_request.stale_assets_only:
+            stale_assets = resolve_stale_assets(workspace_process_context, run_request, external_sensor)  # type: ignore
+            # asset selection is empty set after filtering for stale
+            if len(stale_assets) == 0:
+                continue
+            else:
+                run_request = run_request.with_replaced_attrs(
+                    asset_selection=stale_assets, stale_assets_only=False
+                )
+
         target_data: ExternalTargetData = check.not_none(
             external_sensor.get_target_data(run_request.job_name)
         )

@@ -2,12 +2,12 @@ import {Box, Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {PythonErrorFragmentFragment} from '../graphql/graphql';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 
 interface Props {
   location: string;
   isOpen: boolean;
-  error: PythonErrorFragmentFragment | {message: string} | null;
+  error: PythonErrorFragment | {message: string} | null;
   reloading: boolean;
   onDismiss: () => void;
   onTryReload: () => void;
@@ -62,7 +62,7 @@ export const RepositoryLocationNonBlockingErrorDialog: React.FC<Props> = (props)
 
 const ErrorContents: React.FC<{
   location: string;
-  error: PythonErrorFragmentFragment | {message: string} | null;
+  error: PythonErrorFragment | {message: string} | null;
 }> = ({location, error}) => (
   <>
     <Box margin={{bottom: 12}}>

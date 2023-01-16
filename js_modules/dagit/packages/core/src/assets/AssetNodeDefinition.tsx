@@ -1,19 +1,17 @@
+import {gql} from '@apollo/client';
 import {Body, Box, Caption, Colors, ConfigTypeSchema, Icon, Mono, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,
   LiveData,
   toGraphId,
 } from '../asset-graph/Utils';
+import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
-import {graphql} from '../graphql';
-import {
-  AssetNodeDefinitionFragmentFragment,
-  AssetNodeForGraphQueryFragment,
-} from '../graphql/graphql';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Version} from '../versions/Version';
@@ -21,14 +19,20 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
-import {AssetMetadataTable, metadataForAssetNode} from './AssetMetadata';
+import {
+  AssetMetadataTable,
+  ASSET_NODE_OP_METADATA_FRAGMENT,
+  metadataForAssetNode,
+} from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
+import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 export const AssetNodeDefinition: React.FC<{
-  assetNode: AssetNodeDefinitionFragmentFragment;
+  assetNode: AssetNodeDefinitionFragment;
   upstream: AssetNodeForGraphQueryFragment[] | null;
   downstream: AssetNodeForGraphQueryFragment[] | null;
   liveDataByNode: LiveData;
@@ -195,7 +199,7 @@ export const AssetNodeDefinition: React.FC<{
 };
 
 const DefinitionLocation: React.FC<{
-  assetNode: AssetNodeDefinitionFragmentFragment;
+  assetNode: AssetNodeDefinitionFragment;
   repoAddress: RepoAddress;
 }> = ({assetNode, repoAddress}) => (
   <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
@@ -219,7 +223,7 @@ const DefinitionLocation: React.FC<{
 );
 
 const OpNamesDisplay = (props: {
-  assetNode: AssetNodeDefinitionFragmentFragment;
+  assetNode: AssetNodeDefinitionFragment;
   repoAddress: RepoAddress;
 }) => {
   const {assetNode, repoAddress} = props;
@@ -263,10 +267,9 @@ const OpNamesDisplay = (props: {
   );
 };
 
-export const ASSET_NODE_DEFINITION_FRAGMENT = graphql(`
+export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
-    ...AssetNodeConfigFragment
     description
     graphName
     opNames
@@ -283,7 +286,12 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = graphql(`
         name
       }
     }
+    ...AssetNodeConfigFragment
     ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment
   }
-`);
+
+  ${ASSET_NODE_CONFIG_FRAGMENT}
+  ${ASSET_NODE_FRAGMENT}
+  ${ASSET_NODE_OP_METADATA_FRAGMENT}
+`;

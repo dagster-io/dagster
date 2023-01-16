@@ -1,11 +1,19 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import React from 'react';
 
-import {graphql} from '../graphql';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RepoAddress} from '../workspace/types';
 
+import {
+  AssetJobPartitionSetsQuery,
+  AssetJobPartitionSetsQueryVariables,
+} from './types/usePartitionNameForPipeline.types';
+
 export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineName: string) {
-  const {data: partitionSetsData} = useQuery(ASSET_JOB_PARTITION_SETS_QUERY, {
+  const {data: partitionSetsData} = useQuery<
+    AssetJobPartitionSetsQuery,
+    AssetJobPartitionSetsQueryVariables
+  >(ASSET_JOB_PARTITION_SETS_QUERY, {
     variables: {
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,
@@ -29,7 +37,7 @@ export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineNa
   );
 }
 
-const ASSET_JOB_PARTITION_SETS_QUERY = graphql(`
+const ASSET_JOB_PARTITION_SETS_QUERY = gql`
   query AssetJobPartitionSetsQuery(
     $pipelineName: String!
     $repositoryName: String!
@@ -43,7 +51,6 @@ const ASSET_JOB_PARTITION_SETS_QUERY = graphql(`
       }
     ) {
       __typename
-      ...PythonErrorFragment
       ... on PipelineNotFoundError {
         __typename
         message
@@ -57,6 +64,9 @@ const ASSET_JOB_PARTITION_SETS_QUERY = graphql(`
           solidSelection
         }
       }
+      ...PythonErrorFragment
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;

@@ -1,9 +1,11 @@
 import sys
 import warnings
 from contextlib import closing, contextmanager
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 from dagster import resource
 from dagster._annotations import public
 
@@ -34,9 +36,48 @@ class SnowflakeConnection:
         # snowflake.connector.connect() because they will override the default values set within the
         # connector; remove them from the conn_args dict.
         self.connector = config.get("connector", None)
+        self.sqlalchemy_engine_args = {}
+
+        # there are three different ways to authenticate with snowflake, we need to ensure that only
+        # one method is provided
+        auths_set = 0
+        auths_set += 1 if config.get("password", None) is not None else 0
+        auths_set += 1 if config.get("private_key", None) is not None else 0
+        auths_set += 1 if config.get("private_key_path", None) is not None else 0
+
+        # ensure at least 1 method is provided
+        check.invariant(
+            auths_set > 0,
+            (
+                "Missing config: Password or private key authentication required for Snowflake"
+                " resource."
+            ),
+        )
+
+        # ensure that only 1 method is provided
+        check.invariant(
+            auths_set == 1,
+            (
+                "Incorrect config: Cannot provide both password and private key authentication to"
+                " Snowflake Resource."
+            ),
+        )
+
+        # if private key auth is used, ensure the password is provided
+        if (
+            config.get("private_key", None) is not None
+            or config.get("private_key_path", None) is not None
+        ):
+            check.invariant(
+                config.get("private_key_password", None) is not None,
+                (
+                    "Incorrect config: Must provide private_key_password for private key"
+                    " authentication with Snowflake resource."
+                ),
+            )
 
         if self.connector == "sqlalchemy":
-            self.conn_args = {
+            self.conn_args: Dict[str, Any] = {
                 k: config.get(k)
                 for k in (
                     "account",
@@ -51,6 +92,13 @@ class SnowflakeConnection:
                 )
                 if config.get(k) is not None
             }
+
+            if (
+                config.get("private_key", None) is not None
+                or config.get("private_key_path", None) is not None
+            ):
+                # sqlalchemy passes private key args separately, so store them in a new dict
+                self.sqlalchemy_engine_args["private_key"] = self.__snowflake_private_key(config)
 
         else:
             self.conn_args = {
@@ -76,9 +124,36 @@ class SnowflakeConnection:
                 )
                 if config.get(k) is not None
             }
+            if (
+                config.get("private_key", None) is not None
+                or config.get("private_key_path", None) is not None
+            ):
+                self.conn_args["private_key"] = self.__snowflake_private_key(config)
 
         self.autocommit = self.conn_args.get("autocommit", False)
         self.log = log
+
+    def __snowflake_private_key(self, config) -> bytes:
+        private_key = config.get("private_key", None)
+        # If the user has defined a path to a private key, we will use that.
+        if config.get("private_key_path", None) is not None:
+            # read the file from the path.
+            with open(config.get("private_key_path"), "rb") as key:
+                private_key = key.read()
+
+        p_key = serialization.load_pem_private_key(
+            private_key,
+            password=config.get("private_key_password", None).encode(),
+            backend=default_backend(),
+        )
+
+        pkb = p_key.private_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+
+        return pkb
 
     @public
     @contextmanager
@@ -108,7 +183,7 @@ class SnowflakeConnection:
             from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
             from sqlalchemy import create_engine
 
-            engine = create_engine(URL(**self.conn_args))
+            engine = create_engine(URL(**self.conn_args), connect_args=self.sqlalchemy_engine_args)
             conn = engine.raw_connection() if raw_conn else engine.connect()
 
             yield conn

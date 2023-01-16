@@ -215,11 +215,8 @@ class SensorEvaluationContext:
         return self._log_key
 
 
-# Preserve SensorExecutionContext for backcompat so type annotations don't break.
-SensorExecutionContext = SensorEvaluationContext
-
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest]],
+    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
     Sequence[RunRequest],
     SkipReason,
     RunRequest,

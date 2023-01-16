@@ -15,15 +15,16 @@ import * as React from 'react';
 
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {AssetGroupSelector, AssetTableFragmentFragment} from '../graphql/graphql';
+import {AssetGroupSelector} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
 
-type Asset = AssetTableFragmentFragment;
+type Asset = AssetTableFragment;
 type AssetKey = {path: string[]};
 
 interface Props {

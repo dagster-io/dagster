@@ -19,7 +19,6 @@ import {AppContext} from '../app/AppContext';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {withMiddleTruncation} from '../app/Util';
 import {WebSocketContext} from '../app/WebSocketProvider';
-import {RunFragmentFragment} from '../graphql/graphql';
 import {CancelRunButton} from '../runs/RunActionButtons';
 import {
   EMPTY_RUN_METADATA,
@@ -29,6 +28,7 @@ import {
 } from '../runs/RunMetadataProvider';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {StepSelection} from '../runs/StepSelection';
+import {RunFragment} from '../runs/types/RunFragments.types';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 
 import {
@@ -822,7 +822,7 @@ export const GanttChartLoadingState = ({runId}: {runId: string}) => (
   </GanttChartContainer>
 );
 
-export const QueuedState = ({run}: {run: RunFragmentFragment}) => (
+export const QueuedState = ({run}: {run: RunFragment}) => (
   <GanttChartContainer>
     <OptionsContainer style={{justifyContent: 'flex-end'}}>
       <CancelRunButton run={run} />

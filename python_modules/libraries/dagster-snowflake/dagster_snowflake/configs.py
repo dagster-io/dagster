@@ -15,7 +15,7 @@ def define_snowflake_config():
 
     user = Field(StringSource, description="User login name.", is_required=True)
 
-    password = Field(StringSource, description="User password.", is_required=True)
+    password = Field(StringSource, description="User password.", is_required=False)
 
     database = Field(
         StringSource,
@@ -49,6 +49,36 @@ def define_snowflake_config():
         description=(
             "Name of the default warehouse to use. After login, you can use USE WAREHOUSE "
             "to change the role."
+        ),
+        is_required=False,
+    )
+
+    private_key = Field(
+        StringSource,
+        description=(
+            "Raw private key to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Alternately,"
+            " set private_key_path and private_key_password."
+        ),
+        is_required=False,
+    )
+
+    private_key_password = Field(
+        StringSource,
+        description=(
+            "Raw private key password to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Required for"
+            " both private_key and private_key_path."
+        ),
+        is_required=False,
+    )
+
+    private_key_path = Field(
+        StringSource,
+        description=(
+            "Raw private key path to use. See"
+            " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details. Alternately,"
+            " set the raw private key as private_key."
         ),
         is_required=False,
     )
@@ -179,6 +209,9 @@ def define_snowflake_config():
         "role": role,
         "warehouse": warehouse,
         "autocommit": autocommit,
+        "private_key": private_key,
+        "private_key_password": private_key_password,
+        "private_key_path": private_key_path,
         "client_prefetch_threads": client_prefetch_threads,
         "client_session_keep_alive": client_session_keep_alive,
         "login_timeout": login_timeout,

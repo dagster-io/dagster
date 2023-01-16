@@ -2,18 +2,19 @@ import {Box, ButtonLink, Colors, Tag, Tooltip, FontFamily, MiddleTruncate} from 
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {ScheduleSwitchFragmentFragment, SensorSwitchFragmentFragment} from '../graphql/graphql';
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {humanCronString} from '../schedules/humanCronString';
+import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitch.types';
 import {SensorSwitch} from '../sensors/SensorSwitch';
+import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
 
 export const ScheduleOrSensorTag: React.FC<{
-  schedules: ScheduleSwitchFragmentFragment[];
-  sensors: SensorSwitchFragmentFragment[];
+  schedules: ScheduleSwitchFragment[];
+  sensors: SensorSwitchFragment[];
   repoAddress: RepoAddress;
   showSwitch?: boolean;
 }> = ({schedules, sensors, repoAddress, showSwitch = true}) => {
@@ -65,7 +66,7 @@ export const ScheduleOrSensorTag: React.FC<{
 };
 
 const MatchingSchedule: React.FC<{
-  schedule: ScheduleSwitchFragmentFragment;
+  schedule: ScheduleSwitchFragment;
   repoAddress: RepoAddress;
   showSwitch: boolean;
 }> = ({schedule, repoAddress, showSwitch}) => {
@@ -115,7 +116,7 @@ const MatchingSchedule: React.FC<{
 };
 
 const MatchingSensor: React.FC<{
-  sensor: SensorSwitchFragmentFragment;
+  sensor: SensorSwitchFragment;
   repoAddress: RepoAddress;
   showSwitch: boolean;
 }> = ({sensor, repoAddress, showSwitch}) => {

@@ -5,7 +5,7 @@ import * as React from 'react';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {InstigationType} from '../graphql/graphql';
+import {InstigationType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {Loading} from '../ui/Loading';
@@ -17,6 +17,7 @@ import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
 import {SchedulesNextTicks} from './SchedulesNextTicks';
 import {SchedulesTable} from './SchedulesTable';
+import {SchedulesRootQuery, SchedulesRootQueryVariables} from './types/ScheduleUtils.types';
 
 export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -24,14 +25,17 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery(SCHEDULES_ROOT_QUERY, {
-    variables: {
-      repositorySelector,
-      instigationType: InstigationType.SCHEDULE,
+  const queryResult = useQuery<SchedulesRootQuery, SchedulesRootQueryVariables>(
+    SCHEDULES_ROOT_QUERY,
+    {
+      variables: {
+        repositorySelector,
+        instigationType: InstigationType.SCHEDULE,
+      },
+      partialRefetch: true,
+      notifyOnNetworkStatusChange: true,
     },
-    partialRefetch: true,
-    notifyOnNetworkStatusChange: true,
-  });
+  );
 
   useQueryRefreshAtInterval(queryResult, 50 * 1000);
 

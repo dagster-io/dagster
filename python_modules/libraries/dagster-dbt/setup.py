@@ -36,15 +36,12 @@ setup(
         f"dagster{pin}",
         "dbt-core",
         "requests",
-        "attrs",
-        "agate",
     ],
     extras_require={
         "test": [
             "Jinja2",
             "dbt-rpc<0.3.0",
             "dbt-postgres",
-            "matplotlib",
         ]
     },
     zip_safe=False,

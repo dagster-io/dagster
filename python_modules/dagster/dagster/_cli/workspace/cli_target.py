@@ -540,7 +540,7 @@ def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, 
     )
     package_name = check.opt_str_elem(kwargs, "package_name")
     working_directory = get_working_directory_from_kwargs(kwargs)
-    attribute = kwargs.get("attribute")
+    attribute = check.opt_str_elem(kwargs, "attribute")
     if python_file:
         _check_cli_arguments_none(kwargs, "module_name", "package_name")
         return {

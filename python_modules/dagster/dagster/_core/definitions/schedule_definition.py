@@ -617,11 +617,8 @@ class ScheduleDefinition:
 
         # clone all the run requests with the required schedule tags
         run_requests_with_schedule_tags = [
-            RunRequest(
-                run_key=request.run_key,
-                run_config=request.run_config,
-                tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self)),
-                asset_selection=request.asset_selection,
+            request.with_replaced_attrs(
+                tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self))
             )
             for request in run_requests
         ]
@@ -653,7 +650,3 @@ class ScheduleDefinition:
     @property
     def default_status(self) -> DefaultScheduleStatus:
         return self._default_status
-
-
-# Preserve ScheduleExecutionContext for backcompat so type annotations don't break.
-ScheduleExecutionContext = ScheduleEvaluationContext

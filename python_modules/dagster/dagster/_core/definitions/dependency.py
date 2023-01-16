@@ -492,7 +492,7 @@ class NodeHandle(
         return NodeHandle.from_path(path)
 
     @classmethod
-    def from_dict(cls, dict_repr: Dict[str, Any]) -> Optional["NodeHandle"]:
+    def from_dict(cls, dict_repr: Mapping[str, Any]) -> "NodeHandle":
         """This method makes it possible to load a potentially nested NodeHandle after a
         roundtrip through json.loads(json.dumps(NodeHandle._asdict())).
         """
@@ -505,14 +505,16 @@ class NodeHandle(
         )
 
         if isinstance(dict_repr["parent"], (list, tuple)):
-            dict_repr["parent"] = NodeHandle.from_dict(
+            parent = NodeHandle.from_dict(
                 {
                     "name": dict_repr["parent"][0],
                     "parent": dict_repr["parent"][1],
                 }
             )
+        else:
+            parent = dict_repr["parent"]
 
-        return NodeHandle(**{k: dict_repr[k] for k in ["name", "parent"]})
+        return NodeHandle(name=dict_repr["name"], parent=parent)
 
 
 class NodeInputHandle(

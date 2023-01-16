@@ -7,6 +7,8 @@ from contextlib import ExitStack
 from itertools import count
 from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Union, cast
 
+from typing_extensions import Self
+
 import dagster._check as check
 from dagster._core.errors import (
     DagsterRepositoryLocationLoadError,
@@ -200,7 +202,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def shutdown_repository_location(self, name: str):
         self.process_context.shutdown_repository_location(name)
 
-    def reload_workspace(self) -> "BaseWorkspaceRequestContext":
+    def reload_workspace(self) -> Self:  # type: ignore  # fmt: skip
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 

@@ -1,11 +1,13 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 
-import {graphql} from '../graphql';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 
+import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetViewParams} from './AssetView';
 import {AssetKey} from './types';
+import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
 
 /**
  * If the asset has a defined partition space, we load all materializations in the
@@ -38,19 +40,22 @@ export function useRecentAssetEvents(
 
   const loadUsingPartitionKeys = assetHasDefinedPartitions && xAxis === 'partition';
 
-  const {data, loading, refetch} = useQuery(ASSET_EVENTS_QUERY, {
-    variables: loadUsingPartitionKeys
-      ? {
-          assetKey: {path: assetKey.path},
-          before,
-          partitionInLast: 120,
-        }
-      : {
-          assetKey: {path: assetKey.path},
-          before,
-          limit: 100,
-        },
-  });
+  const {data, loading, refetch} = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(
+    ASSET_EVENTS_QUERY,
+    {
+      variables: loadUsingPartitionKeys
+        ? {
+            assetKey: {path: assetKey.path},
+            before,
+            partitionInLast: 120,
+          }
+        : {
+            assetKey: {path: assetKey.path},
+            before,
+            limit: 100,
+          },
+    },
+  );
 
   return React.useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
@@ -77,7 +82,7 @@ export function useRecentAssetEvents(
   }, [data, loading, refetch, loadUsingPartitionKeys, xAxis]);
 }
 
-export const ASSET_MATERIALIZATION_FRAGMENT = graphql(`
+export const ASSET_MATERIALIZATION_FRAGMENT = gql`
   fragment AssetMaterializationFragment on MaterializationEvent {
     partition
     runOrError {
@@ -107,9 +112,12 @@ export const ASSET_MATERIALIZATION_FRAGMENT = graphql(`
       ...AssetLineageFragment
     }
   }
-`);
 
-export const ASSET_OBSERVATION_FRAGMENT = graphql(`
+  ${METADATA_ENTRY_FRAGMENT}
+  ${ASSET_LINEAGE_FRAGMENT}
+`;
+
+export const ASSET_OBSERVATION_FRAGMENT = gql`
   fragment AssetObservationFragment on ObservationEvent {
     partition
     runOrError {
@@ -136,9 +144,11 @@ export const ASSET_OBSERVATION_FRAGMENT = graphql(`
       ...MetadataEntryFragment
     }
   }
-`);
 
-const ASSET_EVENTS_QUERY = graphql(`
+  ${METADATA_ENTRY_FRAGMENT}
+`;
+
+const ASSET_EVENTS_QUERY = gql`
   query AssetEventsQuery(
     $assetKey: AssetKeyInput!
     $limit: Int
@@ -173,4 +183,7 @@ const ASSET_EVENTS_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${ASSET_OBSERVATION_FRAGMENT}
+  ${ASSET_MATERIALIZATION_FRAGMENT}
+`;

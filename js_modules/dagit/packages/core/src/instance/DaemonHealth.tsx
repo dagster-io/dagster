@@ -11,7 +11,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DaemonStatusForListFragment} from '../graphql/graphql';
+import {DaemonStatusForListFragment} from './types/DaemonList.types';
 
 interface Props {
   daemon: DaemonStatusForListFragment;

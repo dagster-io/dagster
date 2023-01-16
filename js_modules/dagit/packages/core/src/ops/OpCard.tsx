@@ -1,14 +1,15 @@
+import {gql} from '@apollo/client';
 import {Box} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {OpNode} from '../graph/OpNode';
+import {OpNode, OP_NODE_DEFINITION_FRAGMENT} from '../graph/OpNode';
 import {layoutOp} from '../graph/asyncGraphLayout';
-import {graphql} from '../graphql';
-import {OpCardSolidDefinitionFragmentFragment} from '../graphql/graphql';
+
+import {OpCardSolidDefinitionFragment} from './types/OpCard.types';
 
 interface OpCardProps {
-  definition: OpCardSolidDefinitionFragmentFragment;
+  definition: OpCardSolidDefinitionFragment;
 }
 
 export const OpCard: React.FC<OpCardProps> = (props) => {
@@ -54,9 +55,8 @@ export const OpCard: React.FC<OpCardProps> = (props) => {
   );
 };
 
-export const OP_CARD_SOLID_DEFINITION_FRAGMENT = graphql(`
+export const OP_CARD_SOLID_DEFINITION_FRAGMENT = gql`
   fragment OpCardSolidDefinitionFragment on ISolidDefinition {
-    ...OpNodeDefinitionFragment
     __typename
     name
     description
@@ -70,8 +70,11 @@ export const OP_CARD_SOLID_DEFINITION_FRAGMENT = graphql(`
     outputDefinitions {
       name
     }
+    ...OpNodeDefinitionFragment
   }
-`);
+
+  ${OP_NODE_DEFINITION_FRAGMENT}
+`;
 
 const OpCardContainer = styled.div`
   flex: 1;

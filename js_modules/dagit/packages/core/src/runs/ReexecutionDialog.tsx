@@ -4,10 +4,14 @@ import {ProgressBar} from '@blueprintjs/core';
 import {Button, Colors, DialogBody, DialogFooter, Dialog, Group, Icon, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {LaunchPipelineReexecutionMutation, ReexecutionStrategy} from '../graphql/graphql';
+import {ReexecutionStrategy} from '../graphql/types';
 
 import {NavigationBlock} from './NavitationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
+import {
+  LaunchPipelineReexecutionMutation,
+  LaunchPipelineReexecutionMutationVariables,
+} from './types/RunUtils.types';
 
 export interface Props {
   isOpen: boolean;
@@ -147,7 +151,10 @@ export const ReexecutionDialog = (props: Props) => {
     }
   }, [isOpen, selectedRuns]);
 
-  const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
+  const [reexecute] = useMutation<
+    LaunchPipelineReexecutionMutation,
+    LaunchPipelineReexecutionMutationVariables
+  >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
 
   const mutate = async () => {
     dispatch({type: 'start'});
