@@ -1,5 +1,4 @@
 import itertools
-from collections import defaultdict
 from datetime import datetime
 from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, cast
 
@@ -8,7 +7,6 @@ from dagster._annotations import experimental
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
 )
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
@@ -302,9 +300,6 @@ class MultiPartitionsSubset(DefaultPartitionsSubset):
         partitions_def: MultiPartitionsDefinition,
         subset: Optional[Set[str]] = None,
     ):
-        """
-        Users should not directly call this method. Instead, call partitions_def.empty_subset().with_partition_keys().
-        """
         check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
         subset = (
             set(partitions_def.get_partition_key_from_str(key) for key in subset)
@@ -314,31 +309,8 @@ class MultiPartitionsSubset(DefaultPartitionsSubset):
         super(MultiPartitionsSubset, self).__init__(partitions_def, subset)
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "MultiPartitionsSubset":
-        partitions_def = cast(MultiPartitionsDefinition, self._partitions_def)
-        keys_per_dimension: Dict[str, Set] = defaultdict(set)
-        for partition_key in partition_keys:
-            for dimension, key in cast(MultiPartitionKey, partition_key).keys_by_dimension.items():
-                keys_per_dimension[dimension].add(key)
-
-        if set(keys_per_dimension.keys()) != set(
-            [dim.name for dim in partitions_def.partitions_defs]
-        ):
-            check.invariant(
-                "Provided partition keys have different dimensions than the partitions definition."
-            )
-
-        for dim_def in cast(MultiPartitionsDefinition, partitions_def).partitions_defs:
-            if dim_def.name not in keys_per_dimension:
-                raise DagsterInvariantViolationError(
-                    f"Dimension {dim_def.name} not found in provided partition keys."
-                )
-
-            valid_keys = set(dim_def.partitions_def.get_partition_keys())
-            if not all([key in valid_keys for key in keys_per_dimension[dim_def.name]]):
-                check.invariant("Provided partition key were not found in partitions definition.")
-
         return MultiPartitionsSubset(
-            partitions_def,
+            cast(MultiPartitionsDefinition, self._partitions_def),
             self._subset | set(partition_keys),
         )
 

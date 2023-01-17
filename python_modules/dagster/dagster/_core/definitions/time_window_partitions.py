@@ -213,6 +213,17 @@ class TimeWindowPartitionsDefinition(
                     self._iterate_time_windows(datetime.strptime(partition_key, self.fmt))
                 )
                 partition_key_time_windows.append(next(cur_windows_iterator))
+
+        end_tw = self.get_last_partition_window()
+        if end_tw is None:
+            check.failed("No end time window found")
+        end_timestamp = end_tw.end.timestamp()
+        partition_key_time_windows = [
+            tw
+            for tw in partition_key_time_windows
+            if tw.start.timestamp() >= self.start.timestamp()
+            and tw.end.timestamp() <= end_timestamp
+        ]
         return partition_key_time_windows
 
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
@@ -1057,9 +1068,6 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         included_time_windows: Sequence[TimeWindow],
         num_partitions: int,
     ):
-        """
-        Users should not directly call this method. Instead, call empty_subset().with_partition_keys().
-        """
         self._partitions_def = check.inst_param(
             partitions_def, "partitions_def", TimeWindowPartitionsDefinition
         )

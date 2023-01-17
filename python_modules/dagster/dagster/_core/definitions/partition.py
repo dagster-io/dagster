@@ -1108,9 +1108,6 @@ class DefaultPartitionsSubset(PartitionsSubset):
     SERIALIZATION_VERSION = 1
 
     def __init__(self, partitions_def: PartitionsDefinition, subset: Optional[Set[str]] = None):
-        """
-        Users should not directly call this method. Instead, call partitions_def.empty_subset().with_partition_keys().
-        """
         check.opt_set_param(subset, "subset")
         self._partitions_def = partitions_def
         self._subset = subset or set()
@@ -1148,10 +1145,9 @@ class DefaultPartitionsSubset(PartitionsSubset):
         return result
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
-        valid_partition_keys = set(self._partitions_def.get_partition_keys())
         return DefaultPartitionsSubset(
             self._partitions_def,
-            self._subset | (set(valid_partition_keys) & set(partition_keys)),
+            self._subset | set(partition_keys),
         )
 
     def with_partition_key_range(
