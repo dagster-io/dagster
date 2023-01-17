@@ -24,7 +24,11 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessConstraint
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -63,8 +67,30 @@ class AssetReconciliationCursor(NamedTuple):
     def get_never_requested_never_materialized_partitions(
         self, asset_key: AssetKey, asset_graph
     ) -> Iterable[str]:
+        partitions_def = asset_graph.get_partitions_def(asset_key)
+        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            last_window = partitions_def.get_last_partition_window()
+            default_subset = TimeWindowPartitionsSubset(
+                partitions_def=partitions_def,
+                included_time_windows=[
+                    TimeWindow(partitions_def.start, last_window.end - datetime.timedelta(days=1))
+                ],
+                num_partitions=0,
+            )
+            keys = partitions_def.get_partition_keys_in_range(
+                partitions_def.get_partition_key_range_for_time_window(
+                    TimeWindow(
+                        start=last_window.start - datetime.timedelta(days=1), end=last_window.end
+                    )
+                )
+            )
+            return keys
+            print(last_window)
+            print(default_subset)
+        else:
+            default_subset = partitions_def.empty_subset()
         return self.materialized_or_requested_root_partitions_by_asset_key.get(
-            asset_key, asset_graph.get_partitions_def(asset_key).empty_subset()
+            asset_key, default_subset
         ).get_partition_keys_not_in_subset()
 
     def with_updates(
