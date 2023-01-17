@@ -171,6 +171,7 @@ export type AssetMetadataEntry = MetadataEntry & {
 export type AssetNode = {
   __typename: 'AssetNode';
   assetKey: AssetKey;
+  assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   computeKind: Maybe<Scalars['String']>;
@@ -205,6 +206,10 @@ export type AssetNode = {
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
   type: Maybe<DagsterType>;
+};
+
+export type AssetNodeAssetMaterializationUsedDataArgs = {
+  timestampMillis: Scalars['String'];
 };
 
 export type AssetNodeAssetMaterializationsArgs = {
@@ -1855,6 +1860,13 @@ export type MaterializationEvent = DisplayableEvent &
     stepStats: RunStepStats;
     timestamp: Scalars['String'];
   };
+
+export type MaterializationUpstreamDataVersion = {
+  __typename: 'MaterializationUpstreamDataVersion';
+  assetKey: AssetKey;
+  downstreamAssetKey: AssetKey;
+  timestamp: Scalars['String'];
+};
 
 export type MessageEvent = {
   eventType: Maybe<DagsterEventType>;
