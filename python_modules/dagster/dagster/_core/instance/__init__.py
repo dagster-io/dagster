@@ -1649,9 +1649,9 @@ class DagsterInstance:
 
     @traced
     def get_materialization_count_by_partition(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
-        return self._event_storage.get_materialization_count_by_partition(asset_keys)
+        return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
 
     # event subscriptions
 

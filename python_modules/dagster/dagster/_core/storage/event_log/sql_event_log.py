@@ -1565,7 +1565,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     def get_materialization_count_by_partition(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         check.sequence_param(asset_keys, "asset_keys", AssetKey)
 
@@ -1597,6 +1597,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         assets_details = self._get_assets_details(asset_keys)
         query = self._add_assets_wipe_filter_to_query(query, assets_details, asset_keys)
+
+        if after_cursor:
+            query = query.where(SqlEventLogStorageTable.c.id > after_cursor)
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
