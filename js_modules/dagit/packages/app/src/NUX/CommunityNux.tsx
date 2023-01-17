@@ -192,6 +192,7 @@ const RecaptchaIFrame: React.FC<{
         height={height}
         style={{
           border: 'none',
+          overflow: 'hidden',
           ...(iframeLoaded
             ? {}
             : {
