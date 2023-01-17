@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
 import {
-  Alert,
   Box,
   CursorPaginationControls,
   NonIdealState,
@@ -16,6 +15,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {OverviewTabs} from '../overview/OverviewTabs';
+import {DaemonNotRunningAlertBody} from '../partitions/BackfillMessaging';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
 
@@ -86,23 +86,7 @@ export const InstanceBackfills = () => {
             <div>
               {isBackfillHealthy ? null : (
                 <Box padding={{horizontal: 24, vertical: 16}}>
-                  <Alert
-                    intent="warning"
-                    title="The backfill daemon is not running."
-                    description={
-                      <div>
-                        See the{' '}
-                        <a
-                          href="https://docs.dagster.io/deployment/dagster-daemon"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          dagster-daemon documentation
-                        </a>{' '}
-                        for more information on how to deploy the dagster-daemon process.
-                      </div>
-                    }
-                  />
+                  <DaemonNotRunningAlertBody />
                 </Box>
               )}
               <BackfillTable
