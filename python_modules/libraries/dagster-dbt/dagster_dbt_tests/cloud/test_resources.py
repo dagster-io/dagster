@@ -170,6 +170,30 @@ def test_no_disable_schedule():
         # endpoint for disabling the schedule has not been set up, so will fail if attempted
         dc_resource.run_job_and_poll(SAMPLE_JOB_ID)
 
+    # If the schedule was already disabled, no need to re-disable it.
+    dc_resource = get_dbt_cloud_resource()
+    with responses.RequestsMock() as rsps:
+        # endpoint for launching run
+        rsps.add(
+            rsps.POST,
+            f"{SAMPLE_API_PREFIX}/jobs/{SAMPLE_JOB_ID}/run/",
+            json=sample_run_details(job={"triggers": {"schedule": False}}),
+        )
+        # run will immediately succeed
+        rsps.add(
+            rsps.GET,
+            f"{SAMPLE_API_PREFIX}/runs/{SAMPLE_RUN_ID}/",
+            json=sample_run_details(status_humanized="Success"),
+        )
+        # endpoint for run_results.json
+        rsps.add(
+            rsps.GET,
+            f"{SAMPLE_API_PREFIX}/runs/{SAMPLE_RUN_ID}/artifacts/run_results.json",
+            json=sample_run_results(),
+        )
+        # endpoint for disabling the schedule has not been set up, so will fail if attempted
+        dc_resource.run_job_and_poll(SAMPLE_JOB_ID)
+
 
 @pytest.mark.parametrize(
     "final_status,expected_behavior",

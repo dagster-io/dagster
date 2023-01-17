@@ -138,7 +138,7 @@ def sample_run_details(include_related=None, **kwargs):
         "last_heartbeat_at": None,
         "should_start_at": "2021-11-01 22:47:48.501943+00:00",
         "trigger": None,
-        "job": None,
+        "job": {"triggers": {"schedule": True}},
         "environment": None,
         "run_steps": [],
         "status_humanized": "Success",
