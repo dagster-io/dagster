@@ -24,7 +24,10 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessConstraint
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -63,9 +66,28 @@ class AssetReconciliationCursor(NamedTuple):
     def get_never_requested_never_materialized_partitions(
         self, asset_key: AssetKey, asset_graph
     ) -> Iterable[str]:
-        return self.materialized_or_requested_root_partitions_by_asset_key.get(
-            asset_key, asset_graph.get_partitions_def(asset_key).empty_subset()
-        ).get_partition_keys_not_in_subset()
+        partitions_def = asset_graph.get_partitions_def(asset_key)
+
+        materialized_or_requested_subset = (
+            self.materialized_or_requested_root_partitions_by_asset_key.get(
+                asset_key, partitions_def.empty_subset()
+            )
+        )
+
+        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            allowable_time_window = allowable_time_window_for_partitions_def(partitions_def)
+            if allowable_time_window is None:
+                return []
+            # for performance, only iterate over keys within the allowable time window
+            return [
+                partition_key
+                for partition_key in partitions_def.get_partition_keys_in_time_window(
+                    allowable_time_window
+                )
+                if partition_key not in materialized_or_requested_subset
+            ]
+        else:
+            return materialized_or_requested_subset.get_partition_keys_not_in_subset()
 
     def with_updates(
         self,
@@ -265,6 +287,21 @@ def find_never_materialized_or_requested_root_asset_partitions(
     )
 
 
+def allowable_time_window_for_partitions_def(
+    partitions_def: TimeWindowPartitionsDefinition,
+) -> Optional[TimeWindow]:
+    """Returns a time window encompassing the partitions that the reconciliation sensor is currently
+    allowed to materialize for this partitions_def
+    """
+    latest_partition_window = partitions_def.get_last_partition_window()
+    if latest_partition_window is None:
+        return None
+    return TimeWindow(
+        start=latest_partition_window.start - datetime.timedelta(days=1),
+        end=latest_partition_window.end,
+    )
+
+
 def candidates_unit_within_allowable_time_window(
     asset_graph: AssetGraph, candidates_unit: Iterable[AssetKeyPartitionKey]
 ):
@@ -282,14 +319,15 @@ def candidates_unit_within_allowable_time_window(
 
     partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
 
-    latest_partition_window = partitions_def.get_last_partition_window()
-    if latest_partition_window is None:
+    allowable_time_window = allowable_time_window_for_partitions_def(partitions_def)
+    if allowable_time_window is None:
         return False
 
     candidate_partition_window = partitions_def.time_window_for_partition_key(partition_key)
-    time_delta = latest_partition_window.end - candidate_partition_window.end
-
-    return time_delta < datetime.timedelta(days=1)
+    return (
+        candidate_partition_window.start > allowable_time_window.start
+        and candidate_partition_window.end <= allowable_time_window.end
+    )
 
 
 def determine_asset_partitions_to_reconcile(
