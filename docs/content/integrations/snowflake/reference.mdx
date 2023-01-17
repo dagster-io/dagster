@@ -7,10 +7,58 @@ description: Store your Dagster assets in Snowflake
 
 This reference page provides information for working with [`dagster-snowflake`](/\_apidocs/libraries/dagster-snowflake) features that are not covered as part of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
+- [Authenticating using a private key](#authenticating-using-a-private-key)
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas)
 - [Using the Snowflake I/O manager with other I/O managers](#using-the-snowflake-io-manager-with-other-io-managers)
 - [Executing custom SQL commands with the Snowflake resource](#executing-custom-sql-commands-with-the-snowflake-resource)
+
+---
+
+## Authenticating using a private key
+
+In addition to password-based authentication, you can authenticate with Snowflake using a key pair. To set up private key authentication for your Snowflake account, see the instructions in the [Snowflake docs](https://docs.snowflake.com/en/user-guide/key-pair-auth.html#configuring-key-pair-authentication).
+
+You can provide the private key directly to the Snowflake I/O manager using the `private_key` configuration value. If your key is encrypted, you can provide the password using the `private_key_password`.
+
+```python file=/integrations/snowflake/private_key_auth.py startafter=start_direct_key endbefore=end_direct_key
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
+
+from dagster import Definitions
+
+defs = Definitions(
+    assets=[iris_dataset],
+    resources={
+        "io_manager": snowflake_pandas_io_manager.configured(
+            {
+                "account": "abc1234.us-east-1",
+                "user": {"env": "SNOWFLAKE_USER"},
+                "private_key": {"env": "SNOWFLAKE_PK"},
+                "private_key_password": {"env": "SNOWFLAKE_PK_PASSWORD"},
+                "database": "FLOWERS",
+            }
+        )
+    },
+)
+```
+
+You can also provide a path to a file containing the private key with the `private_key_path` configuration value.
+
+```python file=/integrations/snowflake/private_key_auth.py startafter=start_key_file endbefore=end_key_file
+defs = Definitions(
+    assets=[iris_dataset],
+    resources={
+        "io_manager": snowflake_pandas_io_manager.configured(
+            {
+                "account": "abc1234.us-east-1",
+                "user": {"env": "SNOWFLAKE_USER"},
+                "private_key_path": "/path/to/private/key/file.p8",
+                "database": "FLOWERS",
+            }
+        )
+    },
+)
+```
 
 ---
 
