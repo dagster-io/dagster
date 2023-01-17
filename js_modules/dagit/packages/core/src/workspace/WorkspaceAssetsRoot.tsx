@@ -6,6 +6,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useAssetNodeSearch} from '../assets/useAssetSearch';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 import {VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -19,6 +20,9 @@ import {
 
 export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
+
+  const repoName = repoAddressAsHumanString(repoAddress);
+  useDocumentTitle(`Assets: ${repoName}`);
 
   const [searchValue, setSearchValue] = React.useState('');
   const selector = repoAddressToSelector(repoAddress);
@@ -57,8 +61,6 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
         </Box>
       );
     }
-
-    const repoName = repoAddressAsHumanString(repoAddress);
 
     if (!filteredBySearch.length) {
       if (anySearch) {

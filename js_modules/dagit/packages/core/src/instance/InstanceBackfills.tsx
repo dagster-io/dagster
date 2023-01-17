@@ -31,6 +31,7 @@ const PAGE_SIZE = 10;
 
 export const InstanceBackfills = () => {
   useTrackPageView();
+  useDocumentTitle('Overview | Backfills');
 
   const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
 
@@ -51,7 +52,6 @@ export const InstanceBackfills = () => {
         : [],
   });
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
-  useDocumentTitle('Backfills');
 
   return (
     <Page>

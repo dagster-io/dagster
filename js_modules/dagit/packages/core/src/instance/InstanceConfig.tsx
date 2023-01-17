@@ -17,6 +17,7 @@ import {createGlobalStyle} from 'styled-components/macro';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
@@ -36,6 +37,7 @@ const InstanceConfigStyle = createGlobalStyle`
 
 export const InstanceConfig = React.memo(() => {
   useTrackPageView();
+  useDocumentTitle('Configuration');
 
   const {pageTitle} = React.useContext(InstancePageContext);
   const queryResult = useQuery<InstanceConfigQuery>(INSTANCE_CONFIG_QUERY, {

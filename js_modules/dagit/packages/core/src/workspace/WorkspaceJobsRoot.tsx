@@ -6,6 +6,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -16,6 +17,9 @@ import {WorkspaceJobsQuery, WorkspaceJobsQueryVariables} from './types/Workspace
 
 export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
+
+  const repoName = repoAddressAsHumanString(repoAddress);
+  useDocumentTitle(`Jobs: ${repoName}`);
 
   const [searchValue, setSearchValue] = React.useState('');
 
@@ -60,8 +64,6 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
         </Box>
       );
     }
-
-    const repoName = repoAddressAsHumanString(repoAddress);
 
     if (!filteredBySearch.length) {
       if (anySearch) {
