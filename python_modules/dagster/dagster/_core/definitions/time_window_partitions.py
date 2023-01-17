@@ -194,7 +194,7 @@ class TimeWindowPartitionsDefinition(
     def time_windows_for_partition_keys(
         self,
         partition_keys: Sequence[str],
-    ) -> List[TimeWindow]:
+    ) -> Sequence[TimeWindow]:
         if len(partition_keys) == 0:
             return []
 
@@ -1065,9 +1065,8 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         Returns a list of partition time windows that are not in the subset.
         Each time window is a single partition.
         """
-        partitions_def = cast(TimeWindowPartitionsDefinition, self._partitions_def)
-        first_tw = partitions_def.get_first_partition_window()
-        last_tw = partitions_def.get_last_partition_window(current_time=current_time)
+        first_tw = self._partitions_def.get_first_partition_window()
+        last_tw = self._partitions_def.get_last_partition_window(current_time=current_time)
 
         if not first_tw or not last_tw:
             check.failed("No partitions found")
