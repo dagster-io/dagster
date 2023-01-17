@@ -12,7 +12,6 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.storage.partition_status_cache import (
-    AssetStatusCacheValue,
     get_and_update_asset_status_cache_values,
 )
 from dagster._core.test_utils import instance_for_test

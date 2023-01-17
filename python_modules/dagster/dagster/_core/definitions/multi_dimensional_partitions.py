@@ -305,9 +305,7 @@ class MultiPartitionsSubset(DefaultPartitionsSubset):
         """
         Users should not directly call this method. Instead, call partitions_def.empty_subset().with_partition_keys().
         """
-        self._partitions_def = check.inst_param(
-            partitions_def, "partitions_def", MultiPartitionsDefinition
-        )
+        check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
         subset = (
             set(partitions_def.get_partition_key_from_str(key) for key in subset)
             if subset
@@ -316,19 +314,20 @@ class MultiPartitionsSubset(DefaultPartitionsSubset):
         super(MultiPartitionsSubset, self).__init__(partitions_def, subset)
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "MultiPartitionsSubset":
+        partitions_def = cast(MultiPartitionsDefinition, self._partitions_def)
         keys_per_dimension: Dict[str, Set] = defaultdict(set)
         for partition_key in partition_keys:
             for dimension, key in cast(MultiPartitionKey, partition_key).keys_by_dimension.items():
                 keys_per_dimension[dimension].add(key)
 
         if set(keys_per_dimension.keys()) != set(
-            [dim.name for dim in self._partitions_def.partitions_defs]
+            [dim.name for dim in partitions_def.partitions_defs]
         ):
             check.invariant(
                 "Provided partition keys have different dimensions than the partitions definition."
             )
 
-        for dim_def in cast(MultiPartitionsDefinition, self._partitions_def).partitions_defs:
+        for dim_def in cast(MultiPartitionsDefinition, partitions_def).partitions_defs:
             if dim_def.name not in keys_per_dimension:
                 raise DagsterInvariantViolationError(
                     f"Dimension {dim_def.name} not found in provided partition keys."
@@ -339,7 +338,7 @@ class MultiPartitionsSubset(DefaultPartitionsSubset):
                 check.invariant("Provided partition key were not found in partitions definition.")
 
         return MultiPartitionsSubset(
-            self._partitions_def,
+            partitions_def,
             self._subset | set(partition_keys),
         )
 

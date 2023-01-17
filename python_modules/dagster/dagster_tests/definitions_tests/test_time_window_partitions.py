@@ -15,7 +15,11 @@ from dagster import (
     monthly_partitioned_config,
     weekly_partitioned_config,
 )
-from dagster._core.definitions.time_window_partitions import ScheduleType, TimeWindow
+from dagster._core.definitions.time_window_partitions import (
+    ScheduleType,
+    TimeWindow,
+    TimeWindowPartitionsSubset,
+)
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -396,7 +400,9 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
         == expected_keys_not_in_subset
     )
     assert (
-        partitions_def.deserialize_subset(subset.serialize()).included_time_windows
+        cast(
+            TimeWindowPartitionsSubset, partitions_def.deserialize_subset(subset.serialize())
+        ).included_time_windows
         == subset.included_time_windows
     )
 

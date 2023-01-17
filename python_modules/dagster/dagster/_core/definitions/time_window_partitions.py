@@ -1201,6 +1201,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
     ) -> "PartitionsSubset":
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Partitions definition must be a TimeWindowPartitionsDefinition")
+        partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
 
         loaded = json.loads(serialized)
 
