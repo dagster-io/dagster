@@ -2,6 +2,42 @@
 
 import * as Types from '../../graphql/types';
 
+export type ScheduleNextFiveTicksFragment = {
+  __typename: 'Schedule';
+  id: string;
+  name: string;
+  executionTimezone: string | null;
+  mode: string;
+  solidSelection: Array<string | null> | null;
+  pipelineName: string;
+  scheduleState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
+  futureTicks: {
+    __typename: 'FutureInstigationTicks';
+    results: Array<{__typename: 'FutureInstigationTick'; timestamp: number}>;
+  };
+};
+
+export type RepositoryForNextTicksFragment = {
+  __typename: 'Repository';
+  name: string;
+  id: string;
+  location: {__typename: 'RepositoryLocation'; id: string; name: string};
+  schedules: Array<{
+    __typename: 'Schedule';
+    id: string;
+    name: string;
+    executionTimezone: string | null;
+    mode: string;
+    solidSelection: Array<string | null> | null;
+    pipelineName: string;
+    scheduleState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
+    futureTicks: {
+      __typename: 'FutureInstigationTicks';
+      results: Array<{__typename: 'FutureInstigationTick'; timestamp: number}>;
+    };
+  }>;
+};
+
 export type ScheduleTickConfigQueryVariables = Types.Exact<{
   scheduleSelector: Types.ScheduleSelector;
   tickTimestamp: Types.Scalars['Int'];
