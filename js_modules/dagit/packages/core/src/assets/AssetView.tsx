@@ -30,6 +30,7 @@ import {
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {StaleTag} from '../assets/StaleTag';
+import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -450,6 +451,9 @@ const AssetViewPageHeaderTags: React.FC<{
       )}
       {liveData?.freshnessPolicy && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
       <StaleTag liveData={liveData} onClick={onShowUpstream} />
+      {definition && (
+        <AssetComputeKindTag style={{position: 'relative'}} definition={definition} reduceColor />
+      )}
     </>
   );
 };
