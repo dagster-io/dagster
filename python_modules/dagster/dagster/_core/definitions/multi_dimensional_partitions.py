@@ -263,9 +263,6 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return MultiPartitionsSubset.from_serialized(self, serialized)
 
-    def supports_deserialization(self, serialized: str) -> bool:
-        return MultiPartitionsSubset.supports_deserialization(serialized)
-
     def _get_primary_and_secondary_dimension(
         self,
     ) -> Tuple[PartitionDimensionDefinition, PartitionDimensionDefinition]:

@@ -273,9 +273,6 @@ class PartitionsDefinition(ABC, Generic[T]):
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return DefaultPartitionsSubset.from_serialized(self, serialized)
 
-    def supports_deserialization(self, serialized: str) -> bool:
-        return DefaultPartitionsSubset.supports_deserialization(serialized)
-
     @property
     def serializable_unique_identifier(self) -> str:
         return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
@@ -1086,14 +1083,6 @@ class PartitionsSubset(ABC):
 
     @classmethod
     @abstractmethod
-    def supports_deserialization(cls, serialized: str) -> bool:
-        """
-        Returns True if this PartitionsSubset can deserialize the given serialized string.
-        """
-        raise NotImplementedError()
-
-    @classmethod
-    @abstractmethod
     def from_serialized(
         cls, partitions_def: PartitionsDefinition, serialized: str
     ) -> "PartitionsSubset":
@@ -1176,12 +1165,6 @@ class DefaultPartitionsSubset(PartitionsSubset):
         # Serialize version number, so attempting to deserialize old versions can be handled gracefully.
         # Any time the serialization format changes, we should increment the version number.
         return json.dumps({"version": self.SERIALIZATION_VERSION, "subset": list(self._subset)})
-
-    @classmethod
-    def supports_deserialization(cls, serialized: str) -> bool:
-        # Check the version number to determine if the serialization format is supported
-        data = json.loads(serialized)
-        return data.get("version") == cls.SERIALIZATION_VERSION
 
     @classmethod
     def from_serialized(

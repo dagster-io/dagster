@@ -253,17 +253,8 @@ def _get_fresh_asset_status_cache_values(
             continue
 
         partitions_def = asset_graph.get_partitions_def(asset_key)
-        if (
-            cached_status_data is None
-            or cached_status_data.partitions_def_id
-            != (partitions_def.serializable_unique_identifier if partitions_def else None)
-            or (
-                partitions_def
-                and cached_status_data.serialized_materialized_partition_subset
-                and not partitions_def.supports_deserialization(
-                    cached_status_data.serialized_materialized_partition_subset
-                )
-            )
+        if cached_status_data is None or cached_status_data.partitions_def_id != (
+            partitions_def.serializable_unique_identifier if partitions_def else None
         ):
             event_records = instance.get_event_records(
                 event_records_filter=EventRecordsFilter(

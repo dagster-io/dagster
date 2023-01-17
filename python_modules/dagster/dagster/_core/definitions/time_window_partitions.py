@@ -527,9 +527,6 @@ class TimeWindowPartitionsDefinition(
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return TimeWindowPartitionsSubset.from_serialized(self, serialized)
 
-    def supports_deserialization(self, serialized: str) -> bool:
-        return TimeWindowPartitionsSubset.supports_deserialization(serialized)
-
     @property
     def serializable_unique_identifier(self) -> str:
         return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
@@ -1235,12 +1232,6 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             )
 
         return TimeWindowPartitionsSubset(partitions_def, time_windows, num_partitions)
-
-    @classmethod
-    def supports_deserialization(cls, serialized: str) -> bool:
-        # Check the version number to determine if the serialization format is supported
-        data = json.loads(serialized)
-        return data.get("version") == cls.SERIALIZATION_VERSION
 
     def serialize(self) -> str:
         return json.dumps(

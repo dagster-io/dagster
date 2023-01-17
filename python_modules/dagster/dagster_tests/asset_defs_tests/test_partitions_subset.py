@@ -20,8 +20,6 @@ def test_default_subset_cannot_deserialize_invalid_version():
     class NewSerializationVersionSubset(DefaultPartitionsSubset):
         SERIALIZATION_VERSION = -1
 
-    assert NewSerializationVersionSubset.supports_deserialization(serialized_subset) is False
-
     with pytest.raises(DagsterInvalidDeserializationVersionError, match="version -1"):
         NewSerializationVersionSubset.from_serialized(static_partitions_def, serialized_subset)
 
@@ -57,8 +55,6 @@ def test_time_window_subset_cannot_deserialize_invalid_version():
 
     class NewSerializationVersionSubset(TimeWindowPartitionsSubset):
         SERIALIZATION_VERSION = -2
-
-    assert NewSerializationVersionSubset.supports_deserialization(serialized_subset) is False
 
     with pytest.raises(DagsterInvalidDeserializationVersionError, match="version -2"):
         NewSerializationVersionSubset.from_serialized(daily_partitions_def, serialized_subset)
