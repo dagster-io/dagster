@@ -29,9 +29,9 @@ def persist_run(
         repository_location (RepositoryLocation): RepositoryLocation corresponding to user code
         pipeline_selector (PipelineSelector): Selector that encapsulates subset of pipeline that will be executed
         run_config (Mapping[str, object]): Run configuration for this run
-        context_specific_tags (Mapping[str, str]): Callsites typically have tags
-            specific to their context (e.g. users can specify ad hoc tags for runs.
-            This set of tags will be merged with the tags on the pipeline itself)
+        run_tags (Mapping[str, str]): Callsites typically have tags
+            specific to their context (e.g. users can specify ad hoc tags for runs in UI-driven cases).
+            This set of tags will be merged with the tags on the pipeline itself.
         explicit_mode Optional[str]: Explicitly override the default mode for the pipeline.
     """
     external_pipeline = repository_location.get_external_pipeline(pipeline_selector)
