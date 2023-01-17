@@ -164,13 +164,12 @@ export class OpNode extends React.Component<IOpNodeProps> {
 
         {tags.length > 0 && (
           <OpTags
+            tags={tags}
             style={{
               left: layout.op.x + layout.op.width,
               top: layout.op.y + layout.op.height,
               transform: 'translate(-100%, 3px)',
             }}
-            minified={minified}
-            tags={tags}
           />
         )}
 

@@ -66,7 +66,7 @@ export const AssetNodeDefinition: React.FC<{
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Description</Subheading>
-            <DefinitionLocation assetNode={assetNode} repoAddress={repoAddress} />
+            <DescriptionAnnotations assetNode={assetNode} repoAddress={repoAddress} />
           </Box>
           <Box
             padding={{vertical: 16, horizontal: 24}}
@@ -198,7 +198,7 @@ export const AssetNodeDefinition: React.FC<{
   );
 };
 
-const DefinitionLocation: React.FC<{
+const DescriptionAnnotations: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   repoAddress: RepoAddress;
 }> = ({assetNode, repoAddress}) => (
