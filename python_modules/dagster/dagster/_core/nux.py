@@ -25,6 +25,4 @@ def set_nux_seen():
 # Gets whether we've shown the Nux to any user on this instance
 def get_has_seen_nux():
     # We only care about the existence of the file
-    if not os.path.exists(nux_seen_filepath()):
-        return False
-    return True
+    return os.path.exists(nux_seen_filepath())

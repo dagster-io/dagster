@@ -17,14 +17,15 @@ import React from 'react';
 import isEmail from 'validator/lib/isEmail';
 
 export const CommunityNux = () => {
-  const [didDismissCommunityNux, dismissCommunityNux] = useStateWithStorage(
+  const [didDismissCommunityNux, dissmissInBrowser] = useStateWithStorage(
     'communityNux',
     (data) => data,
   );
   const {data, loading} = useQuery(GET_SHOULD_SHOW_NUX_QUERY);
-  const [dismiss] = useMutation(SET_NUX_SEEN_MUTATION);
+  const [dismissOnServer] = useMutation(SET_NUX_SEEN_MUTATION);
 
   if (!isLocalhost()) {
+    // Yes, we only want to show this on localhost for now.
     return null;
   }
   if (didDismissCommunityNux || loading || (data && !data.shouldShowNux)) {
@@ -33,8 +34,8 @@ export const CommunityNux = () => {
   return (
     <CommunityNuxImpl
       dismiss={() => {
-        dismissCommunityNux('1');
-        dismiss();
+        dissmissInBrowser('1');
+        dismissOnServer();
       }}
     />
   );
