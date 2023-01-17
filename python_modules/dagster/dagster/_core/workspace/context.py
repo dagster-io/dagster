@@ -434,6 +434,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         version: str = "",
         read_only: bool = False,
         grpc_server_registry=None,
+        code_server_log_level="INFO",
     ):
         self._stack = ExitStack()
 
@@ -471,6 +472,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     reload_interval=0,
                     heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
                     startup_timeout=instance.code_server_process_startup_timeout,
+                    log_level=code_server_log_level,
                 )
             )
 

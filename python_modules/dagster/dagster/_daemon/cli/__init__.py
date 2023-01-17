@@ -5,7 +5,7 @@ import click
 
 from dagster import __version__ as dagster_version
 from dagster._cli.workspace.cli_target import get_workspace_load_target, workspace_target_argument
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
@@ -16,6 +16,7 @@ from dagster._daemon.controller import (
     get_daemon_statuses,
 )
 from dagster._daemon.daemon import get_telemetry_daemon_session_id
+from dagster._serdes import deserialize_as
 from dagster._utils.interrupts import capture_interrupts
 
 
@@ -30,21 +31,39 @@ def _get_heartbeat_tolerance():
     name="run",
     help="Run any daemons configured on the DagsterInstance.",
 )
+@click.option(
+    "--code-server-log-level",
+    help="Set the log level for any code servers spun up by the daemon.",
+    show_default=True,
+    default="warning",
+    type=click.Choice(
+        ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
+    ),
+)
+@click.option(
+    "--instance-ref",
+    type=click.STRING,
+    required=False,
+    hidden=True,
+)
 @workspace_target_argument
-def run_command(**kwargs):
+def run_command(code_server_log_level, instance_ref, **kwargs):
     with capture_interrupts():
-        with DagsterInstance.get() as instance:
-            _daemon_run_command(instance, kwargs)
+        with DagsterInstance.from_ref(
+            deserialize_as(instance_ref, InstanceRef)
+        ) if instance_ref else DagsterInstance.get() as instance:
+            _daemon_run_command(instance, code_server_log_level, kwargs)
 
 
 @telemetry_wrapper(metadata={"DAEMON_SESSION_ID": get_telemetry_daemon_session_id()})
-def _daemon_run_command(instance: DagsterInstance, kwargs):
+def _daemon_run_command(instance: DagsterInstance, code_server_log_level: str, kwargs):
     workspace_load_target = get_workspace_load_target(kwargs)
 
     with daemon_controller_from_instance(
         instance,
         workspace_load_target=workspace_load_target,
         heartbeat_tolerance_seconds=_get_heartbeat_tolerance(),
+        code_server_log_level=code_server_log_level,
     ) as controller:
         controller.check_daemon_loop()
 
