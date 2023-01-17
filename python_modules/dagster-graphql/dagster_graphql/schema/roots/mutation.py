@@ -1,6 +1,7 @@
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
+from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.implementation.execution.backfill import (
@@ -619,6 +620,20 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
         return action
 
 
+class GrapheneSetNuxSeenMutation(graphene.Mutation):
+    """Store whether we've shown the nux to any user and they've dismissed or submitted it"""
+
+    Output = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "SetNuxSeenMutation"
+
+    @capture_error
+    def mutate(self, _graphene_info):
+        set_nux_seen()
+        return get_has_seen_nux()
+
+
 class GrapheneDagitMutation(graphene.ObjectType):
     """The root for all mutations to modify data in your Dagster instance."""
 
@@ -646,3 +661,4 @@ class GrapheneDagitMutation(graphene.ObjectType):
     resume_partition_backfill = GrapheneResumeBackfillMutation.Field()
     cancel_partition_backfill = GrapheneCancelBackfillMutation.Field()
     log_telemetry = GrapheneLogTelemetryMutation.Field()
+    set_nux_seen = GrapheneSetNuxSeenMutation.Field()

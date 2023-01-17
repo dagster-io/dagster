@@ -1,3 +1,4 @@
+import {gql, useMutation, useQuery} from '@apollo/client';
 import {useStateWithStorage} from '@dagster-io/dagit-core/hooks/useStateWithStorage';
 import {
   Body,
@@ -20,13 +21,20 @@ export const CommunityNux = () => {
     'communityNux',
     (data) => data,
   );
-  if (didDismissCommunityNux) {
+  const {data, loading} = useQuery(GET_SHOULD_SHOW_NUX_QUERY);
+  const [dismiss] = useMutation(SET_NUX_SEEN_MUTATION);
+
+  if (!window.location.origin.startsWith('http://localhost')) {
+    return null;
+  }
+  if (didDismissCommunityNux || loading || (data && !data.shouldShowNux)) {
     return null;
   }
   return (
     <CommunityNuxImpl
       dismiss={() => {
         dismissCommunityNux('1');
+        dismiss();
       }}
     />
   );
@@ -212,3 +220,15 @@ const RecaptchaIFrame: React.FC<{
 };
 
 const IFRAME_SRC = '//dagster.io/dagit_iframes/community_nux';
+
+const SET_NUX_SEEN_MUTATION = gql`
+  mutation SetNuxSeen {
+    setNuxSeen
+  }
+`;
+
+const GET_SHOULD_SHOW_NUX_QUERY = gql`
+  query ShouldShowNux {
+    shouldShowNux
+  }
+`;

@@ -2651,6 +2651,7 @@ type DagitQuery {
   logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
   capturedLogsMetadata(logKey: [String!]!): CapturedLogsMetadata!
   capturedLogs(logKey: [String!]!, cursor: String, limit: Int): CapturedLogs!
+  shouldShowNux: Boolean!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -2772,6 +2773,7 @@ type DagitMutation {
     clientTime: String!
     metadata: String!
   ): LogTelemetryMutationResult!
+  setNuxSeen: Boolean!
 }
 
 input ReexecutionParams {

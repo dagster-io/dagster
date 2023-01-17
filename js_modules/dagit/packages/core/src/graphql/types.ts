@@ -424,6 +424,7 @@ export type DagitMutation = {
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   resumePartitionBackfill: ResumeBackfillResult;
+  setNuxSeen: Scalars['Boolean'];
   setSensorCursor: SensorOrError;
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
   startSchedule: ScheduleMutationResult;
@@ -564,6 +565,7 @@ export type DagitQuery = {
   schedulesOrError: SchedulesOrError;
   sensorOrError: SensorOrError;
   sensorsOrError: SensorsOrError;
+  shouldShowNux: Scalars['Boolean'];
   unloadableInstigationStatesOrError: InstigationStatesOrError;
   version: Scalars['String'];
   workspaceOrError: WorkspaceOrError;
