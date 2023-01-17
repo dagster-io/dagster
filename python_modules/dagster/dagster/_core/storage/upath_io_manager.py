@@ -6,8 +6,12 @@ from typing import Any, Dict, Union
 
 from upath import UPath
 
-from dagster import InputContext, MetadataValue, OutputContext
-from dagster import _check as check
+from dagster import (
+    InputContext,
+    MetadataValue,
+    OutputContext,
+    _check as check,
+)
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 
 
@@ -82,7 +86,7 @@ class UPathIOManager(MemoizableIOManager):
         if not context.has_asset_partitions:
             raise TypeError(
                 f"Detected {context.dagster_type.typing_type} input type "
-                f"but the asset is not partitioned"
+                "but the asset is not partitioned"
             )
 
         partition_keys = context.asset_partition_keys
@@ -121,7 +125,7 @@ class UPathIOManager(MemoizableIOManager):
                     raise e
                 context.log.debug(
                     f"Couldn't load partition {path} and skipped it "
-                    f"because the input metadata includes allow_missing_partitions=True"
+                    "because the input metadata includes allow_missing_partitions=True"
                 )
 
         # TODO: context.add_output_metadata fails in the partitioned context. this should be fixed?
@@ -152,12 +156,11 @@ class UPathIOManager(MemoizableIOManager):
                         # the asset type annotation is accidentally a Dict[str, expected_type]
                         # even tho no partition mappings are used
                         return check.failed(
-                            f"Received `{context.dagster_type.typing_type}` type "
-                            f"in input of DagsterType {context.dagster_type}, "
-                            f"but `{self.load_from_path}` has {expected_type} type annotation for obj. "
-                            f"They should match. "
-                            f"If you are loading a single partition, the upstream asset type annotation "
-                            f"should not be a typing.Dict, but a single partition type."
+                            f"Received `{context.dagster_type.typing_type}` type in input of"
+                            f" DagsterType {context.dagster_type}, but `{self.load_from_path}` has"
+                            f" {expected_type} type annotation for obj. They should match. If you"
+                            " are loading a single partition, the upstream asset type annotation"
+                            " should not be a typing.Dict, but a single partition type."
                         )
 
                     # we are dealing with a single partition of a non-partitioned asset
@@ -175,10 +178,10 @@ class UPathIOManager(MemoizableIOManager):
                             # error message if the user forgot to specify a Dict type
                             # this case is checked separately because this type of mistake can be very common
                             return check.failed(
-                                f"Received `{context.dagster_type.typing_type}` type "
-                                f"in input DagsterType {context.dagster_type}, "
-                                f"but the input has multiple partitions. "
-                                f"`Dict[str, {context.dagster_type.typing_type}]` should be used in this case."
+                                f"Received `{context.dagster_type.typing_type}` type in input"
+                                f" DagsterType {context.dagster_type}, but the input has multiple"
+                                f" partitions. `Dict[str, {context.dagster_type.typing_type}]`"
+                                " should be used in this case."
                             )
 
                         elif (
@@ -191,12 +194,12 @@ class UPathIOManager(MemoizableIOManager):
                         else:
                             # something is wrong with the types
                             return check.failed(
-                                f"Received `{context.dagster_type.typing_type}` type "
-                                f"in input of DagsterType {context.dagster_type}, "
-                                f"but `{self.load_from_path}` has {expected_type} type annotation for obj. "
-                                f"They should be both specified with type annotations and match. "
-                                f"If you are loading multiple partitions, the upstream asset type annotation "
-                                f"should be a typing.Dict."
+                                f"Received `{context.dagster_type.typing_type}` type in input of"
+                                f" DagsterType {context.dagster_type}, but `{self.load_from_path}`"
+                                f" has {expected_type} type annotation for obj. They should be both"
+                                " specified with type annotations and match. If you are loading"
+                                " multiple partitions, the upstream asset type annotation should"
+                                " be a typing.Dict."
                             )
                     else:
                         return self._load_multiple_inputs(context)
@@ -205,8 +208,10 @@ class UPathIOManager(MemoizableIOManager):
         if context.dagster_type.typing_type == type(None):
             check.invariant(
                 obj is None,
-                "Output had Nothing type or 'None' annotation, but handle_output received value "
-                f"that was not None and was of type {type(obj)}.",
+                (
+                    "Output had Nothing type or 'None' annotation, but handle_output received"
+                    f" value that was not None and was of type {type(obj)}."
+                ),
             )
             return None
 

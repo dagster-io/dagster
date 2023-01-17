@@ -4,7 +4,6 @@ import click
 import mock
 import pytest
 from click.testing import CliRunner
-
 from dagster._cli.schedule import (
     check_repo_and_scheduler,
     schedule_list_command,
@@ -33,8 +32,9 @@ def test_schedules_list(gen_schedule_args):
                 raise result.exception
 
             assert result.exit_code == 0
-            assert result.output == (
-                "Repository bar\n"
+            assert (
+                result.output
+                == "Repository bar\n"
                 "**************\n"
                 "Schedule: foo_schedule [STOPPED]\n"
                 "Cron Schedule: * * * * *\n"
@@ -60,7 +60,7 @@ def test_schedules_start_and_stop(gen_schedule_args):
             )
 
             assert result.exit_code == 0
-            assert "Started schedule foo_schedule\n" == result.output
+            assert result.output == "Started schedule foo_schedule\n"
 
             result = runner.invoke(
                 schedule_stop_command,
@@ -68,7 +68,7 @@ def test_schedules_start_and_stop(gen_schedule_args):
             )
 
             assert result.exit_code == 0
-            assert "Stopped schedule foo_schedule\n" == result.output
+            assert result.output == "Stopped schedule foo_schedule\n"
 
 
 @pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())

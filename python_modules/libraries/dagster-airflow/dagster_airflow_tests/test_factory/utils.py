@@ -1,5 +1,4 @@
 from airflow.exceptions import AirflowSkipException
-
 from dagster._core.events.log import EventLogEntry
 
 

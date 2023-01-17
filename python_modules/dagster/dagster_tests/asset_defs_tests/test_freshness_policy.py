@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import create_pendulum_time

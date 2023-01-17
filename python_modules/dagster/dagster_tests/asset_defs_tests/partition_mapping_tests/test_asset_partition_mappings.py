@@ -2,11 +2,6 @@ import inspect
 from typing import Optional
 
 import pendulum
-from dagster_tests.asset_defs_tests.test_partitioned_assets import (
-    get_downstream_partitions_for_partition_range,
-    get_upstream_partitions_for_partition_range,
-)
-
 from dagster import (
     AllPartitionMapping,
     AssetIn,
@@ -20,8 +15,10 @@ from dagster import (
     Output,
     PartitionsDefinition,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
     graph,
+    materialize,
     op,
 )
 from dagster._core.definitions import asset, build_assets_job, multi_asset
@@ -33,6 +30,10 @@ from dagster._core.definitions.partition_mapping import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.test_utils import assert_namedtuple_lists_equal
+from dagster_tests.asset_defs_tests.test_partitioned_assets import (
+    get_downstream_partitions_for_partition_range,
+    get_upstream_partitions_for_partition_range,
+)
 
 
 def test_filter_mapping_partitions_dep():
@@ -484,7 +485,6 @@ def test_non_partitioned_depends_on_all_partitions():
 
 
 def test_partition_keys_in_range():
-
     daily_partition_keys_for_week_2022_09_11 = [
         "2022-09-11",
         "2022-09-12",
@@ -530,6 +530,42 @@ def test_partition_keys_in_range():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     downstream_job.execute_in_process(partition_key="2022-09-11")
+
+
+def test_dependency_resolution_partition_mapping():
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        key_prefix=["staging"],
+    )
+    def upstream(context):
+        partition_date_str = context.asset_partition_key_for_output()
+        return partition_date_str
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        key_prefix=["staging"],
+        ins={
+            "upstream": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=0),
+            )
+        },
+    )
+    def downstream(context, upstream):
+        context.log.info(upstream)
+        return upstream
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            ...
+
+        def load_input(self, context):
+            assert context.asset_key.path == ["staging", "upstream"]
+            assert context.partition_key == "2020-01-02"
+            assert context.asset_partition_keys == ["2020-01-01", "2020-01-02"]
+
+    materialize(
+        [upstream, downstream], resources={"io_manager": MyIOManager()}, partition_key="2020-01-02"
+    )
 
 
 def test_exported_partition_mappings_whitelisted():

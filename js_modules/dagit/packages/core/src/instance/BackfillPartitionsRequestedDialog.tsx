@@ -1,7 +1,7 @@
 import {Button, DialogBody, DialogFooter, Dialog, FontFamily, Box} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {BackfillTableFragment} from './types/BackfillTableFragment';
+import {BackfillTableFragment} from './types/BackfillTable.types';
 
 interface Props {
   backfill?: BackfillTableFragment;

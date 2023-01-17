@@ -1,10 +1,9 @@
-import pytest
-
 import dagster._check as check
+import pytest
 from dagster import (
     AssetKey,
-    AssetSelection,
     AssetsDefinition,
+    AssetSelection,
     DagsterInvalidDefinitionError,
     JobDefinition,
     RepositoryDefinition,
@@ -109,7 +108,10 @@ def test_resolve_wrong_data():
     assert isinstance(pending_repo, PendingRepositoryDefinition)
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Input asset .*\"b\".* is not produced by any of the provided asset ops and is not one of the provided sources",
+        match=(
+            r"Input asset .*\"b\".* is not produced by any of the provided asset ops and is not one"
+            r" of the provided sources"
+        ),
     ):
         pending_repo.reconstruct_repository_definition(
             repository_load_data=RepositoryLoadData(

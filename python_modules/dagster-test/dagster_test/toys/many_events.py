@@ -96,9 +96,11 @@ def many_table_materializations(_context):
 @op(
     ins={"start": In(Nothing)},
     out=Out(Nothing),
-    description="This simulates a op that would wrap something like dbt, "
-    "where it emits a bunch of tables and then say an expectation on each table, "
-    "all in one op",
+    description=(
+        "This simulates a op that would wrap something like dbt, "
+        "where it emits a bunch of tables and then say an expectation on each table, "
+        "all in one op"
+    ),
 )
 def many_materializations_and_passing_expectations(_context):
     tables = [

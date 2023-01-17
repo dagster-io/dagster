@@ -4,15 +4,17 @@ import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissions} from '../app/Permissions';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 
 import {BackfillPartitionsRequestedDialog} from './BackfillPartitionsRequestedDialog';
 import {BackfillRow} from './BackfillRow';
 import {BackfillStepStatusDialog} from './BackfillStepStatusDialog';
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
 import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
-import {BackfillTableFragment} from './types/BackfillTableFragment';
+import {BackfillTableFragment} from './types/BackfillTable.types';
+import {ResumeBackfillMutation, ResumeBackfillMutationVariables} from './types/BackfillUtils.types';
 
 export const BackfillTable = ({
   showBackfillTarget = true,
@@ -31,8 +33,10 @@ export const BackfillTable = ({
     partitionsRequestedBackfill,
     setPartitionsRequestedBackfill,
   ] = React.useState<BackfillTableFragment>();
-  const [resumeBackfill] = useMutation(RESUME_BACKFILL_MUTATION);
-  const {canCancelPartitionBackfill} = usePermissions();
+  const [resumeBackfill] = useMutation<ResumeBackfillMutation, ResumeBackfillMutationVariables>(
+    RESUME_BACKFILL_MUTATION,
+  );
+  const {canCancelPartitionBackfill} = usePermissionsDEPRECATED();
 
   const candidateId = terminationBackfill?.backfillId;
 
@@ -91,7 +95,7 @@ export const BackfillTable = ({
           </tr>
         </thead>
         <tbody>
-          {backfills.map((backfill: BackfillTableFragment) => (
+          {backfills.map((backfill) => (
             <BackfillRow
               key={backfill.backfillId}
               showBackfillTarget={showBackfillTarget}
@@ -133,14 +137,7 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
     partitionSetName
     partitionSet {
       id
-      name
-      mode
-      pipelineName
-      repositoryOrigin {
-        id
-        repositoryName
-        repositoryLocationName
-      }
+      ...PartitionSetForBackfillTable
     }
     assetSelection {
       path
@@ -149,5 +146,18 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
       ...PythonErrorFragment
     }
   }
+
+  fragment PartitionSetForBackfillTable on PartitionSet {
+    id
+    name
+    mode
+    pipelineName
+    repositoryOrigin {
+      id
+      repositoryName
+      repositoryLocationName
+    }
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;

@@ -1,6 +1,5 @@
 import {gql} from '@apollo/client';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
 
 import {LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT} from './LogsScrollingTable';
@@ -21,79 +20,77 @@ export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
   }
 `;
 
-export const RunFragments = {
-  RunFragment: gql`
-    fragment RunFragment on Run {
+export const RUN_FRAGMENT = gql`
+  fragment RunFragment on Run {
+    id
+    runConfigYaml
+    runId
+    canTerminate
+    status
+    mode
+    tags {
+      key
+      value
+    }
+    assets {
       id
-      runConfigYaml
-      runId
-      canTerminate
+      key {
+        path
+      }
+    }
+    rootRunId
+    parentRunId
+    pipelineName
+    solidSelection
+    assetSelection {
+      ... on AssetKey {
+        path
+      }
+    }
+    pipelineSnapshotId
+    parentPipelineSnapshotId
+    executionPlan {
+      artifactsPersisted
+      ...ExecutionPlanToGraphFragment
+    }
+    stepKeysToExecute
+    updateTime
+    stepStats {
+      stepKey
       status
-      mode
-      tags {
-        key
-        value
-      }
-      assets {
-        id
-        key {
-          path
-        }
-      }
-      rootRunId
-      parentRunId
-      pipelineName
-      solidSelection
-      assetSelection {
-        ... on AssetKey {
-          path
-        }
-      }
-      pipelineSnapshotId
-      parentPipelineSnapshotId
-      executionPlan {
-        artifactsPersisted
-        ...ExecutionPlanToGraphFragment
-      }
-      stepKeysToExecute
-      ...RunFragmentForRepositoryMatch
-      ...RunDetailsFragment
-      updateTime
-      stepStats {
-        stepKey
-        status
+      startTime
+      endTime
+      attempts {
         startTime
         endTime
-        attempts {
-          startTime
-          endTime
-        }
-        markers {
-          startTime
-          endTime
-        }
+      }
+      markers {
+        startTime
+        endTime
       }
     }
+    ...RunFragmentForRepositoryMatch
+    ...RunDetailsFragment
+  }
 
-    ${EXECUTION_PLAN_TO_GRAPH_FRAGMENT}
-    ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
-    ${RUN_DETAILS_FRAGMENT}
-  `,
-  RunDagsterRunEventFragment: gql`
-    fragment RunDagsterRunEventFragment on DagsterRunEvent {
-      ... on MessageEvent {
-        message
-        timestamp
-        level
-        stepKey
-      }
+  ${EXECUTION_PLAN_TO_GRAPH_FRAGMENT}
+  ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
+  ${RUN_DETAILS_FRAGMENT}
+`;
 
-      ...LogsScrollingTableMessageFragment
-      ...RunMetadataProviderMessageFragment
+export const RUN_DAGSTER_RUN_EVENT_FRAGMENT = gql`
+  fragment RunDagsterRunEventFragment on DagsterRunEvent {
+    ... on MessageEvent {
+      message
+      timestamp
+      level
+      stepKey
     }
 
-    ${RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT}
-    ${LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT}
-    ${PYTHON_ERROR_FRAGMENT}
-  `,
-};
+    ...LogsScrollingTableMessageFragment
+    ...RunMetadataProviderMessageFragment
+  }
+
+  ${LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT}
+  ${RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT}
+`;

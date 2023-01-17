@@ -16,8 +16,8 @@ from dagster._serdes.serdes import (
     unpack_inner_value,
     whitelist_for_serdes,
 )
-from dagster._utils import merge_dicts
 from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.merger import merge_dicts
 
 
 @whitelist_for_serdes
@@ -115,7 +115,8 @@ def check_instigator_data(
         check.opt_inst_param(instigator_data, "instigator_data", SensorInstigatorData)
     else:
         check.failed(
-            f"Unexpected instigator type {instigator_type}, expected one of InstigatorType.SENSOR, InstigatorType.SCHEDULE"
+            f"Unexpected instigator type {instigator_type}, expected one of InstigatorType.SENSOR,"
+            " InstigatorType.SCHEDULE"
         )
 
     return instigator_data
@@ -401,6 +402,22 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     @property
     def log_key(self) -> Optional[List[str]]:
         return self.tick_data.log_key
+
+    @property
+    def is_completed(self) -> bool:
+        return (
+            self.tick_data.status == TickStatus.SUCCESS
+            or self.tick_data.status == TickStatus.FAILURE
+            or self.tick_data.status == TickStatus.SKIPPED
+        )
+
+    @property
+    def is_failure(self) -> bool:
+        return self.tick_data.status == TickStatus.FAILURE
+
+    @property
+    def is_success(self) -> bool:
+        return self.tick_data.status == TickStatus.SUCCESS
 
 
 register_serdes_tuple_fallbacks({"JobTick": InstigatorTick})

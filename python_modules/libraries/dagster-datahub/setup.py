@@ -22,7 +22,9 @@ setup(
     author_email="hello@elementl.com",
     license="Apache-2.0",
     description="Package for Datahub-specific Dagster framework solid and resource components.",
-    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datahub",
+    url=(
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datahub"
+    ),
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

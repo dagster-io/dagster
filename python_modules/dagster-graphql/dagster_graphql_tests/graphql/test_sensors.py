@@ -3,14 +3,6 @@ import sys
 
 import pendulum
 import pytest
-from dagster_graphql.test.utils import (
-    execute_dagster_graphql,
-    infer_repository_selector,
-    infer_sensor_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
-
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
@@ -29,10 +21,18 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    infer_repository_selector,
+    infer_sensor_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     NonLaunchableGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
 )
 
 GET_SENSORS_QUERY = """
@@ -184,6 +184,7 @@ query SensorQuery($sensorSelector: SensorSelector!, $dayRange: Int, $dayOffset: 
 START_SENSORS_QUERY = """
 mutation($sensorSelector: SensorSelector!) {
   startSensor(sensorSelector: $sensorSelector) {
+    __typename
     ... on PythonError {
       message
       className
@@ -204,6 +205,7 @@ mutation($sensorSelector: SensorSelector!) {
 STOP_SENSORS_QUERY = """
 mutation($jobOriginId: String!, $jobSelectorId: String!) {
   stopSensor(jobOriginId: $jobOriginId, jobSelectorId: $jobSelectorId) {
+    __typename
     ... on PythonError {
       message
       className
@@ -364,6 +366,49 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["sensorOrError"]["__typename"] == "Sensor"
         sensor = result.data["sensorOrError"]
         snapshot.assert_match(sensor)
+
+
+class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
+    def test_start_sensor_failure(self, graphql_context):
+        sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        result = execute_dagster_graphql(
+            graphql_context,
+            START_SENSORS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+        assert result.data
+
+        assert result.data["startSensor"]["__typename"] == "UnauthorizedError"
+
+    def test_stop_sensor_failure(self, graphql_context):
+        sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSOR_STATUS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+        sensor_origin_id = result.data["sensorOrError"]["sensorState"]["id"]
+        sensor_selector_id = result.data["sensorOrError"]["sensorState"]["selectorId"]
+
+        stop_result = execute_dagster_graphql(
+            graphql_context,
+            STOP_SENSORS_QUERY,
+            variables={"jobOriginId": sensor_origin_id, "jobSelectorId": sensor_selector_id},
+        )
+
+        assert stop_result.data["stopSensor"]["__typename"] == "UnauthorizedError"
+
+    def test_set_cursor_failure(self, graphql_context):
+        selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            SET_SENSOR_CURSOR_MUTATION,
+            variables={"sensorSelector": selector, "cursor": "foo"},
+        )
+        assert result.data
+        assert result.data["setSensorCursor"]["__typename"] == "UnauthorizedError"
 
 
 class TestSensorMutations(ExecutingGraphQLContextTestMatrix):

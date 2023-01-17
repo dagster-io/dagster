@@ -136,7 +136,7 @@ def _process_line(file_pointer, sleep_interval=0.1):
 def _poll_process(ipc_process):
     if not ipc_process:
         return
-    if ipc_process.poll() != None:
+    if ipc_process.poll() is not None:
         raise DagsterIPCProtocolError(
             "Process exited with return code {return_code} while waiting for events".format(
                 return_code=ipc_process.returncode
@@ -198,8 +198,7 @@ def open_ipc_subprocess(parts, **kwargs):
 
 
 def interrupt_ipc_subprocess(proc):
-    """Send CTRL_BREAK on Windows, SIGINT on other platforms"""
-
+    """Send CTRL_BREAK on Windows, SIGINT on other platforms."""
     if sys.platform == "win32":
         proc.send_signal(signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
     else:
@@ -207,7 +206,7 @@ def interrupt_ipc_subprocess(proc):
 
 
 def interrupt_ipc_subprocess_pid(pid):
-    """Send CTRL_BREAK on Windows, SIGINT on other platforms"""
+    """Send CTRL_BREAK on Windows, SIGINT on other platforms."""
     check.int_param(pid, "pid")
 
     if sys.platform == "win32":

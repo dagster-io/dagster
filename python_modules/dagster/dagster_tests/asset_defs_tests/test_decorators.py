@@ -2,19 +2,24 @@ import warnings
 from typing import Any
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,
     DagsterInvalidDefinitionError,
+    DailyPartitionsDefinition,
+    Nothing,
     OpExecutionContext,
     Out,
     Output,
     StaticPartitionsDefinition,
     String,
+    TimeWindowPartitionMapping,
+    _check as check,
+    build_op_context,
+    io_manager,
+    materialize_to_memory,
+    resource,
 )
-from dagster import _check as check
-from dagster import build_op_context, io_manager, materialize_to_memory, resource
 from dagster._core.definitions import (
     AssetIn,
     AssetsDefinition,
@@ -31,6 +36,9 @@ from dagster._core.types.dagster_type import resolve_dagster_type
 @pytest.fixture(autouse=True)
 def check_experimental_warnings():
     with warnings.catch_warnings(record=True) as record:
+        # turn off any outer warnings filters
+        warnings.resetwarnings()
+
         yield
 
         for w in record:
@@ -238,7 +246,6 @@ def test_multi_asset_internal_asset_deps_metadata():
 
 
 def test_multi_asset_internal_asset_deps_invalid():
-
     with pytest.raises(check.CheckError, match="Invalid out key"):
 
         @multi_asset(
@@ -703,8 +710,6 @@ def test_multi_asset_retry_policy():
 
 
 def test_invalid_self_dep():
-    from dagster import DailyPartitionsDefinition, TimeWindowPartitionMapping
-
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @asset
@@ -732,3 +737,35 @@ def test_invalid_self_dep():
         )
         def c(c):
             del c
+
+
+def test_asset_in_nothing():
+    @asset(ins={"upstream": AssetIn(dagster_type=Nothing)})
+    def asset1():
+        ...
+
+    assert AssetKey("upstream") in asset1.keys_by_input_name.values()
+    assert materialize_to_memory([asset1]).success
+
+
+def test_asset_in_nothing_and_something():
+    @asset
+    def other_upstream():
+        ...
+
+    @asset(ins={"upstream": AssetIn(dagster_type=Nothing)})
+    def asset1(other_upstream):
+        del other_upstream
+
+    assert AssetKey("upstream") in asset1.keys_by_input_name.values()
+    assert AssetKey("other_upstream") in asset1.keys_by_input_name.values()
+    assert materialize_to_memory([other_upstream, asset1]).success
+
+
+def test_asset_in_nothing_context():
+    @asset(ins={"upstream": AssetIn(dagster_type=Nothing)})
+    def asset1(context):
+        del context
+
+    assert AssetKey("upstream") in asset1.keys_by_input_name.values()
+    assert materialize_to_memory([asset1]).success

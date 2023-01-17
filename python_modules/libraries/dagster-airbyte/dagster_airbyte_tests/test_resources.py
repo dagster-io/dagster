@@ -2,12 +2,15 @@ import re
 
 import pytest
 import responses
+from dagster import (
+    DagsterExecutionInterruptedError,
+    Failure,
+    MetadataEntry,
+    _check as check,
+    build_init_resource_context,
+)
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
-
-from dagster import DagsterExecutionInterruptedError, Failure, MetadataEntry
-from dagster import _check as check
-from dagster import build_init_resource_context
 
 from .utils import get_sample_connection_json, get_sample_job_json, get_sample_job_list_json
 
@@ -290,7 +293,6 @@ def test_logging_multi_attempts(capsys):
     [True, False],
 )
 def test_assets(forward_logs):
-
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={

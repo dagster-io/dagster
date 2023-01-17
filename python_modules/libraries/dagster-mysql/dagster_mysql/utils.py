@@ -1,12 +1,13 @@
 import logging
 import time
 from contextlib import contextmanager
-from urllib.parse import quote_plus as urlquote
-from urllib.parse import urlparse
+from urllib.parse import (
+    quote_plus as urlquote,
+    urlparse,
+)
 
 import mysql.connector as mysql
 import sqlalchemy as db
-
 from dagster import _check as check
 from dagster._core.storage.sql import get_alembic_config
 

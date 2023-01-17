@@ -2,16 +2,21 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {graphql} from '../graphql';
-import {SidebarOpFragmentFragment} from '../graphql/graphql';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {LoadingSpinner} from '../ui/Loading';
 import {RepoAddress} from '../workspace/types';
 
 import {ExplorerPath} from './PipelinePathUtils';
-import {SidebarOpDefinition} from './SidebarOpDefinition';
+import {SidebarOpDefinition, SIDEBAR_OP_DEFINITION_FRAGMENT} from './SidebarOpDefinition';
 import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
-import {SidebarOpInvocation} from './SidebarOpInvocation';
+import {SidebarOpInvocation, SIDEBAR_OP_INVOCATION_FRAGMENT} from './SidebarOpInvocation';
+import {
+  SidebarGraphOpQuery,
+  SidebarGraphOpQueryVariables,
+  SidebarOpFragment,
+  SidebarPipelineOpQuery,
+  SidebarPipelineOpQueryVariables,
+} from './types/SidebarOp.types';
 
 interface SidebarOpProps {
   handleID: string;
@@ -31,35 +36,39 @@ const useSidebarOpQuery = (
   isGraph: boolean,
   repoAddress?: RepoAddress,
 ) => {
-  const pipelineResult = useQuery(SIDEBAR_PIPELINE_OP_QUERY, {
-    variables: {
-      selector: {
-        repositoryName: repoAddress?.name || '',
-        repositoryLocationName: repoAddress?.location || '',
-        pipelineName: name,
+  const pipelineResult = useQuery<SidebarPipelineOpQuery, SidebarPipelineOpQueryVariables>(
+    SIDEBAR_PIPELINE_OP_QUERY,
+    {
+      variables: {
+        selector: {
+          repositoryName: repoAddress?.name || '',
+          repositoryLocationName: repoAddress?.location || '',
+          pipelineName: name,
+        },
+        handleID,
       },
-      handleID,
+      skip: isGraph,
     },
-    fetchPolicy: 'cache-and-network',
-    skip: isGraph,
-  });
+  );
 
-  const graphResult = useQuery(SIDEBAR_GRAPH_OP_QUERY, {
-    variables: {
-      selector: {
-        repositoryName: repoAddress?.name || '',
-        repositoryLocationName: repoAddress?.location || '',
-        graphName: name,
+  const graphResult = useQuery<SidebarGraphOpQuery, SidebarGraphOpQueryVariables>(
+    SIDEBAR_GRAPH_OP_QUERY,
+    {
+      variables: {
+        selector: {
+          repositoryName: repoAddress?.name || '',
+          repositoryLocationName: repoAddress?.location || '',
+          graphName: name,
+        },
+        handleID,
       },
-      handleID,
+      skip: !isGraph,
     },
-    fetchPolicy: 'cache-and-network',
-    skip: !isGraph,
-  });
+  );
 
   if (isGraph) {
     const {error, data, loading} = graphResult;
-    const solidContainer: SidebarOpFragmentFragment | undefined =
+    const solidContainer: SidebarOpFragment | undefined =
       data?.graphOrError.__typename === 'Graph' ? data.graphOrError : undefined;
     return {
       error,
@@ -69,7 +78,7 @@ const useSidebarOpQuery = (
   }
 
   const {error, data, loading} = pipelineResult;
-  const solidContainer: SidebarOpFragmentFragment | undefined =
+  const solidContainer: SidebarOpFragment | undefined =
     data?.pipelineOrError.__typename === 'Pipeline' ? data.pipelineOrError : undefined;
   return {
     error,
@@ -161,9 +170,12 @@ export const SIDEBAR_OP_FRAGMENT = gql`
       }
     }
   }
+
+  ${SIDEBAR_OP_INVOCATION_FRAGMENT}
+  ${SIDEBAR_OP_DEFINITION_FRAGMENT}
 `;
 
-const SIDEBAR_PIPELINE_OP_QUERY = graphql(`
+const SIDEBAR_PIPELINE_OP_QUERY = gql`
   query SidebarPipelineOpQuery($selector: PipelineSelector!, $handleID: String!) {
     pipelineOrError(params: $selector) {
       __typename
@@ -173,9 +185,11 @@ const SIDEBAR_PIPELINE_OP_QUERY = graphql(`
       }
     }
   }
-`);
 
-const SIDEBAR_GRAPH_OP_QUERY = graphql(`
+  ${SIDEBAR_OP_FRAGMENT}
+`;
+
+const SIDEBAR_GRAPH_OP_QUERY = gql`
   query SidebarGraphOpQuery($selector: GraphSelector!, $handleID: String!) {
     graphOrError(selector: $selector) {
       __typename
@@ -185,4 +199,6 @@ const SIDEBAR_GRAPH_OP_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${SIDEBAR_OP_FRAGMENT}
+`;

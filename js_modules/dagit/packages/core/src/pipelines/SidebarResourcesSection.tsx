@@ -7,7 +7,7 @@ import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 
 import {Description} from './Description';
 import {SectionHeader, SectionItemContainer} from './SidebarComponents';
-import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSectionFragment';
+import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSection.types';
 
 const NO_DESCRIPTION = '';
 

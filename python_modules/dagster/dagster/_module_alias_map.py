@@ -14,7 +14,8 @@ def get_meta_path_insertion_index() -> int:
         if isinstance(finder, type) and issubclass(finder, PathFinder):
             return i
     raise Exception(
-        "Could not find the built-in PathFinder in sys.meta_path-- cannot insert the AliasedModuleFinder"
+        "Could not find the built-in PathFinder in sys.meta_path-- cannot insert the"
+        " AliasedModuleFinder"
     )
 
 
@@ -45,6 +46,7 @@ class AliasedModuleFinder(MetaPathFinder):
 
 # Key reference to understand the load process:
 #   https://docs.python.org/3/reference/import.html#loading
+
 
 # While it is possible to override `Loader.create_module` to simply return the base module, this
 # is undesirable because the import system modifies the module's metadata attributes after

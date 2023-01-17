@@ -85,6 +85,7 @@ def my_multi_output_op():
 
 # end_multi_output_op_marker
 
+
 # start_op_context_marker
 @op(config_schema={"name": str})
 def context_op(context):
@@ -93,6 +94,7 @@ def context_op(context):
 
 
 # end_op_context_marker
+
 
 # start_op_factory_pattern_marker
 def my_op_factory(

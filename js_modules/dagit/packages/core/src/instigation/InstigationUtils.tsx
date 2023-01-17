@@ -4,14 +4,12 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RUN_TIME_FRAGMENT, titleForRun} from '../runs/RunUtils';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
-import {InstigationStateFragment} from './types/InstigationStateFragment';
-import {RunStatusFragment} from './types/RunStatusFragment';
+import {InstigationStateFragment, RunStatusFragment} from './types/InstigationUtils.types';
 
 export const InstigatedRunStatus: React.FC<{
   instigationState: InstigationStateFragment;
@@ -70,10 +68,10 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
     }
     runningCount
   }
-  ${PYTHON_ERROR_FRAGMENT}
-  ${TICK_TAG_FRAGMENT}
+
   ${RUN_STATUS_FRAGMENT}
   ${RUN_TIME_FRAGMENT}
+  ${TICK_TAG_FRAGMENT}
 `;
 
 export const StatusTable = styled.table`

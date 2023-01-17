@@ -2,7 +2,6 @@ import os
 import re
 
 from click.testing import CliRunner
-
 from dagster import file_relative_path
 from dagster._cli.project import (
     from_example_command,
@@ -94,6 +93,7 @@ def test_from_example_command_succeeds():
 
 def test_available_examples_in_sync_with_example_folder():
     # ensure the list of AVAILABLE_EXAMPLES is in sync with the example folder minus EXAMPLES_TO_IGNORE
+    # run me
     example_folder = file_relative_path(__file__, "../../../../examples")
     available_examples_in_folder = [
         e
@@ -112,7 +112,10 @@ def test_scaffold_repository_deprecation():
     with runner.isolated_filesystem():
         result = runner.invoke(scaffold_repository_command, ["--name", "my_dagster_project"])
         assert re.match(
-            "WARNING: This command is deprecated. Use `dagster project scaffold-code-location` instead.",
+            (
+                "WARNING: This command is deprecated. Use `dagster project scaffold-code-location`"
+                " instead."
+            ),
             result.output,
         )
 

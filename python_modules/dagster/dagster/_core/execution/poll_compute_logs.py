@@ -26,7 +26,7 @@ def tail_polling(filepath, stream=sys.stdout, parent_pid=None):
     """
     Tails a file and outputs the content to the specified stream via polling.
     The pid of the parent process (if provided) is checked to see if the tail process should be
-    terminated, in case the parent is hard-killed / segfaults
+    terminated, in case the parent is hard-killed / segfaults.
     """
     with open(filepath, "r", encoding="utf8") as file:
         for block in iter(lambda: file.read(1024), None):

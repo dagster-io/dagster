@@ -1,5 +1,6 @@
 """Test a chain of child processes with interrupt support, ensure that interrupts can be
-correctly propagated and handled."""
+correctly propagated and handled.
+"""
 
 import sys
 import time

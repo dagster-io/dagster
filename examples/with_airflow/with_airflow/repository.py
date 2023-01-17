@@ -1,16 +1,17 @@
 import os
 
+from dagster import repository
+
 # start_repo_marker_0
 from dagster_airflow import (
     make_dagster_job_from_airflow_dag,
     make_dagster_repo_from_airflow_dags_path,
     make_dagster_repo_from_airflow_example_dags,
 )
+
 from with_airflow.airflow_complex_dag import complex_dag
 from with_airflow.airflow_kubernetes_dag import kubernetes_dag
 from with_airflow.airflow_simple_dag import simple_dag
-
-from dagster import repository
 
 airflow_simple_dag = make_dagster_job_from_airflow_dag(simple_dag)
 airflow_complex_dag = make_dagster_job_from_airflow_dag(complex_dag)

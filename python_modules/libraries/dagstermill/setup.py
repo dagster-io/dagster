@@ -44,9 +44,7 @@ setup(
         # incidentally brought ipython_genutils, but in v5.1 it was dropped, so as
         # a workaround we need to manually specify it here
         "ipython_genutils>=0.2.0",
-        # packaging v22 has build compatibility issues with dbt as of 2022-12-07
-        # upper bound can be removed as soon as BK passes with packaging >=22
-        "packaging>=20.9,<22",
+        "packaging>=20.9",
         "papermill>=1.0.0",
         "scrapbook>=0.5.0",
         "nbconvert",

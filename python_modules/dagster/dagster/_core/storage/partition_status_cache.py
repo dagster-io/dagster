@@ -1,7 +1,12 @@
 from typing import List, Mapping, NamedTuple, Optional, Sequence, Union
 
-from dagster import AssetKey, DagsterEventType, DagsterInstance, EventRecordsFilter
-from dagster import _check as check
+from dagster import (
+    AssetKey,
+    DagsterEventType,
+    DagsterInstance,
+    EventRecordsFilter,
+    _check as check,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,

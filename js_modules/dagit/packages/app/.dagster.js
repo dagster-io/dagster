@@ -11,6 +11,7 @@ const path = require('path');
 
 const dagitCorePath = path.resolve('../core/src');
 const dagitUIPath = path.resolve('../ui/src');
+const graphQLArtifactDirectory = path.resolve(dagitCorePath, 'graphql');
 
 const noncePlaceholder = 'NONCE-PLACEHOLDER';
 
@@ -24,6 +25,17 @@ module.exports = {
    * Nonce placeholder string, to be replaced at runtime by server.
    */
   noncePlaceholder,
+
+  /**
+   * Configuration for GraphQL codegen. Used by `client-preset` babel plugin to deduplicate
+   * query documents in built output.
+   */
+  graphQL: {
+    // Local directory of GraphQL codegen output.
+    artifactDirectory: graphQLArtifactDirectory,
+    // Function name for tagged GraphQL documents in code.
+    gqlTagName: 'graphql',
+  },
 
   /**
    * Modules that must be deduped for the Webpack build, e.g. `react`. Ex:

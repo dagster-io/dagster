@@ -10,8 +10,8 @@ import {
   LiveData,
   toGraphId,
 } from '../asset-graph/Utils';
+import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
-import {AssetNodeForGraphQueryFragment} from '../graphql/graphql';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {Version} from '../versions/Version';
@@ -29,7 +29,7 @@ import {
 import {AssetNodeList} from './AssetNodeList';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
+import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
@@ -270,7 +270,6 @@ const OpNamesDisplay = (props: {
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
-    ...AssetNodeConfigFragment
     description
     graphName
     opNames
@@ -287,9 +286,11 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
         name
       }
     }
+    ...AssetNodeConfigFragment
     ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment
   }
+
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${ASSET_NODE_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}

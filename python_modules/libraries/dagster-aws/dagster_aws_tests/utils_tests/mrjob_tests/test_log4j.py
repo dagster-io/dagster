@@ -81,13 +81,19 @@ def test_multiline_log4j_parsing():
                 [
                     "",
                     "         client token: N/A",
-                    "         diagnostics: AM container is launched, waiting for AM container to Register with RM",
+                    (
+                        "         diagnostics: AM container is launched, waiting for AM container"
+                        " to Register with RM"
+                    ),
                     "         ApplicationMaster host: N/A",
                     "         ApplicationMaster RPC port: -1",
                     "         queue: default",
                     "         start time: 1580923609467",
                     "         final status: UNDEFINED",
-                    "         tracking URL: http://ip-172-31-2-74.us-west-1.compute.internal:20888/proxy/application_1580918830280_0002/",
+                    (
+                        "         tracking URL:"
+                        " http://ip-172-31-2-74.us-west-1.compute.internal:20888/proxy/application_1580918830280_0002/"
+                    ),
                     "         user: hadoop",
                 ]
             ),

@@ -17,9 +17,11 @@ from .databricks import DatabricksClient
         ),
         "workspace_id": Field(
             StringSource,
-            description="The Databricks workspace ID, as described in"
-            "https://docs.databricks.com/workspace/workspace-details.html#workspace-instance-names-urls-and-ids."
-            "This is used to log a URL for accessing the job in the Databricks UI.",
+            description=(
+                "The Databricks workspace ID, as described"
+                " inhttps://docs.databricks.com/workspace/workspace-details.html#workspace-instance-names-urls-and-ids.This"
+                " is used to log a URL for accessing the job in the Databricks UI."
+            ),
             is_required=False,
         ),
     }

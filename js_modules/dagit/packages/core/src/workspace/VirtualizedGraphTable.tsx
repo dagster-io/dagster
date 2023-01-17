@@ -1,15 +1,15 @@
-import {useLazyQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Caption, Colors} from '@dagster-io/ui';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {graphql} from '../graphql';
 import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
+import {SingleGraphQuery, SingleGraphQueryVariables} from './types/VirtualizedGraphTable.types';
 import {workspacePathFromAddress} from './workspacePath';
 
 export type Graph = {name: string; path: string; description: string | null};
@@ -82,16 +82,18 @@ interface GraphRowProps {
 const GraphRow = (props: GraphRowProps) => {
   const {name, path, description, repoAddress, start, height} = props;
 
-  const [queryGraph, queryResult] = useLazyQuery(SINGLE_GRAPH_QUERY, {
-    fetchPolicy: 'cache-and-network',
-    variables: {
-      selector: {
-        repositoryName: repoAddress.name,
-        repositoryLocationName: repoAddress.location,
-        graphName: name,
+  const [queryGraph, queryResult] = useLazyQuery<SingleGraphQuery, SingleGraphQueryVariables>(
+    SINGLE_GRAPH_QUERY,
+    {
+      variables: {
+        selector: {
+          repositoryName: repoAddress.name,
+          repositoryLocationName: repoAddress.location,
+          graphName: name,
+        },
       },
     },
-  });
+  );
 
   useDelayedRowQuery(queryGraph);
   const {data} = queryResult;
@@ -145,7 +147,7 @@ const RowGrid = styled(Box)`
   height: 100%;
 `;
 
-const SINGLE_GRAPH_QUERY = graphql(`
+const SINGLE_GRAPH_QUERY = gql`
   query SingleGraphQuery($selector: GraphSelector!) {
     graphOrError(selector: $selector) {
       ... on Graph {
@@ -155,4 +157,4 @@ const SINGLE_GRAPH_QUERY = graphql(`
       }
     }
   }
-`);
+`;

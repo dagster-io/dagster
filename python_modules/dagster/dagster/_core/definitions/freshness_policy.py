@@ -132,7 +132,6 @@ class FreshnessPolicy(
             if dt is not None:
                 used_data_time = min(used_data_time or dt, dt)
         while evaluation_tick is not None and evaluation_tick < window_end:
-
             required_data_time = evaluation_tick - self.maximum_lag_delta
             required_by_time = evaluation_tick
 
@@ -174,8 +173,10 @@ class FreshnessPolicy(
                 self.cron_schedule, evaluation_time, ret_type=datetime.datetime, is_prev=True
             )
             evaluation_tick = next(schedule_ticks)
-        else:
+        elif evaluation_time is not None:
             evaluation_tick = evaluation_time
+        else:
+            check.failed("Must provide an evaluation time if not using a cron schedule")
 
         minutes_late = 0.0
         for used_data_time in used_data_times.values():

@@ -1,8 +1,7 @@
 from typing import List
 
-from graphene import ResolveInfo
-
 from dagster._core.storage.captured_log_manager import CapturedLogManager
+from graphene import ResolveInfo
 
 
 def get_captured_log_metadata(graphene_info: ResolveInfo, log_key: List[str]):

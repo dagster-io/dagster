@@ -2,8 +2,6 @@ import sys
 from typing import Any
 from unittest import mock
 
-from dagster_graphql.test.utils import execute_dagster_graphql
-
 from dagster import file_relative_path, repository
 from dagster._core.code_pointer import CodePointer
 from dagster._core.host_representation import (
@@ -13,8 +11,13 @@ from dagster._core.host_representation import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster._grpc.types import ListRepositoriesResponse
+from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
+from .graphql_context_test_suite import (
+    GraphQLContextVariant,
+    ReadonlyGraphQLContextTestMatrix,
+    make_graphql_context_test_suite,
+)
 
 RELOAD_REPOSITORY_LOCATION_QUERY = """
 mutation ($repositoryLocationName: String!) {
@@ -90,6 +93,16 @@ ManagedTestSuite: Any = make_graphql_context_test_suite(
 )
 
 
+class TestReloadWorkspaceReadOnly(ReadonlyGraphQLContextTestMatrix):
+    def test_reload_workspace_permission_failure(self, graphql_context):
+        result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
+
+        assert result
+        assert result.data
+        assert result.data["reloadWorkspace"]
+        assert result.data["reloadWorkspace"]["__typename"] == "UnauthorizedError"
+
+
 class TestReloadWorkspace(MultiLocationTestSuite):
     def test_reload_workspace(self, graphql_context):
         result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
@@ -115,7 +128,6 @@ class TestReloadWorkspace(MultiLocationTestSuite):
         with mock.patch(
             "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
-
             # simulate removing an origin, reload
 
             origins_mock.return_value = original_origins[0:1]
@@ -234,6 +246,18 @@ class TestReloadWorkspace(MultiLocationTestSuite):
             assert "new_location_name" in [node["name"] for node in nodes]
 
 
+class TestReloadRepositoriesReadOnly(ReadonlyGraphQLContextTestMatrix):
+    def test_reload_repository_permission_failure(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}
+        )
+
+        assert result
+        assert result.data
+        assert result.data["reloadRepositoryLocation"]
+        assert result.data["reloadRepositoryLocation"]["__typename"] == "UnauthorizedError"
+
+
 class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
     def test_out_of_process_reload_location(self, graphql_context):
         result = execute_dagster_graphql(
@@ -262,7 +286,6 @@ class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
             # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
             "dagster._core.host_representation.repository_location.sync_list_repositories_grpc"
         ) as cli_command_mock:
-
             with mock.patch(
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.

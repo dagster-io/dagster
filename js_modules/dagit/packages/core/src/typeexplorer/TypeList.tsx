@@ -6,7 +6,7 @@ import styled from 'styled-components/macro';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from './TypeWithTooltip';
-import {TypeListFragment} from './types/TypeListFragment';
+import {TypeListFragment} from './types/TypeList.types';
 
 interface ITypeListProps {
   isGraph: boolean;

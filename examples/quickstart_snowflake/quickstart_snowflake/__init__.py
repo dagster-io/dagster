@@ -1,11 +1,10 @@
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
-
 from dagster import (
     Definitions,
     ScheduleDefinition,
     define_asset_job,
     load_assets_from_package_module,
 )
+from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
 from . import assets
 

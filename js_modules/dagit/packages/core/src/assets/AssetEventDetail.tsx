@@ -12,8 +12,10 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetLineageElements} from './AssetLineageElements';
-import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {AssetObservationFragment} from './types/AssetObservationFragment';
+import {
+  AssetMaterializationFragment,
+  AssetObservationFragment,
+} from './types/useRecentAssetEvents.types';
 
 export const AssetEventDetail: React.FC<{
   event: AssetMaterializationFragment | AssetObservationFragment;

@@ -11,7 +11,6 @@ from dagster_buildkite.utils import BuildkiteStep, is_release_branch, safe_geten
 
 
 def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
-
     branch_name = safe_getenv("BUILDKITE_BRANCH")
     commit_hash = safe_getenv("BUILDKITE_COMMIT")
 

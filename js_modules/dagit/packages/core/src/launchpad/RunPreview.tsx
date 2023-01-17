@@ -19,20 +19,21 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
 import {
+  CompositeConfigTypeForSchemaFragment,
   ConfigEditorRunConfigSchemaFragment,
-  ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
-} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+} from '../configeditor/types/ConfigEditorUtils.types';
 
 import {LaunchpadType} from './LaunchpadRoot';
 import {
+  RunPreviewValidationErrorsFragment,
   RunPreviewValidationFragment,
-  RunPreviewValidationFragment_RunConfigValidationInvalid_errors,
-} from './types/RunPreviewValidationFragment';
+} from './types/RunPreview.types';
 
-type ValidationError = RunPreviewValidationFragment_RunConfigValidationInvalid_errors;
+type ValidationError = RunPreviewValidationErrorsFragment;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;
 
 function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
@@ -232,7 +233,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
 
     const {allConfigTypes, rootConfigType} = runConfigSchema;
     const children: {
-      [fieldName: string]: ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType;
+      [fieldName: string]: CompositeConfigTypeForSchemaFragment;
     } = {};
 
     const root = allConfigTypes.find((t) => t.key === rootConfigType.key);
@@ -463,42 +464,7 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
     __typename
     ... on RunConfigValidationInvalid {
       errors {
-        __typename
-        reason
-        message
-        stack {
-          entries {
-            __typename
-            ... on EvaluationStackPathEntry {
-              fieldName
-            }
-            ... on EvaluationStackListItemEntry {
-              listIndex
-            }
-            ... on EvaluationStackMapKeyEntry {
-              mapKey
-            }
-            ... on EvaluationStackMapValueEntry {
-              mapKey
-            }
-          }
-        }
-        ... on MissingFieldConfigError {
-          field {
-            name
-          }
-        }
-        ... on MissingFieldsConfigError {
-          fields {
-            name
-          }
-        }
-        ... on FieldNotDefinedConfigError {
-          fieldName
-        }
-        ... on FieldsNotDefinedConfigError {
-          fieldNames
-        }
+        ...RunPreviewValidationErrors
       }
     }
     ... on PipelineNotFoundError {
@@ -508,6 +474,44 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
       message
     }
     ...PythonErrorFragment
+  }
+
+  fragment RunPreviewValidationErrors on PipelineConfigValidationError {
+    reason
+    message
+    stack {
+      entries {
+        __typename
+        ... on EvaluationStackPathEntry {
+          fieldName
+        }
+        ... on EvaluationStackListItemEntry {
+          listIndex
+        }
+        ... on EvaluationStackMapKeyEntry {
+          mapKey
+        }
+        ... on EvaluationStackMapValueEntry {
+          mapKey
+        }
+      }
+    }
+    ... on MissingFieldConfigError {
+      field {
+        name
+      }
+    }
+    ... on MissingFieldsConfigError {
+      fields {
+        name
+      }
+    }
+    ... on FieldNotDefinedConfigError {
+      fieldName
+    }
+    ... on FieldsNotDefinedConfigError {
+      fieldNames
+    }
   }
 
   ${PYTHON_ERROR_FRAGMENT}

@@ -1,10 +1,16 @@
 import pytest
 import responses
-from dagster_airbyte import airbyte_resource, build_airbyte_assets
-
-from dagster import AssetKey, MetadataEntry, TableColumn, TableSchema, build_init_resource_context
+from dagster import (
+    AssetKey,
+    FreshnessPolicy,
+    MetadataEntry,
+    TableColumn,
+    TableSchema,
+    build_init_resource_context,
+)
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._legacy import build_assets_job
+from dagster_airbyte import airbyte_resource, build_airbyte_assets
 
 from .utils import get_sample_connection_json, get_sample_job_json
 
@@ -12,7 +18,6 @@ from .utils import get_sample_connection_json, get_sample_job_json
 @responses.activate
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix_"])
 def test_assets(schema_prefix):
-
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
@@ -97,8 +102,8 @@ def test_assets(schema_prefix):
 @responses.activate
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix_"])
 @pytest.mark.parametrize("source_asset", [None, "my_source_asset_key"])
-def test_assets_with_normalization(schema_prefix, source_asset):
-
+@pytest.mark.parametrize("freshness_policy", [None, FreshnessPolicy(maximum_lag_minutes=60)])
+def test_assets_with_normalization(schema_prefix, source_asset, freshness_policy):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
@@ -118,7 +123,11 @@ def test_assets_with_normalization(schema_prefix, source_asset):
         normalization_tables={destination_tables[1]: bar_normalization_tables},
         asset_key_prefix=["some", "prefix"],
         upstream_assets={AssetKey(source_asset)} if source_asset else None,
+        freshness_policy=freshness_policy,
     )
+
+    freshness_policies = ab_assets[0].freshness_policies_by_key
+    assert all(freshness_policies[key] == freshness_policy for key in freshness_policies)
 
     assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables} | {
         AssetKey(["some", "prefix", t]) for t in bar_normalization_tables

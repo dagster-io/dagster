@@ -13,9 +13,10 @@ from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.build_resources import build_resources, get_mapped_resource_config
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.output import build_output_context
-from dagster._core.instance import DagsterInstance, is_dagster_home_set
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.config import is_dagster_home_set
 from dagster._core.types.dagster_type import resolve_dagster_type
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .io_manager import IOManager
 
@@ -52,7 +53,7 @@ class AssetValueLoader:
                     instance=self._instance,
                 )
             )
-            ._asdict()
+            ._asdict()  # type: ignore
             .items()
         ):
             self._resource_instance_cache[built_resource_key] = built_resource

@@ -7,10 +7,9 @@ from assets_smoke_test.python_and_dbt_assets import (
     DBT_PROJECT_DIR,
     raw_country_populations,
 )
+from dagster import load_assets_from_modules, materialize
 from dagster_dbt import dbt_cli_resource
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
-
-from dagster import load_assets_from_modules, materialize
 
 
 def smoke_all_test():

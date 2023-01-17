@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator, Optional, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -21,12 +21,9 @@ from ..definitions.resource_requirement import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import JobDefinition, OpDefinition
-    from dagster._core.execution.context.init import Resources
     from dagster._core.execution.context.system import (
         DagsterTypeLoaderContext,
         DagsterTypeMaterializerContext,
-        StepExecutionContext,
     )
 
 
@@ -149,6 +146,7 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
         Args:
             config_value (object): Config value to be ingested by the external version
                 loading function.
+
         Returns:
             Optional[str]: Hash of concatenated loader version and external input version if both
                 are provided, else None.
@@ -186,7 +184,7 @@ def _create_type_loader_for_decorator(
     )
 
 
-DagsterTypeLoaderFn: TypeAlias = Callable[["StepExecutionContext", object], object]
+DagsterTypeLoaderFn: TypeAlias = Callable[["DagsterTypeLoaderContext", Any], Any]
 
 
 def dagster_type_loader(
@@ -212,12 +210,11 @@ def dagster_type_loader(
             another.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
-
-        @dagster_type_loader(Permissive())
-        def load_dict(_context, value):
-            return value
+            @dagster_type_loader(Permissive())
+            def load_dict(_context, value):
+                return value
     """
     from dagster._config import resolve_to_config_type
 
@@ -232,9 +229,10 @@ def dagster_type_loader(
         missing_positional = validate_expected_params(params, EXPECTED_POSITIONALS)
         if missing_positional:
             raise DagsterInvalidDefinitionError(
-                "@dagster_type_loader '{solid_name}' decorated function does not have required positional "
-                "parameter '{missing_param}'. @dagster_type_loader decorated functions should only have keyword arguments "
-                "that match input names and a first positional parameter named 'context'.".format(
+                "@dagster_type_loader '{solid_name}' decorated function does not have required"
+                " positional parameter '{missing_param}'. @dagster_type_loader decorated functions"
+                " should only have keyword arguments that match input names and a first positional"
+                " parameter named 'context'.".format(
                     solid_name=func.__name__, missing_param=missing_positional
                 )
             )
@@ -292,20 +290,18 @@ def dagster_type_materializer(
         config_schema (object): The type of the config data expected by the decorated function.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            # Takes a list of dicts such as might be read in using csv.DictReader, as well as a config
+            value, and writes
+            @dagster_type_materializer(str)
+            def materialize_df(_context, path, value):
+                with open(path, 'w') as fd:
+                    writer = csv.DictWriter(fd, fieldnames=value[0].keys())
+                    writer.writeheader()
+                    writer.writerows(rowdicts=value)
 
-        # Takes a list of dicts such as might be read in using csv.DictReader, as well as a config
-        value, and writes
-        @dagster_type_materializer(str)
-        def materialize_df(_context, path, value):
-            with open(path, 'w') as fd:
-                writer = csv.DictWriter(fd, fieldnames=value[0].keys())
-                writer.writeheader()
-                writer.writerows(rowdicts=value)
-
-            return AssetMaterialization.file(path)
-
+                return AssetMaterialization.file(path)
     """
     from dagster._config import resolve_to_config_type
 

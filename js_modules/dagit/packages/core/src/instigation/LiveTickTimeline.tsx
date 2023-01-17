@@ -3,8 +3,9 @@ import {ActiveElement, TimeUnit, TooltipItem} from 'chart.js';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
-import {HistoryTickFragment, NextTickForHistoyFragment} from '../graphql/graphql';
-import {InstigationTickStatus} from '../types/globalTypes';
+import {InstigationTickStatus} from '../graphql/types';
+
+import {NextTickForHistoyFragment, HistoryTickFragment} from './types/TickHistory.types';
 
 type FutureTick = NextTickForHistoyFragment;
 type InstigationTick = HistoryTickFragment;

@@ -11,7 +11,7 @@ import {RightInfoPanelContent} from './GraphExplorer';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarContainerOverview} from './SidebarContainerOverview';
 import {SidebarOp} from './SidebarOp';
-import {SidebarRootContainerFragment} from './types/SidebarRootContainerFragment';
+import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
 
 type TabKey = 'types' | 'info';
 

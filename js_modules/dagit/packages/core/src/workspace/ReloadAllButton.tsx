@@ -1,7 +1,7 @@
 import {Button, Dialog, DialogBody, DialogFooter, Icon, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
+import {useUnscopedPermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {
   reloadFnForWorkspace,
@@ -11,7 +11,7 @@ import {
 import {RepositoryLocationErrorDialog} from './RepositoryLocationErrorDialog';
 
 export const ReloadAllButton: React.FC<{label?: string}> = ({label = 'Reload all'}) => {
-  const {canReloadWorkspace} = usePermissions();
+  const {canReloadWorkspace} = useUnscopedPermissions();
   const {reloading, tryReload, error, errorLocationId} = useRepositoryLocationReload({
     scope: 'workspace',
     reloadFn: reloadFnForWorkspace,

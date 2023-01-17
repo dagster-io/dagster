@@ -6,7 +6,6 @@ from contextlib import contextmanager
 
 import boto3
 import pytest
-
 from dagster import ExperimentalWarning
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin

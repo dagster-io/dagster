@@ -5,10 +5,11 @@ from typing import Dict, Generator, NamedTuple
 
 import pendulum
 import pytest
-
-from dagster import DagsterRunStatus
-from dagster import _check as check
-from dagster import file_relative_path
+from dagster import (
+    DagsterRunStatus,
+    _check as check,
+    file_relative_path,
+)
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
@@ -95,7 +96,6 @@ def instance_with_multiple_code_locations(
         with create_test_daemon_workspace_context(
             workspace_load_target or create_workspace_load_target(None), instance=instance
         ) as workspace_context:
-
             location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
 
             for repository_location_entry in (
@@ -154,7 +154,6 @@ def test_run_status_sensor(caplog, executor, instance, workspace_context, extern
         freeze_datetime = freeze_datetime.add(seconds=60)
 
     with pendulum.test(freeze_datetime):
-
         # should not fire the success sensor, should fire the started sensro
         evaluate_sensors(workspace_context, executor)
 
@@ -196,7 +195,6 @@ def test_run_status_sensor(caplog, executor, instance, workspace_context, extern
     caplog.clear()
 
     with pendulum.test(freeze_datetime):
-
         # should fire the success sensor and the started sensor
         evaluate_sensors(workspace_context, executor)
 
@@ -267,7 +265,6 @@ def test_run_failure_sensor(executor, instance, workspace_context, external_repo
         freeze_datetime = freeze_datetime.add(seconds=60)
 
     with pendulum.test(freeze_datetime):
-
         # should fire the failure sensor
         evaluate_sensors(workspace_context, executor)
 
@@ -322,7 +319,6 @@ def test_run_failure_sensor_that_fails(executor, instance, workspace_context, ex
         freeze_datetime = freeze_datetime.add(seconds=60)
 
     with pendulum.test(freeze_datetime):
-
         # should fire the failure sensor and fail
         evaluate_sensors(workspace_context, executor)
 
@@ -393,7 +389,6 @@ def test_run_failure_sensor_filtered(executor, instance, workspace_context, exte
         freeze_datetime = freeze_datetime.add(seconds=60)
 
     with pendulum.test(freeze_datetime):
-
         # should not fire the failure sensor (filtered to failure job)
         evaluate_sensors(workspace_context, executor)
 
@@ -426,7 +421,6 @@ def test_run_failure_sensor_filtered(executor, instance, workspace_context, exte
         freeze_datetime = freeze_datetime.add(seconds=60)
 
     with pendulum.test(freeze_datetime):
-
         # should not fire the failure sensor (filtered to failure job)
         evaluate_sensors(workspace_context, executor)
 
@@ -481,7 +475,6 @@ def sql_event_log_storage_config_fn(temp_dir):
 def test_run_status_sensor_interleave(storage_config_fn, executor):
     freeze_datetime = pendulum.now()
     with tempfile.TemporaryDirectory() as temp_dir:
-
         with instance_with_sensors(overrides=storage_config_fn(temp_dir)) as (
             instance,
             workspace_context,
@@ -535,7 +528,6 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
 
             # check sensor
             with pendulum.test(freeze_datetime):
-
                 # should fire for run 2
                 evaluate_sensors(workspace_context, executor)
 
@@ -561,7 +553,6 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
 
             # check sensor
             with pendulum.test(freeze_datetime):
-
                 # should fire for run 1
                 evaluate_sensors(workspace_context, executor)
 
@@ -728,7 +719,6 @@ def test_cross_code_location_run_status_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             evaluate_sensors(workspace_context, executor)
 
             ticks = [
@@ -825,7 +815,6 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             evaluate_sensors(workspace_context, executor)
 
             ticks = [
@@ -873,7 +862,6 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             evaluate_sensors(workspace_context, executor)
 
             ticks = [
@@ -940,7 +928,6 @@ def test_cross_repo_run_status_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
@@ -1056,7 +1043,6 @@ def test_different_instance_run_status_sensor(executor):
             the_other_workspace_context,
             the_other_repo,
         ):
-
             with pendulum.test(freeze_datetime):
                 cross_repo_sensor = the_repo.get_external_sensor("cross_repo_sensor")
                 instance.start_sensor(cross_repo_sensor)
@@ -1093,7 +1079,6 @@ def test_different_instance_run_status_sensor(executor):
                 freeze_datetime = freeze_datetime.add(seconds=60)
 
             with pendulum.test(freeze_datetime):
-
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
@@ -1154,7 +1139,6 @@ def test_instance_run_status_sensor(executor):
             freeze_datetime = freeze_datetime.add(seconds=60)
 
         with pendulum.test(freeze_datetime):
-
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
@@ -1206,7 +1190,6 @@ def test_logging_run_status_sensor(executor, instance, workspace_context, extern
         freeze_datetime = freeze_datetime.add(seconds=60)
 
     with pendulum.test(freeze_datetime):
-
         # should fire the success sensor and the started sensor
         evaluate_sensors(workspace_context, executor)
 

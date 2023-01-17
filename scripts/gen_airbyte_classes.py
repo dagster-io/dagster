@@ -1,21 +1,20 @@
 import importlib.util
+import itertools
 import json
 import os
 import re
 import subprocess
 import sys
+import textwrap
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import click
-import yaml
-
-import itertools
 import dagster._check as check
+import yaml
 from dagster._utils import file_relative_path, mkdir_p
 from dagster._utils.merger import deep_merge_dicts
-import textwrap
 
 
 def _remove_invalid_chars(name: str) -> str:
@@ -64,7 +63,7 @@ class SchemaType(ABC):
     @abstractmethod
     def get_check(self, name: str, scope: Optional[str] = None):
         """
-        Returns the dagster._check check for this type, e.g. check.str_param(name, 'name')
+        Returns the dagster._check check for this type, e.g. check.str_param(name, 'name').
         """
 
     @abstractmethod
@@ -72,13 +71,13 @@ class SchemaType(ABC):
         self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
     ):
         """
-        Returns the Python type annotation for this type, e.g. str or Union[str, int]
+        Returns the Python type annotation for this type, e.g. str or Union[str, int].
         """
 
     @property
     def const_value(self):
         """
-        If this is a constant field, returns the constant value, otherwise returns None
+        If this is a constant field, returns the constant value, otherwise returns None.
         """
         return None
 
@@ -209,7 +208,6 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
 
     Each class will be turned into a Python class definition with the given name and fields.
     """
-
     class_definitions: Dict[str, Dict[str, SchemaType]] = {}
 
     fields = {}
@@ -422,9 +420,8 @@ def load_from_spec_file(
     injected_props: Dict[str, Any],
 ):
     """
-    Loads a connector spec file and generates a python class definition for it
+    Loads a connector spec file and generates a python class definition for it.
     """
-
     with open(filepath, encoding="utf8") as f:
         if filepath.endswith(".json"):
             schema = json.loads(f.read())

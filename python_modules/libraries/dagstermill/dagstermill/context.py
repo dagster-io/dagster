@@ -1,7 +1,11 @@
 from typing import AbstractSet, Any, Mapping, Optional, cast
 
-from dagster import DagsterRun, JobDefinition, OpDefinition
-from dagster import _check as check
+from dagster import (
+    DagsterRun,
+    JobDefinition,
+    OpDefinition,
+    _check as check,
+)
 from dagster._annotations import public
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.execution.context.compute import AbstractComputeExecutionContext
@@ -76,7 +80,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def resolved_run_config(self) -> ResolvedRunConfig:
-        """:class:`dagster.ResolvedRunConfig`: The resolved_run_config for the context"""
+        """:class:`dagster.ResolvedRunConfig`: The resolved_run_config for the context."""
         return self._pipeline_context.resolved_run_config
 
     @public  # type: ignore
@@ -131,7 +135,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def resources(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
-        resources."""
+        resources.
+        """
         return self._pipeline_context.scoped_resources_builder.build(
             required_resource_keys=self._resource_keys_to_init,
         )
@@ -201,7 +206,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def op_config(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
-        op-specific config."""
+        op-specific config.
+        """
         if self._solid_config:
             return self._solid_config
 
@@ -211,7 +217,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def solid_config(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
-        solid-specific config."""
+        solid-specific config.
+        """
         deprecation_warning(
             "DagstermillExecutionContext.solid_config",
             "0.17.0",

@@ -3,8 +3,6 @@ from abc import abstractmethod
 from typing import NamedTuple, get_type_hints
 
 import pytest
-from typing_extensions import Annotated
-
 from dagster._annotations import (
     PUBLIC,
     PublicAttr,
@@ -15,6 +13,7 @@ from dagster._annotations import (
     is_public,
     public,
 )
+from typing_extensions import Annotated
 
 
 @pytest.mark.parametrize(

@@ -2,6 +2,11 @@ import os
 import time
 from typing import List
 
+from dagster import AssetKey, DagsterEventType
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.test_utils import poll_for_finished_run
+from dagster._legacy import DagsterRunStatus
+from dagster._utils import Counter, safe_tempfile_path, traced_counter
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -12,12 +17,6 @@ from dagster_graphql.test.utils import (
     infer_pipeline_selector,
     infer_repository_selector,
 )
-
-from dagster import AssetKey, DagsterEventType
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.test_utils import poll_for_finished_run
-from dagster._legacy import DagsterRunStatus
-from dagster._utils import Counter, safe_tempfile_path, traced_counter
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from .graphql_context_test_suite import (

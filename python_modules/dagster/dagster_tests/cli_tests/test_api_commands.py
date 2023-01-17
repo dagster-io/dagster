@@ -3,8 +3,6 @@ import os
 
 import mock
 from click.testing import CliRunner
-from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_job_handle
-
 from dagster import DagsterEventType, job, op, reconstructable
 from dagster._cli import api
 from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
@@ -14,6 +12,8 @@ from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 from dagster._core.host_representation import JobHandle
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster._serdes import serialize_dagster_namedtuple
+
+from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_job_handle
 
 
 def runner_execute_run(runner, cli_args):
@@ -349,7 +349,9 @@ def test_execute_step_with_secrets_loader():
                         "handlers": {
                             # Importing this handler fails if REQUIRED_LOGGER_ENV_VAR not set
                             "testHandler": {
-                                "class": "dagster_tests.cli_tests.fake_python_logger_module.FakeHandler",
+                                "class": (
+                                    "dagster_tests.cli_tests.fake_python_logger_module.FakeHandler"
+                                ),
                                 "level": "INFO",
                             },
                         }
@@ -369,7 +371,6 @@ def test_execute_step_with_secrets_loader():
                 },
             }
         ) as instance:
-
             run = create_run_for_test(
                 instance,
                 pipeline_name="needs_env_var_job",
@@ -459,7 +460,6 @@ def test_execute_step_non_compressed():
 
 
 def test_execute_step_1():
-
     with instance_for_test(
         overrides={
             "compute_logs": {
@@ -597,7 +597,8 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
             log_entry = logs[0]
             assert (
                 log_entry.message
-                == "An exception was thrown during step execution that is likely a framework error, rather than an error in user code."
+                == "An exception was thrown during step execution that is likely a framework error,"
+                " rather than an error in user code."
             )
             assert log_entry.step_key == "fake_step"
 

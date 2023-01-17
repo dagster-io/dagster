@@ -4,7 +4,6 @@ import click
 import mock
 import pytest
 from click.testing import CliRunner
-
 from dagster._cli.sensor import (
     check_repo_and_scheduler,
     sensor_cursor_command,
@@ -30,9 +29,7 @@ def test_sensors_list(gen_sensor_args):
             result = runner.invoke(sensor_list_command, cli_args)
 
             assert result.exit_code == 0
-            assert result.output == (
-                "Repository bar\n" "**************\n" "Sensor: foo_sensor [STOPPED]\n"
-            )
+            assert result.output == "Repository bar\n**************\nSensor: foo_sensor [STOPPED]\n"
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
@@ -48,7 +45,7 @@ def test_sensors_start_and_stop(gen_sensor_args):
             )
 
             assert result.exit_code == 0
-            assert "Started sensor foo_sensor\n" == result.output
+            assert result.output == "Started sensor foo_sensor\n"
 
             result = runner.invoke(
                 sensor_stop_command,
@@ -56,7 +53,7 @@ def test_sensors_start_and_stop(gen_sensor_args):
             )
 
             assert result.exit_code == 0
-            assert "Stopped sensor foo_sensor\n" == result.output
+            assert result.output == "Stopped sensor foo_sensor\n"
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())

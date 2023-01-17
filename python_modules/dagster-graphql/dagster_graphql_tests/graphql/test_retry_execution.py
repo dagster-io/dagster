@@ -1,6 +1,12 @@
 import os
 from time import sleep
 
+from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
+from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
+from dagster._core.utils import make_new_run_id
+from dagster._seven.temp_dir import get_system_temp_directory
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -13,14 +19,10 @@ from dagster_graphql.test.utils import (
     infer_pipeline_selector,
 )
 
-from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster._core.storage.pipeline_run import DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
-from dagster._core.test_utils import poll_for_finished_run
-from dagster._core.utils import make_new_run_id
-from dagster._seven.temp_dir import get_system_temp_directory
-
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
+from .graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
+)
 from .repo import csv_hello_world_solids_config, get_retry_multi_execution_params, retry_config
 from .utils import (
     get_all_logs_for_finished_run_via_subscription,
@@ -57,6 +59,41 @@ def get_step_output_event(logs, step_key, output_name="result"):
             return log
 
     return None
+
+
+class TestRetryExecutionReadonly(ReadonlyGraphQLContextTestMatrix):
+    def test_retry_execution_permission_failure(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "eventually_successful")
+
+        repository_location = graphql_context.get_repository_location("test")
+        repository = repository_location.get_repository("test_repo")
+        external_pipeline_origin = repository.get_full_external_job(
+            "eventually_successful"
+        ).get_external_origin()
+
+        run_id = create_run_for_test(
+            graphql_context.instance,
+            "eventually_successful",
+            external_pipeline_origin=external_pipeline_origin,
+        ).run_id
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "mode": "default",
+                    "selector": selector,
+                    "runConfigData": {},
+                    "executionMetadata": {
+                        "rootRunId": run_id,
+                        "parentRunId": run_id,
+                        "tags": [{"key": RESUME_RETRY_TAG, "value": "true"}],
+                    },
+                }
+            },
+        )
+        assert result.data["launchPipelineReexecution"]["__typename"] == "UnauthorizedError"
 
 
 class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
@@ -487,7 +524,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
     def test_retry_failure_all_steps_with_reexecution_params(self, graphql_context):
         """
-        Test with providng reexecutionParams rather than executionParams
+        Test with providng reexecutionParams rather than executionParams.
         """
         selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
 
@@ -533,7 +570,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
     def test_retry_hard_failure_with_reexecution_params_run_config_changed(self, graphql_context):
         """
-        Test that reexecution fails if the run config changes
+        Test that reexecution fails if the run config changes.
         """
         selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
 
@@ -577,7 +614,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
     def test_retry_failure_with_reexecution_params(self, graphql_context):
         """
-        Test with providng reexecutionParams rather than executionParams
+        Test with providng reexecutionParams rather than executionParams.
         """
         selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
 
@@ -620,7 +657,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
 
 def test_graphene_reexecution_strategy():
-    """Check that graphene enum has corresponding values in the ReexecutionStrategy enum"""
+    """Check that graphene enum has corresponding values in the ReexecutionStrategy enum."""
     for strategy in GrapheneReexecutionStrategy.__enum__:
         assert ReexecutionStrategy[strategy.value]
 

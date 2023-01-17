@@ -88,7 +88,7 @@ def _post_process(context: TraversalContext, config_value: Any) -> EvaluateValue
 def _recurse_in_to_scalar_union(
     context: TraversalContext, config_value: Any
 ) -> EvaluateValueResult[Any]:
-    if isinstance(config_value, dict) or isinstance(config_value, list):
+    if isinstance(config_value, (dict, list)):
         return _recursively_process_config(
             context.for_new_config_type(context.config_type.non_scalar_type), config_value  # type: ignore
         )

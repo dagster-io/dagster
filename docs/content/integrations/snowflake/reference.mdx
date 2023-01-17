@@ -23,6 +23,7 @@ import pandas as pd
 
 from dagster import AssetIn, asset
 
+
 # this example uses the iris_dataset asset from Step 2 of the Using Dagster with Snowflake tutorial
 
 
@@ -159,7 +160,10 @@ from dagster import Definitions, asset
 @asset(required_resource_keys={"snowflake"})
 def small_petals(context):
     return context.resources.snowflake.execute_query(
-        'SELECT * FROM IRIS_DATASET WHERE "Petal length (cm)" < 1 AND "Petal width (cm)" < 1',
+        (
+            'SELECT * FROM IRIS_DATASET WHERE "Petal length (cm)" < 1 AND "Petal width'
+            ' (cm)" < 1'
+        ),
         fetch_results=True,
         use_pandas_result=True,
     )

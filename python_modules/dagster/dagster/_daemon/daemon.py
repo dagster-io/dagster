@@ -10,8 +10,10 @@ from typing import Generator, Generic, TypeVar, Union
 
 import pendulum
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import (
+    DagsterInstance,
+    _check as check,
+)
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -57,7 +59,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
     @abstractmethod
     def daemon_type(cls) -> str:
         """
-        returns: str
+        returns: str.
         """
 
     def __exit__(self, _exception_type, _exception_value, _traceback):
@@ -74,7 +76,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
         from dagster._core.telemetry_upload import uploading_logging_thread
 
         with uploading_logging_thread():
-            daemon_generator = self.core_loop(workspace_process_context)
+            daemon_generator = self.core_loop(workspace_process_context, daemon_shutdown_event)
 
             try:
                 while not daemon_shutdown_event.is_set():
@@ -84,7 +86,8 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                             self._errors.appendleft((result, pendulum.now("UTC")))
                     except StopIteration:
                         self._logger.error(
-                            "Daemon loop finished without raising an error - daemon loops should run forever until they are interrupted."
+                            "Daemon loop finished without raising an error - daemon loops should"
+                            " run forever until they are interrupted."
                         )
                         break
                     except Exception:
@@ -94,7 +97,9 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                         )
                         self._errors.appendleft((error_info, pendulum.now("UTC")))
                         daemon_generator.close()
-                        daemon_generator = self.core_loop(workspace_process_context)
+                        daemon_generator = self.core_loop(
+                            workspace_process_context, daemon_shutdown_event
+                        )
                     finally:
                         try:
                             self._check_add_heartbeat(
@@ -148,10 +153,12 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
             and last_stored_heartbeat.daemon_id != daemon_uuid
         ):
             self._logger.error(
-                "Another %s daemon is still sending heartbeats. You likely have multiple "
-                "daemon processes running at once, which is not supported. "
-                "Last heartbeat daemon id: %s, "
-                "Current daemon_id: %s",
+                (
+                    "Another %s daemon is still sending heartbeats. You likely have multiple "
+                    "daemon processes running at once, which is not supported. "
+                    "Last heartbeat daemon id: %s, "
+                    "Current daemon_id: %s"
+                ),
                 daemon_type,
                 last_stored_heartbeat.daemon_id,
                 daemon_uuid,
@@ -182,6 +189,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
     def core_loop(
         self,
         workspace_process_context: TContext,
+        shutdown_event: Event,
     ) -> TDaemonGenerator:
         """
         Execute the daemon loop, which should be a generator function that never finishes.
@@ -199,6 +207,7 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
     def core_loop(
         self,
         workspace_process_context: TContext,
+        shutdown_event: Event,
     ) -> TDaemonGenerator:
         while True:
             start_time = time.time()
@@ -209,8 +218,8 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
                 self._logger.error("Caught error:\n%s", error_info)
                 yield error_info
             while time.time() - start_time < self.interval_seconds:
+                shutdown_event.wait(0.5)
                 yield None
-                time.sleep(0.5)
             yield None
 
     @abstractmethod
@@ -226,6 +235,7 @@ class SchedulerDaemon(DagsterDaemon):
     def core_loop(
         self,
         workspace_process_context: IWorkspaceProcessContext,
+        shutdown_event: Event,
     ) -> TDaemonGenerator:
         scheduler = workspace_process_context.instance.scheduler
         if not isinstance(scheduler, DagsterDaemonScheduler):
@@ -236,6 +246,7 @@ class SchedulerDaemon(DagsterDaemon):
             self._logger,
             scheduler.max_catchup_runs,
             scheduler.max_tick_retries,
+            shutdown_event,
         )
 
 
@@ -247,10 +258,12 @@ class SensorDaemon(DagsterDaemon):
     def core_loop(
         self,
         workspace_process_context: IWorkspaceProcessContext,
+        shutdown_event: Event,
     ) -> TDaemonGenerator:
         yield from execute_sensor_iteration_loop(
             workspace_process_context,
             self._logger,
+            shutdown_event,
         )
 
 

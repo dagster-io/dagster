@@ -1,8 +1,10 @@
 import groupBy from 'lodash/groupBy';
 import React from 'react';
 
-import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {AssetObservationFragment} from './types/AssetObservationFragment';
+import {
+  AssetMaterializationFragment,
+  AssetObservationFragment,
+} from './types/useRecentAssetEvents.types';
 
 const NO_PARTITION_KEY = '__NO_PARTITION__';
 

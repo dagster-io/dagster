@@ -1,7 +1,6 @@
 import enum
 
 import pytest
-
 from dagster import DagsterInvalidConfigError, Enum, Field, config_mapping, graph, op
 
 

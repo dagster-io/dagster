@@ -1,20 +1,23 @@
-import {useLazyQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Colors, MiddleTruncate} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
-import {graphql} from '../graphql';
 import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {RunStatusPezList} from '../runs/RunStatusPez';
+import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {buildPipelineSelector} from './WorkspaceContext';
 import {RepoAddress} from './types';
+import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS = '1.5fr 1fr 180px 96px 80px';
@@ -30,12 +33,14 @@ interface JobRowProps {
 export const VirtualizedJobRow = (props: JobRowProps) => {
   const {name, isJob, repoAddress, start, height} = props;
 
-  const [queryJob, queryResult] = useLazyQuery(SINGLE_JOB_QUERY, {
-    fetchPolicy: 'cache-and-network',
-    variables: {
-      selector: buildPipelineSelector(repoAddress, name),
+  const [queryJob, queryResult] = useLazyQuery<SingleJobQuery, SingleJobQueryVariables>(
+    SINGLE_JOB_QUERY,
+    {
+      variables: {
+        selector: buildPipelineSelector(repoAddress, name),
+      },
     },
-  });
+  );
 
   useDelayedRowQuery(queryJob);
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
@@ -158,7 +163,7 @@ const ScheduleSensorTagContainer = styled.div`
   }
 `;
 
-const SINGLE_JOB_QUERY = graphql(`
+const SINGLE_JOB_QUERY = gql`
   query SingleJobQuery($selector: PipelineSelector!) {
     pipelineOrError(params: $selector) {
       ... on Pipeline {
@@ -181,4 +186,8 @@ const SINGLE_JOB_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${RUN_TIME_FRAGMENT}
+  ${SCHEDULE_SWITCH_FRAGMENT}
+  ${SENSOR_SWITCH_FRAGMENT}
+`;

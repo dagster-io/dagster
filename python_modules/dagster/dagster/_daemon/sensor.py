@@ -34,8 +34,9 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, Run
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._utils import merge_dicts
+from dagster._scheduler.stale import resolve_stale_assets
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.merger import merge_dicts
 
 MIN_INTERVAL_LOOP_TIME = 5
 
@@ -45,7 +46,7 @@ TDaemonGenerator = Generator[Union[None, SerializableErrorInfo], None, None]
 
 
 class DagsterSensorDaemonError(DagsterError):
-    """Error when running the SensorDaemon"""
+    """Error when running the SensorDaemon."""
 
 
 class SkippedSensorRun(
@@ -57,7 +58,7 @@ class SkippedSensorRun(
         ],
     )
 ):
-    """Placeholder for runs that are skipped during the run_key idempotence check"""
+    """Placeholder for runs that are skipped during the run_key idempotence check."""
 
 
 class SensorLaunchContext:
@@ -212,6 +213,7 @@ VERBOSE_LOGS_INTERVAL = 60
 def execute_sensor_iteration_loop(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
+    shutdown_event: threading.Event,
     until=None,
 ) -> TDaemonGenerator:
     """
@@ -220,7 +222,6 @@ def execute_sensor_iteration_loop(
     iteration loop every 30 seconds, sensors are continuously evaluated, every 5 seconds. We rely on
     each sensor definition's min_interval to check that sensor evaluations are spaced appropriately.
     """
-
     sensor_state_lock = threading.Lock()
     sensor_tick_futures: Dict[str, Future] = {}
     with ExitStack() as stack:
@@ -265,7 +266,9 @@ def execute_sensor_iteration_loop(
 
             loop_duration = end_time - start_time
             sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            time.sleep(sleep_time)
+            shutdown_event.wait(sleep_time)
+
+            yield None
 
 
 def execute_sensor_iteration(
@@ -277,7 +280,6 @@ def execute_sensor_iteration(
     log_verbose_checks: bool = True,
     debug_crash_flags=None,
 ):
-
     instance = workspace_process_context.instance
 
     if not sensor_state_lock:
@@ -310,7 +312,8 @@ def execute_sensor_iteration(
                         sensors[selector_id] = sensor
         elif location_entry.load_error and log_verbose_checks:
             logger.warning(
-                f"Could not load location {location_entry.origin.location_name} to check for sensors due to the following error: {location_entry.load_error}"
+                f"Could not load location {location_entry.origin.location_name} to check for"
+                f" sensors due to the following error: {location_entry.load_error}"
             )
 
     if log_verbose_checks:
@@ -347,9 +350,11 @@ def execute_sensor_iteration(
                 )
             else:
                 logger.warning(
-                    f"Could not find sensor {sensor_name} in repository {repo_name}. If this "
-                    "sensor no longer exists, you can turn it off in the Dagit UI from the "
-                    "Status tab.",
+                    (
+                        f"Could not find sensor {sensor_name} in repository {repo_name}. If this "
+                        "sensor no longer exists, you can turn it off in the Dagit UI from the "
+                        "Status tab."
+                    ),
                 )
 
     if not sensors:
@@ -492,7 +497,8 @@ def _process_tick_generator(
     except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         logger.error(
-            f"Sensor daemon caught an error for sensor {external_sensor.name} : {error_info.to_string()}"
+            f"Sensor daemon caught an error for sensor {external_sensor.name} :"
+            f" {error_info.to_string()}"
         )
 
     yield error_info
@@ -567,7 +573,8 @@ def _evaluate_sensor(
                 origin_run_id = check.not_none(pipeline_run_reaction.pipeline_run).run_id
                 if pipeline_run_reaction.error:
                     context.logger.error(
-                        f"Got a reaction request for run {origin_run_id} but execution errorred: {pipeline_run_reaction.error}"
+                        f"Got a reaction request for run {origin_run_id} but execution errorred:"
+                        f" {pipeline_run_reaction.error}"
                     )
                     context.update_state(
                         TickStatus.FAILURE,
@@ -624,6 +631,16 @@ def _evaluate_sensor(
     )
 
     for run_request in sensor_runtime_data.run_requests:
+        if run_request.stale_assets_only:
+            stale_assets = resolve_stale_assets(workspace_process_context, run_request, external_sensor)  # type: ignore
+            # asset selection is empty set after filtering for stale
+            if len(stale_assets) == 0:
+                continue
+            else:
+                run_request = run_request.with_replaced_attrs(
+                    asset_selection=stale_assets, stale_assets_only=False
+                )
+
         target_data: ExternalTargetData = check.not_none(
             external_sensor.get_target_data(run_request.job_name)
         )
@@ -669,7 +686,7 @@ def _evaluate_sensor(
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             context.logger.error(
-                f"Run {run.run_id} created successfully but failed to launch: " f"{str(error_info)}"
+                f"Run {run.run_id} created successfully but failed to launch: {str(error_info)}"
             )
         yield error_info
 
@@ -762,7 +779,6 @@ def _get_or_create_sensor_run(
     target_data: ExternalTargetData,
     existing_runs_by_key: Mapping[str, DagsterRun],
 ):
-
     if not run_request.run_key:
         return _create_sensor_run(
             instance, repo_location, external_sensor, external_pipeline, run_request, target_data

@@ -32,5 +32,6 @@ export const ASSET_TABLE_FRAGMENT = gql`
       ...AssetTableDefinitionFragment
     }
   }
+
   ${ASSET_TABLE_DEFINITION_FRAGMENT}
 `;

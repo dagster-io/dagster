@@ -2,9 +2,8 @@ import tempfile
 from contextlib import contextmanager
 from typing import IO, Generator, Optional, Sequence
 
-import pytest
-
 import dagster._check as check
+import pytest
 from dagster import job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher

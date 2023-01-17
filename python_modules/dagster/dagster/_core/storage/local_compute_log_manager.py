@@ -9,8 +9,12 @@ from typing import IO, Generator, Optional, Sequence, Tuple, Union
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver
 
-from dagster import Field, Float, StringSource
-from dagster import _check as check
+from dagster import (
+    Field,
+    Float,
+    StringSource,
+    _check as check,
+)
 from dagster._core.execution.compute_logs import mirror_stream_to_file
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -236,7 +240,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
             yield
 
     def get_local_path(self, run_id, key, io_type):
-        """Legacy adapter from compute log manager to more generic captured log manager API"""
+        """Legacy adapter from compute log manager to more generic captured log manager API."""
         check.inst_param(io_type, "io_type", ComputeIOType)
         log_key = self.build_log_key_for_run(run_id, key)
         return self.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])

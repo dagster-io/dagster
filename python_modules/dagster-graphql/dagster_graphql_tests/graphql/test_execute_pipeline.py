@@ -2,6 +2,11 @@ import json
 import time
 import uuid
 
+from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.test_utils import wait_for_runs_to_finish
+from dagster._legacy import DagsterRunStatus
+from dagster._utils import file_relative_path
+from dagster._utils.test import get_temp_file_name
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     RUN_EVENTS_QUERY,
@@ -12,12 +17,6 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql_subscription,
     infer_pipeline_selector,
 )
-
-from dagster._core.storage.pipeline_run import RunsFilter
-from dagster._core.test_utils import wait_for_runs_to_finish
-from dagster._legacy import DagsterRunStatus
-from dagster._utils import file_relative_path
-from dagster._utils.test import get_temp_file_name
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -258,7 +257,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
         assert (
             result.data["launchPipelineExecution"]["message"]
-            == "Invalid ExecutionParams. Cannot define selector.solid_selection when using a preset."
+            == "Invalid ExecutionParams. Cannot define selector.solid_selection when using a"
+            " preset."
         )
 
         # while illegally defining runConfigData
@@ -713,7 +713,6 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
 
         with get_temp_file_name() as out_csv_path:
-
             run_config = {
                 "solids": {
                     "sum_solid": {
@@ -915,8 +914,6 @@ def get_step_output_event(logs, step_key, output_name="result"):
 
 class TestExecutePipelineReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
     def test_start_pipeline_execution_readonly_failure(self, graphql_context):
-        assert graphql_context.read_only is True
-
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,

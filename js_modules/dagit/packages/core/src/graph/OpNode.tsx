@@ -11,8 +11,7 @@ import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
 import {OpLayout} from './asyncGraphLayout';
 import {Edge, position} from './common';
-import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
-import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
+import {OpNodeInvocationFragment, OpNodeDefinitionFragment} from './types/OpNode.types';
 
 interface IOpNodeProps {
   layout: OpLayout;

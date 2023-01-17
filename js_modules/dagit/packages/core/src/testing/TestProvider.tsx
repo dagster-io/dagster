@@ -3,10 +3,10 @@ import * as React from 'react';
 import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
 
 import {AppContext, AppContextValue} from '../app/AppContext';
-import {PermissionsContext, PermissionsFromJSON} from '../app/Permissions';
+import {extractPermissions, PermissionsContext, PermissionsFromJSON} from '../app/Permissions';
 import {WebSocketContext, WebSocketContextType} from '../app/WebSocketProvider';
 import {AnalyticsContext} from '../app/analytics';
-import {PermissionFragmentFragment} from '../graphql/graphql';
+import {PermissionFragment} from '../app/types/Permissions.types';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
@@ -55,7 +55,7 @@ interface Props {
 
 export const TestProvider: React.FC<Props> = (props) => {
   const {apolloProps, appContextProps, permissionOverrides, routerProps} = props;
-  const permissions: PermissionFragmentFragment[] = React.useMemo(() => {
+  const permissions: PermissionFragment[] = React.useMemo(() => {
     return Object.keys(PERMISSIONS_ALLOW_ALL).map((permission) => {
       const override = permissionOverrides ? permissionOverrides[permission] : null;
       const value = override ? override.enabled : true;
@@ -75,7 +75,14 @@ export const TestProvider: React.FC<Props> = (props) => {
   return (
     <AppContext.Provider value={{...testValue, ...appContextProps}}>
       <WebSocketContext.Provider value={websocketValue}>
-        <PermissionsContext.Provider value={{data: permissions, loading: false}}>
+        <PermissionsContext.Provider
+          value={{
+            unscopedPermissions: extractPermissions(permissions),
+            locationPermissions: {}, // Allow all permissions to fall back
+            loading: false,
+            rawUnscopedData: [],
+          }}
+        >
           <AnalyticsContext.Provider value={analytics}>
             <MemoryRouter {...routerProps}>
               <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>

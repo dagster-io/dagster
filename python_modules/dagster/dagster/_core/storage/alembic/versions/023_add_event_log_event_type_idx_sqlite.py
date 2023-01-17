@@ -1,4 +1,4 @@
-"""add event log event type idx
+"""add event log event type idx.
 
 Revision ID: 05844c702676
 Revises: f4b6a4885876

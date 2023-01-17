@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, CaptionMono, Caption, Spinner} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, Caption, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import styled from 'styled-components/macro';
@@ -14,7 +14,7 @@ import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
 import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
-import {AssetNodeFragment} from './types/AssetNodeFragment';
+import {AssetNodeFragment} from './types/AssetNode.types';
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
@@ -57,7 +57,7 @@ export const AssetNode: React.FC<{
               <StatsRow>
                 <span>Observed</span>
                 {liveData?.lastObservation ? (
-                  <CaptionMono style={{textAlign: 'right'}}>
+                  <Caption style={{textAlign: 'right'}}>
                     <AssetRunLink
                       runId={liveData.lastObservation.runId}
                       event={{stepKey, timestamp: liveData.lastObservation.timestamp}}
@@ -67,7 +67,7 @@ export const AssetNode: React.FC<{
                         timeFormat={{showSeconds: false, showTimezone: false}}
                       />
                     </AssetRunLink>
-                  </CaptionMono>
+                  </Caption>
                 ) : (
                   <span>–</span>
                 )}
@@ -105,7 +105,7 @@ export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, 
       borderBottomLeftRadius: 6,
       borderBottomRightRadius: 6,
       whiteSpace: 'nowrap',
-      lineHeight: 12,
+      lineHeight: '12px',
       height: 24,
     }}
     flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
@@ -158,15 +158,17 @@ export const AssetNodeStatusRow: React.FC<{
   }
 
   const lastMaterializationLink = lastMaterialization ? (
-    <AssetRunLink
-      runId={lastMaterialization.runId}
-      event={{stepKey, timestamp: lastMaterialization.timestamp}}
-    >
-      <TimestampDisplay
-        timestamp={Number(lastMaterialization.timestamp) / 1000}
-        timeFormat={{showSeconds: false, showTimezone: false}}
-      />
-    </AssetRunLink>
+    <Caption>
+      <AssetRunLink
+        runId={lastMaterialization.runId}
+        event={{stepKey, timestamp: lastMaterialization.timestamp}}
+      >
+        <TimestampDisplay
+          timestamp={Number(lastMaterialization.timestamp) / 1000}
+          timeFormat={{showSeconds: false, showTimezone: false}}
+        />
+      </AssetRunLink>
+    </Caption>
   ) : undefined;
 
   if (runWhichFailedToMaterialize || late) {
@@ -179,7 +181,19 @@ export const AssetNodeStatusRow: React.FC<{
             ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
             : 'Failed'}
         </Caption>
-        {lastMaterializationLink}
+
+        {runWhichFailedToMaterialize ? (
+          <Caption>
+            <AssetRunLink runId={runWhichFailedToMaterialize.id}>
+              <TimestampDisplay
+                timestamp={Number(runWhichFailedToMaterialize.endTime)}
+                timeFormat={{showSeconds: false, showTimezone: false}}
+              />
+            </AssetRunLink>
+          </Caption>
+        ) : (
+          lastMaterializationLink
+        )}
       </AssetNodeStatusBox>
     );
   }
@@ -243,7 +257,7 @@ export const AssetNodeMinimal: React.FC<{
           </div>
 
           <MinimalName style={{fontSize: 30}} $isSource={isSource}>
-            {withMiddleTruncation(displayName, {maxLength: 17})}
+            {withMiddleTruncation(displayName, {maxLength: 14})}
           </MinimalName>
         </MinimalAssetNodeBox>
       </MinimalAssetNodeContainer>

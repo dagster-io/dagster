@@ -6,16 +6,17 @@ import tempfile
 import time
 
 import pytest
-
 from dagster import (
     DagsterEventType,
     DefaultRunLauncher,
+    _check as check,
     _seven,
     file_relative_path,
     fs_io_manager,
     repository,
 )
 from dagster._core.errors import DagsterLaunchFailedError
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._core.test_utils import (
@@ -25,13 +26,13 @@ from dagster._core.test_utils import (
     poll_for_finished_run,
     poll_for_step_start,
 )
+from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.types import CancelExecutionRequest
 from dagster._legacy import ModeDefinition, pipeline, solid
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
-from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._core.workspace.load_target import PythonFileTarget
 
 
 @solid
@@ -180,9 +181,8 @@ def test_successful_run(instance, workspace, run_config):  # pylint: disable=red
 
 
 def test_successful_run_from_pending(
-    instance, pending_workspace
+    instance: DagsterInstance, pending_workspace
 ):  # pylint: disable=redefined-outer-name
-
     repo_location = pending_workspace.get_repository_location("test2")
     external_pipeline = repo_location.get_repository("pending").get_full_external_job(
         "my_cool_asset_job"
@@ -224,15 +224,17 @@ def test_successful_run_from_pending(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        asset_selection=None,
+        solid_selection=None,
     )
 
     run_id = created_pipeline_run.run_id
 
-    assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
+    assert check.not_none(instance.get_run_by_id(run_id)).status == DagsterRunStatus.NOT_STARTED
 
     instance.launch_run(run_id=run_id, workspace=pending_workspace)
 
-    stored_pipeline_run = instance.get_run_by_id(run_id)
+    stored_pipeline_run = check.not_none(instance.get_run_by_id(run_id))
     assert created_pipeline_run.run_id == stored_pipeline_run.run_id
     assert (
         created_pipeline_run.execution_plan_snapshot_id
@@ -258,8 +260,8 @@ def test_successful_run_from_pending(
     assert call_counts.get("compute_cacheable_data_called_b") == "1"
     # once at initial load time, once inside the run launch process, once for each (3) subprocess
     # upper bound of 5 here because race conditions result in lower count sometimes
-    assert int(call_counts.get("get_definitions_called_a")) < 6
-    assert int(call_counts.get("get_definitions_called_b")) < 6
+    assert int(call_counts["get_definitions_called_a"]) < 6
+    assert int(call_counts["get_definitions_called_b"]) < 6
 
 
 def test_invalid_instance_run():
@@ -306,9 +308,8 @@ def test_invalid_instance_run():
                         with pytest.raises(
                             DagsterLaunchFailedError,
                             match=re.escape(
-                                "gRPC server could not load run {run_id} in order to execute it".format(
-                                    run_id=pipeline_run.run_id
-                                )
+                                "gRPC server could not load run {run_id} in order to execute it"
+                                .format(run_id=pipeline_run.run_id)
                             ),
                         ):
                             instance.launch_run(run_id=pipeline_run.run_id, workspace=workspace)
@@ -453,7 +454,10 @@ def test_terminated_run(instance, workspace, run_config):  # pylint: disable=red
                 ("PIPELINE_CANCELING", "Sending run termination request."),
                 (
                     "ENGINE_EVENT",
-                    "Multiprocess executor: received termination signal - forwarding to active child process",
+                    (
+                        "Multiprocess executor: received termination signal - forwarding to active"
+                        " child process"
+                    ),
                 ),
                 (
                     "ENGINE_EVENT",
@@ -526,7 +530,8 @@ def test_cleanup_after_force_terminate(run_config, instance, workspace):
         logs = instance.all_logs(run_id)
         if any(
             [
-                "Computational resources were cleaned up after the run was forcibly marked as canceled."
+                "Computational resources were cleaned up after the run was forcibly marked as"
+                " canceled."
                 in str(event)
                 for event in logs
             ]
@@ -556,7 +561,6 @@ def _get_engine_events(event_records):
 
 
 def _get_successful_step_keys(event_records):
-
     step_keys = set()
 
     for er in event_records:

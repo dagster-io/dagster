@@ -15,7 +15,8 @@ from .types import DbtCloudOutput
             is_required=True,
             description=(
                 "The integer ID of the relevant dbt Cloud job. You can find this value by going to "
-                "the details page of your job in the dbt Cloud UI. It will be the final number in the "
+                "the details page of your job in the dbt Cloud UI. It will be the final number in"
+                " the "
                 "url, e.g.: "
                 "    https://cloud.getdbt.com/#/accounts/{account_id}/projects/{project_id}/jobs/{job_id}/"
             ),
@@ -28,8 +29,10 @@ from .types import DbtCloudOutput
         "poll_timeout": Field(
             Noneable(float),
             default_value=None,
-            description="The maximum time that will waited before this operation is timed out. By "
-            "default, this will never time out.",
+            description=(
+                "The maximum time that will waited before this operation is timed out. By "
+                "default, this will never time out."
+            ),
         ),
         "yield_materializations": Field(
             config=Bool,

@@ -1,9 +1,8 @@
 import pytest
 from dagit import app
-from starlette.testclient import TestClient
-
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
 from dagster._core.test_utils import instance_for_test
+from starlette.testclient import TestClient
 
 SMOKE_TEST_QUERY = """
 {
@@ -36,7 +35,6 @@ def test_smoke_app(gen_instance):
             read_only=False,
             kwargs=dict(module_name=("dagit_tests.toy.bar_repo",), definition="bar"),
         ) as workspace_process_context:
-
             asgi_app = app.create_app_from_workspace_process_context(workspace_process_context)
             client = TestClient(asgi_app)
 

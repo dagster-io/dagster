@@ -92,7 +92,8 @@ def executor_def_from_config(
                 return executor_def
 
         check.failed(
-            f'Could not find executor "{selected_executor}". This should have been caught at config validation time.'
+            f'Could not find executor "{selected_executor}". This should have been caught at config'
+            " validation time."
         )
 
 
@@ -124,7 +125,6 @@ def create_context_creation_data(
     pipeline_run: DagsterRun,
     instance: DagsterInstance,
 ) -> "ContextCreationData":
-
     pipeline_def = pipeline.get_definition()
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=pipeline_run.mode)
 
@@ -357,8 +357,9 @@ def orchestration_context_event_generator(
         event = DagsterEvent.pipeline_failure(
             pipeline_context_or_name=pipeline_run.pipeline_name,
             context_msg=(
-                f'Pipeline failure during initialization for pipeline "{pipeline_run.pipeline_name}". '
-                "This may be due to a failure in initializing the executor or one of the loggers."
+                "Pipeline failure during initialization for pipeline"
+                f' "{pipeline_run.pipeline_name}". This may be due to a failure in initializing the'
+                " executor or one of the loggers."
             ),
             error_info=error_info,
         )
@@ -503,7 +504,7 @@ def create_log_manager(
             )
 
     if not loggers:
-        for (logger_def, logger_config) in default_system_loggers(context_creation_data.instance):
+        for logger_def, logger_config in default_system_loggers(context_creation_data.instance):
             loggers.append(
                 logger_def.logger_fn(
                     InitLoggerContext(
@@ -525,6 +526,7 @@ def create_context_free_log_manager(
 ) -> DagsterLogManager:
     """In the event of pipeline initialization failure, we want to be able to log the failure
     without a dependency on the PlanExecutionContext to initialize DagsterLogManager.
+
     Args:
         pipeline_run (PipelineRun)
         pipeline_def (PipelineDefinition)
@@ -534,7 +536,7 @@ def create_context_free_log_manager(
 
     loggers = []
     # Use the default logger
-    for (logger_def, logger_config) in default_system_loggers(instance):
+    for logger_def, logger_config in default_system_loggers(instance):
         loggers += [
             logger_def.logger_fn(
                 InitLoggerContext(

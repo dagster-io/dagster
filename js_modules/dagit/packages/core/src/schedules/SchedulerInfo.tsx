@@ -1,7 +1,7 @@
 import {Alert, Box} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DaemonHealthFragment} from '../instance/types/DaemonHealthFragment';
+import {DaemonHealthFragment} from '../instance/types/DaemonList.types';
 
 type Props = React.ComponentPropsWithRef<typeof Box> & {
   daemonHealth: DaemonHealthFragment | undefined;

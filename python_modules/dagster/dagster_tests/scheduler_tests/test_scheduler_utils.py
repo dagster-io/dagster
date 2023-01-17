@@ -4,7 +4,6 @@ from dagster._scheduler.scheduler import _get_next_scheduler_iteration_time
 
 
 def test_next_iteration_time():
-
     assert MINUTE_BOUNDARY % 60 == 0
 
     assert _get_next_scheduler_iteration_time(MINUTE_BOUNDARY) == MINUTE_BOUNDARY + 60

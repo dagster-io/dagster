@@ -41,7 +41,6 @@ def build_integration_steps() -> List[BuildkiteStep]:
 
 
 def build_backcompat_suite_steps() -> List[GroupStep]:
-
     tox_factors = [
         "dagit-latest-release",
         "dagit-earliest-release",
@@ -57,7 +56,6 @@ def build_backcompat_suite_steps() -> List[GroupStep]:
 
 
 def backcompat_extra_cmds(_, factor: str) -> List[str]:
-
     tox_factor_map = {
         "dagit-latest-release": {
             "dagit": LATEST_DAGSTER_RELEASE,
@@ -86,7 +84,10 @@ def backcompat_extra_cmds(_, factor: str) -> List[str]:
     return [
         f"export EARLIEST_TESTED_RELEASE={EARLIEST_TESTED_RELEASE}",
         "pushd integration_tests/test_suites/backcompat-test-suite/dagit_service",
-        f"./build.sh {dagit_version} {dagit_library_version} {user_code_version} {user_code_library_version} {_extract_major_version(user_code_version)}",
+        (
+            "./build.sh"
+            f" {dagit_version} {dagit_library_version} {user_code_version} {user_code_library_version} {_extract_major_version(user_code_version)}"
+        ),
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
         *network_buildkite_container("dagit_service_network"),
         *connect_sibling_docker_container(

@@ -46,7 +46,7 @@ class Enum:
 
 class Field:
     """Field represents a field type that we're going to write out as a dagster config field, once
-    we've pre-processed all custom types
+    we've pre-processed all custom types.
     """
 
     def __init__(self, fields, is_required, description):
@@ -79,7 +79,7 @@ class Field:
             with printer.with_indent():
                 printer.line("fields={")
                 with printer.with_indent():
-                    for (k, v) in self.fields.items():
+                    for k, v in self.fields.items():
                         # We need to skip "output" fields which are API responses, not queries
                         if "Output only" in v.description:
                             continue
@@ -98,7 +98,7 @@ class Field:
             printer.line(")")
 
     def write(self, printer, field_wrapped=True):
-        """Use field_wrapped=False for Lists that should not be wrapped in Field()"""
+        """Use field_wrapped=False for Lists that should not be wrapped in Field()."""
         if not field_wrapped:
             self._print_fields(printer)
             return printer.read()

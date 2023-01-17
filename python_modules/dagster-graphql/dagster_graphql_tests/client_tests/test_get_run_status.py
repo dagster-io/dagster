@@ -1,11 +1,10 @@
 import time
 
 import pytest
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster_graphql import DagsterGraphQLClientError
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
-
-from dagster._core.storage.pipeline_run import DagsterRunStatus
 
 from ..graphql.graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from ..graphql.repo import csv_hello_world_solids_config

@@ -1,7 +1,5 @@
 from typing import Sequence
 
-from snowflake.connector import ProgrammingError
-
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -10,6 +8,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartition,
     TableSlice,
 )
+from snowflake.connector import ProgrammingError
 
 from .resources import SnowflakeConnection
 
@@ -28,7 +27,6 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
         IOManagerDefinition
 
     Examples:
-
         .. code-block:: python
 
             from dagster_snowflake import build_snowflake_io_manager
@@ -85,17 +83,43 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             "database": Field(StringSource, description="Name of the database to use."),
             "account": Field(
                 StringSource,
-                description="Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.",
+                description=(
+                    "Your Snowflake account name. For more details, see  https://bit.ly/2FBL320."
+                ),
             ),
             "user": Field(StringSource, description="User login name."),
-            "password": Field(StringSource, description="User password."),
+            "password": Field(StringSource, description="User password.", is_required=False),
             "warehouse": Field(
                 StringSource, description="Name of the warehouse to use.", is_required=False
             ),
             "schema": Field(
-                StringSource, description="Name of the schema to use", is_required=False
+                StringSource, description="Name of the schema to use.", is_required=False
             ),
-            "role": Field(StringSource, description="Name of the role to use", is_required=False),
+            "role": Field(StringSource, description="Name of the role to use.", is_required=False),
+            "private_key": Field(
+                StringSource,
+                description=(
+                    "Raw private key to use. See"
+                    " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+                ),
+                is_required=False,
+            ),
+            "private_key_path": Field(
+                StringSource,
+                description=(
+                    "Path to the private key. See"
+                    " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+                ),
+                is_required=False,
+            ),
+            "private_key_password": Field(
+                StringSource,
+                description=(
+                    "The password of the private key. See"
+                    " https://docs.snowflake.com/en/user-guide/key-pair-auth.html for details."
+                ),
+                is_required=False,
+            ),
         }
     )
     def snowflake_io_manager(init_context):
@@ -132,7 +156,8 @@ class SnowflakeDbClient(DbClient):
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
         if table_slice.partition:
             return (
-                f"SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
+                f"SELECT {col_str} FROM"
+                f" {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
                 + _time_window_where_clause(table_slice.partition)
             )
         else:

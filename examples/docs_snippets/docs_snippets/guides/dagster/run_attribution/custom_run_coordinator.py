@@ -8,7 +8,6 @@ from dagster._core.storage.pipeline_run import DagsterRun
 
 
 class CustomRunCoordinator(QueuedRunCoordinator):
-
     # start_email_marker
     def get_email(self, jwt_claims_header: Optional[str]) -> Optional[str]:
         if not jwt_claims_header:

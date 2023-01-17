@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import Iterator, Mapping, NamedTuple, Optional, Sequence
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import (
+    DagsterInstance,
+    _check as check,
+)
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
 from dagster._core.execution.plan.step import ExecutionStep

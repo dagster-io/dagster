@@ -2,8 +2,8 @@ import warnings
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster._utils import merge_dicts
 from dagster._utils.backcompat import ExperimentalWarning
+from dagster._utils.merger import merge_dicts
 
 from ..errors import DagsterInvariantViolationError
 from ..instance import DagsterInstance
@@ -109,6 +109,7 @@ def materialize_to_memory(
             The string partition key that specifies the run config to execute. Can only be used
             to select run config for assets with partitioned config.
         tags (Optional[Mapping[str, str]]): Tags for the run.
+
     Returns:
         ExecuteInProcessResult: The result of the execution.
     """

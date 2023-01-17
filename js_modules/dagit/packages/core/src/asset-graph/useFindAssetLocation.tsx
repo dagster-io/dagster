@@ -2,7 +2,7 @@ import {gql, useApolloClient} from '@apollo/client';
 import React from 'react';
 
 import {AssetKey} from '../assets/types';
-import {AssetKeyInput} from '../types/globalTypes';
+import {AssetKeyInput} from '../graphql/types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -10,7 +10,7 @@ import {isHiddenAssetGroupJob} from './Utils';
 import {
   AssetForNavigationQuery,
   AssetForNavigationQueryVariables,
-} from './types/AssetForNavigationQuery';
+} from './types/useFindAssetLocation.types';
 
 export interface AssetLocation {
   assetKey: AssetKey;

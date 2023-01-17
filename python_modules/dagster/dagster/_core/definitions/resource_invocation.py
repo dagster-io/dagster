@@ -84,14 +84,14 @@ def _check_invocation_requirements(
 
     # Construct a context if None was provided. This will initialize an ephemeral instance, and
     # console log manager.
-    init_context = init_context or build_init_resource_context()
+    _init_context = init_context or build_init_resource_context()
 
     return InitResourceContext(
         resource_config=resource_config,
-        resources=init_context.resources,
+        resources=_init_context.resources,
         resource_def=resource_def,
-        instance=init_context.instance,
-        log_manager=init_context.log,
+        instance=_init_context.instance,
+        log_manager=_init_context.log,
     )
 
 

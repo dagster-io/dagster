@@ -1,6 +1,5 @@
-import graphene
-
 import dagster._check as check
+import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._utils.error import SerializableErrorInfo
 
@@ -77,16 +76,22 @@ class GraphenePythonError(graphene.ObjectType):
     def resolve_message(self, _graphene_info):
         check.invariant(
             isinstance(self, GraphenePythonError),
-            f"GraphenePythonError methods called on a {type(self)} - this usually indicates that "
-            "a SerializableErrorInfo was passed in where a GraphenePythonError was expected",
+            (
+                f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
+                " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
+                " expected"
+            ),
         )
         return self._message
 
     def resolve_stack(self, _graphene_info):
         check.invariant(
             isinstance(self, GraphenePythonError),
-            f"GraphenePythonError methods called on a {type(self)} - this usually indicates that "
-            "a SerializableErrorInfo was passed in where a GraphenePythonError was expected",
+            (
+                f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
+                " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
+                " expected"
+            ),
         )
         return self._stack
 
@@ -99,8 +104,11 @@ class GraphenePythonError(graphene.ObjectType):
     def resolve_className(self, _graphene_info):
         check.invariant(
             isinstance(self, GraphenePythonError),
-            f"GraphenePythonError methods called on a {type(self)} - this usually indicates that "
-            "a SerializableErrorInfo was passed in where a GraphenePythonError was expected",
+            (
+                f"GraphenePythonError methods called on a {type(self)} - this usually indicates"
+                " that a SerializableErrorInfo was passed in where a GraphenePythonError was"
+                " expected"
+            ),
         )
         return self._className
 
@@ -318,7 +326,10 @@ class GrapheneNoModeProvidedError(graphene.ObjectType):
         super().__init__()
         mode_list = check.list_param(mode_list, "mode_list", of_type=str)
         pipeline_name = check.str_param(pipeline_name, "pipeline_name")
-        self.message = f"No mode provided for pipeline '{pipeline_name}', which has multiple modes. Available modes: {mode_list}"
+        self.message = (
+            f"No mode provided for pipeline '{pipeline_name}', which has multiple modes. Available"
+            f" modes: {mode_list}"
+        )
 
 
 class GrapheneInvalidStepError(graphene.ObjectType):

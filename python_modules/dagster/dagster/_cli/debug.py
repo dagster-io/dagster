@@ -50,7 +50,6 @@ def debug_cli():
 @click.argument("run_id", type=str)
 @click.argument("output_file", type=click.Path())
 def export_command(run_id, output_file):
-
     with DagsterInstance.get() as instance:
         run = instance.get_run_by_id(run_id)
         if run is None:

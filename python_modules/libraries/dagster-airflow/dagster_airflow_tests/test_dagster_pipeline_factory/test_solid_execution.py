@@ -15,14 +15,13 @@ from airflow.models.dag import DAG
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.utils.dates import days_ago
-from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
-
 from dagster import DagsterEventType
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline
 from dagster._seven import get_current_datetime_in_utc
+from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
 
 default_args = {
     "owner": "dagster",
@@ -46,7 +45,7 @@ def test_normalize_name():
             default_args=default_args,
             schedule_interval=None,
         )
-    dummy_operator = DummyOperator(
+    _dummy_operator = DummyOperator(
         task_id="task-with.dot-dash",
         dag=dag,
     )
@@ -79,7 +78,7 @@ def test_long_name():
             schedule_interval=None,
         )
     long_name = "task-with.dot-dash2-loong" * 10  # 250 characters, Airflow's max allowed length
-    dummy_operator = DummyOperator(
+    _dummy_operator = DummyOperator(
         task_id=long_name,
         dag=dag,
     )
@@ -116,7 +115,7 @@ def test_one_task_dag():
             default_args=default_args,
             schedule_interval=None,
         )
-    dummy_operator = DummyOperator(
+    _dummy_operator = DummyOperator(
         task_id="dummy_operator",
         dag=dag,
     )

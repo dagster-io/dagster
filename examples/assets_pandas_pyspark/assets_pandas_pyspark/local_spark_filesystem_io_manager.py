@@ -11,12 +11,16 @@ import os
 from typing import Union
 
 import pandas as pd
+from dagster import (
+    AssetKey,
+    IOManager,
+    _check as check,
+)
 from pandas import DataFrame as PandasDF
-from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql import SparkSession
-
-from dagster import AssetKey, IOManager
-from dagster import _check as check
+from pyspark.sql import (
+    DataFrame as SparkDF,
+    SparkSession,
+)
 
 
 class LocalFileSystemIOManager(IOManager):

@@ -1,9 +1,8 @@
-"""Launching in EMR is prohibitively time consuming, so we just verify that the plan compiles"""
+"""Launching in EMR is prohibitively time consuming, so we just verify that the plan compiles."""
 import os
 
-from with_pyspark_emr.definitions import make_and_filter_data_emr, make_and_filter_data_local
-
 from dagster._core.execution.api import create_execution_plan
+from with_pyspark_emr.definitions import make_and_filter_data_emr, make_and_filter_data_local
 
 
 def test_emr_pyspark_execution_plan():

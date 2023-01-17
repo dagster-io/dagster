@@ -1,17 +1,11 @@
 # isort: skip_file
-# pylint: disable=reimported
 from dagster import (
     AssetKey,
     load_assets_from_current_module,
-    AssetsDefinition,
-    GraphOut,
     Out,
     Output,
     AssetSelection,
-    asset,
     define_asset_job,
-    graph,
-    op,
     Definitions,
 )
 from mock import MagicMock
@@ -23,7 +17,7 @@ def create_db_connection():
 
 # start example
 import pandas as pd
-from dagster import AssetsDefinition, asset, graph, op
+from dagster import AssetsDefinition, graph, op
 
 
 @op(required_resource_keys={"slack"})

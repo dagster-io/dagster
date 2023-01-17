@@ -34,6 +34,7 @@ basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 
 # end_basic_asset_schedule
 
+
 # start_run_config_schedule
 @op(config_schema={"scheduled_date": str})
 def configurable_op(context):

@@ -5,11 +5,11 @@ import click
 import pytest
 from click import UsageError
 from click.testing import CliRunner
-
 from dagster._cli.job import execute_execute_command, job_execute_command
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import instance_for_test, new_cwd
-from dagster._utils import file_relative_path, merge_dicts
+from dagster._utils import file_relative_path
+from dagster._utils.merger import merge_dicts
 
 from .test_cli_commands import (
     job_python_origin_contexts,
@@ -290,8 +290,8 @@ def test_attribute_is_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, "
-                "AssetGroup, or RepositoryDefinition. Got 123."
+                "Loadable attributes must be either a JobDefinition, GraphDefinition,"
+                " PipelineDefinition, AssetGroup, or RepositoryDefinition. Got 123."
             ),
         ):
             execute_execute_command(
@@ -311,8 +311,8 @@ def test_attribute_fn_returns_wrong_thing():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, "
-                "AssetGroup, or RepositoryDefinition."
+                "Loadable attributes must be either a JobDefinition, GraphDefinition,"
+                " PipelineDefinition, AssetGroup, or RepositoryDefinition."
             ),
         ):
             execute_execute_command(

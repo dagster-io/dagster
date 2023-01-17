@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import SensorDefinition, graph
 from dagster._core.errors import DagsterInvalidDefinitionError
 

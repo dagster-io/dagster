@@ -55,7 +55,7 @@ class _TypedPythonTuple(DagsterType):
             return TypeCheck(
                 success=False,
                 description=(
-                    "Tuple with key {key} requires {n} entries, received {m} " "values"
+                    "Tuple with key {key} requires {n} entries, received {m} values"
                 ).format(key=self.key, n=len(self.dagster_types), m=len(value)),
             )
 

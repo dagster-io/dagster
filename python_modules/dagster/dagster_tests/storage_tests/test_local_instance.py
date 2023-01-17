@@ -6,10 +6,16 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 import yaml
-
-from dagster import DagsterEventType, DagsterInvalidConfigError, In, Out, Output
-from dagster import _check as check
-from dagster import job, op
+from dagster import (
+    DagsterEventType,
+    DagsterInvalidConfigError,
+    In,
+    Out,
+    Output,
+    _check as check,
+    job,
+    op,
+)
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
@@ -123,7 +129,7 @@ def test_get_run_by_id():
 
         def _has_run(self, run_id):
             # This is uglier than we would like because there is no nonlocal keyword in py2
-            global MOCK_HAS_RUN_CALLED  # pylint: disable=global-variable-not-assigned
+            global MOCK_HAS_RUN_CALLED  # noqa: PLW0602
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
                 self._run_storage.add_run(DagsterRun(pipeline_name="foo_pipeline", run_id=run_id))
@@ -244,7 +250,10 @@ def test_run_step_stats_with_retries():
 
 
 @pytest.mark.skip(
-    reason="Flakey test. See https://linear.app/elementl/issue/CORE-86/test-threaded-ephemeral-instance-flakes"
+    reason=(
+        "Flakey test. See"
+        " https://linear.app/elementl/issue/CORE-86/test-threaded-ephemeral-instance-flakes"
+    )
 )
 def test_threaded_ephemeral_instance(caplog):
     def _instantiate_ephemeral_instance():

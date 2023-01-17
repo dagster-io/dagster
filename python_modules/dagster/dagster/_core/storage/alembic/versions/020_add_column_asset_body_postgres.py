@@ -1,4 +1,4 @@
-"""add column asset body
+"""add column asset body.
 
 Revision ID: 7cba9eeaaf1d
 Revises: f0367d611631

@@ -330,7 +330,8 @@ class OutputContext:
         result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
         if result is None:
             raise DagsterInvariantViolationError(
-                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+                f"Attempting to access partitions def for asset {asset_key}, but it is not"
+                " partitioned"
             )
 
         return result
@@ -356,7 +357,7 @@ class OutputContext:
     @public  # type: ignore
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run"""
+        """Whether the current run is a partitioned run."""
         if self._warn_on_step_context_use:
             warnings.warn(
                 "You are using InputContext.upstream_output.has_partition_key"
@@ -494,7 +495,6 @@ class OutputContext:
         Returns:
             Sequence[str, ...]: A list of identifiers, i.e. run id, step key, and output name
         """
-
         warnings.warn(
             "`OutputContext.get_run_scoped_output_identifier` is deprecated. Use "
             "`OutputContext.get_identifier` instead."
@@ -547,8 +547,10 @@ class OutputContext:
         if version is not None:
             check.invariant(
                 self.mapping_key is None,
-                f"Mapping key and version both provided for output '{name}' of step '{step_key}'. "
-                "Dynamic mapping is not supported when using versioning.",
+                (
+                    f"Mapping key and version both provided for output '{name}' of step"
+                    f" '{step_key}'. Dynamic mapping is not supported when using versioning."
+                ),
             )
             identifier = ["versioned_outputs", version, step_key, name]
         else:
@@ -597,7 +599,6 @@ class OutputContext:
             event (Union[AssetMaterialization, Materialization, AssetObservation]): The event to log.
 
         Examples:
-
         .. code-block:: python
 
             from dagster import IOManager, AssetMaterialization
@@ -630,7 +631,6 @@ class OutputContext:
 
         If consume_events has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
-
         events = self._events
         self._events = []
         yield from events
@@ -661,7 +661,6 @@ class OutputContext:
                 materializations = [event for event in all_user_events if isinstance(event, AssetMaterialization)]
                 ...
         """
-
         return self._user_events
 
     @public
@@ -674,7 +673,6 @@ class OutputContext:
             metadata (Mapping[str, RawMetadataValue]): A metadata dictionary to log
 
         Examples:
-
         .. code-block:: python
 
             from dagster import IOManager
@@ -730,7 +728,6 @@ def get_output_context(
         run_id (str): The run ID of the run that produced the output, not necessarily the run that
             the context will be used in.
     """
-
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config
     solid_config = resolved_run_config.solids[step.solid_handle.to_string()]
@@ -755,9 +752,11 @@ def get_output_context(
     if step_context:
         check.invariant(
             not resources,
-            "Expected either resources or step context to be set, but "
-            "received both. If step context is provided, resources for IO manager will be "
-            "retrieved off of that.",
+            (
+                "Expected either resources or step context to be set, but "
+                "received both. If step context is provided, resources for IO manager will be "
+                "retrieved off of that."
+            ),
         )
         resources = build_resources_for_manager(io_manager_key, step_context)
 
@@ -841,7 +840,6 @@ def build_output_context(
         partition_key: Optional[str]: String value representing partition key to execute with.
 
     Examples:
-
         .. code-block:: python
 
             build_output_context()

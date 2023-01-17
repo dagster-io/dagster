@@ -22,7 +22,9 @@ setup(
     author_email="hello@elementl.com",
     license="Apache-2.0",
     description="Package for integrating Airbyte with Dagster.",
-    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte",
+    url=(
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte"
+    ),
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

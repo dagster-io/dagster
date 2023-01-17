@@ -1,12 +1,16 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
-import {graphql} from '../graphql';
+import {RunStatus} from '../graphql/types';
 import {TestProvider} from '../testing/TestProvider';
-import {RunStatus} from '../types/globalTypes';
 
 import {RunActionButtons} from './RunActionButtons';
+import {RUN_FRAGMENT} from './RunFragments';
+import {
+  RunActionButtonsTestQuery,
+  RunActionButtonsTestQueryVariables,
+} from './types/RunActionButtons.test.types';
 
 describe('RunActionButtons', () => {
   const props = {
@@ -25,7 +29,9 @@ describe('RunActionButtons', () => {
   };
 
   const Test = () => {
-    const {data} = useQuery(RUN_ACTION_BUTTONS_TEST_QUERY);
+    const {data} = useQuery<RunActionButtonsTestQuery, RunActionButtonsTestQueryVariables>(
+      RUN_ACTION_BUTTONS_TEST_QUERY,
+    );
     if (data) {
       const run = data.pipelineRunOrError;
       if (run.__typename === 'Run') {
@@ -153,7 +159,7 @@ describe('RunActionButtons', () => {
   });
 });
 
-const RUN_ACTION_BUTTONS_TEST_QUERY = graphql(`
+const RUN_ACTION_BUTTONS_TEST_QUERY = gql`
   query RunActionButtonsTestQuery {
     pipelineRunOrError(runId: "foo") {
       ... on Run {
@@ -162,4 +168,6 @@ const RUN_ACTION_BUTTONS_TEST_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${RUN_FRAGMENT}
+`;

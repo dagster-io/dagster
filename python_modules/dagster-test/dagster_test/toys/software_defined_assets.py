@@ -23,7 +23,7 @@ class DummyIOManager(IOManager):
 
 @asset
 def daily_temperature_highs(sfo_q2_weather_sample: DataFrame) -> DataFrame:
-    """Computes the temperature high for each day"""
+    """Computes the temperature high for each day."""
     assert sfo_q2_weather_sample
     time.sleep(3)
     return DataFrame()
@@ -31,7 +31,7 @@ def daily_temperature_highs(sfo_q2_weather_sample: DataFrame) -> DataFrame:
 
 @asset
 def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
-    """Computes the 10 hottest dates"""
+    """Computes the 10 hottest dates."""
     assert daily_temperature_highs
     time.sleep(3)
     return DataFrame()

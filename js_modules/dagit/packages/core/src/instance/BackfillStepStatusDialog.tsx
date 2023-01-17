@@ -11,8 +11,8 @@ import {RepoAddress} from '../workspace/types';
 
 import {
   BackfillTableFragment,
-  BackfillTableFragment_partitionSet,
-} from './types/BackfillTableFragment';
+  PartitionSetForBackfillTableFragment,
+} from './types/BackfillTable.types';
 
 interface Props {
   backfill?: BackfillTableFragment;
@@ -57,7 +57,7 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
 
 interface ContentProps {
   backfill: BackfillTableFragment;
-  partitionSet: BackfillTableFragment_partitionSet;
+  partitionSet: PartitionSetForBackfillTableFragment;
   repoAddress: RepoAddress;
   onClose: () => void;
 }

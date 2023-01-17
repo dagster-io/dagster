@@ -28,7 +28,13 @@ from dagster._utils.backcompat import (
     experimental_class_warning,
 )
 
-from .table import TableColumn, TableColumnConstraints, TableConstraints, TableRecord, TableSchema
+from .table import (  # re-exported
+    TableColumn as TableColumn,
+    TableColumnConstraints as TableColumnConstraints,
+    TableConstraints as TableConstraints,
+    TableRecord as TableRecord,
+    TableSchema as TableSchema,
+)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import AssetKey
@@ -40,6 +46,7 @@ RawMetadataValue = Union[
     int,
     List[Any],
     str,
+    None,
 ]
 
 MetadataMapping = Mapping[str, "MetadataValue"]
@@ -88,7 +95,10 @@ def normalize_metadata(
         deprecation_warning(
             'Argument "metadata_entries"',
             "1.0.0",
-            additional_warn_txt="Use argument `metadata` instead. The `MetadataEntry` `description` attribute is also deprecated-- argument `metadata` takes a label: value dictionary.",
+            additional_warn_txt=(
+                "Use argument `metadata` instead. The `MetadataEntry` `description` attribute is"
+                " also deprecated-- argument `metadata` takes a label: value dictionary."
+            ),
             stacklevel=4,  # to get the caller of `normalize_metadata`
         )
         return check.sequence_param(
@@ -108,7 +118,10 @@ def normalize_metadata(
                 deprecation_warning(
                     "Support for arbitrary metadata values",
                     "1.0.0",
-                    additional_warn_txt=f"In the future, all user-supplied metadata values must be one of {RawMetadataValue}",
+                    additional_warn_txt=(
+                        "In the future, all user-supplied metadata values must be one of"
+                        f" {RawMetadataValue}"
+                    ),
                     stacklevel=4,  # to get the caller of `normalize_metadata`
                 )
                 metadata_entries.append(
@@ -125,7 +138,7 @@ def normalize_metadata(
     ]
 
 
-def normalize_metadata_value(raw_value: RawMetadataValue):
+def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue":
     from dagster._core.definitions.events import AssetKey
 
     if isinstance(raw_value, MetadataValue):
@@ -138,7 +151,7 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
         return MetadataValue.bool(raw_value)
     elif isinstance(raw_value, int):
         return MetadataValue.int(raw_value)
-    elif isinstance(raw_value, dict):
+    elif isinstance(raw_value, (list, dict)):
         return MetadataValue.json(raw_value)
     elif isinstance(raw_value, os.PathLike):
         return MetadataValue.path(raw_value)
@@ -146,6 +159,8 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
         return MetadataValue.asset(raw_value)
     elif isinstance(raw_value, TableSchema):
         return MetadataValue.table_schema(raw_value)
+    elif raw_value is None:
+        return MetadataValue.null()
 
     raise DagsterInvalidMetadata(
         f"Its type was {type(raw_value)}. Consider wrapping the value with the appropriate "
@@ -158,8 +173,8 @@ def package_metadata_value(label: str, raw_value: RawMetadataValue) -> "Metadata
 
     if isinstance(raw_value, (MetadataEntry, PartitionMetadataEntry)):
         raise DagsterInvalidMetadata(
-            f"Expected a metadata value, found an instance of {raw_value.__class__.__name__}. Consider "
-            "instead using a MetadataValue wrapper for the value."
+            f"Expected a metadata value, found an instance of {raw_value.__class__.__name__}."
+            " Consider instead using a MetadataValue wrapper for the value."
         )
     try:
         value = normalize_metadata_value(raw_value)
@@ -292,9 +307,9 @@ class MetadataValue(ABC):
 
     @public
     @staticmethod
-    def json(data: Mapping[str, Any]) -> "JsonMetadataValue":
-        """Static constructor for a metadata value wrapping a path as
-        :py:class:`JsonMetadataValue`. Can be used as the value type for the `metadata`
+    def json(data: Union[Sequence[Any], Mapping[str, Any]]) -> "JsonMetadataValue":
+        """Static constructor for a metadata value wrapping a json-serializable list or dict
+        as :py:class:`JsonMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
 
         .. code-block:: python
@@ -310,7 +325,7 @@ class MetadataValue(ABC):
                 )
 
         Args:
-            data (Dict[str, Any]): The JSON data for a metadata entry.
+            data (Union[Sequence[Any], Mapping[str, Any]]): The JSON data for a metadata entry.
         """
         return JsonMetadataValue(data)
 
@@ -384,7 +399,6 @@ class MetadataValue(ABC):
         Args:
             value (float): The float value for a metadata entry.
         """
-
         return FloatMetadataValue(value)
 
     @public
@@ -408,7 +422,6 @@ class MetadataValue(ABC):
         Args:
             value (int): The int value for a metadata entry.
         """
-
         return IntMetadataValue(value)
 
     @public
@@ -432,7 +445,6 @@ class MetadataValue(ABC):
         Args:
             value (bool): The bool value for a metadata entry.
         """
-
         return BoolMetadataValue(value)
 
     @public
@@ -466,7 +478,6 @@ class MetadataValue(ABC):
         Args:
             asset_key (AssetKey): The asset key referencing the asset.
         """
-
         from dagster._core.definitions.events import AssetKey
 
         check.inst_param(asset_key, "asset_key", AssetKey)
@@ -537,6 +548,14 @@ class MetadataValue(ABC):
             schema (TableSchema): The table schema for a metadata entry.
         """
         return TableSchemaMetadataValue(schema)
+
+    @public
+    @staticmethod
+    def null() -> "NullMetadataValue":
+        """Static constructor for a metadata value representing null. Can be used as the value type
+        for the `metadata` parameter for supported events.
+        """
+        return NullMetadataValue()
 
 
 # ########################
@@ -652,7 +671,7 @@ class JsonMetadataValue(
     NamedTuple(
         "_JsonMetadataValue",
         [
-            ("data", PublicAttr[Mapping[str, Any]]),
+            ("data", PublicAttr[Optional[Union[Sequence[Any], Mapping[str, Any]]]]),
         ],
     ),
     MetadataValue,
@@ -663,8 +682,8 @@ class JsonMetadataValue(
         data (Dict[str, Any]): The JSON data.
     """
 
-    def __new__(cls, data: Optional[Mapping[str, Any]]):
-        data = check.opt_mapping_param(data, "data", key_type=str)
+    def __new__(cls, data: Optional[Union[Sequence[Any], Mapping[str, Any]]]):
+        data = check.opt_inst_param(data, "data", (Sequence, Mapping))
         try:
             # check that the value is JSON serializable
             seven.dumps(data)
@@ -674,7 +693,7 @@ class JsonMetadataValue(
 
     @public  # type: ignore
     @property
-    def value(self) -> Mapping[str, Any]:
+    def value(self) -> Optional[Union[Sequence[Any], Mapping[str, Any]]]:
         return self.data
 
 
@@ -867,7 +886,6 @@ class TableMetadataValue(
             return "string"
 
     def __new__(cls, records: Sequence[TableRecord], schema: Optional[TableSchema]):
-
         check.sequence_param(records, "records", of_type=TableRecord)
         check.opt_inst_param(schema, "schema", TableSchema)
 
@@ -916,6 +934,15 @@ class TableSchemaMetadataValue(
     @property
     def value(self) -> TableSchema:
         return self.schema
+
+
+@whitelist_for_serdes(storage_name="NullMetadataEntryData")
+class NullMetadataValue(NamedTuple("_NullMetadataValue", []), MetadataValue):
+    """Representation of null."""
+
+    @property
+    def value(self) -> None:
+        return None
 
 
 # ########################
@@ -1143,7 +1170,7 @@ class MetadataEntry(
                 )
 
         Args:
-            data (Optional[Dict[str, Any]]): The JSON data contained by this metadata entry.
+            data (Optional[Union[Sequence[Any], Mapping[str, Any]]]): The JSON data contained by this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
@@ -1205,7 +1232,6 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-
         return MetadataEntry(label, description, FloatMetadataValue(value))
 
     @staticmethod
@@ -1228,7 +1254,6 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-
         return MetadataEntry(label, description, IntMetadataValue(value))
 
     @staticmethod
@@ -1261,7 +1286,6 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-
         from dagster._core.definitions.events import AssetKey
 
         check.inst_param(asset_key, "asset_key", AssetKey)

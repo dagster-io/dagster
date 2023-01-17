@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import DagsterInvalidDefinitionError, DynamicOut, DynamicOutput, graph, job, op
 
 
@@ -78,7 +77,7 @@ def test_multi_composite_out():
         @job
         def _should_fail():
             def _complex(item):
-                composed_echo().map(lambda y: add(y, item))
+                composed_echo().map(lambda y: add(y, item))  # type: ignore  # (test error)
 
             dynamic_solid().map(_complex)
 
@@ -86,7 +85,10 @@ def test_multi_composite_out():
 def test_multi_composite_in():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a node that is already downstream of another dynamic output',
+        match=(
+            'cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to'
+            " a node that is already downstream of another dynamic output"
+        ),
     ):
 
         @graph
@@ -101,7 +103,10 @@ def test_multi_composite_in():
 def test_multi_composite_in_2():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a node that is already downstream of another dynamic output',
+        match=(
+            'cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to'
+            " a node that is already downstream of another dynamic output"
+        ),
     ):
 
         @graph
@@ -120,7 +125,10 @@ def test_multi_composite_in_2():
 def test_multi_composite_in_3():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a node that is already downstream of another dynamic output',
+        match=(
+            'cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to'
+            " a node that is already downstream of another dynamic output"
+        ),
     ):
 
         @graph
@@ -135,7 +143,10 @@ def test_multi_composite_in_3():
 def test_multi_composite_in_4():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to a node that is already downstream of another dynamic output',
+        match=(
+            'cannot be downstream of dynamic output "dynamic_solid:result" since input "a" maps to'
+            " a node that is already downstream of another dynamic output"
+        ),
     ):
 
         @graph

@@ -1,12 +1,12 @@
 import {assertUnreachable} from '../app/Util';
 import {
-  ConfigEditorRunConfigSchemaFragment_allConfigTypes,
+  AllConfigTypesForEditorFragment,
   ConfigEditorRunConfigSchemaFragment,
-} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+} from '../configeditor/types/ConfigEditorUtils.types';
 
 export const scaffoldType = (
   configTypeKey: string,
-  typeLookup: {[key: string]: ConfigEditorRunConfigSchemaFragment_allConfigTypes},
+  typeLookup: {[key: string]: AllConfigTypesForEditorFragment},
 ): any => {
   const type = typeLookup[configTypeKey];
 
@@ -58,10 +58,8 @@ export const scaffoldType = (
   }
 };
 
-export const createTypeLookup = (
-  allConfigTypes: ConfigEditorRunConfigSchemaFragment_allConfigTypes[],
-) => {
-  const typeLookup: {[key: string]: ConfigEditorRunConfigSchemaFragment_allConfigTypes} = {};
+export const createTypeLookup = (allConfigTypes: AllConfigTypesForEditorFragment[]) => {
+  const typeLookup: {[key: string]: AllConfigTypesForEditorFragment} = {};
   for (const type of allConfigTypes) {
     typeLookup[type.key] = type;
   }

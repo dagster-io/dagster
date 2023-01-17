@@ -3,7 +3,6 @@ import pickle
 import re
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,

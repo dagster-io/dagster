@@ -1,22 +1,21 @@
-import {useApolloClient, ApolloClient} from '@apollo/client';
+import {useApolloClient, ApolloClient, gql} from '@apollo/client';
 import * as React from 'react';
 
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
-import {graphql} from '../graphql';
-import {
-  PartitionMatrixStepRunFragmentFragment,
-  PartitionStepLoaderQueryQuery,
-  PartitionStepLoaderQueryQueryVariables,
-  RepositorySelector,
-  RunStatus,
-} from '../graphql/graphql';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
+import {RepositorySelector, RunStatus} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';
 
-import {PartitionRuns} from './useMatrixData';
+import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
+import {
+  PartitionStepLoaderQueryVariables,
+  PartitionStepLoaderQuery,
+} from './types/usePartitionStepQuery.types';
+import {PartitionRuns, PARTITION_MATRIX_STEP_RUN_FRAGMENT} from './useMatrixData';
 
 interface DataState {
-  runs: PartitionMatrixStepRunFragmentFragment[];
+  runs: PartitionMatrixStepRunFragment[];
   partitionNames: string[];
   loading: boolean;
   loadingCursorIdx: number;
@@ -197,12 +196,9 @@ export function usePartitionStepQuery({
 
 async function fetchRunsForFilter(
   client: ApolloClient<any>,
-  variables: PartitionStepLoaderQueryQueryVariables,
+  variables: PartitionStepLoaderQueryVariables,
 ) {
-  const result = await client.query<
-    PartitionStepLoaderQueryQuery,
-    PartitionStepLoaderQueryQueryVariables
-  >({
+  const result = await client.query<PartitionStepLoaderQuery, PartitionStepLoaderQueryVariables>({
     fetchPolicy: 'network-only',
     query: PARTITION_STEP_LOADER_QUERY,
     variables,
@@ -238,7 +234,7 @@ function assemblePartitions(data: DataState, partitionTagName: string) {
   return results;
 }
 
-const PARTITION_STEP_LOADER_QUERY = graphql(`
+const PARTITION_STEP_LOADER_QUERY = gql`
   query PartitionStepLoaderQuery($filter: RunsFilter!, $cursor: String, $limit: Int) {
     pipelineRunsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
       ... on Runs {
@@ -253,4 +249,7 @@ const PARTITION_STEP_LOADER_QUERY = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+
+  ${PARTITION_MATRIX_STEP_RUN_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;

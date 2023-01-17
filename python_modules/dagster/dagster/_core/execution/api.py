@@ -35,11 +35,11 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.telemetry import log_repo_stats, telemetry_wrapper
+from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry_wrapper
 from dagster._core.utils import str_format_set
-from dagster._utils import merge_dicts
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
+from dagster._utils.merger import merge_dicts
 
 from .context_creation_pipeline import (
     ExecutionContextManager,
@@ -62,7 +62,6 @@ from .results import PipelineExecutionResult
 # | execute_plan_iterator       | ExecutionPlan      | async | (2)         | no                      |
 # | execute_plan                | ExecutionPlan      | sync  | (2)         | no                      |
 # | reexecute_pipeline          | IPipeline          | sync  | yes         | yes                     |
-# | reexecute_pipeline_iterator | IPipeline          | async | yes         | yes                     |
 #
 # Notes on reexecution support:
 # (1) The appropriate bits must be set on the DagsterRun passed to this function. Specifically,
@@ -98,7 +97,10 @@ def execute_run_iterator(
                 # the run monitoring daemon will also spin up a new pod
                 def gen_ignore_duplicate_run_worker():
                     yield instance.report_engine_event(
-                        "Ignoring a duplicate run that was started from somewhere other than the run monitor daemon",
+                        (
+                            "Ignoring a duplicate run that was started from somewhere other than"
+                            " the run monitor daemon"
+                        ),
                         pipeline_run,
                     )
 
@@ -116,10 +118,12 @@ def execute_run_iterator(
 
                 def gen_fail_restarted_run_worker():
                     yield instance.report_engine_event(
-                        f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started "
-                        f"a new run worker while the run was already in state {pipeline_run.status}. "
-                        "This most frequently happens when the run worker unexpectedly stops and is "
-                        "restarted by the cluster. Marking the run as failed.",
+                        (
+                            f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started a new"
+                            f" run worker while the run was already in state {pipeline_run.status}."
+                            " This most frequently happens when the run worker unexpectedly stops"
+                            " and is restarted by the cluster. Marking the run as failed."
+                        ),
                         pipeline_run,
                     )
                     yield instance.report_run_failed(pipeline_run)
@@ -130,9 +134,11 @@ def execute_run_iterator(
         check.invariant(
             pipeline_run.status == DagsterRunStatus.STARTED
             or pipeline_run.status == DagsterRunStatus.STARTING,
-            desc="Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
-            "resuming from a run worker failure".format(
-                pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+            desc=(
+                "Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
+                "resuming from a run worker failure".format(
+                    pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+                )
             ),
         )
 
@@ -141,8 +147,8 @@ def execute_run_iterator(
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
                 pipeline_run.solids_to_execute == pipeline.solids_to_execute,
-                "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that conflicts "
-                "with pipeline subset {pipeline_solids_to_execute}.".format(
+                "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that"
+                " conflicts with pipeline subset {pipeline_solids_to_execute}.".format(
                     pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
                     solids_to_execute=str_format_set(pipeline_run.solids_to_execute),
                 ),
@@ -204,15 +210,19 @@ def execute_run(
     """
     if isinstance(pipeline, PipelineDefinition):
         if isinstance(pipeline, JobDefinition):
-            error = "execute_run requires a reconstructable job but received job definition directly instead."
+            error = (
+                "execute_run requires a reconstructable job but received job definition directly"
+                " instead."
+            )
         else:
             error = (
                 "execute_run requires a reconstructable pipeline but received pipeline definition "
                 "directly instead."
             )
         raise DagsterInvariantViolationError(
-            f"{error} To support hand-off to other processes please wrap your definition in "
-            "a call to reconstructable(). Learn more about reconstructable here: https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
+            f"{error} To support hand-off to other processes please wrap your definition in a call"
+            " to reconstructable(). Learn more about reconstructable here:"
+            " https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
         )
 
     check.inst_param(pipeline, "pipeline", IPipeline)
@@ -337,7 +347,6 @@ def execute_pipeline_iterator(
     Returns:
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     """
-
     with ephemeral_instance_if_missing(instance) as execute_instance:
         pipeline, repository_load_data = _pipeline_with_repository_load_data(pipeline)
 
@@ -408,6 +417,7 @@ class ReexecutionOptions(NamedTuple):
         Args:
             run_id (str): The run_id of the failed run. Run must fail in order to be reexecuted.
             instance (DagsterInstance): The DagsterInstance that the original run occurred in.
+
         Returns:
             ReexecutionOptions: Reexecution options to pass to a python execution.
         """
@@ -528,7 +538,6 @@ def execute_job(
     Returns:
       :py:class:`JobExecutionResult`: The result of job execution.
     """
-
     check.inst_param(job, "job", ReconstructablePipeline)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
@@ -622,7 +631,6 @@ def execute_pipeline(
 
     For the asynchronous version, see :py:func:`execute_pipeline_iterator`.
     """
-
     with ephemeral_instance_if_missing(instance) as execute_instance:
         return _logged_execute_pipeline(
             pipeline,
@@ -737,10 +745,7 @@ def reexecute_pipeline(
 
     Returns:
       :py:class:`PipelineExecutionResult`: The result of pipeline execution.
-
-    For the asynchronous version, see :py:func:`reexecute_pipeline_iterator`.
     """
-
     check.opt_sequence_param(step_selection, "step_selection", of_type=str)
 
     check.str_param(parent_run_id, "parent_run_id")
@@ -806,106 +811,6 @@ def reexecute_pipeline(
             execute_instance,
             raise_on_error=raise_on_error,
         )
-    check.failed("Should not reach here.")
-
-
-def reexecute_pipeline_iterator(
-    pipeline: Union[IPipeline, PipelineDefinition],
-    parent_run_id: str,
-    run_config: Optional[Mapping[str, object]] = None,
-    step_selection: Optional[Sequence[str]] = None,
-    mode: Optional[str] = None,
-    preset: Optional[str] = None,
-    tags: Optional[Mapping[str, str]] = None,
-    instance: Optional[DagsterInstance] = None,
-) -> Iterator[DagsterEvent]:
-    """Reexecute a pipeline iteratively.
-
-    Rather than package up the result of running a pipeline into a single object, like
-    :py:func:`reexecute_pipeline`, this function yields the stream of events resulting from pipeline
-    reexecution.
-
-    This is intended to allow the caller to handle these events on a streaming basis in whatever
-    way is appropriate.
-
-    Parameters:
-        pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
-        parent_run_id (str): The id of the previous run to reexecute. The run must exist in the
-            instance.
-        run_config (Optional[dict]): The configuration that parametrizes this run,
-            as a dict.
-        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
-            solid names) to execute. For example:
-
-            - ``['some_solid']``: selects ``some_solid`` itself.
-            - ``['*some_solid']``: select ``some_solid`` and all its ancestors (upstream dependencies).
-            - ``['*some_solid+++']``: select ``some_solid``, all its ancestors, and its descendants
-              (downstream dependencies) within 3 levels down.
-            - ``['*some_solid', 'other_solid_a', 'other_solid_b+']``: select ``some_solid`` and all its
-              ancestors, ``other_solid_a`` itself, and ``other_solid_b`` and its direct child solids.
-
-        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
-            and ``preset``.
-        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``.
-        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
-            logs.
-        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
-            an ephemeral instance will be used, and no artifacts will be persisted from the run.
-
-    Returns:
-      Iterator[DagsterEvent]: The stream of events resulting from pipeline reexecution.
-    """
-
-    check.opt_sequence_param(step_selection, "step_selection", of_type=str)
-
-    check.str_param(parent_run_id, "parent_run_id")
-
-    with ephemeral_instance_if_missing(instance) as execute_instance:
-        pipeline, repository_load_data = _pipeline_with_repository_load_data(pipeline)
-
-        (pipeline, run_config, mode, tags, _, _) = _check_execute_pipeline_args(
-            pipeline=pipeline,
-            run_config=run_config,
-            mode=mode,
-            preset=preset,
-            tags=tags,
-            solid_selection=None,
-        )
-        parent_pipeline_run = execute_instance.get_run_by_id(parent_run_id)
-        if parent_pipeline_run is None:
-            check.failed(
-                "No parent run with id {parent_run_id} found in instance.".format(
-                    parent_run_id=parent_run_id
-                ),
-            )
-
-        execution_plan: Optional[ExecutionPlan] = None
-        # resolve step selection DSL queries using parent execution information
-        if step_selection:
-            execution_plan = _resolve_reexecute_step_selection(
-                execute_instance,
-                pipeline,
-                mode,
-                run_config,
-                cast(DagsterRun, parent_pipeline_run),
-                step_selection,
-            )
-
-        pipeline_run = execute_instance.create_run_for_pipeline(
-            pipeline_def=pipeline.get_definition(),
-            run_config=run_config,
-            execution_plan=execution_plan,
-            mode=mode,
-            tags=tags,
-            solid_selection=parent_pipeline_run.solid_selection,
-            solids_to_execute=parent_pipeline_run.solids_to_execute,
-            root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
-            parent_run_id=parent_pipeline_run.run_id,
-            repository_load_data=repository_load_data,
-        )
-
-        return execute_run_iterator(pipeline, pipeline_run, execute_instance)
     check.failed("Should not reach here.")
 
 
@@ -985,7 +890,6 @@ def _check_pipeline(pipeline: Union[PipelineDefinition, IPipeline]) -> IPipeline
 def _get_execution_plan_from_run(
     pipeline: IPipeline, pipeline_run: DagsterRun, instance: DagsterInstance
 ) -> ExecutionPlan:
-
     execution_plan_snapshot = None
     if (
         pipeline.solids_to_execute is None
@@ -1029,7 +933,6 @@ def create_execution_plan(
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
 ) -> ExecutionPlan:
-
     pipeline = _check_pipeline(pipeline)
 
     # If you have repository_load_data, make sure to use it when building plan
@@ -1076,7 +979,6 @@ def pipeline_execution_iterator(
         pipeline_context (PlanOrchestrationContext):
         execution_plan (ExecutionPlan):
     """
-
     # TODO: restart event?
     if not pipeline_context.resume_from_failure:
         yield DagsterEvent.pipeline_start(pipeline_context)
@@ -1091,6 +993,9 @@ def pipeline_execution_iterator(
                 failed_steps.append(event.step_key)
             elif event.is_resource_init_failure and event.step_key:
                 failed_steps.append(event.step_key)
+
+            # Telemetry
+            log_dagster_event(event, pipeline_context)
 
             yield event
     except GeneratorExit:
@@ -1118,21 +1023,28 @@ def pipeline_execution_iterator(
                 # a cancellation request
                 event = DagsterEvent.engine_event(
                     pipeline_context,
-                    "Computational resources were cleaned up after the run was forcibly marked as canceled.",
+                    (
+                        "Computational resources were cleaned up after the run was forcibly marked"
+                        " as canceled."
+                    ),
                     EngineEventData(),
                 )
             elif pipeline_context.instance.run_will_resume(pipeline_context.run_id):
                 event = DagsterEvent.engine_event(
                     pipeline_context,
-                    "Execution was interrupted unexpectedly. "
-                    "No user initiated termination request was found, not treating as failure because run will be resumed.",
+                    (
+                        "Execution was interrupted unexpectedly. No user initiated termination"
+                        " request was found, not treating as failure because run will be resumed."
+                    ),
                     EngineEventData(),
                 )
             else:
                 event = DagsterEvent.pipeline_failure(
                     pipeline_context,
-                    "Execution was interrupted unexpectedly. "
-                    "No user initiated termination request was found, treating as failure.",
+                    (
+                        "Execution was interrupted unexpectedly. "
+                        "No user initiated termination request was found, treating as failure."
+                    ),
                     pipeline_canceled_info,
                 )
         elif pipeline_exception_info:
@@ -1250,8 +1162,8 @@ def _check_execute_pipeline_args(
         if pipeline_preset.solid_selection is not None:
             check.invariant(
                 solid_selection is None or solid_selection == pipeline_preset.solid_selection,
-                "The solid_selection set in preset '{preset}', {preset_subset}, does not agree with "
-                "the `solid_selection` argument: {solid_selection}".format(
+                "The solid_selection set in preset '{preset}', {preset_subset}, does not agree with"
+                " the `solid_selection` argument: {solid_selection}".format(
                     preset=preset,
                     preset_subset=pipeline_preset.solid_selection,
                     solid_selection=solid_selection,

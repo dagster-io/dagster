@@ -1,10 +1,7 @@
 from typing import Any, Dict, Sequence
 
-import graphene
-from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
-from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
-
 import dagster._check as check
+import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.host_representation import (
@@ -14,6 +11,9 @@ from dagster._core.host_representation import (
     SensorSelector,
 )
 from dagster._core.scheduler.instigation import InstigatorType
+
+from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
+from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
 
 from ...implementation.external import (
     fetch_location_statuses,
@@ -169,7 +169,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
         graphene.NonNull(GraphenePipelineSnapshotOrError),
         snapshotId=graphene.String(),
         activePipelineSelector=graphene.Argument(GraphenePipelineSelector),
-        description="Retrieve a job snapshot by its id or location name, repository name, and job name.",
+        description=(
+            "Retrieve a job snapshot by its id or location name, repository name, and job name."
+        ),
     )
 
     graphOrError = graphene.Field(
@@ -209,26 +211,37 @@ class GrapheneDagitQuery(graphene.ObjectType):
     instigationStateOrError = graphene.Field(
         graphene.NonNull(GrapheneInstigationStateOrError),
         instigationSelector=graphene.NonNull(GrapheneInstigationSelector),
-        description="Retrieve the state for a schedule or sensor by its location name, repository name, and schedule/sensor name.",
+        description=(
+            "Retrieve the state for a schedule or sensor by its location name, repository name, and"
+            " schedule/sensor name."
+        ),
     )
 
     unloadableInstigationStatesOrError = graphene.Field(
         graphene.NonNull(GrapheneInstigationStatesOrError),
         instigationType=graphene.Argument(GrapheneInstigationType),
-        description="Retrieve the running schedules and sensors that are missing from the workspace.",
+        description=(
+            "Retrieve the running schedules and sensors that are missing from the workspace."
+        ),
     )
 
     partitionSetsOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionSetsOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         pipelineName=graphene.NonNull(graphene.String),
-        description="Retrieve the partition sets for a job by its location name, repository name, and job name.",
+        description=(
+            "Retrieve the partition sets for a job by its location name, repository name, and job"
+            " name."
+        ),
     )
     partitionSetOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionSetOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         partitionSetName=graphene.String(),
-        description="Retrieve a partition set by its location name, repository name, and partition set name.",
+        description=(
+            "Retrieve a partition set by its location name, repository name, and partition set"
+            " name."
+        ),
     )
 
     pipelineRunsOrError = graphene.Field(
@@ -328,7 +341,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
         pipeline=graphene.Argument(GraphenePipelineSelector),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
         loadMaterializations=graphene.Boolean(default_value=False),
-        description="Retrieve asset nodes after applying a filter on asset group, job, and asset keys.",
+        description=(
+            "Retrieve asset nodes after applying a filter on asset group, job, and asset keys."
+        ),
     )
 
     assetNodeOrError = graphene.Field(
@@ -340,8 +355,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
     assetNodeDefinitionCollisions = graphene.Field(
         non_null_list(GrapheneAssetNodeDefinitionCollision),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
-        description="Retrieve a list of asset keys where two or more repos provide an asset definition. Note: Assets should "
-        + "not be defined in more than one repository - this query is used to present warnings and errors in Dagit.",
+        description=(
+            "Retrieve a list of asset keys where two or more repos provide an asset definition."
+            " Note: Assets should "
+        )
+        + "not be defined in more than one repository - this query is used to present warnings and"
+        " errors in Dagit.",
     )
 
     partitionBackfillOrError = graphene.Field(

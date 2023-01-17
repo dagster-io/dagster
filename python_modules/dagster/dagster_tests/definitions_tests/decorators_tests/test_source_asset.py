@@ -6,7 +6,6 @@ from dagster._core.storage.io_manager import io_manager
 
 
 def test_all_fields():
-
     partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
 
     @io_manager(required_resource_keys={"baz"})  # type: ignore

@@ -75,7 +75,6 @@ def test_write_staging_label():
             },
         ),
     ) as staging_runner:
-
         assert staging_runner.materialize_all_assets().success
 
         all_mat_log_records = staging_runner.get_all_asset_materialization_event_records("now_time")

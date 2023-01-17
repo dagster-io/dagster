@@ -1,5 +1,3 @@
-# pyright: strict
-
 from collections import OrderedDict, defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -64,6 +62,8 @@ if TYPE_CHECKING:
     from .job_definition import JobDefinition
     from .op_definition import OpDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
+
+T = TypeVar("T")
 
 
 def _check_node_defs_arg(
@@ -156,7 +156,6 @@ class GraphDefinition(NodeDefinition):
             values provided at invocation time.
 
     Examples:
-
         .. code-block:: python
 
             @op
@@ -196,8 +195,8 @@ class GraphDefinition(NodeDefinition):
         input_mappings: Optional[Sequence[InputMapping]] = None,
         output_mappings: Optional[Sequence[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
-        tags: Optional[Mapping[str, Any]] = None,
-        **kwargs,
+        tags: Optional[Mapping[str, str]] = None,
+        **kwargs: object,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
         self._dependencies = validate_dependency_dict(dependencies)
@@ -231,7 +230,7 @@ class GraphDefinition(NodeDefinition):
             input_defs=input_defs,
             output_defs=output_defs,
             tags=tags,
-            **kwargs,
+            **kwargs,  # type: ignore  # fmt: skip
         )
 
         # must happen after base class construction as properties are assumed to be there
@@ -240,7 +239,6 @@ class GraphDefinition(NodeDefinition):
         self._dagster_type_dict = construct_dagster_type_dictionary([self])
 
     def _get_nodes_in_topological_order(self) -> Sequence[Node]:
-
         _forward_edges, backward_edges = _create_adjacency_lists(
             self.solids, self.dependency_structure
         )
@@ -255,7 +253,7 @@ class GraphDefinition(NodeDefinition):
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
     ) -> Sequence[InputDefinition]:
-        unresolveable_input_defs = []
+        unresolveable_input_defs: List[InputDefinition] = []
         for node in self.node_dict.values():
             cur_handle = NodeHandle(node.name, handle)
             for input_def in node.definition.get_inputs_must_be_resolved_top_level(
@@ -382,7 +380,6 @@ class GraphDefinition(NodeDefinition):
         return self._dagster_type_dict[name]
 
     def get_input_mapping(self, input_name: str) -> InputMapping:
-
         check.str_param(input_name, "input_name")
         for mapping in self._input_mappings:
             if mapping.graph_input_name == input_name:
@@ -489,7 +486,7 @@ class GraphDefinition(NodeDefinition):
         name: str,
         description: Optional[str],
         config_schema: Any,
-    ):
+    ) -> "GraphDefinition":
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(
                 "Only graphs utilizing config mapping can be pre-configured. The graph "
@@ -511,7 +508,7 @@ class GraphDefinition(NodeDefinition):
             ),
         )
 
-    def node_names(self):
+    def node_names(self) -> Sequence[str]:
         return list(self._node_dict.keys())
 
     @public
@@ -520,7 +517,7 @@ class GraphDefinition(NodeDefinition):
         name: Optional[str] = None,
         description: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        config: Optional[Union[ConfigMapping, Mapping[str, object], "PartitionedConfig"]] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, object], "PartitionedConfig[T]"]] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
@@ -529,7 +526,7 @@ class GraphDefinition(NodeDefinition):
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[Sequence[str]] = None,
-        partitions_def: Optional["PartitionsDefinition"] = None,
+        partitions_def: Optional["PartitionsDefinition[T]"] = None,
         asset_layer: Optional["AssetLayer"] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _asset_selection_data: Optional[AssetSelectionData] = None,
@@ -616,7 +613,7 @@ class GraphDefinition(NodeDefinition):
             _metadata_entries=_metadata_entries,
         ).get_job_def_for_subset_selection(op_selection)
 
-    def coerce_to_job(self):
+    def coerce_to_job(self) -> "JobDefinition":
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
         try:
             return self.to_job()
@@ -688,7 +685,7 @@ class GraphDefinition(NodeDefinition):
         run_config = run_config if run_config is not None else {}
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
 
-        return ephemeral_job.execute_in_process(
+        return ephemeral_job.execute_in_process(  # type: ignore  # fmt: skip
             run_config=run_config,
             instance=instance,
             raise_on_error=raise_on_error,
@@ -808,13 +805,13 @@ def _validate_in_mappings(
     from .composition import MappedInputPlaceholder
 
     input_defs_by_name: Dict[str, InputDefinition] = OrderedDict()
-    mapping_keys = set()
+    mapping_keys: Set[str] = set()
 
     target_input_types_by_graph_input_name: Dict[str, Set[DagsterType]] = defaultdict(set)
 
     for mapping in input_mappings:
         # handle incorrect objects passed in as mappings
-        if not isinstance(mapping, InputMapping):
+        if not isinstance(mapping, InputMapping):  # type: ignore  # (isinstance check for error)
             if isinstance(mapping, InputDefinition):
                 raise DagsterInvalidDefinitionError(
                     f"In {class_name} '{name}' you passed an InputDefinition "
@@ -823,8 +820,8 @@ def _validate_in_mappings(
                 )
             else:
                 raise DagsterInvalidDefinitionError(
-                    f"In {class_name} '{name}' received unexpected type '{type(mapping)}' in input_mappings. "
-                    "Provide an InputMapping using InputMapping(...)"
+                    f"In {class_name} '{name}' received unexpected type '{type(mapping)}' in"
+                    " input_mappings. Provide an InputMapping using InputMapping(...)"
                 )
 
         input_defs_by_name[mapping.graph_input_name] = mapping.get_definition()
@@ -848,9 +845,9 @@ def _validate_in_mappings(
             maps_to = cast(FanInInputPointer, mapping.maps_to)
             if not dependency_structure.has_fan_in_deps(node_input):
                 raise DagsterInvalidDefinitionError(
-                    f"In {class_name} '{name}' input mapping target "
-                    f'"{maps_to.node_name}.{maps_to.input_name}" (index {maps_to.fan_in_index} of fan-in) '
-                    f"is not a MultiDependencyDefinition."
+                    f"In {class_name} '{name}' input mapping target"
+                    f' "{maps_to.node_name}.{maps_to.input_name}" (index'
+                    f" {maps_to.fan_in_index} of fan-in) is not a MultiDependencyDefinition."
                 )
             inner_deps = dependency_structure.get_fan_in_deps(node_input)
             if (maps_to.fan_in_index >= len(inner_deps)) or (
@@ -859,7 +856,7 @@ def _validate_in_mappings(
                 raise DagsterInvalidDefinitionError(
                     f"In {class_name} '{name}' input mapping target "
                     f'"{maps_to.node_name}.{maps_to.input_name}" index {maps_to.fan_in_index} in '
-                    f"the MultiDependencyDefinition is not a MappedInputPlaceholder"
+                    "the MultiDependencyDefinition is not a MappedInputPlaceholder"
                 )
             mapping_keys.add(f"{maps_to.node_name}.{maps_to.input_name}.{maps_to.fan_in_index}")
             target_input_types_by_graph_input_name[mapping.graph_input_name].add(
@@ -885,8 +882,9 @@ def _validate_in_mappings(
                     mapping_str = f"{node_input.node_name}.{node_input.input_name}.{idx}"
                     if mapping_str not in mapping_keys:
                         raise DagsterInvalidDefinitionError(
-                            f"Unsatisfied MappedInputPlaceholder at index {idx} in "
-                            f"MultiDependencyDefinition for '{node_input.node_name}.{node_input.input_name}'"
+                            f"Unsatisfied MappedInputPlaceholder at index {idx} in"
+                            " MultiDependencyDefinition for"
+                            f" '{node_input.node_name}.{node_input.input_name}'"
                         )
 
     # if the dagster type on a graph input is Any and all its target inputs have the
@@ -911,7 +909,6 @@ def _validate_out_mappings(
     output_defs: List[OutputDefinition] = []
     for mapping in output_mappings:
         if isinstance(mapping, OutputMapping):  # type: ignore
-
             target_solid = solid_dict.get(mapping.maps_from.solid_name)
             if target_solid is None:
                 raise DagsterInvalidDefinitionError(
@@ -942,11 +939,11 @@ def _validate_out_mappings(
                 and class_name != "GraphDefinition"
             ):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' output "
-                    "'{mapping.graph_output_name}' of type {mapping.dagster_type.display_name} "
-                    "maps from {mapping.maps_from.solid_name}.{mapping.maps_from.output_name} of different type "
-                    "{target_output.dagster_type.display_name}. OutputMapping source "
-                    "and destination must have the same type.".format(
+                    "In {class_name} '{name}' output '{mapping.graph_output_name}' of type"
+                    " {mapping.dagster_type.display_name} maps from"
+                    " {mapping.maps_from.solid_name}.{mapping.maps_from.output_name} of different"
+                    " type {target_output.dagster_type.display_name}. OutputMapping source and"
+                    " destination must have the same type.".format(
                         class_name=class_name,
                         mapping=mapping,
                         name=name,

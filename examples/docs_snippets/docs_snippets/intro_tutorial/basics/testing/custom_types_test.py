@@ -17,8 +17,9 @@ from dagster import (
 def less_simple_data_frame_type_check(_, value):
     if not isinstance(value, list):
         raise Failure(
-            "LessSimpleDataFrame should be a list of dicts, got "
-            "{type_}".format(type_=type(value))
+            "LessSimpleDataFrame should be a list of dicts, got {type_}".format(
+                type_=type(value)
+            )
         )
 
     fields = [field for field in value[0].keys()]
@@ -27,8 +28,8 @@ def less_simple_data_frame_type_check(_, value):
         row = value[i]
         if not isinstance(row, dict):
             raise Failure(
-                "LessSimpleDataFrame should be a list of dicts, "
-                "got {type_} for row {idx}".format(type_=type(row), idx=(i + 1))
+                "LessSimpleDataFrame should be a list of dicts, got {type_} for row"
+                " {idx}".format(type_=type(row), idx=(i + 1))
             )
         row_fields = [field for field in row.keys()]
         if fields != row_fields:
@@ -98,8 +99,9 @@ def test_less_simple_data_frame():
 
     type_check = check_dagster_type(LessSimpleDataFrame, [{"foo": 1}, {"bar": 2}])
     assert not type_check.success
-    assert type_check.description == (
-        "Rows in LessSimpleDataFrame should have the same fields, "
+    assert (
+        type_check.description
+        == "Rows in LessSimpleDataFrame should have the same fields, "
         "got ['bar'] for row 2, expected ['foo']"
     )
 

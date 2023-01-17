@@ -1,24 +1,25 @@
-import {ApolloQueryResult, useQuery} from '@apollo/client';
+import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import sortBy from 'lodash/sortBy';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
-import {graphql} from '../graphql';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
+import {PipelineSelector} from '../graphql/types';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
+
+import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
+import {buildRepoAddress} from './buildRepoAddress';
+import {findRepoContainingPipeline} from './findRepoContainingPipeline';
+import {RepoAddress} from './types';
 import {
-  PythonErrorFragmentFragment,
-  RootWorkspaceQueryQuery,
+  RootWorkspaceQuery,
   WorkspaceLocationFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
-  PipelineSelector,
-} from '../graphql/graphql';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
-
-import {buildRepoAddress} from './buildRepoAddress';
-import {findRepoContainingPipeline} from './findRepoContainingPipeline';
-import {RepoAddress} from './types';
+} from './types/WorkspaceContext.types';
 
 type Repository = WorkspaceRepositoryFragment;
 type RepositoryLocation = WorkspaceLocationFragment;
@@ -33,13 +34,13 @@ export interface DagsterRepoOption {
 }
 
 export type WorkspaceState = {
-  error: PythonErrorFragmentFragment | null;
+  error: PythonErrorFragment | null;
   loading: boolean;
   locationEntries: WorkspaceRepositoryLocationNode[];
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
 
-  refetch: () => Promise<ApolloQueryResult<RootWorkspaceQueryQuery>>;
+  refetch: () => Promise<ApolloQueryResult<RootWorkspaceQuery>>;
   toggleVisible: (repoAddresses: RepoAddress[]) => void;
 };
 
@@ -49,7 +50,7 @@ export const WorkspaceContext = React.createContext<WorkspaceState>(
 
 export const HIDDEN_REPO_KEYS = 'dagit.hidden-repo-keys';
 
-const ROOT_WORKSPACE_QUERY = graphql(`
+const ROOT_WORKSPACE_QUERY = gql`
   query RootWorkspaceQuery {
     workspaceOrError {
       ... on Workspace {
@@ -152,7 +153,10 @@ const ROOT_WORKSPACE_QUERY = graphql(`
       status
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+  ${REPOSITORY_INFO_FRAGMENT}
+`;
 
 /**
  * A hook that supplies the current workspace state of Dagit, including the current
@@ -160,10 +164,7 @@ const ROOT_WORKSPACE_QUERY = graphql(`
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = (): WorkspaceState => {
-  const {data, loading, refetch} = useQuery(ROOT_WORKSPACE_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
-
+  const {data, loading, refetch} = useQuery<RootWorkspaceQuery>(ROOT_WORKSPACE_QUERY);
   const workspaceOrError = data?.workspaceOrError;
 
   const locationEntries = React.useMemo(

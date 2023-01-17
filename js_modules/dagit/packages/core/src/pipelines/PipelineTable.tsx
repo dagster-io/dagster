@@ -10,7 +10,7 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {PipelineReference} from './PipelineReference';
-import {PipelineTableFragment} from './types/PipelineTableFragment';
+import {PipelineTableFragment} from './types/PipelineTable.types';
 
 type PipelineForTable = {
   pipelineOrJob: PipelineTableFragment;

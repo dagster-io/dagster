@@ -2,8 +2,8 @@ import {gql, useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
-import {InstigationStatus} from '../types/globalTypes';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {InstigationStatus} from '../graphql/types';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -12,7 +12,13 @@ import {
   START_SENSOR_MUTATION,
   STOP_SENSOR_MUTATION,
 } from './SensorMutations';
-import {SensorSwitchFragment} from './types/SensorSwitchFragment';
+import {
+  StartSensorMutation,
+  StartSensorMutationVariables,
+  StopRunningSensorMutation,
+  StopRunningSensorMutationVariables,
+} from './types/SensorMutations.types';
+import {SensorSwitchFragment} from './types/SensorSwitch.types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -22,7 +28,7 @@ interface Props {
 
 export const SensorSwitch: React.FC<Props> = (props) => {
   const {repoAddress, sensor, size = 'large'} = props;
-  const {canStartSensor, canStopSensor} = usePermissions();
+  const {canStartSensor, canStopSensor} = usePermissionsForLocation(repoAddress.location);
 
   const {jobOriginId, name, sensorState} = sensor;
   const {status, selectorId} = sensorState;
@@ -31,10 +37,16 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     sensorName: name,
   };
 
-  const [startSensor, {loading: toggleOnInFlight}] = useMutation(START_SENSOR_MUTATION, {
+  const [startSensor, {loading: toggleOnInFlight}] = useMutation<
+    StartSensorMutation,
+    StartSensorMutationVariables
+  >(START_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
   });
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation(STOP_SENSOR_MUTATION, {
+  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<
+    StopRunningSensorMutation,
+    StopRunningSensorMutationVariables
+  >(STOP_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
   });
 

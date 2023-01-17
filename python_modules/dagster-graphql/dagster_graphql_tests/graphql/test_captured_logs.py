@@ -1,10 +1,9 @@
+from dagster._core.events import DagsterEventType
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_subscription,
     infer_pipeline_selector,
 )
-
-from dagster._core.events import DagsterEventType
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_run_log_data

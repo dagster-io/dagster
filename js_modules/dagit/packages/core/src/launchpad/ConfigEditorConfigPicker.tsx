@@ -20,22 +20,23 @@ import styled from 'styled-components/macro';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
-import {graphql} from '../graphql';
-import {
-  ConfigEditorPipelinePresetFragment,
-  ConfigPartitionResultFragment,
-  PartitionSetForConfigEditorFragment,
-  RepositorySelector,
-} from '../graphql/graphql';
+import {RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {ConfigEditorGeneratorPipelineFragment} from './types/ConfigEditorGeneratorPipelineFragment';
+import {
+  ConfigEditorGeneratorPipelineFragment,
+  ConfigEditorPipelinePresetFragment,
+  PartitionSetForConfigEditorFragment,
+  ConfigPartitionResultFragment,
+  ConfigPartitionsQuery,
+  ConfigPartitionsQueryVariables,
+} from './types/ConfigEditorConfigPicker.types';
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorPipelinePresetFragment;
@@ -151,10 +152,13 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
     const {partitionSetName, value, onSelect, repoAddress} = props;
     const {basePath} = React.useContext(AppContext);
     const repositorySelector = repoAddressToSelector(repoAddress);
-    const {data, loading} = useQuery(CONFIG_PARTITIONS_QUERY, {
-      variables: {repositorySelector, partitionSetName},
-      fetchPolicy: 'network-only',
-    });
+    const {data, loading} = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
+      CONFIG_PARTITIONS_QUERY,
+      {
+        variables: {repositorySelector, partitionSetName},
+        fetchPolicy: 'network-only',
+      },
+    );
 
     const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsHumanString(
       repoAddress,
@@ -173,7 +177,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
       return sortOrder === 'asc' ? retrieved : [...retrieved].reverse();
     }, [data, sortOrder]);
 
-    const error: PythonErrorFragment | null =
+    const error =
       data?.partitionSetOrError.__typename === 'PartitionSet' &&
       data?.partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
         ? data.partitionSetOrError.partitionsOrError
@@ -379,7 +383,7 @@ const PickerContainer = styled.div`
   gap: 6px;
 `;
 
-const CONFIG_PARTITIONS_QUERY = graphql(`
+const CONFIG_PARTITIONS_QUERY = gql`
   query ConfigPartitionsQuery(
     $repositorySelector: RepositorySelector!
     $partitionSetName: String!
@@ -406,9 +410,11 @@ const CONFIG_PARTITIONS_QUERY = graphql(`
   fragment ConfigPartitionResult on Partition {
     name
   }
-`);
 
-export const CONFIG_PARTITION_SELECTION_QUERY = graphql(`
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const CONFIG_PARTITION_SELECTION_QUERY = gql`
   query ConfigPartitionSelectionQuery(
     $repositorySelector: RepositorySelector!
     $partitionSetName: String!
@@ -444,7 +450,9 @@ export const CONFIG_PARTITION_SELECTION_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;
 
 export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
   fragment ConfigEditorGeneratorPipelineFragment on Pipeline {

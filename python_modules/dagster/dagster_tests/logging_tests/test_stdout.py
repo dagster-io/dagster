@@ -7,7 +7,6 @@ import tempfile
 import time
 
 import pytest
-
 from dagster import DagsterEventType, fs_io_manager, reconstructable, resource
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.instance import DagsterInstance
@@ -58,7 +57,6 @@ def normalize_file_content(s):
 )
 def test_compute_log_to_disk():
     with instance_for_test() as instance:
-
         spew_pipeline = define_pipeline()
         manager = instance.compute_log_manager
         result = execute_pipeline(spew_pipeline, instance=instance)

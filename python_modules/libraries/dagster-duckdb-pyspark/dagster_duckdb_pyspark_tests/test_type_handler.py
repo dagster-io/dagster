@@ -3,12 +3,13 @@ import os
 import duckdb
 import pandas as pd
 import pytest
-from dagster_duckdb_pyspark import duckdb_pyspark_io_manager
-from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql import SparkSession
-
 from dagster import DailyPartitionsDefinition, Out, asset, graph, materialize, op
 from dagster._check import CheckError
+from dagster_duckdb_pyspark import duckdb_pyspark_io_manager
+from pyspark.sql import (
+    DataFrame as SparkDF,
+    SparkSession,
+)
 
 
 @op(out=Out(metadata={"schema": "a_df"}))

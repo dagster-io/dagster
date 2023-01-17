@@ -1,9 +1,8 @@
-from pydantic import Field
-from typing_extensions import Annotated
-
 from dagster import op
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.structured_config import Config
+from pydantic import Field
+from typing_extensions import Annotated
 
 
 def test_new_config_descriptions_and_defaults():
@@ -17,8 +16,6 @@ def test_new_config_descriptions_and_defaults():
 
         a_string: str = Field(description="A string")
         nested: ANestedOpConfig = Field(description="A nested config")
-
-    executed = {}
 
     @op
     def a_new_config_op(config: AnOpConfig):

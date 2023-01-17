@@ -10,6 +10,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Union, cast
 
 import click
 import requests
+
 from automation.printer import IndentingBufferPrinter
 
 SPARK_VERSION = "v2.4.0"
@@ -180,7 +181,6 @@ class SparkConfig(NamedTuple("_SparkConfig", [("path", str), ("default", str), (
 
 
 class SparkConfigNode:
-
     value: Optional[SparkConfig]
     children: Dict[str, Any]
 
@@ -208,7 +208,7 @@ class SparkConfigNode:
                 with printer.with_indent():
                     printer.line("fields={")
                     with printer.with_indent():
-                        for (k, v) in retdict.items():
+                        for k, v in retdict.items():
                             with printer.with_indent():
                                 printer.append('"{}": '.format(k))
                             v.write(printer)

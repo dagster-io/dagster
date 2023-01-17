@@ -1,4 +1,4 @@
-import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandleFragment';
+import {GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
 
 function explodeComposite(
   handles: GraphExplorerSolidHandleFragment[],

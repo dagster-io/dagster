@@ -1,8 +1,7 @@
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 from dagster_slack import slack_resource
 from dagster_slack.hooks import slack_on_failure, slack_on_success
 from mock import patch
-
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
 class SomeUserException(Exception):

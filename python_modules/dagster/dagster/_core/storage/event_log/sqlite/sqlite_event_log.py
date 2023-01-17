@@ -70,7 +70,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def __init__(self, base_dir, inst_data=None):
         """Note that idempotent initialization of the SQLite database is done on a per-run_id
-        basis in the body of connect, since each run is stored in a separate database."""
+        basis in the body of connect, since each run is stored in a separate database.
+        """
         self._base_dir = os.path.abspath(check.str_param(base_dir, "base_dir"))
         mkdir_p(self._base_dir)
 
@@ -151,7 +152,6 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         while True:
             try:
-
                 with engine.connect() as connection:
                     db_revision, head_revision = check_alembic_revision(alembic_config, connection)
 
@@ -183,8 +183,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     raise
                 else:
                     logging.info(
-                        "SqliteEventLogStorage._initdb: Encountered apparent concurrent init, "
-                        "retrying (%s retries left). Exception: %s",
+                        (
+                            "SqliteEventLogStorage._initdb: Encountered apparent concurrent init, "
+                            "retrying (%s retries left). Exception: %s"
+                        ),
                         retry_limit,
                         err_msg,
                     )
@@ -199,7 +201,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn_string = self.conn_string_for_shard(shard)
             engine = create_engine(conn_string, poolclass=NullPool)
 
-            if not shard in self._initialized_dbs:
+            if shard not in self._initialized_dbs:
                 self._initdb(engine)
                 self._initialized_dbs.add(shard)
 
@@ -235,7 +237,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if event.is_dagster_event and event.dagster_event.asset_key:
             check.invariant(
                 event.dagster_event_type in ASSET_EVENTS,
-                "Can only store asset materializations, materialization_planned, and observations in index database",
+                (
+                    "Can only store asset materializations, materialization_planned, and"
+                    " observations in index database"
+                ),
             )
 
             event_id = None
@@ -283,7 +288,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         else:
             asset_details = None
 
-        if event_records_filter.after_cursor != None and not isinstance(
+        if event_records_filter.after_cursor is not None and not isinstance(
             event_records_filter.after_cursor, RunShardedEventsCursor
         ):
             raise Exception(

@@ -11,7 +11,7 @@ import {metadataForCompositeParentIO, PARENT_IN, PARENT_OUT, OpIOBox} from './Op
 import {SVGLabeledRect} from './SVGComponents';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {Edge} from './common';
-import {OpGraphOpFragment} from './types/OpGraphOpFragment';
+import {OpGraphOpFragment} from './types/OpGraph.types';
 
 interface ParentOpNodeProps {
   layout: OpGraphLayout;

@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, cast
 
-import kubernetes
-
 import dagster._check as check
+import kubernetes
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
@@ -46,7 +45,8 @@ class K8sContainerContext(
     """Encapsulates configuration that can be applied to a K8s job running Dagster code.
     Can be persisted on a PipelineRun at run submission time based on metadata from the
     code location and then included in the job's configuration at run launch time or step
-    launch time."""
+    launch time.
+    """
 
     def __new__(
         cls,
@@ -98,7 +98,6 @@ class K8sContainerContext(
     def _merge_k8s_config(
         self, first_config: Mapping[str, Any], second_config: Mapping[str, Any]
     ) -> Mapping[str, Any]:
-
         # Keys are always the same and initialized in constructor
         assert set(first_config) == set(second_config)
 

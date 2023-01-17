@@ -27,7 +27,7 @@ To define a graph-backed asset, use the `from_graph` attribute on the <PyObject 
 
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start example endbefore=end example
 import pandas as pd
-from dagster import AssetsDefinition, asset, graph, op
+from dagster import AssetsDefinition, graph, op
 
 
 @op(required_resource_keys={"slack"})

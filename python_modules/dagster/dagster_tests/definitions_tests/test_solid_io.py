@@ -2,7 +2,6 @@ import sys
 from typing import Generator, Iterable, Iterator
 
 import pytest
-
 from dagster import AssetKey, DynamicOut, DynamicOutput, In, Out, Output, op
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._legacy import InputDefinition, OutputDefinition
@@ -33,7 +32,7 @@ def test_merge_desc():
     @op(ins={"arg_b": In(metadata={"explicit": True})})
     def merged(_context, arg_a, arg_b, arg_c):
         """
-        Testing
+        Testing.
 
         Args:
             arg_b: described
@@ -73,7 +72,7 @@ def test_precedence():
     )
     def precedence(_context, arg_a: int, arg_b: int, arg_c: int):
         """
-        Testing
+        Testing.
 
         Args:
             arg_b: boo
@@ -126,23 +125,28 @@ def test_dynamic():
     def dyn_desc(_) -> Iterator[DynamicOutput]:
         """
         Returns:
-            numbers
+            numbers.
         """
         yield DynamicOutput(4, "4")
 
-    assert dyn_desc.output_defs[0].description == "numbers"
+    assert dyn_desc.output_defs[0].description == "numbers."
     assert dyn_desc.output_defs[0].is_dynamic
 
 
 @pytest.mark.skipif(
     sys.version_info < (3, 7),
-    reason="typing types isinstance of type in py3.6, https://github.com/dagster-io/dagster/issues/4077",
+    reason=(
+        "typing types isinstance of type in py3.6,"
+        " https://github.com/dagster-io/dagster/issues/4077"
+    ),
 )
 def test_not_type_input():
-
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue or explicitly set the dagster_type",
+        match=(
+            r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue"
+            r" or explicitly set the dagster_type"
+        ),
     ):
 
         @op
@@ -155,7 +159,10 @@ def test_not_type_input():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue or explicitly set the dagster_type",
+        match=(
+            r"Problem using type '.*' from type annotation for argument 'arg_b', correct the issue"
+            r" or explicitly set the dagster_type"
+        ),
     ):
 
         @op(ins={"arg_b": In()})
@@ -168,7 +175,10 @@ def test_not_type_input():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Problem using type '.*' from return type annotation, correct the issue or explicitly set the dagster_type",
+        match=(
+            r"Problem using type '.*' from return type annotation, correct the issue or explicitly"
+            r" set the dagster_type"
+        ),
     ):
 
         @op

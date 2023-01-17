@@ -1,4 +1,4 @@
-from graphene import ResolveInfo
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.host_representation import (
@@ -15,6 +15,7 @@ from dagster._core.storage.tags import (
     get_tag_type,
 )
 from dagster._utils.yaml_utils import dump_run_config_yaml
+from graphene import ResolveInfo
 
 from .utils import capture_error
 
@@ -174,7 +175,6 @@ def _apply_cursor_limit_reverse(items, cursor, limit, reverse):
 
 @capture_error
 def get_partition_set_partition_statuses(graphene_info, external_partition_set):
-
     check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
     repository_handle = external_partition_set.repository_handle
@@ -196,7 +196,7 @@ def get_partition_set_partition_statuses(graphene_info, external_partition_set):
 
 
 def partition_statuses_from_run_partition_data(
-    partition_set_name, run_partition_data, partition_names, backfill_id=None
+    partition_set_name: Optional[str], run_partition_data, partition_names, backfill_id=None
 ):
     from ..schema.partition_sets import GraphenePartitionStatus, GraphenePartitionStatuses
 
@@ -208,7 +208,7 @@ def partition_statuses_from_run_partition_data(
 
     results = []
     for name in partition_names:
-        partition_id = f"{partition_set_name}:{name}{suffix}"
+        partition_id = f'{partition_set_name or "__NO_PARTITION_SET__"}:{name}{suffix}'
         if not partition_data_by_name.get(name):
             results.append(
                 GraphenePartitionStatus(

@@ -1,7 +1,6 @@
 import datetime
 
 import pendulum
-
 from dagster import Partition, ScheduleEvaluationContext
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.test_utils import instance_for_test

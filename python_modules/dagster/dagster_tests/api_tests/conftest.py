@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-
 from dagster._core.test_utils import instance_for_test
 
 

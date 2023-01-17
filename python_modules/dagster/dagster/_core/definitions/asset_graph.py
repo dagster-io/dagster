@@ -63,6 +63,13 @@ class AssetGraph:
         return self._source_asset_keys
 
     @property
+    def root_asset_keys(self) -> AbstractSet[AssetKey]:
+        """Non-source asset keys that have no non-source parents."""
+        from .asset_selection import AssetSelection
+
+        return AssetSelection.keys(*self.all_asset_keys).sources().resolve(self)
+
+    @property
     def freshness_policies_by_key(self):
         return self._freshness_policies_by_key
 
@@ -126,15 +133,15 @@ class AssetGraph:
         return self.get_partitions_def(asset_key) is not None
 
     def have_same_partitioning(self, asset_key1: AssetKey, asset_key2: AssetKey) -> bool:
-        """Returns whether the given assets have the same partitions definition"""
+        """Returns whether the given assets have the same partitions definition."""
         return self.get_partitions_def(asset_key1) == self.get_partitions_def(asset_key2)
 
     def get_children(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """Returns all assets that depend on the given asset"""
+        """Returns all assets that depend on the given asset."""
         return self._asset_dep_graph["downstream"][asset_key]
 
     def get_parents(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """Returns all assets that the given asset depends on"""
+        """Returns all assets that the given asset depends on."""
         return self._asset_dep_graph["upstream"][asset_key]
 
     def get_children_partitions(
@@ -170,6 +177,7 @@ class AssetGraph:
                 partition key belongs to.
             child_asset_key (AssetKey): The asset key of the downstream asset. The provided partition
                 key will be mapped to partitions within this asset.
+
         Returns:
             Sequence[str]: A list of the corresponding downstream partitions in child_asset_key that
                 partition_key maps to.
@@ -228,6 +236,7 @@ class AssetGraph:
                 partition key belongs to.
             parent_asset_key (AssetKey): The asset key of the parent asset. The provided partition
                 key will be mapped to partitions within this asset.
+
         Returns:
             Sequence[str]: A list of the corresponding downstream partitions in child_asset_key that
                 partition_key maps to.
@@ -253,11 +262,17 @@ class AssetGraph:
         )
         return list(parent_partition_key_subset.get_partition_keys())
 
+    def is_source(self, asset_key: AssetKey) -> bool:
+        return asset_key in self.source_asset_keys or asset_key not in self.all_asset_keys
+
     def has_non_source_parents(self, asset_key: AssetKey) -> bool:
         """Determines if an asset has any parents which are not source assets"""
-        if asset_key in self._source_asset_keys:
+        if self.is_source(asset_key):
             return False
-        return bool(self.get_parents(asset_key) - self._source_asset_keys - {asset_key})
+        return any(
+            not self.is_source(parent_key)
+            for parent_key in self.get_parents(asset_key) - {asset_key}
+        )
 
     def get_non_source_roots(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """Returns all assets upstream of the given asset which do not consume any other
@@ -268,7 +283,7 @@ class AssetGraph:
         return {
             key
             for key in self.upstream_key_iterator(asset_key)
-            if not self.has_non_source_parents(key)
+            if not self.is_source(key) and not self.has_non_source_parents(key)
         }
 
     def upstream_key_iterator(self, asset_key: AssetKey) -> Iterator[AssetKey]:
@@ -277,7 +292,7 @@ class AssetGraph:
         queue = deque([asset_key])
         while queue:
             current_key = queue.popleft()
-            if current_key in self._source_asset_keys:
+            if self.is_source(current_key):
                 continue
             for parent_key in self.get_parents(current_key):
                 if parent_key not in visited:
@@ -286,7 +301,8 @@ class AssetGraph:
                     visited.add(parent_key)
 
     def get_required_multi_asset_keys(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
-        """For a given asset_key, return the set of asset keys that must be materialized at the same time."""
+        """For a given asset_key, return the set of asset keys that must be materialized at the same time.
+        """
         if self._required_multi_asset_sets_by_key is None:
             raise DagsterInvariantViolationError(
                 "Required neighbor information not set when creating this AssetGraph"

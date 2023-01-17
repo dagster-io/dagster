@@ -1,22 +1,19 @@
-# pylint: disable=unused-import
 import os
 
 import docker
 import pytest
-from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
-from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
-from dagster_k8s_test_infra.integration_utils import image_pull_policy
-from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
-from dagster_k8s_test_infra.cluster import (  # isort:skip
-    dagster_instance,
-    dagster_instance_for_user_deployments_subchart_disabled,
-    dagster_instance_for_daemon,
+# fixtures: redundant alias marks them as used imports
+from dagster_k8s_test_infra.cluster import (
+    dagster_instance as dagster_instance,
+    dagster_instance_for_daemon as dagster_instance_for_daemon,
+    dagster_instance_for_user_deployments_subchart_disabled as dagster_instance_for_user_deployments_subchart_disabled,
     define_cluster_provider_fixture,
-    helm_postgres_url,
-    helm_postgres_url_for_user_deployments_subchart_disabled,
-    helm_postgres_url_for_daemon,
+    helm_postgres_url as helm_postgres_url,
+    helm_postgres_url_for_daemon as helm_postgres_url_for_daemon,
+    helm_postgres_url_for_user_deployments_subchart_disabled as helm_postgres_url_for_user_deployments_subchart_disabled,
 )
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 pytest_plugins = ["dagster_k8s_test_infra.helm"]
 

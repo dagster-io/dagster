@@ -84,9 +84,7 @@ def make_context(defs_attrs):
 
 
 def test_get_repository_handle():
-    asset_graph = ExternalAssetGraph.from_workspace_request_context(
-        make_context(["defs1", "defs2"])
-    )
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["defs1", "defs2"]))
 
     assert asset_graph.get_job_names(asset1.key) == ["__ASSET_JOB"]
     repo_handle1 = asset_graph.get_repository_handle(asset1.key)
@@ -100,9 +98,7 @@ def test_get_repository_handle():
 
 
 def test_cross_repo_dep_with_source_asset():
-    asset_graph = ExternalAssetGraph.from_workspace_request_context(
-        make_context(["defs1", "downstream_defs"])
-    )
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["defs1", "downstream_defs"]))
     assert len(asset_graph.source_asset_keys) == 0
     assert asset_graph.get_parents(AssetKey("downstream")) == {AssetKey("asset1")}
     assert asset_graph.get_children(AssetKey("asset1")) == {AssetKey("downstream")}
@@ -121,7 +117,7 @@ def test_cross_repo_dep_with_source_asset():
 
 
 def test_cross_repo_dep_no_source_asset():
-    asset_graph = ExternalAssetGraph.from_workspace_request_context(
+    asset_graph = ExternalAssetGraph.from_workspace(
         make_context(["defs1", "downstream_defs_no_source"])
     )
     assert len(asset_graph.source_asset_keys) == 0

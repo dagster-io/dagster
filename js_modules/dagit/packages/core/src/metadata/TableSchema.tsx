@@ -4,15 +4,12 @@ import {Spacing} from '@dagster-io/ui/src/components/types';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {
-  MetadataEntryFragment_TableSchemaMetadataEntry,
-  MetadataEntryFragment_TableSchemaMetadataEntry_schema_columns_constraints,
-} from './types/MetadataEntryFragment';
-import {TableSchemaFragment} from './types/TableSchemaFragment';
+import {TableSchemaForMetadataEntryFragment} from './types/MetadataEntry.types';
+import {TableSchemaFragment, ConstraintsForTableColumnFragment} from './types/TableSchema.types';
 
-export type ITableSchemaMetadataEntry = MetadataEntryFragment_TableSchemaMetadataEntry;
+export type ITableSchemaMetadataEntry = TableSchemaForMetadataEntryFragment;
 export type ITableSchema = TableSchemaFragment;
-type ColumnConstraints = MetadataEntryFragment_TableSchemaMetadataEntry_schema_columns_constraints;
+type ColumnConstraints = ConstraintsForTableColumnFragment;
 
 const MAX_CONSTRAINT_TAG_CHARS = 30;
 
@@ -123,13 +120,17 @@ export const TABLE_SCHEMA_FRAGMENT = gql`
       description
       type
       constraints {
-        nullable
-        unique
-        other
+        ...ConstraintsForTableColumn
       }
     }
     constraints {
       other
     }
+  }
+
+  fragment ConstraintsForTableColumn on TableColumnConstraints {
+    nullable
+    unique
+    other
   }
 `;

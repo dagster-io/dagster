@@ -3,19 +3,17 @@ import {Button, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {ErrorSource} from '../graphql/types';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {MetadataEntries} from '../metadata/MetadataEntry';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
-import {ErrorSource} from '../types/globalTypes';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
 
-import {
-  PythonErrorFragment,
-  PythonErrorFragment_errorChain as ErrorChainLink,
-} from './types/PythonErrorFragment';
+import {PythonErrorChainFragment, PythonErrorFragment} from './types/PythonErrorFragment.types';
 
 export type GenericError = {
   message: string;
   stack?: string[];
-  errorChain?: ErrorChainLink[];
+  errorChain?: PythonErrorChainFragment[];
 };
 
 interface IPythonErrorInfoProps {
@@ -33,9 +31,15 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
   const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
   const metadataEntries = props.failureMetadata?.metadataEntries;
 
+  const PythonErrorInfoHeader = useLaunchPadHooks().PythonErrorInfoHeader;
+
   return (
     <>
-      {context}
+      {PythonErrorInfoHeader ? (
+        <PythonErrorInfoHeader error={props.error} fallback={context} />
+      ) : (
+        context
+      )}
       <Wrapper>
         <ErrorHeader>{message}</ErrorHeader>
         {metadataEntries ? (
@@ -82,21 +86,6 @@ export const UNAUTHORIZED_ERROR_FRAGMENT = gql`
   }
 `;
 
-export const PYTHON_ERROR_FRAGMENT = gql`
-  fragment PythonErrorFragment on PythonError {
-    __typename
-    message
-    stack
-    errorChain {
-      isExplicitLink
-      error {
-        message
-        stack
-      }
-    }
-  }
-`;
-
 const ContextHeader = styled.h4`
   font-weight: 400;
   margin: 0 0 1em;
@@ -107,7 +96,7 @@ const CauseHeader = styled.h3`
   margin: 1em 0 1em;
 `;
 
-const ErrorHeader = styled.h3`
+export const ErrorHeader = styled.h3`
   color: #b05c47;
   font-weight: 400;
   margin: 0.5em 0 0.25em;

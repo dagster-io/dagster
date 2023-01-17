@@ -4,7 +4,6 @@ import tempfile
 from typing import Optional, Tuple
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -74,7 +73,7 @@ def test_fs_io_manager():
         assert input_metadata_entry_a.label == "path"
         assert input_metadata_entry_a.value == MetadataValue.path(filepath_a)
         assert len(loaded_input_events) == 1
-        assert "op_a" == loaded_input_events[0].event_specific_data.upstream_step_key
+        assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"
 
         filepath_b = os.path.join(tmpdir_path, result.run_id, "op_b", "result")
         result_metadata_entry_b = handled_output_events[1].event_specific_data.metadata_entries[0]
@@ -137,7 +136,7 @@ def test_fs_io_manager_memoization():
 
 
 # lamdba functions can't be pickled (pickle.PicklingError)
-l = lambda x: x * x
+lam = lambda x: x * x
 
 
 def test_fs_io_manager_unpicklable():
@@ -151,7 +150,7 @@ def test_fs_io_manager_unpicklable():
 
     @op
     def unpicklable_lambda_output():
-        return l
+        return lam
 
     @op
     def recursion_limit_output():

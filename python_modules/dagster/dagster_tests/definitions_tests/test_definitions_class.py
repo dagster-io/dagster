@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -9,6 +8,7 @@ from dagster import (
     ScheduleDefinition,
     SourceAsset,
     asset,
+    create_repository_using_definitions_args,
     define_asset_job,
     materialize,
     op,
@@ -22,7 +22,6 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
@@ -500,7 +499,6 @@ def test_implicit_global_job_with_partitioned_asset():
 
 
 def test_implicit_job_with_source_assets():
-
     source_asset = SourceAsset("source_asset")
 
     @asset

@@ -1,20 +1,25 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {CodeMirrorInDialogStyle, Dialog, DialogHeader} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
-import {graphql} from '../graphql';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
+import {
+  CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
+  CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
+} from './ConfigEditorConfigPicker';
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
+import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadRoot.types';
 
 const LaunchpadStoredSessionsContainer = React.lazy(
   () => import('./LaunchpadStoredSessionsContainer'),
@@ -58,7 +63,7 @@ export const AssetLaunchpad: React.FC<{
 export const JobLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
 
   if (!canLaunchPipelineExecution.enabled) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
@@ -99,11 +104,13 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
 
   const {name: repositoryName, location: repositoryLocationName} = repoAddress;
 
-  const result = useQuery(PIPELINE_EXECUTION_ROOT_QUERY, {
-    variables: {repositoryName, repositoryLocationName, pipelineName},
-    fetchPolicy: 'cache-and-network',
-    partialRefetch: true,
-  });
+  const result = useQuery<LaunchpadRootQuery, LaunchpadRootQueryVariables>(
+    PIPELINE_EXECUTION_ROOT_QUERY,
+    {
+      variables: {repositoryName, repositoryLocationName, pipelineName},
+      partialRefetch: true,
+    },
+  );
 
   const pipelineOrError = result?.data?.pipelineOrError;
   const partitionSetsOrError = result?.data?.partitionSetsOrError;
@@ -184,7 +191,7 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
   }
 };
 
-const PIPELINE_EXECUTION_ROOT_QUERY = graphql(`
+const PIPELINE_EXECUTION_ROOT_QUERY = gql`
   query LaunchpadRootQuery(
     $pipelineName: String!
     $repositoryName: String!
@@ -200,11 +207,11 @@ const PIPELINE_EXECUTION_ROOT_QUERY = graphql(`
       ... on PipelineNotFoundError {
         message
       }
-      ...PythonErrorFragment
       ... on Pipeline {
         id
         ...LaunchpadSessionPipelineFragment
       }
+      ...PythonErrorFragment
     }
     partitionSetsOrError(
       pipelineName: $pipelineName
@@ -214,10 +221,10 @@ const PIPELINE_EXECUTION_ROOT_QUERY = graphql(`
       }
     ) {
       __typename
-      ...LaunchpadSessionPartitionSetsFragment
       ... on PipelineNotFoundError {
         message
       }
+      ...LaunchpadSessionPartitionSetsFragment
       ...PythonErrorFragment
     }
   }
@@ -237,4 +244,8 @@ const PIPELINE_EXECUTION_ROOT_QUERY = graphql(`
       description
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+  ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
+  ${CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT}
+`;

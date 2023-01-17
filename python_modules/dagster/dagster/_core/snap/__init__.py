@@ -30,25 +30,41 @@ communicated between user repositories and host processes such as dagit.
 """
 
 from dagster._config import (
-    ConfigEnumValueSnap,
-    ConfigFieldSnap,
-    ConfigSchemaSnapshot,
-    ConfigTypeSnap,
-    snap_from_config_type,
-    snap_from_field,
+    ConfigEnumValueSnap as ConfigEnumValueSnap,
+    ConfigFieldSnap as ConfigFieldSnap,
+    ConfigSchemaSnapshot as ConfigSchemaSnapshot,
+    ConfigTypeSnap as ConfigTypeSnap,
+    snap_from_config_type as snap_from_config_type,
+    snap_from_field as snap_from_field,
 )
 
-from .config_types import build_config_schema_snapshot
-from .dagster_types import build_dagster_type_namespace_snapshot
-from .dep_snapshot import DependencyStructureIndex, SolidInvocationSnap
-from .execution_plan_snapshot import (
-    ExecutionPlanSnapshot,
-    ExecutionStepInputSnap,
-    ExecutionStepOutputSnap,
-    ExecutionStepSnap,
-    create_execution_plan_snapshot_id,
-    snapshot_from_execution_plan,
+from .config_types import build_config_schema_snapshot as build_config_schema_snapshot
+from .dagster_types import (
+    build_dagster_type_namespace_snapshot as build_dagster_type_namespace_snapshot,
 )
-from .mode import LoggerDefSnap, ModeDefSnap, ResourceDefSnap
-from .pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id
-from .solid import CompositeSolidDefSnap, SolidDefSnap, build_composite_solid_def_snap
+from .dep_snapshot import (
+    DependencyStructureIndex as DependencyStructureIndex,
+    SolidInvocationSnap as SolidInvocationSnap,
+)
+from .execution_plan_snapshot import (
+    ExecutionPlanSnapshot as ExecutionPlanSnapshot,
+    ExecutionStepInputSnap as ExecutionStepInputSnap,
+    ExecutionStepOutputSnap as ExecutionStepOutputSnap,
+    ExecutionStepSnap as ExecutionStepSnap,
+    create_execution_plan_snapshot_id as create_execution_plan_snapshot_id,
+    snapshot_from_execution_plan as snapshot_from_execution_plan,
+)
+from .mode import (
+    LoggerDefSnap as LoggerDefSnap,
+    ModeDefSnap as ModeDefSnap,
+    ResourceDefSnap as ResourceDefSnap,
+)
+from .pipeline_snapshot import (
+    PipelineSnapshot as PipelineSnapshot,
+    create_pipeline_snapshot_id as create_pipeline_snapshot_id,
+)
+from .solid import (
+    CompositeSolidDefSnap as CompositeSolidDefSnap,
+    SolidDefSnap as SolidDefSnap,
+    build_composite_solid_def_snap as build_composite_solid_def_snap,
+)

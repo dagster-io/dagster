@@ -1,11 +1,10 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Group, Heading, Icon, Mono, Spinner, Subheading, Tag} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
@@ -16,42 +15,62 @@ import {AllIndividualEventsLink} from './AllIndividualEventsLink';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetKey} from './types';
+import {
+  AssetPartitionDetailQuery,
+  AssetPartitionDetailQueryVariables,
+} from './types/AssetPartitionDetail.types';
+import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
 
 export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partitionKey: string}> = (
   props,
 ) => {
-  const result = useQuery(ASSET_PARTITION_DETAIL_QUERY, {
-    variables: {
-      assetKey: props.assetKey,
-      partitionKey: props.partitionKey,
+  const result = useQuery<AssetPartitionDetailQuery, AssetPartitionDetailQueryVariables>(
+    ASSET_PARTITION_DETAIL_QUERY,
+    {
+      variables: {
+        assetKey: props.assetKey,
+        partitionKey: props.partitionKey,
+      },
     },
-  });
+  );
+
+  const {materializations, observations, hasLineage} = React.useMemo(() => {
+    if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
+      return {materializations: [], observations: [], hasLineage: false};
+    }
+    return {
+      materializations: [...result.data.assetNodeOrError.assetMaterializations].sort(
+        (a, b) => Number(b.timestamp) - Number(a.timestamp),
+      ),
+      observations: [...result.data.assetNodeOrError.assetObservations].sort(
+        (a, b) => Number(b.timestamp) - Number(a.timestamp),
+      ),
+      hasLineage: result.data.assetNodeOrError.assetMaterializations.some(
+        (m) => m.assetLineage.length > 0,
+      ),
+    };
+  }, [result.data]);
 
   if (result.loading || !result.data) {
     return <AssetPartitionDetailEmpty partitionKey={props.partitionKey} />;
   }
 
-  const events =
-    result.data?.assetNodeOrError?.__typename === 'AssetNode'
-      ? result.data.assetNodeOrError.assetMaterializations
-      : [];
-
-  const hasLineage = events.some((m) => m.assetLineage.length > 0);
-
   return (
     <AssetPartitionDetail
       hasLineage={hasLineage}
       group={{
-        latest: events[0],
-        all: events,
-        timestamp: events[0]?.timestamp,
+        latest: materializations[0],
+        timestamp: materializations[0]?.timestamp,
         partition: props.partitionKey,
+        all: [...materializations, ...observations].sort(
+          (a, b) => Number(b.timestamp) - Number(a.timestamp),
+        ),
       }}
     />
   );
 };
 
-const ASSET_PARTITION_DETAIL_QUERY = graphql(`
+const ASSET_PARTITION_DETAIL_QUERY = gql`
   query AssetPartitionDetailQuery($assetKey: AssetKeyInput!, $partitionKey: String!) {
     assetNodeOrError(assetKey: $assetKey) {
       __typename
@@ -63,10 +82,19 @@ const ASSET_PARTITION_DETAIL_QUERY = graphql(`
             ...AssetMaterializationFragment
           }
         }
+        assetObservations(partitions: [$partitionKey]) {
+          ... on ObservationEvent {
+            runId
+            ...AssetObservationFragment
+          }
+        }
       }
     }
   }
-`);
+
+  ${ASSET_MATERIALIZATION_FRAGMENT}
+  ${ASSET_OBSERVATION_FRAGMENT}
+`;
 
 export const AssetPartitionDetail: React.FC<{
   group: AssetEventGroup;

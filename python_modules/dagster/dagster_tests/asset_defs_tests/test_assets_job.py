@@ -2,7 +2,6 @@ import os
 import warnings
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetOut,
@@ -15,8 +14,8 @@ from dagster import (
     GraphIn,
     GraphOut,
     HourlyPartitionsDefinition,
-    IOManager,
     In,
+    IOManager,
     Nothing,
     Out,
     Output,
@@ -53,6 +52,9 @@ from dagster._utils.backcompat import ExperimentalWarning
 @pytest.fixture(autouse=True)
 def check_experimental_warnings():
     with warnings.catch_warnings(record=True) as record:
+        # turn off any outer warnings filters
+        warnings.resetwarnings()
+
         yield
 
         for w in record:
@@ -291,7 +293,10 @@ def test_missing_io_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"io manager with key 'special_io_manager' required by SourceAsset with key \[\"source1\"\] was not provided.",
+        match=(
+            r"io manager with key 'special_io_manager' required by SourceAsset with key"
+            r" \[\"source1\"\] was not provided."
+        ),
     ):
         build_assets_job(
             "a",
@@ -1338,8 +1343,8 @@ def dbt_op():
 
 
 dbt_asset_def = AssetsDefinition(
-    keys_by_output_name={l: AssetKey(l) for l in ["d", "e", "f"]},
-    keys_by_input_name={l: AssetKey(l) for l in ["a", "b", "c"]},
+    keys_by_output_name={k: AssetKey(k) for k in ["d", "e", "f"]},
+    keys_by_input_name={k: AssetKey(k) for k in ["a", "b", "c"]},
     node_def=dbt_op,
     can_subset=True,
     asset_deps={
@@ -1815,7 +1820,10 @@ def test_transitive_io_manager_dep_not_provided():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by resource with key 'my_source_asset__io_manager' was not provided.",
+        match=(
+            "resource with key 'foo' required by resource with key 'my_source_asset__io_manager'"
+            " was not provided."
+        ),
     ):
         build_assets_job(name="test", assets=[my_derived_asset], source_assets=[my_source_asset])
 
@@ -1847,9 +1855,11 @@ def test_resolve_dependency_fail_across_groups():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="is not produced by any of the provided asset ops and is not one of the provided sources",
+        match=(
+            "is not produced by any of the provided asset ops and is not one of the provided"
+            " sources"
+        ),
     ):
-
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
@@ -1874,7 +1884,10 @@ def test_resolve_dependency_multi_asset_different_groups():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="is not produced by any of the provided asset ops and is not one of the provided sources",
+        match=(
+            "is not produced by any of the provided asset ops and is not one of the provided"
+            " sources"
+        ),
     ):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)

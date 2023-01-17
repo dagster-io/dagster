@@ -42,14 +42,10 @@ setup(
     packages=find_packages(exclude=["dagit_tests*"]),
     include_package_data=True,
     install_requires=[
-        "PyYAML",
         # cli
         "click>=7.0,<9.0",
         f"dagster{pin}",
         f"dagster-graphql{pin}",
-        "requests",
-        # watchdog
-        "watchdog>=0.8.3",
         "starlette",
         "uvicorn[standard]",
     ],

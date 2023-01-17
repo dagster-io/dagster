@@ -3,7 +3,6 @@ import operator
 from functools import reduce
 
 import pytest
-
 from dagster import (
     AssetIn,
     DagsterInvalidSubsetError,

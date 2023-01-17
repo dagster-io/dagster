@@ -1,1 +1,1 @@
-from .loader import SecretsLoader
+from .loader import SecretsLoader as SecretsLoader

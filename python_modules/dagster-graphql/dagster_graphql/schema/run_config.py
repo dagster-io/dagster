@@ -1,6 +1,5 @@
-import graphene
-
 import dagster._check as check
+import graphene
 from dagster._core.host_representation import RepresentedPipeline
 
 from ..implementation.run_config_schema import resolve_is_run_config_valid

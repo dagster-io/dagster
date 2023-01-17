@@ -95,6 +95,8 @@ def _execute_run_command_body(
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
             instance, pipeline_run_id
         )
+    else:
+        cancellation_thread, cancellation_thread_shutdown_event = None, None
 
     pipeline_run: DagsterRun = check.not_none(
         instance.get_run_by_id(pipeline_run_id),
@@ -135,6 +137,8 @@ def _execute_run_command_body(
         run_worker_failed = True
     finally:
         if instance.should_start_background_run_thread:
+            cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
+            cancellation_thread = check.not_none(cancellation_thread)
             cancellation_thread_shutdown_event.set()
             if cancellation_thread.is_alive():
                 cancellation_thread.join(timeout=15)
@@ -198,6 +202,8 @@ def _resume_run_command_body(
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
             instance, pipeline_run_id
         )
+    else:
+        cancellation_thread, cancellation_thread_shutdown_event = None, None
     pipeline_run = check.not_none(
         instance.get_run_by_id(pipeline_run_id),  # type: ignore
         "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
@@ -238,6 +244,8 @@ def _resume_run_command_body(
         run_worker_failed = True
     finally:
         if instance.should_start_background_run_thread:
+            cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
+            cancellation_thread = check.not_none(cancellation_thread)
             cancellation_thread_shutdown_event.set()
             if cancellation_thread.is_alive():
                 cancellation_thread.join(timeout=15)
@@ -328,7 +336,6 @@ def verify_step(instance, pipeline_run, retry_state, step_keys_to_execute):
 )
 def execute_step_command(input_json, compressed_input_json):
     with capture_interrupts():
-
         check.invariant(
             bool(input_json) != bool(compressed_input_json),
             "Must provide one of input_json or compressed_input_json",
@@ -455,7 +462,10 @@ def _execute_step_command_body(
         raise
     except Exception:
         yield instance.report_engine_event(
-            "An exception was thrown during step execution that is likely a framework error, rather than an error in user code.",
+            (
+                "An exception was thrown during step execution that is likely a framework error,"
+                " rather than an error in user code."
+            ),
             pipeline_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             step_key=single_step_key,
@@ -517,9 +527,11 @@ def _execute_step_command_body(
     is_flag=True,
     required=False,
     default=False,
-    help="Wait until the first LoadRepositories call to actually load the repositories, instead of "
-    "waiting to load them when the server is launched. Useful for surfacing errors when the server "
-    "is managed directly from Dagit",
+    help=(
+        "Wait until the first LoadRepositories call to actually load the repositories, instead of"
+        " waiting to load them when the server is launched. Useful for surfacing errors when the"
+        " server is managed directly from Dagit"
+    ),
     envvar="DAGSTER_LAZY_LOAD_USER_CODE",
 )
 @python_origin_target_argument
@@ -528,11 +540,13 @@ def _execute_step_command_body(
     is_flag=True,
     required=False,
     default=False,
-    help="If this flag is set, the server will signal to clients that they should launch "
-    "dagster commands using `<this server's python executable> -m dagster`, instead of the "
-    "default `dagster` entry point. This is useful when there are multiple Python environments "
-    "running in the same machine, so a single `dagster` entry point is not enough to uniquely "
-    "determine the environment.",
+    help=(
+        "If this flag is set, the server will signal to clients that they should launch "
+        "dagster commands using `<this server's python executable> -m dagster`, instead of the "
+        "default `dagster` entry point. This is useful when there are multiple Python environments "
+        "running in the same machine, so a single `dagster` entry point is not enough to uniquely "
+        "determine the environment."
+    ),
     envvar="DAGSTER_USE_PYTHON_ENVIRONMENT_ENTRY_POINT",
 )
 @click.option(
@@ -540,30 +554,38 @@ def _execute_step_command_body(
     is_flag=True,
     required=False,
     default=False,
-    help="Indicates that the working directory should be empty and should not set to the current "
-    "directory as a default",
+    help=(
+        "Indicates that the working directory should be empty and should not set to the current "
+        "directory as a default"
+    ),
     envvar="DAGSTER_EMPTY_WORKING_DIRECTORY",
 )
 @click.option(
     "--ipc-output-file",
     type=click.Path(),
-    help="[INTERNAL] This option should generally not be used by users. Internal param used by "
-    "dagster when it automatically spawns gRPC servers to communicate the success or failure of the "
-    "server launching.",
+    help=(
+        "[INTERNAL] This option should generally not be used by users. Internal param used by"
+        " dagster when it automatically spawns gRPC servers to communicate the success or failure"
+        " of the server launching."
+    ),
 )
 @click.option(
     "--fixed-server-id",
     type=click.STRING,
     required=False,
-    help="[INTERNAL] This option should generally not be used by users. Internal param used by "
-    "dagster to spawn a gRPC server with the specified server id.",
+    help=(
+        "[INTERNAL] This option should generally not be used by users. Internal param used by "
+        "dagster to spawn a gRPC server with the specified server id."
+    ),
 )
 @click.option(
     "--override-system-timezone",
     type=click.STRING,
     required=False,
-    help="[INTERNAL] This option should generally not be used by users. Override the system "
-    "timezone for tests.",
+    help=(
+        "[INTERNAL] This option should generally not be used by users. Override the system "
+        "timezone for tests."
+    ),
 )
 @click.option(
     "--log-level",
@@ -583,8 +605,10 @@ def _execute_step_command_body(
     "--container-context",
     type=click.STRING,
     required=False,
-    help="Serialized JSON with configuration for any containers created to run the "
-    "code from this server.",
+    help=(
+        "Serialized JSON with configuration for any containers created to run the "
+        "code from this server."
+    ),
     envvar="DAGSTER_CONTAINER_CONTEXT",
 )
 @click.option(
@@ -683,7 +707,6 @@ def grpc_command(
         )
 
     with ExitStack() as exit_stack:
-
         if override_system_timezone:
             exit_stack.enter_context(mock_system_timezone(override_system_timezone))
 
@@ -704,7 +727,9 @@ def grpc_command(
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
             container_image=container_image,
-            container_context=json.loads(container_context) if container_context != None else None,
+            container_context=json.loads(container_context)
+            if container_context is not None
+            else None,
             inject_env_vars_from_instance=inject_env_vars_from_instance,
             instance_ref=deserialize_as(instance_ref, InstanceRef) if instance_ref else None,
             location_name=location_name,

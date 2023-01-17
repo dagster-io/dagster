@@ -1,12 +1,19 @@
-import {useQuery, useSubscription} from '@apollo/client';
+import {gql, useQuery, useSubscription} from '@apollo/client';
 import {Box, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {RawLogContent} from './RawLogContent';
 import {AppContext} from './app/AppContext';
 import {WebSocketContext} from './app/WebSocketProvider';
-import {graphql} from './graphql';
-import {CapturedLogFragment, CapturedLogsQueryQuery} from './graphql/graphql';
+import {
+  CapturedLogFragment,
+  CapturedLogsMetadataQuery,
+  CapturedLogsMetadataQueryVariables,
+  CapturedLogsQuery,
+  CapturedLogsQueryVariables,
+  CapturedLogsSubscription,
+  CapturedLogsSubscriptionVariables,
+} from './types/CapturedLogPanel.types';
 
 interface CapturedLogProps {
   logKey: string[];
@@ -115,19 +122,22 @@ const CapturedLogSubscription: React.FC<{
   logKey: string[];
   onLogData: (logData: CapturedLogFragment) => void;
 }> = React.memo(({logKey, onLogData}) => {
-  useSubscription(CAPTURED_LOGS_SUBSCRIPTION, {
-    fetchPolicy: 'no-cache',
-    variables: {logKey},
-    onSubscriptionData: ({subscriptionData}) => {
-      if (subscriptionData.data?.capturedLogs) {
-        onLogData(subscriptionData.data.capturedLogs);
-      }
+  useSubscription<CapturedLogsSubscription, CapturedLogsSubscriptionVariables>(
+    CAPTURED_LOGS_SUBSCRIPTION,
+    {
+      fetchPolicy: 'no-cache',
+      variables: {logKey},
+      onSubscriptionData: ({subscriptionData}) => {
+        if (subscriptionData.data?.capturedLogs) {
+          onLogData(subscriptionData.data.capturedLogs);
+        }
+      },
     },
-  });
+  );
   return null;
 });
 
-const CAPTURED_LOGS_SUBSCRIPTION = graphql(`
+const CAPTURED_LOGS_SUBSCRIPTION = gql`
   subscription CapturedLogsSubscription($logKey: [String!]!, $cursor: String) {
     capturedLogs(logKey: $logKey, cursor: $cursor) {
       ...CapturedLog
@@ -139,9 +149,9 @@ const CAPTURED_LOGS_SUBSCRIPTION = graphql(`
     stderr
     cursor
   }
-`);
+`;
 
-const CAPTURED_LOGS_METADATA_QUERY = graphql(`
+const CAPTURED_LOGS_METADATA_QUERY = gql`
   query CapturedLogsMetadataQuery($logKey: [String!]!) {
     capturedLogsMetadata(logKey: $logKey) {
       stdoutDownloadUrl
@@ -150,7 +160,7 @@ const CAPTURED_LOGS_METADATA_QUERY = graphql(`
       stderrLocation
     }
   }
-`);
+`;
 
 const QUERY_LOG_LIMIT = 100000;
 const POLL_INTERVAL = 5000;
@@ -193,22 +203,25 @@ const CapturedLogsQueryProvider = ({
   }, [logKeyString]);
   const {cursor} = state;
 
-  const {stopPolling, startPolling} = useQuery(CAPTURED_LOGS_QUERY, {
-    notifyOnNetworkStatusChange: true,
-    variables: {logKey, cursor, limit: QUERY_LOG_LIMIT},
-    pollInterval: POLL_INTERVAL,
-    onCompleted: (data: CapturedLogsQueryQuery) => {
-      // We have to stop polling in order to update the `after` value.
-      stopPolling();
-      dispatch({type: 'update', logData: data.capturedLogs});
-      startPolling(POLL_INTERVAL);
+  const {stopPolling, startPolling} = useQuery<CapturedLogsQuery, CapturedLogsQueryVariables>(
+    CAPTURED_LOGS_QUERY,
+    {
+      notifyOnNetworkStatusChange: true,
+      variables: {logKey, cursor, limit: QUERY_LOG_LIMIT},
+      pollInterval: POLL_INTERVAL,
+      onCompleted: (data: CapturedLogsQuery) => {
+        // We have to stop polling in order to update the `after` value.
+        stopPolling();
+        dispatch({type: 'update', logData: data.capturedLogs});
+        startPolling(POLL_INTERVAL);
+      },
     },
-  });
+  );
 
   return <>{children(state)}</>;
 };
 
-const CAPTURED_LOGS_QUERY = graphql(`
+const CAPTURED_LOGS_QUERY = gql`
   query CapturedLogsQuery($logKey: [String!]!, $cursor: String, $limit: Int) {
     capturedLogs(logKey: $logKey, cursor: $cursor, limit: $limit) {
       stdout
@@ -216,16 +229,18 @@ const CAPTURED_LOGS_QUERY = graphql(`
       cursor
     }
   }
-`);
+`;
 
 export const CapturedLogPanel: React.FC<CapturedLogProps> = React.memo(
   ({logKey, visibleIOType, onSetDownloadUrl}) => {
     const {rootServerURI} = React.useContext(AppContext);
     const {availability, disabled} = React.useContext(WebSocketContext);
-    const queryResult = useQuery(CAPTURED_LOGS_METADATA_QUERY, {
-      variables: {logKey},
-      fetchPolicy: 'cache-and-network',
-    });
+    const queryResult = useQuery<CapturedLogsMetadataQuery, CapturedLogsMetadataQueryVariables>(
+      CAPTURED_LOGS_METADATA_QUERY,
+      {
+        variables: {logKey},
+      },
+    );
 
     React.useEffect(() => {
       if (!onSetDownloadUrl || !queryResult.data) {

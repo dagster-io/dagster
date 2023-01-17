@@ -3,9 +3,11 @@ import subprocess
 import sys
 import warnings
 from contextlib import contextmanager
-from typing import Iterator, Optional, Sequence, Tuple
+from threading import Event
+from typing import Any, Iterator, Optional, Sequence, Tuple
 
 import grpc
+from google.protobuf.reflection import GeneratedProtocolMessageType
 from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
 
@@ -40,7 +42,7 @@ CLIENT_HEARTBEAT_INTERVAL = 1
 DEFAULT_GRPC_TIMEOUT = default_grpc_timeout()
 
 
-def client_heartbeat_thread(client, shutdown_event):
+def client_heartbeat_thread(client: "DagsterGrpcClient", shutdown_event: Event) -> None:
     while True:
         shutdown_event.wait(CLIENT_HEARTBEAT_INTERVAL)
         if shutdown_event.is_set():
@@ -55,10 +57,10 @@ def client_heartbeat_thread(client, shutdown_event):
 class DagsterGrpcClient:
     def __init__(
         self,
-        port=None,
-        socket=None,
-        host="localhost",
-        use_ssl=False,
+        port: Optional[int] = None,
+        socket: Optional[str] = None,
+        host: str = "localhost",
+        use_ssl: bool = False,
         metadata: Optional[Sequence[Tuple[str, str]]] = None,
     ):
         self.port = check.opt_int_param(port, "port")
@@ -86,6 +88,7 @@ class DagsterGrpcClient:
         if port:
             self._server_address = host + ":" + str(port)
         else:
+            socket = check.not_none(socket)
             self._server_address = "unix:" + os.path.abspath(socket)
 
     @property
@@ -97,7 +100,7 @@ class DagsterGrpcClient:
         return self._use_ssl
 
     @contextmanager
-    def _channel(self):
+    def _channel(self) -> Iterator[grpc.Channel]:
         options = [
             ("grpc.max_receive_message_length", max_rx_bytes()),
             ("grpc.max_send_message_length", max_send_bytes()),
@@ -120,33 +123,49 @@ class DagsterGrpcClient:
 
     def _get_response(
         self,
-        method,
-        request,
-        timeout=DEFAULT_GRPC_TIMEOUT,
+        method: str,
+        request: str,
+        timeout: int = DEFAULT_GRPC_TIMEOUT,
     ):
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
             return getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
 
+    def _raise_grpc_exception(self, e: Exception, timeout, custom_timeout_message=None):
+        if isinstance(e, grpc.RpcError):
+            if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+                raise DagsterUserCodeUnreachableError(
+                    custom_timeout_message
+                    or f"User code server request timed out due to taking longer than {timeout} seconds to complete."
+                ) from e
+            else:
+                raise DagsterUserCodeUnreachableError(
+                    f"Could not reach user code server. gRPC Error code: {e.code().name}"
+                ) from e
+        else:
+            raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
+
     def _query(
         self,
-        method,
-        request_type,
+        method: str,
+        request_type: GeneratedProtocolMessageType,
         timeout=DEFAULT_GRPC_TIMEOUT,
+        custom_timeout_message=None,
         **kwargs,
     ):
         try:
             return self._get_response(method, request=request_type(**kwargs), timeout=timeout)
         except Exception as e:
-            raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
+            self._raise_grpc_exception(
+                e, timeout=timeout, custom_timeout_message=custom_timeout_message
+            )
 
     def _get_streaming_response(
         self,
-        method,
-        request,
-        timeout=DEFAULT_GRPC_TIMEOUT,
-    ):
-
+        method: str,
+        request: str,
+        timeout: int = DEFAULT_GRPC_TIMEOUT,
+    ) -> Iterator[Any]:
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
             yield from getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
@@ -156,26 +175,29 @@ class DagsterGrpcClient:
         method,
         request_type,
         timeout=DEFAULT_GRPC_TIMEOUT,
+        custom_timeout_message=None,
         **kwargs,
-    ):
+    ) -> Iterator[Any]:
         try:
             yield from self._get_streaming_response(
                 method, request=request_type(**kwargs), timeout=timeout
             )
         except Exception as e:
-            raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
+            self._raise_grpc_exception(
+                e, timeout=timeout, custom_timeout_message=custom_timeout_message
+            )
 
-    def ping(self, echo):
+    def ping(self, echo: str):
         check.str_param(echo, "echo")
         res = self._query("Ping", api_pb2.PingRequest, echo=echo)
         return res.echo
 
-    def heartbeat(self, echo=""):
+    def heartbeat(self, echo: str = ""):
         check.str_param(echo, "echo")
         res = self._query("Heartbeat", api_pb2.PingRequest, echo=echo)
         return res.echo
 
-    def streaming_ping(self, sequence_length, echo):
+    def streaming_ping(self, sequence_length: int, echo: str):
         check.int_param(sequence_length, "sequence_length")
         check.str_param(echo, "echo")
 
@@ -190,11 +212,11 @@ class DagsterGrpcClient:
                 "echo": res.echo,
             }
 
-    def get_server_id(self, timeout=None):
+    def get_server_id(self, timeout: int = DEFAULT_GRPC_TIMEOUT) -> str:
         res = self._query("GetServerId", api_pb2.Empty, timeout=timeout)
         return res.server_id
 
-    def execution_plan_snapshot(self, execution_plan_snapshot_args):
+    def execution_plan_snapshot(self, execution_plan_snapshot_args: ExecutionPlanSnapshotArgs):
         check.inst_param(
             execution_plan_snapshot_args, "execution_plan_snapshot_args", ExecutionPlanSnapshotArgs
         )
@@ -366,6 +388,13 @@ class DagsterGrpcClient:
             SensorExecutionArgs,
         )
 
+        custom_timeout_message = (
+            f"The sensor tick timed out due to taking longer than {timeout} seconds to execute the"
+            " sensor function. One way to avoid this error is to break up the sensor work into"
+            " chunks, using cursors to let subsequent sensor calls pick up where the previous call"
+            " left off."
+        )
+
         chunks = list(
             self._streaming_query(
                 "ExternalSensorExecution",
@@ -374,6 +403,7 @@ class DagsterGrpcClient:
                 serialized_external_sensor_execution_args=serialize_dagster_namedtuple(
                     sensor_execution_args
                 ),
+                custom_timeout_message=custom_timeout_message,
             )
         )
 
@@ -409,7 +439,11 @@ class DagsterGrpcClient:
 
         return res.serialized_cancel_execution_result
 
-    def can_cancel_execution(self, can_cancel_execution_request, timeout=None):
+    def can_cancel_execution(
+        self,
+        can_cancel_execution_request: CanCancelExecutionRequest,
+        timeout: int = DEFAULT_GRPC_TIMEOUT,
+    ):
         check.inst_param(
             can_cancel_execution_request,
             "can_cancel_execution_request",
@@ -427,7 +461,7 @@ class DagsterGrpcClient:
 
         return res.serialized_can_cancel_execution_result
 
-    def start_run(self, execute_run_args):
+    def start_run(self, execute_run_args) -> ExecuteExternalPipelineArgs:
         check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
 
         with DagsterInstance.from_ref(execute_run_args.instance_ref) as instance:
@@ -475,7 +509,8 @@ class DagsterGrpcClient:
 
 class EphemeralDagsterGrpcClient(DagsterGrpcClient):
     """A client that tells the server process that created it to shut down once it leaves a
-    context manager."""
+    context manager.
+    """
 
     def __init__(
         self, server_process=None, *args, **kwargs
@@ -483,7 +518,7 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
         self._server_process = check.inst_param(server_process, "server_process", subprocess.Popen)
         super(EphemeralDagsterGrpcClient, self).__init__(*args, **kwargs)
 
-    def cleanup_server(self):
+    def cleanup_server(self) -> None:
         if self._server_process:
             if self._server_process.poll() is None:
                 try:

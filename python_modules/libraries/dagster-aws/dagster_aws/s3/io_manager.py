@@ -9,9 +9,9 @@ from dagster import (
     MetadataValue,
     OutputContext,
     StringSource,
+    _check as check,
+    io_manager,
 )
-from dagster import _check as check
-from dagster import io_manager
 from dagster._utils import PICKLE_PROTOCOL
 
 
@@ -79,8 +79,10 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         if context.dagster_type.typing_type == type(None):
             check.invariant(
                 obj is None,
-                "Output had Nothing type or 'None' annotation, but handle_output received value "
-                f"that was not None and was of type {type(obj)}.",
+                (
+                    "Output had Nothing type or 'None' annotation, but handle_output received"
+                    f" value that was not None and was of type {type(obj)}."
+                ),
             )
             return None
 

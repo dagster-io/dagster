@@ -6,7 +6,9 @@ def less_simple_data_frame_type_check(_, value):
     if not isinstance(value, list):
         return TypeCheck(
             success=False,
-            description=f"LessSimpleDataFrame should be a list of dicts, got {type(value)}",
+            description=(
+                f"LessSimpleDataFrame should be a list of dicts, got {type(value)}"
+            ),
         )
 
     fields = [field for field in value[0].keys()]
@@ -18,7 +20,8 @@ def less_simple_data_frame_type_check(_, value):
             return TypeCheck(
                 success=False,
                 description=(
-                    f"LessSimpleDataFrame should be a list of dicts, got {type(row)} for row {idx}"
+                    "LessSimpleDataFrame should be a list of dicts, got"
+                    f" {type(row)} for row {idx}"
                 ),
             )
         row_fields = [field for field in row.keys()]
@@ -26,8 +29,8 @@ def less_simple_data_frame_type_check(_, value):
             return TypeCheck(
                 success=False,
                 description=(
-                    f"Rows in LessSimpleDataFrame should have the same fields, got {row_fields} "
-                    f"for row {idx}, expected {fields}"
+                    "Rows in LessSimpleDataFrame should have the same fields, got"
+                    f" {row_fields} for row {idx}, expected {fields}"
                 ),
             )
 

@@ -7,8 +7,10 @@ import styled from 'styled-components/macro';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
 
-import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {AssetObservationFragment} from './types/AssetObservationFragment';
+import {
+  AssetObservationFragment,
+  AssetMaterializationFragment,
+} from './types/useRecentAssetEvents.types';
 
 /**
  * This component shows the metadata entries attached to an Asset Materialization or Observation event.

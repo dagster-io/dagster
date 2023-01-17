@@ -1,8 +1,7 @@
 import pytest
+from dagster._utils import file_relative_path
 from with_great_expectations import defs
 from with_great_expectations.ge_demo import payroll_data
-
-from dagster._utils import file_relative_path
 
 
 def test_pipeline_success():

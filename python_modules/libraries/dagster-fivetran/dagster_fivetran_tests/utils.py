@@ -63,7 +63,6 @@ def get_sample_connector_schema_config(tables):
 
 
 def get_complex_sample_connector_schema_config():
-
     return {
         "code": "Success",
         "data": {
@@ -85,7 +84,10 @@ def get_complex_sample_connector_schema_config():
                                     "enabled_patch_settings": {
                                         "allowed": False,
                                         "reason_code": "SYSTEM_COLUMN",
-                                        "reason": "The column does not support exclusion as it is a Primary Key",
+                                        "reason": (
+                                            "The column does not support exclusion as it is a"
+                                            " Primary Key"
+                                        ),
                                     },
                                 },
                                 "column_2": {

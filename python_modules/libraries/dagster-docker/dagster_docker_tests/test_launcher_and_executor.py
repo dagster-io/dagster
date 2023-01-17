@@ -2,6 +2,11 @@ import os
 import time
 
 import pytest
+from dagster._core.definitions.events import AssetKey
+from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.test_utils import poll_for_finished_run
+from dagster._utils.merger import merge_dicts
+from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     find_local_test_image,
@@ -11,12 +16,6 @@ from dagster_test.test_project import (
     get_test_project_recon_pipeline,
     get_test_project_workspace_and_external_pipeline,
 )
-
-from dagster._core.definitions.events import AssetKey
-from dagster._core.storage.pipeline_run import DagsterRunStatus
-from dagster._core.test_utils import poll_for_finished_run
-from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 
 from . import IS_BUILDKITE, docker_postgres_instance
 

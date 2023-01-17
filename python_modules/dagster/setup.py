@@ -20,7 +20,7 @@ def get_description() -> str:
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster/version.py", encoding="utf8") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 
@@ -73,13 +73,12 @@ setup(
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0",
         "croniter>=0.3.34",
-        # grpcio 1.48.1 has hanging/crashing issues: https://github.com/grpc/grpc/issues/30843
+        # grpcio>=1.48.1 has hanging/crashing issues for python 3.9 and earlier: https://github.com/grpc/grpc/issues/30843
         # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
-        "grpcio>=1.32.0,<1.48.1",
+        "grpcio>=1.32.0,<1.48.1; python_version < '3.10'",
+        "grpcio>=1.32.0; python_version >= '3.10'",
         "grpcio-health-checking>=1.32.0,<1.44.0",
-        # packaging v22 has build compatibility issues with dbt as of 2022-12-07
-        # upper bound can be removed as soon as BK passes with packaging >=22
-        "packaging>=20.9,<22",
+        "packaging>=20.9",
         "pendulum",
         "protobuf>=3.13.0,<4",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
         "python-dateutil",
@@ -121,14 +120,9 @@ setup(
             "snapshottest==0.6.0",
             "tox==3.25.0",
             "yamllint",
-            "astroid",  # let pylint determine the version
-            "pylint==2.13.7",
         ],
         "black": [
-            "black[jupyter]==22.3.0",
-        ],
-        "isort": [
-            "isort==5.10.1",
+            "black[jupyter]==22.12.0",
         ],
         "mypy": [
             "mypy==0.991",
@@ -151,6 +145,9 @@ setup(
             "types-tabulate",  # version will be resolved against tabulate
             "types-tzlocal",  # version will be resolved against tzlocal
             "types-toml",  # version will be resolved against toml
+        ],
+        "ruff": [
+            "ruff==0.0.212",
         ],
     },
     entry_points={

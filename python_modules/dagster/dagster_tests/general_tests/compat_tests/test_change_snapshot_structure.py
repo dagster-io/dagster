@@ -10,7 +10,6 @@ from dagster._utils.test import copy_directory
 def test_run_created_in_0_7_9_snapshot_id_change():
     src_dir = file_relative_path(__file__, "snapshot_0_7_9_shapshot_id_creation_change/sqlite")
     with copy_directory(src_dir) as test_dir:
-
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         # run_id = 'e297fa70-49e8-43f8-abfe-1634f02644f6'
 

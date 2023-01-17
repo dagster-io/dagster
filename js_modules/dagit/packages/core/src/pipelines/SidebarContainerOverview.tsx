@@ -14,7 +14,7 @@ import {
   SidebarResourcesSection,
   SIDEBAR_RESOURCES_SECTION_FRAGMENT,
 } from './SidebarResourcesSection';
-import {SidebarRootContainerFragment} from './types/SidebarRootContainerFragment';
+import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
 
 export const SidebarContainerOverview: React.FC<{
   container: SidebarRootContainerFragment;
@@ -101,6 +101,7 @@ export const SIDEBAR_ROOT_CONTAINER_FRAGMENT = gql`
       }
     }
   }
-  ${METADATA_ENTRY_FRAGMENT}
+
   ${SIDEBAR_RESOURCES_SECTION_FRAGMENT}
+  ${METADATA_ENTRY_FRAGMENT}
 `;

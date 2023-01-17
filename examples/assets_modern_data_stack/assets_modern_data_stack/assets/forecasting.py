@@ -1,10 +1,9 @@
 import numpy as np
 import pandas as pd
+from dagster import asset
 from dagster_airbyte import build_airbyte_assets
 from dagster_dbt import load_assets_from_dbt_project
 from scipy import optimize
-
-from dagster import asset
 
 from ..utils.constants import AIRBYTE_CONNECTION_ID, DBT_PROJECT_DIR
 
@@ -26,7 +25,7 @@ def model_func(x, a, b):
 
 @asset(compute_kind="python")
 def order_forecast_model(daily_order_summary: pd.DataFrame) -> np.ndarray:
-    """Model parameters that best fit the observed data"""
+    """Model parameters that best fit the observed data."""
     train_set = daily_order_summary.to_numpy()
     return optimize.curve_fit(
         f=model_func, xdata=train_set[:, 0], ydata=train_set[:, 2], p0=[10, 100]
@@ -37,7 +36,7 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> np.ndarray:
 def predicted_orders(
     daily_order_summary: pd.DataFrame, order_forecast_model: np.ndarray
 ) -> pd.DataFrame:
-    """Predicted orders for the next 30 days based on the fit paramters"""
+    """Predicted orders for the next 30 days based on the fit paramters."""
     a, b = tuple(order_forecast_model)
     start_date = daily_order_summary.order_date.max()
     future_dates = pd.date_range(start=start_date, end=start_date + pd.DateOffset(days=30))

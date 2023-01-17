@@ -10,12 +10,14 @@ from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tup
 
 import pendulum
 
-from dagster import StaticPartitionsDefinition
-from dagster import _check as check
+from dagster import (
+    StaticPartitionsDefinition,
+    _check as check,
+)
 from dagster._core.definitions import (
     JobDefinition,
-    PartitionSetDefinition,
     PartitionsDefinition,
+    PartitionSetDefinition,
     PipelineDefinition,
     PresetDefinition,
     RepositoryDefinition,
@@ -1024,8 +1026,8 @@ def external_asset_graph_from_defs(
             asset_info_by_asset_key[output_key] = asset_info
 
             for upstream_key in upstream_asset_keys:
-                partition_mapping = asset_layer.partition_mapping_for_asset_dep(
-                    output_key, upstream_key
+                partition_mapping = asset_layer.partition_mapping_for_node_input(
+                    node_output_handle.node_handle, upstream_key
                 )
                 deps[output_key][upstream_key] = ExternalAssetDependency(
                     upstream_asset_key=upstream_key,
@@ -1249,9 +1251,9 @@ def external_multi_partitions_definition_from_def(
 
     if any(
         [
-            not (
-                isinstance(dimension.partitions_def, TimeWindowPartitionsDefinition)
-                or isinstance(dimension.partitions_def, StaticPartitionsDefinition)
+            not isinstance(
+                dimension.partitions_def,
+                (TimeWindowPartitionsDefinition, StaticPartitionsDefinition),
             )
             for dimension in partitions_def.partitions_defs
         ]

@@ -1,11 +1,11 @@
 import {Box} from '@dagster-io/ui';
 import React from 'react';
 
-import {RunStatus} from '../types/globalTypes';
+import {RunStatus} from '../graphql/types';
 
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {LiveDataForNode} from './Utils';
-import {AssetNodeFragment} from './types/AssetNodeFragment';
+import {AssetNodeFragment} from './types/AssetNode.types';
 
 const ASSET_NODE_DEFINITION: AssetNodeFragment = {
   __typename: 'AssetNode',
@@ -22,23 +22,38 @@ const ASSET_NODE_DEFINITION: AssetNodeFragment = {
   opVersion: '1',
 };
 
+const SOURCE_ASSET_NODE_DEFINITION: AssetNodeFragment = {
+  __typename: 'AssetNode',
+  assetKey: {__typename: 'AssetKey', path: ['source_asset']},
+  computeKind: null,
+  description: 'This is a test source asset',
+  graphName: null,
+  id: '["source_asset"]',
+  isObservable: true,
+  isPartitioned: false,
+  isSource: true,
+  jobNames: [],
+  opNames: [],
+  opVersion: '1',
+};
+
 // eslint-disable-next-line import/no-default-export
 export default {component: AssetNode};
 
 export const LiveStates = () => {
-  const caseWithLiveData = (name: string, liveData?: LiveDataForNode) => {
+  const caseWithLiveData = (
+    name: string,
+    liveData: LiveDataForNode | undefined = undefined,
+    def: AssetNodeFragment = ASSET_NODE_DEFINITION,
+  ) => {
     return (
       <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
         <div style={{position: 'relative', width: 280}}>
-          <AssetNode definition={ASSET_NODE_DEFINITION} selected={false} liveData={liveData} />
+          <AssetNode definition={def} selected={false} liveData={liveData} />
         </div>
         <div style={{position: 'relative', width: 280, height: 82}}>
           <div style={{position: 'absolute', width: 280, height: 82}}>
-            <AssetNodeMinimal
-              definition={ASSET_NODE_DEFINITION}
-              selected={false}
-              liveData={liveData}
-            />
+            <AssetNodeMinimal definition={def} selected={false} liveData={liveData} />
           </div>
         </div>
         <code>
@@ -85,7 +100,12 @@ export const LiveStates = () => {
         lastMaterialization: null,
         lastMaterializationRunStatus: null,
         lastObservation: null,
-        runWhichFailedToMaterialize: {__typename: 'Run', id: 'ABCDEF', status: RunStatus.FAILURE},
+        runWhichFailedToMaterialize: {
+          __typename: 'Run',
+          id: 'ABCDEF',
+          status: RunStatus.FAILURE,
+          endTime: 1673301346,
+        },
         currentLogicalVersion: null,
         projectedLogicalVersion: null,
         freshnessInfo: null,
@@ -237,6 +257,92 @@ export const LiveStates = () => {
           cronSchedule: null,
         },
       })}
+      {caseWithLiveData('Source Asset - No Live Data', undefined, SOURCE_ASSET_NODE_DEFINITION)}
+
+      {caseWithLiveData('Source Asset - Not Observable', undefined, {
+        ...SOURCE_ASSET_NODE_DEFINITION,
+        isObservable: false,
+      })}
+
+      {caseWithLiveData(
+        'Source Asset - Never Observed',
+        {
+          stepKey: 'source_asset',
+          unstartedRunIds: [],
+          inProgressRunIds: [],
+          lastMaterialization: null,
+          lastMaterializationRunStatus: null,
+          lastObservation: null,
+          runWhichFailedToMaterialize: null,
+          currentLogicalVersion: 'INITIAL',
+          projectedLogicalVersion: null,
+          freshnessInfo: null,
+          freshnessPolicy: null,
+        },
+        SOURCE_ASSET_NODE_DEFINITION,
+      )}
+
+      {caseWithLiveData(
+        'Source Asset - Observation Running',
+        {
+          stepKey: 'source_asset',
+          unstartedRunIds: [],
+          inProgressRunIds: ['12345'],
+          lastMaterialization: null,
+          lastMaterializationRunStatus: null,
+          lastObservation: null,
+          runWhichFailedToMaterialize: null,
+          currentLogicalVersion: 'INITIAL',
+          projectedLogicalVersion: null,
+          freshnessInfo: null,
+          freshnessPolicy: null,
+        },
+        SOURCE_ASSET_NODE_DEFINITION,
+      )}
+
+      {caseWithLiveData(
+        'Source Asset - Observed, Stale',
+        {
+          stepKey: 'source_asset',
+          unstartedRunIds: [],
+          inProgressRunIds: ['12345'],
+          lastMaterialization: null,
+          lastMaterializationRunStatus: null,
+          lastObservation: {
+            __typename: 'ObservationEvent',
+            runId: 'ABCDEF',
+            timestamp: `${Date.now()}`,
+          },
+          runWhichFailedToMaterialize: null,
+          currentLogicalVersion: 'INITIAL',
+          projectedLogicalVersion: 'DIFFERENT',
+          freshnessInfo: null,
+          freshnessPolicy: null,
+        },
+        SOURCE_ASSET_NODE_DEFINITION,
+      )}
+
+      {caseWithLiveData(
+        'Source Asset - Observed, Up To Date',
+        {
+          stepKey: 'source_asset',
+          unstartedRunIds: [],
+          inProgressRunIds: [],
+          lastMaterialization: null,
+          lastMaterializationRunStatus: null,
+          lastObservation: {
+            __typename: 'ObservationEvent',
+            runId: 'ABCDEF',
+            timestamp: `${Date.now()}`,
+          },
+          runWhichFailedToMaterialize: null,
+          currentLogicalVersion: 'DIFFERENT',
+          projectedLogicalVersion: 'DIFFERENT',
+          freshnessInfo: null,
+          freshnessPolicy: null,
+        },
+        SOURCE_ASSET_NODE_DEFINITION,
+      )}
     </Box>
   );
   return;

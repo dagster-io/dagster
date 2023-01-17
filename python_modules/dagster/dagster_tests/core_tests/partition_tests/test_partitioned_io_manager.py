@@ -2,10 +2,9 @@ import datetime
 from typing import Any, Dict
 
 import pytest
-from pytest import fixture
-
 from dagster import DailyPartitionsDefinition, HourlyPartitionsDefinition, asset, materialize
 from dagster._check import CheckError
+from pytest import fixture
 
 
 @fixture

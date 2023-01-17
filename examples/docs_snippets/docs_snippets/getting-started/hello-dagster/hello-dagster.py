@@ -1,7 +1,7 @@
 import pandas as pd
 import requests
 
-from dagster import MetadataValue, Output, asset, repository
+from dagster import MetadataValue, Output, asset
 
 
 @asset

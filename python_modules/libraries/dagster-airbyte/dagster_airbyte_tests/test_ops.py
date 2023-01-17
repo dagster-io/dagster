@@ -2,9 +2,8 @@ from base64 import b64encode
 
 import pytest
 import responses
-from dagster_airbyte import AirbyteOutput, airbyte_resource, airbyte_sync_op
-
 from dagster import job, op
+from dagster_airbyte import AirbyteOutput, airbyte_resource, airbyte_sync_op
 
 DEFAULT_CONNECTION_ID = "02087b3c-2037-4db9-ae7b-4a8e45dc20b1"
 
@@ -22,7 +21,6 @@ DEFAULT_CONNECTION_ID = "02087b3c-2037-4db9-ae7b-4a8e45dc20b1"
     [False, True],
 )
 def test_airbyte_sync_op(forward_logs, additional_request_params, use_auth):
-
     ab_host = "some_host"
     ab_port = "8000"
     ab_url = f"http://{ab_host}:{ab_port}/api/v1"
@@ -62,7 +60,6 @@ def test_airbyte_sync_op(forward_logs, additional_request_params, use_auth):
         airbyte_sync_op(start_after=foo_op())
 
     with responses.RequestsMock() as rsps:
-
         rsps.add(rsps.POST, f"{ab_url}/connections/get", json={"name": "some_connection"})
         rsps.add(rsps.POST, f"{ab_url}/connections/sync", json={"job": {"id": 1}})
 

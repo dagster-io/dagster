@@ -8,7 +8,6 @@ from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.instance import DagsterInstance
-from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.cached_method import cached_method
 
 from .assets import AssetsDefinition, SourceAsset
@@ -45,8 +44,8 @@ def create_repository_using_definitions_args(
     """
     For users who, for the time being, want to continue to use multiple named repositories in
     a single code location, you can use this function. The behavior (e.g. applying resources to
-    all assets) are identical to :py:class:`Definitions` but this returns a named repository."""
-
+    all assets) are identical to :py:class:`Definitions` but this returns a named repository.
+    """
     return _create_repository_using_definitions_args(
         name=name,
         assets=assets,
@@ -114,7 +113,50 @@ def _create_repository_using_definitions_args(
 
 class Definitions:
     """
-    A set of definitions to be explicitly available and loadable by Dagster tools.
+    A set of definitions explicitly available and loadable by Dagster tools.
+
+    Parameters:
+        assets (Optional[Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]]):
+            A list of assets. Assets can be created by annotating
+            a function with :py:func:`@asset <asset>` or
+            :py:func:`@observable_source_asset <observable_source_asset>`.
+            Or they can by directly instantiating :py:class:`AssetsDefinition`,
+            :py:class:`SourceAsset`, or :py:class:`CacheableAssetsDefinition`.
+
+        schedules (Optional[Iterable[ScheduleDefinition]]):
+            List of schedules.
+
+        sensors (Optional[Iterable[SensorDefinition]]):
+            List of sensors, typically created with :py:func:`@sensor <sensor>`.
+
+        jobs (Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]]):
+            List of jobs. Typically created with :py:func:`define_asset_job <define_asset_job>`
+            or with :py:func:`@job <job>` for jobs defined in terms of ops directly.
+            Jobs created with :py:func:`@job <job>` must already have resources bound
+            at job creation time. They do not respect the `resources` argument here.
+
+        resources (Optional[Mapping[str, Any]]): Dictionary of resources to bind to assets.
+            The resources dictionary takes raw Python objects,
+            not just instances of :py:class:`ResourceDefinition`. If that raw object inherits from
+            :py:class:`IOManager`, it gets coerced to an :py:class:`IOManagerDefinition`.
+            Any other object is coerced to a :py:class:`ResourceDefinition`.
+            These resources will be automatically bound
+            to any assets passed to this Definitions instance using
+            :py:func:`with_resources <with_resources>`. Assets passed to Definitions with
+            resources already bound using :py:func:`with_resources <with_resources>` will
+            override this dictionary.
+
+        executor (Optional[ExecutorDefinition]):
+            Default executor for jobs. Individual jobs
+            can override this and define their own executors by setting the executor
+            on :py:func:`@job <job>` or :py:func:`define_asset_job <define_asset_job>`
+            explicitly. This executor will also be used for materializing assets directly
+            outside of the context of jobs.
+
+
+        loggers (Optional[Mapping[str, LoggerDefinition]):
+            Default loggers for jobs. Individual jobs
+            can define their own loggers by setting them explictly.
 
     Example usage:
 
@@ -168,12 +210,6 @@ class Definitions:
         executor: Optional[ExecutorDefinition] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     ):
-        if executor:
-            experimental_arg_warning("executor", "Definitions.__init__")
-
-        if loggers:
-            experimental_arg_warning("loggers", "Definitions.__init__")
-
         self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
             name=SINGLETON_REPOSITORY_NAME,
             assets=assets,
@@ -189,8 +225,8 @@ class Definitions:
     def get_job_def(self, name: str) -> JobDefinition:
         """Get a job definition by name. If you passed in a an :py:class:`UnresolvedAssetJobDefinition`
         (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
-        from this function."""
-
+        from this function.
+        """
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
 
@@ -273,7 +309,8 @@ class Definitions:
         """A useful conveninence method when there is a single defined global asset job.
         This occurs when all assets in the code location use a single partitioning scheme.
         If there are multiple partitioning schemes you must use get_implicit_job_def_for_assets
-        instead to access to the correct implicit asset one."""
+        instead to access to the correct implicit asset one.
+        """
         return self.get_repository_def().get_implicit_global_asset_job_def()
 
     def get_implicit_job_def_for_assets(
@@ -299,5 +336,6 @@ class Definitions:
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
         """This method is used internally to access the inner repository during the loading process
         at CLI entry points. We explicitly do not want to resolve the pending repo because the entire
-        point is to defer that resolution until later."""
+        point is to defer that resolution until later.
+        """
         return self._created_pending_or_normal_repo

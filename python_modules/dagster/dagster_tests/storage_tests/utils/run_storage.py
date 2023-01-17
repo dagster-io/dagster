@@ -1,10 +1,10 @@
 import sys
 import tempfile
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 
 import pendulum
 import pytest
-
 from dagster import _seven, job, op
 from dagster._core.definitions import GraphDefinition
 from dagster._core.errors import (
@@ -672,6 +672,7 @@ class TestRunStorage:
             filters=RunsFilter(run_ids=[two], updated_after=datetime(2020, 1, 1))
         )[0]
         run_two_update_timestamp = record_two.update_timestamp
+        record_three = storage.get_run_records(filters=RunsFilter(run_ids=[three]))[0]
 
         assert [
             record.pipeline_run.run_id
@@ -688,6 +689,54 @@ class TestRunStorage:
                 filters=RunsFilter(
                     statuses=[DagsterRunStatus.FAILURE], updated_after=run_two_update_timestamp
                 ),
+            )
+        ] == [one]
+
+        assert [
+            record.pipeline_run.run_id
+            for record in storage.get_run_records(
+                filters=RunsFilter(updated_before=record_three.update_timestamp)
+            )
+        ] == [two]
+
+    def test_fetch_records_by_create_timestamp(self, storage):
+        assert storage
+        self._skip_in_memory(storage)
+
+        one = make_new_run_id()
+        two = make_new_run_id()
+        three = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=one, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        time.sleep(2)
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=two, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        time.sleep(2)
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=three, pipeline_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        records = storage.get_run_records()
+        assert len(records) == 3
+        run_two_create_timestamp = records[1].create_timestamp
+
+        assert [
+            record.pipeline_run.run_id
+            for record in storage.get_run_records(
+                filters=RunsFilter(created_after=run_two_create_timestamp + timedelta(seconds=1)),
+            )
+        ] == [three]
+        assert [
+            record.pipeline_run.run_id
+            for record in storage.get_run_records(
+                filters=RunsFilter(created_before=run_two_create_timestamp - timedelta(seconds=1)),
             )
         ] == [one]
 
@@ -847,7 +896,6 @@ class TestRunStorage:
             assert not storage.has_run(run_with_snapshot_id)
 
     def test_single_write_with_missing_snapshot(self, storage):
-
         run_with_snapshot_id = "lkasjdflkjasdf"
         pipeline_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
 
@@ -878,7 +926,6 @@ class TestRunStorage:
         assert not storage.has_execution_plan_snapshot("nope")
 
         if self.can_delete_runs():
-
             storage.wipe()
 
             assert not storage.has_execution_plan_snapshot(snapshot_id)
@@ -1196,13 +1243,12 @@ class TestRunStorage:
 
         one = PartitionBackfill(
             "one",
-            origin,
-            BulkActionStatus.REQUESTED,
-            ["a", "b", "c"],
-            False,
-            None,
-            None,
-            pendulum.now().timestamp(),
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=pendulum.now().timestamp(),
         )
         storage.add_backfill(one)
         assert len(storage.get_backfills()) == 1

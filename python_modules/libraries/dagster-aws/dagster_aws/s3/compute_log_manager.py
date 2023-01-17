@@ -2,11 +2,14 @@ import os
 from typing import Optional, Sequence
 
 import boto3
-from botocore.errorfactory import ClientError
-
 import dagster._seven as seven
-from dagster import Field, Permissive, StringSource
-from dagster import _check as check
+from botocore.errorfactory import ClientError
+from dagster import (
+    Field,
+    Permissive,
+    StringSource,
+    _check as check,
+)
 from dagster._config.config_type import Noneable
 from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,

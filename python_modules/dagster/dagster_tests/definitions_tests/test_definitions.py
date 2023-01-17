@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from dagster import (
     Any,
     AssetKey,
@@ -61,20 +60,24 @@ def test_solid_def():
     assert len(solid_one_solid.input_dict) == 1
     assert len(solid_one_solid.output_dict) == 1
 
-    assert str(solid_one_solid.get_input("input_one")) == (
-        "NodeInput(input_name=\"'input_one'\", node_name=\"'op_one'\")"
+    assert (
+        str(solid_one_solid.get_input("input_one"))
+        == "NodeInput(input_name=\"'input_one'\", node_name=\"'op_one'\")"
     )
 
-    assert repr(solid_one_solid.get_input("input_one")) == (
-        "NodeInput(input_name=\"'input_one'\", node_name=\"'op_one'\")"
+    assert (
+        repr(solid_one_solid.get_input("input_one"))
+        == "NodeInput(input_name=\"'input_one'\", node_name=\"'op_one'\")"
     )
 
-    assert str(solid_one_solid.get_output("result")) == (
-        "NodeOutput(node_name=\"'op_one'\", output_name=\"'result'\")"
+    assert (
+        str(solid_one_solid.get_output("result"))
+        == "NodeOutput(node_name=\"'op_one'\", output_name=\"'result'\")"
     )
 
-    assert repr(solid_one_solid.get_output("result")) == (
-        "NodeOutput(node_name=\"'op_one'\", output_name=\"'result'\")"
+    assert (
+        repr(solid_one_solid.get_output("result"))
+        == "NodeOutput(node_name=\"'op_one'\", output_name=\"'result'\")"
     )
 
     assert solid_one_solid.get_output("result") == NodeOutput(
@@ -169,7 +172,8 @@ def test_mapper_errors():
         )
     assert (
         str(excinfo_2.value)
-        == 'Invalid dependencies: node "solid_b" (aliased by "solid_c" in dependency dictionary) not found in node list'
+        == 'Invalid dependencies: node "solid_b" (aliased by "solid_c" in dependency dictionary)'
+        " not found in node list"
     )
 
 

@@ -1,32 +1,29 @@
-# pylint: disable=unused-import
 import os
-import sys
-import uuid
 
 import pytest
 from airflow.exceptions import AirflowException
 from airflow.utils import timezone
+from dagster._core.definitions.reconstruct import ReconstructableRepository
+from dagster._core.utils import make_new_run_id
+from dagster._utils.yaml_utils import load_yaml_from_glob_list
 from dagster_airflow.factory import make_airflow_dag_containerized_for_recon_repo
-from dagster_airflow_tests.conftest import dagster_docker_image
+from dagster_test.test_project import get_test_project_environments_path
+
+from dagster_airflow_tests.conftest import dagster_docker_image  # noqa: F401 -- fixture
 from dagster_airflow_tests.marks import nettest, requires_airflow_db
 from dagster_airflow_tests.test_fixtures import (
-    dagster_airflow_docker_operator_pipeline,
+    dagster_airflow_docker_operator_pipeline,  # noqa: F401 -- fixture
     execute_tasks_in_dag,
     postgres_instance,
 )
-from dagster_test.test_project import get_test_project_environments_path
-
-from dagster._core.definitions.reconstruct import ReconstructableRepository
-from dagster._core.utils import make_new_run_id
-from dagster._utils import git_repository_root, load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
 
 
 @requires_airflow_db
 def test_fs_storage_no_explicit_base_dir(
-    dagster_airflow_docker_operator_pipeline, dagster_docker_image
-):  # pylint: disable=redefined-outer-name
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image  # noqa: F811 (fixture)
+):
     pipeline_name = "demo_pipeline"
     environments_path = get_test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
@@ -45,7 +42,7 @@ def test_fs_storage_no_explicit_base_dir(
 
 @requires_airflow_db
 def test_fs_storage(
-    dagster_airflow_docker_operator_pipeline, dagster_docker_image
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image  # noqa: F811 (fixture)
 ):  # pylint: disable=redefined-outer-name
     pipeline_name = "demo_pipeline"
     environments_path = get_test_project_environments_path()
@@ -67,8 +64,8 @@ def test_fs_storage(
 @nettest
 @requires_airflow_db
 def test_s3_storage(
-    dagster_airflow_docker_operator_pipeline, dagster_docker_image
-):  # pylint: disable=redefined-outer-name
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image  # noqa: F811 (fixture)
+):
     pipeline_name = "demo_pipeline_s3"
     environments_path = get_test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
@@ -89,9 +86,9 @@ def test_s3_storage(
 @nettest
 @requires_airflow_db
 def test_gcs_storage(
-    dagster_airflow_docker_operator_pipeline,
-    dagster_docker_image,
-):  # pylint: disable=redefined-outer-name
+    dagster_airflow_docker_operator_pipeline,  # noqa: F811 (fixture)
+    dagster_docker_image,  # noqa: F811 (fixture)
+):
     pipeline_name = "demo_pipeline_gcs"
     environments_path = get_test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
@@ -111,8 +108,8 @@ def test_gcs_storage(
 
 @requires_airflow_db
 def test_skip_operator(
-    dagster_airflow_docker_operator_pipeline, dagster_docker_image
-):  # pylint: disable=redefined-outer-name
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image  # noqa: F811 (fixture)
+):
     pipeline_name = "optional_outputs"
     environments_path = get_test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
@@ -129,7 +126,7 @@ def test_skip_operator(
 
 
 @requires_airflow_db
-def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redefined-outer-name
+def test_error_dag_containerized(dagster_docker_image):  # noqa: F811 (fixture)
     pipeline_name = "demo_error_pipeline_s3"
     recon_repo = ReconstructableRepository.for_module(
         "dagster_test.test_project.test_pipelines.repo", "define_demo_execution_repo"
@@ -144,7 +141,6 @@ def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redef
     execution_date = timezone.utcnow()
 
     with postgres_instance() as instance:
-
         dag, tasks = make_airflow_dag_containerized_for_recon_repo(
             recon_repo,
             pipeline_name,
@@ -162,8 +158,8 @@ def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redef
 
 @requires_airflow_db
 def test_airflow_execution_date_tags_containerized(
-    dagster_docker_image,
-):  # pylint: disable=redefined-outer-name, unused-argument
+    dagster_docker_image,  # noqa: F811 (fixture)
+):
     pipeline_name = "demo_airflow_execution_date_pipeline_s3"
     recon_repo = ReconstructableRepository.for_module(
         "dagster_test.test_project.test_pipelines.repo", "define_demo_execution_repo"

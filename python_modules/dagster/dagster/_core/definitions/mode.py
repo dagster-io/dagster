@@ -61,7 +61,6 @@ class ModeDefinition(
         _config_mapping: Optional[ConfigMapping] = None,
         _partitioned_config: Optional["PartitionedConfig"] = None,
     ):
-
         from .partition import PartitionedConfig
 
         resource_defs = check.opt_mapping_param(

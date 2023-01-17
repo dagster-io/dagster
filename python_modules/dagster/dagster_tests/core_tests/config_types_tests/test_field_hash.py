@@ -11,7 +11,6 @@ def test_compute_fields_hash():
 
 
 def test_hash_diff():
-
     assert _hash({"some_int": Field(int)}) != _hash({"another_int": Field(int)})
 
     assert _hash({"same_name": Field(int)}) != _hash({"same_name": Field(str)})

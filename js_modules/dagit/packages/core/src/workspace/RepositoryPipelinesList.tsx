@@ -1,17 +1,20 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
-import {PipelineTable} from '../pipelines/PipelineTable';
+import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
 
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
+import {
+  RepositoryPipelinesListQuery,
+  RepositoryPipelinesListQueryVariables,
+} from './types/RepositoryPipelinesList.types';
 
-const REPOSITORY_PIPELINES_LIST_QUERY = graphql(`
+const REPOSITORY_PIPELINES_LIST_QUERY = gql`
   query RepositoryPipelinesListQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       __typename
@@ -27,7 +30,9 @@ const REPOSITORY_PIPELINES_LIST_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${PIPELINE_TABLE_FRAGMENT}
+`;
 
 interface Props {
   repoAddress: RepoAddress;
@@ -40,8 +45,10 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
   const {display, repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const {data, error, loading} = useQuery(REPOSITORY_PIPELINES_LIST_QUERY, {
-    fetchPolicy: 'cache-and-network',
+  const {data, error, loading} = useQuery<
+    RepositoryPipelinesListQuery,
+    RepositoryPipelinesListQueryVariables
+  >(REPOSITORY_PIPELINES_LIST_QUERY, {
     variables: {repositorySelector},
   });
 

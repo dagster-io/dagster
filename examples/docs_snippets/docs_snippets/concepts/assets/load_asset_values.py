@@ -37,7 +37,6 @@ assets = get_assets()
 
 
 def load_single_asset_value():
-
     defs = Definitions(assets=assets)
 
     # single_asset_start_marker

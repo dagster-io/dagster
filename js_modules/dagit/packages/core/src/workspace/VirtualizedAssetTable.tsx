@@ -1,7 +1,7 @@
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
-import {AssetTableFragment} from '../assets/types/AssetTableFragment';
+import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {Container, Inner} from '../ui/VirtualizedTable';
 

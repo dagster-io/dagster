@@ -4,11 +4,6 @@ from unittest.mock import MagicMock
 
 import psycopg2
 import pytest
-from dagster_dbt import dbt_cli_resource
-from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHandledRuntimeError
-from dagster_dbt.types import DbtOutput
-
 from dagster import (
     AssetIn,
     AssetKey,
@@ -23,6 +18,10 @@ from dagster import (
 from dagster._core.definitions import build_assets_job
 from dagster._legacy import AssetGroup
 from dagster._utils import file_relative_path
+from dagster_dbt import dbt_cli_resource
+from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
+from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHandledRuntimeError
+from dagster_dbt.types import DbtOutput
 
 from .utils import assert_assets_match_project
 
@@ -171,7 +170,6 @@ def test_fail_immediately(
 def test_basic(
     capsys, dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, fail_test
 ):  # pylint: disable=unused-argument
-
     # expected to emit json-formatted messages
     with capsys.disabled():
         dbt_assets = load_assets_from_dbt_project(
@@ -323,7 +321,6 @@ def test_partitions(
 def test_select_from_project(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, prefix
 ):  # pylint: disable=unused-argument
-
     dbt_assets = load_assets_from_dbt_project(
         test_project_dir,
         dbt_config_dir,
@@ -374,7 +371,6 @@ def test_select_from_project(
 def test_multiple_select_from_project(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
-
     dbt_assets_a = load_assets_from_dbt_project(
         test_project_dir, dbt_config_dir, select="sort_by_calories subdir.least_caloric"
     )
@@ -402,7 +398,6 @@ def test_dbt_ls_fail_fast():
 def test_select_from_manifest(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build
 ):  # pylint: disable=unused-argument
-
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
     with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
@@ -492,13 +487,17 @@ def test_node_info_to_asset_key(
     [
         (
             "*",
-            "sort_by_calories,cold_schema/sort_cold_cereals_by_calories,"
-            "sort_hot_cereals_by_calories,subdir_schema/least_caloric,hanger1,hanger2",
+            (
+                "sort_by_calories,cold_schema/sort_cold_cereals_by_calories,"
+                "sort_hot_cereals_by_calories,subdir_schema/least_caloric,hanger1,hanger2"
+            ),
         ),
         (
             "sort_by_calories+",
-            "sort_by_calories,subdir_schema/least_caloric,cold_schema/sort_cold_cereals_by_calories,"
-            "sort_hot_cereals_by_calories,hanger1",
+            (
+                "sort_by_calories,subdir_schema/least_caloric,cold_schema/sort_cold_cereals_by_calories,"
+                "sort_hot_cereals_by_calories,hanger1"
+            ),
         ),
         ("*hanger2", "hanger2,subdir_schema/least_caloric,sort_by_calories"),
         (
@@ -518,7 +517,6 @@ def test_subsetting(
     job_selection,
     expected_asset_names,
 ):  # pylint: disable=unused-argument
-
     dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
 
     @asset(non_argument_deps={AssetKey("sort_by_calories")})
@@ -744,7 +742,8 @@ def test_python_interleaving(
                     conn = psycopg2.connect(conn_string)
                     cur = conn.cursor()
                     cur.execute(
-                        f'CREATE TABLE IF NOT EXISTS "test-python-schema"."{table}" (user_id integer, is_bot bool)'
+                        f'CREATE TABLE IF NOT EXISTS "test-python-schema"."{table}" (user_id'
+                        " integer, is_bot bool)"
                     )
                     cur.executemany(
                         f'INSERT INTO "test-python-schema"."{table}"' + " VALUES(%s,%s)",

@@ -1,9 +1,5 @@
 import os
 
-from assets_dbt_python.assets import forecasting, raw_data
-from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
-from dagster_duckdb_pandas import duckdb_pandas_io_manager
-
 from dagster import (
     Definitions,
     ScheduleDefinition,
@@ -12,6 +8,10 @@ from dagster import (
     load_assets_from_package_module,
 )
 from dagster._utils import file_relative_path
+from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
+from dagster_duckdb_pandas import duckdb_pandas_io_manager
+
+from assets_dbt_python.assets import forecasting, raw_data
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../dbt_project")
 DBT_PROFILES_DIR = file_relative_path(__file__, "../dbt_project/config")

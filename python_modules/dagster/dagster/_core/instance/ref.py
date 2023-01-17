@@ -57,7 +57,6 @@ def configurable_secrets_loader_data(
 def configurable_storage_data(
     config_field: Mapping[str, Any], defaults: Mapping[str, Optional[ConfigurableClassData]]
 ) -> Sequence[Optional[ConfigurableClassData]]:
-
     storage_data: ConfigurableClassData
     run_storage_data: Optional[ConfigurableClassData]
     event_storage_data: Optional[ConfigurableClassData]
@@ -311,10 +310,15 @@ class InstanceRef(
         }
 
     @staticmethod
-    def from_dir(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENAME, overrides=None):
+    def from_dir(
+        base_dir, *, config_dir=None, config_filename=DAGSTER_CONFIG_YAML_FILENAME, overrides=None
+    ):
+        if config_dir is None:
+            config_dir = base_dir
+
         overrides = check.opt_dict_param(overrides, "overrides")
         config_value, custom_instance_class = dagster_instance_config(
-            base_dir, config_filename=config_filename, overrides=overrides
+            config_dir, config_filename=config_filename, overrides=overrides
         )
 
         if custom_instance_class:

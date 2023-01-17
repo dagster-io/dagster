@@ -3,10 +3,6 @@ import json
 from unittest import mock
 
 import pytest
-from dagster_k8s.container_context import K8sContainerContext
-from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
-from dagster_k8s.job import UserDefinedDagsterK8sConfig
-
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
@@ -20,6 +16,9 @@ from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._legacy import PipelineDefinition, execute_pipeline, solid
+from dagster_k8s.container_context import K8sContainerContext
+from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
+from dagster_k8s.job import UserDefinedDagsterK8sConfig
 
 
 def _get_pipeline(name, solid_tags=None):
@@ -140,7 +139,6 @@ def _step_handler_context(pipeline, pipeline_run, instance, executor):
 
 
 def test_executor_init(k8s_run_launcher_instance):
-
     resources = {
         "requests": {"memory": "64Mi", "cpu": "250m"},
         "limits": {"memory": "128Mi", "cpu": "500m"},
@@ -194,7 +192,6 @@ def test_executor_init(k8s_run_launcher_instance):
 def test_executor_init_container_context(
     k8s_run_launcher_instance, python_origin_with_container_context
 ):
-
     executor = _get_executor(
         k8s_run_launcher_instance,
         reconstructable(bar),
@@ -301,7 +298,6 @@ def test_step_handler(kubeconfig_file, k8s_instance):
 
 
 def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
-
     mock_k8s_client_batch_api = mock.MagicMock()
     handler = K8sStepHandler(
         image="bizbuz",
@@ -354,7 +350,6 @@ def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
 
 
 def test_step_handler_image_override(kubeconfig_file, k8s_instance):
-
     mock_k8s_client_batch_api = mock.MagicMock()
     handler = K8sStepHandler(
         image="bizbuz",

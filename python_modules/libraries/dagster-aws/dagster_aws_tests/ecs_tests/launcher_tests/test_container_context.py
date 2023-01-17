@@ -1,10 +1,9 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from dagster_aws.ecs.container_context import EcsContainerContext
-
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.test_utils import environ
+from dagster_aws.ecs.container_context import EcsContainerContext
 
 
 @pytest.fixture

@@ -1,12 +1,10 @@
 from collections import namedtuple
 
-import graphene
-from graphene.types.generic import GenericScalar
-
 import dagster._check as check
-from dagster._config import ConfigSchemaSnapshot
-from dagster._config import EvaluationError as DagsterEvaluationError
+import graphene
 from dagster._config import (
+    ConfigSchemaSnapshot,
+    EvaluationError as DagsterEvaluationError,
     EvaluationStackListItemEntry,
     EvaluationStackMapKeyEntry,
     EvaluationStackMapValueEntry,
@@ -20,6 +18,7 @@ from dagster._config import (
 )
 from dagster._core.host_representation.represented import RepresentedPipeline
 from dagster._utils.error import SerializableErrorInfo
+from graphene.types.generic import GenericScalar
 
 from ..config_types import GrapheneConfigTypeField
 from ..util import non_null_list

@@ -2,7 +2,6 @@ from collections import defaultdict
 from typing import Sequence
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -123,7 +122,10 @@ def test_dupe_op_repo_definition():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Conflicting definitions found in repository with name 'same'. Op/Graph definition names must be unique within a repository.",
+        match=(
+            "Conflicting definitions found in repository with name 'same'. Op/Graph definition"
+            " names must be unique within a repository."
+        ),
     ):
         error_repo.get_all_jobs()
 
@@ -229,7 +231,6 @@ def test_direct_schedule_target():
 
 
 def test_direct_schedule_unresolved_target():
-
     unresolved_job = define_asset_job("unresolved_job", selection="foo")
 
     @asset
@@ -270,7 +271,6 @@ def test_direct_sensor_target():
 
 
 def test_direct_sensor_unresolved_target():
-
     unresolved_job = define_asset_job("unresolved_job", selection="foo")
 
     @asset
@@ -460,14 +460,12 @@ def test_dupe_graph_defs():
         DagsterInvalidDefinitionError,
         match="Op/Graph definition names must be unique within a repository",
     ):
-
         get_collision_repo().get_all_jobs()
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Op/Graph definition names must be unique within a repository",
     ):
-
         get_collision_repo().get_all_jobs()
 
 
@@ -514,19 +512,16 @@ def test_dupe_unresolved_job_defs():
         DagsterInvalidDefinitionError,
         match="Duplicate definition found for unresolved job 'bar'",
     ):
-
         get_collision_repo().get_all_jobs()
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Duplicate definition found for unresolved job 'bar'",
     ):
-
         get_collision_repo().get_all_jobs()
 
 
 def test_job_validation():
-
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Object mapped to my_job is not an instance of JobDefinition or GraphDefinition.",
@@ -601,7 +596,10 @@ def test_lazy_graph():
     # Repository with a lazy graph can be constructed, but fails when you try to fetch it
     with pytest.raises(
         CheckError,
-        match="Invariant failed. Description: Bad constructor for job my_graph: must return JobDefinition",
+        match=(
+            "Invariant failed. Description: Bad constructor for job my_graph: must return"
+            " JobDefinition"
+        ),
     ):
         assert jobs.get_job("my_graph")
 
@@ -673,7 +671,6 @@ def test_bad_coerce():
 
 
 def test_bad_resolve():
-
     with pytest.raises(
         DagsterInvalidSubsetError, match=r"AssetKey\(s\) {AssetKey\(\['foo'\]\)} were selected"
     ):
@@ -808,7 +805,10 @@ def test_source_asset_unsatisfied_resource():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by resource with key 'foo__io_manager' was not provided.",
+        match=(
+            "resource with key 'foo' required by resource with key 'foo__io_manager' was not"
+            " provided."
+        ),
     ):
 
         @repository
@@ -993,7 +993,10 @@ def test_duplicate_graph_target_invalid():
     # Different reference-equal graph provided to repo with same name, ensure error is thrown.
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="sensor '_the_sensor' targets graph 'foo', but a different graph with the same name was provided.",
+        match=(
+            "sensor '_the_sensor' targets graph 'foo', but a different graph with the same name was"
+            " provided."
+        ),
     ):
 
         @repository
@@ -1002,7 +1005,10 @@ def test_duplicate_graph_target_invalid():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="schedule '_the_schedule' targets graph 'foo', but a different graph with the same name was provided.",
+        match=(
+            "schedule '_the_schedule' targets graph 'foo', but a different graph with the same name"
+            " was provided."
+        ),
     ):
 
         @repository
@@ -1039,7 +1045,10 @@ def test_duplicate_unresolved_job_target_invalid():
     # Different reference-equal jobs provided to repo with same name, ensure error is thrown.
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="sensor '_the_sensor' targets unresolved asset job 'foo', but a different unresolved asset job with the same name was provided.",
+        match=(
+            "sensor '_the_sensor' targets unresolved asset job 'foo', but a different unresolved"
+            " asset job with the same name was provided."
+        ),
     ):
 
         @repository
@@ -1048,7 +1057,10 @@ def test_duplicate_unresolved_job_target_invalid():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="schedule '_the_schedule' targets unresolved asset job 'foo', but a different unresolved asset job with the same name was provided.",
+        match=(
+            "schedule '_the_schedule' targets unresolved asset job 'foo', but a different"
+            " unresolved asset job with the same name was provided."
+        ),
     ):
 
         @repository
@@ -1074,7 +1086,10 @@ def test_duplicate_job_target_invalid():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="sensor '_the_sensor' targets job 'foo', but a different job with the same name was provided.",
+        match=(
+            "sensor '_the_sensor' targets job 'foo', but a different job with the same name was"
+            " provided."
+        ),
     ):
 
         @repository
@@ -1083,7 +1098,10 @@ def test_duplicate_job_target_invalid():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="schedule '_the_schedule' targets job 'foo', but a different job with the same name was provided.",
+        match=(
+            "schedule '_the_schedule' targets job 'foo', but a different job with the same name was"
+            " provided."
+        ),
     ):
 
         @repository
@@ -1109,7 +1127,10 @@ def test_dupe_jobs_invalid():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="schedule '_the_schedule' targets job 'foo', but a different job with the same name was provided.",
+        match=(
+            "schedule '_the_schedule' targets job 'foo', but a different job with the same name was"
+            " provided."
+        ),
     ):
 
         @repository
@@ -1118,7 +1139,10 @@ def test_dupe_jobs_invalid():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="sensor '_the_sensor' targets job 'foo', but a different job with the same name was provided.",
+        match=(
+            "sensor '_the_sensor' targets job 'foo', but a different job with the same name was"
+            " provided."
+        ),
     ):
 
         @repository

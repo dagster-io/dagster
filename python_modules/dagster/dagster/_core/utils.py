@@ -30,7 +30,6 @@ PYTHON_LOGGING_LEVELS_NAMES = frozenset(
 
 
 def coerce_valid_log_level(log_level: Union[str, int]) -> int:
-
     """Convert a log level into an integer for consumption by the low-level Python logging API."""
     if isinstance(log_level, int):
         return log_level

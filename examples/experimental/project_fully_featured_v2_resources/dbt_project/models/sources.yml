@@ -1,0 +1,7 @@
+version: 2
+
+sources:
+  - name: core
+    tables:
+      - name: comments
+      - name: stories

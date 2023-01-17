@@ -2,7 +2,7 @@ import {render, screen} from '@testing-library/react';
 import * as React from 'react';
 
 import {GenericError, PythonErrorInfo} from './PythonErrorInfo';
-import {PythonErrorFragment} from './types/PythonErrorFragment';
+import {PythonErrorFragment} from './types/PythonErrorFragment.types';
 
 describe('PythonErrorInfo', () => {
   it('renders a real PythonErrorFragment', async () => {

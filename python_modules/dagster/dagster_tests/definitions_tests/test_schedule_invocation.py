@@ -1,25 +1,15 @@
 import datetime
 
 import pytest
-
 from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
     build_schedule_context,
     schedule,
 )
-from dagster._core.definitions.schedule_definition import (
-    ScheduleEvaluationContext,
-    ScheduleExecutionContext,
-)
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import daily_schedule
-
-
-def test_schedule_context_backcompat():
-    # ScheduleExecutionContext is a literal alias of ScheduleEvaluationContext
-    assert isinstance(ScheduleEvaluationContext(None, None), ScheduleExecutionContext)
 
 
 def cron_test_schedule_factory_context():
@@ -56,8 +46,10 @@ def test_incorrect_cron_schedule_invocation():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Schedule decorated function has context argument, but no context argument was "
-        "provided.",
+        match=(
+            "Schedule decorated function has context argument, but no context argument was "
+            "provided."
+        ),
     ):
         basic_schedule()  # pylint: disable=no-value-for-parameter
 

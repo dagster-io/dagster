@@ -1,14 +1,19 @@
 import pickle
 from typing import Union
 
-from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
-from google.cloud import storage  # type: ignore
-
-from dagster import Field, IOManager, InputContext, OutputContext, StringSource
-from dagster import _check as check
-from dagster import io_manager
+from dagster import (
+    Field,
+    InputContext,
+    IOManager,
+    OutputContext,
+    StringSource,
+    _check as check,
+    io_manager,
+)
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.backoff import backoff
+from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
+from google.cloud import storage  # type: ignore
 
 DEFAULT_LEASE_DURATION = 60  # One minute
 
@@ -66,8 +71,10 @@ class PickledObjectGCSIOManager(IOManager):
         if context.dagster_type.typing_type == type(None):
             check.invariant(
                 obj is None,
-                "Output had Nothing type or 'None' annotation, but handle_output received value "
-                f"that was not None and was of type {type(obj)}.",
+                (
+                    "Output had Nothing type or 'None' annotation, but handle_output received"
+                    f" value that was not None and was of type {type(obj)}."
+                ),
             )
             return None
 

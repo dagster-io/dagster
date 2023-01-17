@@ -9,12 +9,12 @@ from airflow.exceptions import AirflowSkipException
 from airflow.models import TaskInstance
 from airflow.settings import LOG_FORMAT
 from airflow.utils import timezone
-
 from dagster import file_relative_path
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
-from dagster._utils import load_yaml_from_glob_list, merge_dicts
+from dagster._utils.merger import merge_dicts
 from dagster._utils.test.postgres_instance import TestPostgresInstance
+from dagster._utils.yaml_utils import load_yaml_from_glob_list
 
 
 @contextmanager
@@ -207,7 +207,6 @@ def dagster_airflow_docker_operator_pipeline():
         op_kwargs["network_mode"] = "container:test-postgres-db-airflow"
 
         with postgres_instance() as instance:
-
             dag, tasks = make_airflow_dag_containerized_for_recon_repo(
                 recon_repo=recon_repo,
                 job_name=pipeline_name,

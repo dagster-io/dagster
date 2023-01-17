@@ -42,12 +42,12 @@ _AWS_MAX_TRIES = 20  # this takes about a day before we run out of tries
 
 
 def _client_error_code(ex):
-    """Get the error code for the given ClientError"""
+    """Get the error code for the given ClientError."""
     return ex.response.get("Error", {}).get("Code", "")
 
 
 def _client_error_status(ex):
-    """Get the HTTP status for the given ClientError"""
+    """Get the HTTP status for the given ClientError."""
     resp = ex.response
     # sometimes status code is in ResponseMetadata, not Error
     return resp.get("Error", {}).get("HTTPStatusCode") or resp.get("ResponseMetadata", {}).get(
@@ -79,7 +79,8 @@ def _is_retriable_client_error(ex):
 
 def _wrap_aws_client(raw_client, min_backoff=None):
     """Wrap a given boto3 Client object so that it can retry when
-    throttled."""
+    throttled.
+    """
     return RetryWrapper(
         raw_client,
         retry_if=_is_retriable_client_error,

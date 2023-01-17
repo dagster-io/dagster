@@ -1,15 +1,18 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Spinner, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetValueGraph, AssetValueGraphData} from '../assets/AssetValueGraph';
 import {StepStatusDot} from '../gantt/GanttStatusPanel';
-import {graphql} from '../graphql';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RepoAddress} from '../workspace/types';
 
 import {SidebarSection} from './SidebarComponents';
+import {
+  SidebarOpGraphsQuery,
+  SidebarOpGraphsQueryVariables,
+} from './types/SidebarOpExecutionGraphs.types';
 
 export const StateColors = {
   SUCCESS: Colors.Green500,
@@ -24,17 +27,19 @@ export const SidebarOpExecutionGraphs: React.FC<{
   repoAddress: RepoAddress;
 }> = ({repoAddress, handleID, pipelineName, solidName}) => {
   const [highlightedStartTime, setHighlightedStartTime] = React.useState<number | null>(null);
-  const result = useQuery(SIDEBAR_OP_GRAPHS_QUERY, {
-    variables: {
-      handleID,
-      selector: {
-        repositoryName: repoAddress.name,
-        repositoryLocationName: repoAddress.location,
-        pipelineName,
+  const result = useQuery<SidebarOpGraphsQuery, SidebarOpGraphsQueryVariables>(
+    SIDEBAR_OP_GRAPHS_QUERY,
+    {
+      variables: {
+        handleID,
+        selector: {
+          repositoryName: repoAddress.name,
+          repositoryLocationName: repoAddress.location,
+          pipelineName,
+        },
       },
     },
-    fetchPolicy: 'cache-and-network',
-  });
+  );
   const stepStats =
     result.data?.pipelineOrError.__typename === 'Pipeline'
       ? result.data.pipelineOrError.solidHandle?.stepStats
@@ -128,7 +133,7 @@ export const SidebarOpExecutionGraphs: React.FC<{
   );
 };
 
-const SIDEBAR_OP_GRAPHS_QUERY = graphql(`
+const SIDEBAR_OP_GRAPHS_QUERY = gql`
   query SidebarOpGraphsQuery($selector: PipelineSelector!, $handleID: String!) {
     pipelineOrError(params: $selector) {
       __typename
@@ -155,4 +160,4 @@ const SIDEBAR_OP_GRAPHS_QUERY = graphql(`
       }
     }
   }
-`);
+`;

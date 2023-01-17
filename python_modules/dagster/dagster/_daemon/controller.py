@@ -59,12 +59,13 @@ def create_daemons_from_instance(instance):
     ]
 
 
-def create_daemon_grpc_server_registry(instance):
+def create_daemon_grpc_server_registry(instance, code_server_log_level="INFO"):
     return ProcessGrpcServerRegistry(
         instance=instance,
         reload_interval=DAEMON_GRPC_SERVER_RELOAD_INTERVAL,
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
         startup_timeout=instance.code_server_process_startup_timeout,
+        log_level=code_server_log_level,
     )
 
 
@@ -79,13 +80,16 @@ def daemon_controller_from_instance(
         [DagsterInstance], Iterator[DagsterDaemon]
     ] = create_daemons_from_instance,
     error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
+    code_server_log_level: str = "info",
 ):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
     grpc_server_registry = None
     try:
         with ExitStack() as stack:
-            grpc_server_registry = stack.enter_context(create_daemon_grpc_server_registry(instance))
+            grpc_server_registry = stack.enter_context(
+                create_daemon_grpc_server_registry(instance, code_server_log_level)
+            )
             daemons = [stack.enter_context(daemon) for daemon in gen_daemons(instance)]
             workspace_process_context = stack.enter_context(
                 WorkspaceProcessContext(
@@ -120,7 +124,6 @@ class DagsterDaemonController(AbstractContextManager):
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
         handler: str = "default",
     ):
-
         self._daemon_uuid = str(uuid.uuid4())
 
         self._daemons = {}
@@ -221,7 +224,8 @@ class DagsterDaemonController(AbstractContextManager):
 
         if failed_daemons:
             self._logger.error(
-                f"Stopping dagster-daemon process since the following threads are no longer running: {failed_daemons}"
+                "Stopping dagster-daemon process since the following threads are no longer"
+                f" running: {failed_daemons}"
             )
             raise Exception("Stopped dagster-daemon process due to threads no longer running")
 
@@ -234,7 +238,8 @@ class DagsterDaemonController(AbstractContextManager):
 
         if failed_daemons:
             self._logger.error(
-                f"Stopping dagster-daemon process since the following threads are no longer sending heartbeats: {failed_daemons}"
+                "Stopping dagster-daemon process since the following threads are no longer sending"
+                f" heartbeats: {failed_daemons}"
             )
             raise Exception("Stopped dagster-daemon process due to thread heartbeat failure")
 
@@ -316,9 +321,8 @@ def all_daemons_healthy(
     heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ):
     """
-    True if all required daemons have had a recent heartbeat with no errors
+    True if all required daemons have had a recent heartbeat with no errors.
     """
-
     statuses_by_type = get_daemon_statuses(
         instance,
         daemon_types=instance.get_required_daemon_types(),
@@ -339,7 +343,6 @@ def all_daemons_live(
     """
     True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
     """
-
     statuses_by_type = get_daemon_statuses(
         instance,
         daemon_types=instance.get_required_daemon_types(),

@@ -16,7 +16,7 @@ import {getJSONForKey} from '../hooks/useStateWithStorage';
 import {AssetViewParams} from './AssetView';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
+import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
 

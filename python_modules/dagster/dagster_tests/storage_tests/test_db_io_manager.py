@@ -2,8 +2,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-from pendulum import datetime
-
 from dagster import AssetKey, InputContext, OutputContext, build_output_context
 from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -16,6 +14,7 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 from dagster._core.types.dagster_type import resolve_dagster_type
+from pendulum import datetime
 
 resource_config = {
     "database": "database_abc",
@@ -61,7 +60,6 @@ class StringHandler(DbTypeHandler[str]):
 
 
 def build_db_io_manager(type_handlers, db_client, resource_config_override=None):
-
     conf = resource_config_override if resource_config_override else resource_config
 
     return DbIOManager(

@@ -3,12 +3,15 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
-import {OpNodeInputDefinitionFragment, OpNodeOutputDefinitionFragment} from '../graphql/graphql';
 
 import {Edge, isHighlighted, position} from './common';
 import {OpLayoutIO} from './layout';
-import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
-import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
+import {
+  OpNodeInputDefinitionFragment,
+  OpNodeOutputDefinitionFragment,
+  OpNodeDefinitionFragment,
+  OpNodeInvocationFragment,
+} from './types/OpNode.types';
 
 export const PARENT_IN = 'PARENT_IN';
 export const PARENT_OUT = 'PARENT_OUT';

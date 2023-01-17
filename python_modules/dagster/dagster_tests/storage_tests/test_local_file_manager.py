@@ -62,7 +62,6 @@ def test_basic_file_manager_execute():
         file_handle()
 
     with tempfile.TemporaryDirectory() as temp_dir:
-
         result = the_job.execute_in_process(
             run_config={"resources": {"file_manager": {"config": {"base_dir": temp_dir}}}},
         )

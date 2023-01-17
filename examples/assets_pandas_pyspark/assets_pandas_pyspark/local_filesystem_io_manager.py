@@ -3,9 +3,8 @@
 import os
 
 import pandas as pd
-from pandas import DataFrame
-
 from dagster import AssetKey, IOManager
+from pandas import DataFrame
 
 
 class LocalFileSystemIOManager(IOManager):

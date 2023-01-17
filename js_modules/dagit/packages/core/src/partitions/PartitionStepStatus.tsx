@@ -20,8 +20,7 @@ import {PartitionHealthData, PartitionHealthDimension} from '../assets/usePartit
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
-import {graphql} from '../graphql';
-import {PartitionMatrixStepRunFragmentFragment, RunStatus} from '../graphql/graphql';
+import {RunStatus} from '../graphql/types';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
 import {MenuLink} from '../ui/MenuLink';
@@ -39,7 +38,18 @@ import {
   topLabelHeightForLabels,
   TopLabelTilted,
 } from './RunMatrixUtils';
-import {MatrixStep, PartitionRuns, useMatrixData, MatrixData} from './useMatrixData';
+import {
+  PartitionStepStatusPipelineQuery,
+  PartitionStepStatusPipelineQueryVariables,
+} from './types/PartitionStepStatus.types';
+import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
+import {
+  MatrixStep,
+  PartitionRuns,
+  useMatrixData,
+  MatrixData,
+  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
+} from './useMatrixData';
 
 const BUFFER = 3;
 
@@ -141,7 +151,10 @@ export const PartitionPerOpStatus: React.FC<
   // Retrieve the pipeline's structure
   const repositorySelector = repoAddressToSelector(repoAddress);
   const pipelineSelector = {...repositorySelector, pipelineName};
-  const pipeline = useQuery(PARTITION_STEP_STATUS_PIPELINE_QUERY, {
+  const pipeline = useQuery<
+    PartitionStepStatusPipelineQuery,
+    PartitionStepStatusPipelineQueryVariables
+  >(PARTITION_STEP_STATUS_PIPELINE_QUERY, {
     variables: {pipelineSelector},
   });
 
@@ -386,7 +399,7 @@ export const PARTITION_STEP_STATUS_RUN_FRAGMENT = gql`
 
 // add in the explorer fragment, so we can reconstruct the faux-plan steps from the exploded plan
 // in the same way we construct the explorer graph
-const PARTITION_STEP_STATUS_PIPELINE_QUERY = graphql(`
+const PARTITION_STEP_STATUS_PIPELINE_QUERY = gql`
   query PartitionStepStatusPipelineQuery($pipelineSelector: PipelineSelector) {
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
@@ -398,7 +411,9 @@ const PARTITION_STEP_STATUS_PIPELINE_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT}
+`;
 
 const TOOLTIP_STYLE = JSON.stringify({
   top: 20,
@@ -407,7 +422,7 @@ const TOOLTIP_STYLE = JSON.stringify({
 
 const PartitionSquare: React.FC<{
   step?: MatrixStep;
-  runs: PartitionMatrixStepRunFragmentFragment[];
+  runs: PartitionMatrixStepRunFragment[];
   runsLoaded: boolean;
   hovered: PartitionRunSelection | null;
   minUnix: number;

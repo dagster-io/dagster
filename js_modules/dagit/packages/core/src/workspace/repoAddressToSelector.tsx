@@ -1,6 +1,6 @@
 import memoize from 'lodash/memoize';
 
-import {RepositorySelector} from '../graphql/graphql';
+import {RepositorySelector} from '../graphql/types';
 
 import {RepoAddress} from './types';
 

@@ -6,7 +6,7 @@ import {Link} from 'react-router-dom';
 import {Timestamp} from '../app/time/Timestamp';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {AssetLineageFragment} from './types/AssetLineageFragment';
+import {AssetLineageFragment} from './types/AssetLineageElements.types';
 
 const AssetLineageInfoElement: React.FC<{
   lineage_info: AssetLineageFragment;

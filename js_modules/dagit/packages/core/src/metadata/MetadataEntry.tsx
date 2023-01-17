@@ -23,7 +23,7 @@ import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {NotebookButton} from '../ui/NotebookButton';
 
 import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
-import {MetadataEntryFragment} from './types/MetadataEntryFragment';
+import {MetadataEntryFragment} from './types/MetadataEntry.types';
 
 export interface IMetadataEntries {
   metadataEntries: MetadataEntryFragment[];
@@ -158,7 +158,9 @@ export const MetadataEntry: React.FC<{
     case 'IntMetadataEntry':
       return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
     case 'BoolMetadataEntry':
-      return entry.boolValue !== null ? <>{entry.boolValue.toString()}</> : null;
+      return <>{entry.boolValue !== null ? entry.boolValue.toString() : 'null'}</>;
+    case 'NullMetadataEntry':
+      return <>null</>;
     case 'PipelineRunMetadataEntry':
       return <MetadataEntryLink to={`/runs/${entry.runId}`}>{entry.runId}</MetadataEntryLink>;
     case 'AssetMetadataEntry':
@@ -192,7 +194,6 @@ export const MetadataEntry: React.FC<{
 
 export const METADATA_ENTRY_FRAGMENT = gql`
   fragment MetadataEntryFragment on MetadataEntry {
-    __typename
     label
     description
     ... on PathMetadataEntry {
@@ -244,11 +245,16 @@ export const METADATA_ENTRY_FRAGMENT = gql`
       }
     }
     ... on TableSchemaMetadataEntry {
-      schema {
-        ...TableSchemaFragment
-      }
+      ...TableSchemaForMetadataEntry
     }
   }
+
+  fragment TableSchemaForMetadataEntry on TableSchemaMetadataEntry {
+    schema {
+      ...TableSchemaFragment
+    }
+  }
+
   ${TABLE_SCHEMA_FRAGMENT}
 `;
 

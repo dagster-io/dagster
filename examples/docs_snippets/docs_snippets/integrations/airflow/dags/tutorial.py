@@ -15,7 +15,6 @@ with DAG(
     catchup=False,
     tags=["example"],
 ) as dag:
-
     t1 = BashOperator(
         task_id="print_date",
         bash_command="date",

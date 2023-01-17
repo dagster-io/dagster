@@ -4,7 +4,6 @@ import logging
 
 import mock
 import pytest
-
 from dagster import get_dagster_logger, reconstructable, resource
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
@@ -164,7 +163,6 @@ def test_logging_capture_resource(managed_logs, expect_output, reset_logging):
 
 
 def define_multilevel_logging_pipeline(inside, python):
-
     if not inside:
         outside_logger = logging.getLogger("my_logger_outside") if python else get_dagster_logger()
 
@@ -401,7 +399,6 @@ def test_failure_logging(managed_loggers, reset_logging):
             return orig_handle_new_event(event)
 
         with mock.patch.object(instance, "handle_new_event", _fake_handle_new_event):
-
             result = execute_pipeline(
                 reconstructable(define_logging_pipeline),
                 instance=instance,

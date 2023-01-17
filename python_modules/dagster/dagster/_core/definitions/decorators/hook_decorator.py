@@ -51,7 +51,6 @@ class _Hook:
         self.decorated_fn = check.opt_callable_param(decorated_fn, "decorated_fn")
 
     def __call__(self, fn) -> HookDefinition:
-
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -114,7 +113,6 @@ def event_list_hook(
             hook.
 
     Examples:
-
         .. code-block:: python
 
             @event_list_hook(required_resource_keys={'slack'})
@@ -172,7 +170,6 @@ def success_hook(
             hook.
 
     Examples:
-
         .. code-block:: python
 
             @success_hook(required_resource_keys={'slack'})
@@ -188,7 +185,6 @@ def success_hook(
     """
 
     def wrapper(fn: SuccessOrFailureHookFn) -> HookDefinition:
-
         check.callable_param(fn, "fn")
 
         expected_positionals = ["context"]
@@ -246,7 +242,6 @@ def failure_hook(
             hook.
 
     Examples:
-
         .. code-block:: python
 
             @failure_hook(required_resource_keys={'slack'})

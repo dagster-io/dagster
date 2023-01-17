@@ -55,7 +55,7 @@ class RetryWrapper:
         unwrap_methods=(),
     ):
         """
-        Wrap the given object
+        Wrap the given object.
 
         :param wrapped: the object to wrap
         :param retry_if: a method that takes an exception, and returns whether
@@ -96,7 +96,8 @@ class RetryWrapper:
 
     def __getattr__(self, name):
         """The glue that makes functions retriable, and returns other
-        attributes from the wrapped object as-is."""
+        attributes from the wrapped object as-is.
+        """
         x = getattr(self.__wrapped, name)
 
         if name in self.__unwrap_methods:

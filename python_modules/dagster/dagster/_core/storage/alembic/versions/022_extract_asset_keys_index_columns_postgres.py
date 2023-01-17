@@ -1,4 +1,4 @@
-"""extract asset_keys index columns
+"""extract asset_keys index columns.
 
 Revision ID: 7b8304b4429d
 Revises: 1a2d72f6b24e

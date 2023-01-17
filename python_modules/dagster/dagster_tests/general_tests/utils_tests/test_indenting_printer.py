@@ -1,5 +1,4 @@
 import pytest
-
 from dagster._check import CheckError
 from dagster._utils.indenting_printer import IndentingPrinter, IndentingStringIoPrinter
 
@@ -38,7 +37,7 @@ class CollectingIndentingPrinter(IndentingPrinter):
             if str is not None:
                 self.lines.append(text)
 
-        super(CollectingIndentingPrinter, self).__init__(printer=_add_line, *args, **kwargs)
+        super(CollectingIndentingPrinter, self).__init__(*args, printer=_add_line, **kwargs)
 
     def result(self):
         return "\n".join(self.lines)
@@ -64,7 +63,7 @@ def test_indent_printer():
         printer.line("another")
         printer.line("yet")
 
-    assert printer.result() == ("test\n" "  test indent\n" "bop\n" "  another\n" "  yet")
+    assert printer.result() == "test\n  test indent\nbop\n  another\n  yet"
 
 
 def test_parameterized_indent():

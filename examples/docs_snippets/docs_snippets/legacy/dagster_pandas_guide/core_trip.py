@@ -25,6 +25,7 @@ TripDataFrame = create_dagster_pandas_dataframe_type(
 )
 # end_core_trip_marker_0
 
+
 # start_core_trip_marker_1
 @op(out=Out(TripDataFrame))
 def load_trip_dataframe() -> DataFrame:

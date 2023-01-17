@@ -1,9 +1,6 @@
 import os
 from collections import Counter
 
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-from dagster_celery_k8s import celery_k8s_job_executor
-
 from dagster import file_relative_path, repository
 from dagster._legacy import (
     InputDefinition,
@@ -13,6 +10,8 @@ from dagster._legacy import (
     pipeline,
     solid,
 )
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_celery_k8s import celery_k8s_job_executor
 
 
 @solid(input_defs=[InputDefinition("word", str)], config_schema={"factor": int})

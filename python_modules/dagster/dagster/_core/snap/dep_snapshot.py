@@ -89,7 +89,6 @@ class InputHandle(
 # for a given "level" in a pipeline. So either the pipelines
 # or within a composite solid
 class DependencyStructureIndex:
-
     _invocations_dict: Dict[str, "SolidInvocationSnap"]
     _output_to_upstream_index: Mapping[str, Mapping[str, Sequence[InputHandle]]]
 

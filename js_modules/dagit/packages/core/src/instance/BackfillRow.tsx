@@ -1,16 +1,15 @@
-import {useLazyQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import {Box, Button, Colors, Icon, MenuItem, Menu, Popover, Tag, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {graphql} from '../graphql';
-import {PartitionStatusesForBackfillFragment} from '../graphql/graphql';
+import {RunStatus, BulkActionStatus} from '../graphql/types';
 import {
   PartitionState,
   PartitionStatus,
@@ -21,14 +20,18 @@ import {AssetKeyTagCollection} from '../runs/AssetKeyTagCollection';
 import {inProgressStatuses} from '../runs/RunStatuses';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {BulkActionStatus, RunStatus} from '../types/globalTypes';
 import {LoadingOrNone, useDelayedRowQuery} from '../workspace/VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
 
-import {BackfillTableFragment} from './types/BackfillTableFragment';
+import {
+  PartitionStatusesForBackfillFragment,
+  SingleBackfillQuery,
+  SingleBackfillQueryVariables,
+} from './types/BackfillRow.types';
+import {BackfillTableFragment} from './types/BackfillTable.types';
 
 type BackfillPartitionStatusData = PartitionStatusesForBackfillFragment;
 
@@ -50,8 +53,10 @@ export const BackfillRow = ({
   onShowPartitionsRequested: (backfill: BackfillTableFragment) => void;
 }) => {
   const history = useHistory();
-  const [queryBackfill, queryResult] = useLazyQuery(SINGLE_BACKFILL_QUERY, {
-    fetchPolicy: 'cache-and-network',
+  const [queryBackfill, queryResult] = useLazyQuery<
+    SingleBackfillQuery,
+    SingleBackfillQueryVariables
+  >(SINGLE_BACKFILL_QUERY, {
     variables: {
       backfillId: backfill.backfillId,
     },
@@ -152,7 +157,7 @@ const BackfillMenu = ({
   onResumeBackfill: (backfill: BackfillTableFragment) => void;
   onShowStepStatus: (backfill: BackfillTableFragment) => void;
 }) => {
-  const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
+  const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissionsDEPRECATED();
   const runsUrl = runsPathWithFilters([
     {
       token: 'tag',
@@ -400,7 +405,7 @@ const TagButton = styled.button`
   }
 `;
 
-export const SINGLE_BACKFILL_QUERY = graphql(`
+export const SINGLE_BACKFILL_QUERY = gql`
   query SingleBackfillQuery($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
@@ -419,4 +424,4 @@ export const SINGLE_BACKFILL_QUERY = graphql(`
       runStatus
     }
   }
-`);
+`;

@@ -2,7 +2,6 @@
 
 
 import pytest
-
 from dagster._core.launcher import RunLauncher
 from dagster._core.test_utils import instance_for_test
 from dagster._serdes import ConfigurableClass

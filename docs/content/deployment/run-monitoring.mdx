@@ -5,13 +5,11 @@ description: Features for managing run failures in Dagster.
 
 # Run Monitoring
 
-Dagster can detect hanging runs and restart crashed [run workers](/deployment/overview#job-execution-flow). Run monitoring is currently only supported on instances using one of the following run launchers:
+Dagster can detect hanging runs and restart crashed [run workers](/deployment/overview#job-execution-flow). Using run monitoring requires:
 
-- [`K8sRunLauncher`](/\_apidocs/libraries/dagster-k8s#dagster_k8s.K8sRunLauncher)
-- [`CeleryK8sRunLauncher`](/\_apidocs/libraries/dagster-celery-k8s#dagster_celery_k8s.CeleryK8sRunLauncher)
-- [`DockerRunLauncher`](/\_apidocs/libraries/dagster-docker#dagster_docker.DockerRunLauncher)
-
-These features require running the Dagster Daemon, and enabling run monitoring in the Dagster Instance:
+- Using a run launcher other than the <PyObject object="DefaultRunLauncher" />
+- Running the Dagster Daemon
+- Enabling run monitoring in the Dagster Instance:
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_run_monitoring endbefore=end_run_monitoring
 # Opt in to the experimental Monitoring Daemon

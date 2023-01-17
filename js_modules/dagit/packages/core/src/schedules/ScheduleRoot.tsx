@@ -1,22 +1,30 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Tabs, Tab, Page, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {graphql} from '../graphql';
-import {ScheduleFragmentFragment} from '../graphql/graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable} from '../instigation/TickHistory';
-import {RunTable} from '../runs/RunTable';
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {ScheduleDetails} from './ScheduleDetails';
+import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
+import {
+  PreviousRunsForScheduleQuery,
+  PreviousRunsForScheduleQueryVariables,
+  ScheduleRootQuery,
+  ScheduleRootQueryVariables,
+} from './types/ScheduleRoot.types';
+import {ScheduleFragment} from './types/ScheduleUtils.types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -37,11 +45,10 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
   const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
 
-  const queryResult = useQuery(SCHEDULE_ROOT_QUERY, {
+  const queryResult = useQuery<ScheduleRootQuery, ScheduleRootQueryVariables>(SCHEDULE_ROOT_QUERY, {
     variables: {
       scheduleSelector,
     },
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
@@ -95,22 +102,24 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
 export const SchedulePreviousRuns: React.FC<{
   repoAddress: RepoAddress;
-  schedule: ScheduleFragmentFragment;
+  schedule: ScheduleFragment;
   tabs?: React.ReactElement;
   highlightedIds?: string[];
 }> = ({schedule, highlightedIds, tabs}) => {
-  const queryResult = useQuery(PREVIOUS_RUNS_FOR_SCHEDULE_QUERY, {
-    fetchPolicy: 'cache-and-network',
-    variables: {
-      limit: 20,
-      filter: {
-        pipelineName: schedule.pipelineName,
-        tags: [{key: DagsterTag.ScheduleName, value: schedule.name}],
+  const queryResult = useQuery<PreviousRunsForScheduleQuery, PreviousRunsForScheduleQueryVariables>(
+    PREVIOUS_RUNS_FOR_SCHEDULE_QUERY,
+    {
+      variables: {
+        limit: 20,
+        filter: {
+          pipelineName: schedule.pipelineName,
+          tags: [{key: DagsterTag.ScheduleName, value: schedule.name}],
+        },
       },
+      partialRefetch: true,
+      notifyOnNetworkStatusChange: true,
     },
-    partialRefetch: true,
-    notifyOnNetworkStatusChange: true,
-  });
+  );
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;
@@ -131,7 +140,7 @@ export const SchedulePreviousRuns: React.FC<{
   return <RunTable actionBarComponents={tabs} runs={runs} highlightedIds={highlightedIds} />;
 };
 
-const SCHEDULE_ROOT_QUERY = graphql(`
+const SCHEDULE_ROOT_QUERY = gql`
   query ScheduleRootQuery($scheduleSelector: ScheduleSelector!) {
     scheduleOrError(scheduleSelector: $scheduleSelector) {
       ... on Schedule {
@@ -144,7 +153,6 @@ const SCHEDULE_ROOT_QUERY = graphql(`
       ...PythonErrorFragment
     }
     instance {
-      ...InstanceHealthFragment
       daemonHealth {
         id
         daemonStatus(daemonType: "SCHEDULER") {
@@ -152,11 +160,16 @@ const SCHEDULE_ROOT_QUERY = graphql(`
           healthy
         }
       }
+      ...InstanceHealthFragment
     }
   }
-`);
 
-const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = graphql(`
+  ${SCHEDULE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+  ${INSTANCE_HEALTH_FRAGMENT}
+`;
+
+const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
   query PreviousRunsForScheduleQuery($filter: RunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
       __typename
@@ -173,4 +186,6 @@ const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${RUN_TABLE_RUN_FRAGMENT}
+`;

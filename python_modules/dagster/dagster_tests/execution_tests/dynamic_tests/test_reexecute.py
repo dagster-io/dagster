@@ -1,7 +1,6 @@
 from typing import List
 
 import pytest
-
 from dagster import (
     DynamicOutput,
     ReexecutionOptions,
@@ -106,7 +105,10 @@ def test_reexec_from_parent_dynamic_fails():
         # not currently supported, this needs to know all fan outs of previous step, should just run previous step
         with pytest.raises(
             DagsterInvariantViolationError,
-            match=r'Unresolved ExecutionStep "multiply_inputs\[\?\]" is resolved by "emit" which is not part of the current step selection',
+            match=(
+                r'Unresolved ExecutionStep "multiply_inputs\[\?\]" is resolved by "emit" which is'
+                r" not part of the current step selection"
+            ),
         ):
             execute_job(
                 reconstructable(dynamic_pipeline),

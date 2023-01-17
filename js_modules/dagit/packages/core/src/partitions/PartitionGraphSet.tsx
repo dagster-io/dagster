@@ -14,10 +14,10 @@ import {
   getStepExpectationRateForRun,
   getStepExpectationSuccessForRun,
   getStepMaterializationCountForRun,
-  StepSelector,
   PARTITION_GRAPH_FRAGMENT,
+  StepSelector,
 } from './PartitionGraphUtils';
-import {PartitionGraphSetRunFragment} from './types/PartitionGraphSetRunFragment';
+import {PartitionGraphSetRunFragment} from './types/PartitionGraphSet.types';
 
 const _reverseSortRunCompare = (
   a: PartitionGraphSetRunFragment,
@@ -140,6 +140,7 @@ export const PARTITION_GRAPH_SET_RUN_FRAGMENT = gql`
     }
     ...PartitionGraphFragment
   }
+
   ${PARTITION_GRAPH_FRAGMENT}
 `;
 

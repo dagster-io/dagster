@@ -5,7 +5,6 @@ import mock
 import pytest
 import responses
 from click.testing import CliRunner
-
 from dagster._cli.job import job_execute_command
 from dagster._core.telemetry import cleanup_telemetry_logger
 from dagster._core.telemetry_upload import get_dagster_telemetry_url, upload_logs

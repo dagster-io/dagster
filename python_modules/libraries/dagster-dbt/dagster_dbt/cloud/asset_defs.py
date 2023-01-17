@@ -14,8 +14,6 @@ from typing import (
     cast,
 )
 
-from dbt.main import parse_args as dbt_parse_args
-
 import dagster._check as check
 from dagster import (
     AssetKey,
@@ -37,6 +35,7 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.backcompat import experimental_arg_warning
+from dbt.main import parse_args as dbt_parse_args
 
 from ..asset_defs import (
     _get_asset_deps,
@@ -47,7 +46,7 @@ from ..asset_defs import (
 )
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
-from .resources import DbtCloudResourceV2
+from .resources import DbtCloudResource
 
 
 class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
@@ -62,7 +61,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     ):
         self._dbt_cloud_resource_def = dbt_cloud_resource_def
-        self._dbt_cloud: DbtCloudResourceV2 = dbt_cloud_resource_def(build_init_resource_context())
+        self._dbt_cloud: DbtCloudResource = dbt_cloud_resource_def(build_init_resource_context())
         self._job_id = job_id
         self._project_id: int
         self._has_generate_docs: bool
@@ -97,7 +96,6 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         """
         For a given dbt Cloud job, fetch the latest run's dependency structure of executed nodes.
         """
-
         # Fetch information about the job.
         job = self._dbt_cloud.get_job(job_id=self._job_id)
         self._project_id = job["project_id"]
@@ -239,7 +237,6 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         Given all of the nodes and dependencies for a dbt Cloud job, build the cacheable
         representation that generate the asset definition for the job.
         """
-
         (
             asset_deps,
             asset_ins,
@@ -364,7 +361,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             compute_kind="dbt",
         )
         def _assets(context: OpExecutionContext):
-            dbt_cloud = cast(DbtCloudResourceV2, context.resources.dbt_cloud)
+            dbt_cloud = cast(DbtCloudResource, context.resources.dbt_cloud)
 
             # Add the partition variable as a variable to the dbt Cloud job command.
             dbt_options: List[str] = []
@@ -483,29 +480,28 @@ def load_assets_from_dbt_cloud_job(
         CacheableAssetsDefinition: A definition for the loaded assets.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster import repository
+            from dagster_dbt import dbt_cloud_resource, load_assets_from_dbt_cloud_job
 
-        from dagster import repository
-        from dagster_dbt import dbt_cloud_resource, load_assets_from_dbt_cloud_job
+            DBT_CLOUD_JOB_ID = 1234
 
-        DBT_CLOUD_JOB_ID = 1234
+            dbt_cloud = dbt_cloud_resource.configured(
+                {
+                    "auth_token": {"env": "DBT_CLOUD_API_TOKEN"},
+                    "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
+                }
+            )
 
-        dbt_cloud = dbt_cloud_resource.configured(
-            {
-                "auth_token": {"env": "DBT_CLOUD_API_TOKEN"},
-                "account_id": {"env": "DBT_CLOUD_ACCOUNT_ID"},
-            }
-        )
-
-        dbt_cloud_assets = load_assets_from_dbt_cloud_job(
-            dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
-        )
+            dbt_cloud_assets = load_assets_from_dbt_cloud_job(
+                dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
+            )
 
 
-        @repository
-        def dbt_cloud_sandbox():
-            return [dbt_cloud_assets]
+            @repository
+            def dbt_cloud_sandbox():
+                return [dbt_cloud_assets]
     """
     if partitions_def:
         experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")

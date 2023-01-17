@@ -529,11 +529,13 @@ class ExternalPartitionSetOrigin(
     def get_id(self) -> str:
         return create_snapshot_id(self)
 
-    def get_selector_id(self) -> str:
-        return create_snapshot_id(
-            PartitionSetSelector(
-                self.external_repository_origin.repository_location_origin.location_name,
-                self.external_repository_origin.repository_name,
-                self.partition_set_name,
-            )
+    @property
+    def selector(self) -> PartitionSetSelector:
+        return PartitionSetSelector(
+            self.external_repository_origin.repository_location_origin.location_name,
+            self.external_repository_origin.repository_name,
+            self.partition_set_name,
         )
+
+    def get_selector_id(self) -> str:
+        return create_snapshot_id(self.selector)

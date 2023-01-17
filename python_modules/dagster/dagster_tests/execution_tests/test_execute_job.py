@@ -1,6 +1,5 @@
-import pytest
-
 import dagster._check as check
+import pytest
 from dagster import (
     AssetKey,
     DagsterExecutionStepNotFoundError,
@@ -355,7 +354,6 @@ def get_asset_job():
 
 
 def test_asset_selection():
-
     with instance_for_test() as instance:
         result = execute_job(
             reconstructable(get_asset_job), instance, asset_selection=[AssetKey("upstream_asset")]
