@@ -1,4 +1,4 @@
-from typing import List, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
+from typing import List, Mapping, NamedTuple, Optional, Sequence, Set, cast
 
 from dagster import (
     AssetKey,

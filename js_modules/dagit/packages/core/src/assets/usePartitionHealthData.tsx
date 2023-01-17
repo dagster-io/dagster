@@ -132,7 +132,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
 // Note: assetLastMaterializedAt is used as a "hint" - if the input value changes, it's
 // a sign that we should invalidate and reload previously loaded health stats. We don't
 // clear them immediately to avoid an empty state.
-//
+
 export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMaterializedAt = '') {
   const [result, setResult] = React.useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
   const client = useApolloClient();
@@ -193,12 +193,15 @@ const PARTITION_HEALTH_QUERY = gql`
             }
           }
           ... on DefaultPartitions {
-            partitions
+            materializedPartitions
+            unmaterializedPartitions
           }
           ... on MultiPartitions {
             ranges {
-              primaryDimStart
-              primaryDimEnd
+              primaryDimStartKey
+              primaryDimEndKey
+              primaryDimStartTime
+              primaryDimEndTime
               secondaryDim {
                 ... on TimePartitions {
                   ranges {
@@ -209,7 +212,8 @@ const PARTITION_HEALTH_QUERY = gql`
                   }
                 }
                 ... on DefaultPartitions {
-                  partitions
+                  materializedPartitions
+                  unmaterializedPartitions
                 }
               }
             }

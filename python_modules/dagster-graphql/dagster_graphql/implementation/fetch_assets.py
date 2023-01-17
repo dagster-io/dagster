@@ -9,32 +9,27 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    cast,
     Union,
+    cast,
 )
 
 import dagster._seven as seven
 from dagster import (
     AssetKey,
     DagsterEventType,
-    EventRecordsFilter,
-    _check as check,
     DagsterInstance,
     EventRecordsFilter,
     MultiPartitionKey,
     MultiPartitionsDefinition,
-    PartitionKeyRange,
-    PartitionsDefinition,
+    _check as check,
 )
-from dagster import _check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.multi_dimensional_partitions import (
-    PartitionDimensionDefinition,
     MultiPartitionsSubset,
 )
-from dagster._core.definitions.partition import PartitionsSubset, DefaultPartitionsSubset
+from dagster._core.definitions.partition import DefaultPartitionsSubset, PartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -63,9 +58,9 @@ if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
     from ..schema.pipelines.pipeline import (
-        GrapheneTimePartitions,
         GrapheneDefaultPartitions,
         GrapheneMultiPartitions,
+        GrapheneTimePartitions,
     )
     from ..schema.util import HasContext
 
@@ -371,13 +366,13 @@ def build_materialized_partitions(
     materialized_partitions_subset: Optional[PartitionsSubset],
 ) -> Union["GrapheneTimePartitions", "GrapheneDefaultPartitions", "GrapheneMultiPartitions",]:
     from ..schema.pipelines.pipeline import (
+        GrapheneDefaultPartitions,
         GrapheneTimePartitionRange,
         GrapheneTimePartitions,
-        GrapheneDefaultPartitions,
     )
 
     if materialized_partitions_subset is None:
-        return GrapheneDefaultPartitions(partitions=[])
+        return GrapheneDefaultPartitions(materializedPartitions=[], unmaterializedPartitions=[])
     elif isinstance(materialized_partitions_subset, TimeWindowPartitionsSubset):
         time_windows = materialized_partitions_subset.included_time_windows
         partition_ranges = materialized_partitions_subset.get_partition_key_ranges()
@@ -400,7 +395,8 @@ def build_materialized_partitions(
         return get_2d_run_length_encoded_materialized_partitions(materialized_partitions_subset)
     elif isinstance(materialized_partitions_subset, DefaultPartitionsSubset):
         return GrapheneDefaultPartitions(
-            partitions=materialized_partitions_subset.get_partition_keys(),
+            materializedPartitions=materialized_partitions_subset.get_partition_keys(),
+            unmaterializedPartitions=materialized_partitions_subset.get_partition_keys_not_in_subset(),
         )
     else:
         check.failed("Should not reach this point")
@@ -447,12 +443,28 @@ def get_2d_run_length_encoded_materialized_partitions(
         ):
             if len(dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]) > 0:
                 # Do not add to materialized_2d_ranges if the dim2 partition subset is empty
+                start_key = dim1_keys[range_start_idx]
+                end_key = dim1_keys[unevaluated_idx - 1]
+
+                primary_partitions_def = primary_dim.partitions_def
+                if isinstance(primary_partitions_def, TimeWindowPartitionsDefinition):
+                    time_windows = cast(
+                        TimeWindowPartitionsDefinition, primary_partitions_def
+                    ).time_windows_for_partition_keys(list(set([start_key, end_key])))
+                    start_time = time_windows[0].start.timestamp()
+                    end_time = time_windows[-1].end.timestamp()
+                else:
+                    start_time = None
+                    end_time = None
+
                 materialized_2d_ranges.append(
                     GrapheneMultiPartitionRange(
-                        primaryDimStart=dim1_keys[range_start_idx],
-                        primaryDimEnd=dim1_keys[unevaluated_idx - 1],
+                        primaryDimStartKey=start_key,
+                        primaryDimEndKey=end_key,
+                        primaryDimStartTime=start_time,
+                        primaryDimEndTime=end_time,
                         secondaryDim=build_materialized_partitions(
-                            dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]
+                            dim2_partition_subset_by_dim1[start_key]
                         ),
                     )
                 )

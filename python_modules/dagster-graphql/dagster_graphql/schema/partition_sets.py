@@ -1,6 +1,7 @@
+from typing import cast
+
 import dagster._check as check
 import graphene
-from typing import cast
 from dagster import MultiPartitionsDefinition
 from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.host_representation.external_data import (

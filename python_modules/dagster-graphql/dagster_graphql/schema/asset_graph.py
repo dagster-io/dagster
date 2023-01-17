@@ -17,9 +17,9 @@ from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalMultiPartitionsDefinitionData,
+    ExternalPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
-    ExternalPartitionsDefinitionData,
 )
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -59,12 +59,12 @@ from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolic
 from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
 from .pipelines.pipeline import (
     GrapheneDefaultPartitions,
-    GrapheneTimePartitions,
-    GrapheneMultiPartitions,
     GrapheneMaterializedPartitions,
+    GrapheneMultiPartitions,
+    GraphenePartitionStats,
     GraphenePipeline,
     GrapheneRun,
-    GraphenePartitionStats,
+    GrapheneTimePartitions,
 )
 from .util import HasContext, non_null_list
 

@@ -105,7 +105,8 @@ class GrapheneTimePartitions(graphene.ObjectType):
 
 
 class GrapheneDefaultPartitions(graphene.ObjectType):
-    partitions = non_null_list(graphene.String)
+    materializedPartitions = non_null_list(graphene.String)
+    unmaterializedPartitions = non_null_list(graphene.String)
 
     class Meta:
         name = "DefaultPartitions"
@@ -124,8 +125,10 @@ class GrapheneMultiPartitionRange(graphene.ObjectType):
     the first defined dimension.
     """
 
-    primaryDimStart = graphene.NonNull(graphene.String)
-    primaryDimEnd = graphene.NonNull(graphene.String)
+    primaryDimStartKey = graphene.NonNull(graphene.String)
+    primaryDimEndKey = graphene.NonNull(graphene.String)
+    primaryDimStartTime = graphene.Field(graphene.Float)
+    primaryDimEndTime = graphene.Field(graphene.Float)
     secondaryDim = graphene.NonNull(GraphenePartitionStatus1D)
 
     class Meta:

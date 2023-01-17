@@ -702,7 +702,8 @@ type FreshnessPolicy {
 union MaterializedPartitions = DefaultPartitions | MultiPartitions | TimePartitions
 
 type DefaultPartitions {
-  partitions: [String!]!
+  materializedPartitions: [String!]!
+  unmaterializedPartitions: [String!]!
 }
 
 type MultiPartitions {
@@ -710,8 +711,10 @@ type MultiPartitions {
 }
 
 type MaterializedPartitionRange2D {
-  primaryDimStart: String!
-  primaryDimEnd: String!
+  primaryDimStartKey: String!
+  primaryDimEndKey: String!
+  primaryDimStartTime: Float
+  primaryDimEndTime: Float
   secondaryDim: PartitionStatus1D!
 }
 
