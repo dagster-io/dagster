@@ -310,7 +310,7 @@ Once you've defined a set of assets, you can:
 To view and materialize assets in Dagit, you can point it at a module that contains asset definitions or lists of asset definitions as module-level attributes:
 
 ```shell
-dagit -m module_with_assets
+dagster dev -m module_with_assets
 ```
 
 If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jobs) that target the assets, you can place the assets and jobs together inside a <PyObject object="Definitions" /> object. For example:

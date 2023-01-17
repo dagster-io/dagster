@@ -11,6 +11,10 @@ Dagster CLI
    :prog: dagster debug
    :nested:
 
+.. click:: dagster._cli.dev:dev_command
+   :prog: dagster dev
+   :nested:
+
 .. click:: dagster._cli.instance:instance_cli
    :prog: dagster instance
    :nested:

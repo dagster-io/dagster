@@ -53,7 +53,7 @@ dagster-celery worker start -A dagster_celery.app
 Now you can execute this job with Celery. Again, from the same directory in which you saved the job file, run:
 
 ```shell
-dagit -f celery_job.py
+dagster dev -f celery_job.py
 ```
 
 Now you can execute the parallel job from Dagit.

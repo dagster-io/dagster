@@ -71,7 +71,7 @@ Here's a breakdown of the files and directories that are generated:
         It includes a <code>tool.dagster</code> section which references to the Python
         package with your Dagster definitions defined and discoverable at the top-level.
         This allows you to type just
-        <code>dagit</code> without any parameters in order to load your Dagster code.
+        <code>dagster dev</code> without any parameters in order to load your Dagster code.
         Visit <a href="/concepts/code-locations">Code Locations</a> to learn more.
         <br />
         <br /> <strong>Note:</strong> <code>pyproject.toml</code> was introduced
@@ -193,7 +193,7 @@ pip install -e ".[dev]"
 Then, start the Dagit web server:
 
 ```bash
-dagit
+dagster dev
 ```
 
 Open <http://localhost:3000> with your browser to see the project.
@@ -207,7 +207,6 @@ Now, you can start writing assets in `my_dagster_project/assets.py`.
 - [Adding new Python dependencies](#adding-new-python-dependencies)
 - [Environment variables and secrets](#environment-variables-and-secrets)
 - [Unit testing](#unit-testing)
-- [Schedules and sensors](#schedules-and-sensors)
 
 ### Adding new Python dependencies
 
@@ -226,23 +225,6 @@ Tests can be added in the `my_dagster_project_tests` directory and you can run t
 ```bash
 pytest my_dagster_project_tests
 ```
-
-### Schedules and sensors
-
-If you want to enable Dagster [schedules](/concepts/partitions-schedules-sensors/schedules) or [sensors](/concepts/partitions-schedules-sensors/sensors), you will need to start a [Dagster Daemon](/deployment/dagster-daemon).
-
-Start a daemon process in the same folder as your `pyproject.toml` file, but in a different shell or terminal:
-
-```bash
-dagster-daemon run
-```
-
-<Note>
-
-The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. <strong>Note:</strong> using directories within `/tmp/` may cause issues. See <Link href="/deployment/dagster-instance#default-local-behavior">Dagster Instance default local behavior</Link> for more details.
-
-</Note>
-Once your daemon process is running, you can start turning on schedules and sensors for your jobs.
 
 ---
 
