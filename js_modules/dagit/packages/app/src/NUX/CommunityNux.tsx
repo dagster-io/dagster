@@ -202,6 +202,7 @@ const RecaptchaIFrame: React.FC<{
                 height: '78px',
               }),
         }}
+        scrolling="no"
         onLoad={() => {
           setIframeLoaded(true);
         }}
@@ -210,4 +211,4 @@ const RecaptchaIFrame: React.FC<{
   );
 };
 
-const IFRAME_SRC = 'https://dagster.io/dagit_iframes/community_nux';
+const IFRAME_SRC = '//dagster.io/dagit_iframes/community_nux';
