@@ -24,7 +24,7 @@ export const CommunityNux = () => {
   const {data, loading} = useQuery(GET_SHOULD_SHOW_NUX_QUERY);
   const [dismiss] = useMutation(SET_NUX_SEEN_MUTATION);
 
-  if (!window.location.origin.startsWith('http://localhost')) {
+  if (!isLocalhost()) {
     return null;
   }
   if (didDismissCommunityNux || loading || (data && !data.shouldShowNux)) {
@@ -232,3 +232,8 @@ const GET_SHOULD_SHOW_NUX_QUERY = gql`
     shouldShowNux
   }
 `;
+
+function isLocalhost() {
+  const origin = window.location.origin;
+  return origin.startsWith('http://127.0.0.1') || origin.startsWith('http://localhost');
+}
