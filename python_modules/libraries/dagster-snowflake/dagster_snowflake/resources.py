@@ -63,19 +63,6 @@ class SnowflakeConnection:
             ),
         )
 
-        # if private key auth is used, ensure the password is provided
-        if (
-            config.get("private_key", None) is not None
-            or config.get("private_key_path", None) is not None
-        ):
-            check.invariant(
-                config.get("private_key_password", None) is not None,
-                (
-                    "Incorrect config: Must provide private_key_password for private key"
-                    " authentication with Snowflake resource."
-                ),
-            )
-
         if self.connector == "sqlalchemy":
             self.conn_args: Dict[str, Any] = {
                 k: config.get(k)
