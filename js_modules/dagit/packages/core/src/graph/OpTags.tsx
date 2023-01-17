@@ -111,7 +111,7 @@ const KNOWN_TAGS = {
     icon: sql,
     content: 'SQL',
   },
-  Expand: {color: '#D7A540', content: 'Expand'},
+  expand: {color: '#D7A540', content: 'Expand'},
 };
 
 function generateColorForLabel(label = '') {
@@ -121,6 +121,11 @@ function generateColorForLabel(label = '') {
       .map((c) => c.charCodeAt(0))
       .reduce((n, a) => n + a) % 360
   }, 75%, 45%)`;
+}
+
+// google-sheets to googlesheets, Duckdb to duckdb
+function coerceToStandardLabel(label: string) {
+  return label.replace(/[ _-]/g, '').toLowerCase();
 }
 
 export const AssetComputeKindTag: React.FC<{
@@ -151,7 +156,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
   return (
     <OpTagsContainer style={style}>
       {tags.map((tag) => {
-        const known = KNOWN_TAGS[tag.label];
+        const known = KNOWN_TAGS[coerceToStandardLabel(tag.label)];
         const text = known?.content || tag.label;
         const color = known?.color || generateColorForLabel(tag.label);
 
