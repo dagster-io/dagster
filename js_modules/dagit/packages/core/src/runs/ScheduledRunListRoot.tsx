@@ -18,7 +18,7 @@ import {SchedulerInfoQuery} from './types/ScheduledRunListRoot.types';
 
 export const ScheduledRunListRoot = () => {
   useTrackPageView();
-  useDocumentTitle('Scheduled runs');
+  useDocumentTitle('Runs | Scheduled');
 
   const queryResult = useQuery<SchedulerInfoQuery>(SCHEDULER_INFO_QUERY, {
     partialRefetch: true,
