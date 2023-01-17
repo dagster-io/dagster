@@ -1,29 +1,22 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
 import {
-  Alert,
   Box,
-  ButtonLink,
+  Button,
   Checkbox,
   Colors,
   DialogBody,
   DialogFooter,
-  Group,
   Icon,
   NonIdealState,
   Spinner,
+  Subheading,
   Tooltip,
-  Mono,
-  Button,
 } from '@dagster-io/ui';
-import {History} from 'history';
 import * as React from 'react';
 import {useHistory} from 'react-router';
 
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {SharedToaster} from '../app/DomUtils';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {filterByQuery} from '../app/GraphQueryImpl';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
@@ -32,13 +25,21 @@ import {
   LaunchPartitionBackfillMutationVariables,
 } from '../instance/types/BackfillUtils.types';
 import {LaunchButton} from '../launchpad/LaunchButton';
-import {TagEditor, TagContainer} from '../launchpad/TagEditor';
+import {TagContainer, TagEditor} from '../launchpad/TagEditor';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
+import {
+  DaemonNotRunningAlert,
+  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
+  showBackfillErrorToast,
+  showBackfillSuccessToast,
+  UsingDefaultLauncherAlert,
+  USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT,
+} from './BackfillMessaging';
 import {DimensionRangeWizard} from './DimensionRangeWizard';
 import {PartitionStateCheckboxes} from './PartitionStateCheckboxes';
 import {PartitionState} from './PartitionStatus';
@@ -46,8 +47,6 @@ import {
   BackfillSelectorQuery,
   BackfillSelectorQueryVariables,
 } from './types/BackfillSelector.types';
-
-const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 
 interface BackfillOptions {
   reexecute: boolean;
@@ -154,8 +153,6 @@ export const BackfillPartitionSelector: React.FC<{
     name: box.node.name,
   }));
 
-  const usingDefaultRunLauncher = instance.runLauncher?.name === DEFAULT_RUN_LAUNCHER_NAME;
-
   const isFailed = (name: string) => partitionData[name] === PartitionState.FAILURE;
   const failedPartitions = partitionNames.filter(isFailed);
 
@@ -172,7 +169,7 @@ export const BackfillPartitionSelector: React.FC<{
   return (
     <>
       <DialogBody>
-        <Box flex={{direction: 'column', gap: 32}}>
+        <Box flex={{direction: 'column', gap: 24}}>
           <Section title="Partitions">
             <Box>
               Select partitions to materialize. Click and drag to select a range on the timeline.
@@ -288,11 +285,11 @@ export const BackfillPartitionSelector: React.FC<{
             )}
           </Section>
 
-          {!instance.daemonHealth.daemonStatus.healthy ? <DaemonNotRunningAlert /> : null}
+          <Box flex={{direction: 'column', gap: 16}}>
+            <DaemonNotRunningAlert instance={instance} />
 
-          {usingDefaultRunLauncher && !instance.runQueuingSupported ? (
-            <UsingDefaultLauncherAlert />
-          ) : null}
+            <UsingDefaultLauncherAlert instance={instance} />
+          </Box>
         </Box>
       </DialogBody>
       <DialogFooter>
@@ -451,140 +448,25 @@ const BACKFILL_SELECTOR_QUERY = gql`
       }
     }
     instance {
-      runLauncher {
-        name
-      }
-      daemonHealth {
-        id
-        daemonStatus(daemonType: "BACKFILL") {
-          id
-          healthy
-        }
-      }
-      runQueuingSupported
+      ...UsingDefaultLauncherAlertInstanceFragment
+      ...DaemonNotRunningAlertInstanceFragment
     }
   }
 
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT}
+  ${USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT}
 `;
 
-function messageForLaunchBackfillError(data: LaunchPartitionBackfillMutation | null | undefined) {
-  const result = data?.launchPartitionBackfill;
-
-  let errors = <></>;
-  if (result?.__typename === 'PythonError' || result?.__typename === 'PartitionSetNotFoundError') {
-    errors = <PythonErrorInfo error={result} />;
-  } else if (result?.__typename === 'InvalidStepError') {
-    errors = <div>{`Invalid step: ${result.invalidStepKey}`}</div>;
-  } else if (result?.__typename === 'InvalidOutputError') {
-    errors = <div>{`Invalid output: ${result.invalidOutputName} for ${result.stepKey}`}</div>;
-  } else if (result && 'errors' in result) {
-    errors = (
-      <>
-        {result['errors'].map((error, idx) => (
-          <PythonErrorInfo error={error} key={idx} />
-        ))}
-      </>
-    );
-  }
-
-  return (
-    <Group direction="column" spacing={4}>
-      <div>An unexpected error occurred. This backfill was not launched.</div>
-      {errors ? (
-        <ButtonLink
-          color={Colors.White}
-          underline="always"
-          onClick={() => {
-            showCustomAlert({
-              body: errors,
-            });
-          }}
-        >
-          View error
-        </ButtonLink>
-      ) : null}
-    </Group>
-  );
-}
-
-export function showBackfillErrorToast(data: LaunchPartitionBackfillMutation | null | undefined) {
-  SharedToaster.show({
-    message: messageForLaunchBackfillError(data),
-    icon: 'error',
-    intent: 'danger',
-  });
-}
-
-export function showBackfillSuccessToast(history: History<unknown>, backfillId: string) {
-  SharedToaster.show({
-    intent: 'success',
-    message: (
-      <div>
-        Created backfill <Mono>{backfillId}</Mono>
-      </div>
-    ),
-    action: {
-      text: 'View',
-      onClick: () => history.push('/overview/backfills'),
-    },
-  });
-}
-
-const DaemonNotRunningAlert: React.FC = () => (
-  <Alert
-    intent="warning"
-    title="The backfill daemon is not running."
-    description={
-      <div>
-        See the{' '}
-        <a
-          href="https://docs.dagster.io/deployment/dagster-daemon"
-          target="_blank"
-          rel="noreferrer"
-        >
-          dagster-daemon documentation
-        </a>{' '}
-        for more information on how to deploy the dagster-daemon process.
-      </div>
-    }
-  />
-);
-
-const UsingDefaultLauncherAlert: React.FC = () => (
-  <Alert
-    intent="warning"
-    title={
-      <div>
-        Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for launching
-        backfills without a queued run coordinator is not advised.
-      </div>
-    }
-    description={
-      <div>
-        Check your instance configuration in <code>dagster.yaml</code> to either configure the{' '}
-        <a
-          href="https://docs.dagster.io/deployment/run-coordinator"
-          target="_blank"
-          rel="noreferrer"
-        >
-          queued run coordinator
-        </a>{' '}
-        or to configure a run launcher more appropriate for launching a large number of jobs.
-      </div>
-    }
-  />
-);
-
-const Section = ({
+export const Section = ({
   title,
   children,
 }: {
   title: string | React.ReactNode;
   children: React.ReactNode;
 }) => (
-  <Box flex={{direction: 'column', gap: 8}}>
-    <strong style={{display: 'block'}}>{title}</strong>
+  <Box flex={{direction: 'column', gap: 4}}>
+    <Subheading>{title}</Subheading>
     <Box
       flex={{direction: 'column', gap: 8}}
       padding={{top: 16}}
