@@ -128,11 +128,11 @@ class SnowflakeConnection:
             with open(config.get("private_key_path"), "rb") as key:
                 private_key = key.read()
 
-        p_key = serialization.load_pem_private_key(
-            private_key,
-            password=config.get("private_key_password", None).encode(),
-            backend=default_backend(),
-        )
+        kwargs = {}
+        if config.get("private_key_password", None) is not None:
+            kwargs["password"] = config["private_key_password"].encode()
+
+        p_key = serialization.load_pem_private_key(private_key, backend=default_backend(), **kwargs)
 
         pkb = p_key.private_bytes(
             encoding=serialization.Encoding.DER,
