@@ -19,7 +19,7 @@ def set_nux_seen():
             # the contents of the file dont matter, we just check that it exists, but lets write seen: True here anyways.
             yaml.dump({"seen": 1}, nux_seen_file, default_flow_style=False)
     except Exception:
-        return "<<unable_to_write_instance_id>>"
+        return "<<unable_to_write_nux_seen>>"
 
 
 # Gets whether we've shown the Nux to any user on this instance
