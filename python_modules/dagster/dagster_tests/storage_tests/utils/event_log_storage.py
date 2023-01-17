@@ -1925,7 +1925,7 @@ class TestEventLogStorage:
                     storage.store_event(event)
 
                 cursor_run1 = storage.get_event_records(
-                    EventRecordsFilter(event_type=DagsterEventType.RUN_SUCCESS),
+                    EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION),
                     limit=1,
                     ascending=False,
                 )[0].storage_id
