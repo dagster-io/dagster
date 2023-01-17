@@ -4,6 +4,7 @@ from enum import Enum as PythonEnum
 from functools import partial
 from typing import (
     AbstractSet as TypingAbstractSet,
+    AnyStr,
     Iterator as TypingIterator,
     Mapping,
     Optional as TypingOptional,
@@ -40,7 +41,7 @@ if t.TYPE_CHECKING:
     from dagster._core.definitions.node_definition import NodeDefinition
     from dagster._core.execution.context.system import DagsterTypeLoaderContext, TypeCheckContext
 
-TypeCheckFn = t.Callable[["TypeCheckContext", object], t.Union[TypeCheck, bool]]
+TypeCheckFn = t.Callable[["TypeCheckContext", AnyStr], t.Union[TypeCheck, bool]]
 
 
 @whitelist_for_serdes

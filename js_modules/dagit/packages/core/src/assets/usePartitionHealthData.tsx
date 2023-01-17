@@ -37,9 +37,15 @@ export interface PartitionHealthDimension {
   partitionKeys: string[];
 }
 
-export type PartitionHealthDimensionRange = {
+export type PartitionDimensionSelectionRange = [
+  {idx: number; key: string},
+  {idx: number; key: string},
+];
+
+export type PartitionDimensionSelection = {
   dimension: PartitionHealthDimension;
-  selected: string[];
+  selectedKeys: string[];
+  selectedRanges: PartitionDimensionSelectionRange[];
 };
 
 export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: AssetKey) {

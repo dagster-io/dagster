@@ -42,7 +42,7 @@ class BaseDaemonWorkspace(IWorkspace):
     def get_workspace_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:
         if self._location_entries is None:
             self._location_entries = self._load_workspace()
-        return self._location_entries.copy()
+        return dict(self._location_entries)
 
     def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
         if self._location_entries is None:

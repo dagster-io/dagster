@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional, Union, overload
 import dagster._check as check
 from dagster._config import UserConfigSchema
 
-from ..config import ConfigMapping
+from ..config import ConfigMapping, ConfigMappingFn
 
 
 class _ConfigMapping:
@@ -29,7 +29,7 @@ class _ConfigMapping:
 
 @overload
 def config_mapping(
-    config_fn: Callable[..., Any],
+    config_fn: ConfigMappingFn,
 ) -> ConfigMapping:
     ...
 
@@ -39,7 +39,7 @@ def config_mapping(
     *,
     config_schema: UserConfigSchema = ...,
     receive_processed_config_values: Optional[bool] = ...,
-) -> Union[_ConfigMapping, ConfigMapping]:
+) -> Callable[[ConfigMappingFn], ConfigMapping]:
     ...
 
 
@@ -48,7 +48,7 @@ def config_mapping(
     *,
     config_schema: Optional[UserConfigSchema] = None,
     receive_processed_config_values: Optional[bool] = None,
-) -> Union[ConfigMapping, _ConfigMapping]:
+) -> Union[Callable[[ConfigMappingFn], ConfigMapping], ConfigMapping]:
     """Create a config mapping with the specified parameters from the decorated function.
 
     The config schema will be inferred from the type signature of the decorated function if not explicitly provided.

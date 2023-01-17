@@ -3,7 +3,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional, Sequence
 
 from dagster import (
     DagsterEvent,
@@ -28,6 +28,7 @@ from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._daemon.daemon import IntervalDaemon, TDaemonGenerator
+from dagster._utils import len_iter
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
@@ -194,14 +195,13 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         in_progress_runs = self._get_in_progress_runs(instance)
 
         max_concurrent_runs_enabled = max_concurrent_runs != -1  # setting to -1 disables the limit
+        max_runs_to_launch = max_concurrent_runs - len_iter(in_progress_runs)
         if max_concurrent_runs_enabled:
-            max_runs_to_launch = max_concurrent_runs - len(in_progress_runs)
-
             # Possibly under 0 if runs were launched without queuing
             if max_runs_to_launch <= 0:
                 self._logger.info(
                     "{} runs are currently in progress. Maximum is {}, won't launch more.".format(
-                        len(in_progress_runs), max_concurrent_runs
+                        len_iter(in_progress_runs), max_concurrent_runs
                     )
                 )
                 return []
@@ -264,10 +264,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         runs = instance.get_runs(filters=queued_runs_filter)[::-1]
         return runs
 
-    def _get_in_progress_runs(self, instance):
+    def _get_in_progress_runs(self, instance: DagsterInstance) -> Iterable[DagsterRun]:
         return instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
-    def _priority_sort(self, runs):
+    def _priority_sort(self, runs: Iterable[DagsterRun]) -> Sequence[DagsterRun]:
         def get_priority(run):
             priority_tag_value = run.tags.get(PRIORITY_TAG, "0")
             try:

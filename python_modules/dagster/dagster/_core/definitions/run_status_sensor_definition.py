@@ -1,9 +1,20 @@
 import logging
 import warnings
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterator,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+    overload,
+)
 
 import pendulum
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -51,6 +62,15 @@ if TYPE_CHECKING:
         JobSelector,
         RepositorySelector,
     )
+
+RunStatusSensorEvaluationFunction: TypeAlias = Union[
+    Callable[[], RawSensorEvaluationFunctionReturn],
+    Callable[["RunStatusSensorContext"], RawSensorEvaluationFunctionReturn],
+]
+RunFailureSensorEvaluationFn: TypeAlias = Union[
+    Callable[[], RawSensorEvaluationFunctionReturn],
+    Callable[["RunFailureSensorContext"], RawSensorEvaluationFunctionReturn],
+]
 
 
 @whitelist_for_serdes
@@ -216,8 +236,16 @@ def build_run_status_sensor_context(
     )
 
 
+@overload
 def run_failure_sensor(
-    name: Optional[Union[Callable[..., Any], str]] = None,
+    name: RunFailureSensorEvaluationFn,
+) -> SensorDefinition:
+    ...
+
+
+@overload
+def run_failure_sensor(
+    name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
@@ -248,10 +276,43 @@ def run_failure_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
-) -> Callable[
-    [Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
-    SensorDefinition,
-]:
+) -> Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]:
+    ...
+
+
+def run_failure_sensor(
+    name: Optional[Union[RunFailureSensorEvaluationFn, str]] = None,
+    minimum_interval_seconds: Optional[int] = None,
+    description: Optional[str] = None,
+    monitored_jobs: Optional[
+        Sequence[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+                "CodeLocationSelector",
+            ]
+        ]
+    ] = None,
+    job_selection: Optional[
+        Sequence[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+                "CodeLocationSelector",
+            ]
+        ]
+    ] = None,
+    monitor_all_repositories: bool = False,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+    request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+) -> Union[SensorDefinition, Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]]:
     """
     Creates a sensor that reacts to job failure events, where the decorated function will be
     run when a run fails.
@@ -284,7 +345,7 @@ def run_failure_sensor(
     """
 
     def inner(
-        fn: Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]
+        fn: RunFailureSensorEvaluationFn,
     ) -> SensorDefinition:
         check.callable_param(fn, "fn")
         if name is None or callable(name):
@@ -308,7 +369,7 @@ def run_failure_sensor(
             request_jobs=request_jobs,
         )
         def _run_failure_sensor(context: RunStatusSensorContext):
-            return fn(context.for_run_failure())
+            return fn(context.for_run_failure())  # type: ignore  # fmt: skip
 
         return _run_failure_sensor
 
@@ -351,7 +412,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         self,
         name: str,
         run_status: DagsterRunStatus,
-        run_status_sensor_fn: Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn],
+        run_status_sensor_fn: RunStatusSensorEvaluationFunction,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         monitored_jobs: Optional[
@@ -426,7 +487,9 @@ class RunStatusSensorDefinition(SensorDefinition):
             else []
         )
 
-        def _wrapped_fn(context: SensorEvaluationContext):
+        def _wrapped_fn(
+            context: SensorEvaluationContext,
+        ) -> Iterator[Union[RunRequest, SkipReason, PipelineRunReaction]]:
             # initiate the cursor to (most recent event id, current timestamp) when:
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
@@ -558,7 +621,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                         lambda: f'Error occurred during the execution sensor "{name}".',
                     ):
                         # one user code invocation maps to one failure event
-                        sensor_return = run_status_sensor_fn(
+                        sensor_return = run_status_sensor_fn(  # type: ignore  # fmt: skip
                             RunStatusSensorContext(
                                 sensor_name=name,
                                 dagster_run=pipeline_run,
@@ -690,10 +753,7 @@ def run_status_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
-) -> Callable[
-    [Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn]],
-    RunStatusSensorDefinition,
-]:
+) -> Callable[[RunStatusSensorEvaluationFunction], RunStatusSensorDefinition,]:
     """
     Creates a sensor that reacts to a given status of pipeline execution, where the decorated
     function will be run when a pipeline is at the given status.
@@ -727,7 +787,7 @@ def run_status_sensor(
     """
 
     def inner(
-        fn: Callable[["RunStatusSensorContext"], RawSensorEvaluationFunctionReturn]
+        fn: RunStatusSensorEvaluationFunction,
     ) -> RunStatusSensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__

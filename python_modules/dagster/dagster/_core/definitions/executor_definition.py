@@ -2,7 +2,7 @@ from enum import Enum as PyEnum
 from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Sequence, Union, overload
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -146,9 +146,9 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         self,
         config_or_config_fn: Any,
         name: Optional[str] = None,
-        config_schema: Optional[Mapping[str, Any]] = None,
+        config_schema: Optional[UserConfigSchema] = None,
         description: Optional[str] = None,
-    ):
+    ) -> Self:  # type: ignore  # fmt: skip
         """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.

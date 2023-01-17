@@ -19,36 +19,31 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 
 
-def resolve_asset_selection(
+def resolve_stale_assets(
     context: WorkspaceProcessContext,
     run_request: RunRequest,
     instigator: Union[ExternalSensor, ExternalSchedule],
-) -> Optional[Sequence[AssetKey]]:
-    if run_request.stale_assets_only:
-        request_context = context.create_request_context()
-        repositories = _get_repositories(request_context)
-        key_to_node_map = _get_asset_nodes_by_asset_key(repositories)
-        asset_selection = (
-            run_request.asset_selection
-            if run_request.asset_selection is not None
-            else _get_assets_for_job(
-                check.not_none(instigator.pipeline_name), key_to_node_map.values()
-            )
+) -> Sequence[AssetKey]:
+    request_context = context.create_request_context()
+    repositories = _get_repositories(request_context)
+    key_to_node_map = _get_asset_nodes_by_asset_key(repositories)
+    asset_selection = (
+        run_request.asset_selection
+        if run_request.asset_selection is not None
+        else _get_assets_for_job(check.not_none(instigator.pipeline_name), key_to_node_map.values())
+    )
+    resolver = CachingProjectedLogicalVersionResolver(
+        context.instance, repositories, key_to_node_map
+    )
+    stale_keys: List[AssetKey] = []
+    for asset_key in asset_selection:
+        projected_logical_version = resolver.get(asset_key)
+        current_logical_version = _get_current_logical_version(
+            key_to_node_map[asset_key], context.instance
         )
-        resolver = CachingProjectedLogicalVersionResolver(
-            context.instance, repositories, key_to_node_map
-        )
-        stale_keys: List[AssetKey] = []
-        for asset_key in asset_selection:
-            projected_logical_version = resolver.get(asset_key)
-            current_logical_version = _get_current_logical_version(
-                key_to_node_map[asset_key], context.instance
-            )
-            if projected_logical_version != current_logical_version:
-                stale_keys.append(asset_key)
-        return stale_keys
-    else:
-        return run_request.asset_selection
+        if projected_logical_version != current_logical_version:
+            stale_keys.append(asset_key)
+    return stale_keys
 
 
 def _get_repositories(context: WorkspaceRequestContext) -> Sequence[ExternalRepository]:
