@@ -53,8 +53,6 @@ const CommunityNuxImpl: React.FC<{dismiss: () => void}> = ({dismiss}) => {
     setIframeData({email, newsletter});
   };
 
-  console.log({iframeData});
-
   return (
     <Dialog isOpen={shouldShowNux} style={{width: '680px'}}>
       {iframeData ? (
@@ -211,4 +209,4 @@ const RecaptchaIFrame: React.FC<{
   );
 };
 
-const IFRAME_SRC = '//localhost:4000/dagit_iframes/community_nux';
+const IFRAME_SRC = 'https://dagster.io/dagit_iframes/community_nux';
