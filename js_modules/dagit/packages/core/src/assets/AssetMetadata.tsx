@@ -1,24 +1,24 @@
+import {gql} from '@apollo/client';
 import {Box, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {graphql} from '../graphql';
-import {
-  AssetNodeOpMetadataFragmentFragment,
-  DagsterTypeFragmentFragment,
-  MetadataEntryFragmentFragment,
-} from '../graphql/graphql';
-import {MetadataEntry} from '../metadata/MetadataEntry';
+import {DAGSTER_TYPE_FRAGMENT} from '../dagstertype/DagsterType';
+import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
+import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
+
+import {AssetNodeOpMetadataFragment} from './types/AssetMetadata.types';
 
 export const metadataForAssetNode = (
-  assetNode: AssetNodeOpMetadataFragmentFragment,
-): {assetType?: DagsterTypeFragmentFragment; assetMetadata: MetadataEntryFragmentFragment[]} => {
+  assetNode: AssetNodeOpMetadataFragment,
+): {assetType?: DagsterTypeFragment; assetMetadata: MetadataEntryFragment[]} => {
   const assetType = assetNode.type ? assetNode.type : undefined;
   const assetMetadata = assetNode.metadataEntries || [];
   return {assetType, assetMetadata};
 };
 
 export const AssetMetadataTable: React.FC<{
-  assetMetadata: MetadataEntryFragmentFragment[];
+  assetMetadata: MetadataEntryFragment[];
   repoLocation: string;
 }> = ({assetMetadata, repoLocation}) => {
   const rows = assetMetadata.map((entry) => {
@@ -34,7 +34,7 @@ export const AssetMetadataTable: React.FC<{
   );
 };
 
-export const ASSET_NODE_OP_METADATA_FRAGMENT = graphql(`
+export const ASSET_NODE_OP_METADATA_FRAGMENT = gql`
   fragment AssetNodeOpMetadataFragment on AssetNode {
     id
     metadataEntries {
@@ -44,4 +44,7 @@ export const ASSET_NODE_OP_METADATA_FRAGMENT = graphql(`
       ...DagsterTypeFragment
     }
   }
-`);
+
+  ${METADATA_ENTRY_FRAGMENT}
+  ${DAGSTER_TYPE_FRAGMENT}
+`;

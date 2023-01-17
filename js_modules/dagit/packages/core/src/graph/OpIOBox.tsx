@@ -3,15 +3,15 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
-import {
-  OpNodeDefinitionFragmentFragment,
-  OpNodeInputDefinitionFragment,
-  OpNodeInvocationFragmentFragment,
-  OpNodeOutputDefinitionFragment,
-} from '../graphql/graphql';
 
 import {Edge, isHighlighted, position} from './common';
 import {OpLayoutIO} from './layout';
+import {
+  OpNodeInputDefinitionFragment,
+  OpNodeOutputDefinitionFragment,
+  OpNodeDefinitionFragment,
+  OpNodeInvocationFragment,
+} from './types/OpNode.types';
 
 export const PARENT_IN = 'PARENT_IN';
 export const PARENT_OUT = 'PARENT_OUT';
@@ -128,7 +128,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
 `;
 
 export function metadataForCompositeParentIO(
-  parentDefinition: OpNodeDefinitionFragmentFragment,
+  parentDefinition: OpNodeDefinitionFragment,
   item: OpNodeInputDefinitionFragment | OpNodeOutputDefinitionFragment,
 ): OpIORenderMetadata {
   const edges: Edge[] = [];
@@ -174,7 +174,7 @@ export function metadataForCompositeParentIO(
 
 export function metadataForIO(
   item: OpNodeInputDefinitionFragment | OpNodeOutputDefinitionFragment,
-  invocation?: OpNodeInvocationFragmentFragment,
+  invocation?: OpNodeInvocationFragment,
 ): OpIORenderMetadata {
   const edges: Edge[] = [];
 

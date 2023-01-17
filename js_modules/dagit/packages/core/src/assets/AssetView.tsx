@@ -1,4 +1,4 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -30,16 +30,15 @@ import {
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {StaleTag} from '../assets/StaleTag';
-import {graphql} from '../graphql';
-import {AssetViewDefinitionNodeFragment} from '../graphql/graphql';
+import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetEvents} from './AssetEvents';
-import {AssetNodeDefinition} from './AssetNodeDefinition';
-import {AssetNodeInstigatorTag} from './AssetNodeInstigatorTag';
+import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
+import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
@@ -48,6 +47,11 @@ import {AssetPlots} from './AssetPlots';
 import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
+import {
+  AssetViewDefinitionNodeFragment,
+  AssetViewDefinitionQuery,
+  AssetViewDefinitionQueryVariables,
+} from './types/AssetView.types';
 
 interface Props {
   assetKey: AssetKey;
@@ -321,10 +325,13 @@ function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) 
 }
 
 const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
-  const result = useQuery(ASSET_VIEW_DEFINITION_QUERY, {
-    variables: {assetKey: {path: assetKey.path}},
-    notifyOnNetworkStatusChange: true,
-  });
+  const result = useQuery<AssetViewDefinitionQuery, AssetViewDefinitionQueryVariables>(
+    ASSET_VIEW_DEFINITION_QUERY,
+    {
+      variables: {assetKey: {path: assetKey.path}},
+      notifyOnNetworkStatusChange: true,
+    },
+  );
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   return {
@@ -334,7 +341,7 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
   };
 };
 
-const ASSET_VIEW_DEFINITION_QUERY = graphql(`
+const ASSET_VIEW_DEFINITION_QUERY = gql`
   query AssetViewDefinitionQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
@@ -375,7 +382,10 @@ const ASSET_VIEW_DEFINITION_QUERY = graphql(`
     ...AssetNodeInstigatorsFragment
     ...AssetNodeDefinitionFragment
   }
-`);
+
+  ${ASSET_NODE_INSTIGATORS_FRAGMENT}
+  ${ASSET_NODE_DEFINITION_FRAGMENT}
+`;
 
 const HistoricalViewAlert: React.FC<{
   asOf: string | undefined;
@@ -441,6 +451,9 @@ const AssetViewPageHeaderTags: React.FC<{
       )}
       {liveData?.freshnessPolicy && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
       <StaleTag liveData={liveData} onClick={onShowUpstream} />
+      {definition && (
+        <AssetComputeKindTag style={{position: 'relative'}} definition={definition} reduceColor />
+      )}
     </>
   );
 };

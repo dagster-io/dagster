@@ -1,9 +1,8 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {AssetLineageFragmentFragment} from '../graphql/graphql';
-
 import {AssetLineageElements} from './AssetLineageElements';
+import {AssetLineageFragment} from './types/AssetLineageElements.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -13,7 +12,7 @@ export default {
 
 export const FewParents = () => {
   const timestamp = React.useMemo(() => Date.now(), []);
-  const elements: AssetLineageFragmentFragment[] = [
+  const elements: AssetLineageFragment[] = [
     {
       __typename: 'AssetLineageInfo',
       partitions: ['2021-01-01'],
@@ -45,7 +44,7 @@ export const FewParents = () => {
 
 export const ManyParents = () => {
   const timestamp = React.useMemo(() => Date.now(), []);
-  const elements: AssetLineageFragmentFragment[] = [];
+  const elements: AssetLineageFragment[] = [];
   for (let ii = 0; ii < 20; ii++) {
     elements.push({
       __typename: 'AssetLineageInfo',

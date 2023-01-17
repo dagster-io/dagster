@@ -1,7 +1,7 @@
-import {PermissionFragmentFragment} from '../graphql/graphql';
 import permissions from '../graphql/permissions.json';
 
 import {EXPECTED_PERMISSIONS, extractPermissions} from './Permissions';
+import {PermissionFragment} from './types/Permissions.types';
 
 describe('Permissions', () => {
   it('Client permissions match graphql permissions', () => {
@@ -11,7 +11,7 @@ describe('Permissions', () => {
   });
 
   describe('Fallback permissions', () => {
-    const permissions: PermissionFragmentFragment[] = [
+    const permissions: PermissionFragment[] = [
       {
         __typename: 'Permission',
         permission: 'launch_pipeline_execution',
@@ -26,7 +26,7 @@ describe('Permissions', () => {
       },
     ];
 
-    const fallback: PermissionFragmentFragment[] = [
+    const fallback: PermissionFragment[] = [
       {
         __typename: 'Permission',
         permission: 'launch_pipeline_execution',

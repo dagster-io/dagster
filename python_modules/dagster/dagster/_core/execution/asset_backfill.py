@@ -24,11 +24,11 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.run_request import RunRequest
+from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
-from dagster._core.utils import frozendict
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -302,55 +302,69 @@ def execute_asset_backfill_iteration_inner(
     if request_roots:
         initial_candidates.update(asset_backfill_data.get_target_root_asset_partitions())
 
-    (
-        parent_materialized_asset_partitions,
-        next_latest_storage_id,
-    ) = find_parent_materialized_asset_partitions(
-        asset_graph=asset_graph,
-        instance_queryer=instance_queryer,
-        target_asset_selection=AssetSelection.keys(*asset_backfill_data.target_subset.asset_keys),
-        latest_storage_id=asset_backfill_data.latest_storage_id,
-    )
-    initial_candidates.update(parent_materialized_asset_partitions)
-
-    yield None
-
-    recently_materialized_asset_partitions = AssetGraphSubset(asset_graph)
-    for asset_key in asset_backfill_data.target_subset.asset_keys:
-        records = instance_queryer.get_materialization_records(
-            asset_key=asset_key,
-            after_cursor=asset_backfill_data.latest_storage_id,
-            tags=frozendict({BACKFILL_ID_TAG: backfill_id}),
+        next_latest_storage_id = instance_queryer.get_latest_storage_id(
+            DagsterEventType.ASSET_MATERIALIZATION
         )
-        recently_materialized_asset_partitions |= {
-            AssetKeyPartitionKey(asset_key, record.partition_key) for record in records
-        }
+        updated_materialized_subset = AssetGraphSubset(asset_graph)
+        failed_and_downstream_subset = AssetGraphSubset(asset_graph)
+    else:
+        (
+            parent_materialized_asset_partitions,
+            next_latest_storage_id,
+        ) = find_parent_materialized_asset_partitions(
+            asset_graph=asset_graph,
+            instance_queryer=instance_queryer,
+            target_asset_selection=AssetSelection.keys(
+                *asset_backfill_data.target_subset.asset_keys
+            ),
+            latest_storage_id=asset_backfill_data.latest_storage_id,
+        )
+        initial_candidates.update(parent_materialized_asset_partitions)
 
         yield None
 
-    updated_materialized_asset_partitions = (
-        asset_backfill_data.materialized_subset | recently_materialized_asset_partitions
-    )
+        recently_materialized_asset_partitions = AssetGraphSubset(asset_graph)
+        for asset_key in asset_backfill_data.target_subset.asset_keys:
+            records = instance_queryer.get_materialization_records(
+                asset_key=asset_key, after_cursor=asset_backfill_data.latest_storage_id
+            )
+            records_in_backfill = [
+                record
+                for record in records
+                if instance_queryer.run_has_tag(
+                    run_id=record.run_id, tag_key=BACKFILL_ID_TAG, tag_value=backfill_id
+                )
+            ]
+            recently_materialized_asset_partitions |= {
+                AssetKeyPartitionKey(asset_key, record.partition_key)
+                for record in records_in_backfill
+            }
 
-    failed_and_downstream_subset = AssetGraphSubset.from_asset_partition_set(
-        asset_graph.bfs_filter_asset_partitions(
-            lambda asset_partitions, _: any(
-                asset_partition in asset_backfill_data.target_subset
-                for asset_partition in asset_partitions
+            yield None
+
+        updated_materialized_subset = (
+            asset_backfill_data.materialized_subset | recently_materialized_asset_partitions
+        )
+
+        failed_and_downstream_subset = AssetGraphSubset.from_asset_partition_set(
+            asset_graph.bfs_filter_asset_partitions(
+                lambda asset_partitions, _: any(
+                    asset_partition in asset_backfill_data.target_subset
+                    for asset_partition in asset_partitions
+                ),
+                _get_failed_asset_partitions(instance_queryer, backfill_id),
             ),
-            _get_failed_asset_partitions(instance_queryer, backfill_id),
-        ),
-        asset_graph,
-    )
+            asset_graph,
+        )
 
-    yield None
+        yield None
 
     asset_partitions_to_request = asset_graph.bfs_filter_asset_partitions(
         lambda unit, visited: should_backfill_atomic_asset_partitions_unit(
             candidates_unit=unit,
             asset_partitions_to_request=visited,
             asset_graph=asset_graph,
-            materialized_subset=updated_materialized_asset_partitions,
+            materialized_subset=updated_materialized_subset,
             target_subset=asset_backfill_data.target_subset,
             failed_and_downstream_subset=failed_and_downstream_subset,
         ),
@@ -372,7 +386,7 @@ def execute_asset_backfill_iteration_inner(
         latest_storage_id=next_latest_storage_id or asset_backfill_data.latest_storage_id,
         requested_runs_for_target_roots=asset_backfill_data.requested_runs_for_target_roots
         or request_roots,
-        materialized_subset=updated_materialized_asset_partitions,
+        materialized_subset=updated_materialized_subset,
         failed_and_downstream_subset=failed_and_downstream_subset,
         requested_subset=asset_backfill_data.requested_subset | asset_partitions_to_request,
     )

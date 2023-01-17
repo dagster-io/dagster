@@ -2,7 +2,7 @@ import {Box, ButtonGroup, Colors, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {RepositorySelector} from '../graphql/graphql';
+import {RepositorySelector} from '../graphql/types';
 
 import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
 import {AssetEventList} from './AssetEventList';
@@ -164,12 +164,16 @@ export const AssetEvents: React.FC<Props> = ({
         >
           {xAxis === 'partition' ? (
             focused ? (
-              <AssetPartitionDetail group={focused} hasLineage={assetHasLineage} />
+              <AssetPartitionDetail
+                group={focused}
+                hasLineage={assetHasLineage}
+                assetKey={assetKey}
+              />
             ) : (
               <AssetPartitionDetailEmpty />
             )
           ) : focused?.latest ? (
-            <AssetEventDetail event={focused.latest} />
+            <AssetEventDetail assetKey={assetKey} event={focused.latest} />
           ) : (
             <AssetEventDetailEmpty />
           )}

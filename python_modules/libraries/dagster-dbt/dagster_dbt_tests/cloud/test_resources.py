@@ -10,9 +10,11 @@ from .utils import (
     SAMPLE_ACCOUNT_ID,
     SAMPLE_API_PREFIX,
     SAMPLE_JOB_ID,
+    SAMPLE_PROJECT_ID,
     SAMPLE_RUN_ID,
     sample_job_details,
     sample_list_artifacts,
+    sample_list_job_details,
     sample_run_details,
     sample_run_results,
     sample_runs_details,
@@ -25,6 +27,14 @@ def get_dbt_cloud_resource(**kwargs):
             config={"auth_token": "some_auth_token", "account_id": SAMPLE_ACCOUNT_ID, **kwargs}
         )
     )
+
+
+@responses.activate
+def test_list_jobs():
+    dc_resource = get_dbt_cloud_resource()
+
+    responses.add(responses.GET, f"{SAMPLE_API_PREFIX}/jobs", json=sample_list_job_details())
+    assert dc_resource.list_jobs(SAMPLE_PROJECT_ID) == sample_list_job_details()["data"]
 
 
 def test_get_job():
@@ -144,6 +154,30 @@ def test_no_disable_schedule():
         # endpoint for launching run
         rsps.add(
             rsps.POST, f"{SAMPLE_API_PREFIX}/jobs/{SAMPLE_JOB_ID}/run/", json=sample_run_details()
+        )
+        # run will immediately succeed
+        rsps.add(
+            rsps.GET,
+            f"{SAMPLE_API_PREFIX}/runs/{SAMPLE_RUN_ID}/",
+            json=sample_run_details(status_humanized="Success"),
+        )
+        # endpoint for run_results.json
+        rsps.add(
+            rsps.GET,
+            f"{SAMPLE_API_PREFIX}/runs/{SAMPLE_RUN_ID}/artifacts/run_results.json",
+            json=sample_run_results(),
+        )
+        # endpoint for disabling the schedule has not been set up, so will fail if attempted
+        dc_resource.run_job_and_poll(SAMPLE_JOB_ID)
+
+    # If the schedule was already disabled, no need to re-disable it.
+    dc_resource = get_dbt_cloud_resource()
+    with responses.RequestsMock() as rsps:
+        # endpoint for launching run
+        rsps.add(
+            rsps.POST,
+            f"{SAMPLE_API_PREFIX}/jobs/{SAMPLE_JOB_ID}/run/",
+            json=sample_run_details(job={"triggers": {"schedule": False}}),
         )
         # run will immediately succeed
         rsps.add(

@@ -1,13 +1,15 @@
-import {useApolloClient} from '@apollo/client';
+import {gql, useApolloClient} from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 
-import {graphql} from '../graphql';
-import {PartitionHealthQueryQuery, PartitionHealthQueryQueryVariables} from '../graphql/graphql';
 import {PartitionState} from '../partitions/PartitionStatus';
 
 import {mergedStates} from './MultipartitioningSupport';
 import {AssetKey} from './types';
+import {
+  PartitionHealthQuery,
+  PartitionHealthQueryVariables,
+} from './types/usePartitionHealthData.types';
 
 /**
  * usePartitionHealthData retrieves partitionKeysByDimension + partitionMaterializationCounts and
@@ -35,12 +37,18 @@ export interface PartitionHealthDimension {
   partitionKeys: string[];
 }
 
-export type PartitionHealthDimensionRange = {
+export type PartitionDimensionSelectionRange = [
+  {idx: number; key: string},
+  {idx: number; key: string},
+];
+
+export type PartitionDimensionSelection = {
   dimension: PartitionHealthDimension;
-  selected: string[];
+  selectedKeys: string[];
+  selectedRanges: PartitionDimensionSelectionRange[];
 };
 
-export function buildPartitionHealthData(data: PartitionHealthQueryQuery, loadKey: AssetKey) {
+export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: AssetKey) {
   const dimensions =
     data.assetNodeOrError.__typename === 'AssetNode'
       ? data.assetNodeOrError.partitionKeysByDimension
@@ -144,10 +152,7 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
     }
     const loadKey: AssetKey = JSON.parse(missingKeyJSON);
     const run = async () => {
-      const {data} = await client.query<
-        PartitionHealthQueryQuery,
-        PartitionHealthQueryQueryVariables
-      >({
+      const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
         query: PARTITION_HEALTH_QUERY,
         fetchPolicy: 'network-only',
         variables: {
@@ -169,7 +174,7 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
   }, [assetKeyJSON, result]);
 }
 
-const PARTITION_HEALTH_QUERY = graphql(`
+const PARTITION_HEALTH_QUERY = gql`
   query PartitionHealthQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
@@ -189,4 +194,4 @@ const PARTITION_HEALTH_QUERY = graphql(`
       }
     }
   }
-`);
+`;

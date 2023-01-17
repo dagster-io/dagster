@@ -1,14 +1,32 @@
+import {gql} from '@apollo/client';
 import {Tabs, TokenizingFieldValue} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 
-import {graphql} from '../graphql';
-import {RunStatus} from '../graphql/graphql';
+import {RunStatus} from '../graphql/types';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {TabLink} from '../ui/TabLink';
 
 import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
+
+const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsTab>) => {
+  switch (selected) {
+    case 'all':
+      return 'Runs | All runs';
+    case 'done':
+      return 'Runs | Done';
+    case 'in-progress':
+      return 'Runs | In progress';
+    case 'queued':
+      return 'Runs | Queued';
+    case 'scheduled':
+      return 'Runs | Scheduled';
+    default:
+      return 'Runs';
+  }
+};
 
 interface Props {
   queuedCount: number | null;
@@ -18,6 +36,8 @@ interface Props {
 export const RunListTabs: React.FC<Props> = React.memo(({queuedCount, inProgressCount}) => {
   const [filterTokens] = useQueryPersistedRunFilters();
   const selectedTab = useSelectedRunsTab(filterTokens);
+
+  useDocumentTitle(getDocumentTitle(selectedTab));
 
   const urlForStatus = (statuses: RunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
@@ -73,7 +93,7 @@ export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   return 'all';
 };
 
-export const RUN_TABS_COUNT_QUERY = graphql(`
+export const RUN_TABS_COUNT_QUERY = gql`
   query RunTabsCountQuery($queuedFilter: RunsFilter!, $inProgressFilter: RunsFilter!) {
     queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
       ... on Runs {
@@ -86,4 +106,4 @@ export const RUN_TABS_COUNT_QUERY = graphql(`
       }
     }
   }
-`);
+`;

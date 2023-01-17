@@ -1,16 +1,14 @@
+import {gql} from '@apollo/client';
 import {Button, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {graphql} from '../graphql';
-import {
-  ErrorSource,
-  MetadataEntryFragmentFragment,
-  PythonErrorFragmentFragment,
-  PythonErrorChainFragment,
-} from '../graphql/graphql';
+import {ErrorSource} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {MetadataEntries} from '../metadata/MetadataEntry';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
+
+import {PythonErrorChainFragment, PythonErrorFragment} from './types/PythonErrorFragment.types';
 
 export type GenericError = {
   message: string;
@@ -21,8 +19,8 @@ export type GenericError = {
 interface IPythonErrorInfoProps {
   showReload?: boolean;
   centered?: boolean;
-  error: GenericError | PythonErrorFragmentFragment;
-  failureMetadata?: {metadataEntries: MetadataEntryFragmentFragment[]} | null;
+  error: GenericError | PythonErrorFragment;
+  failureMetadata?: {metadataEntries: MetadataEntryFragment[]} | null;
   errorSource?: ErrorSource | null;
 }
 
@@ -82,30 +80,11 @@ const ErrorContext: React.FC<{errorSource: ErrorSource}> = ({errorSource}) => {
   }
 };
 
-export const UNAUTHORIZED_ERROR_FRAGMENT = graphql(`
+export const UNAUTHORIZED_ERROR_FRAGMENT = gql`
   fragment UnauthorizedErrorFragment on UnauthorizedError {
     message
   }
-`);
-
-export const PYTHON_ERROR_FRAGMENT = graphql(`
-  fragment PythonErrorFragment on PythonError {
-    __typename
-    message
-    stack
-    errorChain {
-      ...PythonErrorChain
-    }
-  }
-
-  fragment PythonErrorChain on ErrorChainLink {
-    isExplicitLink
-    error {
-      message
-      stack
-    }
-  }
-`);
+`;
 
 const ContextHeader = styled.h4`
   font-weight: 400;

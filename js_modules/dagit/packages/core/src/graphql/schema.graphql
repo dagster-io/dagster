@@ -637,6 +637,7 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
+  assetMaterializationUsedData(timestampMillis: String!): [MaterializationUpstreamDataVersion!]!
   assetObservations(
     partitions: [String]
     beforeTimestampMillis: String
@@ -674,6 +675,12 @@ type AssetNode {
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
   type: DagsterType
+}
+
+type MaterializationUpstreamDataVersion {
+  assetKey: AssetKey!
+  downstreamAssetKey: AssetKey!
+  timestamp: String!
 }
 
 type AssetDependency {

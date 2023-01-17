@@ -238,6 +238,7 @@ class AirbyteConnection:
         destination_namespace: Optional[
             Union[AirbyteDestinationNamespace, str]
         ] = AirbyteDestinationNamespace.SAME_AS_SOURCE,
+        prefix: Optional[str] = None,
     ):
         """
         Args:
@@ -256,6 +257,7 @@ class AirbyteConnection:
                 AirbyteDestinationNamespace.DESTINATION_DEFAULT, the namespace will be
                 the default namespace for the destination. If set to a string, the
                 namespace will be that string.
+            prefix (Optional[str]): A prefix to add to the table names in the destination.
 
         Example:
             .. code-block:: python
@@ -284,6 +286,7 @@ class AirbyteConnection:
         self.destination_namespace = check.opt_inst_param(
             destination_namespace, "destination_namespace", (str, AirbyteDestinationNamespace)
         )
+        self.prefix = check.opt_str_param(prefix, "prefix")
 
     def must_be_recreated(self, other: Optional["AirbyteConnection"]) -> bool:
         return (
@@ -349,6 +352,7 @@ class InitializedAirbyteConnection:
                 destination_namespace=api_dict["namespaceFormat"]
                 if api_dict["namespaceDefinition"] == "customformat"
                 else AirbyteDestinationNamespace(api_dict["namespaceDefinition"]),
+                prefix=api_dict["prefix"] if api_dict.get("prefix") else None,
             ),
             api_dict["connectionId"],
         )

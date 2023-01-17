@@ -24,6 +24,7 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessConstraint
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -264,6 +265,33 @@ def find_never_materialized_or_requested_root_asset_partitions(
     )
 
 
+def candidates_unit_within_allowable_time_window(
+    asset_graph: AssetGraph, candidates_unit: Iterable[AssetKeyPartitionKey]
+):
+    """A given time-window partition may only be materialized if its window ends within 1 day of the
+    latest window for that partition.
+    """
+    representative_candidate = next(iter(candidates_unit), None)
+    if not representative_candidate:
+        return True
+
+    partitions_def = asset_graph.get_partitions_def(representative_candidate.asset_key)
+    partition_key = representative_candidate.partition_key
+    if not isinstance(partitions_def, TimeWindowPartitionsDefinition) or not partition_key:
+        return True
+
+    partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
+
+    latest_partition_window = partitions_def.get_last_partition_window()
+    if latest_partition_window is None:
+        return False
+
+    candidate_partition_window = partitions_def.time_window_for_partition_key(partition_key)
+    time_delta = latest_partition_window.end - candidate_partition_window.end
+
+    return time_delta < datetime.timedelta(days=1)
+
+
 def determine_asset_partitions_to_reconcile(
     instance_queryer: CachingInstanceQueryer,
     cursor: AssetReconciliationCursor,
@@ -321,6 +349,9 @@ def determine_asset_partitions_to_reconcile(
         candidates_unit: Iterable[AssetKeyPartitionKey],
         to_reconcile: AbstractSet[AssetKeyPartitionKey],
     ) -> bool:
+        if not candidates_unit_within_allowable_time_window(asset_graph, candidates_unit):
+            return False
+
         if any(
             candidate in eventual_asset_partitions_to_reconcile_for_freshness
             or candidate.asset_key not in target_asset_keys

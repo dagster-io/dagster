@@ -326,7 +326,7 @@ class DagsterLogManager(logging.Logger):
         python_log_level = logging.NOTSET
 
         if instance:
-            handlers += instance.get_handlers()
+            handlers = [*handlers, *instance.get_handlers()]
             managed_loggers += [
                 logging.getLogger(lname) if lname != "root" else logging.getLogger()
                 for lname in instance.managed_python_loggers

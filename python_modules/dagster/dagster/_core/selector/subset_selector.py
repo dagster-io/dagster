@@ -8,6 +8,8 @@ from typing import (
     Callable,
     Dict,
     FrozenSet,
+    Generic,
+    Hashable,
     Iterable,
     List,
     Mapping,
@@ -35,8 +37,9 @@ if TYPE_CHECKING:
 
 MAX_NUM = sys.maxsize
 
-T = TypeVar("T")
-DependencyGraph: TypeAlias = Mapping[str, Mapping[T, AbstractSet[T]]]
+T_Hashable = TypeVar("T_Hashable", bound=Hashable)
+Direction: TypeAlias = Literal["downstream", "upstream"]
+DependencyGraph: TypeAlias = Mapping[Direction, Mapping[T_Hashable, AbstractSet[T_Hashable]]]
 
 
 class OpSelectionData(
@@ -126,7 +129,7 @@ def generate_asset_dep_graph(
     return {"upstream": upstream, "downstream": downstream}
 
 
-def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph:
+def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph[str]:
     """Pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
@@ -157,7 +160,7 @@ def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph:
     item_names = [i.name for i in pipeline_def.solids]
 
     # defaultdict isn't appropriate because we also want to include items without dependencies
-    graph: Dict[str, Dict[str, MutableSet[str]]] = {"upstream": {}, "downstream": {}}
+    graph: Dict[Direction, Dict[str, MutableSet[str]]] = {"upstream": {}, "downstream": {}}
     for item_name in item_names:
         graph["upstream"][item_name] = set()
         upstream_dep = dependency_structure.input_to_upstream_outputs_for_node(item_name)
@@ -174,18 +177,17 @@ def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph:
     return graph
 
 
-Direction = Literal["downstream", "upstream"]
-
-
-class Traverser:
-    def __init__(self, graph: DependencyGraph):
+class Traverser(Generic[T_Hashable]):
+    def __init__(self, graph: DependencyGraph[T_Hashable]):
         self.graph = graph
 
     # `depth=None` is infinite depth
-    def _fetch_items(self, item_name: T, depth: int, direction: Direction) -> AbstractSet[T]:
+    def _fetch_items(
+        self, item_name: T_Hashable, depth: int, direction: Direction
+    ) -> AbstractSet[T_Hashable]:
         dep_graph = self.graph[direction]
         stack = deque([item_name])
-        result: Set[T] = set()
+        result: Set[T_Hashable] = set()
         curr_depth = 0
         while stack:
             # stop when reach the given depth
@@ -195,7 +197,7 @@ class Traverser:
             while stack and curr_level_len > 0:
                 curr_item = stack.popleft()
                 curr_level_len -= 1
-                empty_set: Set[str] = set()
+                empty_set: Set[T_Hashable] = set()
                 for item in dep_graph.get(curr_item, empty_set):
                     if item not in result:
                         stack.append(item)
@@ -203,22 +205,22 @@ class Traverser:
             curr_depth += 1
         return result
 
-    def fetch_upstream(self, item_name: T, depth: int) -> AbstractSet[T]:
+    def fetch_upstream(self, item_name: T_Hashable, depth: int) -> AbstractSet[T_Hashable]:
         # return a set of ancestors of the given item, up to the given depth
         return self._fetch_items(item_name, depth, "upstream")
 
-    def fetch_downstream(self, item_name: T, depth: int) -> AbstractSet[T]:
+    def fetch_downstream(self, item_name: T_Hashable, depth: int) -> AbstractSet[T_Hashable]:
         # return a set of descendants of the given item, down to the given depth
         return self._fetch_items(item_name, depth, "downstream")
 
 
 def fetch_connected(
-    item: T,
+    item: T_Hashable,
     graph: DependencyGraph,
     *,
     direction: Direction,
     depth: Optional[int] = None,
-) -> AbstractSet[T]:
+) -> AbstractSet[T_Hashable]:
     if depth is None:
         depth = MAX_NUM
     if direction == "downstream":
@@ -227,13 +229,15 @@ def fetch_connected(
         return Traverser(graph).fetch_upstream(item, depth)
 
 
-def fetch_sinks(graph: DependencyGraph, within_selection: AbstractSet[T]) -> AbstractSet[T]:
+def fetch_sinks(
+    graph: DependencyGraph, within_selection: AbstractSet[T_Hashable]
+) -> AbstractSet[T_Hashable]:
     """
     A sink is an asset that has no downstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
     """
     traverser = Traverser(graph)
-    sinks: Set[T] = set()
+    sinks: Set[T_Hashable] = set()
     for item in within_selection:
         downstream = traverser.fetch_downstream(item, depth=MAX_NUM) & within_selection
         if len(downstream) == 0 or downstream == {item}:
@@ -241,7 +245,9 @@ def fetch_sinks(graph: DependencyGraph, within_selection: AbstractSet[T]) -> Abs
     return sinks
 
 
-def fetch_sources(graph: DependencyGraph, within_selection: AbstractSet[T]) -> AbstractSet[T]:
+def fetch_sources(
+    graph: DependencyGraph, within_selection: AbstractSet[T_Hashable]
+) -> AbstractSet[T_Hashable]:
     """
     A source is a node that has no upstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
@@ -311,8 +317,8 @@ def parse_items_from_selection(selection: Sequence[str]) -> Sequence[str]:
 
 
 def clause_to_subset(
-    graph: DependencyGraph, clause: str, item_name_to_item_fn: Callable[[str], T]
-) -> Sequence[T]:
+    graph: DependencyGraph, clause: str, item_name_to_item_fn: Callable[[str], T_Hashable]
+) -> Sequence[T_Hashable]:
     """Take a selection query and return a list of the selected and qualified items.
 
     Args:
@@ -338,7 +344,7 @@ def clause_to_subset(
     if item not in graph["upstream"]:
         return []
 
-    subset_list: List[T] = []
+    subset_list: List[T_Hashable] = []
     traverser = Traverser(graph=graph)
     subset_list.append(item)
     # traverse graph to get up/downsteam items
@@ -474,7 +480,7 @@ def parse_step_selection(
             downstream_deps[step_key].add(downstream_key)
 
     # generate dep graph
-    graph = {"upstream": step_deps, "downstream": downstream_deps}
+    graph: DependencyGraph[str] = {"upstream": step_deps, "downstream": downstream_deps}
     steps_set: Set[str] = set()
 
     step_keys = parse_items_from_selection(step_selection)

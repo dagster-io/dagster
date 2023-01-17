@@ -1,13 +1,12 @@
+import {gql} from '@apollo/client';
 import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {graphql} from '../graphql';
-import {OpGraphOpFragmentFragment} from '../graphql/graphql';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 
 import {OpEdges} from './OpEdges';
-import {OpNode} from './OpNode';
+import {OpNode, OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT} from './OpNode';
 import {ParentOpNode, SVGLabeledParentRect} from './ParentOpNode';
 import {DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
 import {OpGraphLayout} from './asyncGraphLayout';
@@ -19,19 +18,20 @@ import {
   isNodeOffscreen,
   isOpHighlighted,
 } from './common';
+import {OpGraphOpFragment} from './types/OpGraph.types';
 
 const NoOp = () => {};
 
 interface OpGraphProps {
   jobName: string;
   layout: OpGraphLayout;
-  ops: OpGraphOpFragmentFragment[];
-  focusOps: OpGraphOpFragmentFragment[];
+  ops: OpGraphOpFragment[];
+  focusOps: OpGraphOpFragment[];
   parentHandleID?: string;
-  parentOp?: OpGraphOpFragmentFragment;
+  parentOp?: OpGraphOpFragment;
   selectedHandleID?: string;
-  selectedOp?: OpGraphOpFragmentFragment;
-  highlightedOps: Array<OpGraphOpFragmentFragment>;
+  selectedOp?: OpGraphOpFragment;
+  highlightedOps: Array<OpGraphOpFragment>;
   interactor?: SVGViewportInteractor;
   onClickOp?: (arg: OpNameOrPath) => void;
   onDoubleClickOp?: (arg: OpNameOrPath) => void;
@@ -223,7 +223,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
   }
 }
 
-export const OP_GRAPH_OP_FRAGMENT = graphql(`
+export const OP_GRAPH_OP_FRAGMENT = gql`
   fragment OpGraphOpFragment on Solid {
     name
     ...OpNodeInvocationFragment
@@ -232,7 +232,10 @@ export const OP_GRAPH_OP_FRAGMENT = graphql(`
       ...OpNodeDefinitionFragment
     }
   }
-`);
+
+  ${OP_NODE_INVOCATION_FRAGMENT}
+  ${OP_NODE_DEFINITION_FRAGMENT}
+`;
 
 const SVGContainer = styled.svg`
   overflow: visible;

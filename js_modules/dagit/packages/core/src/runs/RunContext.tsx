@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {RunFragmentFragment} from '../graphql/graphql';
+import {RunFragment} from './types/RunFragments.types';
 
 const initialContext = undefined;
-export const RunContext = React.createContext<RunFragmentFragment | undefined>(initialContext);
+export const RunContext = React.createContext<RunFragment | undefined>(initialContext);

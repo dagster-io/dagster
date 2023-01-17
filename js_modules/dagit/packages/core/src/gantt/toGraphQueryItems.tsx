@@ -1,9 +1,11 @@
+import {gql} from '@apollo/client';
+
 import {GraphQueryItem} from '../app/GraphQueryImpl';
-import {graphql} from '../graphql';
-import {ExecutionPlanToGraphFragmentFragment, StepKind} from '../graphql/graphql';
+import {StepKind} from '../graphql/types';
 import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';
 
 import {invocationsOfPlannedDynamicStep, replacePlannedIndex} from './DynamicStepSupport';
+import {ExecutionPlanToGraphFragment} from './types/toGraphQueryItems.types';
 
 /**
  * Converts a Run execution plan into a tree of `GraphQueryItem` items that
@@ -16,7 +18,7 @@ import {invocationsOfPlannedDynamicStep, replacePlannedIndex} from './DynamicSte
  */
 
 export const toGraphQueryItems = (
-  plan: ExecutionPlanToGraphFragmentFragment,
+  plan: ExecutionPlanToGraphFragment,
   runtimeStepMetadata: {[key: string]: IStepMetadata},
 ) => {
   // Step 1: Find unresolved steps in the initial plan and build a mapping
@@ -109,7 +111,7 @@ export const toGraphQueryItems = (
   return Object.values(nodeTable);
 };
 
-export const EXECUTION_PLAN_TO_GRAPH_FRAGMENT = graphql(`
+export const EXECUTION_PLAN_TO_GRAPH_FRAGMENT = gql`
   fragment ExecutionPlanToGraphFragment on ExecutionPlan {
     steps {
       key
@@ -122,4 +124,4 @@ export const EXECUTION_PLAN_TO_GRAPH_FRAGMENT = graphql(`
       }
     }
   }
-`);
+`;

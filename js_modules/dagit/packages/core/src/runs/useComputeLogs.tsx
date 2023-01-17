@@ -1,8 +1,13 @@
-import {useSubscription} from '@apollo/client';
+import {gql, useSubscription} from '@apollo/client';
 import * as React from 'react';
 
-import {graphql} from '../graphql';
-import {ComputeIoType, ComputeLogForSubscriptionFragment} from '../graphql/graphql';
+import {ComputeIoType} from '../graphql/types';
+
+import {
+  ComputeLogForSubscriptionFragment,
+  ComputeLogsSubscription,
+  ComputeLogsSubscriptionVariables,
+} from './types/useComputeLogs.types';
 
 const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 
@@ -67,26 +72,32 @@ const initialState: State = {
 export const useComputeLogs = (runId: string, stepKey: string) => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
-  useSubscription(COMPUTE_LOGS_SUBSCRIPTION, {
-    fetchPolicy: 'no-cache',
-    variables: {runId, stepKey, ioType: ComputeIoType.STDOUT, cursor: null},
-    onSubscriptionData: ({subscriptionData}) => {
-      dispatch({type: 'stdout', stepKey, log: subscriptionData.data?.computeLogs || null});
+  useSubscription<ComputeLogsSubscription, ComputeLogsSubscriptionVariables>(
+    COMPUTE_LOGS_SUBSCRIPTION,
+    {
+      fetchPolicy: 'no-cache',
+      variables: {runId, stepKey, ioType: ComputeIoType.STDOUT, cursor: null},
+      onSubscriptionData: ({subscriptionData}) => {
+        dispatch({type: 'stdout', stepKey, log: subscriptionData.data?.computeLogs || null});
+      },
     },
-  });
+  );
 
-  useSubscription(COMPUTE_LOGS_SUBSCRIPTION, {
-    fetchPolicy: 'no-cache',
-    variables: {runId, stepKey, ioType: ComputeIoType.STDERR, cursor: null},
-    onSubscriptionData: ({subscriptionData}) => {
-      dispatch({type: 'stderr', stepKey, log: subscriptionData.data?.computeLogs || null});
+  useSubscription<ComputeLogsSubscription, ComputeLogsSubscriptionVariables>(
+    COMPUTE_LOGS_SUBSCRIPTION,
+    {
+      fetchPolicy: 'no-cache',
+      variables: {runId, stepKey, ioType: ComputeIoType.STDERR, cursor: null},
+      onSubscriptionData: ({subscriptionData}) => {
+        dispatch({type: 'stderr', stepKey, log: subscriptionData.data?.computeLogs || null});
+      },
     },
-  });
+  );
 
   return state;
 };
 
-const COMPUTE_LOGS_SUBSCRIPTION = graphql(`
+const COMPUTE_LOGS_SUBSCRIPTION = gql`
   subscription ComputeLogsSubscription(
     $runId: ID!
     $stepKey: String!
@@ -104,4 +115,4 @@ const COMPUTE_LOGS_SUBSCRIPTION = graphql(`
     data
     downloadUrl
   }
-`);
+`;

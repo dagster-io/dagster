@@ -4,13 +4,8 @@ import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissionsDEPRECATED} from '../app/Permissions';
-import {
-  LaunchAssetExecutionAssetNodeFragmentFragment,
-  LaunchAssetLoaderQueryQuery,
-  LaunchAssetLoaderQueryQueryVariables,
-  LaunchPipelineExecutionMutationVariables,
-} from '../graphql/graphql';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
@@ -21,6 +16,11 @@ import {
   LAUNCH_ASSET_LOADER_QUERY,
 } from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
+import {
+  LaunchAssetExecutionAssetNodeFragment,
+  LaunchAssetLoaderQuery,
+  LaunchAssetLoaderQueryVariables,
+} from './types/LaunchAssetExecutionButton.types';
 
 type ObserveAssetsState =
   | {type: 'none'}
@@ -66,10 +66,7 @@ export const LaunchAssetObservationButton: React.FC<{
     }
     setState({type: 'loading'});
 
-    const result = await client.query<
-      LaunchAssetLoaderQueryQuery,
-      LaunchAssetLoaderQueryQueryVariables
-    >({
+    const result = await client.query<LaunchAssetLoaderQuery, LaunchAssetLoaderQueryVariables>({
       query: LAUNCH_ASSET_LOADER_QUERY,
       variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
     });
@@ -117,7 +114,7 @@ export const LaunchAssetObservationButton: React.FC<{
 
 async function stateForObservingAssets(
   _client: ApolloClient<any>,
-  assets: LaunchAssetExecutionAssetNodeFragmentFragment[],
+  assets: LaunchAssetExecutionAssetNodeFragment[],
   _forceLaunchpad: boolean,
   preferredJobName?: string,
 ): Promise<ObserveAssetsState> {

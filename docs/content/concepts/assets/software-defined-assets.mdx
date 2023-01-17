@@ -609,6 +609,20 @@ def table1() -> Output[DataFrame]:
     return Output(df, metadata={"num_rows": df.shape[0]})
 ```
 
+This works even if you're not returning an object from your decorated function:
+
+```python file=/concepts/assets/asset_materialization_metadata_none.py
+from dagster import Output, asset
+
+
+@asset
+def table1() -> Output[None]:
+    ...  # write out some data to table1
+    return Output(None, metadata={"num_rows": 25})
+```
+
+#### Recording materialization metadata using I/O managers
+
 Sometimes it's useful to record the same metadata for all assets that are stored in the same way. E.g. if you have a set of assets that are all stored on a filesystem, you might want to record the number of bytes they occupy on disk every time one is materialized. You can achieve this by [recording metadata from an I/O manager](/concepts/io-management/io-managers#recording-metadata-from-an-io-manager) that's shared by the assets.
 
 ### Attaching definition metadata

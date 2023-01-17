@@ -164,8 +164,10 @@ class FreshnessPolicy(
                 self.cron_schedule, evaluation_time, ret_type=datetime.datetime, is_prev=True
             )
             evaluation_tick = next(schedule_ticks)
-        else:
+        elif evaluation_time is not None:
             evaluation_tick = evaluation_time
+        else:
+            check.failed("Must provide an evaluation time if not using a cron schedule")
 
         minutes_late = 0.0
         for used_data_time in used_data_times.values():

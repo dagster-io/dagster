@@ -1,14 +1,14 @@
-import {useApolloClient} from '@apollo/client';
+import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
-  Dialog,
-  DialogHeader,
-  DialogBody,
   Box,
   Button,
   ButtonLink,
-  DialogFooter,
-  Tooltip,
   Colors,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  DialogHeader,
+  Tooltip,
   Alert,
 } from '@dagster-io/ui';
 import reject from 'lodash/reject';
@@ -16,35 +16,48 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';
+import {LaunchBackfillParams} from '../graphql/types';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
-  ConfigPartitionSelectionQueryQuery,
-  ConfigPartitionSelectionQueryQueryVariables,
-  LaunchBackfillParams,
   LaunchPartitionBackfillMutation,
   LaunchPartitionBackfillMutationVariables,
-  PartitionDefinitionForLaunchAssetFragment,
-} from '../graphql/graphql';
-import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
+} from '../instance/types/BackfillUtils.types';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
+import {TagContainer, TagEditor} from '../launchpad/TagEditor';
+import {
+  ConfigPartitionSelectionQuery,
+  ConfigPartitionSelectionQueryVariables,
+} from '../launchpad/types/ConfigEditorConfigPicker.types';
+import {
+  DaemonNotRunningAlert,
+  DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
+  showBackfillErrorToast,
+  showBackfillSuccessToast,
+  UsingDefaultLauncherAlert,
+  USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT,
+} from '../partitions/BackfillMessaging';
+import {Section} from '../partitions/BackfillSelector';
+import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
-import {showBackfillErrorToast, showBackfillSuccessToast} from '../partitions/PartitionsBackfill';
 import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
 import {RepoAddress} from '../workspace/types';
 
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
-import {explodePartitionKeysInRanges, mergedAssetHealth} from './MultipartitioningSupport';
+import {explodePartitionKeysInSelection, mergedAssetHealth} from './MultipartitioningSupport';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
-import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
-import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
+import {PartitionDefinitionForLaunchAssetFragment} from './types/LaunchAssetExecutionButton.types';
+import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
+import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
 import {usePartitionNameForPipeline} from './usePartitionNameForPipeline';
+
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -97,6 +110,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
   const [launching, setLaunching] = React.useState(false);
+
+  const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
+  const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
+
   const [previewCount, setPreviewCount] = React.useState(0);
   const morePreviewsCount = partitionedAssets.length - previewCount;
 
@@ -104,7 +121,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const mergedHealth = React.useMemo(() => mergedAssetHealth(assetHealth), [assetHealth]);
 
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
-  const [ranges, setRanges] = usePartitionDimensionRanges({
+  const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: knownDimensions.map((d) => d.name),
     modifyQueryString: false,
     assetHealth: mergedHealth,
@@ -114,9 +131,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     PartitionState.MISSING,
   ]);
 
-  const allInRanges = React.useMemo(
+  const keysInSelection = React.useMemo(
     () =>
-      explodePartitionKeysInRanges(ranges, (dimensionKeys: string[]) => {
+      explodePartitionKeysInSelection(selections, (dimensionKeys: string[]) => {
         // Note: If the merged asset health for a given partition is "partial", we want
         // to group it into "missing" within the backfill UI. We don't have a fine-grained
         // way to run just the missing assets within the partition.
@@ -127,18 +144,21 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         const state = mergedHealth.stateForKey(dimensionKeys);
         return state === PartitionState.SUCCESS_MISSING ? PartitionState.MISSING : state;
       }),
-    [ranges, mergedHealth],
+    [selections, mergedHealth],
   );
 
-  const allSelected = React.useMemo(
-    () => allInRanges.filter((key) => stateFilters.includes(key.state)),
-    [allInRanges, stateFilters],
+  const keysFiltered = React.useMemo(
+    () => keysInSelection.filter((key) => stateFilters.includes(key.state)),
+    [keysInSelection, stateFilters],
   );
 
   const client = useApolloClient();
   const history = useHistory();
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
+
+  const instanceResult = useQuery(LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY);
+  const instance = instanceResult.data?.instance;
 
   // Find the partition set name. This seems like a bit of a hack, unclear
   // how it would work if there were two different partition spaces in the asset job
@@ -156,10 +176,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       return;
     }
 
-    if (allSelected.length === 1) {
+    if (keysFiltered.length === 1) {
       const {data: tagAndConfigData} = await client.query<
-        ConfigPartitionSelectionQueryQuery,
-        ConfigPartitionSelectionQueryQueryVariables
+        ConfigPartitionSelectionQuery,
+        ConfigPartitionSelectionQueryVariables
       >({
         query: CONFIG_PARTITION_SELECTION_QUERY,
         fetchPolicy: 'network-only',
@@ -169,7 +189,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             repositoryName: repoAddress.name,
           },
           partitionSetName: partitionSet.name,
-          partitionName: allSelected[0].partitionKey,
+          partitionName: keysFiltered[0].partitionKey,
         },
       });
 
@@ -201,13 +221,13 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         return;
       }
 
-      const tags = [...partition.tagsOrError.results];
+      const allTags = [...partition.tagsOrError.results, ...tags];
       const runConfigData = partition.runConfigOrError.yaml || '';
 
       const result = await launchWithTelemetry(
         {
           executionParams: {
-            ...executionParamsForAssetJob(repoAddress, assetJobName, assets, tags),
+            ...executionParamsForAssetJob(repoAddress, assetJobName, assets, allTags),
             runConfigData,
             mode: partition.mode,
           },
@@ -241,9 +261,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           backfillParams: {
             selector: selectorUnlessGraph,
             assetSelection: assets.map((a) => ({path: a.assetKey.path})),
-            partitionNames: allSelected.map((k) => k.partitionKey),
+            partitionNames: keysFiltered.map((k) => k.partitionKey),
             fromFailure: false,
-            tags: [],
+            tags,
           },
         },
       });
@@ -267,27 +287,29 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             Select partitions to materialize. Click and drag to select a range on the timeline.
           </Box>
 
-          {ranges.map((range, idx) => (
-            <PartitionRangeWizard
+          {selections.map((range, idx) => (
+            <DimensionRangeWizard
               key={range.dimension.name}
               partitionKeys={range.dimension.partitionKeys}
               partitionStateForKey={(dimensionKey) =>
                 mergedHealth.stateForSingleDimension(
                   idx,
                   dimensionKey,
-                  ranges.length === 2 ? ranges[1 - idx].selected : undefined,
+                  selections.length === 2 ? selections[1 - idx].selectedKeys : undefined,
                 )
               }
-              selected={range.selected}
-              setSelected={(selected) =>
-                setRanges(
-                  ranges.map((r) => (r.dimension === range.dimension ? {...r, selected} : r)),
+              selected={range.selectedKeys}
+              setSelected={(selectedKeys) =>
+                setSelections(
+                  selections.map((r) =>
+                    r.dimension === range.dimension ? {...r, selectedKeys} : r,
+                  ),
                 )
               }
             />
           ))}
           <PartitionStateCheckboxes
-            partitionKeysForCounts={allInRanges}
+            partitionKeysForCounts={keysInSelection}
             allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
             value={stateFilters}
             onChange={setStateFilters}
@@ -315,7 +337,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                 assetKey={a.assetKey}
                 showAssetKey
                 data={assetHealth}
-                ranges={ranges}
+                selections={selections}
               />
             ))}
             {morePreviewsCount > 0 && (
@@ -338,31 +360,58 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
         <UpstreamUnavailableWarning
           upstreamAssetKeys={upstreamAssetKeys}
-          ranges={ranges}
-          setRanges={setRanges}
+          selections={selections}
+          setSelections={setSelections}
         />
+
+        <Box flex={{direction: 'column', gap: 16}} style={{marginTop: 24}}>
+          <Section title="Tags">
+            <TagEditor
+              tagsFromSession={tags}
+              onChange={setTags}
+              open={tagEditorOpen}
+              onRequestClose={() => setTagEditorOpen(false)}
+            />
+            {tags.length ? (
+              <div style={{border: `1px solid ${Colors.Gray300}`, borderRadius: 8, padding: 3}}>
+                <TagContainer tagsFromSession={tags} onRequestEdit={() => setTagEditorOpen(true)} />
+              </div>
+            ) : (
+              <div>
+                <Button onClick={() => setTagEditorOpen(true)}>
+                  {keysFiltered.length > 1 ? 'Add tags to backfill runs' : 'Add tags'}
+                </Button>
+              </div>
+            )}
+          </Section>
+
+          {instance && keysFiltered.length > 1 && <DaemonNotRunningAlert instance={instance} />}
+
+          {instance && keysFiltered.length > 1 && <UsingDefaultLauncherAlert instance={instance} />}
+        </Box>
       </DialogBody>
+
       <DialogFooter
         left={partitionSet && <RunningBackfillsNotice partitionSetName={partitionSet.name} />}
       >
         <Button intent="none" onClick={() => setOpen(false)}>
           Cancel
         </Button>
-        {allSelected.length !== 1 && !canLaunchPartitionBackfill.enabled ? (
+        {keysFiltered.length !== 1 && !canLaunchPartitionBackfill.enabled ? (
           <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
-            <Button disabled>{`Launch ${allSelected.length}-Run Backfill`}</Button>
+            <Button disabled>{`Launch ${keysFiltered.length}-Run Backfill`}</Button>
           </Tooltip>
         ) : (
           <Button
             intent="primary"
             onClick={onLaunch}
-            disabled={allSelected.length === 0}
+            disabled={keysFiltered.length === 0}
             loading={launching}
           >
             {launching
               ? 'Launching...'
-              : allSelected.length !== 1
-              ? `Launch ${allSelected.length}-Run Backfill`
+              : keysFiltered.length !== 1
+              ? `Launch ${keysFiltered.length}-Run Backfill`
               : `Launch 1 Run`}
           </Button>
         )}
@@ -373,9 +422,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
 const UpstreamUnavailableWarning: React.FC<{
   upstreamAssetKeys: AssetKey[];
-  ranges: PartitionHealthDimensionRange[];
-  setRanges: (next: PartitionHealthDimensionRange[]) => void;
-}> = ({upstreamAssetKeys, ranges, setRanges}) => {
+  selections: PartitionDimensionSelection[];
+  setSelections: (next: PartitionDimensionSelection[]) => void;
+}> = ({upstreamAssetKeys, selections, setSelections}) => {
   // We want to warn if an immediately upstream asset 1) has the same partitioning and
   // 2) is missing materializations for keys in `allSelected`. We only offer this feature
   // for single-dimensional partitioned assets because it's difficult to express the
@@ -393,15 +442,19 @@ const UpstreamUnavailableWarning: React.FC<{
     });
 
   const upstreamUnavailableSpans =
-    ranges.length === 1
-      ? assembleIntoSpans(ranges[0].selected, upstreamUnavailable).filter((s) => s.status === true)
+    selections.length === 1
+      ? assembleIntoSpans(selections[0].selectedKeys, upstreamUnavailable).filter(
+          (s) => s.status === true,
+        )
       : [];
 
   const onRemoveUpstreamUnavailable = () => {
-    if (ranges.length > 1) {
+    if (selections.length > 1) {
       throw new Error('Assertion failed, this feature is only available for 1 dimensional assets');
     }
-    setRanges([{...ranges[0], selected: reject(ranges[0].selected, upstreamUnavailable)}]);
+    setSelections([
+      {...selections[0], selectedKeys: reject(selections[0].selectedKeys, upstreamUnavailable)},
+    ]);
   };
 
   if (upstreamUnavailableSpans.length === 0) {
@@ -416,7 +469,7 @@ const UpstreamUnavailableWarning: React.FC<{
         description={
           <>
             {upstreamUnavailableSpans
-              .map((span) => stringForSpan(span, ranges[0].selected))
+              .map((span) => stringForSpan(span, selections[0].selectedKeys))
               .join(', ')}
             {
               ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
@@ -431,3 +484,15 @@ const UpstreamUnavailableWarning: React.FC<{
     </Box>
   );
 };
+
+const LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY = gql`
+  query LaunchAssetChoosePartitionsQuery {
+    instance {
+      ...DaemonNotRunningAlertInstanceFragment
+      ...UsingDefaultLauncherAlertInstanceFragment
+    }
+  }
+
+  ${DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT}
+  ${USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT}
+`;

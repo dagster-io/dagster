@@ -31,12 +31,15 @@ from dagster import (
     get_dagster_logger,
     op,
 )
+from dagster._config.field import Field
+from dagster._config.field_utils import Permissive
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
+from dagster._utils.merger import deep_merge_dicts
 
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
@@ -365,6 +368,23 @@ def _get_dbt_op(
         ins=ins,
         out=outs,
         required_resource_keys={dbt_resource_key},
+        config_schema=Field(
+            Permissive(
+                {
+                    "select": Field(str, is_required=False),
+                    "exclude": Field(str, is_required=False),
+                    "vars": Field(dict, is_required=False),
+                    "full_refresh": Field(bool, is_required=False),
+                }
+            ),
+            default_value={},
+            description=(
+                "Keyword arguments to pass to the underlying dbt command. Additional arguments not"
+                " listed in the schema will be passed through as well, e.g. {'bool_flag': True,"
+                " 'string_flag': 'hi'} will result in the flags '--bool-flag --string-flag hi'"
+                " being passed into the underlying execution"
+            ),
+        ),
     )
     def _dbt_op(context):
         dbt_output = None
@@ -390,6 +410,9 @@ def _get_dbt_op(
             # variables to pass into the command
             if partition_key_to_vars_fn:
                 kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
+
+            # merge in any additional kwargs from the config
+            kwargs = deep_merge_dicts(kwargs, context.op_config)
 
             if use_build_command:
                 dbt_output = dbt_resource.build(**kwargs)

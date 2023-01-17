@@ -155,6 +155,9 @@ def job(
     ops (or graphs).
 
     Args:
+        compose_fn (Callable[..., Any]:
+            The decorated function. The body should contain op or graph invocations. Unlike op
+            functions, does not accept a context argument.
         name (Optional[str]):
             The name for the Job. Defaults to the name of the this graph.
         resource_defs (Optional[Mapping[str, ResourceDefinition]]):
@@ -204,6 +207,20 @@ def job(
         input_values (Optional[Mapping[str, Any]]):
             A dictionary that maps python objects to the top-level inputs of a job.
 
+    Examples:
+        .. code-block:: python
+
+            @op
+            def return_one():
+                return 1
+
+            @op
+            def add_one(in1):
+                return in1 + 1
+
+            @job
+            def job1():
+                add_one(return_one())
     """
     if compose_fn is not None:
         check.invariant(description is None)

@@ -13,7 +13,6 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {usePermissionsForLocation} from '../app/Permissions';
-import {WorkspaceDisplayMetadataFragment} from '../graphql/graphql';
 import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
 import {
   buildReloadFnForLocation,
@@ -27,6 +26,7 @@ import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErro
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
 import {buildRepoAddress} from './buildRepoAddress';
 import {repoAddressAsHumanString} from './repoAddressAsString';
+import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceContext.types';
 import {workspacePathFromAddress} from './workspacePath';
 
 interface Props {

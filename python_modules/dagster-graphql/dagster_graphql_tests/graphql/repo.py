@@ -1528,8 +1528,8 @@ def asset_one():
 
 
 @asset
-def asset_two(asset_one):  # pylint: disable=redefined-outer-name,unused-argument
-    return first_asset + 1
+def asset_two(asset_one):  # pylint: disable=redefined-outer-name
+    return asset_one + 1
 
 
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])

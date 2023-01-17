@@ -1,5 +1,51 @@
 # Changelog
 
+# 1.1.10 (core) / 0.17.10 (libraries)
+
+### New
+
+- The `selection` argument of `define_asset_job` now accepts lists of `AssetKey`s or `AssetsDefinitions`.
+- `RunRequest` now takes a `stale_assets_only` flag that filters the full set of assets that would be materialized by a job to stale assets only. This can be used in schedules and sensors.
+- Dagit will now choose a different open port on the local machine to run on when no port is specified to the `dagit` command and the default port 3000 is already in use.
+- The `grpcio` pin in Dagster to <1.48.1 has been removed for Python versions 3.10 and 3.11. Python 3.7, 3.8, and 3.9 are still pinned to <1.48.1 due to a bug in the grpc library that is causing the process to sometimes hang.
+- When it is likely that an op process was killed due to running out of memory, a clearer error message is now displayed in Dagit.
+- When a sensor tick fails due to taking longer than 60 seconds to execute, a clearer error message is displayed on the sensor timeline in Dagit.
+- When you view compute logs on a run in Dagit, we now locally track whether you choose the `stdout` or `stderr` tab. The next time you view compute logs, you will see that tab first by default.
+- The `executor` and `loggers` arguments on `Definitions` are no longer experimental.
+- [dagster-dbt] When `json_log_format` is set to `False` when using the `dbt_cli_resource`, logs will be emitted at the appropriate log level in some situations. Previously, all logs would be emitted at the `INFO` level.
+- [dagster-snowflake] The Snowflake IO Manager and Snowflake Resource now support private key authentication. Thanks Josh Taylor!
+- [dagster-airbyte] Users can now specify freshness policies when generating Airbyte assets.
+- [dagster-airbyte] When using managed Airbyte ingestion, users can now specify a destination table prefix.
+
+### Bugfixes
+
+- Fixed a bug that caused backfills launched from the asset graph page not to work with code locations running versions of Dagster less than 1.1.8.
+- Fixed a bug that reverted to the default partition mappings in situations where asset dependencies were resolved based on group instead of asset key.
+- The way skips are propagate through the graph when using dynamic outputs are used has been fixed.
+- Fixed a bug affecting the download link for cloud-based compute log manager implementations (e.g. `dagster-azure` / `dagster-aws` / `dagster-gcp`)
+- Fixed a bug that would cause errors when using `build_asset_reconciliation_sensor` with asset graphs that contained references to source assets without the associated `SourceAsset` objects (which may happen when using `load_assets_from_dbt_*`).
+- [dagit] Fixed an issue where an error appeared in dagit when a code server stopped and restarted.
+- [dagit] Previously, when restarting the dagit process, the Dagit frontend kept cached versions of certain queries even after the code location finished loading. This could lead to display of stale versions of jobs or other code objects. These objects will now be correctly retrieved anew from the backend.
+- [dagster-dbt] Fixed a bug with the `DbtManifestAssetSelection` which could result in `KeyErrors` when selecting from projects with sources defined.
+- [dagster-k8s] Fixed a bug where disabling run worker crash recovery by setting maxResumeRunAttempts to 0 in the Helm chart had no effect.
+- [dagster-airflow] Fixed a bug where transformed Airflow DAG schedules would always use UTC for their timezone.
+
+### Breaking Changes
+
+- [dagit] The `/instance` and `/workspace` path prefixes were removed in previous version, but redirects were left in place. These redirects have now been removed.
+
+### Community Contributions
+
+- The new `StaticPartitionMapping` enables explicitly defining the dependencies between partitions in two `StaticPartitionsDefinition`s. Thanks Alexander VR!
+- Fixed a typo in the Dagster Instance documentation header - thanks Cushnir Grigore!
+- Fixed a typo in the Dagster Instance documentation body - thanks Chris Zubak-Skees!
+- Fixed docstring for static_partitioned_config - thanks Sylvain Lesage!
+- Fix dead link in the docs to the Slack community - thanks Emil Christensen!
+
+### Documentation
+
+- The [Ops and jobs tutorial](https://docs.dagster.io/master/guides/dagster/intro-to-ops-jobs) has been moved to the Guides section. Clicking "Tutorial" in the sidenav will open the Assets tutorial.
+
 # 1.1.9 (core) / 0.17.9 (libraries)
 
 ### Bugfixes

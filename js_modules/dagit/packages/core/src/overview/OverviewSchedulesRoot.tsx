@@ -1,4 +1,4 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -14,12 +14,14 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {graphql} from '../graphql';
-import {OverviewSchedulesQueryQuery} from '../graphql/graphql';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
+import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
@@ -30,19 +32,29 @@ import {RepoAddress} from '../workspace/types';
 import {OverviewScheduleTable} from './OverviewSchedulesTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
+import {
+  OverviewSchedulesQuery,
+  OverviewSchedulesQueryVariables,
+  UnloadableSchedulesQuery,
+  UnloadableSchedulesQueryVariables,
+} from './types/OverviewSchedulesRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewSchedulesRoot = () => {
   useTrackPageView();
+  useDocumentTitle('Overview | Schedules');
 
   const [searchValue, setSearchValue] = React.useState('');
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
 
-  const queryResultOverview = useQuery(OVERVIEW_SCHEDULES_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-  });
+  const queryResultOverview = useQuery<OverviewSchedulesQuery, OverviewSchedulesQueryVariables>(
+    OVERVIEW_SCHEDULES_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+    },
+  );
   const {data, loading} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
@@ -220,7 +232,9 @@ const UnloadableSchedulesAlert: React.FC<{
 };
 
 const UnloadableScheduleDialog: React.FC = () => {
-  const {data} = useQuery(UNLOADABLE_SCHEDULES_QUERY);
+  const {data} = useQuery<UnloadableSchedulesQuery, UnloadableSchedulesQueryVariables>(
+    UNLOADABLE_SCHEDULES_QUERY,
+  );
   if (!data) {
     return <Spinner purpose="section" />;
   }
@@ -242,7 +256,7 @@ type RepoBucket = {
   schedules: string[];
 };
 
-const buildBuckets = (data?: OverviewSchedulesQueryQuery): RepoBucket[] => {
+const buildBuckets = (data?: OverviewSchedulesQuery): RepoBucket[] => {
   if (data?.workspaceOrError.__typename !== 'Workspace') {
     return [];
   }
@@ -273,7 +287,7 @@ const buildBuckets = (data?: OverviewSchedulesQueryQuery): RepoBucket[] => {
   return sortRepoBuckets(buckets);
 };
 
-const OVERVIEW_SCHEDULES_QUERY = graphql(`
+const OVERVIEW_SCHEDULES_QUERY = gql`
   query OverviewSchedulesQuery {
     workspaceOrError {
       ... on Workspace {
@@ -310,9 +324,12 @@ const OVERVIEW_SCHEDULES_QUERY = graphql(`
       ...InstanceHealthFragment
     }
   }
-`);
 
-const UNLOADABLE_SCHEDULES_QUERY = graphql(`
+  ${PYTHON_ERROR_FRAGMENT}
+  ${INSTANCE_HEALTH_FRAGMENT}
+`;
+
+const UNLOADABLE_SCHEDULES_QUERY = gql`
   query UnloadableSchedulesQuery {
     unloadableInstigationStatesOrError(instigationType: SCHEDULE) {
       ... on InstigationStates {
@@ -324,4 +341,7 @@ const UNLOADABLE_SCHEDULES_QUERY = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+
+  ${INSTIGATION_STATE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;
