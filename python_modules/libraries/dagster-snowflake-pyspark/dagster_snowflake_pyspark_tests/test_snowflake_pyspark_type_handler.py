@@ -5,7 +5,6 @@ from contextlib import contextmanager
 from typing import Iterator
 from unittest.mock import patch
 
-import pytest
 from dagster import (
     IOManagerDefinition,
     MetadataValue,
@@ -38,10 +37,13 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
     "user": "BUILDKITE",
     "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
+    "warehouse": "ELEMENTL",
 }
 
 # SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.13.22,net.snowflake:spark-snowflake_2.12:2.11.0-spark_3.3"
-SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
+SNOWFLAKE_JARS = (
+    "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
+)
 # old "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
 
@@ -129,50 +131,47 @@ def test_build_snowflake_pyspark_io_manager():
     assert isinstance(snowflake_pyspark_io_manager, IOManagerDefinition)
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_io_manager_with_snowflake_pyspark():
-    # with temporary_snowflake_table(
-    #     schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-    #     db_name="TEST_SNOWFLAKE_IO_MANAGER",
-    #     column_str="foo string, quux integer",
-    # ) as table_name:
+    with temporary_snowflake_table(
+        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
+        db_name="DEVELOPMENT",
+        column_str="foo string, quux integer",
+    ) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
 
-    table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
+        @op(
+            out={
+                table_name: Out(
+                    dagster_type=DataFrame, metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
+                )
+            },
+        )
+        def emit_pyspark_df(_):
+            spark = SparkSession.builder.config(
+                key="spark.jars.packages",
+                value=SNOWFLAKE_JARS,
+            ).getOrCreate()
+            columns = ["foo", "quux"]
+            data = [("bar", 1), ("baz", 2)]
+            df = spark.createDataFrame(data).toDF(*columns)
+            return df
 
-    @op(
-        out={
-            table_name: Out(
-                dagster_type=DataFrame, io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
-            )
-        },
-    )
-    def emit_pyspark_df(_):
-        spark = SparkSession.builder.config(
-            key="spark.jars.packages",
-            value=SNOWFLAKE_JARS,
-        ).getOrCreate()
-        columns = ["foo", "quux"]
-        data = [("bar", 1), ("baz", 2)]
-        df = spark.createDataFrame(data).toDF(*columns)
-        return df
+        @op
+        def read_pyspark_df(df: DataFrame):
+            assert set(df.schema.fields) == {"foo", "quux"}
+            assert df.count() == 2
 
-    @op
-    def read_pyspark_df(df: DataFrame):
-        assert set(df.schema.fields) == {"foo", "quux"}
-        assert df.count() == 2
-
-    @job(
-        resource_defs={"snowflake": snowflake_pyspark_io_manager.configured(
-            {
-                **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-                "database": "TEST_SNOWFLAKE_IO_MANAGER",
+        @job(
+            resource_defs={
+                "io_manager": snowflake_pyspark_io_manager.configured(
+                    {**SHARED_BUILDKITE_SNOWFLAKE_CONF, "database": "TEST_SNOWFLAKE_IO_MANAGER"}
+                )
             }
-        )}
-    )
-    def io_manager_test_pipeline():
-        read_pyspark_df(emit_pyspark_df())
+        )
+        def io_manager_test_pipeline():
+            read_pyspark_df(emit_pyspark_df())
 
-    res = io_manager_test_pipeline.execute_in_process()
-    assert res.success
+        res = io_manager_test_pipeline.execute_in_process()
+        assert res.success

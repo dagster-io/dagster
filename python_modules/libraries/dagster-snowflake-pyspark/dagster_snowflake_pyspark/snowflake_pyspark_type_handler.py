@@ -20,9 +20,13 @@ def _get_sf_options(config, table_slice):
         "dbtable": table_slice.table,
     }
 
+
 # SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.13.22,net.snowflake:spark-snowflake_2.12:2.11.0-spark_3.3"
-SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
+SNOWFLAKE_JARS = (
+    "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
+)
 # old "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
+
 
 class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
     """
@@ -66,7 +70,11 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
             value=SNOWFLAKE_JARS,
         ).getOrCreate()
 
-        obj.write.format(SNOWFLAKE_CONNECTOR).options(**options).mode("append").save()
+        with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
+
+        with_uppercase_cols.write.format(SNOWFLAKE_CONNECTOR).options(**options).mode(
+            "append"
+        ).save()
 
         return {
             "row_count": obj.count(),
@@ -87,7 +95,9 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
             key="spark.jars.packages",
             value=SNOWFLAKE_JARS,
         ).getOrCreate()
-        return spark.read.format(SNOWFLAKE_CONNECTOR).options(**options).load()
+        df = spark.read.format(SNOWFLAKE_CONNECTOR).options(**options).load()
+
+        return df.toDF(*[c.lower() for c in df.columns])
 
     @property
     def supported_types(self):
