@@ -7,18 +7,21 @@ top_100_newstories = requests.get(newstories_url).json()[:100]
 
 # start_hackernews_topstories
 import matplotlib.pyplot as plt
+import pandas as pd
 
 results = []
 for item_id in top_100_newstories:
     item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
     results.append(item)
 
+    if len(results) % 20 == 0:
+        print(f"Got {len(results)} items so far.")
+
 df = pd.DataFrame(results)
 # end_hackernews_topstories
 
 
 # start_hackernews_topstories_word_cloud
-import pandas as pd
 from wordcloud import STOPWORDS, WordCloud
 
 stopwords = set(STOPWORDS)

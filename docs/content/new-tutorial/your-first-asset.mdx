@@ -11,6 +11,7 @@ Now that you've installed Dagster and know what assets are, it's time for you to
 In this tutorial, you will analyze activity on a popular news aggregation website called Hacker News. Similar to common data pipelines, you will fetch data from the website, clean it up, and build a report summarizing some findings.
 
 By the end of this section, you will:
+
 - ingest data from the Hacker News API
 - turn that ingestion into an asset
 - explore the Dagit, the Dagster UI
@@ -19,11 +20,51 @@ By the end of this section, you will:
 ## Understanding the pipeline
 
 Hypothetically, you have a Python script called `analyze_hackernews.py`. The code for it is below. In this script, you:
+
 - use the free [Hacker News API](https://github.com/HackerNews/API) to get the IDs for the current top stories for Hacker News.
 - get the titles of the top 100 stories
 - make a chart with this data and save it
 
 ```python file=/intro_tutorial/basics/hackernews/analyze_hackernews.py
+# start_hackernews_topstory_ids
+import requests
+
+newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
+top_100_newstories = requests.get(newstories_url).json()[:100]
+# end_hackernews_topstory_ids
+
+# start_hackernews_topstories
+import matplotlib.pyplot as plt
+import pandas as pd
+
+results = []
+for item_id in top_100_newstories:
+    item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
+    results.append(item)
+
+    if len(results) % 20 == 0:
+        print(f"Got {len(results)} items so far.")
+
+df = pd.DataFrame(results)
+# end_hackernews_topstories
+
+
+# start_hackernews_topstories_word_cloud
+from wordcloud import STOPWORDS, WordCloud
+
+stopwords = set(STOPWORDS)
+stopwords.update(["Ask", "Show", "HN", "S"])
+titles_text = " ".join([str(item) for item in df["title"]])
+titles_cloud = WordCloud(stopwords=stopwords, background_color="white").generate(titles_text)
+
+# Generate the word cloud image
+plt.figure(figsize=(8, 8), facecolor=None)
+plt.imshow(titles_cloud, interpolation="bilinear")
+plt.axis("off")
+plt.tight_layout(pad=0)
+
+plt.show()
+# end_hackernews_topstories_word_cloud
 ```
 
 You want this visualization updated daily, and you want to use Dagster to orchestrate it. The first step is to get the ingestion moved over to Dagster.
@@ -40,7 +81,7 @@ In the `tutorial-project` directory, you will see a file called `assets.py`. Thi
 
 ### Ingesting data
 
-To get started, you will fetch data from the Hacker News API. You can do this by adding the following code snippet from  to `assets.py`:
+To get started, you will fetch data from the Hacker News API. You can do this by adding the following code snippet from to `assets.py`:
 
 ```python
 import requests
@@ -93,8 +134,12 @@ If `localhost:3000` is not already being used, Dagit will use that port. Navigat
 
 You should see a screen that looks like this:
 
-{/* Insert Image here */}
-
+<Image
+alt="the Dagit asset graph with no materializations"
+src="/images/tutorial/dagit-default.png"
+width={1392}
+height={1167}
+/>
 
 You can see that Dagit has detected your `hackernews_topstory_ids` asset. The UI isn't very useful yet because the asset hasn't been materialized yet. Let's do that next.
 
@@ -110,19 +155,30 @@ The H3s below actually should all go under tabs.
 
 To manually materialize an asset over Dagit, click the Materialize button in the upper right corner of the screen.
 
-{/* Insert Image here */}
+<Image
+alt="the materialize button in Dagit"
+src="/images/tutorial/materialize-button.png"
+width={308}
+height={260}
+/>
 
 This will create a Dagster run that will make your assets. You can see the result in the Dagit UI:
 
-{/* Insert Image here */}
+<Image
+alt="Dagit with the asset materialized"
+src="/images/tutorial/dagit-materialized.png"
+width={1392}
+height={1167}
+/>
 
 You can also look at the logs for the run:
 
-{/* Insert Image here */}
-
-### dagster CLI
-
-### Python API
+<Image
+alt="Dagit with the asset materialized"
+src="/images/tutorial/single-asset-run.png"
+width={1392}
+height={1167}
+/>
 
 In future sections, you'll learn how to materialize assets automatically on a schedule.
 

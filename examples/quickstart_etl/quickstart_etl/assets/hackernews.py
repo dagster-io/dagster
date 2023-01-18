@@ -18,7 +18,7 @@ def hackernews_topstory_ids() -> List[int]:
     """
     newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
     top_100_newstories = requests.get(newstories_url).json()
-    return top_100_newstories
+    return top_100_newstories[:100]
 
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")
@@ -37,9 +37,6 @@ def hackernews_topstories(
         results.append(item)
         if len(results) % 20 == 0:
             context.log.info(f"Got {len(results)} items so far.")
-
-        if len(results) >= 100:
-            break
 
     df = pd.DataFrame(results)
 
