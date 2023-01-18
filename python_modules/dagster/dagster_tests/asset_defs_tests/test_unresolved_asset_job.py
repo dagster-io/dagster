@@ -685,6 +685,7 @@ def test_job_run_request():
         assert run_request.run_config == partition_fn(partition_key)
         assert run_request.tags
         assert run_request.tags.get(PARTITION_NAME_TAG) == partition_key
+        assert run_request.job_name == my_job.name
 
         run_request_with_tags = my_job.run_request_for_partition(
             partition_key=partition_key, run_key=None, tags={"foo": "bar"}
@@ -702,6 +703,7 @@ def test_job_run_request():
     )
 
     run_request = my_job_hardcoded_config.run_request_for_partition(partition_key="a", run_key=None)
+    assert run_request.job_name == my_job_hardcoded_config.name
     assert run_request.run_config == {"ops": {"my_asset": {"config": {"partition": "blabla"}}}}
     assert my_job_hardcoded_config.run_request_for_partition(
         partition_key="a", run_config={"a": 5}
