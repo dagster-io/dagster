@@ -28,8 +28,8 @@ def dev_command_options(f):
     return apply_click_params(
         f,
         workspace_option(),
-        python_file_option(),
-        python_module_option(),
+        python_file_option(allow_multiple=True),
+        python_module_option(allow_multiple=True),
     )
 
 
