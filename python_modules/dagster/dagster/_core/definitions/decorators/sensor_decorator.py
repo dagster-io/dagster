@@ -197,6 +197,7 @@ def multi_asset_sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    request_assets: Optional[AssetSelection] = None,
 ) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
     """
     Creates an asset sensor that can monitor multiple assets.
@@ -227,6 +228,8 @@ def multi_asset_sensor(
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        request_assets (Optional[AssetSelection]): (Experimental) an asset selection to launch a run
+            for if the sensor condition is met. This can be provided instead of specifying a job.
     """
     check.opt_str_param(name, "name")
 
@@ -253,6 +256,7 @@ def multi_asset_sensor(
             job=job,
             jobs=jobs,
             default_status=default_status,
+            request_assets=request_assets,
         )
         update_wrapper(sensor_def, wrapped=fn)
         return sensor_def
