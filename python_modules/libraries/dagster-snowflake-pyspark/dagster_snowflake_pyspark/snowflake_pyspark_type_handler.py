@@ -27,9 +27,9 @@ def _get_sf_options(config, table_slice):
 
 
 # SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.13.22,net.snowflake:spark-snowflake_2.12:2.11.0-spark_3.3"
-SNOWFLAKE_JARS = (
-    "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
-)
+# SNOWFLAKE_JARS = (
+#     "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
+# )
 # old "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
 
@@ -70,10 +70,10 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_sf_options(context.resource_config, table_slice)
-        SparkSession.builder.config(
-            key="spark.jars.packages",
-            value=SNOWFLAKE_JARS,
-        ).getOrCreate()
+        # SparkSession.builder.config(
+        #     key="spark.jars.packages",
+        #     value=SNOWFLAKE_JARS,
+        # ).getOrCreate()
 
         with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
 
@@ -96,10 +96,11 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
     def load_input(self, context: InputContext, table_slice: TableSlice) -> DataFrame:
         options = _get_sf_options(context.resource_config, table_slice)
 
-        spark = SparkSession.builder.config(
-            key="spark.jars.packages",
-            value=SNOWFLAKE_JARS,
-        ).getOrCreate()
+        # spark = SparkSession.builder.config(
+        #     key="spark.jars.packages",
+        #     value=SNOWFLAKE_JARS,
+        # ).getOrCreate()
+        spark = SparkSession.builder.getOrCreate()
         df = spark.read.format(SNOWFLAKE_CONNECTOR).options(**options).load()
 
         return df.toDF(*[c.lower() for c in df.columns])

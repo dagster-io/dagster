@@ -40,18 +40,9 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
     "warehouse": "BUILDKITE",
 }
 
-# SHARED_BUILDKITE_SNOWFLAKE_CONF = {
-#     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
-#     "user": "DEVELOPMENT",
-#     "password": os.getenv("SF_PASSWORD", ""),
-#     "warehouse": "DEVELOPMENT",
-# }
-
-# SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.13.22,net.snowflake:spark-snowflake_2.12:2.11.0-spark_3.3"
 SNOWFLAKE_JARS = (
     "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 )
-# old "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
 
 @contextmanager
@@ -138,7 +129,7 @@ def test_build_snowflake_pyspark_io_manager():
     assert isinstance(snowflake_pyspark_io_manager, IOManagerDefinition)
 
 
-# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_io_manager_with_snowflake_pyspark():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
