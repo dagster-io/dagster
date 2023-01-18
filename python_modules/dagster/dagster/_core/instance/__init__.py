@@ -691,6 +691,22 @@ class DagsterInstance:
         else:
             return dagster_telemetry_enabled_default
 
+    @property
+    def nux_enabled(self) -> bool:
+        if self.is_ephemeral:
+            return False
+
+        nux_enabled_by_default = True
+
+        nux_settings = self.get_settings("nux")
+        if not nux_settings:
+            return nux_enabled_by_default
+
+        if "enabled" in nux_settings:
+            return nux_settings["enabled"]
+        else:
+            return nux_enabled_by_default
+
     # run monitoring
 
     @property

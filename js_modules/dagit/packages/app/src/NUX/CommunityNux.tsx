@@ -1,3 +1,4 @@
+import {gql, useMutation, useQuery} from '@apollo/client';
 import {useStateWithStorage} from '@dagster-io/dagit-core/hooks/useStateWithStorage';
 import {
   Body,
@@ -16,17 +17,25 @@ import React from 'react';
 import isEmail from 'validator/lib/isEmail';
 
 export const CommunityNux = () => {
-  const [didDismissCommunityNux, dismissCommunityNux] = useStateWithStorage(
+  const [didDismissCommunityNux, dissmissInBrowser] = useStateWithStorage(
     'communityNux',
     (data) => data,
   );
-  if (didDismissCommunityNux) {
+  const {data, loading} = useQuery(GET_SHOULD_SHOW_NUX_QUERY);
+  const [dismissOnServer] = useMutation(SET_NUX_SEEN_MUTATION);
+
+  if (!isLocalhost()) {
+    // Yes, we only want to show this on localhost for now.
+    return null;
+  }
+  if (didDismissCommunityNux || loading || (data && !data.shouldShowNux)) {
     return null;
   }
   return (
     <CommunityNuxImpl
       dismiss={() => {
-        dismissCommunityNux('1');
+        dissmissInBrowser('1');
+        dismissOnServer();
       }}
     />
   );
@@ -212,3 +221,20 @@ const RecaptchaIFrame: React.FC<{
 };
 
 const IFRAME_SRC = '//dagster.io/dagit_iframes/community_nux';
+
+const SET_NUX_SEEN_MUTATION = gql`
+  mutation SetNuxSeen {
+    setNuxSeen
+  }
+`;
+
+const GET_SHOULD_SHOW_NUX_QUERY = gql`
+  query ShouldShowNux {
+    shouldShowNux
+  }
+`;
+
+function isLocalhost() {
+  const origin = window.location.origin;
+  return origin.startsWith('http://127.0.0.1') || origin.startsWith('http://localhost');
+}
