@@ -1,9 +1,50 @@
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, Optional, Type, Union, cast
+
+import pydantic
+from typing_extensions import TypeVar, dataclass_transform, get_args, get_origin
+
+from .utils import safe_is_subclass
 
 if TYPE_CHECKING:
     from dagster._config.structured_config import PartialResource
 
 Self = TypeVar("Self", bound="TypecheckAllowPartialResourceInitParams")
+
+
+# Since a metaclass is invoked by Resource before Resource or PartialResource is defined, we need to
+# define a temporary class to use as a placeholder for use in the initial metaclass invocation.
+# When the metaclass is invoked for a Resource subclass, it will use the non-placeholder values.
+
+_ResValue = TypeVar("_ResValue")
+
+
+class _Temp(Generic[_ResValue]):
+    pass
+
+
+_ResourceDep: Type = _Temp
+_Resource: Type = _Temp
+_PartialResource: Type = _Temp
+
+
+@dataclass_transform()
+class BaseResourceMeta(pydantic.main.ModelMetaclass):
+    def __new__(self, name, bases, namespaces, **kwargs):
+        annotations = namespaces.get("__annotations__", {})
+        for base in bases:
+            if hasattr(base, "__annotations__"):
+                annotations.update(base.__annotations__)
+        for field in annotations:
+            if not field.startswith("__"):
+                if get_origin(annotations[field]) == _ResourceDep:
+                    arg = get_args(annotations[field])[0]
+                    annotations[field] = Union[_PartialResource[arg], _Resource[arg]]
+                elif safe_is_subclass(annotations[field], _Resource):
+                    base = annotations[field]
+                    annotations[field] = Union[_PartialResource[base], base]
+
+        namespaces["__annotations__"] = annotations
+        return super().__new__(self, name, bases, namespaces, **kwargs)
 
 
 class TypecheckAllowPartialResourceInitParams:
