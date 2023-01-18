@@ -92,6 +92,12 @@ def _create_repository_using_definitions_args(
 
     if loggers:
         check.mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
+    from dagster._config.structured_config import AllowDelayedDependencies
+
+    if resources:
+        for rkey, resource in resources.items():
+            if isinstance(resource, AllowDelayedDependencies):
+                resource.set_top_level_key(rkey)
 
     resource_defs = wrap_resources_for_execution(resources or {})
 
