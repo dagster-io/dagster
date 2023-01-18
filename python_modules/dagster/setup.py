@@ -61,6 +61,11 @@ def _get_grpcio_requires():
             " ; python_version == '3.10' and (platform_system=='Darwin' and"
             " platform_machine=='arm64')"
         ),
+        # we do not have wheels for the following m1 python versions - fallback to PyPI
+        "grpcio>=1.32.0,<1.48.1; python_version < '3.8' and (platform_system=='Darwin' and"
+        " platform_machine=='arm64')",
+        "grpcio>=1.32.0; python_version >= '3.11' and (platform_system=='Darwin' and"
+        " platform_machine=='arm64')",
     ]
     return non_m1_deps + m1_deps
 
