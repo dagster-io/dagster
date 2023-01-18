@@ -167,7 +167,7 @@ def test_io_manager_with_snowflake_pyspark():
 
         @op
         def read_pyspark_df(df: DataFrame):
-            assert set([f[0] for f in df.schema.fields]) == {"foo", "quux"}
+            assert set([f.name for f in df.schema.fields]) == {"foo", "quux"}
             assert df.count() == 2
 
         @job(
