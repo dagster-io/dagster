@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Collection, Mapping, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -327,7 +327,19 @@ class SingleDimensionDependencyMapping(PartitionMapping):
         return downstream_partitions_def.empty_subset().with_partition_keys(set(matching_keys))
 
 
-class StaticPartitionMapping(PartitionMapping):
+@whitelist_for_serdes
+class StaticPartitionMapping(
+    PartitionMapping,
+    NamedTuple(
+        "_StaticPartitionMapping",
+        [
+            (
+                "downstream_partition_keys_by_upstream_partition_key",
+                PublicAttr[Mapping[str, Union[str, Collection[str]]]],
+            )
+        ],
+    ),
+):
     """
     Define an explicit correspondence between two StaticPartitionsDefinitions.
 

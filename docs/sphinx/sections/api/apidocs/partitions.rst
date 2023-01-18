@@ -76,3 +76,6 @@ Partition Mapping (Experimental)
 
 .. autoclass:: LastPartitionMapping
     :members:
+
+.. autoclass:: StaticPartitionMapping
+    :members:
