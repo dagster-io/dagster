@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Dict
 
@@ -23,6 +24,54 @@ def get_version() -> str:
         exec(fp.read(), version)
 
     return version["__version__"]
+
+
+def _get_grpcio_requires():
+    pypi_deps = [
+        # grpcio>=1.48.1 has hanging/crashing issues for python 3.9 and earlier:
+        # https://github.com/grpc/grpc/issues/30843
+        # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
+        "grpcio>=1.32.0,<1.48.1; python_version < '3.10'",
+        "grpcio>=1.32.0; python_version >= '3.10'",
+    ]
+    if os.getenv("DAGSTER_M1_DEFAULT_GRPCIO"):
+        return pypi_deps
+
+    non_m1_marker = " and (platform_system!='Darwin' or platform_machine!='arm64')"
+
+    # on non-macs and intel-macs, we use the pypi grpcio wheel
+    non_m1_deps = [pypi_dep + non_m1_marker for pypi_dep in pypi_deps]
+    # on m1-macs, we use a grpcio wheel built by us (official wheels are not available)
+    m1_deps = [
+        (
+            "grpcio @"
+            " https://github.com/dagster-io/build-grpcio/raw/main/wheels/grpcio-1.47.2-cp38-cp38-macosx_11_0_arm64.whl"
+            " ; python_version == '3.8' and (platform_system=='Darwin' and"
+            " platform_machine=='arm64')"
+        ),
+        (
+            "grpcio @"
+            " https://github.com/dagster-io/build-grpcio/raw/main/wheels/grpcio-1.47.2-cp39-cp39-macosx_11_0_arm64.whl"
+            " ; python_version == '3.9' and (platform_system=='Darwin' and"
+            " platform_machine=='arm64')"
+        ),
+        (
+            "grpcio @"
+            " https://github.com/dagster-io/build-grpcio/raw/main/wheels/grpcio-1.47.2-cp310-cp310-macosx_11_0_arm64.whl"
+            " ; python_version == '3.10' and (platform_system=='Darwin' and"
+            " platform_machine=='arm64')"
+        ),
+        # we do not have wheels for the following m1 python versions - fallback to PyPI
+        (
+            "grpcio>=1.32.0,<1.48.1; python_version < '3.8' and (platform_system=='Darwin' and"
+            " platform_machine=='arm64')"
+        ),
+        (
+            "grpcio>=1.32.0; python_version >= '3.11' and (platform_system=='Darwin' and"
+            " platform_machine=='arm64')"
+        ),
+    ]
+    return non_m1_deps + m1_deps
 
 
 setup(
@@ -73,10 +122,7 @@ setup(
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0",
         "croniter>=0.3.34",
-        # grpcio>=1.48.1 has hanging/crashing issues for python 3.9 and earlier: https://github.com/grpc/grpc/issues/30843
-        # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
-        "grpcio>=1.32.0,<1.48.1; python_version < '3.10'",
-        "grpcio>=1.32.0; python_version >= '3.10'",
+        *_get_grpcio_requires(),
         "grpcio-health-checking>=1.32.0,<1.44.0",
         "packaging>=20.9",
         "pendulum",
