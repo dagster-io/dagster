@@ -76,14 +76,33 @@ setup(
         # grpcio>=1.48.1 has hanging/crashing issues for python 3.9 and earlier: https://github.com/grpc/grpc/issues/30843
         # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
         # on non-macs and intel macs, we use the pypi grpcio wheel
-        "grpcio>=1.32.0,<1.48.1; python_version < '3.10' and (platform_system!='Darwin' or platform_machine!='arm64')",
-        "grpcio>=1.32.0; python_version >= '3.10' and (platform_system!='Darwin' or platform_machine!='arm64')",
+        (
+            "grpcio>=1.32.0,<1.48.1; python_version < '3.10' and (platform_system!='Darwin' or"
+            " platform_machine!='arm64')"
+        ),
+        (
+            "grpcio>=1.32.0; python_version >= '3.10' and (platform_system!='Darwin' or"
+            " platform_machine!='arm64')"
+        ),
         # on m1-macs, we use a grpcio wheel built by us (official wheels are not available)
-        "grpcio @ https://github.com/dagster-io/build-grpcio/raw/main/wheels/grpcio-1.47.2-cp38-cp38-macosx_11_0_arm64.whl ; python_version == '3.8' and (platform_system=='Darwin' and platform_machine=='arm64')",
-        # TODO: fix URLs for 3.9 and 3.10
-        "grpcio @ https://github.com/dagster-io/build-grpcio/raw/main/wheels/grpcio-1.47.2-cp38-cp38-macosx_11_0_arm64.whl ; python_version == '3.9' and (platform_system=='Darwin' and platform_machine=='arm64')",
-        "grpcio @ https://github.com/dagster-io/build-grpcio/raw/main/wheels/grpcio-1.47.2-cp38-cp38-macosx_11_0_arm64.whl ; python_version == '3.10' and (platform_system=='Darwin' and platform_machine=='arm64')",
-
+        (
+            "grpcio @"
+            " https://github.com/dagster-io/build-grpcio/raw/main/wheels/grpcio-1.47.2-cp38-cp38-macosx_11_0_arm64.whl"
+            " ; python_version == '3.8' and (platform_system=='Darwin' and"
+            " platform_machine=='arm64')"
+        ),
+        (
+            "grpcio @"
+            " https://github.com/dagster-io/build-grpcio/raw/main/wheels/grpcio-1.47.2-cp39-cp39-macosx_11_0_arm64.whl"
+            " ; python_version == '3.9' and (platform_system=='Darwin' and"
+            " platform_machine=='arm64')"
+        ),
+        (
+            "grpcio @"
+            " https://github.com/dagster-io/build-grpcio/raw/main/wheels/grpcio-1.47.2-cp310-cp310-macosx_11_0_arm64.whl"
+            " ; python_version == '3.10' and (platform_system=='Darwin' and"
+            " platform_machine=='arm64')"
+        ),
         "grpcio-health-checking>=1.32.0,<1.44.0",
         "packaging>=20.9",
         "pendulum",
