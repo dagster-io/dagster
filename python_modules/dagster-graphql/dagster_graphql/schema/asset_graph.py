@@ -394,7 +394,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         used_data_times = data_time_queryer.get_used_data_times_for_record(
             asset_graph=asset_graph,
             record=event_records[0],
-            upstream_keys=parents_to_children.keys(),
         )
 
         return [
