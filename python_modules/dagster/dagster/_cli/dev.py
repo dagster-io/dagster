@@ -7,7 +7,6 @@ from pathlib import Path
 
 import click
 
-import dagster._seven as seven
 from dagster._serdes import serialize_dagster_namedtuple
 from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.log import configure_loggers
@@ -23,20 +22,6 @@ from .workspace.cli_target import (
 
 _SUBPROCESS_WAIT_TIMEOUT = 60
 _CHECK_SUBPROCESS_INTERVAL = 5
-
-
-def _interrupt_after_grace_period(process, start_time, logger, grace_period, process_name):
-    while True:
-        if process.poll() is not None:
-            # process died on its own
-            return
-
-        if time.time() - start_time >= grace_period:
-            logger.info(f"Interrupting {process_name} process...")
-            interrupt_ipc_subprocess(process)
-            return
-
-        time.sleep(1)
 
 
 def dev_command_options(f):
@@ -137,26 +122,10 @@ def dev_command(code_server_log_level, dagit_port, **kwargs):
                         f" {daemon_process.returncode}"
                     )
 
-        except BaseException as e:
+        except:
             logger.info("Shutting down Dagster services...")
-
-            # If it's a KeyboardInterrupt / SIGINT outside of windows, that probably means that
-            # the whole process group is being interrupted by a CTRL-C in the mac Terminal app,
-            # so give the subprocesses a grace period to stop on their own. Otherwise,
-            # interrupt them immediately
-            grace_period = 10 if isinstance(e, KeyboardInterrupt) and not seven.IS_WINDOWS else 0
-
-            start_time = time.time()
-            _interrupt_after_grace_period(
-                dagit_process, start_time, logger, grace_period=grace_period, process_name="dagit"
-            )
-            _interrupt_after_grace_period(
-                daemon_process,
-                start_time,
-                logger,
-                grace_period=grace_period,
-                process_name="dagster-daemon",
-            )
+            interrupt_ipc_subprocess(daemon_process)
+            interrupt_ipc_subprocess(dagit_process)
 
             try:
                 dagit_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
