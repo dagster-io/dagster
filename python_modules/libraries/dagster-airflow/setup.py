@@ -50,6 +50,7 @@ setup(
             "kubernetes>=10.0.1",
             "apache-airflow-providers-docker>=3.2.0,<4",
             "apache-airflow-providers-apache-spark>=3.0.0,<4",
+            "apache-airflow-providers-http!=4.1.1",
         ],
         "test_airflow_1": [
             "apache-airflow>=1.0.0,<2.0.0",
