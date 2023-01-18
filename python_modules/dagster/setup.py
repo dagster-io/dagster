@@ -116,7 +116,7 @@ setup(
             "pytest-runner==5.2",
             "pytest-xdist==2.1.0",
             "pytest==7.0.1",  # last version supporting python 3.6
-            "responses==0.10.*",
+            "responses",
             "snapshottest==0.6.0",
             "tox==3.25.0",
             "yamllint",
