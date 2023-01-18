@@ -63,19 +63,6 @@ class SnowflakeConnection:
             ),
         )
 
-        # if private key auth is used, ensure the password is provided
-        if (
-            config.get("private_key", None) is not None
-            or config.get("private_key_path", None) is not None
-        ):
-            check.invariant(
-                config.get("private_key_password", None) is not None,
-                (
-                    "Incorrect config: Must provide private_key_password for private key"
-                    " authentication with Snowflake resource."
-                ),
-            )
-
         if self.connector == "sqlalchemy":
             self.conn_args: Dict[str, Any] = {
                 k: config.get(k)
@@ -141,11 +128,11 @@ class SnowflakeConnection:
             with open(config.get("private_key_path"), "rb") as key:
                 private_key = key.read()
 
-        p_key = serialization.load_pem_private_key(
-            private_key,
-            password=config.get("private_key_password", None).encode(),
-            backend=default_backend(),
-        )
+        kwargs = {}
+        if config.get("private_key_password", None) is not None:
+            kwargs["password"] = config["private_key_password"].encode()
+
+        p_key = serialization.load_pem_private_key(private_key, backend=default_backend(), **kwargs)
 
         pkb = p_key.private_bytes(
             encoding=serialization.Encoding.DER,
