@@ -19,6 +19,8 @@ pip install dagster dagit
 
 This will install the latest stable version of the core Dagster packages in your current Python environment.
 
+**Note for Macs with an M1 or M2 chip**: Since users have reported installation problems due to missing wheels for arm64 Macs in the standard `grpcio` package, the `dagster` Python package includes its own pre-built wheel of the `grpcio` package for M1 and M2 users at version 1.47.2. To opt out of using our wheel and use the standard `grpcio` build process instead, run `DAGSTER_M1_DEFAULT_GRPCIO=1 pip install dagster dagit` instead.
+
 ---
 
 ## Python version and environment
