@@ -2249,6 +2249,7 @@ type PartitionBackfill {
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
   partitionStatuses: PartitionStatuses!
+  partitionStatusCounts: [PartitionStatusCounts!]!
 }
 
 enum BulkActionStatus {
@@ -2274,6 +2275,11 @@ type PartitionStatus {
   runId: String
   runStatus: RunStatus
   runDuration: Float
+}
+
+type PartitionStatusCounts {
+  runStatus: RunStatus!
+  count: Int!
 }
 
 type PartitionStatuses {

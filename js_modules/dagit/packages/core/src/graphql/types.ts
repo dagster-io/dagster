@@ -2081,6 +2081,7 @@ export type PartitionBackfill = {
   partitionNames: Array<Scalars['String']>;
   partitionSet: Maybe<PartitionSet>;
   partitionSetName: Maybe<Scalars['String']>;
+  partitionStatusCounts: Array<PartitionStatusCounts>;
   partitionStatuses: PartitionStatuses;
   reexecutionSteps: Maybe<Array<Scalars['String']>>;
   runs: Array<Run>;
@@ -2194,6 +2195,12 @@ export type PartitionStatus = {
   runDuration: Maybe<Scalars['Float']>;
   runId: Maybe<Scalars['String']>;
   runStatus: Maybe<RunStatus>;
+};
+
+export type PartitionStatusCounts = {
+  __typename: 'PartitionStatusCounts';
+  count: Scalars['Int'];
+  runStatus: RunStatus;
 };
 
 export type PartitionStatuses = {
