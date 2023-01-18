@@ -1,0 +1,131 @@
+---
+title: "Intro to the Dagster Tutorial: Your First Asset | Dagster Docs"
+description: "Get set up for the intro to assets tutorial."
+noindex: True
+---
+
+# Writing Your Pipeline with Assets
+
+Now that you've installed Dagster and know what assets are, it's time for you to build parts of your first data pipeline!
+
+In this tutorial, you will analyze activity on a popular news aggregation website called Hacker News. Similar to common data pipelines, you will fetch data from the website, clean it up, and build a report summarizing some findings.
+
+By the end of this section, you will:
+- ingest data from the Hacker News API
+- turn that ingestion into an asset
+- explore the Dagit, the Dagster UI
+- launch your first Dagster run manually
+
+## Understanding the pipeline
+
+Hypothetically, you have a Python script called `analyze_hackernews.py`. The code for it is below. In this script, you:
+- use the free [Hacker News API](https://github.com/HackerNews/API) to get the IDs for the current top stories for Hacker News.
+- get the titles of the top 100 stories
+- make a chart with this data and save it
+
+```python file=/intro_tutorial/basics/hackernews/analyze_hackernews.py
+```
+
+You want this visualization updated daily, and you want to use Dagster to orchestrate it. The first step is to get the ingestion moved over to Dagster.
+
+---
+
+## Writing your first asset
+
+Let's start moving that script over to Dagster and build your first asset while doing so!
+
+In your scaffolded Dagster project, there will be a directory called `tutorial-project`. If you named your project differently when running the Dagster CLI, the directory will be named after that name.
+
+In the `tutorial-project` directory, you will see a file called `assets.py`. This is where you will put your first data pipeline.
+
+### Ingesting data
+
+To get started, you will fetch data from the Hacker News API. You can do this by adding the following code snippet from  to `assets.py`:
+
+```python
+import requests
+
+newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
+top_100_newstories = requests.get(newstories_url).json()[:100]
+```
+
+This is your first asset. It is a list of integers representing the IDs for the current top stories on Hacker News.
+
+Next, let's turn it into a function:
+
+```python
+import requests
+
+def hackernews_topstory_ids():
+    newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
+    top_100_newstories = requests.get(newstories_url).json()[:100]
+    return top_100_newstories
+```
+
+By turning it into a function, you've made the first step into making it an asset. Now, you need to add the `@asset` decorator to the function.
+
+```python
+import requests
+from dagster import asset
+
+@asset
+def hackernews_topstory_ids():
+    newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
+    top_100_newstories = requests.get(newstories_url).json()[:100]
+    return top_100_newstories
+```
+
+That's all it takes to get started. Dagster now knows that this is an asset. In future sections, you'll see how you can add more metadata, schedule when to refresh the asset, and more.
+
+And now you're done! Time to go into the Dagster UI and see what you've built.
+
+### Exploring the Dagster UI
+
+Dagster has a UI called Dagit. It's a great way to explore your data pipelines and see what's going on.
+
+To launch Dagit, set your current directory to `/tutorial-project`, and run the following command in your terminal:
+
+```bash
+dagit
+```
+
+If `localhost:3000` is not already being used, Dagit will use that port. Navigate to `localhost:3000` in your browser to see the Dagit UI.
+
+You should see a screen that looks like this:
+
+{/* Insert Image here */}
+
+
+You can see that Dagit has detected your `hackernews_topstory_ids` asset. The UI isn't very useful yet because the asset hasn't been materialized yet. Let's do that next.
+
+---
+
+## Materializing your asset
+
+To **materialize** a Software-defined assets means to create or update it. Dagster materializes assets by executing the asset's function or triggering an integration. These assets are stored in places like databases or cloud storage. Many destinations are supported out-of-the-box through another Dagster feature: [I/O managers](/concepts/io-management/io-managers). If an asset does not have an I/O manager configured, the asset is saved in the user's local file system.
+
+The H3s below actually should all go under tabs.
+
+### Dagit
+
+To manually materialize an asset over Dagit, click the Materialize button in the upper right corner of the screen.
+
+{/* Insert Image here */}
+
+This will create a Dagster run that will make your assets. You can see the result in the Dagit UI:
+
+{/* Insert Image here */}
+
+You can also look at the logs for the run:
+
+{/* Insert Image here */}
+
+### dagster CLI
+
+### Python API
+
+In future sections, you'll learn how to materialize assets automatically on a schedule.
+
+## Next steps
+
+You've written the first step in your data pipeline! In the next section, you'll learn how to add more assets to your pipeline. You'll also learn how to add more information and metadata to your assets.

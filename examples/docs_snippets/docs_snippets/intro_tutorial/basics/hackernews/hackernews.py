@@ -7,7 +7,9 @@ import pandas as pd
 import requests
 from wordcloud import STOPWORDS, WordCloud
 
-from dagster import MetadataValue, OpExecutionContext, asset
+# start_hackernews_dagster_imports
+from dagster import asset, MetadataValue, OpExecutionContext
+# end_hackernews_dagster_imports
 
 # start_topstory_ids_asset_marker
 
