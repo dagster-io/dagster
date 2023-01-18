@@ -10,7 +10,7 @@ SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
 
 
 def _get_sf_options(config, table_slice):
-    return {
+    conf = {
         "sfURL": f"{config['account']}.snowflakecomputing.com",
         "sfUser": config["user"],
         "sfPassword": config["password"],
@@ -19,6 +19,11 @@ def _get_sf_options(config, table_slice):
         "sfWarehouse": config.get("warehouse"),
         "dbtable": table_slice.table,
     }
+
+    print("CONFIGURATION")
+    print(conf)
+
+    return conf
 
 
 # SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.13.22,net.snowflake:spark-snowflake_2.12:2.11.0-spark_3.3"
