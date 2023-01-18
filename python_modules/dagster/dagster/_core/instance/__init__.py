@@ -705,7 +705,7 @@ class DagsterInstance:
         if "enabled" in nux_settings:
             return nux_settings["enabled"]
         else:
-            return nux_enabled_by_default 
+            return nux_enabled_by_default
 
     # run monitoring
 
