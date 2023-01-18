@@ -166,6 +166,10 @@ class Resource(
         """
         return PartialResource(cls, data=kwargs)
 
+    # Python descriptor
+    # https://docs.python.org/3/howto/descriptor.html
+    # Used to adjust the types of resource inputs and outputs, e.g. resource dependencies can be passed in
+    # as PartialResources or Resources, but will always be returned as Resources
     def __get__(self, obj: "Resource", __owner: Any) -> Self:
         ...
 
