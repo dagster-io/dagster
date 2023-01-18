@@ -454,7 +454,7 @@ def multi_asset(
                 (
                     f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for"
                     f" multi-asset {op_name}. Must be one of the outs for this multi-asset"
-                    f" {list(outs.keys())}."
+                    f" {list(outs.keys())[:20]}."
                 ),
             )
             invalid_asset_deps = asset_keys.difference(valid_asset_deps)
@@ -464,7 +464,8 @@ def multi_asset(
                     f"Invalid asset dependencies: {invalid_asset_deps} specified in"
                     f" `internal_asset_deps` argument for multi-asset '{op_name}' on key"
                     f" '{out_name}'. Each specified asset key must be associated with an input to"
-                    f" the asset or produced by this asset. Valid keys: {valid_asset_deps}"
+                    " the asset or produced by this asset. Valid keys:"
+                    f" {list(valid_asset_deps)[:20]}"
                 ),
             )
         with warnings.catch_warnings():

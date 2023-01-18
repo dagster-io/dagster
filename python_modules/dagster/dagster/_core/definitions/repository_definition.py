@@ -1477,7 +1477,7 @@ class RepositoryDefinition:
     @property
     def asset_graph(self) -> AssetGraph:
         return AssetGraph.from_assets(
-            [*self._assets_defs_by_key.values(), *self.source_assets_by_key.values()]
+            [*set(self._assets_defs_by_key.values()), *self.source_assets_by_key.values()]
         )
 
     # If definition comes from the @repository decorator, then the __call__ method will be
