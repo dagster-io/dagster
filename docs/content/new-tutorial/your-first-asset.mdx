@@ -19,23 +19,22 @@ By the end of this section, you will:
 
 ## Understanding the pipeline
 
-Hypothetically, you have a Python script called `analyze_hackernews.py`. The code for it is below. In this script, you:
+Hypothetically, you have a Python script called `analyze_hackernews.py`. The code for it is below. If you'd like to see this code work, you can run:
 
-- use the free [Hacker News API](https://github.com/HackerNews/API) to get the IDs for the current top stories for Hacker News.
-- get the titles of the top 100 stories
-- make a chart with this data and save it
+```bash
+python analyze_hackernews.py
+```
 
 ```python file=/intro_tutorial/basics/hackernews/analyze_hackernews.py
-# start_hackernews_topstory_ids
 import requests
+import matplotlib.pyplot as plt
+import pandas as pd
+from wordcloud import STOPWORDS, WordCloud
+
 
 newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
 top_100_newstories = requests.get(newstories_url).json()[:100]
-# end_hackernews_topstory_ids
 
-# start_hackernews_topstories
-import matplotlib.pyplot as plt
-import pandas as pd
 
 results = []
 for item_id in top_100_newstories:
@@ -46,26 +45,27 @@ for item_id in top_100_newstories:
         print(f"Got {len(results)} items so far.")
 
 df = pd.DataFrame(results)
-# end_hackernews_topstories
 
-
-# start_hackernews_topstories_word_cloud
-from wordcloud import STOPWORDS, WordCloud
 
 stopwords = set(STOPWORDS)
 stopwords.update(["Ask", "Show", "HN", "S"])
 titles_text = " ".join([str(item) for item in df["title"]])
 titles_cloud = WordCloud(stopwords=stopwords, background_color="white").generate(titles_text)
 
-# Generate the word cloud image
 plt.figure(figsize=(8, 8), facecolor=None)
 plt.imshow(titles_cloud, interpolation="bilinear")
 plt.axis("off")
 plt.tight_layout(pad=0)
 
+
 plt.show()
-# end_hackernews_topstories_word_cloud
 ```
+
+As an overview, this script:
+
+- uses the free [Hacker News API](https://github.com/HackerNews/API) to get the IDs for the current top stories for Hacker News.
+- gets the titles of the top 100 stories
+- makes a chart with this data and save it
 
 You want this visualization updated daily, and you want to use Dagster to orchestrate it. The first step is to get the ingestion moved over to Dagster.
 
