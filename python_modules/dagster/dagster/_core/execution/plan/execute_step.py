@@ -101,7 +101,7 @@ def _step_output_error_checked_user_event_sequence(
         if not step.has_step_output(cast(str, output.output_name)):
             raise DagsterInvariantViolationError(
                 f'Core compute for {op_label} returned an output "{output.output_name}" that does '
-                f"not exist. The available outputs are {output_names}"
+                f'not exist. The available outputs are {output_names}'
             )
 
         step_output = step.step_output_named(cast(str, output.output_name))
@@ -113,13 +113,13 @@ def _step_output_error_checked_user_event_sequence(
             if step_context.has_seen_output(output.output_name):
                 raise DagsterInvariantViolationError(
                     f'Compute for {op_label} returned an output "{output.output_name}" multiple '
-                    "times"
+                    'times'
                 )
 
             if output_def.is_dynamic:
                 raise DagsterInvariantViolationError(
                     f'Compute for {op_label} for output "{output.output_name}" defined as dynamic '
-                    "must yield DynamicOutput, got Output."
+                    'must yield DynamicOutput, got Output.'
                 )
 
             step_context.observe_output(output.output_name)
@@ -145,7 +145,7 @@ def _step_output_error_checked_user_event_sequence(
             if step_context.has_seen_output(output.output_name, output.mapping_key):
                 raise DagsterInvariantViolationError(
                     f"Compute for {op_label} yielded a DynamicOutput with mapping_key "
-                    f'"{output.mapping_key}" multiple times.'
+                    f"\"{output.mapping_key}\" multiple times."
                 )
             step_context.observe_output(output.output_name, output.mapping_key)
             metadata = step_context.get_output_metadata(
@@ -175,7 +175,7 @@ def _step_output_error_checked_user_event_sequence(
                 raise DagsterStepOutputNotFoundError(
                     (
                         f"Core compute for {op_label} did not return an output for non-optional "
-                        f'output "{step_output_def.name}"'
+                        f"output \"{step_output_def.name}\""
                     ),
                     step_key=step.key,
                     output_name=step_output_def.name,
@@ -253,7 +253,7 @@ def _type_checked_event_sequence_for_input(
             description=(
                 f'Type check failed for step input "{input_name}" - '
                 f'expected type "{dagster_type.display_name}". '
-                f"Description: {type_check.description}"
+                f'Description: {type_check.description}'
             ),
             metadata_entries=type_check.metadata_entries,
             dagster_type=dagster_type,
@@ -306,7 +306,7 @@ def _type_check_output(
             description=(
                 f'Type check failed for step output "{output.output_name}" - '
                 f'expected type "{dagster_type.display_name}". '
-                f"Description: {type_check.description}"
+                f'Description: {type_check.description}'
             ),
             metadata_entries=type_check.metadata_entries,
             dagster_type=dagster_type,
@@ -544,6 +544,8 @@ def _get_output_asset_materializations(
                     if isinstance(partition, MultiPartitionKey)
                     else {}
                 )
+                print(isinstance(partition, MultiPartitionKey), "is multipartitionkey")
+                print("Tags on materialization", tags)
 
                 yield AssetMaterialization(
                     asset_key=asset_key,

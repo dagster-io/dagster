@@ -30,6 +30,7 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._core.storage.pipeline_run import get_partition_tags_from_partition_def
 
 from .asset_selection import AssetGraph, AssetSelection
 from .decorators.sensor_decorator import sensor
@@ -755,12 +756,14 @@ def build_run_requests(
     run_requests = []
 
     for (
-        _,
+        partitions_def,
         partition_key,
     ), asset_keys in assets_to_reconcile_by_partitions_def_partition_key.items():
         tags = {**(run_tags or {})}
         if partition_key is not None:
-            tags[PARTITION_NAME_TAG] = partition_key
+            if partitions_def is None:
+                check.failed("Partition key provided for unpartitioned asset")
+            tags.update({**get_partition_tags_from_partition_def(partitions_def, partition_key)})
 
         run_requests.append(
             RunRequest(
