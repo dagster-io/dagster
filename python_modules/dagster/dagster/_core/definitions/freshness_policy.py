@@ -1,5 +1,5 @@
 import datetime
-from typing import AbstractSet, Mapping, NamedTuple, Optional
+from typing import AbstractSet, FrozenSet, Mapping, NamedTuple, Optional
 
 import pendulum
 from croniter import croniter
@@ -94,7 +94,7 @@ class FreshnessPolicy(
         self,
         window_start: datetime.datetime,
         window_end: datetime.datetime,
-        used_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
+        upstream_keys: FrozenSet[AssetKey],
     ) -> AbstractSet[FreshnessConstraint]:
         """For a given time window, calculate a set of FreshnessConstraints that this asset must
         satisfy.
@@ -104,9 +104,7 @@ class FreshnessPolicy(
                 calculated for. Generally, this is the current time.
             window_start (datetime): The end time of the window that constraints will be
                 calculated for.
-            used_data_times (Mapping[AssetKey, Optional[datetime]]): For each of the relevant
-                upstream assets, the timestamp of the data that was used to create the current
-                version of this asset.
+            upstream_keys (FrozenSet[AssetKey]): The relevant upstream keys for this policy.
         """
         constraints = set()
 
@@ -126,24 +124,17 @@ class FreshnessPolicy(
 
         # iterate over each schedule tick in the provided time window
         evaluation_tick = next(constraint_ticks, None)
-        upstream_keys = frozenset(used_data_times.keys())
-        used_data_time = None
-        for dt in used_data_times.values():
-            if dt is not None:
-                used_data_time = min(used_data_time or dt, dt)
         while evaluation_tick is not None and evaluation_tick < window_end:
             required_data_time = evaluation_tick - self.maximum_lag_delta
             required_by_time = evaluation_tick
 
-            # only add constraints if it is not currently fully satisfied
-            if used_data_time is None or used_data_time < required_data_time:
-                constraints.add(
-                    FreshnessConstraint(
-                        asset_keys=upstream_keys,
-                        required_data_time=required_data_time,
-                        required_by_time=required_by_time,
-                    )
+            constraints.add(
+                FreshnessConstraint(
+                    asset_keys=upstream_keys,
+                    required_data_time=required_data_time,
+                    required_by_time=required_by_time,
                 )
+            )
 
             evaluation_tick = next(constraint_ticks, None)
             # fallback if the user selects a very small maximum_lag_minutes value

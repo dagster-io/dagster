@@ -21,12 +21,9 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 @pytest.mark.parametrize("ignore_asset_tags", [True, False])
 @pytest.mark.parametrize(
-    ["relative_to", "runs_to_expected_data_times_index"],
+    ["runs_to_expected_data_times_index"],
     [
         (
-            # materialization times are calculated relative to the root assets
-            # in this case, the root of all assets in the graph is AssetKey("a")
-            "ROOTS",
             [
                 # EXPLANATION FOR THIS FORMAT:
                 #
@@ -46,7 +43,6 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
             ],
         ),
         (
-            "ROOTS",
             [
                 ("abcf", {"abc": {"a": 0}}),
                 ("bd", {"abd": {"a": 0}}),
@@ -57,45 +53,9 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
                 ("df", {"abcdf": {"a": 2}}),
             ],
         ),
-        (
-            # materialization times are calculated relative to the asset itself
-            # this sidesteps any of the recursion, you're just looking at the latest materialization
-            "SELF",
-            [
-                ("abcdef", {a: {a: 0} for a in "abcdef"}),
-                ("abc", {a: {a: 1 if a in "abc" else 0} for a in "abcdef"}),
-                ("def", {a: {a: 2 if a in "def" else 1} for a in "abcdef"}),
-                ("abcdef", {a: {a: 3} for a in "abcdef"}),
-                ("acd", {a: {a: 4 if a in "acd" else 3} for a in "abcdef"}),
-                ("bef", {a: {a: 5 if a in "bef" else 4} for a in "abcdef"}),
-            ],
-        ),
-        (
-            # materialization times are calculated relative to assets b and c
-            "bc",
-            [
-                ("abcd", {"d": {"b": 0, "c": 0}}),
-                ("acd", {"d": {"b": 0, "c": 1}}),
-                ("abd", {"d": {"b": 2, "c": 1}}),
-                ("f", {"df": {"b": 2, "c": 1}}),
-            ],
-        ),
-        (
-            # materialization times are calculated relative to assets a and c
-            "ac",
-            [
-                ("abcd", {"d": {"a": 0, "c": 0}}),
-                ("ce", {"d": {"a": 0, "c": 0}, "e": {"a": 0, "c": 1}}),
-                ("df", {"de": {"a": 0, "c": 1}}),
-                ("abc", {"de": {"a": 0, "c": 1}}),
-                ("d", {"d": {"a": 3, "c": 3}, "e": {"a": 0, "c": 1}}),
-            ],
-        ),
     ],
 )
-def test_caching_instance_queryer(
-    ignore_asset_tags, relative_to, runs_to_expected_data_times_index
-):
+def test_caching_instance_queryer(ignore_asset_tags, runs_to_expected_data_times_index):
     r"""
     A = B = D = F
      \\  //
@@ -183,12 +143,6 @@ def test_caching_instance_queryer(
                     latest_asset_record = data_time_queryer.get_latest_materialization_record(
                         AssetKey(ak)
                     )
-                    if relative_to == "ROOTS":
-                        relevant_upstream_keys = None
-                    elif relative_to == "SELF":
-                        relevant_upstream_keys = {AssetKey(ak)}
-                    else:
-                        relevant_upstream_keys = {AssetKey(u) for u in relative_to}
                     if ignore_asset_tags:
                         # simulate an environment where materialization tags were not populated
                         with mock.patch(
@@ -198,13 +152,11 @@ def test_caching_instance_queryer(
                             upstream_data_times = data_time_queryer.get_used_data_times_for_record(
                                 asset_graph=asset_graph,
                                 record=latest_asset_record,
-                                upstream_keys=relevant_upstream_keys,
                             )
                     else:
                         upstream_data_times = data_time_queryer.get_used_data_times_for_record(
                             asset_graph=asset_graph,
                             record=latest_asset_record,
-                            upstream_keys=relevant_upstream_keys,
                         )
                     assert upstream_data_times == {
                         AssetKey(k): materialization_times_index[AssetKey(k)][v]
