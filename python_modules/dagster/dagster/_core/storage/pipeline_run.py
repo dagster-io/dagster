@@ -3,7 +3,6 @@ from datetime import datetime
 from enum import Enum
 from inspect import Parameter
 from typing import (
-    cast,
     TYPE_CHECKING,
     Any,
     Dict,
@@ -15,6 +14,7 @@ from typing import (
     Sequence,
     Type,
     Union,
+    cast,
 )
 
 from typing_extensions import Self
@@ -49,8 +49,8 @@ from .tags import (
 if TYPE_CHECKING:
     from dagster._core.definitions.partition import (
         Partition,
-        PartitionSetDefinition,
         PartitionsDefinition,
+        PartitionSetDefinition,
     )
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
@@ -536,8 +536,8 @@ class DagsterRun(
 
 def get_tags_from_partition_key(partition_key: str) -> Mapping[str, str]:
     from dagster._core.definitions.multi_dimensional_partitions import (
-        get_tags_from_multi_partition_key,
         MultiPartitionKey,
+        get_tags_from_multi_partition_key,
     )
 
     tags = {PARTITION_NAME_TAG: partition_key}
@@ -551,8 +551,8 @@ def get_partition_tags_from_partition_def(
     partitions_def: "PartitionsDefinition", partition_key: str
 ) -> Mapping[str, str]:
     from dagster._core.definitions.multi_dimensional_partitions import (
-        MultiPartitionsDefinition,
         MultiPartitionKey,
+        MultiPartitionsDefinition,
     )
 
     if isinstance(partitions_def, MultiPartitionsDefinition):

@@ -28,9 +28,8 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._core.storage.pipeline_run import get_partition_tags_from_partition_def
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .asset_selection import AssetGraph, AssetSelection
 from .decorators.sensor_decorator import sensor
