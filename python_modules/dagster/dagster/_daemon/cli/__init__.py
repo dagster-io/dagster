@@ -48,11 +48,14 @@ def _get_heartbeat_tolerance():
 )
 @workspace_target_argument
 def run_command(code_server_log_level, instance_ref, **kwargs):
-    with capture_interrupts():
-        with DagsterInstance.from_ref(
-            deserialize_as(instance_ref, InstanceRef)
-        ) if instance_ref else DagsterInstance.get() as instance:
-            _daemon_run_command(instance, code_server_log_level, kwargs)
+    try:
+        with capture_interrupts():
+            with DagsterInstance.from_ref(
+                deserialize_as(instance_ref, InstanceRef)
+            ) if instance_ref else DagsterInstance.get() as instance:
+                _daemon_run_command(instance, code_server_log_level, kwargs)
+    except KeyboardInterrupt:
+        return  # Exit cleanly on interrupt
 
 
 @telemetry_wrapper(metadata={"DAEMON_SESSION_ID": get_telemetry_daemon_session_id()})

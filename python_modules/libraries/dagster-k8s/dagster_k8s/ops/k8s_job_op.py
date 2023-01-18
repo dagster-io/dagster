@@ -254,6 +254,10 @@ def execute_k8s_job(
 
     job_name = get_k8s_job_name(context.run_id, context.op.name)
 
+    retry_number = context.retry_number
+    if retry_number > 0:
+        job_name = f"{job_name}-{retry_number}"
+
     job = construct_dagster_k8s_job(
         job_config=k8s_job_config,
         args=args,

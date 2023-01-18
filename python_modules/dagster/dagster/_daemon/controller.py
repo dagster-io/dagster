@@ -274,7 +274,14 @@ class DagsterDaemonController(AbstractContextManager):
                 last_heartbeat_check_time = time.time()
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self._logger.info("Shutting down daemon threads...")
+        if isinstance(exception_value, KeyboardInterrupt):
+            self._logger.info("Received interrupt, shutting down daemon threads...")
+        elif exception_type:
+            self._logger.warning(
+                f"Shutting down daemon threads due to {exception_type.__name__}..."
+            )
+        else:
+            self._logger.info("Shutting down daemon threads...")
         self._daemon_shutdown_event.set()
         for daemon_type, thread in self._daemon_threads.items():
             if thread.is_alive():
