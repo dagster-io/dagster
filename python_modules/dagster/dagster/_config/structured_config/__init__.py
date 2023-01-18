@@ -1,7 +1,7 @@
 import inspect
 from typing import Generic, Mapping, TypeVar, Union
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, dataclass_transform, get_args, get_origin
 
 from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType
 from dagster._config.post_process import resolve_defaults
