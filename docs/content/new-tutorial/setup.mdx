@@ -26,7 +26,28 @@ To complete this tutorial, you'll need:
   - `dagit` is the web-based UI for developing and operating Dagster jobs, including a DAG browser, a type-aware config editor, and a live execution interface.
   - `requests` is not a part of Dagster, but you'll use it in the tutorial to download data from the internet.
 
-## Troubleshooting Installations
+## Making your first Dagster project
+
+To verify that your dagster installation was successful, let's create your first Dagster project! We'll use the Dagster scaffolding command to give you an empty Dagster project that you can run locally.
+
+To create the project, run:
+
+```bash
+dagster project scaffold --name tutorial-project
+```
+
+To verify that it worked and that you can run Dagster locally, run:
+
+```bash
+cd tutorial-project
+dagit
+```
+
+If you'd like an explanation on what files were made and why, you can look at the [Creating a new Dagster project page](/getting-started/create-new-project#using-the-default-project-skeleton).
+
+---
+
+## Troubleshooting Installation
 
 If you are having issues with installing Dagster, Dagit, or any of its dependencies, you can look at the [Installation Troubleshooting Page](/getting-started/installation/troubleshooting-installation) for help and resources.
 
@@ -34,4 +55,4 @@ If you are having issues with installing Dagster, Dagit, or any of its dependenc
 
 ## Ready to get started?
 
-When you've fulfilled all the prerequistes for the tutorial, you can get started [creating your first asset](/tutorial/assets/defining-an-asset).
+When you've created your first Dagster project, you start writing your own pipeline by [creating your first asset](/tutorial/assets/defining-an-asset).
