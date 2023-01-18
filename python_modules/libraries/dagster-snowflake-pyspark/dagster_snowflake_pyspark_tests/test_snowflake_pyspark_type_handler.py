@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import Iterator
 from unittest.mock import patch
 
+import pytest
 from dagster import (
     IOManagerDefinition,
     MetadataValue,
