@@ -306,9 +306,8 @@ class StaticPartitionsDefinition(
         return hash(self.__repr__())
 
     def __eq__(self, other) -> bool:
-        return (
-            isinstance(other, StaticPartitionsDefinition)
-            and self._partitions == other.get_partitions()
+        return isinstance(other, StaticPartitionsDefinition) and (
+            self is other or self._partitions == other.get_partitions()
         )
 
     def __repr__(self) -> str:
