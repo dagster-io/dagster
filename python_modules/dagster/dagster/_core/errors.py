@@ -65,6 +65,10 @@ class DagsterInvalidSubsetError(DagsterError):
     """
 
 
+class DagsterInvalidDeserializationVersionError(DagsterError):
+    """Indicates that a serialized value has an unsupported version and cannot be deserialized."""
+
+
 CONFIG_ERROR_VERBIAGE = """
 This value can be a:
     - Field

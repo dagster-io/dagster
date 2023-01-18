@@ -692,3 +692,9 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
 
     def __contains__(self, value) -> bool:
         raise NotImplementedError()
+
+    @classmethod
+    def from_serialized(
+        cls, partitions_def: "PartitionsDefinition", serialized: str
+    ) -> "PartitionsSubset":
+        raise NotImplementedError()
