@@ -332,7 +332,12 @@ class StaticPartitionMapping(
     PartitionMapping,
     NamedTuple(
         "_StaticPartitionMapping",
-        [("downstream_partition_keys_by_upstream_partition_key", PublicAttr[Mapping])],
+        [
+            (
+                "downstream_partition_keys_by_upstream_partition_key",
+                PublicAttr[Mapping[str, Union[str, Collection[str]]]],
+            )
+        ],
     ),
 ):
     """
