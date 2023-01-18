@@ -1,6 +1,6 @@
 import kubernetes
 import pytest
-from dagster import job, op
+from dagster import RetryRequested, job, op
 from dagster_k8s import execute_k8s_job, k8s_job_op
 from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
@@ -215,3 +215,31 @@ def test_k8s_job_op_with_container_config_and_command(namespace, cluster_provide
     job_name = get_k8s_job_name(run_id, with_container_config.name)
 
     assert "OVERRIDES_CONTAINER_CONFIG" in _get_pod_logs(cluster_provider, job_name, namespace)
+
+
+@pytest.mark.default
+def test_k8s_job_op_retries(namespace, cluster_provider):
+    @op
+    def fails_sometimes(context):
+        execute_k8s_job(
+            context,
+            image="busybox",
+            command=["/bin/sh", "-c"],
+            args=[f"echo HERE IS RETRY NUMBER {context.retry_number}"],
+            namespace=namespace,
+            load_incluster_config=False,
+            kubeconfig_file=cluster_provider.kubeconfig_file,
+        )
+        if context.retry_number == 0:
+            raise RetryRequested(max_retries=1, seconds_to_wait=1)
+
+    @job
+    def fails_sometimes_job():
+        fails_sometimes()
+
+    execute_result = fails_sometimes_job.execute_in_process()
+    run_id = execute_result.dagster_run.run_id
+    job_name = get_k8s_job_name(run_id, fails_sometimes.name)
+
+    assert "HERE IS RETRY NUMBER 0" in _get_pod_logs(cluster_provider, job_name, namespace)
+    assert "HERE IS RETRY NUMBER 1" in _get_pod_logs(cluster_provider, job_name + "-1", namespace)
