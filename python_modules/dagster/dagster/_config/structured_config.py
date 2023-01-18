@@ -1,7 +1,7 @@
 import inspect
-from typing import Generic, Mapping, TypeVar, Union, get_origin
+from typing import Generic, Mapping, TypeVar, Union
 
-from typing_extensions import TypeAlias, dataclass_transform, get_args
+from typing_extensions import TypeAlias, dataclass_transform, get_args, get_origin
 
 from dagster._config.config_type import ConfigType
 from dagster._config.source import BoolSource, IntSource, StringSource
@@ -31,10 +31,7 @@ from dagster._config.field_utils import (
     convert_potential_field,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
-from dagster._core.storage.io_manager import (
-    IOManager,
-    IOManagerDefinition,
-)
+from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
 Self = Any
 
