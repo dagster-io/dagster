@@ -434,18 +434,10 @@ def get_freshness_constraints_by_key(
             continue
         has_freshness_policy = True
         upstream_keys = asset_graph.get_non_source_roots(key)
-        latest_record = instance_queryer.get_latest_materialization_record(key)
-        used_data_times = (
-            instance_queryer.get_used_data_times_for_record(
-                asset_graph=asset_graph, record=latest_record, upstream_keys=upstream_keys
-            )
-            if latest_record is not None
-            else {upstream_key: None for upstream_key in upstream_keys}
-        )
         constraints_by_key[key] = freshness_policy.constraints_for_time_window(
             window_start=plan_window_start,
             window_end=plan_window_end,
-            used_data_times=used_data_times,
+            upstream_keys=frozenset(upstream_keys),
         )
 
     # no freshness policies, so don't bother with constraints
@@ -482,7 +474,6 @@ def get_current_data_times_for_key(
     else:
         return instance_queryer.get_used_data_times_for_record(
             asset_graph=asset_graph,
-            upstream_keys=relevant_upstream_keys,
             record=latest_record,
         )
 
@@ -496,7 +487,7 @@ def get_expected_data_times_for_key(
     """Returns the data times for the given asset key if this asset were to be executed in this
     tick.
     """
-    expected_data_times: Dict[AssetKey, datetime.datetime] = {asset_key: current_time}
+    expected_data_times: Dict[AssetKey, Optional[datetime.datetime]] = {asset_key: current_time}
 
     def _min_or_none(a, b):
         if a is None or b is None:
@@ -641,11 +632,12 @@ def determine_asset_partitions_to_reconcile_for_freshness(
                 # cannot execute this asset, so if something consumes it, it should expect to
                 # recieve the current contents of the asset
                 execution_window_start = None
+                expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
             else:
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
                 in_progress_data_times = instance_queryer.get_in_progress_data_times_for_key(
-                    asset_graph, key, relevant_upstream_keys, current_time
+                    asset_graph, key, current_time
                 )
 
                 # if the latest run for this asset failed, then calculate the data times you would

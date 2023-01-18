@@ -1,5 +1,4 @@
-from collections import deque
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
 
 import graphene
 from dagster import (
@@ -377,33 +376,18 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not event_records:
             return []
 
-        parents_to_children: Dict[AssetKey, AssetKey] = dict()
-        queue = deque([[asset_key, None]])
-        while queue:
-            [current_key, child_key] = queue.popleft()
-            if not current_key or asset_graph.is_source(current_key):
-                continue
-            # just return the nearest 20 assets or all the immediate parents
-            if len(parents_to_children) > 20 and child_key != asset_key:
-                break
-            for parent_key in asset_graph.get_parents(current_key):
-                if parent_key not in parents_to_children:
-                    parents_to_children[parent_key] = current_key
-                    queue.append([parent_key, current_key])
-
         used_data_times = data_time_queryer.get_used_data_times_for_record(
             asset_graph=asset_graph,
             record=event_records[0],
-            upstream_keys=parents_to_children.keys(),
         )
 
         return [
             GrapheneMaterializationUpstreamDataVersion(
-                assetKey=asset_key,
-                downstreamAssetKey=parents_to_children[asset_key],
+                assetKey=used_asset_key,
+                downstreamAssetKey=asset_key,
                 timestamp=int(materialization_time.timestamp() * 1000),
             )
-            for asset_key, materialization_time in used_data_times.items()
+            for used_asset_key, materialization_time in used_data_times.items()
             if materialization_time
         ]
 
