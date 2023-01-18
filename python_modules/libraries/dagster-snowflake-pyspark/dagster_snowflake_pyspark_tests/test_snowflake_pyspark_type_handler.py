@@ -37,8 +37,15 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
     "user": "BUILDKITE",
     "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
-    "warehouse": "TINY_WAREHOUSE",
+    "warehouse": "BUILDKITE",
 }
+
+# SHARED_BUILDKITE_SNOWFLAKE_CONF = {
+#     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
+#     "user": "DEVELOPMENT",
+#     "password": os.getenv("SF_PASSWORD", ""),
+#     "warehouse": "DEVELOPMENT",
+# }
 
 # SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.13.22,net.snowflake:spark-snowflake_2.12:2.11.0-spark_3.3"
 SNOWFLAKE_JARS = (
