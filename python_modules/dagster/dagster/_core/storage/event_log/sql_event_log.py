@@ -969,6 +969,7 @@ class SqlEventLogStorage(EventLogStorage):
             results = conn.execute(query).fetchall()
 
         events = {}
+        record_id = None
         try:
             for (
                 record_id,
