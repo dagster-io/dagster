@@ -1,5 +1,18 @@
 import inspect
-from typing import Generic, TypeVar, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Generic,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from typing_extensions import TypeAlias
 
@@ -10,8 +23,10 @@ from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.structured_config.typing_utils import TypecheckAllowPartialResourceInitParams
 from dagster._config.validate import process_config, validate_config
 from dagster._core.definitions.definition_config_schema import (
+    ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
     IDefinitionConfigSchema,
+    convert_user_facing_definition_config_schema,
 )
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.init import InitResourceContext
@@ -25,7 +40,6 @@ except ImportError:
 
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Mapping, Optional, Type, cast
 
 from pydantic import BaseModel, Extra
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_MAPPING, SHAPE_SINGLETON, ModelField
@@ -38,22 +52,20 @@ from dagster._config.field_utils import (
     Permissive,
     convert_potential_field,
 )
-from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
+from dagster._core.definitions.resource_definition import (
+    ResourceDefinition,
+    ResourceFunction,
+    ResourceFunctionWithContext,
+    ResourceFunctionWithoutContext,
+    has_at_least_one_parameter,
+)
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
+from . import typing_utils
+from .typing_utils import BaseResourceMeta
+from .utils import safe_is_subclass
 
-def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
-    """Version of issubclass that returns False if cls is not a Type."""
-    if not isinstance(cls, type):
-        return False
-
-    try:
-        return issubclass(cls, possible_parent_cls)
-    except TypeError:
-        # Using builtin Python types in python 3.9+ will raise a TypeError when using issubclass
-        # even though the isinstance check will succeed (as will inspect.isclass), for example
-        # list[dict[str, str]] will raise a TypeError
-        return False
+Self = TypeVar("Self", bound="Resource")
 
 
 class MakeConfigCacheable(BaseModel):
@@ -168,6 +180,145 @@ def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSch
 
 
 ResValue = TypeVar("ResValue")
+IOManagerValue = TypeVar("IOManagerValue", bound=IOManager)
+
+ResourceId: TypeAlias = int
+
+
+def _resolve_required_resource_keys_for_resource(
+    resource: ResourceDefinition, resource_id_to_key_mapping: Mapping[ResourceId, str]
+) -> AbstractSet[str]:
+    """
+    Gets the required resource keys for the provided resource, with the assistance of the passed
+    resource-id-to-key mapping. For resources which may hold nested partial resources,
+    this mapping is used to obtain the top-level resource keys to depend on.
+    """
+    if isinstance(resource, AllowDelayedDependencies):
+        return resource._resolve_required_resource_keys(resource_id_to_key_mapping)
+    return resource.required_resource_keys
+
+
+class AllowDelayedDependencies:
+    _nested_partial_resources: Mapping[str, ResourceDefinition] = {}
+
+    def _resolve_required_resource_keys(
+        self, resource_mapping: Mapping[int, str]
+    ) -> AbstractSet[str]:
+        # All dependent resources which are not fully configured
+        # must be specified to the Definitions object so that the
+        # resource can be configured at runtime by the user
+        nested_partial_resource_keys = {
+            attr_name: resource_mapping.get(id(resource_def))
+            for attr_name, resource_def in self._nested_partial_resources.items()
+        }
+        check.invariant(
+            all(pointer_key is not None for pointer_key in nested_partial_resource_keys.values()),
+            (
+                "Any partially configured, nested resources must be specified to Definitions"
+                f" object: {nested_partial_resource_keys}"
+            ),
+        )
+
+        # Recursively get all nested resource keys
+        nested_resource_required_keys: Set[str] = set()
+        for v in self._nested_partial_resources.values():
+            nested_resource_required_keys.update(
+                _resolve_required_resource_keys_for_resource(v, resource_mapping)
+            )
+
+        resources, _ = _separate_resource_params(self.__dict__)
+        for v in resources.values():
+            nested_resource_required_keys.update(
+                _resolve_required_resource_keys_for_resource(v, resource_mapping)
+            )
+
+        out = set(cast(Set[str], nested_partial_resource_keys.values())).union(
+            nested_resource_required_keys
+        )
+        return out
+
+
+class ResourceWithKeyMapping(ResourceDefinition):
+    """
+    Wrapper around a ResourceDefinition which helps the inner resource resolve its required
+    resource keys. This is useful for resources which may hold nested resources. At construction
+    time, they are unaware of the resource keys of their nested resources - the resource id to
+    key mapping is used to resolve this.
+    """
+
+    def __init__(
+        self, resource: ResourceDefinition, resource_id_to_key_mapping: Dict[ResourceId, str]
+    ):
+        self._resource = resource
+        self._resource_id_to_key_mapping = resource_id_to_key_mapping
+
+        ResourceDefinition.__init__(
+            self,
+            resource_fn=self.setup_context_resources_and_call,
+            config_schema=resource.config_schema,
+            description=resource.description,
+            version=resource.version,
+        )
+
+    def setup_context_resources_and_call(self, context: InitResourceContext):
+        """
+        Wrapper around the wrapped resource's resource_fn which sets up the context.resources
+        to include resources by their ID, and then calls the nested resource's resource_fn.
+        """
+        for resource_id, resource_key in self._resource_id_to_key_mapping.items():
+            # Wrapped resource only knows about its nested resources by ID, so we need to
+            # set up the context.resources to include resources by their ID as well.
+            setattr(
+                context.resources,
+                f"id_{resource_id}",
+                getattr(context.resources, resource_key, None),
+            )
+
+        if has_at_least_one_parameter(self._resource.resource_fn):
+            return self._resource.resource_fn(context)
+        else:
+            return cast(ResourceFunctionWithoutContext, self._resource.resource_fn)()
+
+    @property
+    def required_resource_keys(self) -> AbstractSet[str]:
+        return _resolve_required_resource_keys_for_resource(
+            self._resource, self._resource_id_to_key_mapping
+        )
+
+
+class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
+    """
+    Version of ResourceWithKeyMapping wrapper that also implements IOManagerDefinition.
+    """
+
+    def __init__(
+        self, resource: ResourceDefinition, resource_id_to_key_mapping: Dict[ResourceId, str]
+    ):
+        ResourceWithKeyMapping.__init__(self, resource, resource_id_to_key_mapping)
+        IOManagerDefinition.__init__(
+            self, resource_fn=self.resource_fn, config_schema=resource.config_schema
+        )
+
+
+def attach_resource_id_to_key_mapping(
+    resource_def: Any, resource_id_to_key_mapping: Dict[ResourceId, str]
+) -> Any:
+    if isinstance(resource_def, ResourceDefinition):
+        return (
+            IOManagerWithKeyMapping(resource_def, resource_id_to_key_mapping)
+            if isinstance(resource_def, IOManagerDefinition)
+            else ResourceWithKeyMapping(resource_def, resource_id_to_key_mapping)
+        )
+    return resource_def
+
+
+def _get_resource_by_id(context: InitResourceContext, resource_id: ResourceId) -> Any:
+    """
+    Retrieves a resource's value from the resource context object from the ResourceDefinition's ID.
+    This is used to retrieve the value of nested resources which are not fully configured, since the
+    resource key is not known by the nested resource's parent.
+    """
+    return getattr(context.resources, f"id_{resource_id}", None)
 
 
 class Resource(
@@ -175,6 +326,8 @@ class Resource(
     ResourceDefinition,
     Config,
     TypecheckAllowPartialResourceInitParams,
+    AllowDelayedDependencies,
+    metaclass=BaseResourceMeta,
 ):
     """
     Base class for Dagster resources that utilize structured config.
@@ -194,17 +347,69 @@ class Resource(
     """
 
     def __init__(self, **data: Any):
-        schema = infer_schema_from_config_class(self.__class__)
-        post_processed_data = _process_config_values(schema, data, self.__class__.__name__)
-        Config.__init__(self, **post_processed_data)
+        resource_pointers, data_without_resources = _separate_resource_params(data)
+
+        schema = infer_schema_from_config_class(
+            self.__class__, ignore_resource_fields=set(resource_pointers.keys())
+        )
+
+        post_processed_data = _process_config_values(
+            schema, data_without_resources, self.__class__.__name__
+        )
+        curried_schema = _curry_config_schema(schema, post_processed_data)
+
+        Config.__init__(self, **{**post_processed_data, **resource_pointers})
+
+        # We keep track of any resources we depend on which are not fully configured
+        # so that we can retrieve them at runtime
+        self._nested_partial_resources: Mapping[str, ResourceDefinition] = {
+            k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
+        }
+
         ResourceDefinition.__init__(
             self,
-            resource_fn=self.create_object_to_pass_to_user_code,
-            config_schema=_curry_config_schema(schema, post_processed_data),
+            resource_fn=self.initialize_and_run,
+            config_schema=curried_schema,
             description=self.__doc__,
         )
 
-    def create_object_to_pass_to_user_code(self, context) -> Any:  # pylint: disable=unused-argument
+    @classmethod
+    def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":
+        """
+        Returns a partially initialized copy of the resource, with remaining config fields
+        set at runtime.
+        """
+        return PartialResource(cls, data=kwargs)
+
+    def initialize_and_run(self, context: InitResourceContext) -> ResValue:
+        # If we have any partially configured resources, we need to update them
+        # with the fully configured resources from the context
+        partial_resources_to_update = {
+            attr_name: _get_resource_by_id(context, id(resource_def))
+            for attr_name, resource_def in self._nested_partial_resources.items()
+        }
+
+        # Also evaluate any resources that are not partial
+        resources_to_update, _ = _separate_resource_params(self.__dict__)
+        resources_to_update = {
+            attr_name: _call_resource_fn_with_default(resource_def, context)
+            for attr_name, resource_def in resources_to_update.items()
+            if attr_name not in partial_resources_to_update
+        }
+
+        to_update = {**resources_to_update, **partial_resources_to_update}
+
+        for attr_name, value in to_update.items():
+            object.__setattr__(self, attr_name, value)
+
+        return self._create_object_fn(context)
+
+    def _create_object_fn(self, context: InitResourceContext) -> ResValue:
+        return self.create_object_to_pass_to_user_code(context)
+
+    def create_object_to_pass_to_user_code(
+        self, context: InitResourceContext
+    ) -> ResValue:  # pylint: disable=unused-argument
         """
         Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
@@ -215,31 +420,46 @@ class Resource(
         """
         return cast(ResValue, self)
 
-    @classmethod
-    def configure_at_launch(cls, **kwargs) -> "PartialResource[ResValue]":
-        """
-        Returns a partially initialized copy of the resource, with remaining config fields
-        set at runtime.
-        """
-        return PartialResource(cls, data=kwargs)
+
+def _is_fully_configured(resource: ResourceDefinition) -> bool:
+    res = (
+        ConfiguredDefinitionConfigSchema(
+            resource,
+            convert_user_facing_definition_config_schema(resource.config_schema),
+            resource.config_schema.default_value if resource.config_schema.default_provided else {},
+        )
+        .resolve_config({})
+        .success
+        is True
+    )
+
+    return res
 
 
-class PartialResource(Generic[ResValue], ResourceDefinition, MakeConfigCacheable):
+class PartialResource(
+    Generic[ResValue], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
+):
     data: Dict[str, Any]
     resource_cls: Type[Resource[ResValue]]
 
     def __init__(self, resource_cls: Type[Resource[ResValue]], data: Dict[str, Any]):
-        check.invariant(data == {}, "PartialResource currently does not support config fields")
+        resource_pointers, data_without_resources = _separate_resource_params(data)
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
+        # We keep track of any resources we depend on which are not fully configured
+        # so that we can retrieve them at runtime
+        self._nested_partial_resources: Dict[str, ResourceDefinition] = {
+            k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
+        }
+
         schema = infer_schema_from_config_class(
-            resource_cls,
+            resource_cls, ignore_resource_fields=set(resource_pointers.keys())
         )
 
         def resource_fn(context: InitResourceContext):
             instantiated = resource_cls(**context.resource_config, **data)
-            return instantiated.create_object_to_pass_to_user_code(context)
+            return instantiated.initialize_and_run(context)
 
         ResourceDefinition.__init__(
             self,
@@ -250,6 +470,23 @@ class PartialResource(Generic[ResValue], ResourceDefinition, MakeConfigCacheable
 
 
 ResourceOrPartial: TypeAlias = Union[Resource[ResValue], PartialResource[ResValue]]
+ResourceOrPartialOrBase: TypeAlias = Union[
+    Resource[ResValue], PartialResource[ResValue], ResourceDefinition, ResValue
+]
+
+
+V = TypeVar("V")
+
+
+class ResourceDependency(Generic[V]):
+    def __set_name__(self, _owner, name):
+        self._name = name
+
+    def __get__(self, obj: "Resource", __owner: Any) -> V:
+        return getattr(obj, self._name)
+
+    def __set__(self, obj: Optional[object], value: ResourceOrPartialOrBase[V]) -> None:
+        setattr(obj, self._name, value)
 
 
 class StructuredResourceAdapter(Resource, ABC):
@@ -293,7 +530,7 @@ class StructuredResourceAdapter(Resource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
+class StructuredConfigIOManagerBase(Resource[IOManagerValue], IOManagerDefinition):
     """
     Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
@@ -305,30 +542,40 @@ class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
     """
 
     def __init__(self, **data: Any):
-        schema = infer_schema_from_config_class(self.__class__)
-        Resource.__init__(self, **_process_config_values(schema, data, self.__class__.__name__))
+        Resource.__init__(self, **data)
         IOManagerDefinition.__init__(
             self,
-            resource_fn=self.create_io_manager_to_pass_to_user_code,
+            resource_fn=self.initialize_and_run,
             config_schema=self._config_schema,
             description=self.__doc__,
         )
 
-    def _create_object_fn(self, context: InitResourceContext) -> IOManager:
+    def _create_object_fn(self, context: InitResourceContext) -> IOManagerValue:
         return self.create_io_manager_to_pass_to_user_code(context)
 
     @abstractmethod
-    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManagerValue:
         """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
 
     @classmethod
-    def configure_at_launch(cls, **kwargs) -> "PartialIOManager":
+    def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialIOManager[Self]":
         """
-        Returns a partially initialized copy of the resource, with remaining config fields
+        Returns a partially initialized copy of the IO manager, with remaining config fields
         set at runtime.
         """
         return PartialIOManager(cls, data=kwargs)
+
+
+class PartialIOManager(Generic[ResValue], PartialResource[ResValue], IOManagerDefinition):
+    def __init__(self, resource_cls: Type[Resource[ResValue]], data: Dict[str, Any]):
+        PartialResource.__init__(self, resource_cls, data)
+        IOManagerDefinition.__init__(
+            self,
+            resource_fn=self._resource_fn,
+            config_schema=self._config_schema,
+            description=resource_cls.__doc__,
+        )
 
 
 class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
@@ -378,17 +625,6 @@ def _wrap_config_type(
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
 
 
-class PartialIOManager(PartialResource[IOManager], IOManagerDefinition):
-    def __init__(self, resource_cls: Type[StructuredConfigIOManagerBase], data: Dict[str, Any]):
-        PartialResource.__init__(self, resource_cls, data)
-        IOManagerDefinition.__init__(
-            self,
-            resource_fn=self._resource_fn,
-            config_schema=self._config_schema,
-            description=resource_cls.__doc__,
-        )
-
-
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     """
     Transforms a Pydantic field into a corresponding Dagster config field.
@@ -398,7 +634,7 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
         if pydantic_field.key_field
         else None
     )
-    if _safe_is_subclass(pydantic_field.type_, Config):
+    if safe_is_subclass(pydantic_field.type_, Config):
         inferred_field = infer_schema_from_config_class(
             pydantic_field.type_,
             description=pydantic_field.field_info.description,
@@ -473,7 +709,7 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
     """
     Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
     """
-    if _safe_is_subclass(model_cls, Config):
+    if safe_is_subclass(model_cls, Config):
         check.invariant(
             config_arg_default is inspect.Parameter.empty,
             "Cannot provide a default value when using a Config class",
@@ -494,10 +730,13 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
 def infer_schema_from_config_class(
     model_cls: Type[Config],
     description: Optional[str] = None,
+    ignore_resource_fields: Optional[Set[str]] = None,
 ) -> Field:
     """
     Parses a structured config class and returns a corresponding Dagster config Field.
     """
+    ignore_resource_fields = ignore_resource_fields or set()
+
     check.param_invariant(
         issubclass(model_cls, Config),
         "Config type annotation must inherit from dagster._config.structured_config.Config",
@@ -505,10 +744,48 @@ def infer_schema_from_config_class(
 
     fields = {}
     for pydantic_field in model_cls.__fields__.values():
-        fields[pydantic_field.alias] = _convert_pydantic_field(pydantic_field)
+        if pydantic_field.name not in ignore_resource_fields:
+            fields[pydantic_field.alias] = _convert_pydantic_field(pydantic_field)
 
     shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
+    return Field(config=shape_cls(fields), description=description or docstring)
 
-    return Field(shape_cls(fields), description=description or docstring)
+
+def _separate_resource_params(
+    data: Dict[str, Any]
+) -> Tuple[Dict[str, Union[Resource, PartialResource, ResourceDefinition]], Dict[str, Any]]:
+    """
+    Separates out the key/value inputs of fields in a structured config Resource class which
+    are themselves Resources and those which are not.
+    """
+    return (
+        {
+            k: v
+            for k, v in data.items()
+            if isinstance(v, (Resource, PartialResource, ResourceDefinition))
+        },
+        {
+            k: v
+            for k, v in data.items()
+            if not isinstance(v, (Resource, PartialResource, ResourceDefinition))
+        },
+    )
+
+
+def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourceContext) -> Any:
+    if isinstance(obj.config_schema, ConfiguredDefinitionConfigSchema):
+        value = cast(Dict[str, Any], obj.config_schema.resolve_config({}).value)
+        context = context.replace_config(value["config"])
+    elif obj.config_schema.default_provided:
+        context = context.replace_config(obj.config_schema.default_value)
+    if has_at_least_one_parameter(obj.resource_fn):  # type: ignore  # fmt: skip
+        return cast(ResourceFunctionWithContext, obj.resource_fn)(context)
+    else:
+        return cast(ResourceFunctionWithoutContext, obj.resource_fn)()
+
+
+typing_utils._Resource = Resource
+typing_utils._PartialResource = PartialResource
+typing_utils._ResourceDep = ResourceDependency
