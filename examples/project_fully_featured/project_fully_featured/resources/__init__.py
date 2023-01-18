@@ -48,8 +48,8 @@ configured_pyspark = pyspark_resource.configured(
 
 SHARED_SNOWFLAKE_CONF = {
     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
-    "user": os.getenv("SNOWFLAKE_USER", ""),
-    "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
+    "user": os.getenv("SF_USER", ""),
+    "password": os.getenv("SF_PASSWORD", ""),
     "warehouse": "elementl",
 }
 
@@ -59,7 +59,7 @@ RESOURCES_PROD = {
     "s3": s3_resource,
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
     "warehouse_io_manager": snowflake_pandas_io_manager.configured({
-        "database": "DEMO_DB",
+        "database": "DEVELOPMENT",
         **SHARED_SNOWFLAKE_CONF
     }),
     "pyspark": configured_pyspark,

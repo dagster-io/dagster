@@ -23,7 +23,7 @@ if deployment_name in ["prod", "staging"]:
 
 defs = Definitions(
     assets=all_assets,
-    resources=resources_by_deployment_name[deployment_name],
+    resources=RESOURCES_PROD,
     schedules=[core_assets_schedule],
     sensors=all_sensors,
 )
