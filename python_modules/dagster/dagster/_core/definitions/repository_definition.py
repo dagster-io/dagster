@@ -1368,7 +1368,7 @@ class RepositoryDefinition:
 
         return self.get_job(ASSET_BASE_JOB_PREFIX)
 
-    def get_implicit_asset_job_def_names(self) -> Sequence[str]:
+    def get_implicit_asset_job_names(self) -> Sequence[str]:
         return [
             job_name for job_name in self.job_names if job_name.startswith(ASSET_BASE_JOB_PREFIX)
         ]

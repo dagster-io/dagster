@@ -1310,7 +1310,7 @@ def external_sensor_data_from_def(
             base_asset_job_name: ExternalTargetData(
                 pipeline_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, solid_selection=None
             )
-            for base_asset_job_name in repository_def.get_implicit_asset_job_def_names()
+            for base_asset_job_name in repository_def.get_implicit_asset_job_names()
         }
     else:
         target_dict = {

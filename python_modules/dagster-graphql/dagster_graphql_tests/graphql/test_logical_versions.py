@@ -91,7 +91,7 @@ def test_partitioned_self_dep():
 
 
 def _materialize_assets(context: WorkspaceRequestContext, repo: RepositoryDefinition):
-    selector = infer_job_or_pipeline_selector(context, repo.get_implicit_asset_job_def_names()[0])
+    selector = infer_job_or_pipeline_selector(context, repo.get_implicit_asset_job_names()[0])
     return execute_dagster_graphql(
         context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -104,7 +104,7 @@ def _materialize_assets(context: WorkspaceRequestContext, repo: RepositoryDefini
 
 
 def _fetch_logical_versions(context: WorkspaceRequestContext, repo: RepositoryDefinition):
-    selector = infer_job_or_pipeline_selector(context, repo.get_implicit_asset_job_def_names()[0])
+    selector = infer_job_or_pipeline_selector(context, repo.get_implicit_asset_job_names()[0])
     return execute_dagster_graphql(
         context,
         GET_ASSET_LOGICAL_VERSIONS,
