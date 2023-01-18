@@ -1,3 +1,4 @@
+import functools
 import logging
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
@@ -132,6 +133,7 @@ class SqlEventLogStorage(EventLogStorage):
             partition=partition,
         )
 
+    @functools.lru_cache(maxsize=None)
     def has_asset_key_col(self, column_name: str):
         with self.index_connection() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]

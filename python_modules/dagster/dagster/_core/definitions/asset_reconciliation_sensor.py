@@ -223,9 +223,14 @@ def find_parent_materialized_asset_partitions(
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
     for asset_key in target_asset_selection.upstream(depth=1).resolve(asset_graph):
-        records = instance_queryer.get_materialization_records(
-            asset_key=asset_key, after_cursor=latest_storage_id
-        )
+        # if the asset is non-partitioned, we only need the latest materialization
+        if not asset_graph.is_partitioned(asset_key):
+            latest_record = instance_queryer.get_latest_materialization_record(asset_key)
+            records = [latest_record] if latest_record else []
+        else:
+            records = instance_queryer.get_materialization_records(
+                asset_key=asset_key, after_cursor=latest_storage_id
+            )
         for record in records:
             for child in asset_graph.get_children_partitions(asset_key, record.partition_key):
                 if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
@@ -611,7 +616,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
             # the set of asset keys which are involved in some constraint and are actually upstream
             # of this asset
-            relevant_upstream_keys = frozenset(
+            relevant_upstream_keys = set(
                 set().union(
                     *(
                         expected_data_times_by_key[parent_key].keys()
@@ -699,6 +704,9 @@ def reconcile(
 ):
     instance_queryer = CachingInstanceQueryer(instance=instance)
     asset_graph = repository_def.asset_graph
+
+    # fetch some data in advance to batch together some queries
+    instance_queryer.prefetch_for_keys(list(asset_selection.resolve(asset_graph)))
 
     (
         asset_partitions_to_reconcile_for_freshness,

@@ -21,6 +21,7 @@ import toposort
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
+from dagster._utils.cached_method import cached_method
 
 from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
@@ -311,6 +312,7 @@ class AssetGraph:
             return self._required_multi_asset_sets_by_key[asset_key]
         return set()
 
+    @cached_method
     def toposort_asset_keys(self) -> Sequence[AbstractSet[AssetKey]]:
         return [
             {key for key in level} for level in toposort.toposort(self._asset_dep_graph["upstream"])
