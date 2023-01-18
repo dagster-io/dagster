@@ -78,18 +78,18 @@ Definitions can be included in a Python file like `my_file.py` or a Python modul
 <TabGroup>
 <TabItem name="From a file">
 
-Dagit and other Dagster tools can load a file directly as a code location. In the following example, we used the `-f` argument to supply the name of the file to `dagit`:
+Dagster can load a file directly as a code location. In the following example, we used the `-f` argument to supply the name of the file to `dagster dev`:
 
 ```shell
-dagit -f my_file.py
+dagster dev -f my_file.py
 ```
 
-This command loads the definitions in `my_file.py` as a code location in the same Python environment where Dagit resides.
+This command loads the definitions in `my_file.py` as a code location in the current Python environment.
 
-You can also include multiple files at a time, which Dagit will load as individual code locations:
+You can also include multiple files at a time, which Dagster will load as individual code locations:
 
 ```shell
-dagit -f my_file.py -f my_second_file.py
+dagster dev -f my_file.py -f my_second_file.py
 ```
 
 ---
@@ -97,15 +97,15 @@ dagit -f my_file.py -f my_second_file.py
 </TabItem>
 <TabItem name="From a module">
 
-Dagit and other Dagster tools can also load Python modules as code locations. When this approach is used, Dagster loads the definitions defined at the top-level of the module, in a variable containing the <PyObject object="Definitions" /> object of its root `__init__.py` file. As this style of development eliminates an entire class of Python import errors, we strongly recommend it for Dagster projects deployed to production.
+Dagster can also load Python modules as code locations. When this approach is used, Dagster loads the definitions defined at the top-level of the module, in a variable containing the <PyObject object="Definitions" /> object of its root `__init__.py` file. As this style of development eliminates an entire class of Python import errors, we strongly recommend it for Dagster projects deployed to production.
 
-In the following example, we used the `-m` argument to supply the name of the module to Dagit:
+In the following example, we used the `-m` argument to supply the name of the module to Dagster:
 
 ```shell
-dagit -m your_module_name
+dagster dev -m your_module_name
 ```
 
-This command loads the definitions in the variable containing the <PyObject object="Definitions" /> object in the named module - defined as the root `__init__.py` file - in the same virtual environment as Dagit.
+This command loads the definitions in the variable containing the <PyObject object="Definitions" /> object in the named module - defined as the root `__init__.py` file - in the current Python environment.
 
 **Note**: Before getting started, install dependencies as an editable install by running:
 
@@ -128,13 +128,13 @@ module_name = "your_module_name"  ## name of project's Python module
 When defined, you can run this in the same directory as the `pyproject.toml` file:
 
 ```shell
-dagit
+dagster dev
 ```
 
 Instead of this:
 
 ```shell
-dagit -m your_module_name
+dagster dev -m your_module_name
 ```
 
 ---

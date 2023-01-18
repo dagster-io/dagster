@@ -76,7 +76,7 @@ If you're running on Dagster Cloud and any of your connection fields are sensiti
 Once you've defined the repository, you can launch Dagit, Dagster's web UI. This allows you to view your newly migrated jobs and launch runs.
 
 ```bash
-dagit -f <your migrated dags>.py
+dagster dev -f <your migrated dags>.py
 ```
 
 If your local shell has the correct permissions, you can also test out running the migrated DAGs end-to-end.
