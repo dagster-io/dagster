@@ -1,5 +1,6 @@
 import json
 import shlex
+from argparse import Namespace
 from typing import (
     Any,
     Callable,
@@ -90,6 +91,42 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             {"dbt_cloud": self._dbt_cloud_resource_def},
         )
 
+    @staticmethod
+    def parse_dbt_command(dbt_command: str) -> Namespace:
+        return dbt_parse_args(args=shlex.split(dbt_command)[1:])
+
+    @staticmethod
+    def get_job_materialization_command_step(execute_steps: List[str]) -> int:
+        materialization_command_filter = [
+            DbtCloudCacheableAssetsDefinition.parse_dbt_command(command).which in ["run", "build"]
+            for command in execute_steps
+        ]
+
+        if sum(materialization_command_filter) != 1:
+            raise DagsterDbtCloudJobInvariantViolationError(
+                "The dbt Cloud job must have a single `dbt run` or `dbt build` in its commands. "
+                f"Received commands: {execute_steps}."
+            )
+
+        return materialization_command_filter.index(True)
+
+    @staticmethod
+    def get_compile_filters(parsed_args: Namespace) -> List[str]:
+        dbt_compile_options: List[str] = []
+
+        selected_models = parsed_args.select or []
+        if selected_models:
+            dbt_compile_options.append(f"--select {' '.join(selected_models)}")
+
+        excluded_models = parsed_args.exclude or []
+        if excluded_models:
+            dbt_compile_options.append(f"--exclude {' '.join(excluded_models)}")
+
+        if parsed_args.selector_name:
+            dbt_compile_options.append(f"--selector {parsed_args.selector_name}")
+
+        return dbt_compile_options
+
     def _get_dbt_nodes_and_dependencies(
         self,
     ) -> Tuple[Mapping[str, Any], Mapping[str, FrozenSet[str]]]:
@@ -113,35 +150,20 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         # These commands that execute before and after the job's configured commands do not count
         # towards the single command constraint.
         self._job_commands = job["execute_steps"]
-        materialization_command_filter = [
-            dbt_parse_args(shlex.split(command)[1:]).which in ["run", "build"]
-            for command in self._job_commands
-        ]
-        if sum(materialization_command_filter) != 1:
-            raise DagsterDbtCloudJobInvariantViolationError(
-                f"The dbt Cloud job '{job['name']}' ({job['id']}) must have a single `dbt run` "
-                f"or `dbt build` in its commands. Received commands: {self._job_commands}."
+        self._job_materialization_command_step = (
+            DbtCloudCacheableAssetsDefinition.get_job_materialization_command_step(
+                execute_steps=self._job_commands
             )
-
-        self._job_materialization_command_step = materialization_command_filter.index(True)
+        )
 
         # Retrieve the filters options from the dbt Cloud job's materialization command.
         #
         # There are three filters: `--select`, `--exclude`, and `--selector`.
         materialization_command = self._job_commands[self._job_materialization_command_step]
-        parsed_args = dbt_parse_args(args=shlex.split(materialization_command)[1:])
-        dbt_compile_options: List[str] = []
-
-        selected_models = parsed_args.select or []
-        if selected_models:
-            dbt_compile_options.append(f"--select {' '.join(selected_models)}")
-
-        excluded_models = parsed_args.exclude or []
-        if excluded_models:
-            dbt_compile_options.append(f"--exclude {' '.join(excluded_models)}")
-
-        if parsed_args.selector_name:
-            dbt_compile_options.append(f"--selector {parsed_args.selector_name}")
+        parsed_args = DbtCloudCacheableAssetsDefinition.parse_dbt_command(materialization_command)
+        dbt_compile_options = DbtCloudCacheableAssetsDefinition.get_compile_filters(
+            parsed_args=parsed_args
+        )
 
         # Add the partition variable as a variable to the dbt Cloud job command.
         #
@@ -174,11 +196,11 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         # By always doing a compile step, we can always get the latest dependency structure.
         # This incurs some latency, but at least it doesn't run through the entire materialization
         # process.
+        dbt_compile_command = f"dbt compile {' '.join(dbt_compile_options)}"
         compile_run_dbt_output = self._dbt_cloud.run_job_and_poll(
             job_id=self._job_id,
             cause="Generating software-defined assets for Dagster.",
-            # Pass the filters from the run/build step to the compile step.
-            steps_override=[f"dbt compile {' '.join(dbt_compile_options)}"],
+            steps_override=[dbt_compile_command],
         )
 
         # Target the compile execution step when retrieving run artifacts, rather than assuming
