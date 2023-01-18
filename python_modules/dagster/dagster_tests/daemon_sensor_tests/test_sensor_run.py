@@ -236,7 +236,7 @@ def asset_c(asset_b):  # pylint: disable=unused-argument
     return 3
 
 
-@multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
 def asset_a_and_b_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
@@ -244,7 +244,7 @@ def asset_a_and_b_sensor(context):
         return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
 def doesnt_update_cursor_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if any(asset_events.values()):
@@ -252,7 +252,7 @@ def doesnt_update_cursor_sensor(context):
         return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@multi_asset_sensor(asset_keys=[AssetKey("asset_a")], job=the_job)
+@multi_asset_sensor(monitored_assets=[AssetKey("asset_a")], job=the_job)
 def backlog_sensor(context):
     asset_events = context.materialization_records_for_key(asset_key=AssetKey("asset_a"), limit=2)
     if len(asset_events) == 2:
@@ -260,7 +260,7 @@ def backlog_sensor(context):
         return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@multi_asset_sensor(asset_selection=AssetSelection.keys("asset_c").upstream(include_self=False))
+@multi_asset_sensor(monitored_assets=AssetSelection.keys("asset_c").upstream(include_self=False))
 def asset_selection_sensor(context):
     assert context.asset_keys == [AssetKey("asset_b")]
     assert context.latest_materialization_records_by_key().keys() == {AssetKey("asset_b")}
@@ -309,7 +309,7 @@ weekly_asset_job = define_asset_job(
 )
 
 
-@multi_asset_sensor(asset_keys=[hourly_asset.key], job=weekly_asset_job)
+@multi_asset_sensor(monitored_assets=[hourly_asset.key], job=weekly_asset_job)
 def multi_asset_sensor_hourly_to_weekly(context):
     for partition, materialization in context.latest_materialization_records_by_partition(
         hourly_asset.key
@@ -323,7 +323,7 @@ def multi_asset_sensor_hourly_to_weekly(context):
         context.advance_cursor({hourly_asset.key: materialization})
 
 
-@multi_asset_sensor(asset_keys=[hourly_asset.key], job=hourly_asset_job)
+@multi_asset_sensor(monitored_assets=[hourly_asset.key], job=hourly_asset_job)
 def multi_asset_sensor_hourly_to_hourly(context):
     materialization_by_partition = context.latest_materialization_records_by_partition(
         hourly_asset.key
@@ -670,7 +670,7 @@ def with_source_asset_repo():
     return [a_source_asset]
 
 
-@multi_asset_sensor(asset_keys=[AssetKey("a_source_asset")], job=the_job)
+@multi_asset_sensor(monitored_assets=[AssetKey("a_source_asset")], job=the_job)
 def monitor_source_asset_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
