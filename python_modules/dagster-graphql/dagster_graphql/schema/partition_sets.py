@@ -75,6 +75,14 @@ class GraphenePartitionRun(graphene.ObjectType):
         name = "PartitionRun"
 
 
+class GraphenePartitionStatusCounts(graphene.ObjectType):
+    runStatus = graphene.NonNull(GrapheneRunStatus)
+    count = graphene.NonNull(graphene.Int)
+
+    class Meta:
+        name = "PartitionStatusCounts"
+
+
 class GraphenePartitionStatuses(graphene.ObjectType):
     results = non_null_list(GraphenePartitionStatus)
 
@@ -373,6 +381,7 @@ types = [
     GraphenePartitionSetsOrError,
     GraphenePartitionsOrError,
     GraphenePartitionStatus,
+    GraphenePartitionStatusCounts,
     GraphenePartitionStatuses,
     GraphenePartitionStatusesOrError,
     GraphenePartitionTags,

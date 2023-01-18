@@ -2,6 +2,25 @@
 
 import * as Types from '../../graphql/types';
 
+export type SingleBackfillCountsQueryVariables = Types.Exact<{
+  backfillId: Types.Scalars['String'];
+}>;
+
+export type SingleBackfillCountsQuery = {
+  __typename: 'DagitQuery';
+  partitionBackfillOrError:
+    | {
+        __typename: 'PartitionBackfill';
+        backfillId: string;
+        partitionStatusCounts: Array<{
+          __typename: 'PartitionStatusCounts';
+          runStatus: Types.RunStatus;
+          count: number;
+        }>;
+      }
+    | {__typename: 'PythonError'};
+};
+
 export type SingleBackfillQueryVariables = Types.Exact<{
   backfillId: Types.Scalars['String'];
 }>;
@@ -11,6 +30,7 @@ export type SingleBackfillQuery = {
   partitionBackfillOrError:
     | {
         __typename: 'PartitionBackfill';
+        backfillId: string;
         partitionStatuses: {
           __typename: 'PartitionStatuses';
           results: Array<{

@@ -4,7 +4,10 @@ from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 
-from ..implementation.fetch_partition_sets import partition_statuses_from_run_partition_data
+from ..implementation.fetch_partition_sets import (
+    partition_status_counts_from_run_partition_data,
+    partition_statuses_from_run_partition_data,
+)
 from .asset_key import GrapheneAssetKey
 from .errors import (
     GrapheneInvalidOutputError,
@@ -111,6 +114,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     error = graphene.Field(GraphenePythonError)
     partitionStatuses = graphene.NonNull(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatuses"
+    )
+    partitionStatusCounts = non_null_list(
+        "dagster_graphql.schema.partition_sets.GraphenePartitionStatusCounts"
     )
 
     def __init__(self, backfill_job):
@@ -220,6 +226,12 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             partition_run_data,
             self._backfill_job.get_partition_names(graphene_info.context),
             backfill_id=self._backfill_job.backfill_id,
+        )
+
+    def resolve_partitionStatusCounts(self, graphene_info):
+        partition_run_data = self._get_partition_run_data(graphene_info)
+        return partition_status_counts_from_run_partition_data(
+            partition_run_data, self._backfill_job.get_partition_names(graphene_info.context)
         )
 
     def resolve_error(self, _):
