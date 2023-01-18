@@ -1368,12 +1368,14 @@ class RepositoryDefinition:
 
         return self.get_job(ASSET_BASE_JOB_PREFIX)
 
-    def get_base_asset_job_names(self) -> Sequence[str]:
+    def get_implicit_asset_job_names(self) -> Sequence[str]:
         return [
             job_name for job_name in self.job_names if job_name.startswith(ASSET_BASE_JOB_PREFIX)
         ]
 
-    def get_base_job_for_assets(self, asset_keys: Iterable[AssetKey]) -> Optional[JobDefinition]:
+    def get_implicit_job_def_for_assets(
+        self, asset_keys: Iterable[AssetKey]
+    ) -> Optional[JobDefinition]:
         """
         Returns the asset base job that contains all the given assets, or None if there is no such
         job.

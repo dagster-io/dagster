@@ -71,7 +71,7 @@ class AssetReconciliationScenario(NamedTuple):
                 run_requests, cursor = self.cursor_from.do_scenario(instance)
                 for run_request in run_requests:
                     instance.create_run_for_pipeline(
-                        repo.get_base_job_for_assets(run_request.asset_selection),
+                        repo.get_implicit_job_def_for_assets(run_request.asset_selection),
                         asset_selection=set(run_request.asset_selection),
                         tags=run_request.tags,
                     )
@@ -125,7 +125,7 @@ class AssetReconciliationScenario(NamedTuple):
             )
 
         for run_request in run_requests:
-            base_job = repo.get_base_job_for_assets(run_request.asset_selection)
+            base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)
             assert base_job is not None
 
         return run_requests, cursor
