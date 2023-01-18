@@ -135,7 +135,7 @@ def test_build_snowflake_pyspark_io_manager():
 def test_io_manager_with_snowflake_pyspark():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-        db_name="DEVELOPMENT",
+        db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str="foo string, quux integer",
     ) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
