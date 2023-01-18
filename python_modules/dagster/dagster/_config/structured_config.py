@@ -1,4 +1,7 @@
 import inspect
+from typing import Generic, TypeVar, Union
+
+from typing_extensions import TypeAlias
 
 from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType
 from dagster._config.post_process import resolve_defaults
@@ -9,6 +12,8 @@ from dagster._core.definitions.definition_config_schema import (
     IDefinitionConfigSchema,
 )
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster._core.execution.context.init import InitResourceContext
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -20,6 +25,7 @@ except ImportError:
 
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Type
+from typing import Any, Dict, Optional, Type, cast
 
 from pydantic import BaseModel, Extra
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_MAPPING, SHAPE_SINGLETON, ModelField
@@ -35,6 +41,22 @@ from dagster._config.field_utils import (
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
+
+Self = Any
+
+
+def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
+    """Version of issubclass that returns False if cls is not a Type."""
+    if not isinstance(cls, type):
+        return False
+
+    try:
+        return issubclass(cls, possible_parent_cls)
+    except TypeError:
+        # Using builtin Python types in python 3.9+ will raise a TypeError when using issubclass
+        # even though the isinstance check will succeed (as will inspect.isclass), for example
+        # list[dict[str, str]] will raise a TypeError
+        return False
 
 
 class MakeConfigCacheable(BaseModel):
@@ -130,7 +152,11 @@ def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSch
     return DefinitionConfigSchema(_apply_defaults_to_schema_field(schema_field, data))
 
 
+T = TypeVar("T")
+
+
 class Resource(
+    Generic[T],
     ResourceDefinition,
     Config,
 ):
@@ -170,7 +196,51 @@ class Resource(
         Default behavior for new class-based resources is to return itself, passing
         the actual resource object to user code.
         """
-        return self
+        return cast(T, self)
+
+    @classmethod
+    def partial(cls, **kwargs) -> "PartialResource[Self]":
+        """
+        Returns a partially initialized copy of the resource, with remaining config fields
+        set at runtime.
+        """
+        return PartialResource(cls, data=kwargs)
+
+    def __get__(self, obj: "Resource", __owner: Any) -> Self:
+        ...
+
+    def __set__(self, obj: Optional[object], value: Union[T, "PartialResource[T]"]) -> None:
+        ...
+
+
+class PartialResource(Generic[T], ResourceDefinition, MakeConfigCacheable):
+    data: Dict[str, Any]
+    resource_cls: Type[Resource[T]]
+
+    def __init__(self, resource_cls: Type[Resource[T]], data: Dict[str, Any]):
+        check.invariant(data == {}, "PartialResource currently does not support config fields")
+
+        Config.__init__(self, data=data, resource_cls=resource_cls)
+
+        MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)
+
+        schema = infer_schema_from_config_class(
+            resource_cls,
+        )
+
+        def resource_fn(context: InitResourceContext):
+            instantiated = resource_cls(**context.resource_config, **data)
+            return instantiated.create_object_to_pass_to_user_code(context)
+
+        ResourceDefinition.__init__(
+            self,
+            resource_fn=resource_fn,
+            config_schema=schema,
+            description=resource_cls.__doc__,
+        )
+
+
+ResourceOrPartial: TypeAlias = Union[Resource[T], PartialResource[T]]
 
 
 class StructuredResourceAdapter(Resource, ABC):
@@ -214,7 +284,7 @@ class StructuredResourceAdapter(Resource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
+class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
     """
     Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
@@ -226,19 +296,29 @@ class StructuredConfigIOManagerBase(IOManagerDefinition, Config, ABC):
     """
 
     def __init__(self, **data: Any):
-        schema = infer_schema_from_config_class(self.__class__)
-        Config.__init__(self, **data)
+        Resource.__init__(self, **data)
         IOManagerDefinition.__init__(
             self,
             resource_fn=self.create_io_manager_to_pass_to_user_code,
-            config_schema=_curry_config_schema(schema, data),
+            config_schema=self._config_schema,
             description=self.__doc__,
         )
+
+    def _create_object_fn(self, context: InitResourceContext) -> IOManager:
+        return self.create_io_manager_to_pass_to_user_code(context)
 
     @abstractmethod
     def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
         """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
+
+    @classmethod
+    def partial(cls, **kwargs) -> "PartialIOManager":
+        """
+        Returns a partially initialized copy of the resource, with remaining config fields
+        set at runtime.
+        """
+        return PartialIOManager(cls, data=kwargs)
 
 
 class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
@@ -286,6 +366,17 @@ def _wrap_config_type(
         return Map(MAPPING_KEY_TYPE_TO_SCALAR[key_type], config_type)
     else:
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
+
+
+class PartialIOManager(PartialResource[IOManager], IOManagerDefinition):
+    def __init__(self, resource_cls: Type[StructuredConfigIOManagerBase], data: Dict[str, Any]):
+        PartialResource.__init__(self, resource_cls, data)
+        IOManagerDefinition.__init__(
+            self,
+            resource_fn=self._resource_fn,
+            config_schema=self._config_schema,
+            description=resource_cls.__doc__,
+        )
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
@@ -388,20 +479,6 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
         if config_arg_default is inspect.Parameter.empty
         else config_arg_default,
     )
-
-
-def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
-    """Version of issubclass that returns False if cls is not a Type."""
-    if not isinstance(cls, type):
-        return False
-
-    try:
-        return issubclass(cls, possible_parent_cls)
-    except TypeError:
-        # Using builtin Python types in python 3.9+ will raise a TypeError when using issubclass
-        # even though the isinstance check will succeed (as will inspect.isclass), for example
-        # list[dict[str, str]] will raise a TypeError
-        return False
 
 
 def infer_schema_from_config_class(
