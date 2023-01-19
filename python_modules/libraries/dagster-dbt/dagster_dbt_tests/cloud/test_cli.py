@@ -31,6 +31,7 @@ def test_cache_compile_references(monkeypatch):
         json=sample_get_environment_variables(
             environment_variable_id=compile_run_environment_variable_id,
             name=DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR,
+            value="-1",
         ),
     )
     responses.post(
