@@ -96,6 +96,7 @@ def _create_repository_using_definitions_args(
 
     resource_defs = wrap_resources_for_execution(resources or {})
 
+    check.opt_inst_param(executor, "executor", (Executor, ExecutorDefinition))
     executor_def = (
         executor
         if isinstance(executor, ExecutorDefinition) or executor is None
