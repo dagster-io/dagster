@@ -99,7 +99,6 @@ def _create_repository_using_definitions_args(
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
-
     @repository(
         name=name,
         default_executor_def=executor_def,
