@@ -23,7 +23,7 @@ DAGSTER_HOME=/opt/dagster/dagster_home dagit -h 0.0.0.0 -p 3000
 
 In this configuration, Dagit will write execution logs to `$DAGSTER_HOME/logs` and listen on _0.0.0.0:3000_.
 
-## Running dagster-daemon
+## Running the Dagster daemon
 
 If you're using [schedules](/concepts/partitions-schedules-sensors/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), or [backfills](/concepts/partitions-schedules-sensors/backfills), or want to set limits on the number of runs that can be executed at once, you'll want to also run a [dagster-daemon service](/deployment/dagster-daemon) as part of your deployment. To run this service locally, run the following command:
 
