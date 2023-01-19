@@ -33,6 +33,7 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.runtime_partitions import RuntimePartitionsDefinition
 from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
@@ -650,6 +651,17 @@ class ExternalMultiPartitionsDefinitionData(
             }
         )
 
+@whitelist_for_serdes
+class ExternalRuntimePartitionsDefinitionData(
+    ExternalPartitionsDefinitionData,
+    NamedTuple(
+        "_ExternalRuntimePartitionsDefinitionData",
+        [("name", str)]
+    )
+):
+    def get_partitions_definition(self):
+        return RuntimePartitionsDefinition(self.name)
+
 
 @whitelist_for_serdes
 class ExternalPartitionSetData(
@@ -1221,6 +1233,8 @@ def external_partitions_definition_from_def(
         return external_static_partitions_definition_from_def(partitions_def)
     elif isinstance(partitions_def, MultiPartitionsDefinition):
         return external_multi_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, RuntimePartitionsDefinition):
+        return external_runtime_partitions_definition_from_def(partitions_def)
     else:
         raise DagsterInvalidDefinitionError(
             "Only static, time window, and multi-dimensional partitions are currently supported."
@@ -1275,6 +1289,13 @@ def external_multi_partitions_definition_from_def(
             for dimension in partitions_def.partitions_defs
         ]
     )
+
+
+def external_runtime_partitions_definition_from_def(
+    partitions_def: RuntimePartitionsDefinition,
+) -> ExternalRuntimePartitionsDefinitionData:
+    check.inst_param(partitions_def, "partitions_def", RuntimePartitionsDefinition)
+    return ExternalRuntimePartitionsDefinitionData(name=partitions_def.name)
 
 
 def external_partition_set_data_from_def(

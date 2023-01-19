@@ -118,6 +118,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.schedules import ScheduleStorage
+    from dagster._core.storage.partitions.base import PartitionsStorage
     from dagster._core.workspace.workspace import IWorkspace
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
 
@@ -302,6 +303,7 @@ class DagsterInstance:
         settings: Optional[Mapping[str, Any]] = None,
         secrets_loader: Optional["SecretsLoader"] = None,
         ref: Optional[InstanceRef] = None,
+        partitions_storage: Optional["PartitionsStorage"] = None,
     ):
         from dagster._core.launcher import RunLauncher
         from dagster._core.run_coordinator import RunCoordinator
@@ -313,6 +315,7 @@ class DagsterInstance:
         from dagster._core.storage.root import LocalArtifactStorage
         from dagster._core.storage.runs import RunStorage
         from dagster._core.storage.schedules import ScheduleStorage
+        from dagster._core.storage.partitions.base import PartitionsStorage
 
         self._instance_type = check.inst_param(instance_type, "instance_type", InstanceType)
         self._local_artifact_storage = check.inst_param(
@@ -339,6 +342,12 @@ class DagsterInstance:
         )
         if self._schedule_storage:
             self._schedule_storage.register_instance(self)
+
+        self._partitions_storage = check.opt_inst_param(
+            partitions_storage, "partitions_storage", PartitionsStorage
+        )
+        if self._partitions_storage:
+            self._partitions_storage.register_instance(self)
 
         self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
         self._run_coordinator.register_instance(self)
@@ -436,7 +445,7 @@ class DagsterInstance:
                 " file which can configure storing metadata in an external database.\nYou can"
                 " resolve this error by exporting the environment variable. For example, you can"
                 " run the following command in your shell or include it in your shell configuration"
-                ' file:\n\texport DAGSTER_HOME=~"/dagster_home"\nor PowerShell\n$env:DAGSTER_HOME'
+                " file:\n\texport DAGSTER_HOME=~\"/dagster_home\"\nor PowerShell\n$env:DAGSTER_HOME"
                 " = ($home + '\\dagster_home')or batchset"
                 " DAGSTER_HOME=%UserProfile%/dagster_homeAlternatively, DagsterInstance.ephemeral()"
                 " can be used for a transient instance.\n"
@@ -448,7 +457,7 @@ class DagsterInstance:
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" must be an absolute path. Dagster requires this '
-                    "environment variable to be set to an existing directory in your filesystem."
+                    'environment variable to be set to an existing directory in your filesystem.'
                 ).format(dagster_home_path)
             )
 
@@ -456,7 +465,7 @@ class DagsterInstance:
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this'
-                    " environment variable to be set to an existing directory in your filesystem"
+                    ' environment variable to be set to an existing directory in your filesystem'
                 ).format(dagster_home_path)
             )
 
@@ -496,6 +505,7 @@ class DagsterInstance:
         schedule_storage = (
             unified_storage.schedule_storage if unified_storage else instance_ref.schedule_storage
         )
+        partitions_storage = unified_storage.partitions_storage if unified_storage else None
 
         return klass(  # type: ignore
             instance_type=InstanceType.PERSISTENT,
@@ -510,6 +520,7 @@ class DagsterInstance:
             settings=instance_ref.settings,
             secrets_loader=instance_ref.secrets_loader,
             ref=instance_ref,
+            partitions_storage=partitions_storage,
             **kwargs,
         )
 
@@ -787,6 +798,12 @@ class DagsterInstance:
             self._schedule_storage.upgrade()
             self._schedule_storage.migrate(print_fn)
 
+            if self._partitions_storage:
+                if print_fn:
+                    print_fn("Updating partitions storage...")
+                self._partitions_storage.upgrade()
+                self._partitions_storage.migrate(print_fn)
+
     def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
         if self._schedule_storage:
             self._schedule_storage.optimize_for_dagit(
@@ -798,6 +815,10 @@ class DagsterInstance:
         self._event_storage.optimize_for_dagit(
             statement_timeout=statement_timeout, pool_recycle=pool_recycle
         )
+        if self._partitions_storage:
+            self._partitions_storage.optimize_for_dagit(
+                statement_timeout=statement_timeout, pool_recycle=pool_recycle
+            )
 
     def reindex(self, print_fn=lambda _: None):
         print_fn("Checking for reindexing...")
@@ -1094,8 +1115,8 @@ class DagsterInstance:
             execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id,
             (
                 "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
-                '"{ep_pipeline_snapshot_id}" and snapshot_id created in memory is '
-                '"{pipeline_snapshot_id}"'
+                "\"{ep_pipeline_snapshot_id}\" and snapshot_id created in memory is "
+                "\"{pipeline_snapshot_id}\""
             ).format(
                 ep_pipeline_snapshot_id=execution_plan_snapshot.pipeline_snapshot_id,
                 pipeline_snapshot_id=pipeline_snapshot_id,
@@ -1681,6 +1702,25 @@ class DagsterInstance:
         self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
+
+    # partitions storage
+
+    @traced
+    def get_runtime_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        if self._partitions_storage is None:
+            check.failed("Partitions storage not found")
+        return self._partitions_storage.get_partitions(partitions_def_name)
+
+    @traced
+    def add_runtime_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        check.sequence_param(partition_keys, "partition_keys", of_type=str)
+        if self._partitions_storage is None:
+            check.failed("Partitions storage not found")
+        return self._partitions_storage.add_partitions(partitions_def_name, partition_keys)
 
     # event subscriptions
 

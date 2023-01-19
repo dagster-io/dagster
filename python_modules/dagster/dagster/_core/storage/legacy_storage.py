@@ -13,6 +13,7 @@ from .event_log.base import (
 )
 from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
+from .partitions.base import PartitionsStorage
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import AssetKey
@@ -124,6 +125,10 @@ class CompositeStorage(DagsterStorage, ConfigurableClass):
     @property
     def schedule_storage(self) -> ScheduleStorage:
         return self._schedule_storage
+
+    @property
+    def partitions_storage(self) -> Optional[PartitionsStorage]:
+        return None
 
 
 class LegacyRunStorage(RunStorage, ConfigurableClass):

@@ -6,6 +6,7 @@ from dagster._core.storage.config import mysql_config
 from dagster._core.storage.event_log import EventLogStorage
 from dagster._core.storage.runs import RunStorage
 from dagster._core.storage.schedules import ScheduleStorage
+from dagster._core.storage.partitions.base import PartitionsStorage
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .event_log import MySQLEventLogStorage
@@ -66,6 +67,10 @@ class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):
     @property
     def schedule_storage(self) -> ScheduleStorage:
         return self._schedule_storage
+
+    @property
+    def partitions_storage(self) -> Optional[PartitionsStorage]:
+        return None
 
     @property
     def event_storage_data(self) -> Optional[ConfigurableClassData]:
