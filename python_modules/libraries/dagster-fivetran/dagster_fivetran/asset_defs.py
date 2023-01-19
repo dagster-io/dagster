@@ -127,6 +127,8 @@ def build_fivetran_assets(
             If left blank, assets will have a key of `AssetKey([schema_name, table_name])`.
         metadata_by_table_name (Optional[Mapping[str, MetadataUserInput]]): A mapping from destination
             table name to user-supplied metadata that should be associated with the asset for that table.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. This
+            group name will be applied to all assets produced by this multi_asset.
 
     **Examples:**
 
