@@ -1055,6 +1055,8 @@ class MultiAssetSensorDefinition(SensorDefinition):
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        request_assets (Optional[AssetSelection]): (Experimental) an asset selection to launch a run
+            for if the sensor condition is met. This can be provided instead of specifying a job.
     """
 
     def __init__(
@@ -1068,6 +1070,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
         job: Optional[ExecutableDefinition] = None,
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+        request_assets: Optional[AssetSelection] = None,
     ):
         def _wrap_asset_fn(materialization_fn):
             def _fn(context):
@@ -1131,6 +1134,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
             job=job,
             jobs=jobs,
             default_status=default_status,
+            asset_selection=request_assets,
         )
 
     def __call__(self, *args, **kwargs):
