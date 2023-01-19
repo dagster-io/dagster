@@ -1,3 +1,3 @@
 # dagster-wandb
 
-The docs for `dagster-wandb` can be found [here](https://docs.dagster.io/_apidocs/libraries/dagster-wandb).
+For a complete set of documentation, see [Dagster integration](https://docs.wandb.ai/guides/integrations/dagster) on the W&B website.

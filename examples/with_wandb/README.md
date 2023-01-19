@@ -2,7 +2,7 @@
 
 This directory contains examples showcasing the integration with Weights & Biases (W&B).
 
-View this example in the Dagster docs at https://docs.dagster.io/integrations/wandb.
+For a complete set of documentation, see [Dagster integration](https://docs.wandb.ai/guides/integrations/dagster) on the W&B website.
 
 ## Getting started
 
