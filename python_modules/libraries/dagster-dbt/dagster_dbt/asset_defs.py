@@ -8,12 +8,15 @@ from typing import (
     Callable,
     Dict,
     FrozenSet,
+    Iterator,
     List,
     Mapping,
     Optional,
     Sequence,
     Set,
     Tuple,
+    Union,
+    cast,
 )
 
 from dagster import (
@@ -33,13 +36,19 @@ from dagster import (
 )
 from dagster._config.field import Field
 from dagster._config.field_utils import Permissive
-from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.events import (
+    AssetMaterialization,
+    AssetObservation,
+    CoercibleToAssetKeyPrefix,
+    Output,
+)
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.merger import deep_merge_dicts
+from dagster_dbt.cli.resources import DbtCliResource
 
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
@@ -350,6 +359,60 @@ def _get_asset_deps(
     )
 
 
+def _batch_event_iterator(
+    context: OpExecutionContext,
+    dbt_resource: DbtCliResource,
+    use_build_command: bool,
+    runtime_metadata_fn,
+    node_info_to_asset_key,
+    kwargs: Dict[str, Any],
+) -> Iterator[Union[AssetObservation, AssetMaterialization, Output]]:
+    """Yields events for a dbt cli invocation. Waits until the entire command has completed before
+    emitting outputs.
+    """
+    dbt_output = None
+    try:
+        if use_build_command:
+            dbt_output = dbt_resource.build(**kwargs)
+        else:
+            dbt_output = dbt_resource.run(**kwargs)
+    finally:
+        # in the case that the project only partially runs successfully, still attempt to generate
+        # events for the parts that were successful
+        if dbt_output is None:
+            dbt_output = DbtOutput(result=check.not_none(dbt_resource.get_run_results_json()))
+
+        manifest_json = check.not_none(dbt_resource.get_manifest_json())
+
+        for result in dbt_output.result["results"]:
+            if runtime_metadata_fn:
+                node_info = manifest_json["nodes"][result["unique_id"]]
+                extra_metadata = runtime_metadata_fn(context, node_info)
+            else:
+                extra_metadata = None
+            yield from result_to_events(
+                result=result,
+                docs_url=dbt_output.docs_url,
+                node_info_to_asset_key=node_info_to_asset_key,
+                manifest_json=manifest_json,
+                extra_metadata=extra_metadata,
+                generate_asset_outputs=True,
+            )
+
+
+def _stream_event_iterator(
+    context: OpExecutionContext,
+    dbt_resource: DbtCliResource,
+    use_build_command: bool,
+    runtime_metadata_fn,
+    node_info_to_asset_key,
+    kwargs: Dict[str, Any],
+) -> Iterator[Union[AssetObservation, AssetMaterialization, Output]]:
+    flags_dict = dbt_resource._get_flags_dict(
+        kwargs
+    )
+
+
 def _get_dbt_op(
     op_name: str,
     ins: Mapping[str, In],
@@ -364,6 +427,7 @@ def _get_dbt_op(
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
+    stream_events: bool,
 ):
     @op(
         name=op_name,
@@ -408,41 +472,30 @@ def _get_dbt_op(
                     for output_name in context.selected_output_names
                 ]
             }
+        # variables to pass into the command
+        if partition_key_to_vars_fn:
+            kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
+        # merge in any additional kwargs from the config
+        kwargs = deep_merge_dicts(kwargs, context.op_config)
 
-        try:
-            # variables to pass into the command
-            if partition_key_to_vars_fn:
-                kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
-
-            # merge in any additional kwargs from the config
-            kwargs = deep_merge_dicts(kwargs, context.op_config)
-
-            if use_build_command:
-                dbt_output = dbt_resource.build(**kwargs)
-            else:
-                dbt_output = dbt_resource.run(**kwargs)
-        finally:
-            # in the case that the project only partially runs successfully, still attempt to generate
-            # events for the parts that were successful
-            if dbt_output is None:
-                dbt_output = DbtOutput(result=dbt_resource.get_run_results_json())
-
-            manifest_json = dbt_resource.get_manifest_json()
-
-            for result in dbt_output.result["results"]:
-                if runtime_metadata_fn:
-                    node_info = manifest_json["nodes"][result["unique_id"]]
-                    extra_metadata = runtime_metadata_fn(context, node_info)
-                else:
-                    extra_metadata = None
-                yield from result_to_events(
-                    result=result,
-                    docs_url=dbt_output.docs_url,
-                    node_info_to_asset_key=node_info_to_asset_key,
-                    manifest_json=manifest_json,
-                    extra_metadata=extra_metadata,
-                    generate_asset_outputs=True,
-                )
+        if stream_events:
+            yield from _stream_event_iterator(
+                context,
+                dbt_resource,
+                use_build_command,
+                runtime_metadata_fn,
+                node_info_to_asset_key,
+                kwargs,
+            )
+        else:
+            yield from _batch_event_iterator(
+                context,
+                dbt_resource,
+                use_build_command,
+                runtime_metadata_fn,
+                node_info_to_asset_key,
+                kwargs,
+            )
 
     return _dbt_op
 

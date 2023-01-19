@@ -59,6 +59,20 @@ class DbtCliResource(DbtResource):
         """
         return {"models", "exclude", "select"}
 
+    def _get_flags_dict(self, kwargs) -> Mapping[str, Any]:
+        extra_flags = {} if kwargs is None else kwargs
+
+        # remove default flags that are declared as "strict" and not explicitly passed in
+        default_flags = {
+            k: v
+            for k, v in self.default_flags.items()
+            if not (k in self.strict_flags and k not in extra_flags)
+        }
+
+        return merge_dicts(
+            default_flags, self._format_params(extra_flags, replace_underscores=True)
+        )
+
     @public
     def cli(self, command: str, **kwargs) -> DbtCliOutput:
         """
@@ -74,23 +88,11 @@ class DbtCliResource(DbtResource):
                 parsed log output as well as the contents of run_results.json (if applicable).
         """
         command = check.str_param(command, "command")
-        extra_flags = {} if kwargs is None else kwargs
-
-        # remove default flags that are declared as "strict" and not explicitly passed in
-        default_flags = {
-            k: v
-            for k, v in self.default_flags.items()
-            if not (k in self.strict_flags and k not in extra_flags)
-        }
-
-        flags = merge_dicts(
-            default_flags, self._format_params(extra_flags, replace_underscores=True)
-        )
 
         return execute_cli(
             executable=self._executable,
             command=command,
-            flags_dict=flags,
+            flags_dict=self._get_flags_dict(kwargs),
             log=self.logger,
             warn_error=self._warn_error,
             ignore_handled_error=self._ignore_handled_error,
