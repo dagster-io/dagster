@@ -85,23 +85,20 @@ def _create_repository_using_definitions_args(
     if jobs:
         check.iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
 
-    if resources:
-        check.mapping_param(resources, "resources", key_type=str)
-
-    if executor:
-        check.inst_param(executor, "executor", (ExecutorDefinition, Executor))
-
-    if loggers:
-        check.mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
+    check.opt_mapping_param(resources, "resources", key_type=str)
 
     resource_defs = wrap_resources_for_execution(resources or {})
 
-    check.opt_inst_param(executor, "executor", (Executor, ExecutorDefinition))
+    check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor))
+
     executor_def = (
         executor
         if isinstance(executor, ExecutorDefinition) or executor is None
         else ExecutorDefinition.hardcoded_executor(executor)
     )
+
+    check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
+
 
     @repository(
         name=name,
