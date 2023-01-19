@@ -5,6 +5,8 @@ from typing import Any, Callable
 
 import pytest
 from dagster import IOManager, asset, job, op, resource
+from dagster._check import CheckError
+from dagster._config.field import Field
 from dagster._config.structured_config import (
     Resource,
     ResourceDependency,
@@ -664,3 +666,157 @@ def test_resources_which_return():
         .success
     )
     assert completed["yes"]
+
+
+def test_nested_function_resource():
+    out_txt = []
+
+    @resource
+    def writer_resource(context):
+        def output(text: str) -> None:
+            out_txt.append(text)
+
+        return output
+
+    class PostfixWriterResource(Resource[Callable[[str], None]]):
+        writer: ResourceDependency[Callable[[str], None]]
+        postfix: str
+
+        def create_object_to_pass_to_user_code(self, context) -> Callable[[str], None]:
+            def output(text: str):
+                self.writer(f"{text}{self.postfix}")
+
+            return output
+
+    @asset
+    def my_asset(writer: PostfixWriterResource):
+        writer("foo")
+        writer("bar")
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "writer": PostfixWriterResource(writer=writer_resource, postfix="!"),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert out_txt == ["foo!", "bar!"]
+
+
+def test_nested_function_resource_configured():
+    out_txt = []
+
+    @resource(config_schema={"prefix": Field(str, default_value="")})
+    def writer_resource(context):
+        prefix = context.resource_config["prefix"]
+
+        def output(text: str) -> None:
+            out_txt.append(f"{prefix}{text}")
+
+        return output
+
+    class PostfixWriterResource(Resource[Callable[[str], None]]):
+        writer: ResourceDependency[Callable[[str], None]]
+        postfix: str
+
+        def create_object_to_pass_to_user_code(self, context) -> Callable[[str], None]:
+            def output(text: str):
+                self.writer(f"{text}{self.postfix}")
+
+            return output
+
+    @asset
+    def my_asset(writer: PostfixWriterResource):
+        writer("foo")
+        writer("bar")
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "writer": PostfixWriterResource(writer=writer_resource, postfix="!"),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert out_txt == ["foo!", "bar!"]
+
+    out_txt.clear()
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "writer": PostfixWriterResource(
+                writer=writer_resource.configured({"prefix": "msg: "}), postfix="!"
+            ),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert out_txt == ["msg: foo!", "msg: bar!"]
+
+
+def test_nested_function_resource_runtime_config():
+    out_txt = []
+
+    @resource(config_schema={"prefix": str})
+    def writer_resource(context):
+        prefix = context.resource_config["prefix"]
+
+        def output(text: str) -> None:
+            out_txt.append(f"{prefix}{text}")
+
+        return output
+
+    class PostfixWriterResource(Resource[Callable[[str], None]]):
+        writer: ResourceDependency[Callable[[str], None]]
+        postfix: str
+
+        def create_object_to_pass_to_user_code(self, context) -> Callable[[str], None]:
+            def output(text: str):
+                self.writer(f"{text}{self.postfix}")
+
+            return output
+
+    @asset
+    def my_asset(writer: PostfixWriterResource):
+        writer("foo")
+        writer("bar")
+
+    with pytest.raises(
+        CheckError,
+        match="Any partially configured, nested resources must be specified to Definitions",
+    ):
+        # errors b/c writer_resource is not configured
+        # and not provided as a top-level resource to Definitions
+        defs = Definitions(
+            assets=[my_asset],
+            resources={
+                "writer": PostfixWriterResource(writer=writer_resource, postfix="!"),
+            },
+        )
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "base_writer": writer_resource,
+            "writer": PostfixWriterResource(writer=writer_resource, postfix="!"),
+        },
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(
+            {
+                "resources": {
+                    "base_writer": {
+                        "config": {
+                            "prefix": "msg: ",
+                        },
+                    },
+                },
+            }
+        )
+        .success
+    )
+    assert out_txt == ["msg: foo!", "msg: bar!"]

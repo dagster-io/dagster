@@ -1,11 +1,15 @@
 import inspect
 from typing import Generic, Mapping, TypeVar, Union
 
-from typing_extensions import TypeAlias, dataclass_transform, get_args, get_origin
+from typing_extensions import TypeAlias, dataclass_transform, get_origin
 
 from dagster._config.config_type import ConfigType
 from dagster._config.source import BoolSource, IntSource, StringSource
-from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster._core.definitions.definition_config_schema import (
+    ConfiguredDefinitionConfigSchema,
+    IDefinitionConfigSchema,
+    convert_user_facing_definition_config_schema,
+)
 from dagster._core.execution.context.init import InitResourceContext
 
 try:
@@ -30,7 +34,11 @@ from dagster._config.field_utils import (
     config_dictionary_from_values,
     convert_potential_field,
 )
-from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
+from dagster._core.definitions.resource_definition import (
+    ResourceDefinition,
+    ResourceFunction,
+    is_context_provided,
+)
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
 Self = TypeVar("Self", bound="Resource")
@@ -148,10 +156,10 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
             if not field.startswith("__"):
                 # Check if the annotation is a ResourceDependency
                 if get_origin(annotations[field]) == _ResourceDep:
-                    arg = get_args(annotations[field])[0]
+                    # arg = get_args(annotations[field])[0]
                     # If so, we treat it as a Union of a PartialResource and a Resource
                     # for Pydantic's sake.
-                    annotations[field] = Union[_PartialResource[arg], _Resource[arg]]
+                    annotations[field] = Any  # TODO fix
                 elif _safe_is_subclass(annotations[field], _Resource):
                     # If the annotation is a Resource, we treat it as a Union of a PartialResource
                     # and a Resource for Pydantic's sake, so that a user can pass in a partially
@@ -164,28 +172,13 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
 
 
 class AllowDelayedDependencies:
-    _top_level_key: Optional[str] = None
-    _resource_pointers: Mapping[str, "AllowDelayedDependencies"] = {}
-
-    def set_top_level_key(self, key: str):
-        """
-        Sets the top-level resource key for this resource, when passed
-        into the Definitions object.
-        """
-        self._top_level_key = key
-
-    def get_top_level_key(self) -> Optional[str]:
-        """
-        Gets the top-level resource key for this resource which was associated with it
-        in the Definitions object.
-        """
-        return self._top_level_key
+    _resource_pointers: Mapping[str, ResourceDefinition] = {}
 
     def _resolve_required_resource_keys(self) -> AbstractSet[str]:
         # All dependent resources which are not fully configured
         # must be specified to the Definitions object so that the
         # resource can be configured at runtime by the user
-        pointer_keys = {k: v.get_top_level_key() for k, v in self._resource_pointers.items()}
+        pointer_keys = {k: v.top_level_key for k, v in self._resource_pointers.items()}
         check.invariant(
             all(pointer_key is not None for pointer_key in pointer_keys.values()),
             (
@@ -197,12 +190,11 @@ class AllowDelayedDependencies:
         # Recursively get all nested resource keys
         nested_pointer_keys: Set[str] = set()
         for v in self._resource_pointers.values():
-            nested_pointer_keys.update(v._resolve_required_resource_keys())
+            nested_pointer_keys.update(v.required_resource_keys)
 
         resources, _ = _separate_resource_params(self.__dict__)
-        resources = {k: v for k, v in resources.items() if isinstance(v, Resource)}
         for v in resources.values():
-            nested_pointer_keys.update(v._resolve_required_resource_keys())
+            nested_pointer_keys.update(v.required_resource_keys)
 
         out = set(cast(Set[str], pointer_keys.values())).union(nested_pointer_keys)
         return out
@@ -245,8 +237,8 @@ class Resource(
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
-        self._resource_pointers: Mapping[str, PartialResource] = {
-            k: v for k, v in resource_pointers.items() if isinstance(v, PartialResource)
+        self._resource_pointers: Mapping[str, ResourceDefinition] = {
+            k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
         }
 
         ResourceDefinition.__init__(
@@ -274,16 +266,16 @@ class Resource(
 
         _, config_to_update = _separate_resource_params(context.resource_config)
 
-        resources_to_update, _ = _separate_resource_params(self.__dict__)
-        resources_to_update = {
-            k: v.initialize_and_run(context)
-            for k, v in resources_to_update.items()
-            if isinstance(v, Resource)
+        partial_resources_to_update = {
+            k: getattr(context.resources, cast(str, v.top_level_key))
+            for k, v in self._resource_pointers.items()
         }
 
-        partial_resources_to_update = {
-            k: getattr(context.resources, cast(str, v.get_top_level_key()))
-            for k, v in self._resource_pointers.items()
+        resources_to_update, _ = _separate_resource_params(self.__dict__)
+        resources_to_update = {
+            k: _call_resource_fn_with_default(v, context)
+            for k, v in resources_to_update.items()
+            if k not in partial_resources_to_update
         }
 
         to_update = {**resources_to_update, **partial_resources_to_update, **config_to_update}
@@ -328,6 +320,16 @@ class Resource(
         setattr(obj, self._assigned_name, value)
 
 
+def _is_fully_configured(resource: ResourceDefinition) -> bool:
+    return (
+        ConfiguredDefinitionConfigSchema(
+            resource, convert_user_facing_definition_config_schema(resource.config_schema), {}
+        )
+        .resolve_config({})
+        .success
+    )
+
+
 class PartialResource(
     Generic[ResValue], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
 ):
@@ -341,8 +343,8 @@ class PartialResource(
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
-        self._resource_pointers: Dict[str, ResourceOrPartial] = {
-            k: v for k, v in resource_pointers.items() if isinstance(v, PartialResource)
+        self._resource_pointers: Dict[str, ResourceDefinition] = {
+            k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
         }
 
         schema = infer_schema_from_config_class(
@@ -365,7 +367,8 @@ class PartialResource(
         return self._resolve_required_resource_keys()
 
 
-ResourceOrPartial: TypeAlias = Union[Resource[ResValue], PartialResource[Resource[ResValue]]]
+ResourceOrPartial: TypeAlias = Union[Resource[ResValue], PartialResource[ResValue]]
+ResourceOrPartialOrBase: TypeAlias = Union[Resource[ResValue], PartialResource[ResValue], ResValue]
 
 
 V = TypeVar("V")
@@ -378,7 +381,7 @@ class ResourceDependency(Generic[V]):
     def __get__(self, obj: "Resource", __owner: Any) -> V:
         return getattr(obj, self._name)
 
-    def __set__(self, obj: Optional[object], value: ResourceOrPartial[V]) -> None:
+    def __set__(self, obj: Optional[object], value: ResourceOrPartialOrBase[V]) -> None:
         setattr(obj, self._name, value)
 
 
@@ -581,15 +584,35 @@ def infer_schema_from_config_class(
 
 def _separate_resource_params(
     data: Dict[str, Any]
-) -> Tuple[Dict[str, Union[Resource, PartialResource]], Dict[str, Any]]:
+) -> Tuple[Dict[str, Union[Resource, PartialResource, ResourceDefinition]], Dict[str, Any]]:
     """
     Separates out the key/value inputs of fields in a structured config Resource class which
     are themselves Resources and those which are not.
     """
     return (
-        {k: v for k, v in data.items() if isinstance(v, (Resource, PartialResource))},
-        {k: v for k, v in data.items() if not isinstance(v, (Resource, PartialResource))},
+        {
+            k: v
+            for k, v in data.items()
+            if isinstance(v, (Resource, PartialResource, ResourceDefinition))
+        },
+        {
+            k: v
+            for k, v in data.items()
+            if not isinstance(v, (Resource, PartialResource, ResourceDefinition))
+        },
     )
+
+
+def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourceContext) -> Any:
+    if isinstance(obj.config_schema, ConfiguredDefinitionConfigSchema):
+        value = obj.config_schema.resolve_config({}).value
+        context = context.replace_config(value["config"])
+    elif obj.config_schema.default_provided:
+        context = context.replace_config(obj.config_schema.default_value)
+    if is_context_provided(obj.resource_fn):
+        return obj.resource_fn(context)
+    else:
+        return obj.resource_fn()
 
 
 _Resource = Resource
