@@ -4,7 +4,7 @@
 
 ### New
 
-- Added a new `dagster dev` command that can be used to run both Dagit and the Dagster daemon in the same process during local development. See the new Running Dagster Locally guide in the docs for more information.
+- Added a new `dagster dev` command that can be used to run both Dagit and the Dagster daemon in the same process during local development. See the new [Running Dagster Locally guide](https://docs.dagster.io/deployment/guides/running-locally) in the docs for more information.
 - Added instructions for installing the `dagster` package on M1 and M2 Macs that avoids installation errors when building the `grpcio` package. See [the Installing Dagster guide in the docs](https://docs.dagster.io/getting-started/install) for more information.
 - `create_repository_using_definitions_args` has been added for users to backport their repository definitions to the new `Definitions` API
 - When running Dagit on your local machine, a prompt will now appear that allows you to optionally enter an email address to receive Dagster security updates or subscribe to the Dagster newsletter. This prompt can be dismissed in the UI, or permanently disabled by adding the following to your dagster.yaml file:
