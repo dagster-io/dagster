@@ -2,12 +2,13 @@ from typing import List
 
 import typer
 
-from dagster_dbt.cloud.asset_defs import DbtCloudCacheableAssetsDefinition
+from dagster_dbt.cloud.asset_defs import (
+    DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR,
+    DbtCloudCacheableAssetsDefinition,
+)
 from dagster_dbt.cloud.resources import DbtCloudResource
 
 app = typer.Typer()
-
-DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 
 
 @app.command()
@@ -51,6 +52,7 @@ def cache_compile_references(
             job_id=job_id,
             cause="Generating software-defined assets for Dagster.",
             steps_override=[dbt_compile_command],
+            generate_docs_override=True,
         )
 
         # Cache the compile run as a reference in the dbt Cloud job's env var
@@ -83,3 +85,7 @@ def cache_compile_references(
 @app.callback()
 def callback() -> None:
     pass
+
+
+if __name__ == "__main__":
+    app()
