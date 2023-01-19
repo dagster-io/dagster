@@ -1,5 +1,6 @@
 from typing import Mapping
 
+import dagster._check as check
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
@@ -10,27 +11,22 @@ SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
 
 
 def _get_sf_options(config, table_slice):
+    check.invariant(
+        config.get("warehouse", None) is not None,
+        "Missing config: Warehouse is required when using PySpark with the Snowflake I/O manager.",
+    )
+
     conf = {
         "sfURL": f"{config['account']}.snowflakecomputing.com",
         "sfUser": config["user"],
         "sfPassword": config["password"],
         "sfDatabase": config["database"],
         "sfSchema": table_slice.schema,
-        "sfWarehouse": config.get("warehouse"),
+        "sfWarehouse": config["warehouse"],
         "dbtable": table_slice.table,
     }
 
-    print("CONFIGURATION")
-    print(conf)
-
     return conf
-
-
-# SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.13.22,net.snowflake:spark-snowflake_2.12:2.11.0-spark_3.3"
-# SNOWFLAKE_JARS = (
-#     "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
-# )
-# old "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
 
 class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
@@ -38,42 +34,38 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
     Plugin for the Snowflake I/O Manager that can store and load PySpark DataFrames as Snowflake tables.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster_snowflake import build_snowflake_io_manager
-        from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
-        from pyspark.sql import DataFrame
-        from dagster import Definitions
+            from dagster_snowflake import build_snowflake_io_manager
+            from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
+            from pyspark.sql import DataFrame
+            from dagster import Definitions
 
-        snowflake_io_manager = build_snowflake_io_manager([SnowflakePySparkTypeHandler()])
+            snowflake_io_manager = build_snowflake_io_manager([SnowflakePySparkTypeHandler()])
 
-        @job(resource_defs={'io_manager': snowflake_io_manager})
-        def my_job():
-            ...
+            @job(resource_defs={'io_manager': snowflake_io_manager})
+            def my_job():
+                ...
 
 
-        # OR
+            # OR
 
-        @asset
-        def my_asset() -> DataFrame:
-            ...
+            @asset
+            def my_asset() -> DataFrame:
+                ...
 
-        defs = Definitions(
-            assets=[my_asset],
-            resources={
-                "io_manager": snowflake_io_manager.configured(...)
-            }
-        )
+            defs = Definitions(
+                assets=[my_asset],
+                resources={
+                    "io_manager": snowflake_io_manager.configured(...)
+                }
+            )
     """
 
     def handle_output(
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_sf_options(context.resource_config, table_slice)
-        # SparkSession.builder.config(
-        #     key="spark.jars.packages",
-        #     value=SNOWFLAKE_JARS,
-        # ).getOrCreate()
 
         with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
 
@@ -96,10 +88,6 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
     def load_input(self, context: InputContext, table_slice: TableSlice) -> DataFrame:
         options = _get_sf_options(context.resource_config, table_slice)
 
-        # spark = SparkSession.builder.config(
-        #     key="spark.jars.packages",
-        #     value=SNOWFLAKE_JARS,
-        # ).getOrCreate()
         spark = SparkSession.builder.getOrCreate()
         df = spark.read.format(SNOWFLAKE_CONNECTOR).options(**options).load()
 
@@ -123,7 +111,7 @@ Examples:
 
         from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
         from pyspark.sql import DataFrame
-        from dagstr import Definitions
+        from dagster import Definitions
 
         @asset(
             key_prefix=["my_schema"]  # will be used as the schema in snowflake
@@ -136,11 +124,15 @@ Examples:
             resources={
                 "io_manager": snowflake_pyspark_io_manager.configured({
                     "database": "my_database",
-                    "account" : {"env": "SNOWFLAKE_ACCOUNT"}
+                    "warehouse": "my_warehouse", # required for snowflake_pyspark_io_manager
+                    "account" : {"env": "SNOWFLAKE_ACCOUNT"},
+                    "password": {"env": "SNOWFLAKE_PASSWORD"},
                     ...
                 })
             }
         )
+
+    Note that the warehouse configuration value is required when using the snowflake_pyspark_io_manager
 
     If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
     the IO Manager. For assets, the schema will be determined from the asset key.
