@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.1.12 (core) / 0.17.12 (libraries)
+
+### Bugfixes
+
+- [dagit] Fixes a "maximum call stack size exceeded" error when viewing a materialization of a root asset in Asset Details
+
 # 1.1.11 (core) / 0.17.11 (libraries)
 
 ### New
