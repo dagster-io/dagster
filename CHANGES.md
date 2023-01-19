@@ -15,6 +15,9 @@ nux:
 ```
 
 - [dagit] Improved query performance on Scheduled Runs page.
+- [dagit] The "Materialize" button now allows you to add tags to asset materialization runs. If your assets do not require config or partitions, you may need to shift-click "Materialize".
+- [dagit] The kind tags and logos shown on assets in the Asset Graph now appear in other parts of Dagit so it's easier to understand your assets.
+- [dagit] Selecting a materialization event on the Asset Details page now shows links to the upstream materialzations ("Source Data") that were incorporated into that version of the asset.
 - [dagit] Added or improved document (browser tab) titles throughout Dagit.
 - [dagster-snowflake] Snowflake resource and IO manager now support private key authentication with unencrypted keys
 - [dagster-dbt] The op created when using `load_assets_from_dbt*` is now configurable, allowing you to pass in specific parameters to the underlying dbt command (such as `--full-refresh`). To do so, supply config of the form `{"ops": {"run_dbt_<abcde>": {"config": {"full_refresh": True}}}}` when defining your asset job, or in Dagit.
@@ -24,6 +27,8 @@ nux:
 - For time-partitioned assets, the `build_asset_reconciliation_sensor` will now only materialize partitions from the past day. Previously, if a new asset was added with a large number of missing partitions, a run for each of the missing partitions would be launched immediately.
 - A variety of performance improvements to the `build_asset_reconciliation_sensor`, which should help significantly speed up sensor evaluation in cases where there is a large number of assets or partitions.
 - [dagit] Fixed broken code location names in the “Definitions” filter dialog accessible from the left navigation.
+- [dagit] The Backfills pages in Dagit no longer crash when your backfills span tens of thousands of partition keys
+- [dagit] The asset graph now links to the failed run, not the last successful materialization, when assets are shown in a "Failed" state.
 
 ### Breaking Changes
 
