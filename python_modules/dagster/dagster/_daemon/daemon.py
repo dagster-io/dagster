@@ -212,6 +212,7 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
         while True:
             start_time = time.time()
             try:
+                yield None  # Heartbeat once at the beginning to kick things off
                 yield from self.run_iteration(workspace_process_context)
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
