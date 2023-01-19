@@ -146,12 +146,14 @@ class Definitions:
             resources already bound using :py:func:`with_resources <with_resources>` will
             override this dictionary.
 
-        executor (Optional[ExecutorDefinition]):
+        executor (Optional[Union[ExecutorDefinition, Executor]]):
             Default executor for jobs. Individual jobs
             can override this and define their own executors by setting the executor
             on :py:func:`@job <job>` or :py:func:`define_asset_job <define_asset_job>`
             explicitly. This executor will also be used for materializing assets directly
             outside of the context of jobs.
+
+            If an Executor is passed, it is coerced into a ExecutorDefinition.
 
 
         loggers (Optional[Mapping[str, LoggerDefinition]):
