@@ -132,6 +132,7 @@ class UnresolvedAssetJobDefinition(
         )
 
         return RunRequest(
+            job_name=self.name,
             run_key=run_key,
             run_config=run_config
             if run_config is not None
