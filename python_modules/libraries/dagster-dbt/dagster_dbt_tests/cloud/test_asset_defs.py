@@ -261,7 +261,13 @@ def test_load_assets_from_cached_compile_run(
     )
     responses.get(
         url=f"{dbt_cloud_service.api_v2_base_url}{DBT_CLOUD_ACCOUNT_ID}/runs/{cached_compile_run_id}/?include_related=trigger,run_steps",
-        json={"data": {"trigger": {"generate_docs_override": False}, "run_steps": [{}]}},
+        json={
+            "data": {
+                "trigger": {"generate_docs_override": False},
+                "run_steps": [{}],
+                "status_humanized": "Success",
+            }
+        },
     )
     responses.get(
         url=f"{dbt_cloud_service.api_v2_base_url}{DBT_CLOUD_ACCOUNT_ID}/runs/{cached_compile_run_id}/artifacts/manifest.json",
@@ -318,6 +324,44 @@ def test_load_assets_from_cached_compile_run(
         cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=dbt_commands,
     )
+
+
+@responses.activate
+def test_invalid_cached_compile_run(dbt_cloud, dbt_cloud_service):
+    environment_variable_id = 1
+    cached_compile_run_id = "12345"
+
+    _add_dbt_cloud_job_responses(
+        dbt_cloud_service=dbt_cloud_service,
+        dbt_commands=["dbt build"],
+    )
+    responses.replace(
+        responses.GET,
+        url=f"{dbt_cloud_service.api_v3_base_url}{DBT_CLOUD_ACCOUNT_ID}/projects/{DBT_CLOUD_PROJECT_ID}/environment-variables/job?job_definition_id={DBT_CLOUD_JOB_ID}",
+        json=sample_get_environment_variables(
+            environment_variable_id=environment_variable_id,
+            name=DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR,
+            value=cached_compile_run_id,
+        ),
+    )
+    responses.get(
+        url=f"{dbt_cloud_service.api_v2_base_url}{DBT_CLOUD_ACCOUNT_ID}/runs/{cached_compile_run_id}/?include_related=trigger,run_steps",
+        json={
+            "data": {
+                "trigger": {"generate_docs_override": False},
+                "run_steps": [{}],
+                "status_humanized": "Running",
+                "href": "https://cloud.getdbt.com",
+            }
+        },
+    )
+
+    dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
+        dbt_cloud=dbt_cloud, job_id=DBT_CLOUD_JOB_ID
+    )
+
+    with pytest.raises(DagsterDbtCloudJobInvariantViolationError):
+        dbt_cloud_cacheable_assets.compute_cacheable_data()
 
 
 @responses.activate

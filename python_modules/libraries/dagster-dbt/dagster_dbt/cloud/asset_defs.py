@@ -47,7 +47,7 @@ from ..asset_defs import (
 )
 from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
-from .resources import DbtCloudResource
+from .resources import DbtCloudResource, DbtCloudRunStatus
 
 DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 
@@ -133,6 +133,18 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         compile_run = self._dbt_cloud.get_run(
             run_id=compile_run_id, include_related=["trigger", "run_steps"]
         )
+
+        compile_run_status: str = compile_run["status_humanized"]
+        if compile_run_status != DbtCloudRunStatus.SUCCESS:
+            raise DagsterDbtCloudJobInvariantViolationError(
+                f"The cached dbt Cloud job run `{compile_run_id}` must have a status of"
+                f" `{DbtCloudRunStatus.SUCCESS}`. Received status: `{compile_run_status}. You can"
+                f" view the full status of your dbt Cloud run at {compile_run['href']}. Once it has"
+                " successfully completed, reload your Dagster definitions. If your run has failed,"
+                " you must manually refresh the cache using the `dagster-dbt"
+                " cache-compile-references` CLI."
+            )
+
         compile_run_has_generate_docs = compile_run["trigger"]["generate_docs_override"]
 
         compile_job_materialization_command_step = len(compile_run["run_steps"])
