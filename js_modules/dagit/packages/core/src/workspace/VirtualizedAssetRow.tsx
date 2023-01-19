@@ -107,8 +107,8 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           </RowCell>
         ) : null}
         <RowCell>
-          <Box flex={{justifyContent: 'space-between'}} style={{position: 'relative'}}>
-            <div style={{maxWidth: '100%', minWidth: 0}}>
+          <Box flex={{alignItems: 'center'}}>
+            <div style={{flex: 1, minWidth: 0}}>
               <AssetLink
                 path={type === 'folder' || view === 'directory' ? path.slice(-1) : path}
                 url={linkUrl}
@@ -116,17 +116,6 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 icon={type}
                 textStyle="middle-truncate"
               />
-            </div>
-            <div
-              style={{
-                maxWidth: '100%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              <Caption style={{color: Colors.Gray500, whiteSpace: 'nowrap'}}>
-                {asset?.definition?.description}
-              </Caption>
             </div>
             {asset?.definition && (
               <AssetComputeKindTag
@@ -137,6 +126,17 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
               />
             )}
           </Box>
+          <div
+            style={{
+              maxWidth: '100%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            <Caption style={{color: Colors.Gray500, whiteSpace: 'nowrap'}}>
+              {asset?.definition?.description}
+            </Caption>
+          </div>
         </RowCell>
         {showRepoColumn ? (
           <RowCell>
