@@ -1,5 +1,34 @@
 # Changelog
 
+# 1.1.11 (core) / 0.17.11 (libraries)
+
+### New
+
+- [dagster-snowflake] Snowflake resource and IO manager now support private key authentication with unencrypted keys
+- [dagit] Improved query performance on Scheduled Runs page.
+- [dagit] Added or improved document (browser tab) titles throughout Dagit.
+- [dagster-dbt] The op created when using `load_assets_from_dbt*` is now configurable, allowing you to pass in specific parameters to the underlying dbt command (such as `--full-refresh`). To do so, supply config of the form `{"ops": {"run_dbt_<abcde>": {"config": {"full_refresh": True}}}}` when defining your asset job, or in Dagit.
+- A `dagster dev` which spins up both dagit and the daemon, and requires no `$DAGSTER_HOME` env var to be set
+- `create_repository_using_definitions_args` has been added for users to backport their repository definitions to the new `Definitions` API
+
+### Bugfixes
+
+- [dagit] Fixed broken code location names in the “Definitions” filter dialog accessible from the left navigation.
+- For time-partitioned assets, the `build_asset_reconciliation_sensor` will now only materialize partitions from the past day. Previously, if a new asset was added with a large number of missing partitions, a run for each of the missing partitions would be launched immediately.
+- A variety of performance improvements to the `build_asset_reconciliation_sensor`, which should help significantly speed up sensor evaluation in cases where there is a large number of assets or partitions.
+
+### Breaking Changes
+
+- Strings with escaped characters are now invalid substrings of partition keys.
+
+### Community Contributions
+
+- In dagster-airbyte, keys containing credentials are now considered a secret (thanks [joel-olazagasti](https://github.com/joel-olazagasti))!
+
+### Documentation
+
+- A new example of using the branching IO manager has been added.
+
 # 1.1.10 (core) / 0.17.10 (libraries)
 
 ### New
