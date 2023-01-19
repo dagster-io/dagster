@@ -36,9 +36,9 @@ def test_fivetran_group_label(group_name, expected_group_name):
     ft_assets = build_fivetran_assets(
         connector_id=DEFAULT_CONNECTOR_ID, destination_tables=["x.foo", "y.bar"]
     )
-    group_name = list(ft_assets[0].group_names_by_key.values())
-    assert len(groups) == 1
-    assert group_name == expected_group_name
+    group_names = list(ft_assets[0].group_names_by_key.values())
+    assert len(group_names) == 1
+    assert group_names[0] == expected_group_name
 
 
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix"])
