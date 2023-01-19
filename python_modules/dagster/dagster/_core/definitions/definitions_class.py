@@ -71,20 +71,12 @@ def _create_repository_using_definitions_args(
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
 ):
-    if assets:
-        check.iterable_param(
-            assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
-        )
-
-    if schedules:
-        check.iterable_param(schedules, "schedules", ScheduleDefinition)
-
-    if sensors:
-        check.iterable_param(sensors, "sensors", SensorDefinition)
-
-    if jobs:
-        check.iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
-
+    check.opt_iterable_param(
+        assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
+    )
+    check.opt_iterable_param(schedules, "schedules", ScheduleDefinition)
+    check.opt_iterable_param(sensors, "sensors", SensorDefinition)
+    check.opt_iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
     check.opt_mapping_param(resources, "resources", key_type=str)
 
     resource_defs = wrap_resources_for_execution(resources or {})
