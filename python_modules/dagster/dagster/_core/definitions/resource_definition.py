@@ -103,8 +103,24 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
             required_resource_keys, "required_resource_keys"
         )
         self._version = check.opt_str_param(version, "version")
+        self._top_level_key = None
         if version:
             experimental_arg_warning("version", "ResourceDefinition.__init__")
+
+    def set_top_level_key(self, key: str):
+        """
+        Sets the top-level resource key for this resource, when passed
+        into the Definitions object.
+        """
+        self._top_level_key = key
+
+    @property
+    def top_level_key(self) -> Optional[str]:
+        """
+        Gets the top-level resource key for this resource which was associated with it
+        in the Definitions object.
+        """
+        return self._top_level_key
 
     @property
     def resource_fn(self) -> ResourceFunction:
