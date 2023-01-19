@@ -1,0 +1,120 @@
+---
+title: Troubleshooting with Dagster | Dagster Docs
+---
+
+# Troubleshooting with Dagster 
+
+
+This guide helps users troubleshoot common errors and a roadmap to further investigation. 
+
+---
+## Building 💪 Pipelines with Dagster
+
+Before reviewing how to troubleshoot, let's discuss a few things that can be done while building with Dagster to reduce failures, or be able to be notified or track down what went wrong in a data pipeline.
+
+Building a robust data pipeline requires thinking through what can go wrong in a data pipeline using Dagster up front, and pays off later. A few things to consider when building in Dagster:
+
+- What kind of data is expected? What type of data is possible to get that might be unexpected? What type of data anamolies can break my pipeline? [Validating Data with Dagster](/guides/dagster/dagster_type_factories)
+- Do I have any potential for flakey failures? How do I build retries into my pipeline?
+  [How to recover from flaky failures using retries](concepts/ops-jobs-graphs/op-retries#op-retries)
+- How to diagnose failures? What types of logs would it be helpful to include in my pipeline on portions that might be more sensitive?[Learn about Dagster's built-in loggers](/concepts/logging/loggers#using-built-in-loggers) 
+- What alerts in slack or email are important enough to trigger? When is it time to jump in and see what the problem is?[Setting up run failure alerts in Dagster with Sensors](/concepts/partitions-schedules-sensors/sensors#run-failure-sensor)
+
+
+## Op or Asset Failures
+
+One of the most common issues that users will hit in Dagster is either an Asset or Op failure. 
+
+#### What went wrong?
+
+Dagit can be used to review the [loggers](/concepts/logging/loggers#using-loggers) to review the stacktrace to investigate what has failed. A few common cases:
+- The Asset or Op could have received some bad data. For more information see [Validating Data with Dagster](/guides/dagster/dagster_type_factories)
+- An external service might have failed, retries in Dagster can be helpful to mitigate this. For more information see [How to recover from flaky failures using retries](concepts/ops-jobs-graphs/op-retries#op-retries)
+- If a non-python sub-process was used, the raw compute logs can be helpful (for more information click here)
+- If something is going wrong with another python library, linking the logger to capture some of the events 
+
+Helpful hint:
+[Exception chaining may be helpful](https://docs.python.org/3.9/tutorial/errors.html#exception-chaining)
+
+---
+
+### Observability 
+
+Dagster provides built-in logger as well an extendible logging system that can be customized. 
+
+Dagster has structured event, compute, agent health and pod logs that can be published. These logs can help dig into what is not working.
+
+
+<!-- ![Viewing the cereals asset in Dagit](/images/guides/troubleshooting/agents.png) -->
+
+<Image
+alt="Viewing the agent console in Dagit"
+src="/images/guides/troubleshooting/agents.png"
+width={3574}
+height={1962}
+/>
+
+Some helpful logs that are available when using Dagster locally or a Hybrid deployment:
+
+- Agent status is available in the Dagit UI which displays if there is a heartbeat and direct access to raw logs is available 
+- Code server status and logs are directly available 
+- Step & Run worker status is available via agent checks and through the event logs as well as raw logs via the compute logs 
+
+#### Deployment Troubleshooting
+
+Agent and pod logs can be a useful tool for resolving Dagster deployment issues. 
+
+[For more information on Dagster Cloud Hybrid Deploymements](/dagster-cloud/deployment/agents)
+
+---
+
+
+## Sensing Failures 
+
+#### Setting up sensors 
+
+When building your data pipeline in Dagster, you have the opportunity to set up custom sensors that can trigger a warning based on a specific situation. [Run failure sensors](/concepts/partitions-schedules-sensors/sensors#run-failure-sensor) are a tool that can be used to monitor run failures. Dagster also provides [built-in failure sensors](/concepts/partitions-schedules-sensors/sensors#out-of-box-run-failure-sensors) that can trigger either a slack message or an email to notify if a run has failed.    
+
+#### Monitoring Sensors in Dagit
+
+The [Dagit UI](/concepts/partitions-schedules-sensors/sensors#monitoring-sensors-in-dagit) can be used to check on sensors and ensure that they are up and running. 
+--- 
+## Definitions
+
+[Definitions](/_apidocs/definitions) are used to load code to be used in Dagster. When the code is loaded into the code servers.
+
+Dagster will check to ensure the code is valid, if there are any issues in the namespace or if a resource was missing.
+
+When using definitions, each of the inputs must either be provided in the defintions or produced by one of the provided assets.
+
+
+---
+
+## Where to go next
+
+
+[Ask for help on Slack](https://dagster.io/slack)
+
+
+
+
+
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    href="/guides/dagster/using-environment-variables-and-secrets"
+    title="Environment variables and secrets"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/guides/dagster/dagster_type_factories"
+    title="Validating Data with Dagster Type Factories"
+  ></ArticleListItem>
+  <ArticleListItem
+    href="/concepts/ops-jobs-graphs/op-retries"
+    title="Op Retries"
+  ></ArticleListItem>
+</ArticleList>
