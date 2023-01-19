@@ -42,6 +42,7 @@ from dagster._config.field_utils import (
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ResourceFunction,
+    ResourceFunctionWithoutContext,
     is_context_provided,
 )
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
@@ -303,6 +304,7 @@ def _is_fully_configured(resource: ResourceDefinition) -> bool:
         )
         .resolve_config({})
         .success
+        is True
     )
 
 
@@ -640,14 +642,14 @@ def _separate_resource_params(
 
 def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourceContext) -> Any:
     if isinstance(obj.config_schema, ConfiguredDefinitionConfigSchema):
-        value = obj.config_schema.resolve_config({}).value
+        value = cast(Dict[str, Any], obj.config_schema.resolve_config({}).value)
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
         context = context.replace_config(obj.config_schema.default_value)
     if is_context_provided(obj.resource_fn):
         return obj.resource_fn(context)
     else:
-        return obj.resource_fn()
+        return cast(ResourceFunctionWithoutContext, obj.resource_fn)()
 
 
 typing_utils._Resource = Resource

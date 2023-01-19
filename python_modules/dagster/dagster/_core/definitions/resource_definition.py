@@ -103,7 +103,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
             required_resource_keys, "required_resource_keys"
         )
         self._version = check.opt_str_param(version, "version")
-        self._top_level_key = None
+        self._top_level_key: Optional[str] = None
         if version:
             experimental_arg_warning("version", "ResourceDefinition.__init__")
 
