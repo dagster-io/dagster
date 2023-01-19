@@ -5,6 +5,7 @@ from dagster._annotations import experimental, public
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.executor.base import Executor
@@ -93,11 +94,9 @@ def _create_repository_using_definitions_args(
         else ExecutorDefinition.hardcoded_executor(executor)
     )
 
-    from dagster._config.structured_config import AllowDelayedDependencies
-
     if resources:
         for rkey, resource in resources.items():
-            if isinstance(resource, AllowDelayedDependencies):
+            if isinstance(resource, ResourceDefinition):
                 resource.set_top_level_key(rkey)
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
