@@ -53,6 +53,6 @@ const Container = styled(Box)`
 
 const AssetNodeWrapper = styled.div`
   cursor: pointer;
-  width: 240px;
+  width: 260px;
   flex-shrink: 0;
 `;
