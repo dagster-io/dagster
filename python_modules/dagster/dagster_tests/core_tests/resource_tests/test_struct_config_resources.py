@@ -139,30 +139,30 @@ def test_caching_within_resource():
 def test_abc_resource():
     out_txt = []
 
-    class WriterResource(Resource, ABC):
+    class Writer(Resource, ABC):
         @abstractmethod
         def output(self, text: str) -> None:
             pass
 
-    class PrefixedWriterResource(WriterResource):
+    class PrefixedWriterResource(Writer):
         prefix: str
 
         def output(self, text: str) -> None:
             out_txt.append(f"{self.prefix}{text}")
 
-    class RepetitiveWriterResource(WriterResource):
+    class RepetitiveWriterResource(Writer):
         repetitions: int
 
         def output(self, text: str) -> None:
             out_txt.append(f"{text} " * self.repetitions)
 
     @op
-    def hello_world_op(writer: WriterResource):
+    def hello_world_op(writer: Writer):
         writer.output("hello, world!")
 
     # Can't instantiate abstract class
     with pytest.raises(TypeError):
-        WriterResource()  # pylint: disable=abstract-class-instantiated
+        Writer()  # pylint: disable=abstract-class-instantiated
 
     @job(resource_defs={"writer": PrefixedWriterResource(prefix="greeting: ")})
     def prefixed_job():
@@ -356,18 +356,25 @@ def test_structured_resource_runtime_config():
 def test_nested_resources():
     out_txt = []
 
-    class WriterResource(Resource):
+    class Writer(Resource, ABC):
+        @abstractmethod
+        def output(self, text: str) -> None:
+            pass
+
+    class WriterResource(Writer):
         def output(self, text: str) -> None:
             out_txt.append(text)
 
-    class PrefixedWriterResource(WriterResource, Resource):
+    class PrefixedWriterResource(Writer):
         prefix: str
 
         def output(self, text: str) -> None:
             out_txt.append(f"{self.prefix}{text}")
 
-    class JsonWriterResource(WriterResource):
-        base_writer: WriterResource
+    class JsonWriterResource(
+        Writer,
+    ):
+        base_writer: Writer
         indent: int
 
         def output(self, obj: Any) -> None:
