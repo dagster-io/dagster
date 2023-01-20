@@ -26,6 +26,24 @@ def test_fivetran_asset_keys():
     assert ft_assets[0].keys == {AssetKey(["x", "foo"]), AssetKey(["y", "bar"])}
 
 
+@pytest.mark.parametrize(
+    "group_name,expected_group_name",
+    [
+        (None, "default"),
+        ("my_group_name", "my_group_name"),
+    ],
+)
+def test_fivetran_group_label(group_name, expected_group_name):
+    ft_assets = build_fivetran_assets(
+        connector_id=DEFAULT_CONNECTOR_ID,
+        destination_tables=["x.foo", "y.bar"],
+        group_name=group_name,
+    )
+    group_names = set(ft_assets[0].group_names_by_key.values())
+    assert len(group_names) == 1
+    assert list(group_names)[0] == expected_group_name
+
+
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix"])
 @pytest.mark.parametrize(
     "tables,should_error",
