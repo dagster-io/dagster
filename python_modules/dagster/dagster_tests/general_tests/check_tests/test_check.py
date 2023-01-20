@@ -1327,6 +1327,42 @@ def test_is_tuple():
         check.is_tuple((str,), of_type=int)
 
 
+def test_tuple_elem():
+    tuple_value = ("blah", "blahblah")
+    ddict = {"tuplekey": tuple_value, "stringkey": "A", "nonekey": None}
+
+    assert check.tuple_elem(ddict, "tuplekey") == tuple_value
+    assert check.tuple_elem(ddict, "tuplekey", of_type=str) == tuple_value
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "nonekey")
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "nonexistantkey")
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "stringkey")
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "tuplekey", of_type=int)
+
+
+def test_opt_tuple_elem():
+    tuple_value = ("blah", "blahblah")
+    ddict = {"tuplekey": tuple_value, "stringkey": "A", "nonekey": None}
+
+    assert check.opt_tuple_elem(ddict, "tuplekey") == tuple_value
+    assert check.opt_tuple_elem(ddict, "tuplekey", of_type=str) == tuple_value
+    assert check.opt_tuple_elem(ddict, "nonekey") == tuple()
+    assert check.opt_tuple_elem(ddict, "nonexistantkey") == tuple()
+
+    with pytest.raises(CheckError):
+        check.opt_tuple_elem(ddict, "stringkey")
+
+    with pytest.raises(CheckError):
+        check.opt_tuple_elem(ddict, "tuplekey", of_type=int)
+
+
 def test_typed_is_tuple():
     class Foo:
         pass

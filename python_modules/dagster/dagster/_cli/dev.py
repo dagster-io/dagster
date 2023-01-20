@@ -7,6 +7,7 @@ from pathlib import Path
 
 import click
 
+import dagster._check as check
 from dagster._serdes import serialize_dagster_namedtuple
 from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.log import configure_loggers
@@ -90,14 +91,18 @@ def dev_command(code_server_log_level, dagit_port, **kwargs):
             serialize_dagster_namedtuple(instance.get_ref()),
             "--code-server-log-level",
             code_server_log_level,
-        ] + (["--workspace", kwargs["workspace"]] if kwargs.get("workspace") else [])
+        ]
+
+        if kwargs.get("workspace"):
+            for workspace in check.tuple_elem(kwargs, "workspace"):
+                args.extend(["--workspace", workspace])
 
         if kwargs.get("python_file"):
-            for python_file in kwargs["python_file"]:
+            for python_file in check.tuple_elem(kwargs, "python_file"):
                 args.extend(["--python-file", python_file])
 
         if kwargs.get("module_name"):
-            for module_name in kwargs["module_name"]:
+            for module_name in check.tuple_elem(kwargs, "module_name"):
                 args.extend(["--module-name", module_name])
 
         dagit_process = open_ipc_subprocess(
