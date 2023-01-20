@@ -15,6 +15,7 @@ from dagster import (
     Out,
     PartitionMapping,
     StaticPartitionsDefinition,
+    TimeWindowPartitionMapping,
     asset,
     graph,
     multi_asset,
@@ -22,6 +23,7 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -360,3 +362,149 @@ def test_partitioned_source_asset():
 
     assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
     assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))
+
+
+def test_bfs_filter_asset_subsets():
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+
+    @asset(partitions_def=daily_partitions_def)
+    def asset0():
+        ...
+
+    @asset(partitions_def=daily_partitions_def)
+    def asset1(asset0):
+        ...
+
+    @asset(partitions_def=daily_partitions_def)
+    def asset2(asset0):
+        ...
+
+    @asset(partitions_def=HourlyPartitionsDefinition(start_date="2022-01-01-00:00"))
+    def asset3(asset1, asset2):
+        ...
+
+    asset_graph = AssetGraph.from_assets([asset0, asset1, asset2, asset3])
+
+    def include_all(asset_key, partitions_subset):
+        return True
+
+    initial_partitions_subset = daily_partitions_def.empty_subset().with_partition_keys(
+        ["2022-01-02", "2022-01-03"]
+    )
+    initial_asset1_subset = AssetGraphSubset(
+        asset_graph, partitions_subsets_by_asset_key={asset1.key: initial_partitions_subset}
+    )
+    corresponding_asset3_subset = AssetGraphSubset(
+        asset_graph,
+        partitions_subsets_by_asset_key={
+            asset3.key: asset3.partitions_def.empty_subset().with_partition_key_range(
+                PartitionKeyRange("2022-01-02-00:00", "2022-01-03-23:00")
+            ),
+        },
+    )
+
+    assert (
+        asset_graph.bfs_filter_subsets(
+            dynamic_partitions_store=MagicMock(),
+            initial_subset=initial_asset1_subset,
+            condition_fn=include_all,
+        )
+        == initial_asset1_subset | corresponding_asset3_subset
+    )
+
+    def include_none(asset_key, partitions_subset):
+        return False
+
+    assert asset_graph.bfs_filter_subsets(
+        dynamic_partitions_store=MagicMock(),
+        initial_subset=initial_asset1_subset,
+        condition_fn=include_none,
+    ) == AssetGraphSubset(asset_graph)
+
+    def exclude_asset3(asset_key, partitions_subset):
+        return asset_key is not asset3.key
+
+    assert (
+        asset_graph.bfs_filter_subsets(
+            dynamic_partitions_store=MagicMock(),
+            initial_subset=initial_asset1_subset,
+            condition_fn=exclude_asset3,
+        )
+        == initial_asset1_subset
+    )
+
+    def exclude_asset2(asset_key, partitions_subset):
+        return asset_key is not asset2.key
+
+    initial_asset0_subset = AssetGraphSubset(
+        asset_graph, partitions_subsets_by_asset_key={asset0.key: initial_partitions_subset}
+    )
+    assert (
+        asset_graph.bfs_filter_subsets(
+            dynamic_partitions_store=MagicMock(),
+            initial_subset=initial_asset0_subset,
+            condition_fn=exclude_asset2,
+        )
+        == initial_asset0_subset | initial_asset1_subset | corresponding_asset3_subset
+    )
+
+
+def test_bfs_filter_asset_subsets_different_mappings():
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+
+    @asset(partitions_def=daily_partitions_def)
+    def asset0():
+        ...
+
+    @asset(partitions_def=daily_partitions_def)
+    def asset1(asset0):
+        ...
+
+    @asset(
+        partitions_def=daily_partitions_def,
+        ins={
+            "asset0": AssetIn(
+                partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+            )
+        },
+    )
+    def asset2(asset0):
+        ...
+
+    @asset(partitions_def=daily_partitions_def)
+    def asset3(asset1, asset2):
+        ...
+
+    asset_graph = AssetGraph.from_assets([asset0, asset1, asset2, asset3])
+
+    def include_all(asset_key, partitions_subset):
+        return True
+
+    initial_subset = daily_partitions_def.subset_with_partition_keys(["2022-01-01"])
+    expected_asset2_partitions_subset = daily_partitions_def.subset_with_partition_keys(
+        ["2022-01-02"]
+    )
+    expected_asset3_partitions_subset = daily_partitions_def.subset_with_partition_keys(
+        ["2022-01-01", "2022-01-02"]
+    )
+    expected_asset_graph_subset = AssetGraphSubset(
+        asset_graph,
+        partitions_subsets_by_asset_key={
+            asset0.key: initial_subset,
+            asset1.key: initial_subset,
+            asset2.key: expected_asset2_partitions_subset,
+            asset3.key: expected_asset3_partitions_subset,
+        },
+    )
+
+    assert (
+        asset_graph.bfs_filter_subsets(
+            dynamic_partitions_store=MagicMock(),
+            initial_subset=AssetGraphSubset(
+                asset_graph,
+                partitions_subsets_by_asset_key={asset0.key: initial_subset},
+            ),
+            condition_fn=include_all,
+        )
+        == expected_asset_graph_subset
+    )

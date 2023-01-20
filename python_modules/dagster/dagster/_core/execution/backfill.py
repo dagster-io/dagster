@@ -1,15 +1,16 @@
 from enum import Enum
-from typing import Dict, Mapping, NamedTuple, Optional, Sequence, Set
+from typing import Mapping, NamedTuple, Optional, Sequence
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.errors import DagsterDefinitionChangedDeserializationError
+from dagster._core.errors import (
+    DagsterDefinitionChangedDeserializationError,
+)
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
@@ -262,18 +263,17 @@ class PartitionBackfill(
         asset_selection: Sequence[AssetKey],
         backfill_timestamp: float,
         tags: Mapping[str, str],
+        dynamic_partitions_store: DynamicPartitionsStore,
     ) -> "PartitionBackfill":
-        target_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
-        non_partitioned_asset_keys: Set[AssetKey] = set()
-        for asset_key in asset_selection:
-            partitions_def = asset_graph.get_partitions_def(asset_key)
-            if partitions_def:
-                target_subsets_by_asset_key[
-                    asset_key
-                ] = partitions_def.empty_subset().with_partition_keys(partition_names)
-            else:
-                non_partitioned_asset_keys.add(asset_key)
+        """
+        If all the selected assets that have PartitionsDefinitions have the same partitioning, then
+        the backfill will target the provided partition_names for all those assets.
 
+        Otherwise, the backfill must consist of a partitioned "anchor" asset and a set of other
+        assets that descend from it. In that case, the backfill will target the partition_names of
+        the anchor asset, as well as all partitions of other selected assets that are downstream
+        of those partitions of the anchor asset.
+        """
         return cls(
             backfill_id=backfill_id,
             status=BulkActionStatus.REQUESTED,
@@ -281,9 +281,10 @@ class PartitionBackfill(
             tags=tags,
             backfill_timestamp=backfill_timestamp,
             asset_selection=asset_selection,
-            serialized_asset_backfill_data=AssetBackfillData.empty(
-                AssetGraphSubset(
-                    asset_graph, target_subsets_by_asset_key, non_partitioned_asset_keys
-                )
+            serialized_asset_backfill_data=AssetBackfillData.from_asset_partitions(
+                asset_graph=asset_graph,
+                partition_names=partition_names,
+                asset_selection=asset_selection,
+                dynamic_partitions_store=dynamic_partitions_store,
             ).serialize(),
         )

@@ -25,6 +25,7 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PipelineSelector
+from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
@@ -143,6 +144,54 @@ class AssetBackfillData(NamedTuple):
             ),
             latest_storage_id=storage_dict["latest_storage_id"],
         )
+
+    @classmethod
+    def from_asset_partitions(
+        cls,
+        asset_graph: AssetGraph,
+        partition_names: Sequence[str],
+        asset_selection: Sequence[AssetKey],
+        dynamic_partitions_store: DynamicPartitionsStore,
+    ) -> "AssetBackfillData":
+        partitioned_asset_keys = {
+            asset_key
+            for asset_key in asset_selection
+            if asset_graph.get_partitions_def(asset_key) is not None
+        }
+
+        root_partitioned_asset_keys = (
+            AssetSelection.keys(*partitioned_asset_keys).sources().resolve(asset_graph)
+        )
+        root_partitions_defs = {
+            asset_graph.get_partitions_def(asset_key) for asset_key in root_partitioned_asset_keys
+        }
+        if len(root_partitions_defs) > 1:
+            raise DagsterBackfillFailedError(
+                "All the assets at the root of the backfill must have the same PartitionsDefinition"
+            )
+
+        root_partitions_def = next(iter(root_partitions_defs))
+        if not root_partitions_def:
+            raise DagsterBackfillFailedError(
+                "If assets within the backfill have different partitionings, then root assets"
+                " must be partitioned"
+            )
+
+        root_partitions_subset = root_partitions_def.subset_with_partition_keys(partition_names)
+        target_subset = AssetGraphSubset(
+            asset_graph, non_partitioned_asset_keys=set(asset_selection) - partitioned_asset_keys
+        )
+        for root_asset_key in root_partitioned_asset_keys:
+            target_subset |= asset_graph.bfs_filter_subsets(
+                dynamic_partitions_store,
+                lambda asset_key, _: asset_key in partitioned_asset_keys,
+                AssetGraphSubset(
+                    asset_graph,
+                    partitions_subsets_by_asset_key={root_asset_key: root_partitions_subset},
+                ),
+            )
+
+        return cls.empty(target_subset)
 
     def serialize(self) -> str:
         storage_dict = {

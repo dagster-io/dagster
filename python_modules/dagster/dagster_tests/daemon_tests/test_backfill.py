@@ -686,6 +686,7 @@ def test_pure_asset_backfill(instance, workspace_context, external_repo):
             backfill_timestamp=pendulum.now().timestamp(),
             asset_selection=asset_selection,
             partition_names=partition_name_list,
+            dynamic_partitions_store=instance,
         )
     )
     assert instance.get_runs_count() == 0

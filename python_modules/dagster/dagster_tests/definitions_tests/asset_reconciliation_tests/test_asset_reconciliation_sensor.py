@@ -36,7 +36,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     reconcile,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.partition import DefaultPartitionsSubset, DynamicPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -273,6 +273,16 @@ def multi_asset_def(
 
 
 class FanInPartitionMapping(PartitionMapping):
+    def get_downstream_partitions_for_partitions(
+        self, upstream_partitions_subset, downstream_partitions_def, dynamic_partitions_store
+    ):
+        upstream_partition_keys = upstream_partitions_subset.get_partition_keys()
+        downstream_partition_keys = set(
+            upstream_partition_key.split("_")[0]
+            for upstream_partition_key in upstream_partition_keys
+        )
+        return DefaultPartitionsSubset(downstream_partitions_def, downstream_partition_keys)
+
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range,
@@ -286,15 +296,11 @@ class FanInPartitionMapping(PartitionMapping):
 
     def get_downstream_partitions_for_partition_range(
         self,
-        upstream_partition_key_range,
-        downstream_partitions_def,
-        upstream_partitions_def,
-    ):
-        assert upstream_partition_key_range
-        assert upstream_partition_key_range.start == upstream_partition_key_range.end
-        upstream_partition_key = upstream_partition_key_range.start
-        result = upstream_partition_key.split("_")[0]
-        return PartitionKeyRange(result, result)
+        upstream_partition_key_range: PartitionKeyRange,
+        downstream_partitions_def: Optional[PartitionsDefinition],
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionKeyRange:
+        raise NotImplementedError()
 
 
 class FanOutPartitionMapping(PartitionMapping):

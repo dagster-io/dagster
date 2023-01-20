@@ -1491,3 +1491,6 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             and time_window.start < included_time_window.end
             for included_time_window in self.included_time_windows
         )
+
+    def __repr__(self) -> str:
+        return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges()})"

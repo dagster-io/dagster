@@ -306,6 +306,17 @@ class PartitionsDefinition(ABC, Generic[T]):
     def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.empty_subset(self)
 
+    def subset_with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
+        return self.empty_subset().with_partition_keys(partition_keys)
+
+    def subset_with_all_partitions(
+        self,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> "PartitionsSubset":
+        return self.subset_with_partition_keys(
+            self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
+        )
+
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return self.partitions_subset_class.from_serialized(self, serialized)
 
@@ -1325,6 +1336,11 @@ class PartitionsSubset(ABC):
                 partition_key_range, dynamic_partitions_store=dynamic_partitions_store
             )
         )
+
+    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if self is other:
+            return self
+        return self.with_partition_keys(other.get_partition_keys())
 
     @abstractmethod
     def serialize(self) -> str:
