@@ -4,7 +4,7 @@ import subprocess
 from typing import Any, Iterator, List, Mapping, Optional, Sequence, Tuple, Union
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetMaterialization, AssetObservation, Output
+from dagster._core.definitions.events import AssetObservation, Output
 from dagster._core.utils import coerce_valid_log_level
 
 from ..errors import (
@@ -12,6 +12,7 @@ from ..errors import (
     DagsterDbtCliHandledRuntimeError,
     DagsterDbtCliOutputsNotFoundError,
 )
+from ..utils import _get_output_name
 from .constants import DBT_RUN_RESULTS_COMMANDS, DEFAULT_DBT_TARGET_PATH
 from .types import DbtCliOutput
 
@@ -63,7 +64,6 @@ def _process_line(
     line: str, log: Any, json_log_format: bool, capture_logs: bool
 ) -> Tuple[str, Optional[Mapping[str, Any]]]:
     """Processes a line of output from the dbt CLI."""
-
     log_level = "info"
 
     message = line
@@ -213,18 +213,31 @@ def _event_for_json_line(
     json_line: Mapping[str, Any], manifest_json, node_info_to_asset_key, runtime_metadata_fn
 ) -> Optional[Union[AssetObservation, Output]]:
     """Parses a json line into a Dagster event."""
-    pass
+    print(json.dumps(json_line, indent=2))
+    status = json_line.get("status")
+    node = json_line.get("data", {}).get("node_info", {})
+    if not node:
+        return None
+
+    resource_type = node.get("resource_type")
+    unique_id = node.get("unique_id")
+
+    if not resource_type or not unique_id:
+        return None
+
+    node_info = manifest_json["nodes"].get(unique_id)
+
+    if resource_type == "model" and status == "OK":
+        return Output(value=None, output_name=_get_output_name(node_info))
 
 
-def generate_cli_events(
+def execute_cli_event_generator(
     executable: str,
     command: str,
     flags_dict: Mapping[str, Any],
     log: Any,
     warn_error: bool,
     ignore_handled_error: bool,
-    target_path: str,
-    docs_url: Optional[str],
     json_log_format: bool,
     capture_logs: bool,
     manifest_json: Mapping[str, Any],

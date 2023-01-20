@@ -1,14 +1,21 @@
-from typing import Any, Mapping, Optional, Sequence, Set
+from typing import Any, Iterator, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster import Permissive, resource
 from dagster._annotations import public
+from dagster._core.definitions.events import AssetMaterialization, Output
 from dagster._utils.merger import merge_dicts
 
 from ..dbt_resource import DbtResource
 from .constants import CLI_COMMON_FLAGS_CONFIG_SCHEMA, CLI_COMMON_OPTIONS_CONFIG_SCHEMA
 from .types import DbtCliOutput
-from .utils import execute_cli, parse_manifest, parse_run_results, remove_run_results
+from .utils import (
+    execute_cli,
+    execute_cli_event_generator,
+    parse_manifest,
+    parse_run_results,
+    remove_run_results,
+)
 
 
 class DbtCliResource(DbtResource):
@@ -100,6 +107,28 @@ class DbtCliResource(DbtResource):
             docs_url=self._docs_url,
             json_log_format=self._json_log_format,
             capture_logs=self._capture_logs,
+        )
+
+    def stream_asset_events(
+        self,
+        command: str,
+        manifest_json: Mapping[str, Any],
+        node_info_to_asset_key,
+        runtime_metadata_fn,
+        **kwargs,
+    ) -> Iterator[Union[Output, AssetMaterialization]]:
+        yield from execute_cli_event_generator(
+            executable=self._executable,
+            command=command,
+            flags_dict=self._get_flags_dict(kwargs),
+            log=self.logger,
+            warn_error=self._warn_error,
+            ignore_handled_error=self._ignore_handled_error,
+            json_log_format=self._json_log_format,
+            capture_logs=self._capture_logs,
+            manifest_json=manifest_json,
+            node_info_to_asset_key=node_info_to_asset_key,
+            runtime_metadata_fn=runtime_metadata_fn,
         )
 
     @public

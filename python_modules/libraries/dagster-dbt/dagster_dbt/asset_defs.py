@@ -16,7 +16,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    cast,
 )
 
 from dagster import (
@@ -48,8 +47,8 @@ from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.merger import deep_merge_dicts
-from dagster_dbt.cli.resources import DbtCliResource
 
+from dagster_dbt.cli.resources import DbtCliResource
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
 from dagster_dbt.types import DbtOutput
@@ -408,8 +407,12 @@ def _stream_event_iterator(
     node_info_to_asset_key,
     kwargs: Dict[str, Any],
 ) -> Iterator[Union[AssetObservation, AssetMaterialization, Output]]:
-    flags_dict = dbt_resource._get_flags_dict(
-        kwargs
+    yield from dbt_resource.stream_asset_events(
+        command="build" if use_build_command else "run",
+        manifest_json=check.not_none(dbt_resource.get_manifest_json()),
+        runtime_metadata_fn=runtime_metadata_fn,
+        node_info_to_asset_key=node_info_to_asset_key,
+        **kwargs,
     )
 
 
@@ -520,6 +523,7 @@ def _dbt_nodes_to_assets(
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = _get_node_freshness_policy,
     display_raw_sql: bool = True,
+    stream_events: bool = False,
 ) -> AssetsDefinition:
     if use_build_command:
         deps = _get_deps(
@@ -565,6 +569,7 @@ def _dbt_nodes_to_assets(
         node_info_to_asset_key=node_info_to_asset_key,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         runtime_metadata_fn=runtime_metadata_fn,
+        stream_events=stream_events,
     )
 
     return AssetsDefinition(
@@ -605,6 +610,7 @@ def load_assets_from_dbt_project(
     ] = _get_node_freshness_policy,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
+    stream_events: bool = False,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models from a dbt project into Dagster assets.
@@ -689,6 +695,7 @@ def load_assets_from_dbt_project(
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         display_raw_sql=display_raw_sql,
         dbt_resource_key=dbt_resource_key,
+        stream_events=stream_events,
     )
 
 
@@ -713,6 +720,7 @@ def load_assets_from_dbt_manifest(
     ] = _get_node_freshness_policy,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
+    stream_events: bool = False,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -813,6 +821,7 @@ def load_assets_from_dbt_manifest(
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         display_raw_sql=display_raw_sql,
+        stream_events=stream_events,
     )
     dbt_assets: Sequence[AssetsDefinition]
     if source_key_prefix:

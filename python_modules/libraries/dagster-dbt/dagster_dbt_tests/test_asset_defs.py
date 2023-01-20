@@ -168,14 +168,25 @@ def test_fail_immediately(
     assert len(materializations) == 0
 
 
+@pytest.mark.parametrize("stream_events", [True, False])
 @pytest.mark.parametrize("use_build, fail_test", [(True, False), (True, True), (False, False)])
 def test_basic(
-    capsys, dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, fail_test
+    capsys,
+    dbt_seed,
+    conn_string,
+    test_project_dir,
+    dbt_config_dir,
+    stream_events,
+    use_build,
+    fail_test,
 ):  # pylint: disable=unused-argument
     # expected to emit json-formatted messages
     with capsys.disabled():
         dbt_assets = load_assets_from_dbt_project(
-            test_project_dir, dbt_config_dir, use_build_command=use_build
+            test_project_dir,
+            dbt_config_dir,
+            use_build_command=use_build,
+            stream_events=stream_events,
         )
 
     assert dbt_assets[0].op.name == "run_dbt_5ad73"
