@@ -97,4 +97,4 @@ def id_range_for_time(
     For the configured time partition, searches for the range of ids that were created in that time.
     """
     start, end = context.asset_partitions_time_window_for_output()
-    return _id_range_for_time(start.timestamp(), end.timestamp(), hn_client)
+    return _id_range_for_time(int(start.timestamp()), int(end.timestamp()), hn_client)
