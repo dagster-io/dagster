@@ -43,6 +43,8 @@ class PythonScriptSingleStepHandler(RemoteEnvironmentSingleStepHandler):
             text=True,
         )
 
+        return None
+
     def terminate_single_step(
         self, _step_context: IStepContext, step_handler_context: StepHandlerContext
     ) -> Optional[Iterator[DagsterEvent]]:
