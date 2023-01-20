@@ -32,7 +32,11 @@ from schema.charts.dagster.subschema.daemon import (
 )
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
 from schema.charts.dagster.subschema.python_logs import PythonLogs
-from schema.charts.dagster.subschema.retention import Retention, TickRetention, TickRetentionByType
+from schema.charts.dagster.subschema.retention import (
+    Retention,
+    TickRetention,
+    TickRetentionByType,
+)
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,
     K8sRunLauncherConfig,
@@ -575,6 +579,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
     storage_account = "account"
     container = "container"
     secret_key = "secret_key"
+    default_azure_credential = {"exclude_cli_credential": True}
     local_dir = "/dir"
     prefix = "prefix"
     upload_interval = 30
@@ -586,6 +591,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
                     storageAccount=storage_account,
                     container=container,
                     secretKey=secret_key,
+                    defaultAzureCredential=default_azure_credential,
                     localDir=local_dir,
                     prefix=prefix,
                     uploadInterval=upload_interval,
@@ -600,17 +606,18 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
 
     assert compute_logs_config["module"] == "dagster_azure.blob.compute_log_manager"
     assert compute_logs_config["class"] == "AzureBlobComputeLogManager"
+    assert compute_logs_config["config"].keys() == AzureBlobComputeLogManager.config_type().keys()
     assert compute_logs_config["config"] == {
         "storage_account": storage_account,
         "container": container,
         "secret_key": secret_key,
+        "default_azure_credential": default_azure_credential,
         "local_dir": local_dir,
         "prefix": prefix,
         "upload_interval": upload_interval,
     }
 
     # Test all config fields in configurable class
-    assert compute_logs_config["config"].keys() == AzureBlobComputeLogManager.config_type().keys()
 
 
 def test_gcs_compute_log_manager(template: HelmTemplate):

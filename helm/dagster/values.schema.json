@@ -1189,6 +1189,20 @@
                         },
                         {
                             "$ref": "#/definitions/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "defaultAzureCredential": {
+                    "title": "Defaultazurecredential",
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
                         }
                     ]
                 },
@@ -1234,8 +1248,7 @@
             },
             "required": [
                 "storageAccount",
-                "container",
-                "secretKey"
+                "container"
             ]
         },
         "GCSComputeLogManager": {
