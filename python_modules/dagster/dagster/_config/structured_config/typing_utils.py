@@ -18,6 +18,9 @@ Self = TypeVar("Self", bound="TypecheckAllowPartialResourceInitParams")
 _ResValue = TypeVar("_ResValue")
 
 
+# Since a metaclass is invoked by Resource before Resource or PartialResource is defined, we need to
+# define a temporary class to use as a placeholder for use in the initial metaclass invocation.
+# When the metaclass is invoked for a Resource subclass, it will use the non-placeholder values.
 class _Temp(Generic[_ResValue]):
     pass
 
@@ -29,17 +32,29 @@ _PartialResource: Type = _Temp
 
 @dataclass_transform()
 class BaseResourceMeta(pydantic.main.ModelMetaclass):
+    """
+    Custom metaclass for Resource and PartialResource. This metaclass is responsible for
+    transforming the type annotations on the class to allow for partially configured resources.
+    """
+
     def __new__(self, name, bases, namespaces, **kwargs):
+        # Gather all type annotations from the class and its base classes
         annotations = namespaces.get("__annotations__", {})
         for base in bases:
             if hasattr(base, "__annotations__"):
                 annotations.update(base.__annotations__)
         for field in annotations:
             if not field.startswith("__"):
+                # Check if the annotation is a ResourceDependency
                 if get_origin(annotations[field]) == _ResourceDep:
                     arg = get_args(annotations[field])[0]
+                    # If so, we treat it as a Union of a PartialResource and a Resource
+                    # for Pydantic's sake.
                     annotations[field] = Union[_PartialResource[arg], _Resource[arg]]
                 elif safe_is_subclass(annotations[field], _Resource):
+                    # If the annotation is a Resource, we treat it as a Union of a PartialResource
+                    # and a Resource for Pydantic's sake, so that a user can pass in a partially
+                    # configured resource.
                     base = annotations[field]
                     annotations[field] = Union[_PartialResource[base], base]
 
