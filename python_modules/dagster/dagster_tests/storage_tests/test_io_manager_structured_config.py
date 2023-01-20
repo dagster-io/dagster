@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 
 from dagster import Definitions, In, asset, job, op
-from dagster._config.structured_config import StructuredConfigIOManager
+from dagster._config.structured_config import Resource, StructuredConfigIOManager
 
 
 def test_load_input_handle_output():
