@@ -77,7 +77,7 @@ class LocalPartitionedParquetIOManager(PartitionedParquetIOManager):
 
 
 class S3PartitionedParquetIOManager(PartitionedParquetIOManager):
-    s3_bucket: ResourceDependency[str]
+    s3_bucket: str
 
     @property
     def _base_path(self):
