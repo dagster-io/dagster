@@ -527,7 +527,7 @@ class DagsterRun(
         partition_set: "PartitionSetDefinition", partition: "Partition"
     ) -> Mapping[str, str]:
         tags = {PARTITION_SET_TAG: partition_set.name}
-        tags.update(partition_set.partitions_def.get_tags_from_partition_key(partition.name))
+        tags.update(partition_set.partitions_def.get_tags_for_partition_key(partition.name))
         return tags
 
 

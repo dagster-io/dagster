@@ -761,7 +761,7 @@ def build_run_requests(
         if partition_key is not None:
             if partitions_def is None:
                 check.failed("Partition key provided for unpartitioned asset")
-            tags.update({**partitions_def.get_tags_from_partition_key(partition_key)})
+            tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
 
         run_requests.append(
             RunRequest(

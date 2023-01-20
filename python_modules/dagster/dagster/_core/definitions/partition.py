@@ -278,7 +278,7 @@ class PartitionsDefinition(ABC, Generic[T]):
     def serializable_unique_identifier(self) -> str:
         return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
 
-    def get_tags_from_partition_key(self, partition_key: str) -> Mapping[str, str]:
+    def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
         tags = {PARTITION_NAME_TAG: partition_key}
         return tags
 
