@@ -201,7 +201,9 @@ class TimeWindowPartitionsDefinition(
 
         sorted_pks = sorted(partition_keys, key=lambda pk: datetime.strptime(pk, self.fmt))
         cur_windows_iterator = iter(
-            self._iterate_time_windows(datetime.strptime(sorted_pks[0], self.fmt))
+            self._iterate_time_windows(
+                pendulum.instance(datetime.strptime(sorted_pks[0], self.fmt), tz=self.timezone)
+            )
         )
         partition_key_time_windows: List[TimeWindow] = []
         for partition_key in sorted_pks:
@@ -210,19 +212,27 @@ class TimeWindowPartitionsDefinition(
                 partition_key_time_windows.append(next_window)
             else:
                 cur_windows_iterator = iter(
-                    self._iterate_time_windows(datetime.strptime(partition_key, self.fmt))
+                    self._iterate_time_windows(
+                        pendulum.instance(
+                            datetime.strptime(partition_key, self.fmt), tz=self.timezone
+                        )
+                    )
                 )
                 partition_key_time_windows.append(next(cur_windows_iterator))
 
-        end_tw = self.get_last_partition_window()
-        if end_tw is None:
-            check.failed("No end time window found")
-        end_timestamp = end_tw.end.timestamp()
+        start_time_window = self.get_first_partition_window()
+        end_time_window = self.get_last_partition_window()
+
+        if end_time_window is None or start_time_window is None:
+            check.failed("No partitions in the PartitionsDefinition")
+
+        start_timestamp = start_time_window.start.timestamp()
+        end_timestamp = end_time_window.end.timestamp()
+
         partition_key_time_windows = [
             tw
             for tw in partition_key_time_windows
-            if tw.start.timestamp() >= self.start.timestamp()
-            and tw.end.timestamp() <= end_timestamp
+            if tw.start.timestamp() >= start_timestamp and tw.end.timestamp() <= end_timestamp
         ]
         return partition_key_time_windows
 
