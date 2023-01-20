@@ -14,7 +14,6 @@ from typing import (
     Sequence,
     Type,
     Union,
-    cast,
 )
 
 from typing_extensions import Self
@@ -38,7 +37,6 @@ from dagster._serdes.serdes import (
 
 from .tags import (
     BACKFILL_ID_TAG,
-    PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
@@ -49,7 +47,6 @@ from .tags import (
 if TYPE_CHECKING:
     from dagster._core.definitions.partition import (
         Partition,
-        PartitionsDefinition,
         PartitionSetDefinition,
     )
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
@@ -530,37 +527,8 @@ class DagsterRun(
         partition_set: "PartitionSetDefinition", partition: "Partition"
     ) -> Mapping[str, str]:
         tags = {PARTITION_SET_TAG: partition_set.name}
-        tags.update(get_tags_from_partition_key(partition.name))
+        tags.update(partition_set.partitions_def.get_tags_from_partition_key(partition.name))
         return tags
-
-
-def get_tags_from_partition_key(partition_key: str) -> Mapping[str, str]:
-    from dagster._core.definitions.multi_dimensional_partitions import (
-        MultiPartitionKey,
-        get_tags_from_multi_partition_key,
-    )
-
-    tags = {PARTITION_NAME_TAG: partition_key}
-    if isinstance(partition_key, MultiPartitionKey):
-        tags.update(get_tags_from_multi_partition_key(partition_key))
-
-    return tags
-
-
-def get_partition_tags_from_partition_def(
-    partitions_def: "PartitionsDefinition", partition_key: str
-) -> Mapping[str, str]:
-    from dagster._core.definitions.multi_dimensional_partitions import (
-        MultiPartitionKey,
-        MultiPartitionsDefinition,
-    )
-
-    if isinstance(partitions_def, MultiPartitionsDefinition):
-        partition_key = cast(
-            MultiPartitionKey, partitions_def.get_partition_key_from_str(partition_key)
-        )
-
-    return get_tags_from_partition_key(partition_key)
 
 
 # DagsterRun is serialized as PipelineRun so that it can be read by older (pre 0.13.x) version of

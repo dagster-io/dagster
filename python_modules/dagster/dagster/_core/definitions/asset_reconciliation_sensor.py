@@ -28,7 +28,6 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.storage.pipeline_run import get_partition_tags_from_partition_def
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .asset_selection import AssetGraph, AssetSelection
@@ -762,7 +761,7 @@ def build_run_requests(
         if partition_key is not None:
             if partitions_def is None:
                 check.failed("Partition key provided for unpartitioned asset")
-            tags.update({**get_partition_tags_from_partition_def(partitions_def, partition_key)})
+            tags.update({**partitions_def.get_tags_from_partition_key(partition_key)})
 
         run_requests.append(
             RunRequest(
