@@ -159,7 +159,7 @@ class Resource(
         return cast(T, self)
 
     @classmethod
-    def partial(cls, **kwargs) -> "PartialResource[Self]":
+    def configure_at_launch(cls, **kwargs) -> "PartialResource[Self]":
         """
         Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
@@ -183,8 +183,6 @@ class PartialResource(Generic[T], ResourceDefinition, MakeConfigCacheable):
 
     def __init__(self, resource_cls: Type[Resource[T]], data: Dict[str, Any]):
         check.invariant(data == {}, "PartialResource currently does not support config fields")
-
-        Config.__init__(self, data=data, resource_cls=resource_cls)
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)
 
@@ -277,7 +275,7 @@ class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
         raise NotImplementedError()
 
     @classmethod
-    def partial(cls, **kwargs) -> "PartialIOManager":
+    def configure_at_launch(cls, **kwargs) -> "PartialIOManager":
         """
         Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
