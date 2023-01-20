@@ -50,32 +50,26 @@ SHARED_SNOWFLAKE_CONF = {
 }
 
 RESOURCES_PROD = {
-    "s3_bucket": "hackernews-elementl-prod",
     "io_manager": CommonBucketS3PickleIOManager(
         s3=s3_resource, s3_bucket="hackernews-elementl-prod"
     ),
-    "s3": s3_resource,
     "parquet_io_manager": S3PartitionedParquetIOManager(
         pyspark=configured_pyspark, s3_bucket="hackernews-elementl-dev"
     ),
     "warehouse_io_manager": SnowflakeIOManager(database="DEMO_DB", **SHARED_SNOWFLAKE_CONF),
-    "pyspark": configured_pyspark,
     "hn_client": HNAPISubsampleClient(subsample_rate=10),
     "dbt": dbt_prod_resource,
 }
 
 
 RESOURCES_STAGING = {
-    "s3_bucket": "hackernews-elementl-dev",
     "io_manager": CommonBucketS3PickleIOManager(
         s3=s3_resource, s3_bucket="hackernews-elementl-dev"
     ),
-    "s3": s3_resource,
     "parquet_io_manager": S3PartitionedParquetIOManager(
         pyspark=configured_pyspark, s3_bucket="hackernews-elementl-dev"
     ),
     "warehouse_io_manager": SnowflakeIOManager(database="DEMO_DB_STAGING", **SHARED_SNOWFLAKE_CONF),
-    "pyspark": configured_pyspark,
     "hn_client": HNAPISubsampleClient(subsample_rate=10),
     "dbt": dbt_staging_resource,
 }
@@ -86,7 +80,6 @@ RESOURCES_LOCAL = {
     "warehouse_io_manager": DuckDBPartitionedParquetIOManager(
         duckdb_path=os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb")
     ),
-    "pyspark": configured_pyspark,
     "hn_client": HNAPIClient(),
     "dbt": dbt_local_resource,
 }

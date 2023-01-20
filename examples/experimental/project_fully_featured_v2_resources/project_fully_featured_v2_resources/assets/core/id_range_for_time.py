@@ -1,7 +1,14 @@
 from datetime import datetime, timezone
 from typing import Any, Mapping, Tuple
 
-from dagster import _check as check
+from dagster import (
+    OpExecutionContext,
+    _check as check,
+)
+
+from project_fully_featured_v2_resources.resources.hn_resource import (
+    HNClient,
+)
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):
@@ -50,7 +57,7 @@ def binary_search_nearest_right(get_value, start, end, max_target):
     return end
 
 
-def _id_range_for_time(start: int, end: int, hn_client):
+def _id_range_for_time(start: int, end: int, hn_client: HNClient):
     check.invariant(end >= start, "End time comes before start time")
 
     def _get_item_timestamp(item_id):
@@ -83,9 +90,11 @@ def _id_range_for_time(start: int, end: int, hn_client):
     return id_range, metadata
 
 
-def id_range_for_time(context) -> Tuple[Tuple[int, int], Mapping[str, Any]]:
+def id_range_for_time(
+    context: OpExecutionContext, hn_client: HNClient
+) -> Tuple[Tuple[int, int], Mapping[str, Any]]:
     """
     For the configured time partition, searches for the range of ids that were created in that time.
     """
     start, end = context.asset_partitions_time_window_for_output()
-    return _id_range_for_time(start.timestamp(), end.timestamp(), context.resources.hn_client)
+    return _id_range_for_time(start.timestamp(), end.timestamp(), hn_client)
