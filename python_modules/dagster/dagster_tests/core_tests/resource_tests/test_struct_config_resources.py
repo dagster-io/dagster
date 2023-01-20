@@ -331,7 +331,7 @@ def test_structured_resource_runtime_config():
 
     defs = Definitions(
         assets=[hello_world_asset],
-        resources={"writer": WriterResource.partial()},
+        resources={"writer": WriterResource.configure_at_launch()},
     )
 
     assert (

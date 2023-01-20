@@ -64,7 +64,7 @@ def test_runtime_config():
 
     defs = Definitions(
         assets=[hello_world_asset],
-        resources={"io_manager": MyIOManager.partial()},
+        resources={"io_manager": MyIOManager.configure_at_launch()},
     )
 
     assert (
