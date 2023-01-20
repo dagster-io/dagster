@@ -274,6 +274,9 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "telemetry": Field(
             {"enabled": Field(Bool, is_required=False)},
         ),
+        "nux": Field(
+            {"enabled": Field(Bool, is_required=False)},
+        ),
         "instance_class": config_field_for_configurable_class(),
         "python_logs": python_logs_config_schema(),
         "run_monitoring": Field(
