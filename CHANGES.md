@@ -1,5 +1,15 @@
 # Changelog
 
+# 1.1.13 (core) / 0.17.13 (libraries)
+
+### Bugfixes
+
+- The `nux` section of `dagster.yaml` config has been fixed.
+- Changes when heartbeats occur in the daemon to avoid crashes in certain conditions.
+- Fixed an issue where passing a workspace file as an argument into the `dagster dev` command raised an error
+- [dagit] Fixes an issue with asset names being truncated by long asset descriptions in the asset catalog, making them impossible to click.
+- [dagit] The backfill page no longer fails to load if any of the asset backfills had assets that were partitioned at the time of the backfill but are no longer partitioned.
+
 # 1.1.12 (core) / 0.17.12 (libraries)
 
 ### Bugfixes
@@ -13,13 +23,14 @@
 - Added a new `dagster dev` command that can be used to run both Dagit and the Dagster daemon in the same process during local development. See the new Running Dagster Locally guide in the docs for more information.
 - Added instructions for installing the `dagster` package on M1 and M2 Macs that avoids installation errors when building the `grpcio` package. See [the Installing Dagster guide in the docs](https://docs.dagster.io/getting-started/install) for more information.
 - `create_repository_using_definitions_args` has been added for users to backport their repository definitions to the new `Definitions` API
-- When running Dagit on your local machine, a prompt will now appear that allows you to optionally enter an email address to receive Dagster security updates or subscribe to the Dagster newsletter. This prompt can be dismissed in the UI, or permanently disabled by adding the following to your dagster.yaml file:
+- When running Dagit on your local machine, a prompt will now appear that allows you to optionally enter an email address to receive Dagster security updates or subscribe to the Dagster newsletter. This prompt can be dismissed in the UI, or permanently disabled by adding the following to your `dagster.yaml` file:
 
 ```
 nux:
   enabled: false
 ```
 
+- The `grpcio` pin in Dagster to <1.48.1 has been restored for Python versions 3.10 and 3.11, due to [upstream issues](https://github.com/grpc/grpc/issues/31885) in the grpcio package causing hangs in Dagster.
 - [dagit] Improved query performance on Scheduled Runs page.
 - [dagit] The "Materialize" button now allows you to add tags to asset materialization runs. If your assets do not require config or partitions, you may need to shift-click "Materialize".
 - [dagit] The kind tags and logos shown on assets in the Asset Graph now appear in other parts of Dagit so it's easier to understand your assets.
