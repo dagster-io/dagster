@@ -421,6 +421,7 @@ export type DagitMutation = {
   cancelPartitionBackfill: CancelBackfillResult;
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
+  evaluateSensor: EvaluateSensorMutation;
   launchPartitionBackfill: LaunchBackfillResult;
   launchPipelineExecution: LaunchRunResult;
   launchPipelineReexecution: LaunchRunReexecutionResult;
@@ -439,7 +440,6 @@ export type DagitMutation = {
   stopSensor: StopSensorMutationResultOrError;
   terminatePipelineExecution: TerminateRunResult;
   terminateRun: TerminateRunResult;
-  testInstigator: TestInstigatorResult;
   wipeAssets: AssetWipeMutationResult;
 };
 
@@ -453,6 +453,11 @@ export type DagitMutationDeletePipelineRunArgs = {
 
 export type DagitMutationDeleteRunArgs = {
   runId: Scalars['String'];
+};
+
+export type DagitMutationEvaluateSensorArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  selectorData: SensorSelector;
 };
 
 export type DagitMutationLaunchPartitionBackfillArgs = {
@@ -527,11 +532,6 @@ export type DagitMutationTerminatePipelineExecutionArgs = {
 export type DagitMutationTerminateRunArgs = {
   runId: Scalars['String'];
   terminatePolicy?: InputMaybe<TerminateRunPolicy>;
-};
-
-export type DagitMutationTestInstigatorArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  instigatorSelector: InstigatorSelector;
 };
 
 export type DagitMutationWipeAssetsArgs = {
@@ -992,6 +992,8 @@ export enum ErrorSource {
   UNEXPECTED_ERROR = 'UNEXPECTED_ERROR',
   USER_CODE_ERROR = 'USER_CODE_ERROR',
 }
+
+export type EvaluateSensorMutation = PythonError | SensorExecutionData;
 
 export enum EvaluationErrorReason {
   FIELDS_NOT_DEFINED = 'FIELDS_NOT_DEFINED',
@@ -1536,20 +1538,6 @@ export enum InstigationType {
 }
 
 export type InstigationTypeSpecificData = ScheduleData | SensorData;
-
-export type InstigatorExecutionData = {
-  __typename: 'InstigatorExecutionData';
-  cursor: Maybe<Scalars['String']>;
-  runRequests: Maybe<Array<Maybe<RunRequest>>>;
-  skipMessage: Maybe<Scalars['String']>;
-};
-
-export type InstigatorSelector = {
-  instigatorType: Scalars['String'];
-  name: Scalars['String'];
-  repositoryLocationName: Scalars['String'];
-  repositoryName: Scalars['String'];
-};
 
 export type IntMetadataEntry = MetadataEntry & {
   __typename: 'IntMetadataEntry';
@@ -3238,6 +3226,13 @@ export type SensorData = {
   lastTickTimestamp: Maybe<Scalars['Float']>;
 };
 
+export type SensorExecutionData = {
+  __typename: 'SensorExecutionData';
+  cursor: Maybe<Scalars['String']>;
+  runRequests: Maybe<Array<Maybe<RunRequest>>>;
+  skipMessage: Maybe<Scalars['String']>;
+};
+
 export type SensorMetadata = {
   __typename: 'SensorMetadata';
   assetKeys: Maybe<Array<AssetKey>>;
@@ -3542,8 +3537,6 @@ export type TerminateRunSuccess = TerminatePipelineExecutionSuccess & {
   __typename: 'TerminateRunSuccess';
   run: Run;
 };
-
-export type TestInstigatorResult = InstigatorExecutionData | PythonError;
 
 export type TextMetadataEntry = MetadataEntry & {
   __typename: 'TextMetadataEntry';

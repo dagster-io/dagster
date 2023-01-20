@@ -23,7 +23,6 @@ from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
-    infer_instigation_selector,
     infer_repository_selector,
     infer_sensor_selector,
     main_repo_location_name,
@@ -31,9 +30,7 @@ from dagster_graphql.test.utils import (
 )
 
 from .graphql_context_test_suite import (
-    ExecutingGraphQLContextTestMatrix,
     NonLaunchableGraphQLContextTestMatrix,
-    ReadonlyGraphQLContextTestMatrix,
 )
 
 GET_SENSORS_QUERY = """
@@ -264,15 +261,15 @@ mutation($sensorSelector: SensorSelector!, $cursor: String) {
 }
 """
 
-INSTIGATE_CURSOR_MUTATION = """
-mutation($instigatorSelector: InstigatorSelector!, $cursor: String) {
-  testInstigator(instigatorSelector: $instigatorSelector, cursor: $cursor) {
+EVALUATE_SENSOR_MUTATION = """
+mutation($selectorData: SensorSelector!, $cursor: String) {
+  evaluateSensor(selectorData: $selectorData, cursor: $cursor) {
     __typename
     ... on PythonError {
       message
       stack
     }
-    ... on InstigatorExecutionData {
+    ... on SensorExecutionData {
       cursor
       runRequests {
         runKey
@@ -546,19 +543,19 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert start_result.data["startSensor"]["sensorState"]["status"] == "RUNNING"
 
     def test_instigate_sensor(self, graphql_context):
-        instigator_selector = infer_instigation_selector(
-            graphql_context, "always_no_config_sensor", instigator_type="SENSOR"
+        instigator_selector = infer_sensor_selector(
+            graphql_context, "always_no_config_sensor"
         )
         result = execute_dagster_graphql(
             graphql_context,
-            INSTIGATE_CURSOR_MUTATION,
-            variables={"instigatorSelector": instigator_selector, "cursor": "blah"},
+            EVALUATE_SENSOR_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": "blah"},
         )
         assert result.data
-        assert result.data["testInstigator"]["__typename"] == "InstigatorExecutionData"
-        assert result.data["testInstigator"]["cursor"] == "blah"
-        assert result.data["testInstigator"]["runRequests"] is None
-        assert result.data["testInstigator"]["skipMessage"] is None
+        assert result.data["evaluateSensor"]["__typename"] == "SensorExecutionData"
+        assert result.data["evaluateSensor"]["cursor"] == "blah"
+        assert result.data["evaluateSensor"]["runRequests"] is None
+        assert result.data["evaluateSensor"]["skipMessage"] is None
 
 
 def test_sensor_next_ticks(graphql_context):

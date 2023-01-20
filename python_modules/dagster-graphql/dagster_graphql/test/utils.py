@@ -166,9 +166,7 @@ def infer_sensor_selector(graphql_context, sensor_name):
     return selector
 
 
-def infer_instigation_selector(graphql_context, name, instigator_type=None):
+def infer_instigation_selector(graphql_context, name):
     selector = infer_repository_selector(graphql_context)
     selector.update({"name": name})
-    if instigator_type:
-        selector.update({"instigatorType": instigator_type})
     return selector
