@@ -293,6 +293,12 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def secondary_dimension(self) -> PartitionDimensionDefinition:
         return self._get_primary_and_secondary_dimension()[1]
 
+    def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
+        partition_key = cast(MultiPartitionKey, self.get_partition_key_from_str(partition_key))
+        tags = {**super().get_tags_for_partition_key(partition_key)}
+        tags.update(get_tags_from_multi_partition_key(partition_key))
+        return tags
+
 
 class MultiPartitionsSubset(DefaultPartitionsSubset):
     def __init__(

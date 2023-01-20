@@ -37,7 +37,6 @@ from dagster._serdes.serdes import (
 
 from .tags import (
     BACKFILL_ID_TAG,
-    PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
@@ -46,7 +45,10 @@ from .tags import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.partition import Partition, PartitionSetDefinition
+    from dagster._core.definitions.partition import (
+        Partition,
+        PartitionSetDefinition,
+    )
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
 
@@ -524,17 +526,8 @@ class DagsterRun(
     def tags_for_partition_set(
         partition_set: "PartitionSetDefinition", partition: "Partition"
     ) -> Mapping[str, str]:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionKey,
-            get_tags_from_multi_partition_key,
-        )
-
         tags = {PARTITION_SET_TAG: partition_set.name}
-        if isinstance(partition.name, MultiPartitionKey):
-            tags.update(get_tags_from_multi_partition_key(partition.name))
-        else:
-            tags[PARTITION_NAME_TAG] = partition.name
-
+        tags.update(partition_set.partitions_def.get_tags_for_partition_key(partition.name))
         return tags
 
 
