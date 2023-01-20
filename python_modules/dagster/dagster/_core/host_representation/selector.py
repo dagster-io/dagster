@@ -1,9 +1,76 @@
-from typing import NamedTuple, Optional, Sequence
+from dataclasses import dataclass
+from typing import NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+
+
+class NotSpecifiedSentinel:
+    pass
+
+
+NOT_SPECIFIED_SENTINEL = NotSpecifiedSentinel()
+
+
+@dataclass(frozen=True)
+class JobSelection:
+    @staticmethod
+    def complete():
+        return JobSelection(
+            op_selection_queries=NOT_SPECIFIED_SENTINEL, asset_keys=NOT_SPECIFIED_SENTINEL
+        )
+
+    @staticmethod
+    def of_op_selection_queries(op_selection_queries: Sequence[str]):
+        return JobSelection(
+            op_selection_queries=op_selection_queries, asset_keys=NOT_SPECIFIED_SENTINEL
+        )
+
+    @staticmethod
+    def of_assets(asset_keys: Sequence[AssetKey]):
+        return JobSelection(op_selection_queries=NOT_SPECIFIED_SENTINEL, asset_keys=asset_keys)
+
+    @staticmethod
+    def from_legacy_values(
+        solid_selection: Optional[Sequence[str]], asset_selection: Optional[Sequence[AssetKey]]
+    ) -> "JobSelection":
+        if solid_selection is None and asset_selection is None:
+            return JobSelection.complete()
+        elif solid_selection is not None:
+            return JobSelection.of_assets(asset_keys=check.not_none(asset_selection))
+        elif asset_selection is not None:
+            return JobSelection.of_op_selection_queries(
+                op_selection_queries=check.not_none(solid_selection)
+            )
+        raise Exception("should not be reached")
+
+    op_selection_queries: Union[NotSpecifiedSentinel, Sequence[str]]
+    asset_keys: Union[NotSpecifiedSentinel, Sequence[AssetKey]]
+
+    @property
+    def is_op_selection_query_based(self):
+        return self.op_selection_queries is not NOT_SPECIFIED_SENTINEL
+
+    @property
+    def is_asset_key_based(self):
+        return self.asset_keys is not NOT_SPECIFIED_SENTINEL
+
+    def to_pipeline_selector(
+        self, location_name: str, repository_name: str, job_name: str
+    ) -> "PipelineSelector":
+        return PipelineSelector(
+            location_name=location_name,
+            repository_name=repository_name,
+            pipeline_name=job_name,
+            solid_selection=None
+            if isinstance(self.op_selection_queries, NotSpecifiedSentinel)
+            else self.op_selection_queries,
+            asset_selection=None
+            if isinstance(self.asset_keys, NotSpecifiedSentinel)
+            else self.asset_keys,
+        )
 
 
 class PipelineSelector(

@@ -2,7 +2,7 @@ from typing import Mapping, Optional
 
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.host_representation.repository_location import RepositoryLocation
-from dagster._core.host_representation.selector import PipelineSelector
+from dagster._core.host_representation.selector import JobSelection
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.utils import make_new_run_id
@@ -12,7 +12,9 @@ def persist_run(
     *,
     instance: DagsterInstance,
     repository_location: RepositoryLocation,
-    pipeline_selector: PipelineSelector,
+    repository_name: str,
+    job_name: str,
+    job_selection: JobSelection,
     run_config: Mapping[str, object],
     run_tags: Mapping[str, str],
     explicit_mode: Optional[str],
@@ -27,13 +29,19 @@ def persist_run(
     Parameters:
         instance (DagsterInstance): Instace to execute against
         repository_location (RepositoryLocation): RepositoryLocation corresponding to user code
-        pipeline_selector (PipelineSelector): Selector that encapsulates subset of pipeline that will be executed
+        repository_name (str): Name of the repository within the repository location
+        job_name (str): Name fo the job within the repository
+        job_selection (JobSelection): Subselection within that job to execute
         run_config (Mapping[str, object]): Run configuration for this run
         run_tags (Mapping[str, str]): Callsites typically have tags
             specific to their context (e.g. users can specify ad hoc tags for runs in UI-driven cases).
             This set of tags will be merged with the tags on the pipeline itself.
         explicit_mode Optional[str]: Explicitly override the default mode for the pipeline.
     """
+    pipeline_selector = job_selection.to_pipeline_selector(
+        location_name=repository_location.name, repository_name=repository_name, job_name=job_name
+    )
+
     external_pipeline = repository_location.get_external_pipeline(pipeline_selector)
     mode = explicit_mode or external_pipeline.get_default_mode_name()
 

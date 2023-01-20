@@ -16,10 +16,10 @@ import dagster._seven as seven
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster._core.errors import DagsterError
-from dagster._core.host_representation import PipelineSelector
 from dagster._core.host_representation.external import ExternalSensor
 from dagster._core.host_representation.external_data import ExternalTargetData
 from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.host_representation.selector import JobSelection
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.persist_run import persist_run
 from dagster._core.scheduler.instigation import (
@@ -641,21 +641,18 @@ def _evaluate_sensor(
             external_sensor.get_target_data(run_request.job_name)
         )
 
-        pipeline_selector = PipelineSelector(
-            location_name=repo_location.name,
-            repository_name=sensor_origin.external_repository_origin.repository_name,
-            pipeline_name=target_data.pipeline_name,
-            solid_selection=target_data.solid_selection,
-            asset_selection=run_request.asset_selection,
+        job_selection = JobSelection.from_legacy_values(
+            solid_selection=target_data.solid_selection, asset_selection=run_request.asset_selection
         )
+
         run = _get_or_create_sensor_run(
             context=context,
             instance=instance,
             repo_location=repo_location,
+            job_selection=job_selection,
             external_sensor=external_sensor,
             run_request=run_request,
             existing_runs_by_key=existing_runs_by_key,
-            pipeline_selector=pipeline_selector,
         )
 
         if isinstance(run, SkippedSensorRun):
@@ -768,18 +765,21 @@ def _get_or_create_sensor_run(
     context: SensorLaunchContext,
     instance: DagsterInstance,
     repo_location: RepositoryLocation,
+    job_selection: JobSelection,
     external_sensor: ExternalSensor,
     run_request: RunRequest,
     existing_runs_by_key: Mapping[str, DagsterRun],
-    pipeline_selector: PipelineSelector,
 ):
+    check.param_invariant(
+        bool(run_request.job_name), param_name="run_request", desc="Run request must have job name"
+    )
     if not run_request.run_key:
         return _create_sensor_run(
             instance=instance,
             repo_location=repo_location,
+            job_selection=job_selection,
             external_sensor=external_sensor,
             run_request=run_request,
-            pipeline_selector=pipeline_selector,
         )
 
     run = existing_runs_by_key.get(run_request.run_key)
@@ -801,9 +801,9 @@ def _get_or_create_sensor_run(
     return _create_sensor_run(
         instance=instance,
         repo_location=repo_location,
+        job_selection=job_selection,
         external_sensor=external_sensor,
         run_request=run_request,
-        pipeline_selector=pipeline_selector,
     )
 
 
@@ -813,9 +813,11 @@ def _create_sensor_run(
     repo_location: RepositoryLocation,
     external_sensor: ExternalSensor,
     run_request: RunRequest,
-    pipeline_selector: PipelineSelector,
+    job_selection: JobSelection,
 ):
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
+
+    job_name = check.not_none(run_request.job_name)
 
     log_action(
         instance,
@@ -823,7 +825,7 @@ def _create_sensor_run(
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SENSOR_NAME_HASH": hash_name(external_sensor.name),
-            "pipeline_name_hash": hash_name(pipeline_selector.pipeline_name),
+            "pipeline_name_hash": hash_name(job_name),
             "repo_hash": hash_name(repo_location.name),
         },
     )
@@ -831,7 +833,9 @@ def _create_sensor_run(
     return persist_run(
         instance=instance,
         repository_location=repo_location,
-        pipeline_selector=pipeline_selector,
+        repository_name=external_sensor.handle.repository_name,
+        job_name=job_name,
+        job_selection=job_selection,
         run_config=run_request.run_config,
         run_tags={
             **run_request.tags,
