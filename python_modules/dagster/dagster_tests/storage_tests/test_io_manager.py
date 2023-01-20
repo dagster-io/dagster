@@ -1100,7 +1100,7 @@ def test_instance_set_on_asset_loader():
             assets=[an_asset, another_asset],
             resources={"io_manager": AssertingContextInputOnLoadInputIOManager()},
         )
-        defs.get_job_def("__ASSET_JOB").execute_in_process(
+        defs.get_implicit_global_asset_job_def().execute_in_process(
             asset_selection=[AssetKey("an_asset")], instance=instance
         )
         # load_input not called when asset does not have any inputs
