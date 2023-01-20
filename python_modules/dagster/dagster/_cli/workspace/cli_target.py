@@ -1,7 +1,17 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Generator, Iterable, List, Mapping, Optional, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Generator,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 import click
 import tomli
@@ -27,6 +37,7 @@ from dagster._core.workspace.load_target import (
     GrpcServerTarget,
     ModuleTarget,
     PackageTarget,
+    PyProjectFileTarget,
     PythonFileTarget,
     WorkspaceFileTarget,
 )
@@ -82,21 +93,15 @@ WORKSPACE_CLI_ARGS = (
 )
 
 
-def get_target_from_toml(path) -> Optional[ModuleTarget]:
+def _has_pyproject_dagster_block(path):
+    if not os.path.exists(path):
+        return False
     with open(path, "rb") as f:
         data = tomli.load(f)
         if not isinstance(data, dict):
-            return None
+            return False
 
-        dagster_block = data.get("tool", {}).get("dagster", {})
-        if "module_name" in dagster_block:
-            return ModuleTarget(
-                module_name=dagster_block["module_name"],
-                attribute=None,
-                working_directory=os.getcwd(),
-                location_name=None,
-            )
-        return None
+        return data.get("tool", {}).get("dagster")
 
 
 def get_workspace_load_target(kwargs: ClickArgMapping):
@@ -104,10 +109,8 @@ def get_workspace_load_target(kwargs: ClickArgMapping):
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
             return EmptyWorkspaceTarget()
-        if os.path.exists("pyproject.toml"):
-            target = get_target_from_toml("pyproject.toml")
-            if target:
-                return target
+        if _has_pyproject_dagster_block("pyproject.toml"):
+            return PyProjectFileTarget("pyproject.toml")
 
         if os.path.exists("workspace.yaml"):
             return WorkspaceFileTarget(paths=["workspace.yaml"])
