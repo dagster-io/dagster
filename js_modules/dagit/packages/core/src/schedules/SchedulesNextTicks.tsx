@@ -43,22 +43,23 @@ import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {TimestampDisplay} from './TimestampDisplay';
-import {ScheduleFragment, RepositorySchedulesFragment} from './types/ScheduleUtils.types';
 import {
+  RepositoryForNextTicksFragment,
   ScheduleFutureTickEvaluationResultFragment,
   ScheduleFutureTickRunRequestFragment,
+  ScheduleNextFiveTicksFragment,
   ScheduleTickConfigQuery,
   ScheduleTickConfigQueryVariables,
 } from './types/SchedulesNextTicks.types';
 
 interface ScheduleTick {
-  schedule: ScheduleFragment;
+  schedule: ScheduleNextFiveTicksFragment;
   timestamp: number;
   repoAddress: RepoAddress;
 }
 
 export const SchedulesNextTicks: React.FC<{
-  repos: RepositorySchedulesFragment[];
+  repos: RepositoryForNextTicksFragment[];
 }> = React.memo(({repos}) => {
   const nextTicks: ScheduleTick[] = [];
   let anyPipelines = false;
@@ -138,7 +139,7 @@ export const SchedulesNextTicks: React.FC<{
   }
 
   return (
-    <Table>
+    <Table $monospaceFont={false}>
       <thead>
         <tr>
           <th style={{width: '260px'}}>Timestamp</th>
@@ -188,7 +189,7 @@ export const SchedulesNextTicks: React.FC<{
 
 const NextTickMenu: React.FC<{
   repoAddress: RepoAddress;
-  schedule: ScheduleFragment;
+  schedule: ScheduleNextFiveTicksFragment;
   tickTimestamp: number;
 }> = React.memo(({repoAddress, schedule, tickTimestamp}) => {
   const scheduleSelector = {
@@ -251,7 +252,7 @@ const NextTickMenu: React.FC<{
 const NextTickMenuItems: React.FC<{
   repoAddress: RepoAddress;
   evaluationResult: ScheduleFutureTickEvaluationResultFragment | null;
-  schedule: ScheduleFragment;
+  schedule: ScheduleNextFiveTicksFragment;
   loading: boolean;
   onItemOpen: (value: boolean) => void;
 }> = ({repoAddress, schedule, evaluationResult, loading, onItemOpen}) => {
@@ -313,7 +314,7 @@ const NextTickDialog: React.FC<{
   isOpen: boolean;
   setOpen: (value: boolean) => void;
   evaluationResult: ScheduleFutureTickEvaluationResultFragment | null;
-  schedule: ScheduleFragment;
+  schedule: ScheduleNextFiveTicksFragment;
   tickTimestamp: number;
 }> = ({repoAddress, evaluationResult, schedule, tickTimestamp, setOpen, isOpen}) => {
   const [
@@ -486,6 +487,43 @@ const NextTickDialog: React.FC<{
     </Dialog>
   );
 };
+
+export const SCHEDULE_NEXT_FIVE_TICKS_FRAGMENT = gql`
+  fragment ScheduleNextFiveTicksFragment on Schedule {
+    id
+    name
+    executionTimezone
+    mode
+    solidSelection
+    pipelineName
+    scheduleState {
+      id
+      status
+    }
+    futureTicks(limit: 5) {
+      results {
+        timestamp
+      }
+    }
+  }
+`;
+
+export const REPOSITORY_FOR_NEXT_TICKS_FRAGMENT = gql`
+  fragment RepositoryForNextTicksFragment on Repository {
+    name
+    id
+    location {
+      id
+      name
+    }
+    schedules {
+      id
+      ...ScheduleNextFiveTicksFragment
+    }
+  }
+
+  ${SCHEDULE_NEXT_FIVE_TICKS_FRAGMENT}
+`;
 
 const SCHEDULE_TICK_CONFIG_QUERY = gql`
   query ScheduleTickConfigQuery($scheduleSelector: ScheduleSelector!, $tickTimestamp: Int!) {

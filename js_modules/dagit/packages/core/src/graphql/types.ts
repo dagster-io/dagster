@@ -171,6 +171,7 @@ export type AssetMetadataEntry = MetadataEntry & {
 export type AssetNode = {
   __typename: 'AssetNode';
   assetKey: AssetKey;
+  assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   computeKind: Maybe<Scalars['String']>;
@@ -205,6 +206,10 @@ export type AssetNode = {
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
   type: Maybe<DagsterType>;
+};
+
+export type AssetNodeAssetMaterializationUsedDataArgs = {
+  timestampMillis: Scalars['String'];
 };
 
 export type AssetNodeAssetMaterializationsArgs = {
@@ -419,6 +424,7 @@ export type DagitMutation = {
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   resumePartitionBackfill: ResumeBackfillResult;
+  setNuxSeen: Scalars['Boolean'];
   setSensorCursor: SensorOrError;
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
   startSchedule: ScheduleMutationResult;
@@ -559,6 +565,7 @@ export type DagitQuery = {
   schedulesOrError: SchedulesOrError;
   sensorOrError: SensorOrError;
   sensorsOrError: SensorsOrError;
+  shouldShowNux: Scalars['Boolean'];
   unloadableInstigationStatesOrError: InstigationStatesOrError;
   version: Scalars['String'];
   workspaceOrError: WorkspaceOrError;
@@ -1856,6 +1863,13 @@ export type MaterializationEvent = DisplayableEvent &
     timestamp: Scalars['String'];
   };
 
+export type MaterializationUpstreamDataVersion = {
+  __typename: 'MaterializationUpstreamDataVersion';
+  assetKey: AssetKey;
+  downstreamAssetKey: AssetKey;
+  timestamp: Scalars['String'];
+};
+
 export type MessageEvent = {
   eventType: Maybe<DagsterEventType>;
   level: LogLevel;
@@ -2069,6 +2083,7 @@ export type PartitionBackfill = {
   partitionNames: Array<Scalars['String']>;
   partitionSet: Maybe<PartitionSet>;
   partitionSetName: Maybe<Scalars['String']>;
+  partitionStatusCounts: Array<PartitionStatusCounts>;
   partitionStatuses: PartitionStatuses;
   reexecutionSteps: Maybe<Array<Scalars['String']>>;
   runs: Array<Run>;
@@ -2182,6 +2197,12 @@ export type PartitionStatus = {
   runDuration: Maybe<Scalars['Float']>;
   runId: Maybe<Scalars['String']>;
   runStatus: Maybe<RunStatus>;
+};
+
+export type PartitionStatusCounts = {
+  __typename: 'PartitionStatusCounts';
+  count: Scalars['Int'];
+  runStatus: RunStatus;
 };
 
 export type PartitionStatuses = {

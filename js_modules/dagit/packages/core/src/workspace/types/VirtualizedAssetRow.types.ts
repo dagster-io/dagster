@@ -20,6 +20,7 @@ export type SingleAssetQuery = {
         definition: {
           __typename: 'AssetNode';
           id: string;
+          computeKind: string | null;
           opNames: Array<string>;
           currentLogicalVersion: string | null;
           projectedLogicalVersion: string | null;

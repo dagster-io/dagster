@@ -164,12 +164,16 @@ export const AssetEvents: React.FC<Props> = ({
         >
           {xAxis === 'partition' ? (
             focused ? (
-              <AssetPartitionDetail group={focused} hasLineage={assetHasLineage} />
+              <AssetPartitionDetail
+                group={focused}
+                hasLineage={assetHasLineage}
+                assetKey={assetKey}
+              />
             ) : (
               <AssetPartitionDetailEmpty />
             )
           ) : focused?.latest ? (
-            <AssetEventDetail event={focused.latest} />
+            <AssetEventDetail assetKey={assetKey} event={focused.latest} />
           ) : (
             <AssetEventDetailEmpty />
           )}

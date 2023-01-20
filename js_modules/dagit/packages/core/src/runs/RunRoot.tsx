@@ -6,6 +6,7 @@ import {useParams} from 'react-router-dom';
 import {formatElapsedTime} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -24,6 +25,7 @@ export const RunRoot = () => {
   useTrackPageView();
 
   const {runId} = useParams<{runId: string}>();
+  useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
 
   const {data, loading} = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
     partialRefetch: true,

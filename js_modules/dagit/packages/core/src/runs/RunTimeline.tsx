@@ -229,7 +229,7 @@ const TimelineSection = (props: TimelineSectionProps) => {
 };
 
 const RunStatusTags = React.memo(({jobs}: {jobs: TimelineJob[]}) => {
-  const {inProgressCount, failedCount, succeededCount} = React.useMemo(() => {
+  const counts = React.useMemo(() => {
     let inProgressCount = 0;
     let failedCount = 0;
     let succeededCount = 0;
@@ -251,6 +251,18 @@ const RunStatusTags = React.memo(({jobs}: {jobs: TimelineJob[]}) => {
     return {inProgressCount, failedCount, succeededCount};
   }, [jobs]);
 
+  return <RunStatusTagsWithCounts {...counts} />;
+});
+
+export const RunStatusTagsWithCounts = ({
+  inProgressCount,
+  succeededCount,
+  failedCount,
+}: {
+  inProgressCount: number;
+  succeededCount: number;
+  failedCount: number;
+}) => {
   const inProgressText =
     inProgressCount === 1 ? '1 run in progress' : `${inProgressCount} runs in progress`;
   const succeededText =
@@ -276,7 +288,7 @@ const RunStatusTags = React.memo(({jobs}: {jobs: TimelineJob[]}) => {
       ) : null}
     </Box>
   );
-});
+};
 
 const StatusSpan = styled.span`
   white-space: nowrap;

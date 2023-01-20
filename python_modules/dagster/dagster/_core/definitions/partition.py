@@ -38,6 +38,7 @@ from dagster._utils.schedules import schedule_execution_time_iterator
 from ..decorator_utils import get_function_params
 from ..errors import (
     DagsterInvalidDefinitionError,
+    DagsterInvalidDeserializationVersionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterUnknownPartitionError,
@@ -76,6 +77,11 @@ PartitionSelectorFunction: TypeAlias = Callable[
     [ScheduleEvaluationContext, "PartitionSetDefinition[T]"],
     Union["Partition[T]", Sequence["Partition[T]"], SkipReason],
 ]
+
+# Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
+# "..." is an invalid substring in partition keys
+# The other escape characters are characters that may not display in Dagit
+INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v", "\0"]
 
 
 class Partition(Generic[T]):
@@ -278,10 +284,16 @@ class StaticPartitionsDefinition(
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
-        # Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
-        # "..." is an invalid substring in partition keys
-        if any(["..." in partition_key for partition_key in partition_keys]):
-            raise DagsterInvalidDefinitionError("'...' is an invalid substring in a partition key")
+        for partition_key in partition_keys:
+            found_invalid_substrs = [
+                invalid_substr
+                for invalid_substr in INVALID_PARTITION_SUBSTRINGS
+                if invalid_substr in partition_key
+            ]
+            if found_invalid_substrs:
+                raise DagsterInvalidDefinitionError(
+                    f"{found_invalid_substrs} are invalid substrings in a partition key"
+                )
 
         self._partitions = [Partition(key) for key in partition_keys]
 
@@ -294,9 +306,8 @@ class StaticPartitionsDefinition(
         return hash(self.__repr__())
 
     def __eq__(self, other) -> bool:
-        return (
-            isinstance(other, StaticPartitionsDefinition)
-            and self._partitions == other.get_partitions()
+        return isinstance(other, StaticPartitionsDefinition) and (
+            self is other or self._partitions == other.get_partitions()
         )
 
     def __repr__(self) -> str:
@@ -1058,14 +1069,22 @@ class PartitionsSubset(ABC):
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
         raise NotImplementedError()
 
-    @abstractmethod
     def with_partition_key_range(
         self, partition_key_range: PartitionKeyRange
     ) -> "PartitionsSubset":
-        raise NotImplementedError()
+        return self.with_partition_keys(
+            self.partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
 
     @abstractmethod
     def serialize(self) -> str:
+        raise NotImplementedError()
+
+    @classmethod
+    @abstractmethod
+    def from_serialized(
+        cls, partitions_def: PartitionsDefinition, serialized: str
+    ) -> "PartitionsSubset":
         raise NotImplementedError()
 
     @property
@@ -1083,6 +1102,10 @@ class PartitionsSubset(ABC):
 
 
 class DefaultPartitionsSubset(PartitionsSubset):
+    # Every time we change the serialization format, we should increment the version number.
+    # This will ensure that we can gracefully degrade when deserializing old data.
+    SERIALIZATION_VERSION = 1
+
     def __init__(self, partitions_def: PartitionsDefinition, subset: Optional[Set[str]] = None):
         check.opt_set_param(subset, "subset")
         self._partitions_def = partitions_def
@@ -1091,7 +1114,9 @@ class DefaultPartitionsSubset(PartitionsSubset):
     def get_partition_keys_not_in_subset(
         self, current_time: Optional[datetime] = None
     ) -> Iterable[str]:
-        return set(self._partitions_def.get_partition_keys()) - self._subset
+        return (
+            set(self._partitions_def.get_partition_keys(current_time=current_time)) - self._subset
+        )
 
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
         return self._subset
@@ -1119,7 +1144,10 @@ class DefaultPartitionsSubset(PartitionsSubset):
         return result
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
-        return DefaultPartitionsSubset(self._partitions_def, self._subset | set(partition_keys))
+        return DefaultPartitionsSubset(
+            self._partitions_def,
+            self._subset | set(partition_keys),
+        )
 
     def with_partition_key_range(
         self, partition_key_range: PartitionKeyRange
@@ -1129,7 +1157,27 @@ class DefaultPartitionsSubset(PartitionsSubset):
         )
 
     def serialize(self) -> str:
-        return json.dumps(list(self._subset))
+        # Serialize version number, so attempting to deserialize old versions can be handled gracefully.
+        # Any time the serialization format changes, we should increment the version number.
+        return json.dumps({"version": self.SERIALIZATION_VERSION, "subset": list(self._subset)})
+
+    @classmethod
+    def from_serialized(
+        cls, partitions_def: PartitionsDefinition, serialized: str
+    ) -> "PartitionsSubset":
+        # Check the version number, so only valid versions can be deserialized.
+        data = json.loads(serialized)
+
+        if isinstance(data, list):
+            # backwards compatibility
+            return cls(subset=set(data), partitions_def=partitions_def)
+        else:
+            if data.get("version") != cls.SERIALIZATION_VERSION:
+                raise DagsterInvalidDeserializationVersionError(
+                    f"Attempted to deserialize partition subset with version {data.get('version')},"
+                    f" but only version {cls.SERIALIZATION_VERSION} is supported."
+                )
+            return cls(subset=set(data.get("subset")), partitions_def=partitions_def)
 
     @property
     def partitions_def(self) -> PartitionsDefinition:
@@ -1147,14 +1195,6 @@ class DefaultPartitionsSubset(PartitionsSubset):
 
     def __contains__(self, value) -> bool:
         return value in self._subset
-
-    @staticmethod
-    def from_serialized(
-        partitions_def: PartitionsDefinition, serialized: str
-    ) -> "DefaultPartitionsSubset":
-        return DefaultPartitionsSubset(
-            subset=set(json.loads(serialized)), partitions_def=partitions_def
-        )
 
     def __repr__(self) -> str:
         return (

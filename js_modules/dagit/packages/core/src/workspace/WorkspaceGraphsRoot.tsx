@@ -6,6 +6,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 import {Graph, VirtualizedGraphTable} from './VirtualizedGraphTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -19,6 +20,9 @@ import {
 
 export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
+
+  const repoName = repoAddressAsHumanString(repoAddress);
+  useDocumentTitle(`Graphs: ${repoName}`);
 
   const [searchValue, setSearchValue] = React.useState('');
   const selector = repoAddressToSelector(repoAddress);
@@ -84,8 +88,6 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
         </Box>
       );
     }
-
-    const repoName = repoAddressAsHumanString(repoAddress);
 
     if (!filteredBySearch.length) {
       if (anySearch) {

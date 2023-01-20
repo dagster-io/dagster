@@ -188,13 +188,20 @@ def ipc_read_event_stream(file_path, timeout=30, ipc_process=None):
 
 
 def open_ipc_subprocess(parts, **kwargs):
-    """Sets new process group flags on Windows to support graceful termination."""
+    """Sets the correct flags to support graceful termination - the new subprocess will be in
+    its own process group so that CTRL-Cing the parent process doesn't immediately interrupt
+    the child process as well.
+    """
     check.list_param(parts, "parts", str)
 
     creationflags = 0
+    preexec_fn = None
     if sys.platform == "win32":
         creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
-    return subprocess.Popen(parts, creationflags=creationflags, **kwargs)
+    else:
+        # Works on all UNIX systems (but not WASI, see: https://docs.python.org/3/library/os.html#os.setpgrp)
+        preexec_fn = os.setpgrp
+    return subprocess.Popen(parts, creationflags=creationflags, preexec_fn=preexec_fn, **kwargs)
 
 
 def interrupt_ipc_subprocess(proc):

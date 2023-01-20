@@ -2,7 +2,7 @@
 import argparse
 import subprocess
 import sys
-from typing import List
+from typing import List, Optional
 
 # We allow extra packages to be passed in via the command line because pip's version resolution
 # requires everything to be installed at the same time.
@@ -15,9 +15,12 @@ parser.add_argument(
     nargs="*",
     help="Additional packages (with optional version reqs) to pass to `pip install`",
 )
+parser.add_argument("--include-prebuilt-grpcio-wheel", action="store_true")
 
 
-def main(quiet: bool, extra_packages: List[str]) -> None:
+def main(
+    quiet: bool, extra_packages: List[str], include_prebuilt_grpcio_wheel: Optional[bool]
+) -> None:
     """
     Especially on macOS, there may be missing wheels for new major Python versions, which means that
     some dependencies may have to be built from source. You may find yourself needing to install
@@ -95,6 +98,12 @@ def main(quiet: bool, extra_packages: List[str]) -> None:
             "-e python_modules/libraries/dagster-dbt",
         ]
 
+    if include_prebuilt_grpcio_wheel:
+        install_targets += [
+            "--find-links",
+            "https://github.com/dagster-io/build-grpcio/wiki/Wheels",
+        ]
+
     # NOTE: `dagster-ge` is out of date and does not support recent versions of great expectations.
     # Because of this, it has second-order dependencies on old versions of popular libraries like
     # numpy which conflict with the requirements of our other libraries. For this reason, until
@@ -128,4 +137,8 @@ def main(quiet: bool, extra_packages: List[str]) -> None:
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    main(quiet=args.quiet, extra_packages=args.packages)
+    main(
+        quiet=args.quiet,
+        extra_packages=args.packages,
+        include_prebuilt_grpcio_wheel=args.include_prebuilt_grpcio_wheel,
+    )

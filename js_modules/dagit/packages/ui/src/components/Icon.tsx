@@ -10,6 +10,7 @@ import arrow_back from '../icon-svgs/arrow_back.svg';
 import arrow_downward from '../icon-svgs/arrow_downward.svg';
 import arrow_drop_down from '../icon-svgs/arrow_drop_down.svg';
 import arrow_forward from '../icon-svgs/arrow_forward.svg';
+import arrow_indent from '../icon-svgs/arrow_indent.svg';
 import arrow_upward from '../icon-svgs/arrow_upward.svg';
 import asset from '../icon-svgs/asset.svg';
 import asset_group from '../icon-svgs/asset_group.svg';
@@ -179,6 +180,7 @@ export const Icons = {
   github_pr_merged,
   gitlab,
   youtube,
+  arrow_indent,
 
   graph_downstream,
   graph_upstream,

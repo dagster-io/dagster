@@ -213,7 +213,7 @@ def test_pending_repo():
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "foobar"
 
-    assert isinstance(defs.get_job_def("__ASSET_JOB"), JobDefinition)
+    assert isinstance(defs.get_implicit_global_asset_job_def(), JobDefinition)
 
 
 def test_asset_loading():
@@ -243,7 +243,7 @@ def test_io_manager_coercion():
 
     defs = Definitions(assets=[one], resources={"mem_io_manager": InMemoryIOManager()})
 
-    asset_job = defs.get_job_def("__ASSET_JOB")
+    asset_job = defs.get_implicit_global_asset_job_def()
     assert isinstance(asset_job.resource_defs["mem_io_manager"], IOManagerDefinition)
     result = asset_job.execute_in_process()
     assert result.output_for_node("one") == 1
@@ -265,7 +265,7 @@ def test_custom_executor_in_definitions():
         return 1
 
     defs = Definitions(assets=[one], executor=an_executor)
-    asset_job = defs.get_job_def("__ASSET_JOB")
+    asset_job = defs.get_implicit_global_asset_job_def()
     assert asset_job.executor_def is an_executor
 
 
@@ -280,7 +280,7 @@ def test_custom_loggers_in_definitions():
 
     defs = Definitions(assets=[one], loggers={"custom_logger": a_logger})
 
-    asset_job = defs.get_job_def("__ASSET_JOB")
+    asset_job = defs.get_implicit_global_asset_job_def()
     loggers = asset_job.loggers
     assert len(loggers) == 1
     assert "custom_logger" in loggers
@@ -361,9 +361,9 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     assert isinstance(repo.get_job("a_job"), JobDefinition)
     assert repo.get_job("a_job").executor_def is an_executor
     assert repo.get_job("a_job").loggers == {"logger_key": a_logger}
-    assert isinstance(repo.get_job("__ASSET_JOB"), JobDefinition)
-    assert repo.get_job("__ASSET_JOB").executor_def is an_executor
-    assert repo.get_job("__ASSET_JOB").loggers == {"logger_key": a_logger}
+    assert isinstance(repo.get_implicit_global_asset_job_def(), JobDefinition)
+    assert repo.get_implicit_global_asset_job_def().executor_def is an_executor
+    assert repo.get_implicit_global_asset_job_def().loggers == {"logger_key": a_logger}
     assert isinstance(repo.get_job("another_asset_job"), JobDefinition)
     assert repo.get_job("another_asset_job").executor_def is an_executor
     assert repo.get_job("another_asset_job").loggers == {"logger_key": a_logger}
@@ -391,9 +391,9 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     assert isinstance(defs.get_job_def("a_job"), JobDefinition)
     assert defs.get_job_def("a_job").executor_def is an_executor
     assert defs.get_job_def("a_job").loggers == {"logger_key": a_logger}
-    assert isinstance(defs.get_job_def("__ASSET_JOB"), JobDefinition)
-    assert defs.get_job_def("__ASSET_JOB").executor_def is an_executor
-    assert defs.get_job_def("__ASSET_JOB").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.get_implicit_global_asset_job_def(), JobDefinition)
+    assert defs.get_implicit_global_asset_job_def().executor_def is an_executor
+    assert defs.get_implicit_global_asset_job_def().loggers == {"logger_key": a_logger}
     assert isinstance(defs.get_job_def("another_asset_job"), JobDefinition)
     assert defs.get_job_def("another_asset_job").executor_def is an_executor
     assert defs.get_job_def("another_asset_job").loggers == {"logger_key": a_logger}

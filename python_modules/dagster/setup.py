@@ -73,10 +73,9 @@ setup(
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0",
         "croniter>=0.3.34",
-        # grpcio>=1.48.1 has hanging/crashing issues for python 3.9 and earlier: https://github.com/grpc/grpc/issues/30843
+        # grpcio>=1.48.1 has hanging/crashing issues: https://github.com/grpc/grpc/issues/30843 and https://github.com/grpc/grpc/issues/31885
         # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
-        "grpcio>=1.32.0,<1.48.1; python_version < '3.10'",
-        "grpcio>=1.32.0; python_version >= '3.10'",
+        "grpcio>=1.32.0,<1.48.1",
         "grpcio-health-checking>=1.32.0,<1.44.0",
         "packaging>=20.9",
         "pendulum",
@@ -116,7 +115,7 @@ setup(
             "pytest-runner==5.2",
             "pytest-xdist==2.1.0",
             "pytest==7.0.1",  # last version supporting python 3.6
-            "responses==0.10.*",
+            "responses",
             "snapshottest==0.6.0",
             "tox==3.25.0",
             "yamllint",

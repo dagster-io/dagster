@@ -76,7 +76,7 @@ const CaptionTextContainer = styled.div`
 
 const JOB_QUERY_DELAY = 100;
 
-export const useDelayedRowQuery = <Q, V>(lazyQueryFn: LazyQueryExecFunction<Q, V>) => {
+export const useDelayedRowQuery = (lazyQueryFn: LazyQueryExecFunction<any, any>) => {
   React.useEffect(() => {
     const timer = setTimeout(() => {
       lazyQueryFn();

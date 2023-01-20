@@ -2,14 +2,12 @@ import {
   Box,
   Checkbox,
   Colors,
-  Group,
   Icon,
   IconWrapper,
   Spinner,
   Table,
   Caption,
   Tooltip,
-  FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -66,7 +64,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
         />
         {`${selected.length} of ${options.length} selected`}
       </Box>
-      <Table>
+      <Table $monospaceFont={false}>
         <tbody>
           {options.map((option) => {
             const checked = selected.includes(option);
@@ -90,20 +88,17 @@ export const RepoSelector: React.FC<Props> = (props) => {
                 </td>
                 <td>
                   <RepoLabel htmlFor={`switch-${addressString}`}>
-                    <Group direction="column" spacing={4}>
-                      <Box flex={{direction: 'row'}} title={addressString}>
-                        <RepoLocation>{repoAddress.location}</RepoLocation>
-                        <RepoName>{repoAddress.name}</RepoName>
-                      </Box>
-                      <Group direction="column" spacing={2}>
+                    <Box flex={{direction: 'column', gap: 4}}>
+                      <RepoLocation>{addressString}</RepoLocation>
+                      <Box flex={{direction: 'column', gap: 2}}>
                         {option.repository.displayMetadata.map(({key, value}) => (
                           <Caption
-                            style={{color: Colors.Gray400, fontFamily: FontFamily.monospace}}
+                            style={{color: Colors.Gray400}}
                             key={key}
                           >{`${key}: ${value}`}</Caption>
                         ))}
-                      </Group>
-                    </Group>
+                      </Box>
+                    </Box>
                   </RepoLabel>
                 </td>
                 <td>
@@ -129,7 +124,6 @@ const RepoLabel = styled.label`
   cursor: pointer;
   display: block;
   font-weight: 500;
-  line-height: 1;
   overflow: hidden;
   position: relative;
   top: 1px;
@@ -147,13 +141,8 @@ const RepoLabel = styled.label`
   }
 `;
 
-const RepoName = styled.div`
-  color: ${Colors.Gray800};
-`;
-
 const RepoLocation = styled.div`
   color: ${Colors.Gray700};
-  font-family: ${FontFamily.monospace};
 `;
 
 const ReloadButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {

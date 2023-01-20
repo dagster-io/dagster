@@ -2,7 +2,6 @@ import {MainContent} from '@dagster-io/ui';
 import * as React from 'react';
 import {Route, Switch, useLocation} from 'react-router-dom';
 
-const UserSettingsRoot = React.lazy(() => import('./UserSettingsRoot'));
 const WorkspaceRoot = React.lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = React.lazy(() => import('../overview/OverviewRoot'));
 const FallthroughRoot = React.lazy(() => import('./FallthroughRoot'));
@@ -77,11 +76,6 @@ export const ContentRoot = React.memo(() => {
         <Route path="/locations">
           <React.Suspense fallback={<div />}>
             <WorkspaceRoot />
-          </React.Suspense>
-        </Route>
-        <Route path="/settings">
-          <React.Suspense fallback={<div />}>
-            <UserSettingsRoot />
           </React.Suspense>
         </Route>
         <Route path="/overview">

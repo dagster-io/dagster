@@ -261,11 +261,16 @@ def get_workspace_process_context_from_kwargs(
     version: str,
     read_only: bool,
     kwargs: ClickArgMapping,
+    code_server_log_level: str = "INFO",
 ) -> "WorkspaceProcessContext":
     from dagster._core.workspace.context import WorkspaceProcessContext
 
     return WorkspaceProcessContext(
-        instance, get_workspace_load_target(kwargs), version=version, read_only=read_only
+        instance,
+        get_workspace_load_target(kwargs),
+        version=version,
+        read_only=read_only,
+        code_server_log_level=code_server_log_level,
     )
 
 
@@ -281,7 +286,52 @@ def get_workspace_from_kwargs(
         yield workspace_process_context.create_request_context()
 
 
-def python_target_click_options():
+def python_file_option(allow_multiple):
+    return click.option(
+        "--python-file",
+        "-f",
+        # Checks that the path actually exists lower in the stack, where we
+        # are better equipped to surface errors
+        type=click.Path(exists=False),
+        multiple=allow_multiple,
+        help=(
+            "Specify python file "
+            + ("or files (flag can be used multiple times) " if allow_multiple else "")
+            + "where dagster definitions reside as top-level symbols/variables and load "
+            + ("each" if allow_multiple else "the")
+            + " file as a code location in the current python environment."
+        ),
+        envvar="DAGSTER_PYTHON_FILE",
+    )
+
+
+def workspace_option():
+    return click.option(
+        "--workspace",
+        "-w",
+        multiple=True,
+        type=click.Path(exists=True),
+        help="Path to workspace file. Argument can be provided multiple times.",
+    )
+
+
+def python_module_option(allow_multiple):
+    return click.option(
+        "--module-name",
+        "-m",
+        multiple=allow_multiple,
+        help=(
+            "Specify module "
+            + ("or modules (flag can be used multiple times) " if allow_multiple else "")
+            + "where dagster definitions reside as top-level symbols/variables and load "
+            + ("each" if allow_multiple else "the")
+            + " module as a code location in the current python environment."
+        ),
+        envvar="DAGSTER_MODULE_NAME",
+    )
+
+
+def python_target_click_options(allow_multiple_python_targets):
     return [
         click.option(
             "--working-directory",
@@ -289,35 +339,12 @@ def python_target_click_options():
             help="Specify working directory to use when loading the repository or job",
             envvar="DAGSTER_WORKING_DIRECTORY",
         ),
-        click.option(
-            "--python-file",
-            "-f",
-            # Checks that the path actually exists lower in the stack, where we
-            # are better equipped to surface errors
-            type=click.Path(exists=False),
-            multiple=True,
-            help=(
-                "Specify python file or files (flag can be used multiple times) where "
-                "dagster definitions reside as top-level symbols/variables and load each "
-                "file as a code location in the current python environment."
-            ),
-            envvar="DAGSTER_PYTHON_FILE",
-        ),
+        python_file_option(allow_multiple=allow_multiple_python_targets),
+        python_module_option(allow_multiple=allow_multiple_python_targets),
         click.option(
             "--package-name",
             help="Specify Python package where repository or job function lives",
             envvar="DAGSTER_PACKAGE_NAME",
-        ),
-        click.option(
-            "--module-name",
-            "-m",
-            multiple=True,
-            help=(
-                "Specify module or modules (flag can be used multiple times) where "
-                "dagster definitions reside as top-level symbols/variables and load each "
-                "module as a code location in the current python environment."
-            ),
-            envvar="DAGSTER_MODULE_NAME",
         ),
         click.option(
             "--attribute",
@@ -364,22 +391,16 @@ def workspace_target_click_options():
     return (
         [
             click.option("--empty-workspace", is_flag=True, help="Allow an empty workspace"),
-            click.option(
-                "--workspace",
-                "-w",
-                multiple=True,
-                type=click.Path(exists=True),
-                help="Path to workspace file. Argument can be provided multiple times.",
-            ),
+            workspace_option(),
         ]
-        + python_target_click_options()
+        + python_target_click_options(allow_multiple_python_targets=True)
         + grpc_server_target_click_options()
     )
 
 
 def python_job_target_click_options():
     return (
-        python_target_click_options()
+        python_target_click_options(allow_multiple_python_targets=False)
         + [
             click.option(
                 "--repository",
@@ -449,7 +470,7 @@ def grpc_server_origin_target_argument(f):
 def python_origin_target_argument(f):
     from dagster._cli.job import apply_click_params
 
-    options = python_target_click_options()
+    options = python_target_click_options(allow_multiple_python_targets=False)
     return apply_click_params(f, *options)
 
 
@@ -528,16 +549,8 @@ def get_job_python_origin_from_kwargs(kwargs):
 
 
 def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, CodePointer]:
-    python_file = (
-        unwrap_single_code_location_target_cli_arg(kwargs, "python_file")
-        if kwargs.get("python_file")
-        else None
-    )
-    module_name = (
-        unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
-        if kwargs.get("module_name")
-        else None
-    )
+    python_file = check.opt_str_elem(kwargs, "python_file")
+    module_name = check.opt_str_elem(kwargs, "module_name")
     package_name = check.opt_str_elem(kwargs, "package_name")
     working_directory = get_working_directory_from_kwargs(kwargs)
     attribute = check.opt_str_elem(kwargs, "attribute")
@@ -588,27 +601,7 @@ def get_working_directory_from_kwargs(kwargs: ClickArgMapping) -> Optional[str]:
     return check.opt_str_elem(kwargs, "working_directory") or os.getcwd()
 
 
-def unwrap_single_code_location_target_cli_arg(kwargs: ClickArgMapping, key: str) -> str:
-    """
-    Dagster CLI tools accept multiple code location targets (e.g. multiple -f and -m instances)
-    but sometimes only one makes sense (e.g. when targeting a single job)
-    Use this function to validate that there is only one value in that tuple and then return the tuple itself.
-
-    key can be module_name or python_file
-    """
-    check.is_tuple(kwargs[key], of_type=str)
-    value_tuple = cast(Tuple[str], kwargs[key])
-    check.invariant(
-        len(value_tuple) == 1,
-        (
-            "Must specify only one code location when executing this command. Multiple {key}"
-            " options given"
-        ),
-    )
-    return value_tuple[0]
-
-
-def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> RepositoryPythonOrigin:
+def get_repository_python_origin_from_kwargs(kwargs: Mapping[str, str]) -> RepositoryPythonOrigin:
     provided_repo_name = cast(str, kwargs.get("repository"))
 
     if not (kwargs.get("python_file") or kwargs.get("module_name") or kwargs.get("package_name")):
@@ -621,7 +614,7 @@ def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> Reposit
     if kwargs.get("attribute") and not provided_repo_name:
         if kwargs.get("python_file"):
             _check_cli_arguments_none(kwargs, "module_name", "package_name")
-            python_file = unwrap_single_code_location_target_cli_arg(kwargs, "python_file")
+            python_file = check.str_elem(kwargs, "python_file")
             code_pointer: CodePointer = CodePointer.from_python_file(
                 python_file,
                 check.str_elem(kwargs, "attribute"),
@@ -629,7 +622,7 @@ def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> Reposit
             )
         elif kwargs.get("module_name"):
             _check_cli_arguments_none(kwargs, "python_file", "package_name")
-            module_name = unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
+            module_name = check.str_elem(kwargs, "module_name")
             code_pointer = CodePointer.from_module(
                 module_name,
                 check.str_elem(kwargs, "attribute"),

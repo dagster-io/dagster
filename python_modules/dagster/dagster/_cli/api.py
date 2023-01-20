@@ -14,7 +14,6 @@ import dagster._seven as seven
 from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
-    unwrap_single_code_location_target_cli_arg,
 )
 from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -680,18 +679,8 @@ def grpc_command(
         ]
     ):
         # in the gRPC api CLI we never load more than one module or python file at a time
-
-        module_name = (
-            unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
-            if kwargs["module_name"]
-            else None
-        )
-
-        python_file = (
-            unwrap_single_code_location_target_cli_arg(kwargs, "python_file")
-            if kwargs["python_file"]
-            else None
-        )
+        module_name = check.opt_str_elem(kwargs, "module_name")
+        python_file = check.opt_str_elem(kwargs, "python_file")
 
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,

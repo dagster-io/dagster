@@ -7,7 +7,7 @@ import {BulkActionStatus} from '../graphql/types';
 import {cancelableStatuses} from '../runs/RunStatuses';
 import {TerminationDialog} from '../runs/TerminationDialog';
 
-import {SINGLE_BACKFILL_QUERY} from './BackfillRow';
+import {SINGLE_BACKFILL_STATUS_DETAILS_QUERY} from './BackfillRow';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 import {
@@ -25,7 +25,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     CANCEL_BACKFILL_MUTATION,
   );
   const {data} = useQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
-    SINGLE_BACKFILL_QUERY,
+    SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
     {
       variables: {
         backfillId: backfill?.backfillId || '',
