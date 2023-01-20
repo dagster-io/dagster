@@ -46,7 +46,7 @@ SHARED_SNOWFLAKE_CONF = {
     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
     "user": os.getenv("SNOWFLAKE_USER", ""),
     "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
-    "warehouse": "ELEMENTL",
+    "warehouse": "TINY_WAREHOUSE",
 }
 
 RESOURCES_PROD = {
