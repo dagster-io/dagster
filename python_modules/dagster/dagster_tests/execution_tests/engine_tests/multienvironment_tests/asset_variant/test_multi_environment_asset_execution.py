@@ -43,7 +43,7 @@ def build_definitions_for_remote_assets(
     asset_job_name: str, remote_assets: Sequence[RemoteAsset]
 ) -> Definitions:
     def _never_called(*args, **kwargs):
-        raise Exception("This assets exists only for metadata. Do not call")
+        raise Exception("This assets exists only for metadata. Should not be called.")
 
     assets_defs = []
 

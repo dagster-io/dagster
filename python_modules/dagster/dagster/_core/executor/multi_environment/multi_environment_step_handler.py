@@ -51,9 +51,7 @@ class MultiEnvironmentStepHandler(StepHandler):
         )
 
         remote_handler = self.handler_for_key(step_context)
-        # .launch_single_step(
-        #     step_context, step_handler_context
-        # )
+
         yield DagsterEvent.step_worker_starting(
             step_context,
             message=f'Executing step "{step_context.step.key}" in external process',
