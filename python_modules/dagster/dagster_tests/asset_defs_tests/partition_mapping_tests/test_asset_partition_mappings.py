@@ -498,6 +498,7 @@ def test_partition_keys_in_range():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-09-11"))
     def upstream(context):
         assert context.asset_partition_keys_for_output("result") == ["2022-09-11"]
+        assert context.asset_partition_keys_for_output() == ["2022-09-11"]
 
     @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2022-09-11"))
     def downstream(context, upstream):  # pylint: disable=unused-argument
