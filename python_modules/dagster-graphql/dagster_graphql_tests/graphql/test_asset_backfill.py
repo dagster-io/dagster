@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dagster import Definitions, StaticPartitionsDefinition, asset
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.test_utils import instance_for_test
@@ -105,28 +107,8 @@ def test_launch_asset_backfill():
                     }
                 },
             )
-            assert launch_backfill_result
-            assert launch_backfill_result.data
-            error_msg = (
-                (
-                    "".join(launch_backfill_result.data["launchPartitionBackfill"]["stack"])
-                    + launch_backfill_result.data["launchPartitionBackfill"]["message"]
-                )
-                if "message" in launch_backfill_result.data["launchPartitionBackfill"]
-                else None
-            )
-            assert "backfillId" in launch_backfill_result.data["launchPartitionBackfill"], error_msg
-
-            backfill_id = launch_backfill_result.data["launchPartitionBackfill"]["backfillId"]
-            assert launch_backfill_result.data["launchPartitionBackfill"]["launchedRunIds"] is None
-
-            backfills = instance.get_backfills()
-            assert len(backfills) == 1
-            backfill = backfills[0]
-            assert backfill.backfill_id == backfill_id
-            assert backfill.serialized_asset_backfill_data
-            asset_backfill_data = AssetBackfillData.from_serialized(
-                backfill.serialized_asset_backfill_data, repo.asset_graph
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
             )
             assert asset_backfill_data.target_subset.asset_keys == all_asset_keys
 
@@ -158,3 +140,64 @@ def test_launch_asset_backfill():
                 partition_status_result["partitionName"]
                 for partition_status_result in partition_status_results
             } == {"a", "b"}
+            )
+            assert asset_backfill_data.target_subset.asset_keys == all_asset_keys
+
+            # on PartitionBackfills
+            get_backfills_result = execute_dagster_graphql(
+                context, GET_PARTITION_BACKFILLS_QUERY, variables={}
+            )
+            assert not get_backfills_result.errors
+            assert get_backfills_result.data
+            backfill_results = get_backfills_result.data["partitionBackfillsOrError"]["results"]
+            assert len(backfill_results) == 1
+            assert backfill_results[0]["numPartitions"] == 2
+            assert backfill_results[0]["backfillId"] == backfill_id
+            assert backfill_results[0]["partitionSet"] is None
+            assert backfill_results[0]["partitionSetName"] is None
+            assert set(backfill_results[0]["partitionNames"]) == {"a", "b"}
+
+            # on PartitionBackfill
+            single_backfill_result = execute_dagster_graphql(
+                context, SINGLE_BACKFILL_QUERY, variables={"backfillId": backfill_id}
+            )
+            assert not single_backfill_result.errors
+            assert single_backfill_result.data
+            partition_status_results = single_backfill_result.data["partitionBackfillOrError"][
+                "partitionStatuses"
+            ]["results"]
+            assert len(partition_status_results) == 2
+            assert {
+                partition_status_result["partitionName"]
+                for partition_status_result in partition_status_results
+            } == {"a", "b"}
+
+def _get_backfill_data(launch_backfill_result, instance, repo):
+    assert launch_backfill_result
+    assert launch_backfill_result.data
+    assert (
+        "backfillId" in launch_backfill_result.data["launchPartitionBackfill"]
+    ), _get_error_message(launch_backfill_result)
+
+    backfill_id = launch_backfill_result.data["launchPartitionBackfill"]["backfillId"]
+
+    backfills = instance.get_backfills()
+    assert len(backfills) == 1
+    backfill = backfills[0]
+    assert backfill.backfill_id == backfill_id
+    assert backfill.serialized_asset_backfill_data
+
+    return backfill_id, AssetBackfillData.from_serialized(
+        backfill.serialized_asset_backfill_data, repo.asset_graph
+    )
+
+
+def _get_error_message(launch_backfill_result) -> Optional[str]:
+    return (
+        (
+            "".join(launch_backfill_result.data["launchPartitionBackfill"]["stack"])
+            + launch_backfill_result.data["launchPartitionBackfill"]["message"]
+        )
+        if "message" in launch_backfill_result.data["launchPartitionBackfill"]
+        else None
+    )
