@@ -121,7 +121,7 @@ def get_materialized_multipartitions(
     return materialized_keys
 
 
-def _get_validated_partition_keys(partitions_def: PartitionsDefinition, partition_keys: Set[str]):
+def get_validated_partition_keys(partitions_def: PartitionsDefinition, partition_keys: Set[str]):
     if isinstance(partitions_def, StaticPartitionsDefinition):
         validated_partitions = set(partitions_def.get_partition_keys()) & partition_keys
     elif isinstance(partitions_def, MultiPartitionsDefinition):
@@ -176,7 +176,7 @@ def _build_status_cache(
 
     serialized_materialized_partition_subset = (
         serialized_materialized_partition_subset.with_partition_keys(
-            _get_validated_partition_keys(partitions_def, set(materialized_keys))
+            get_validated_partition_keys(partitions_def, set(materialized_keys))
         )
     )
 
@@ -240,7 +240,7 @@ def _get_updated_status_cache(
             )
 
     materialized_subset = materialized_subset.with_partition_keys(
-        _get_validated_partition_keys(partitions_def, newly_materialized_partitions)
+        get_validated_partition_keys(partitions_def, newly_materialized_partitions)
     )
     return AssetStatusCacheValue(
         latest_storage_id=latest_storage_id,

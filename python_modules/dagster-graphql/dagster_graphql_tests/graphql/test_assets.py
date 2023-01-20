@@ -5,10 +5,12 @@ from typing import List, Optional
 
 from dagster import (
     AssetKey,
+    AssetMaterialization,
     AssetSelection,
     DagsterEventType,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
+    Output,
     StaticPartitionsDefinition,
     asset,
     define_asset_job,
@@ -1780,7 +1782,8 @@ def get_partitioned_asset_repo():
 
     @asset(partitions_def=static_partitions_def)
     def abc_asset(_):
-        return 1
+        yield AssetMaterialization(asset_key="abc_asset", partition="invalid_partition_key")
+        yield Output(5)
 
     daily_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 

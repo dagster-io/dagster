@@ -41,6 +41,7 @@ from dagster._core.host_representation.repository_location import RepositoryLoca
 from dagster._core.storage.partition_status_cache import (
     get_and_update_asset_status_cache_values,
     get_materialized_multipartitions,
+    get_validated_partition_keys,
 )
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -355,9 +356,11 @@ def get_materialized_partitions_subset(
                 if count > 0
             ]
 
+        validated_keys = get_validated_partition_keys(partitions_def, set(materialized_keys))
+
         return (
-            partitions_def.empty_subset().with_partition_keys(materialized_keys)
-            if materialized_keys
+            partitions_def.empty_subset().with_partition_keys(validated_keys)
+            if validated_keys
             else partitions_def.empty_subset()
         )
 
