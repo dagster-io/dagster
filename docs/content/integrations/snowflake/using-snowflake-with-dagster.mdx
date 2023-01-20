@@ -38,7 +38,7 @@ To complete this tutorial, you'll need:
 
   - **Snowflake credentials**: You can authenticate with Snowflake two ways: with a username and password, or with a username and private key.
 
-    The Snowflake I/O manager can read all of these authentication values values from environment variables. In this guide, we use password authentication and store the username and password as `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`, respectively.
+    The Snowflake I/O manager can read all of these authentication values from environment variables. In this guide, we use password authentication and store the username and password as `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`, respectively.
 
     ```shell
     export SNOWFLAKE_USER=<your username>
@@ -46,6 +46,9 @@ To complete this tutorial, you'll need:
     ```
 
     Refer to the [Using environment variables and secrets guide](/guides/dagster/using-environment-variables-and-secrets) for more info.
+
+    For more information on authenticating with a private key, see [Authenticating with a private key](/integrations/snowflake/reference#authenticating-using-a-private-key) in the Snowflake reference guide.
+
 
 ---
 
@@ -83,8 +86,6 @@ With this configuration, if you materialized an asset called `iris_dataset`, the
 Finally, in the <PyObject object="Definitions" /> object, we assign the `snowflake_pandas_io_manager` to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
 For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake" object="build_snowflake_io_manager" /> API documentation.
-
-For more information on authenticating with a private key, see [Authenticating with a private key](/integrations/snowflake/reference#authenticating-using-a-private-key) in the Snowflake reference guide.
 
 ---
 
