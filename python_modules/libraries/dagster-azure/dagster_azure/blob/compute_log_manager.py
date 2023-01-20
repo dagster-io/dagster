@@ -126,7 +126,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             "default_azure_credential": Field(
                 Noneable(Permissive(description="keyword arguments for DefaultAzureCredential")),
                 is_required=False,
-                default_value=None
+                default_value=None,
             ),
             "local_dir": Field(StringSource, is_required=False),
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
