@@ -104,7 +104,8 @@ class DbIOManager(IOManager):
                     f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has"
                     " handlers for types"
                     f" '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'."
-                    " Please add type hints to your assets and ops, so the"
+                    " Please add type hints to your assets and ops, or build the"
+                    f" {self._io_manager_name} with an type handler for type '{obj_type}', so the"
                     f" {self._io_manager_name} can correctly handle the output."
                 ),
             )
@@ -137,8 +138,9 @@ class DbIOManager(IOManager):
                 f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has"
                 " handlers for types"
                 f" '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'"
-                f" Please add type hints to your assets and ops, so the {self._io_manager_name} can"
-                " correctly load the input."
+                " Please add type hints to your assets and ops, or build the"
+                f" {self._io_manager_name} with an type handler for type '{obj_type}', so the"
+                f" {self._io_manager_name} can correctly load the input."
             ),
         )
         return self._handlers_by_type[obj_type].load_input(
