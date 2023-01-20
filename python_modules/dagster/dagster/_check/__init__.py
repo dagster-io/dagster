@@ -1611,6 +1611,51 @@ def _check_tuple_items(
     return obj_tuple
 
 
+def tuple_elem(
+    ddict: Mapping,
+    key: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Tuple:
+    dict_param(ddict, "ddict")
+    str_param(key, "key")
+    opt_class_param(of_type, "of_type")
+
+    value = ddict.get(key)
+
+    if isinstance(value, tuple):
+        if not of_type:
+            return value
+
+        return _check_iterable_items(value, of_type, "tuple")
+
+    raise _element_check_error(key, value, ddict, tuple, additional_message)
+
+
+def opt_tuple_elem(
+    ddict: Mapping,
+    key: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Tuple:
+    dict_param(ddict, "ddict")
+    str_param(key, "key")
+    opt_class_param(of_type, "of_type")
+
+    value = ddict.get(key)
+
+    if value is None:
+        return tuple()
+
+    if isinstance(value, tuple):
+        if not of_type:
+            return value
+
+        return _check_iterable_items(value, of_type, "tuple")
+
+    raise _element_check_error(key, value, ddict, tuple, additional_message)
+
+
 # ###################################################################################################
 # ##### OTHER CHECKS
 # ###################################################################################################
