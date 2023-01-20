@@ -29,6 +29,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster._utils import frozenlist
@@ -276,6 +277,10 @@ class PartitionsDefinition(ABC, Generic[T]):
     @property
     def serializable_unique_identifier(self) -> str:
         return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
+
+    def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
+        tags = {PARTITION_NAME_TAG: partition_key}
+        return tags
 
 
 class StaticPartitionsDefinition(
@@ -617,6 +622,10 @@ class PartitionSetDefinition(Generic[T]):
     @property
     def mode(self) -> Optional[str]:
         return self._mode
+
+    @property
+    def partitions_def(self) -> PartitionsDefinition:
+        return self._partitions_def
 
     def run_config_for_partition(self, partition: Partition[T]) -> Mapping[str, Any]:
         return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))  # type: ignore
