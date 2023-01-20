@@ -34,8 +34,8 @@ setup(
     packages=find_packages(exclude=["dagster_duckdb_pandas_tests*"]),
     include_package_data=True,
     install_requires=[
-        "dagster==1.1.12",
-        "dagster-duckdb==0.17.12",
+        "dagster==1.1.13",
+        "dagster-duckdb==0.17.13",
         "pandas",
     ],
     zip_safe=False,
