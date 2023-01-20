@@ -70,3 +70,22 @@ def persist_run(
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
     )
+
+
+def persist_reexecuted_run(
+    *,
+    instance: DagsterInstance,
+    repository_location: RepositoryLocation,
+    pipeline_selector: PipelineSelector,
+    parent_run: DagsterRun,
+):
+    pass
+
+    # new_run = instance.create_reexecuted_run(
+    #     parent_run=failed_run,
+    #     repo_location=repo_location,
+    #     external_pipeline=external_pipeline,
+    #     strategy=strategy,
+    #     extra_tags=tags,
+    #     use_parent_run_tags=True,
+    # )
