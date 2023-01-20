@@ -73,7 +73,6 @@ if TYPE_CHECKING:
         ExternalPartitionSetExecutionParamData,
         ExternalPartitionTagsData,
     )
-    from dagster._grpc.server import LoadedRepositories
 
 
 class RepositoryLocation(AbstractContextManager):
@@ -278,19 +277,18 @@ class RepositoryLocation(AbstractContextManager):
 
 
 class InProcessRepositoryLocation(RepositoryLocation):
-    def __init__(
-        self,
-        loaded_repositories: "LoadedRepositories",
-        original_origin: Optional[InProcessRepositoryLocationOrigin] = None,
-    ):
+    def __init__(self, origin: InProcessRepositoryLocationOrigin):
+        from dagster._grpc.server import LoadedRepositories
         from dagster._utils.hosted_user_process import external_repo_from_def
 
-        # other option is to introduce other subclass
-        self._original_origin = check.opt_inst_param(
-            original_origin, "origin", InProcessRepositoryLocationOrigin
-        )
+        self._origin = check.inst_param(origin, "origin", InProcessRepositoryLocationOrigin)
 
-        self._loaded_repositories = loaded_repositories
+        loadable_target_origin = self._origin.loadable_target_origin
+        self._loaded_repositories = LoadedRepositories(
+            loadable_target_origin,
+            self._origin.entry_point,
+            self._origin.container_image,
+        )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
 
@@ -301,49 +299,29 @@ class InProcessRepositoryLocation(RepositoryLocation):
                 RepositoryHandle(repository_name=repo_name, repository_location=self),
             )
 
-    @staticmethod
-    def from_in_process_origin(origin: InProcessRepositoryLocationOrigin):
-        from dagster._grpc.server import LoadedRepositories
-
-        loadable_target_origin = origin.loadable_target_origin
-        loaded_repositories = LoadedRepositories.from_target_origin(
-            loadable_target_origin,
-            origin.entry_point,
-            origin.container_image,
-        )
-        return InProcessRepositoryLocation(
-            loaded_repositories=loaded_repositories, original_origin=origin
-        )
-
     @property
     def is_reload_supported(self) -> bool:
         return False
 
     @property
     def origin(self) -> InProcessRepositoryLocationOrigin:
-        return check.not_none(
-            self._original_origin,
-            (
-                "Must provide origin via InProcessRepositoryLocation.from_in_process_origin at"
-                " construction time."
-            ),
-        )
+        return self._origin
 
     @property
     def executable_path(self) -> Optional[str]:
-        return self.origin.loadable_target_origin.executable_path
+        return self._origin.loadable_target_origin.executable_path
 
     @property
     def container_image(self) -> Optional[str]:
-        return self.origin.container_image
+        return self._origin.container_image
 
     @property
     def container_context(self) -> Optional[Mapping[str, Any]]:
-        return self.origin.container_context
+        return self._origin.container_context
 
     @property
     def entry_point(self) -> Optional[Sequence[str]]:
-        return self.origin.entry_point
+        return self._origin.entry_point
 
     @property
     def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
