@@ -48,6 +48,7 @@ from ..errors import (
     GrapheneRunNotFoundError,
     GrapheneUnauthorizedError,
 )
+from ..evaluate_sensor import GrapheneEvaluateSensorMutation
 from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 from ..inputs import (
     GrapheneAssetKeyInput,
@@ -55,7 +56,6 @@ from ..inputs import (
     GrapheneLaunchBackfillParams,
     GrapheneReexecutionParams,
 )
-from ..instigator_launch import GrapheneTestInstigatorMutation
 from ..pipelines.pipeline import GrapheneRun
 from ..runs import (
     GrapheneLaunchRunReexecutionResult,
@@ -654,7 +654,7 @@ class GrapheneDagitMutation(graphene.ObjectType):
     start_sensor = GrapheneStartSensorMutation.Field()
     set_sensor_cursor = GrapheneSetSensorCursorMutation.Field()
     stop_sensor = GrapheneStopSensorMutation.Field()
-    test_instigator = GrapheneTestInstigatorMutation.Field()
+    evaluate_sensor = GrapheneEvaluateSensorMutation.Field()
     terminate_pipeline_execution = GrapheneTerminateRunMutation.Field()
     terminate_run = GrapheneTerminateRunMutation.Field()
     delete_pipeline_run = GrapheneDeleteRunMutation.Field()
