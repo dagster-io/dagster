@@ -424,6 +424,7 @@ class InstanceRef(
             "retention",
             "sensors",
             "schedules",
+            "nux",
         }
         settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
 
