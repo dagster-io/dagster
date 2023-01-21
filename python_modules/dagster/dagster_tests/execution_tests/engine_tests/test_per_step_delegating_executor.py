@@ -31,15 +31,19 @@ class PerRunState:
         for p in self.processes:
             p.wait(timeout=5)
 
+    @property
+    def step_count(self):
+        return len(self.handler_dict)
+
 
 class SubprocessSingleStepHandler(RemoteEnvironmentSingleStepHandler):
-    def __init__(self, process_collection: PerRunState):
-        self.process_collection = process_collection
+    def __init__(self, per_run_state: PerRunState):
+        self.per_run_state = per_run_state
 
     def launch_single_step(
         self, step_context: IStepContext, step_handler_context: StepHandlerContext
     ) -> Optional[Iterator[DagsterEvent]]:
-        self.process_collection.processes.append(
+        self.per_run_state.processes.append(
             subprocess.Popen(step_handler_context.execute_step_args.get_command_args())
         )
         return iter(())
@@ -114,4 +118,5 @@ def test_single_op_job():
         assert result.output_for_node("return_one") == 1
 
         per_run_state = get_per_run_state(result)
+        assert per_run_state.step_count == 1
         assert isinstance(per_run_state.handler_dict["return_one"], SubprocessSingleStepHandler)
