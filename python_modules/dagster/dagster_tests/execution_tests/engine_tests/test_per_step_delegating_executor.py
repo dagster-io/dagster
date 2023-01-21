@@ -1,14 +1,12 @@
-from contextlib import contextmanager
 import subprocess
+from contextlib import contextmanager
 from typing import Callable, Iterator, Optional
 
 from dagster import Definitions, job, op, reconstructable
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.context.system import IStepContext
-from dagster._core.execution.execute_job_result import ExecuteJobResult
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.multi_environment.multi_environment_step_handler import (
     MultiEnvironmentExecutor,
@@ -23,20 +21,7 @@ from dagster._core.executor.step_delegating.step_handler.base import (
 from dagster._core.test_utils import instance_for_test
 
 
-# class ProcessCollection:
-#     processes = []  # type: ignore
-
-#     @classmethod
-#     def reset(cls):
-#         cls.processes = []
-
-#     @classmethod
-#     def wait_for_processes(cls):
-#         for p in cls.processes:
-#             p.wait(timeout=5)
-
-
-class ProcessCollectionObjectStyle:
+class ProcessCollection:
     def __init__(self):
         self.processes = []  # type: ignore
 
@@ -45,13 +30,8 @@ class ProcessCollectionObjectStyle:
             p.wait(timeout=5)
 
 
-def unwrap_executor(result: ExecuteJobResult):
-    assert result.job_def.executor_def.executor_creation_fn
-    return result.job_def.executor_def.executor_creation_fn(None)  # type: ignore
-
-
 class SubprocessSingleStepHandler(RemoteEnvironmentSingleStepHandler):
-    def __init__(self, process_collection: ProcessCollectionObjectStyle):
+    def __init__(self, process_collection: ProcessCollection):
         self.process_collection = process_collection
 
     def launch_single_step(
@@ -74,7 +54,7 @@ class SubprocessSingleStepHandler(RemoteEnvironmentSingleStepHandler):
 
 
 def get_subprocess_executor_with_monkey_patched_process_collection():
-    collection = ProcessCollectionObjectStyle()
+    collection = ProcessCollection()
     executor = MultiEnvironmentExecutor(
         lambda _step_context: SubprocessSingleStepHandler(collection),
         retries=RetryMode.DISABLED,
@@ -90,7 +70,8 @@ def execute_and_complete_job(job_fn: Callable):
             reconstructable(job_fn),
             instance=instance,
         ) as result:
-            executor = unwrap_executor(result)
+            assert result.job_def.executor_def.executor_creation_fn
+            executor = result.job_def.executor_def.executor_creation_fn(None)  # type: ignore
             collection = getattr(executor, "__collection")
             collection.wait_for_processes()
             yield result
