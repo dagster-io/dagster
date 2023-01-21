@@ -6,9 +6,6 @@ from unittest.mock import ANY, MagicMock, patch
 import pytest
 import wandb
 from callee import EndsWith
-from dagster_wandb import WandbArtifactsIOManagerError, wandb_artifacts_io_manager, wandb_resource
-from wandb.sdk.wandb_artifacts import Artifact
-
 from dagster import (
     DagsterRunMetadataValue,
     IntMetadataValue,
@@ -18,6 +15,8 @@ from dagster import (
     build_input_context,
     build_output_context,
 )
+from dagster_wandb import WandbArtifactsIOManagerError, wandb_artifacts_io_manager, wandb_resource
+from wandb.sdk.wandb_artifacts import Artifact
 
 DAGSTER_RUN_ID = "unit-testing"
 DAGSTER_RUN_ID_SHORT = DAGSTER_RUN_ID[0:8]
@@ -2054,110 +2053,6 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
         )
 
 
-def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_output_and_all_parameters(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
-):
-    run_mock.configure_mock(
-        name=WANDB_RUN_NAME,
-        id=WANDB_RUN_ID,
-        entity=WANDB_ENTITY,
-        project=WANDB_PROJECT,
-        path=WANDB_RUN_PATH,
-        url=WANDB_RUN_URL,
-    )
-    manager = wandb_artifacts_io_manager(
-        build_init_resource_context(
-            resources={
-                "wandb_config": {"entity": WANDB_ENTITY, "project": WANDB_PROJECT},
-                "wandb_resource": wandb_resource_configured,
-            },
-        )
-    )
-
-    context = build_output_context(
-        metadata={
-            "wandb_artifact_configuration": {
-                "aliases": [EXTRA_ALIAS],
-                "add_dirs": DIRS,
-                "add_files": FILES,
-                "add_references": REFERENCES,
-            }
-        },
-    )
-
-    with patch.object(context, "add_output_metadata") as add_output_metadata_spy:
-        artifact = MagicMock(
-            spec=Artifact,
-            id=ARTIFACT_ID,
-            name=ARTIFACT_NAME,
-            type=ARTIFACT_TYPE,
-            version=ARTIFACT_VERSION,
-            size=ARTIFACT_SIZE,
-        )
-        manager.handle_output(context, artifact)
-
-        assert init_mock.call_count == 1
-        init_mock.assert_called_with(
-            anonymous="never",
-            dir=EndsWith(f"/storage/wandb_artifacts_manager/runs/{DAGSTER_RUN_ID}"),
-            entity=WANDB_ENTITY,
-            id=DAGSTER_RUN_ID,
-            name=f"dagster-run-{DAGSTER_RUN_ID_SHORT}",
-            project=WANDB_PROJECT,
-            resume="allow",
-            tags=["dagster_wandb"],
-        )
-
-        assert login_mock.call_count == 1
-        login_mock.assert_called_with(
-            anonymous="never",
-            host="https://api.wandb.ai",
-            key="WANDB_API_KEY",
-        )
-
-        assert artifact_mock.call_count == 0
-        assert artifact_mock.return_value.add.call_count == 0
-
-        assert artifact_mock.add_file.call_count == 0
-        assert artifact_mock.add_dir.call_count == 0
-        assert artifact_mock.add_reference.call_count == 0
-
-        assert artifact.add_file.call_count == 2
-        assert artifact.add_dir.call_count == 2
-        assert artifact.add_reference.call_count == 1
-
-        assert artifact_mock.return_value.new_file.call_count == 0
-
-        assert artifact.new_file.call_count == 0
-
-        assert pickle_dump_mock.call_count == 0
-
-        assert artifact.wait.call_count == 1
-
-        log_artifact_mock.assert_called_with(
-            artifact,
-            aliases=[EXTRA_ALIAS, f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
-        )
-
-        assert context.add_output_metadata.call_count == 1
-        add_output_metadata_spy.assert_called_with(
-            {
-                "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
-                "wandb_artifact_id": TextMetadataValue(text=ARTIFACT_ID),
-                "wandb_artifact_size": IntMetadataValue(value=ARTIFACT_SIZE),
-                "wandb_artifact_type": TextMetadataValue(text=ARTIFACT_TYPE),
-                "wandb_artifact_url": UrlMetadataValue(url=ARTIFACT_URL),
-                "wandb_artifact_version": TextMetadataValue(text=ARTIFACT_VERSION),
-                "wandb_entity": TextMetadataValue(text=WANDB_ENTITY),
-                "wandb_project": TextMetadataValue(text=WANDB_PROJECT),
-                "wandb_run_id": TextMetadataValue(text=WANDB_RUN_ID),
-                "wandb_run_name": TextMetadataValue(text=WANDB_RUN_NAME),
-                "wandb_run_path": TextMetadataValue(text=WANDB_RUN_PATH),
-                "wandb_run_url": UrlMetadataValue(url=WANDB_RUN_URL),
-            },
-        )
-
-
 def test_wandb_artifacts_io_manager_load_input_raise_when_no_name_is_provided(
     init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_dump_mock
 ):
@@ -2182,7 +2077,7 @@ def test_wandb_artifacts_io_manager_load_input_raise_when_no_name_is_provided(
     context = build_input_context()
 
     with pytest.raises(WandbArtifactsIOManagerError):
-        assert manager.load_input(context) == None
+        assert manager.load_input(context) is None
 
 
 def test_wandb_artifacts_io_manager_load_input(
@@ -2370,7 +2265,7 @@ def test_wandb_artifacts_io_manager_load_input_raise_when_version_and_alias_are_
     )
 
     with pytest.raises(WandbArtifactsIOManagerError):
-        assert manager.load_input(context) == None
+        assert manager.load_input(context) is None
 
 
 def test_wandb_artifacts_io_manager_load_input_raise_when_get_and_get_path_are_provided(
@@ -2405,7 +2300,7 @@ def test_wandb_artifacts_io_manager_load_input_raise_when_get_and_get_path_are_p
     )
 
     with pytest.raises(WandbArtifactsIOManagerError):
-        assert manager.load_input(context) == None
+        assert manager.load_input(context) is None
 
 
 def test_wandb_artifacts_io_manager_load_input_with_specific_version(

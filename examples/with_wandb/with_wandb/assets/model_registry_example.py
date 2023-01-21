@@ -1,5 +1,4 @@
 import wandb
-
 from dagster import AssetIn, OpExecutionContext, asset
 
 MODEL_NAME = "my_model"

@@ -1,7 +1,6 @@
 from typing import Tuple
 
 import wandb
-
 from dagster import AssetOut, multi_asset
 
 
@@ -35,7 +34,6 @@ def write_multiple_artifacts() -> Tuple[wandb.Table, wandb.Table]:
 
     Both outputs will be turned into an W&B Artifact. They don't need to be of the same type.
     """
-
     first_table = wandb.Table(columns=["a", "b", "c"], data=[[1, 2, 3]])
     second_table = wandb.Table(columns=["d", "e"], data=[[4, 5]])
 

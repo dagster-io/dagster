@@ -1,7 +1,6 @@
+from dagster import job, make_values_resource
 from dagster_wandb.launch.ops import run_launch_job
 from dagster_wandb.resources import wandb_resource
-
-from dagster import job, make_values_resource
 
 
 @job(
@@ -10,9 +9,7 @@ from dagster import job, make_values_resource
             entity=str,
             project=str,
         ),
-        "wandb_resource": wandb_resource.configured(
-            {"api_key": {"env": "WANDB_API_KEY"}}
-        ),
+        "wandb_resource": wandb_resource.configured({"api_key": {"env": "WANDB_API_KEY"}}),
     },
 )
 def run_launch_job_example():

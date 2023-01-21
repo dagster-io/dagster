@@ -1,9 +1,8 @@
 from typing import Any, Dict
 
 import wandb
-from wandb.sdk.internal.internal_api import Api
-
 from dagster import Field, InitResourceContext, String, StringSource, resource
+from wandb.sdk.internal.internal_api import Api
 
 WANDB_CLOUD_HOST: str = "https://api.wandb.ai"
 
@@ -17,7 +16,9 @@ WANDB_CLOUD_HOST: str = "https://api.wandb.ai"
         ),
         "host": Field(
             String,
-            description="API host server you wish to use. Only required if you are using W&B Server.",
+            description=(
+                "API host server you wish to use. Only required if you are using W&B Server."
+            ),
             is_required=False,
             default_value=WANDB_CLOUD_HOST,
         ),
