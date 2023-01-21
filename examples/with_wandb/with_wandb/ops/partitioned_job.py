@@ -1,5 +1,3 @@
-from dagster_wandb import wandb_artifacts_io_manager, wandb_resource
-
 from dagster import (
     In,
     OpExecutionContext,
@@ -9,6 +7,7 @@ from dagster import (
     op,
     static_partitioned_config,
 )
+from dagster_wandb import wandb_artifacts_io_manager, wandb_resource
 
 AWS_REGIONS = [
     "us-west-1",
@@ -73,9 +72,7 @@ def read_partitioned_artifact(context: OpExecutionContext, content: list[int]) -
             entity=str,
             project=str,
         ),
-        "wandb_resource": wandb_resource.configured(
-            {"api_key": {"env": "WANDB_API_KEY"}}
-        ),
+        "wandb_resource": wandb_resource.configured({"api_key": {"env": "WANDB_API_KEY"}}),
         "io_manager": wandb_artifacts_io_manager,
     },
 )

@@ -10,8 +10,6 @@ import os
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.datasets as dsets
 import torchvision.transforms as transforms
 import wandb
 from fashion_data import fashion
@@ -92,18 +90,11 @@ class CNNModel(nn.Module):
 
 
 def main():
-    normalize = transforms.Normalize(
-        mean=[x / 255.0 for x in [125.3, 123.0, 113.9]],
-        std=[x / 255.0 for x in [63.0, 62.1, 66.7]],
-    )
-
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
     )
 
-    train_dataset = fashion(
-        root="./data", train=True, transform=transform, download=True
-    )
+    train_dataset = fashion(root="./data", train=True, transform=transform, download=True)
 
     test_dataset = fashion(
         root="./data",
@@ -142,7 +133,6 @@ def main():
     iter = 0
     for epoch in range(config.epochs):
         for i, (images, labels) in enumerate(train_loader):
-
             images = Variable(images)
             labels = Variable(labels)
 
@@ -185,9 +175,7 @@ def main():
                     correct += (predicted == labels).sum()
 
                     for label in range(10):
-                        correct_arr[label] += (
-                            (predicted == labels) & (labels == label)
-                        ).sum()
+                        correct_arr[label] += ((predicted == labels) & (labels == label)).sum()
                         total_arr[label] += (labels == label).sum()
 
                 accuracy = correct / total
@@ -201,11 +189,7 @@ def main():
                 wandb.log(metrics)
 
                 # Print Loss
-                print(
-                    "Iteration: {0} Loss: {1:.2f} Accuracy: {2:.2f}".format(
-                        iter, loss, accuracy
-                    )
-                )
+                print("Iteration: {0} Loss: {1:.2f} Accuracy: {2:.2f}".format(iter, loss, accuracy))
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 
 

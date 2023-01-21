@@ -1,12 +1,11 @@
 import numpy
 import onnxruntime as rt
+from dagster import AssetIn, AssetOut, OpExecutionContext, asset, multi_asset
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
 from sklearn.datasets import load_iris
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-
-from dagster import AssetIn, AssetOut, OpExecutionContext, asset, multi_asset
 
 
 @asset(
@@ -37,9 +36,7 @@ def create_model_serialized_with_joblib():
         }
     },
 )
-def use_model_serialized_with_joblib(
-    context: OpExecutionContext, my_joblib_serialized_model
-):
+def use_model_serialized_with_joblib(context: OpExecutionContext, my_joblib_serialized_model):
     inference_result = my_joblib_serialized_model(1, 2)
     context.log.info(inference_result)  # Prints: 3
     return inference_result
@@ -99,8 +96,6 @@ def use_onnx_model(context, my_onnx_model, my_test_set):
     sess = rt.InferenceSession(my_onnx_model)
     input_name = sess.get_inputs()[0].name
     label_name = sess.get_outputs()[0].name
-    pred_onx = sess.run(
-        [label_name], {input_name: my_test_set["X_test"].astype(numpy.float32)}
-    )[0]
+    pred_onx = sess.run([label_name], {input_name: my_test_set["X_test"].astype(numpy.float32)})[0]
     context.log.info(pred_onx)
     return pred_onx

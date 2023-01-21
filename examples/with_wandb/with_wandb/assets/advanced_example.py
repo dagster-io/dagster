@@ -1,7 +1,6 @@
 import wandb
-from dagster_wandb import WandbArtifactConfiguration
-
 from dagster import AssetIn, OpExecutionContext, asset
+from dagster_wandb import WandbArtifactConfiguration
 
 wandb_artifact_configuration: WandbArtifactConfiguration = {
     "description": "My **Markdown** description",
@@ -133,9 +132,7 @@ def get_path(context: OpExecutionContext, path: str) -> None:
     },
     output_required=False,
 )
-def get_artifact(
-    context: OpExecutionContext, artifact: wandb.apis.public.Artifact
-) -> None:
+def get_artifact(context: OpExecutionContext, artifact: wandb.apis.public.Artifact) -> None:
     """Example that gets the entire Artifact object.
 
     Args:

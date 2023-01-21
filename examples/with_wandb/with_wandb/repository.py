@@ -1,13 +1,12 @@
 from os import environ
 
-from dagster_wandb import wandb_artifacts_io_manager, wandb_resource
-
 from dagster import (
     load_assets_from_package_module,
     make_values_resource,
     repository,
     with_resources,
 )
+from dagster_wandb import wandb_artifacts_io_manager, wandb_resource
 
 from . import assets
 from .ops.launch.run_launch_agent import run_launch_agent_example
@@ -30,9 +29,7 @@ def dagster_with_wandb():
                     entity=str,
                     project=str,
                 ),
-                "wandb_resource": wandb_resource.configured(
-                    {"api_key": {"env": "WANDB_API_KEY"}}
-                ),
+                "wandb_resource": wandb_resource.configured({"api_key": {"env": "WANDB_API_KEY"}}),
                 "io_manager": wandb_artifacts_io_manager.configured(
                     {"cache_duration_in_minutes": 60}
                 ),

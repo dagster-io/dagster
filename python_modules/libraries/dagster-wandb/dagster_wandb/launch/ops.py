@@ -1,7 +1,6 @@
+from dagster import OpExecutionContext, op
 from wandb.sdk.launch import launch
 from wandb.sdk.launch.launch_add import launch_add
-
-from dagster import OpExecutionContext, op
 
 from .configs import launch_agent_config, launch_config
 
@@ -10,13 +9,15 @@ def raise_on_invalid_config(context: OpExecutionContext):
     entity = context.resources.wandb_config["entity"]
     if entity == "":
         raise RuntimeError(
-            "(dagster_wandb) An empty string was provided for the 'entity' property of the 'wandb_config'."
+            "(dagster_wandb) An empty string was provided for the 'entity' property of the"
+            " 'wandb_config'."
         )
 
     project = context.resources.wandb_config["project"]
     if project == "":
         raise RuntimeError(
-            "(dagster_wandb) An empty string was provided for the 'project' property of the 'wandb_config'."
+            "(dagster_wandb) An empty string was provided for the 'project' property of the"
+            " 'wandb_config'."
         )
 
 
@@ -159,7 +160,8 @@ def run_launch_job(context: OpExecutionContext):
         queued_run = launch_add(**config)
         if synchronous is True:
             context.log.info(
-                f"Synchronous Launch job added to queue with name={queue}. Waiting for completion..."
+                f"Synchronous Launch job added to queue with name={queue}. Waiting for"
+                " completion..."
             )
             queued_run.wait_until_finished()
         else:
