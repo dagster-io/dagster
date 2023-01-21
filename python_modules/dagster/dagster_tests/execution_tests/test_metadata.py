@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-
 from dagster import (
     AssetMaterialization,
     AssetObservation,
@@ -9,7 +8,9 @@ from dagster import (
     DagsterEventType,
     FloatMetadataValue,
     IntMetadataValue,
+    JsonMetadataValue,
     MetadataValue,
+    NullMetadataValue,
     PathMetadataValue,
     PythonArtifactMetadataValue,
     TextMetadataValue,
@@ -146,15 +147,29 @@ def test_unknown_metadata_value():
     with pytest.raises(DagsterInvalidMetadata) as exc_info:
         execute_pipeline(the_pipeline)
 
-    assert str(exc_info.value) == (
-        'Could not resolve the metadata value for "bad" to a known type. '
+    assert (
+        str(exc_info.value)
+        == 'Could not resolve the metadata value for "bad" to a known type. '
         "Its type was <class 'dagster._core.instance.DagsterInstance'>. "
         "Consider wrapping the value with the appropriate MetadataValue type."
     )
 
 
-def test_parse_invalid_metadata():
+def test_parse_null_metadata():
+    metadata = {"foo": None}
+    entries = normalize_metadata(metadata, [])
+    assert entries[0].label == "foo"
+    assert entries[0].value == NullMetadataValue()
 
+
+def test_parse_list_metadata():
+    metadata = {"foo": ["bar"]}
+    entries = normalize_metadata(metadata, [])
+    assert entries[0].label == "foo"
+    assert entries[0].value == JsonMetadataValue(["bar"])
+
+
+def test_parse_invalid_metadata():
     metadata = {"foo": object()}
 
     with pytest.raises(DagsterInvalidMetadata) as _exc_info:
@@ -167,7 +182,6 @@ def test_parse_invalid_metadata():
 
 
 def test_parse_path_metadata():
-
     metadata = {"path": Path("/a/b.csv")}
 
     entries = normalize_metadata(metadata, [])
@@ -191,14 +205,14 @@ def test_bad_json_metadata_value():
     with pytest.raises(DagsterInvalidMetadata) as exc_info:
         execute_pipeline(the_pipeline)
 
-    assert str(exc_info.value) == (
-        'Could not resolve the metadata value for "bad" to a known type. '
+    assert (
+        str(exc_info.value)
+        == 'Could not resolve the metadata value for "bad" to a known type. '
         "Value is a dictionary but is not JSON serializable."
     )
 
 
 def test_table_metadata_value_schema_inference():
-
     table_metadata_entry = MetadataEntry(
         "foo",
         value=MetadataValue.table(

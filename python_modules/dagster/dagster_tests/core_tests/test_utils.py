@@ -1,14 +1,12 @@
 import warnings
 
-import pytest
-
 import dagster.version
+import pytest
 from dagster._core.test_utils import environ
 from dagster._core.utils import check_dagster_package_version, parse_env_var
 
 
 def test_parse_env_var_no_equals():
-
     env_var = "FOO_ENV_VAR"
 
     with pytest.raises(
@@ -32,7 +30,6 @@ def test_parse_env_var_containing_equals():
 
 
 def test_check_dagster_package_version(monkeypatch):
-
     monkeypatch.setattr(dagster.version, "__version__", "1.1.0")
 
     # Ensure no warning emitted

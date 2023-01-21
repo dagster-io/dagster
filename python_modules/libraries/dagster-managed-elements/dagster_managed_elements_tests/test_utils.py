@@ -3,7 +3,6 @@ from dagster_managed_elements.utils import diff_dicts
 
 
 def test_diff_dicts():
-
     config_dict = {"foo": "bar", "nested": {"qwerty": "uiop", "new": "field"}, "same": "as"}
     dst_dict = {"baz": "qux", "nested": {"qwerty": "hjkl", "old": "field"}, "same": "as"}
 
@@ -59,7 +58,6 @@ def test_diff_dicts():
 
 
 def test_diff_dicts_custom_comparison_fn():
-
     config_dict = {"foo": "bar", "nested": {"qwerty": "uiop", "new": "field"}, "same": "as"}
     dst_dict = {"baz": "qux", "nested": {"qwerty": "hjkl", "old": "field"}, "same": "as"}
 

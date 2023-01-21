@@ -1,9 +1,9 @@
 import time
 from typing import Callable, Generator, Mapping, Optional, Sequence, Tuple, Type, TypeVar
 
-T = TypeVar("T")
-
 import dagster._check as check
+
+T = TypeVar("T")
 
 
 def backoff_delay_generator() -> Generator[float, None, None]:

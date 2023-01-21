@@ -1,13 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
 import React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RepoAddress} from '../workspace/types';
 
 import {
   AssetJobPartitionSetsQuery,
   AssetJobPartitionSetsQueryVariables,
-} from './types/AssetJobPartitionSetsQuery';
+} from './types/usePartitionNameForPipeline.types';
 
 export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineName: string) {
   const {data: partitionSetsData} = useQuery<
@@ -51,7 +51,6 @@ const ASSET_JOB_PARTITION_SETS_QUERY = gql`
       }
     ) {
       __typename
-      ...PythonErrorFragment
       ... on PipelineNotFoundError {
         __typename
         message
@@ -65,6 +64,7 @@ const ASSET_JOB_PARTITION_SETS_QUERY = gql`
           solidSelection
         }
       }
+      ...PythonErrorFragment
     }
   }
 

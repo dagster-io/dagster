@@ -1,5 +1,7 @@
 import pytest
 import responses
+from dagster import AssetKey, DagsterStepOutputNotFoundError
+from dagster._legacy import build_assets_job
 from dagster_fivetran import fivetran_resource
 from dagster_fivetran.asset_defs import build_fivetran_assets
 from dagster_fivetran.resources import (
@@ -7,9 +9,6 @@ from dagster_fivetran.resources import (
     FIVETRAN_API_VERSION_PATH,
     FIVETRAN_CONNECTOR_PATH,
 )
-
-from dagster import AssetKey, DagsterStepOutputNotFoundError
-from dagster._legacy import build_assets_job
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,
@@ -21,11 +20,28 @@ from .utils import (
 
 
 def test_fivetran_asset_keys():
-
     ft_assets = build_fivetran_assets(
         connector_id=DEFAULT_CONNECTOR_ID, destination_tables=["x.foo", "y.bar"]
     )
     assert ft_assets[0].keys == {AssetKey(["x", "foo"]), AssetKey(["y", "bar"])}
+
+
+@pytest.mark.parametrize(
+    "group_name,expected_group_name",
+    [
+        (None, "default"),
+        ("my_group_name", "my_group_name"),
+    ],
+)
+def test_fivetran_group_label(group_name, expected_group_name):
+    ft_assets = build_fivetran_assets(
+        connector_id=DEFAULT_CONNECTOR_ID,
+        destination_tables=["x.foo", "y.bar"],
+        group_name=group_name,
+    )
+    group_names = set(ft_assets[0].group_names_by_key.values())
+    assert len(group_names) == 1
+    assert list(group_names)[0] == expected_group_name
 
 
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix"])
@@ -40,7 +56,6 @@ def test_fivetran_asset_keys():
     ],
 )
 def test_fivetran_asset_run(tables, should_error, schema_prefix):
-
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
     api_prefix = f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION_PATH}{FIVETRAN_CONNECTOR_PATH}{DEFAULT_CONNECTOR_ID}"

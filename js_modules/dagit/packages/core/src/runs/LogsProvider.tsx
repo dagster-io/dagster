@@ -10,20 +10,21 @@ import throttle from 'lodash/throttle';
 import * as React from 'react';
 
 import {WebSocketContext} from '../app/WebSocketProvider';
-import {RunStatus} from '../types/globalTypes';
+import {RunStatus} from '../graphql/types';
 
 import {LogLevelCounts} from './LogsToolbar';
-import {RunFragments} from './RunFragments';
+import {RUN_DAGSTER_RUN_EVENT_FRAGMENT} from './RunFragments';
 import {logNodeLevel} from './logNodeLevel';
 import {LogNode} from './types';
 import {
+  RunLogsSubscriptionSuccessFragment,
+  PipelineRunLogsSubscriptionStatusFragment,
+  RunLogsQuery,
   PipelineRunLogsSubscription,
+  RunLogsQueryVariables,
   PipelineRunLogsSubscriptionVariables,
-  PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess,
-} from './types/PipelineRunLogsSubscription';
-import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
-import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
-import {RunLogsQuery, RunLogsQueryVariables} from './types/RunLogsQuery';
+} from './types/LogsProvider.types';
+import {RunDagsterRunEventFragment} from './types/RunFragments.types';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';
@@ -124,9 +125,7 @@ const initialState: State = {
 
 const useLogsProviderWithSubscription = (runId: string) => {
   const client = useApolloClient();
-  const queue = React.useRef<
-    PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess[]
-  >([]);
+  const queue = React.useRef<RunLogsSubscriptionSuccessFragment[]>([]);
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
   const syncPipelineStatusToApolloCache = React.useCallback(
@@ -361,24 +360,26 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription PipelineRunLogsSubscription($runId: ID!, $cursor: String) {
     pipelineRunLogs(runId: $runId, cursor: $cursor) {
       __typename
-      ... on PipelineRunLogsSubscriptionSuccess {
-        messages {
-          ... on MessageEvent {
-            runId
-          }
-          ...RunDagsterRunEventFragment
-        }
-        hasMorePastEvents
-        cursor
-      }
       ... on PipelineRunLogsSubscriptionFailure {
         missingRunId
         message
       }
+      ...RunLogsSubscriptionSuccess
     }
   }
 
-  ${RunFragments.RunDagsterRunEventFragment}
+  fragment RunLogsSubscriptionSuccess on PipelineRunLogsSubscriptionSuccess {
+    messages {
+      ... on MessageEvent {
+        runId
+      }
+      ...RunDagsterRunEventFragment
+    }
+    hasMorePastEvents
+    cursor
+  }
+
+  ${RUN_DAGSTER_RUN_EVENT_FRAGMENT}
 `;
 
 const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
@@ -417,5 +418,6 @@ const RUN_LOGS_QUERY = gql`
       }
     }
   }
-  ${RunFragments.RunDagsterRunEventFragment}
+
+  ${RUN_DAGSTER_RUN_EVENT_FRAGMENT}
 `;

@@ -1,6 +1,5 @@
-from dagster_aws.s3 import S3FileHandle, file_handle_to_s3, s3_file_manager, s3_resource
-
 from dagster import DagsterEventType, job, op
+from dagster_aws.s3 import S3FileHandle, file_handle_to_s3, s3_file_manager, s3_resource
 
 
 def create_file_handle_job(temp_file_handle):

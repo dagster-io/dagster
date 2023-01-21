@@ -11,7 +11,6 @@ from ..output import GraphOut, OutputDefinition
 
 
 class _Graph:
-
     name: Optional[str]
     description: Optional[str]
     input_defs: Sequence[InputDefinition]

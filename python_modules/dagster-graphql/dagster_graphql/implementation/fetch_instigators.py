@@ -1,7 +1,5 @@
 from itertools import chain
-
-from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
-from dagster_graphql.schema.util import HasContext
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
@@ -12,9 +10,12 @@ from dagster._core.scheduler.instigation import InstigatorStatus
 
 from .utils import capture_error
 
+if TYPE_CHECKING:
+    from dagster_graphql.schema.util import HasContext
+
 
 @capture_error
-def get_unloadable_instigator_states_or_error(graphene_info: HasContext, instigator_type=None):
+def get_unloadable_instigator_states_or_error(graphene_info: "HasContext", instigator_type=None):
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
     check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
@@ -79,6 +80,7 @@ def get_instigator_state_or_error(graphene_info, selector):
 
 def get_tick_log_events(graphene_info, tick):
     from ..schema.instigation import GrapheneInstigationEvent, GrapheneInstigationEventConnection
+    from ..schema.logs.log_level import GrapheneLogLevel
 
     if not tick.log_key:
         return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)

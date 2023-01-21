@@ -1,28 +1,32 @@
 ---
-title: Setup for the Tutorial | Dagster
-description: Before we get started, we need to install Dagster on our machine.
+title: "Intro to Software-defined assets: Getting set up | Dagster Docs"
+description: "Get set up for the intro to assets tutorial."
 ---
 
-# Setup for the Tutorial
+# Intro to Software-defined assets: Getting set up
 
-Welcome to the Dagster tutorial! Before we get started, we need to install Dagster on our machine.
+To complete this tutorial, you'll need:
 
-## Python and pip
+- **To install Python and pip.** This tutorial assumes that you have some familiarity with Python, but you should be able to follow along even if you’re coming from a different programming language. To check that Python and the pip package manager are already installed in your environment or install them, follow the instructions [here](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/).
 
-We’ll assume that you have some familiarity with Python, but you should be able to follow along even if you’re coming from a different programming language. To check that Python and the pip package manager are already installed in your environment or install them, you can follow the instructions [here](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/).
+  <DagsterVersion />
 
-## Dagster and Dagit
+<!-- ^ Lives in: /next/components/mdx/includes/dagster/DagsterVersion.mdx -->
 
-If you haven't already, please read about our [Installation](/getting-started/install) page.
+- **To install Dagster, Dagit, and the `requests` library**:
 
-```bash
-pip install dagster dagit requests
-```
+  ```shell
+  pip install dagster dagit requests
+  ```
 
-This installs a few packages:
+  This installs a few packages:
 
-- **Dagster**: the core programming model and abstraction stack; stateless, single-node, single-process and multi-process execution engines; and a CLI tool for driving those engines.
-- **Dagit**: the UI for developing and operating Dagster jobs, including a DAG browser, a type-aware config editor, and a live execution interface.
-- **Requests**: not part of Dagster. Our examples will use it to download data from the internet.
+  - **Dagster**. The core programming model and abstraction stack; stateless, single-node, single-process and multi-process execution engines; and a CLI tool for driving those engines. Refer to the [Dagster installation guide](/getting-started/install) for more info, including how to ensure your environment is set up correctly.
+  - **Dagit**: The web-based UI for developing and operating Dagster jobs, including a DAG browser, a type-aware config editor, and a live execution interface.
+  - **Requests**: While not a part of Dagster, we'll use this in the tutorial to download data from the internet.
 
-You can also check out our [Getting Started](/getting-started) page to make sure you have installed the packages and set up the environment properly.
+---
+
+## Ready to get started?
+
+When you've fulfilled all the prerequistes for the tutorial, you can get started [creating your first asset](/tutorial/assets/defining-an-asset).

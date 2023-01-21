@@ -6,7 +6,7 @@ import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {OpGraph} from './OpGraph';
 import {SVGViewport} from './SVGViewport';
 import {getFullOpLayout} from './asyncGraphLayout';
-import {OpGraphOpFragment} from './types/OpGraphOpFragment';
+import {OpGraphOpFragment} from './types/OpGraph.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {

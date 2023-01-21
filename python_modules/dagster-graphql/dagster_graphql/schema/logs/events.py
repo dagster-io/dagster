@@ -1,6 +1,5 @@
-import graphene
-
 import dagster._check as check
+import graphene
 from dagster._core.events import AssetLineageInfo, DagsterEventType
 from dagster._core.execution.plan.objects import ErrorSource
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot

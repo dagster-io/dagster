@@ -17,6 +17,7 @@ import threading
 from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
+from signal import Signals
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -25,11 +26,13 @@ from typing import (
     Dict,
     Generator,
     Generic,
+    Iterable,
     Iterator,
     List,
     Mapping,
     Optional,
     Sequence,
+    Sized,
     Tuple,
     Type,
     TypeVar,
@@ -37,16 +40,12 @@ from typing import (
     cast,
     overload,
 )
-from warnings import warn
 
 import packaging.version
 from typing_extensions import Literal
 
 import dagster._check as check
 import dagster._seven as seven
-
-from .merger import deep_merge_dicts, merge_dicts
-from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 if sys.version_info > (3,):
     from pathlib import Path  # pylint: disable=import-error
@@ -67,6 +66,7 @@ PICKLE_PROTOCOL = 4
 
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
+
 
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
 # version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
@@ -116,7 +116,6 @@ def file_relative_path(dunderfile: str, relative_path: str) -> str:
         file_relative_path(__file__, 'path/relative/to/file')
 
     """
-
     check.str_param(dunderfile, "dunderfile")
     check.str_param(relative_path, "relative_path")
 
@@ -128,7 +127,7 @@ def script_relative_path(file_path: str) -> str:
     Useful for testing with local files. Use a path relative to where the
     test resides and this function will return the absolute path
     of that file. Otherwise it will be relative to script that
-    ran the test
+    ran the test.
 
     Note: this is function is very, very expensive (on the order of 1
     millisecond per invocation) so this should only be used in performance
@@ -172,7 +171,7 @@ def pushd(path: str) -> Iterator[str]:
 
 
 def safe_isfile(path: str) -> bool:
-    """ "Backport of Python 3.8 os.path.isfile behavior.
+    """Backport of Python 3.8 os.path.isfile behavior.
 
     This is intended to backport https://docs.python.org/dev/whatsnew/3.8.html#os-path. I'm not
     sure that there are other ways to provoke this behavior on Unix other than the null byte,
@@ -468,7 +467,7 @@ def datetime_as_float(dt):
 
 
 # hashable frozen string to string dict
-class frozentags(frozendict):
+class frozentags(frozendict, Mapping[str, str]):
     def __init__(self, *args, **kwargs):
         super(frozentags, self).__init__(*args, **kwargs)
         check.dict_param(self, "self", key_type=str, value_type=str)
@@ -485,10 +484,10 @@ class frozentags(frozendict):
         return frozentags(updated)
 
 
-GeneratedContext = TypeVar("GeneratedContext")
+T_GeneratedContext = TypeVar("T_GeneratedContext")
 
 
-class EventGenerationManager(Generic[GeneratedContext]):
+class EventGenerationManager(Generic[T_GeneratedContext]):
     """Utility class that wraps an event generator function, that also yields a single instance of
     a typed object.  All events yielded before the typed object are yielded through the method
     `generate_setup_events` and all events yielded after the typed object are yielded through the
@@ -504,14 +503,14 @@ class EventGenerationManager(Generic[GeneratedContext]):
 
     def __init__(
         self,
-        generator: Generator[Union["DagsterEvent", GeneratedContext], None, None],
-        object_cls: Type[GeneratedContext],
+        generator: Generator[Union["DagsterEvent", T_GeneratedContext], None, None],
+        object_cls: Type[T_GeneratedContext],
         require_object: Optional[bool] = True,
     ):
         self.generator = check.generator(generator)
-        self.object_cls: Type[GeneratedContext] = check.class_param(object_cls, "object_cls")
+        self.object_cls: Type[T_GeneratedContext] = check.class_param(object_cls, "object_cls")
         self.require_object = check.bool_param(require_object, "require_object")
-        self.object: Optional[GeneratedContext] = None
+        self.object: Optional[T_GeneratedContext] = None
         self.did_setup = False
         self.did_teardown = False
 
@@ -533,10 +532,10 @@ class EventGenerationManager(Generic[GeneratedContext]):
                     "generator never yielded object of type {}".format(self.object_cls.__name__),
                 )
 
-    def get_object(self) -> GeneratedContext:
+    def get_object(self) -> T_GeneratedContext:
         if not self.did_setup:
             check.failed("Called `get_object` before `generate_setup_events`")
-        return cast(GeneratedContext, self.object)
+        return cast(T_GeneratedContext, self.object)
 
     def generate_teardown_events(self) -> Iterator["DagsterEvent"]:
         self.did_teardown = True
@@ -577,6 +576,20 @@ def find_free_port() -> int:
         s.bind(("", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+
+
+def is_port_in_use(host, port) -> bool:
+    # Similar to the socket options that uvicorn uses to bind ports:
+    # https://github.com/encode/uvicorn/blob/62f19c1c39929c84968712c371c9b7b96a041dec/uvicorn/config.py#L565-L566
+    sock = socket.socket(family=socket.AF_INET)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        sock.bind((host, port))
+        return False
+    except socket.error as e:
+        return e.errno == errno.EADDRINUSE
+    finally:
+        sock.close()
 
 
 @contextlib.contextmanager
@@ -670,3 +683,44 @@ def traced(func: T_Callable) -> T_Callable:
         return func(*args, **kwargs)
 
     return cast(T_Callable, inner)
+
+
+def get_terminate_signal():
+    if sys.platform == "win32":
+        return signal.SIGTERM
+    return signal.SIGKILL
+
+
+def get_run_crash_explanation(prefix: str, exit_code: int):
+    # As per https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess.returncode
+    # negative exit code means a posix signal
+    if exit_code < 0 and -exit_code in [signal.value for signal in Signals]:
+        posix_signal = -exit_code
+        signal_str = Signals(posix_signal).name
+        exit_clause = f"was terminated by signal {posix_signal} ({signal_str})."
+        if posix_signal == get_terminate_signal():
+            exit_clause = (
+                exit_clause
+                + " This usually indicates that the process was"
+                " killed by the operating system due to running out of"
+                " memory. Possible solutions include increasing the"
+                " amount of memory available to the run, reducing"
+                " the amount of memory used by the ops in the run, or"
+                " configuring the executor to run fewer ops concurrently."
+            )
+    else:
+        exit_clause = f"unexpectedly exited with code {exit_code}."
+
+    return prefix + " " + exit_clause
+
+
+def len_iter(iterable: Iterable[object]) -> int:
+    if isinstance(iterable, Sized):
+        return len(iterable)
+    return sum(1 for _ in iterable)
+
+
+def iter_to_list(iterable: Iterable[T]) -> List[T]:
+    if isinstance(iterable, List):
+        return iterable
+    return list(iterable)

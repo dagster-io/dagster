@@ -120,7 +120,7 @@ class InputDefinition:
         input_manager_key: Optional[str] = None
         # when adding new params, make sure to update combine_with_inferred and with_dagster_type below
     ):
-        self._name = check_valid_name(name)
+        self._name = check_valid_name(name, allow_list=["config"])
 
         self._type_not_set = dagster_type is None
         self._dagster_type = check.inst(resolve_dagster_type(dagster_type), DagsterType)
@@ -138,7 +138,8 @@ class InputDefinition:
 
         if root_manager_key and input_manager_key:
             raise DagsterInvalidDefinitionError(
-                f"Can't supply both root input manager key {root_manager_key} and input manager key {input_manager_key} on InputDefinition."
+                f"Can't supply both root input manager key {root_manager_key} and input manager key"
+                f" {input_manager_key} on InputDefinition."
             )
 
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
@@ -259,7 +260,6 @@ class InputDefinition:
             fan_in_index (Optional[int]): The index in to a fanned in input, else None
 
         Examples:
-
             .. code-block:: python
 
                 input_mapping = InputDefinition('composite_input', Int).mapping_to(
@@ -293,10 +293,12 @@ class InputDefinition:
         Return a new InputDefinition that merges this ones properties with those inferred from type signature.
         This can update: dagster_type, description, and default_value if they are not set.
         """
-
         check.invariant(
             self.name == inferred.name,
-            f"InferredInputProps name {inferred.name} did not align with InputDefinition name {self.name}",
+            (
+                f"InferredInputProps name {inferred.name} did not align with InputDefinition name"
+                f" {self.name}"
+            ),
         )
 
         dagster_type = self._dagster_type
@@ -402,7 +404,6 @@ class InputMapping(NamedTuple):
             being mapped from. Users should not use this argument when instantiating the class.
 
     Examples:
-
         .. code-block:: python
 
             from dagster import InputMapping, GraphDefinition, op, graph
@@ -519,7 +520,8 @@ class In(
     ):
         if root_manager_key and input_manager_key:
             raise DagsterInvalidDefinitionError(
-                f"Can't supply both root input manager key {root_manager_key} and input manager key {input_manager_key} on InputDefinition."
+                f"Can't supply both root input manager key {root_manager_key} and input manager key"
+                f" {input_manager_key} on InputDefinition."
             )
 
         if root_manager_key:

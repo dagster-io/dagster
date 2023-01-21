@@ -6,7 +6,7 @@ import styled from 'styled-components/macro';
 import {OpNode, OP_NODE_DEFINITION_FRAGMENT} from '../graph/OpNode';
 import {layoutOp} from '../graph/asyncGraphLayout';
 
-import {OpCardSolidDefinitionFragment} from './types/OpCardSolidDefinitionFragment';
+import {OpCardSolidDefinitionFragment} from './types/OpCard.types';
 
 interface OpCardProps {
   definition: OpCardSolidDefinitionFragment;
@@ -57,7 +57,6 @@ export const OpCard: React.FC<OpCardProps> = (props) => {
 
 export const OP_CARD_SOLID_DEFINITION_FRAGMENT = gql`
   fragment OpCardSolidDefinitionFragment on ISolidDefinition {
-    ...OpNodeDefinitionFragment
     __typename
     name
     description
@@ -71,6 +70,7 @@ export const OP_CARD_SOLID_DEFINITION_FRAGMENT = gql`
     outputDefinitions {
       name
     }
+    ...OpNodeDefinitionFragment
   }
 
   ${OP_NODE_DEFINITION_FRAGMENT}

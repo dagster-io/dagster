@@ -41,7 +41,7 @@ export function explorerPathFromString(path: string): ExplorerPath {
   return {
     pipelineName,
     snapshotId,
-    opsQuery: decodeURIComponent(opsQuery),
+    opsQuery: decodeURIComponent(opsQuery || ''),
     explodeComposites: explodeComposites === '!',
     opNames: opNames.map(decodeURIComponent),
   };

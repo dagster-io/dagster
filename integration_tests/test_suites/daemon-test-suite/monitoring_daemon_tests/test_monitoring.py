@@ -2,6 +2,14 @@ import os
 import time
 from contextlib import contextmanager
 
+from dagster import _seven
+from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.test_utils import instance_for_test, poll_for_finished_run
+from dagster._daemon.controller import all_daemons_healthy
+from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster._utils.merger import merge_dicts
+from dagster._utils.test.postgres_instance import postgres_instance_for_test
+from dagster._utils.yaml_utils import load_yaml_from_path
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     find_local_test_image,
@@ -11,15 +19,6 @@ from dagster_test.test_project import (
     get_test_project_recon_pipeline,
     get_test_project_workspace_and_external_pipeline,
 )
-
-from dagster import _seven
-from dagster._core.storage.pipeline_run import DagsterRunStatus
-from dagster._core.test_utils import instance_for_test, poll_for_finished_run
-from dagster._daemon.controller import all_daemons_healthy
-from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
-from dagster._utils.merger import merge_dicts
-from dagster._utils.test.postgres_instance import postgres_instance_for_test
-from dagster._utils.yaml_utils import load_yaml_from_path
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -134,7 +133,6 @@ def test_docker_monitoring():
                 )
 
                 with log_run_events(instance, run.run_id):
-
                     instance.launch_run(run.run_id, workspace)
 
                     start_time = time.time()
@@ -223,7 +221,6 @@ def test_docker_monitoring_run_out_of_attempts():
                 )
 
                 with log_run_events(instance, run.run_id):
-
                     instance.launch_run(run.run_id, workspace)
 
                     start_time = time.time()

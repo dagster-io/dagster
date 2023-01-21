@@ -4,7 +4,6 @@ from dagster_managed_elements import ManagedElementDiff
 
 
 def test_diff_equality():
-
     assert ManagedElementDiff() == ManagedElementDiff()
 
     # Ensure equality ignores order
@@ -26,7 +25,6 @@ def test_diff_equality():
 
 
 def test_diff_join():
-
     assert ManagedElementDiff().add("foo", "bar").add("baz", "qux") == ManagedElementDiff().add(
         "foo", "bar"
     ).join(ManagedElementDiff().add("baz", "qux"))
@@ -57,7 +55,6 @@ def clean_escape(diff: ManagedElementDiff):
 
 
 def test_diff_string():
-
     assert clean_escape(ManagedElementDiff()) == ""
 
     assert clean_escape(ManagedElementDiff().add("foo", "bar")) == "+ foo: bar"

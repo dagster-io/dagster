@@ -1,7 +1,5 @@
-import docker
-from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
-
 import dagster._check as check
+import docker
 from dagster._core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
@@ -14,6 +12,8 @@ from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster._serdes import ConfigurableClass
+
+from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 from .container_context import DockerContainerContext
 
@@ -93,6 +93,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     def _launch_container_with_command(self, run, docker_image, command):
         container_context = self.get_container_context(run)
         docker_env = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
+        docker_env["DAGSTER_RUN_JOB_NAME"] = run.job_name
 
         client = self._get_client(container_context)
 
@@ -123,9 +124,11 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 network.connect(container)
 
         self._instance.report_engine_event(
-            message="Launching run in a new container {container_id} with image {docker_image}".format(
-                container_id=container.id,
-                docker_image=docker_image,
+            message=(
+                "Launching run in a new container {container_id} with image {docker_image}".format(
+                    container_id=container.id,
+                    docker_image=docker_image,
+                )
             ),
             pipeline_run=run,
             cls=self.__class__,

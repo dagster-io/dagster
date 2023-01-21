@@ -2,6 +2,7 @@ import {Box, Heading, PageHeader, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepositoryLocationsList} from '../workspace/RepositoryLocationsList';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
@@ -11,6 +12,7 @@ import {InstanceTabs} from './InstanceTabs';
 
 export const CodeLocationsPage = () => {
   useTrackPageView();
+  useDocumentTitle('Code locations');
 
   const {pageTitle} = React.useContext(InstancePageContext);
   const {locationEntries, loading} = React.useContext(WorkspaceContext);
@@ -37,10 +39,7 @@ export const CodeLocationsPage = () => {
 
   return (
     <>
-      <PageHeader
-        title={<Heading>{pageTitle}</Heading>}
-        tabs={<InstanceTabs tab="code-locations" />}
-      />
+      <PageHeader title={<Heading>{pageTitle}</Heading>} tabs={<InstanceTabs tab="locations" />} />
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}

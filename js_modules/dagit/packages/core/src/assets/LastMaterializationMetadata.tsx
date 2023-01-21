@@ -14,7 +14,7 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
-import {LatestMaterializationMetadataFragment} from './types/LatestMaterializationMetadataFragment';
+import {LatestMaterializationMetadataFragment} from './types/LastMaterializationMetadata.types';
 
 export const LatestMaterializationMetadata: React.FC<{
   latest: LatestMaterializationMetadataFragment | undefined;
@@ -168,5 +168,6 @@ export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
       partitions
     }
   }
+
   ${METADATA_ENTRY_FRAGMENT}
 `;

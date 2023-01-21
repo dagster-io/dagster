@@ -1,11 +1,24 @@
+import logging
 import warnings
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterator,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+    overload,
+)
 
 import pendulum
+from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import public
+from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -44,7 +57,20 @@ from .sensor_definition import (
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
+    from dagster._core.host_representation.selector import (
+        CodeLocationSelector,
+        JobSelector,
+        RepositorySelector,
+    )
+
+RunStatusSensorEvaluationFunction: TypeAlias = Union[
+    Callable[[], RawSensorEvaluationFunctionReturn],
+    Callable[["RunStatusSensorContext"], RawSensorEvaluationFunctionReturn],
+]
+RunFailureSensorEvaluationFn: TypeAlias = Union[
+    Callable[[], RawSensorEvaluationFunctionReturn],
+    Callable[["RunFailureSensorContext"], RawSensorEvaluationFunctionReturn],
+]
 
 
 @whitelist_for_serdes
@@ -55,7 +81,6 @@ class RunStatusSensorCursor(
     )
 ):
     def __new__(cls, record_id, update_timestamp):
-
         return super(RunStatusSensorCursor, cls).__new__(
             cls,
             record_id=check.int_param(record_id, "record_id"),
@@ -82,17 +107,7 @@ class RunStatusSensorCursor(
 register_serdes_tuple_fallbacks({"PipelineSensorCursor": RunStatusSensorCursor})
 
 
-class RunStatusSensorContext(
-    NamedTuple(
-        "_RunStatusSensorContext",
-        [
-            ("sensor_name", PublicAttr[str]),
-            ("dagster_run", PublicAttr[DagsterRun]),
-            ("dagster_event", PublicAttr[DagsterEvent]),
-            ("instance", PublicAttr[DagsterInstance]),
-        ],
-    )
-):
+class RunStatusSensorContext:
     """The ``context`` object available to a decorated function of ``run_status_sensor``.
 
     Attributes:
@@ -100,26 +115,57 @@ class RunStatusSensorContext(
         dagster_run (DagsterRun): the run of the job or pipeline.
         dagster_event (DagsterEvent): the event associated with the job or pipeline run status.
         instance (DagsterInstance): the current instance.
+        log (logging.Logger): the logger for the given sensor evaluation
     """
 
-    def __new__(cls, sensor_name, dagster_run, dagster_event, instance):
-
-        return super(RunStatusSensorContext, cls).__new__(
-            cls,
-            sensor_name=check.str_param(sensor_name, "sensor_name"),
-            dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
-            dagster_event=check.inst_param(dagster_event, "dagster_event", DagsterEvent),
-            instance=check.inst_param(instance, "instance", DagsterInstance),
-        )
+    def __init__(self, sensor_name, dagster_run, dagster_event, instance, context=None):
+        self._sensor_name = check.str_param(sensor_name, "sensor_name")
+        self._dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
+        self._dagster_event = check.inst_param(dagster_event, "dagster_event", DagsterEvent)
+        self._instance = check.inst_param(instance, "instance", DagsterInstance)
+        self._context = check.opt_inst_param(context, "context", SensorEvaluationContext)
+        self._logger: Optional[logging.Logger] = None
 
     def for_run_failure(self):
         """Converts RunStatusSensorContext to RunFailureSensorContext."""
         return RunFailureSensorContext(
-            sensor_name=self.sensor_name,
-            dagster_run=self.dagster_run,
-            dagster_event=self.dagster_event,
-            instance=self.instance,
+            sensor_name=self._sensor_name,
+            dagster_run=self._dagster_run,
+            dagster_event=self._dagster_event,
+            instance=self._instance,
+            context=self._context,
         )
+
+    @public  # type: ignore
+    @property
+    def sensor_name(self) -> str:
+        return self._sensor_name
+
+    @public  # type: ignore
+    @property
+    def dagster_run(self) -> DagsterRun:
+        return self._dagster_run
+
+    @public  # type: ignore
+    @property
+    def dagster_event(self) -> DagsterEvent:
+        return self._dagster_event
+
+    @public  # type: ignore
+    @property
+    def instance(self) -> DagsterInstance:
+        return self._instance
+
+    @public  # type: ignore
+    @property
+    def log(self) -> logging.Logger:
+        if self._context:
+            return self._context.log
+
+        if not self._logger:
+            self._logger = InstigationLogger()
+
+        return self._logger
 
     @property
     def pipeline_run(self) -> DagsterRun:
@@ -149,6 +195,7 @@ def build_run_status_sensor_context(
     dagster_event: DagsterEvent,
     dagster_instance: DagsterInstance,
     dagster_run: DagsterRun,
+    context: Optional[SensorEvaluationContext] = None,
 ) -> RunStatusSensorContext:
     """
     Builds run status sensor context from provided parameters.
@@ -180,17 +227,25 @@ def build_run_status_sensor_context(
             )
             run_status_sensor_to_invoke(context)
     """
-
     return RunStatusSensorContext(
         sensor_name=sensor_name,
         instance=dagster_instance,
         dagster_run=dagster_run,
         dagster_event=dagster_event,
+        context=context,
     )
 
 
+@overload
 def run_failure_sensor(
-    name: Optional[Union[Callable[..., Any], str]] = None,
+    name: RunFailureSensorEvaluationFn,
+) -> SensorDefinition:
+    ...
+
+
+@overload
+def run_failure_sensor(
+    name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
@@ -201,6 +256,7 @@ def run_failure_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
@@ -212,6 +268,7 @@ def run_failure_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
@@ -219,10 +276,43 @@ def run_failure_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
-) -> Callable[
-    [Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
-    SensorDefinition,
-]:
+) -> Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]:
+    ...
+
+
+def run_failure_sensor(
+    name: Optional[Union[RunFailureSensorEvaluationFn, str]] = None,
+    minimum_interval_seconds: Optional[int] = None,
+    description: Optional[str] = None,
+    monitored_jobs: Optional[
+        Sequence[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+                "CodeLocationSelector",
+            ]
+        ]
+    ] = None,
+    job_selection: Optional[
+        Sequence[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+                "CodeLocationSelector",
+            ]
+        ]
+    ] = None,
+    monitor_all_repositories: bool = False,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+    request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+) -> Union[SensorDefinition, Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]]:
     """
     Creates a sensor that reacts to job failure events, where the decorated function will be
     run when a run fails.
@@ -235,14 +325,14 @@ def run_failure_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]):
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             The jobs in the current repository that will be monitored by this failure sensor.
             Defaults to None, which means the alert will be sent when any job in the current
             repository fails.
         monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
             Dagster instance. If set to True, an error will be raised if you also specify
             monitored_jobs or job_selection. Defaults to False.
-        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector]]]):
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             (deprecated in favor of monitored_jobs) The jobs in the current repository that will be
             monitored by this failure sensor. Defaults to None, which means the alert will be sent
             when any job in the repository fails.
@@ -255,7 +345,7 @@ def run_failure_sensor(
     """
 
     def inner(
-        fn: Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]
+        fn: RunFailureSensorEvaluationFn,
     ) -> SensorDefinition:
         check.callable_param(fn, "fn")
         if name is None or callable(name):
@@ -279,7 +369,7 @@ def run_failure_sensor(
             request_jobs=request_jobs,
         )
         def _run_failure_sensor(context: RunStatusSensorContext):
-            return fn(context.for_run_failure())
+            return fn(context.for_run_failure())  # type: ignore  # fmt: skip
 
         return _run_failure_sensor
 
@@ -304,7 +394,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobSelector, RepositorySelector]]]):
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobSelector, RepositorySelector, CodeLocationSelector]]]):
             The jobs in the current repository that will be monitored by this sensor. Defaults to
             None, which means the alert will be sent when any job in the repository fails.
         monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the
@@ -322,7 +412,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         self,
         name: str,
         run_status: DagsterRunStatus,
-        run_status_sensor_fn: Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn],
+        run_status_sensor_fn: RunStatusSensorEvaluationFunction,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         monitored_jobs: Optional[
@@ -333,6 +423,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     UnresolvedAssetJobDefinition,
                     "RepositorySelector",
                     "JobSelector",
+                    "CodeLocationSelector",
                 ]
             ]
         ] = None,
@@ -341,9 +432,12 @@ class RunStatusSensorDefinition(SensorDefinition):
         request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     ):
-
         from dagster._core.event_api import RunShardedEventsCursor
-        from dagster._core.host_representation.selector import JobSelector, RepositorySelector
+        from dagster._core.host_representation.selector import (
+            CodeLocationSelector,
+            JobSelector,
+            RepositorySelector,
+        )
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
         check.str_param(name, "name")
@@ -360,16 +454,42 @@ class RunStatusSensorDefinition(SensorDefinition):
                 UnresolvedAssetJobDefinition,
                 RepositorySelector,
                 JobSelector,
+                CodeLocationSelector,
             ),
         )
         check.inst_param(default_status, "default_status", DefaultSensorStatus)
+
+        # coerce CodeLocationSelectors to RepositorySelectors with repo name "__repository__"
+        monitored_jobs = [
+            job.to_repository_selector() if isinstance(job, CodeLocationSelector) else job
+            for job in (monitored_jobs or [])
+        ]
 
         self._run_status_sensor_fn = check.callable_param(
             run_status_sensor_fn, "run_status_sensor_fn"
         )
         event_type = PIPELINE_RUN_STATUS_TO_EVENT_TYPE[run_status]
 
-        def _wrapped_fn(context: SensorEvaluationContext):
+        # split monitored_jobs into external repos, external jobs, and jobs in the current repo
+        other_repos = (
+            [x for x in monitored_jobs if isinstance(x, RepositorySelector)]
+            if monitored_jobs
+            else []
+        )
+
+        other_repo_jobs = (
+            [x for x in monitored_jobs if isinstance(x, JobSelector)] if monitored_jobs else []
+        )
+
+        current_repo_jobs = (
+            [x for x in monitored_jobs if not isinstance(x, (JobSelector, RepositorySelector))]
+            if monitored_jobs
+            else []
+        )
+
+        def _wrapped_fn(
+            context: SensorEvaluationContext,
+        ) -> Iterator[Union[RunRequest, SkipReason, PipelineRunReaction]]:
             # initiate the cursor to (most recent event id, current timestamp) when:
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
@@ -410,22 +530,6 @@ class RunStatusSensorDefinition(SensorDefinition):
                 ),
                 ascending=True,
                 limit=5,
-            )
-
-            # split monitored_jobs into external repos, external jobs, and jobs in the current repo
-            other_repos = (
-                [x for x in monitored_jobs if isinstance(x, RepositorySelector)]
-                if monitored_jobs
-                else []
-            )
-            other_repo_jobs = (
-                [x for x in monitored_jobs if isinstance(x, JobSelector)] if monitored_jobs else []
-            )
-
-            current_repo_jobs = (
-                [x for x in monitored_jobs if not isinstance(x, (JobSelector, RepositorySelector))]
-                if monitored_jobs
-                else []
             )
 
             for event_record in event_records:
@@ -517,12 +621,13 @@ class RunStatusSensorDefinition(SensorDefinition):
                         lambda: f'Error occurred during the execution sensor "{name}".',
                     ):
                         # one user code invocation maps to one failure event
-                        sensor_return = run_status_sensor_fn(
+                        sensor_return = run_status_sensor_fn(  # type: ignore  # fmt: skip
                             RunStatusSensorContext(
                                 sensor_name=name,
                                 dagster_run=pipeline_run,
                                 dagster_event=event_log_entry.dagster_event,
                                 instance=context.instance,
+                                context=context,
                             )
                         )
                         if sensor_return is not None:
@@ -628,6 +733,7 @@ def run_status_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
@@ -639,6 +745,7 @@ def run_status_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
@@ -646,10 +753,7 @@ def run_status_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
-) -> Callable[
-    [Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn]],
-    RunStatusSensorDefinition,
-]:
+) -> Callable[[RunStatusSensorEvaluationFunction], RunStatusSensorDefinition,]:
     """
     Creates a sensor that reacts to a given status of pipeline execution, where the decorated
     function will be run when a pipeline is at the given status.
@@ -663,14 +767,14 @@ def run_status_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector]]]):
+        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             Jobs in the current repository that will be monitored by this sensor. Defaults to None, which means the alert will
             be sent when any job in the repository matches the requested run_status. Jobs in external repositories can be monitored by using
             RepositorySelector or JobSelector.
         monitor_all_repositories (bool): If set to True, the sensor will monitor all runs in the Dagster instance.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.
             Defaults to False.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]):
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSelector]]]):
             (deprecated in favor of monitored_jobs) Jobs in the current repository that will be
             monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested run_status.
@@ -683,9 +787,8 @@ def run_status_sensor(
     """
 
     def inner(
-        fn: Callable[["RunStatusSensorContext"], RawSensorEvaluationFunctionReturn]
+        fn: RunStatusSensorEvaluationFunction,
     ) -> RunStatusSensorDefinition:
-
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
@@ -695,7 +798,8 @@ def run_status_sensor(
 
         if jobs and monitor_all_repositories:
             DagsterInvalidDefinitionError(
-                f"Cannot specify both monitor_all_repositories and {'monitored_jobs' if monitored_jobs else 'job_selection'}."
+                "Cannot specify both monitor_all_repositories and"
+                f" {'monitored_jobs' if monitored_jobs else 'job_selection'}."
             )
 
         return RunStatusSensorDefinition(

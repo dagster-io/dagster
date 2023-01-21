@@ -10,7 +10,6 @@ from dagster_buildkite.utils import CommandStep, make_buildkite_section_header
 _COMMAND_TYPE_TO_EMOJI_MAP = {
     "pytest": ":pytest:",
     "mypy": ":mypy:",
-    "pylint": ":lint-roller:",
     "miscellaneous": ":sparkle",
 }
 

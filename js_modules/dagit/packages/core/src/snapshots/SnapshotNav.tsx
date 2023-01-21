@@ -8,7 +8,7 @@ import {TabLink} from '../ui/TabLink';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
-import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotQuery';
+import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
 
 const SNAPSHOT_PARENT_QUERY = gql`
   query SnapshotQuery($snapshotId: String!) {

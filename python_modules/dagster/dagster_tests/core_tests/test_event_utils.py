@@ -5,7 +5,6 @@ from dagster._core.execution.plan.objects import StepSuccessData
 
 
 def test_filter_dagster_events_from_cli_logs():
-
     sameple_output = """
     2020-07-17 11:31:58 - dagster - DEBUG - foo - new_run - STEP_START - Started execution of step "do_something".
                  pid = 2467

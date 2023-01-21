@@ -2,14 +2,13 @@ import os
 from contextlib import contextmanager
 
 import pytest
-from dagstermill.compat import ExecutionError
-from dagstermill.examples.repository import custom_io_mgr_key_asset
-
 from dagster import AssetKey, DagsterEventType
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline
+from dagstermill.compat import ExecutionError
+from dagstermill.examples.repository import custom_io_mgr_key_asset
 
 
 def get_path(materialization_event):

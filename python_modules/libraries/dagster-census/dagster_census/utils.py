@@ -8,7 +8,6 @@ from .types import CensusOutput
 def generate_materialization(
     census_output: CensusOutput, asset_key_prefix: Sequence[str]
 ) -> AssetMaterialization:
-
     sync_id = census_output.sync_run["sync_id"]
     source_name = census_output.source["name"]
     destination_name = census_output.destination["name"]
@@ -31,6 +30,8 @@ def generate_materialization(
 
     return AssetMaterialization(
         asset_key=asset_key_name,
-        description=f"Sync generated for Census sync {sync_id}: {source_name} to {destination_name}",
+        description=(
+            f"Sync generated for Census sync {sync_id}: {source_name} to {destination_name}"
+        ),
         metadata=metadata,
     )

@@ -41,7 +41,8 @@ class DagsterExecutionInterruptedError(BaseException):
 class DagsterError(Exception):
     """Base class for all errors thrown by the Dagster framework.
 
-    Users should not subclass this base class for their own exceptions."""
+    Users should not subclass this base class for their own exceptions.
+    """
 
     @property
     def is_user_code_error(self):
@@ -64,6 +65,10 @@ class DagsterInvalidSubsetError(DagsterError):
     """
 
 
+class DagsterInvalidDeserializationVersionError(DagsterError):
+    """Indicates that a serialized value has an unsupported version and cannot be deserialized."""
+
+
 CONFIG_ERROR_VERBIAGE = """
 This value can be a:
     - Field
@@ -77,7 +82,7 @@ This value can be a:
 
 
 class DagsterInvalidConfigDefinitionError(DagsterError):
-    """Indicates that you have attempted to construct a config with an invalid value
+    """Indicates that you have attempted to construct a config with an invalid value.
 
     Acceptable values for config types are any of:
         1. A Python primitive type that resolves to a Dagster config type
@@ -109,7 +114,8 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
             (
                 "Error defining config. Original value passed: {original_root}. "
                 "{stack_str}{current_value} "
-                "cannot be resolved.{reason_str}" + CONFIG_ERROR_VERBIAGE
+                "cannot be resolved.{reason_str}"
+                + CONFIG_ERROR_VERBIAGE
             ).format(
                 original_root=repr(original_root),
                 stack_str="Error at stack path :" + ":".join(stack) + ". " if stack else "",
@@ -122,7 +128,8 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
 
 class DagsterInvariantViolationError(DagsterError):
     """Indicates the user has violated a well-defined invariant that can only be enforced
-    at runtime."""
+    at runtime.
+    """
 
 
 class DagsterExecutionStepNotFoundError(DagsterError):
@@ -147,7 +154,8 @@ class DagsterRunNotFoundError(DagsterError):
 
 class DagsterStepOutputNotFoundError(DagsterError):
     """Indicates that previous step outputs required for an execution step to proceed are not
-    available."""
+    available.
+    """
 
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop("step_key"), "step_key")
@@ -177,7 +185,6 @@ def user_code_error_boundary(
     tool author wishes to do so.
 
     Examples:
-
     .. code-block:: python
 
         with user_code_error_boundary(
@@ -332,7 +339,8 @@ class DagsterInvalidInvocationError(DagsterError):
 
 class DagsterInvalidConfigError(DagsterError):
     """Thrown when provided config is invalid (does not type check against the relevant config
-    schema)."""
+    schema).
+    """
 
     def __init__(self, preamble, errors, config_value, *args, **kwargs):
         from dagster._config import EvaluationError
@@ -382,7 +390,8 @@ class DagsterUserCodeUnreachableError(DagsterError):
 
 class DagsterUserCodeProcessError(DagsterError):
     """An exception has occurred in a user code process that the host process raising this error
-    was communicating with."""
+    was communicating with.
+    """
 
     @staticmethod
     def from_error_info(error_info):
@@ -405,7 +414,8 @@ class DagsterUserCodeProcessError(DagsterError):
 
 
 class DagsterMaxRetriesExceededError(DagsterError):
-    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised."""
+    """Raised when raise_on_error is true, and retries were exceeded, this error should be raised.
+    """
 
     def __init__(self, *args, **kwargs):
         from dagster._utils.error import SerializableErrorInfo
@@ -476,7 +486,7 @@ class DagsterRunAlreadyExists(DagsterError):
 
 
 class DagsterSnapshotDoesNotExist(DagsterError):
-    """Indicates you attempted to create a pipeline run with a nonexistent snapshot id"""
+    """Indicates you attempted to create a pipeline run with a nonexistent snapshot id."""
 
 
 class DagsterRunConflict(DagsterError):
@@ -526,11 +536,11 @@ class PartitionExecutionError(DagsterUserCodeExecutionError):
 
 
 class DagsterInvalidAssetKey(DagsterError):
-    """Error raised by invalid asset key"""
+    """Error raised by invalid asset key."""
 
 
 class DagsterInvalidMetadata(DagsterError):
-    """Error raised by invalid metadata parameters"""
+    """Error raised by invalid metadata parameters."""
 
 
 class HookExecutionError(DagsterUserCodeExecutionError):
@@ -554,7 +564,7 @@ class JobError(DagsterUserCodeExecutionError):
 
 
 class DagsterUnknownStepStateError(DagsterError):
-    """When job execution completes with steps in an unknown state"""
+    """When job execution completes with steps in an unknown state."""
 
 
 class DagsterObjectStoreError(DagsterError):
@@ -563,7 +573,8 @@ class DagsterObjectStoreError(DagsterError):
 
 class DagsterInvalidPropertyError(DagsterError):
     """Indicates that an invalid property was accessed. May often happen by accessing a property
-    that no longer exists after breaking changes."""
+    that no longer exists after breaking changes.
+    """
 
 
 class DagsterHomeNotSetError(DagsterError):
@@ -582,4 +593,11 @@ class DagsterUnknownPartitionError(DagsterError):
 class DagsterUndefinedLogicalVersionError(DagsterError):
     """
     The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
+    """
+
+
+class DagsterDefinitionChangedDeserializationError(DagsterError):
+    """
+    Indicates that a stored value can't be deserialized because the definition needed to interpret
+    it has changed.
     """

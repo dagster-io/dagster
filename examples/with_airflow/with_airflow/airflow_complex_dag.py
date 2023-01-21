@@ -32,7 +32,6 @@ default_args = {"start_date": days_ago(1)}
 with models.DAG(
     dag_id="complex_dag", default_args=default_args, schedule_interval=None
 ) as complex_dag:
-
     # Create
     create_entry_group = BashOperator(
         task_id="create_entry_group", bash_command="echo create_entry_group"

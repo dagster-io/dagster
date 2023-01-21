@@ -34,8 +34,8 @@ import {
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   responseToYamlValidationResult,
 } from '../configeditor/ConfigEditorUtils';
+import {PipelineSelector, RepositorySelector} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
-import {PipelineSelector, RepositorySelector} from '../types/globalTypes';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -53,25 +53,27 @@ import {RunPreview, RUN_PREVIEW_VALIDATION_FRAGMENT} from './RunPreview';
 import {SessionSettingsBar} from './SessionSettingsBar';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
-import {ConfigEditorGeneratorPipelineFragment_presets} from './types/ConfigEditorGeneratorPipelineFragment';
 import {
+  ConfigEditorPipelinePresetFragment,
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
-} from './types/ConfigPartitionSelectionQuery';
-import {LaunchpadSessionPartitionSetsFragment} from './types/LaunchpadSessionPartitionSetsFragment';
-import {LaunchpadSessionPipelineFragment} from './types/LaunchpadSessionPipelineFragment';
+} from './types/ConfigEditorConfigPicker.types';
+import {
+  LaunchpadSessionPartitionSetsFragment,
+  LaunchpadSessionPipelineFragment,
+} from './types/LaunchpadRoot.types';
 import {
   PipelineExecutionConfigSchemaQuery,
-  PipelineExecutionConfigSchemaQueryVariables,
-} from './types/PipelineExecutionConfigSchemaQuery';
-import {PreviewConfigQuery, PreviewConfigQueryVariables} from './types/PreviewConfigQuery';
+  PreviewConfigQuery,
+  PreviewConfigQueryVariables,
+} from './types/LaunchpadSession.types';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_CONFIG_FOR_PARTITION = `Generating configuration...`;
 const LOADING_CONFIG_SCHEMA = `Loading config schema...`;
 const LOADING_RUN_PREVIEW = `Checking config...`;
 
-type Preset = ConfigEditorGeneratorPipelineFragment_presets;
+type Preset = ConfigEditorPipelinePresetFragment;
 
 interface LaunchpadSessionProps {
   session: IExecutionSession;
@@ -188,14 +190,13 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     assetSelection: currentSession.assetSelection?.map(({assetKey: {path}}) => ({path})),
   };
 
-  const configResult = useQuery<
-    PipelineExecutionConfigSchemaQuery,
-    PipelineExecutionConfigSchemaQueryVariables
-  >(PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY, {
-    variables: {selector: pipelineSelector, mode: currentSession?.mode},
-    fetchPolicy: 'cache-and-network',
-    partialRefetch: true,
-  });
+  const configResult = useQuery<PipelineExecutionConfigSchemaQuery>(
+    PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY,
+    {
+      variables: {selector: pipelineSelector, mode: currentSession?.mode},
+      partialRefetch: true,
+    },
+  );
 
   const configSchemaOrError = configResult?.data?.runConfigSchemaOrError;
 
@@ -775,25 +776,13 @@ const PREVIEW_CONFIG_QUERY = gql`
       ...RunPreviewValidationFragment
     }
   }
-  ${RUN_PREVIEW_VALIDATION_FRAGMENT}
+
   ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
+  ${RUN_PREVIEW_VALIDATION_FRAGMENT}
 `;
 
 const SessionSettingsSpacer = styled.div`
   width: 5px;
-`;
-
-const RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT = gql`
-  fragment LaunchpadSessionRunConfigSchemaFragment on RunConfigSchemaOrError {
-    __typename
-    ... on RunConfigSchema {
-      ...ConfigEditorRunConfigSchemaFragment
-    }
-    ... on ModeNotFoundError {
-      message
-    }
-  }
-  ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
 `;
 
 export const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
@@ -803,5 +792,19 @@ export const PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY = gql`
     }
   }
 
-  ${RUN_CONFIG_SCHEMA_OR_ERROR_FRAGMENT}
+  fragment LaunchpadSessionRunConfigSchemaFragment on RunConfigSchemaOrError {
+    __typename
+    ... on RunConfigSchema {
+      ...ConfigEditorRunConfigSchemaFragment
+    }
+    ... on ModeNotFoundError {
+      ...LaunchpadSessionModeNotFound
+    }
+  }
+
+  fragment LaunchpadSessionModeNotFound on ModeNotFoundError {
+    message
+  }
+
+  ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
 `;

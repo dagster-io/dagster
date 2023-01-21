@@ -11,17 +11,17 @@ import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   ReExecutionStyle,
 } from './RunUtils';
+import {RunFragment} from './types/RunFragments.types';
 import {
-  LaunchPipelineReexecution,
-  LaunchPipelineReexecutionVariables,
-} from './types/LaunchPipelineReexecution';
-import {RunFragment} from './types/RunFragment';
+  LaunchPipelineReexecutionMutation,
+  LaunchPipelineReexecutionMutationVariables,
+} from './types/RunUtils.types';
 
 export const useJobReExecution = (run: RunFragment | undefined | null) => {
   const history = useHistory();
   const [launchPipelineReexecution] = useMutation<
-    LaunchPipelineReexecution,
-    LaunchPipelineReexecutionVariables
+    LaunchPipelineReexecutionMutation,
+    LaunchPipelineReexecutionMutationVariables
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
   const repoMatch = useRepositoryForRun(run);
 

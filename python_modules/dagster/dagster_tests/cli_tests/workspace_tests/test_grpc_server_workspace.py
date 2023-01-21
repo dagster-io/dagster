@@ -2,7 +2,6 @@ from contextlib import ExitStack
 
 import pytest
 import yaml
-
 from dagster import _seven
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
@@ -120,7 +119,6 @@ def test_ssl_grpc_server_workspace(instance):
     server_process = GrpcServerProcess(instance_ref=instance.get_ref(), force_port=True)
     try:
         with server_process.create_ephemeral_client() as client:
-
             assert client.heartbeat(echo="Hello")
 
             port = server_process.port

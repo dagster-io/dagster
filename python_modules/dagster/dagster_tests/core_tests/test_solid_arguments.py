@@ -1,12 +1,10 @@
 # pylint: disable=unused-argument
 import pytest
-
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._legacy import InputDefinition, execute_solid, lambda_solid, solid
 
 
 def test_solid_input_arguments():
-
     # Solid with no parameters
     @solid
     def _no_param():
@@ -64,8 +62,10 @@ def test_solid_input_arguments():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='"context" is not a valid name in Dagster. It conflicts with a Dagster or python '
-        "reserved keyword.",
+        match=(
+            '"context" is not a valid name in Dagster. It conflicts with a Dagster or python '
+            "reserved keyword."
+        ),
     ):
 
         @solid

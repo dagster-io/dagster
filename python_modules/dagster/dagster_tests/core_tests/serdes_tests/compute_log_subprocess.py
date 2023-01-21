@@ -1,5 +1,6 @@
 """Test that compute log tail processes go away when the parent is interrupted using
-IPC machinery."""
+IPC machinery.
+"""
 
 import sys
 import time

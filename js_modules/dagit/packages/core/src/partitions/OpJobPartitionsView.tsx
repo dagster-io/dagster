@@ -2,8 +2,8 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useViewport} from '../gantt/useViewport';
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
@@ -17,15 +17,15 @@ import {PartitionState, PartitionStatus, runStatusToPartitionState} from './Part
 import {getVisibleItemCount, PartitionPerOpStatus} from './PartitionStepStatus';
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {
-  PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results,
-  PartitionsStatusQuery_partitionSetOrError_PartitionSet,
+  OpJobPartitionSetFragment,
+  OpJobPartitionStatusFragment,
   PartitionsStatusQuery,
   PartitionsStatusQueryVariables,
-} from './types/PartitionsStatusQuery';
+} from './types/OpJobPartitionsView.types';
 import {PartitionRuns} from './useMatrixData';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
 
-type PartitionStatus = PartitionsStatusQuery_partitionSetOrError_PartitionSet_partitionStatusesOrError_PartitionStatuses_results;
+type PartitionStatus = OpJobPartitionStatusFragment;
 
 export const OpJobPartitionsView: React.FC<{
   partitionSetName: string;
@@ -34,7 +34,9 @@ export const OpJobPartitionsView: React.FC<{
   const repositorySelector = repoAddressToSelector(repoAddress);
   const queryResult = useQuery<PartitionsStatusQuery, PartitionsStatusQueryVariables>(
     PARTITIONS_STATUS_QUERY,
-    {variables: {partitionSetName, repositorySelector}},
+    {
+      variables: {partitionSetName, repositorySelector},
+    },
   );
 
   return (
@@ -89,10 +91,10 @@ export function usePartitionDurations(partitions: PartitionRuns[]) {
 
 const OpJobPartitionsViewContent: React.FC<{
   partitionNames: string[];
-  partitionSet: PartitionsStatusQuery_partitionSetOrError_PartitionSet;
+  partitionSet: OpJobPartitionSetFragment;
   repoAddress: RepoAddress;
 }> = ({partitionSet, partitionNames, repoAddress}) => {
-  const {canLaunchPartitionBackfill} = usePermissions();
+  const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
   const {viewport, containerProps} = useViewport();
 
   const [pageSize, setPageSize] = React.useState(60);
@@ -330,29 +332,39 @@ const PARTITIONS_STATUS_QUERY = gql`
     ) {
       ... on PartitionSet {
         id
-        name
-        pipelineName
-        partitionsOrError {
-          ... on Partitions {
-            results {
-              name
-            }
-          }
-        }
-        partitionStatusesOrError {
-          __typename
-          ... on PartitionStatuses {
-            results {
-              id
-              partitionName
-              runStatus
-              runDuration
-            }
-          }
-          ...PythonErrorFragment
+        ...OpJobPartitionSet
+      }
+    }
+  }
+
+  fragment OpJobPartitionSet on PartitionSet {
+    id
+    name
+    pipelineName
+    partitionsOrError {
+      ... on Partitions {
+        results {
+          name
         }
       }
     }
+    partitionStatusesOrError {
+      __typename
+      ... on PartitionStatuses {
+        results {
+          id
+          ...OpJobPartitionStatus
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  fragment OpJobPartitionStatus on PartitionStatus {
+    id
+    partitionName
+    runStatus
+    runDuration
   }
 
   ${PYTHON_ERROR_FRAGMENT}

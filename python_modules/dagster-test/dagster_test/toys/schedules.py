@@ -1,9 +1,5 @@
 import datetime
 
-from dagster_test.toys.longitudinal import longitudinal
-from dagster_test.toys.many_events import many_events
-from dagster_test.toys.unreliable import unreliable
-
 from dagster import build_schedule_from_partitioned_job
 from dagster._core.definitions.time_window_partitions import (
     daily_partitioned_config,
@@ -11,6 +7,10 @@ from dagster._core.definitions.time_window_partitions import (
     monthly_partitioned_config,
     weekly_partitioned_config,
 )
+
+from dagster_test.toys.longitudinal import longitudinal
+from dagster_test.toys.many_events import many_events
+from dagster_test.toys.unreliable import unreliable
 
 
 def _toys_tz_info():
@@ -82,8 +82,8 @@ def longitudinal_schedule():
             }
         }
 
-    longitudinal_job = longitudinal.to_job(config=longitudinal_config)
-    return build_schedule_from_partitioned_job(longitudinal_job)
+    job_def = longitudinal.to_job(config=longitudinal_config)
+    return build_schedule_from_partitioned_job(job_def)
 
 
 def get_toys_schedules():

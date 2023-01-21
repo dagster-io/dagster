@@ -14,7 +14,7 @@ def get_version() -> str:
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "0+dev" else f"=={ver}"
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-datahub",
     version=ver,
@@ -22,7 +22,9 @@ setup(
     author_email="hello@elementl.com",
     license="Apache-2.0",
     description="Package for Datahub-specific Dagster framework solid and resource components.",
-    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datahub",
+    url=(
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datahub"
+    ),
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

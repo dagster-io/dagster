@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
 import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -15,7 +15,7 @@ import {DagsterTag} from './RunTag';
 import {ReExecutionStyle} from './RunUtils';
 import {StepSelection} from './StepSelection';
 import {TerminationDialog, TerminationState} from './TerminationDialog';
-import {RunFragment} from './types/RunFragment';
+import {RunFragment} from './types/RunFragments.types';
 
 interface RunActionButtonsProps {
   run: RunFragment;
@@ -106,7 +106,7 @@ export const canRunFromFailure = (run: RunFragment) =>
 export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const {metadata, graph, onLaunch, run} = props;
   const artifactsPersisted = run?.executionPlan?.artifactsPersisted;
-  const {canLaunchPipelineReexecution} = usePermissions();
+  const {canLaunchPipelineReexecution} = usePermissionsDEPRECATED();
   const pipelineError = usePipelineAvailabilityErrorForRun(run);
 
   const selection = stepSelectionWithState(props.selection, metadata);

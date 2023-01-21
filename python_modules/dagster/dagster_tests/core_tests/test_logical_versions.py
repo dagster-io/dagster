@@ -1,5 +1,4 @@
 import pytest
-
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.logical_version import LogicalVersion
 

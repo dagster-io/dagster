@@ -17,6 +17,7 @@ east_unsigned_s3_session = s3_session.configured(
 )
 # end_configured_marker
 
+
 # start_configured_decorator_marker
 @configured(s3_session)
 def west_unsigned_s3_session(_init_context):

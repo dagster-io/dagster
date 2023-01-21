@@ -4,9 +4,10 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 
-import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStatsQuery';
+import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStats.types';
 
 export const RunStats = ({runId}: {runId: string}) => {
   const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {
@@ -55,7 +56,6 @@ const RUN_STATS_QUERY = gql`
   query RunStatsQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       __typename
-      ...PythonErrorFragment
       ... on RunNotFoundError {
         message
       }
@@ -74,8 +74,10 @@ const RUN_STATS_QUERY = gql`
           ...PythonErrorFragment
         }
       }
+      ...PythonErrorFragment
     }
   }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;
 

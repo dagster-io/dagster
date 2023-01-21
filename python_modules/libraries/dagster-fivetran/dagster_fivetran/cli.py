@@ -14,7 +14,10 @@ try:
 except ImportError:
 
     @click.group(
-        help="In order to use managed Fivetran config, the dagster-managed-elements package must be installed."
+        help=(
+            "In order to use managed Fivetran config, the dagster-managed-elements package must be"
+            " installed."
+        )
     )
     def main():
         pass

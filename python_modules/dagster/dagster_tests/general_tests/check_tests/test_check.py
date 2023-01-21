@@ -5,9 +5,8 @@ import sys
 from collections import defaultdict
 from contextlib import contextmanager
 
-import pytest
-
 import dagster._check as check
+import pytest
 from dagster._check import (
     CheckError,
     ElementCheckError,
@@ -385,15 +384,19 @@ def test_two_dim_dict():
 
     with raises_with_message(
         CheckError,
-        "Value in dict mismatches expected type for key int_value. Expected value "
-        "of type <class 'dict'>. Got value 2 of type <class 'int'>.",
+        (
+            "Value in dict mismatches expected type for key int_value. Expected value "
+            "of type <class 'dict'>. Got value 2 of type <class 'int'>."
+        ),
     ):
         check.two_dim_dict_param({"int_value": 2}, "foo")
 
     with raises_with_message(
         CheckError,
-        "Value in dict mismatches expected type for key level_two_value_mismatch. "
-        "Expected value of type <class 'str'>. Got value 2 of type <class 'int'>.",
+        (
+            "Value in dict mismatches expected type for key level_two_value_mismatch. "
+            "Expected value of type <class 'str'>. Got value 2 of type <class 'int'>."
+        ),
     ):
         check.two_dim_dict_param(
             {"level_one_key": {"level_two_value_mismatch": 2}}, "foo", value_type=str
@@ -1107,7 +1110,6 @@ def test_sequence_param():
 
 
 def test_opt_sequence_param():
-
     assert check.opt_sequence_param([], "sequence_param") == []
     assert check.opt_sequence_param(tuple(), "sequence_param") == tuple()
 
@@ -1125,7 +1127,6 @@ def test_opt_sequence_param():
 
 
 def test_opt_nullable_sequence_param():
-
     assert check.opt_nullable_sequence_param([], "sequence_param") == []
     assert check.opt_nullable_sequence_param(tuple(), "sequence_param") == tuple()
 
@@ -1324,6 +1325,42 @@ def test_is_tuple():
 
     with pytest.raises(CheckError, match="Did you pass a class"):
         check.is_tuple((str,), of_type=int)
+
+
+def test_tuple_elem():
+    tuple_value = ("blah", "blahblah")
+    ddict = {"tuplekey": tuple_value, "stringkey": "A", "nonekey": None}
+
+    assert check.tuple_elem(ddict, "tuplekey") == tuple_value
+    assert check.tuple_elem(ddict, "tuplekey", of_type=str) == tuple_value
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "nonekey")
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "nonexistantkey")
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "stringkey")
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "tuplekey", of_type=int)
+
+
+def test_opt_tuple_elem():
+    tuple_value = ("blah", "blahblah")
+    ddict = {"tuplekey": tuple_value, "stringkey": "A", "nonekey": None}
+
+    assert check.opt_tuple_elem(ddict, "tuplekey") == tuple_value
+    assert check.opt_tuple_elem(ddict, "tuplekey", of_type=str) == tuple_value
+    assert check.opt_tuple_elem(ddict, "nonekey") == tuple()
+    assert check.opt_tuple_elem(ddict, "nonexistantkey") == tuple()
+
+    with pytest.raises(CheckError):
+        check.opt_tuple_elem(ddict, "stringkey")
+
+    with pytest.raises(CheckError):
+        check.opt_tuple_elem(ddict, "tuplekey", of_type=int)
 
 
 def test_typed_is_tuple():

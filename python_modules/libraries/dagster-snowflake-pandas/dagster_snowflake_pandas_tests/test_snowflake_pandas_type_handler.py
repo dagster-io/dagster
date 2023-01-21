@@ -7,15 +7,6 @@ from unittest.mock import patch
 
 import pandas
 import pytest
-from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake.resources import SnowflakeConnection
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler, snowflake_pandas_io_manager
-from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
-    _convert_string_to_timestamp,
-    _convert_timestamp_to_string,
-)
-from pandas import DataFrame
-
 from dagster import (
     IOManagerDefinition,
     MetadataValue,
@@ -28,6 +19,14 @@ from dagster import (
     op,
 )
 from dagster._core.storage.db_io_manager import TableSlice
+from dagster_snowflake import build_snowflake_io_manager
+from dagster_snowflake.resources import SnowflakeConnection
+from dagster_snowflake_pandas import SnowflakePandasTypeHandler, snowflake_pandas_io_manager
+from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
+    _convert_string_to_timestamp,
+    _convert_timestamp_to_string,
+)
+from pandas import DataFrame
 
 resource_config = {
     "database": "database_abc",
@@ -149,7 +148,6 @@ def test_io_manager_with_snowflake_pandas():
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str="foo string, quux integer",
     ) as table_name:
-
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
 
@@ -195,7 +193,6 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str="foo string, date TIMESTAMP_NTZ(9)",
     ) as table_name:
-
         time_df = pandas.DataFrame(
             {
                 "foo": ["bar", "baz"],

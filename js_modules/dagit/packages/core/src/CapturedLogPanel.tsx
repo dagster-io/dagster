@@ -6,15 +6,14 @@ import {RawLogContent} from './RawLogContent';
 import {AppContext} from './app/AppContext';
 import {WebSocketContext} from './app/WebSocketProvider';
 import {
+  CapturedLogFragment,
   CapturedLogsMetadataQuery,
   CapturedLogsMetadataQueryVariables,
-} from './types/CapturedLogsMetadataQuery';
-import {CapturedLogsQuery, CapturedLogsQueryVariables} from './types/CapturedLogsQuery';
-import {
+  CapturedLogsQuery,
+  CapturedLogsQueryVariables,
   CapturedLogsSubscription,
   CapturedLogsSubscriptionVariables,
-  CapturedLogsSubscription_capturedLogs,
-} from './types/CapturedLogsSubscription';
+} from './types/CapturedLogPanel.types';
 
 interface CapturedLogProps {
   logKey: string[];
@@ -84,7 +83,7 @@ interface State {
 }
 
 type Action =
-  | {type: 'update'; logData: CapturedLogsSubscription_capturedLogs}
+  | {type: 'update'; logData: CapturedLogFragment}
   | {type: 'metadata'; metadata: any}
   | {type: 'reset'};
 
@@ -121,7 +120,7 @@ const initialState: State = {
 
 const CapturedLogSubscription: React.FC<{
   logKey: string[];
-  onLogData: (logData: CapturedLogsSubscription_capturedLogs) => void;
+  onLogData: (logData: CapturedLogFragment) => void;
 }> = React.memo(({logKey, onLogData}) => {
   useSubscription<CapturedLogsSubscription, CapturedLogsSubscriptionVariables>(
     CAPTURED_LOGS_SUBSCRIPTION,
@@ -141,10 +140,14 @@ const CapturedLogSubscription: React.FC<{
 const CAPTURED_LOGS_SUBSCRIPTION = gql`
   subscription CapturedLogsSubscription($logKey: [String!]!, $cursor: String) {
     capturedLogs(logKey: $logKey, cursor: $cursor) {
-      stdout
-      stderr
-      cursor
+      ...CapturedLog
     }
+  }
+
+  fragment CapturedLog on CapturedLogs {
+    stdout
+    stderr
+    cursor
   }
 `;
 
@@ -175,7 +178,7 @@ const CapturedLogsSubscriptionProvider = ({
     dispatch({type: 'reset'});
   }, [logKeyString]);
 
-  const onLogData = React.useCallback((logData: CapturedLogsSubscription_capturedLogs) => {
+  const onLogData = React.useCallback((logData: CapturedLogFragment) => {
     dispatch({type: 'update', logData});
   }, []);
   return (
@@ -236,7 +239,6 @@ export const CapturedLogPanel: React.FC<CapturedLogProps> = React.memo(
       CAPTURED_LOGS_METADATA_QUERY,
       {
         variables: {logKey},
-        fetchPolicy: 'cache-and-network',
       },
     );
 

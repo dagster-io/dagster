@@ -3,10 +3,11 @@ import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {setHighlightedGanttChartTime} from '../gantt/GanttChart';
+import {LogLevel} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
-import {LogLevel} from '../types/globalTypes';
 
 import {CellTruncationProvider} from './CellTruncationProvider';
 import {
@@ -18,8 +19,7 @@ import {
 } from './LogsRowComponents';
 import {LogsRowStructuredContent} from './LogsRowStructuredContent';
 import {IRunMetadataDict} from './RunMetadataProvider';
-import {LogsRowStructuredFragment} from './types/LogsRowStructuredFragment';
-import {LogsRowUnstructuredFragment} from './types/LogsRowUnstructuredFragment';
+import {LogsRowStructuredFragment, LogsRowUnstructuredFragment} from './types/LogsRow.types';
 
 interface StructuredProps {
   node: LogsRowStructuredFragment;
@@ -187,6 +187,7 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       externalUrl
     }
   }
+
   ${METADATA_ENTRY_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

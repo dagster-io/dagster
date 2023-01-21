@@ -17,7 +17,7 @@ def filter_runs_to_should_retry(
     runs: Sequence[DagsterRun], instance: DagsterInstance, default_max_retries: int
 ) -> Iterator[Tuple[DagsterRun, int]]:
     """
-    Return only runs that should retry along with their retry number (1st retry, 2nd, etc.)
+    Return only runs that should retry along with their retry number (1st retry, 2nd, etc.).
     """
 
     def get_retry_number(run: DagsterRun) -> Optional[int]:
@@ -85,7 +85,7 @@ def retry_run(
     workspace_context: IWorkspaceProcessContext,
 ) -> None:
     """
-    Submit a retry as a re-execute from failure
+    Submit a retry as a re-execute from failure.
     """
     instance = workspace_context.instance
     tags = {RETRY_NUMBER_TAG: str(retry_number)}
@@ -105,7 +105,10 @@ def retry_run(
 
     if not repo_location.has_repository(repo_name):
         instance.report_engine_event(
-            f"Could not find repository {repo_name} in location {repo_location.name}, unable to retry the run. It was likely renamed or deleted.",
+            (
+                f"Could not find repository {repo_name} in location {repo_location.name}, unable to"
+                " retry the run. It was likely renamed or deleted."
+            ),
             failed_run,
         )
         return
@@ -114,7 +117,10 @@ def retry_run(
 
     if not external_repo.has_external_job(failed_run.pipeline_name):
         instance.report_engine_event(
-            f"Could not find job {failed_run.pipeline_name} in repository {repo_name}, unable to retry the run. It was likely renamed or deleted.",
+            (
+                f"Could not find job {failed_run.pipeline_name} in repository {repo_name}, unable"
+                " to retry the run. It was likely renamed or deleted."
+            ),
             failed_run,
         )
         return
@@ -124,9 +130,9 @@ def retry_run(
     strategy = get_reexecution_strategy(failed_run, instance) or DEFAULT_REEXECUTION_POLICY
 
     new_run = instance.create_reexecuted_run(
-        failed_run,
-        repo_location,
-        external_pipeline,
+        parent_run=failed_run,
+        repo_location=repo_location,
+        external_pipeline=external_pipeline,
         strategy=strategy,
         extra_tags=tags,
         use_parent_run_tags=True,
@@ -161,13 +167,11 @@ def consume_new_runs_for_automatic_reexecution(
     it won't create another. The only exception is if the new run gets deleted, in which case we'd
     retry the run again.
     """
-
     for run, retry_number in filter_runs_to_should_retry(
         [cast(DagsterRun, run_record.pipeline_run) for run_record in run_records],
         workspace_process_context.instance,
         workspace_process_context.instance.run_retries_max_retries,
     ):
-
         yield
 
         try:

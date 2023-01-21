@@ -3,11 +3,11 @@ import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
 import {TimezoneProvider} from '../app/time/TimezoneContext';
+import {RunStatus} from '../graphql/types';
 import {TestProvider} from '../testing/TestProvider';
-import {RunStatus} from '../types/globalTypes';
 
 import {RunDetails, RUN_DETAILS_FRAGMENT} from './RunDetails';
-import {RunDetailsTestQuery} from './types/RunDetailsTestQuery';
+import {RunDetailsTestQuery} from './types/RunDetails.test.types';
 
 jest.mock('../app/time/browserTimezone.ts', () => ({
   browserTimezone: () => 'America/Los_Angeles',
@@ -23,6 +23,7 @@ describe('RunDetails', () => {
         }
       }
     }
+
     ${RUN_DETAILS_FRAGMENT}
   `;
 

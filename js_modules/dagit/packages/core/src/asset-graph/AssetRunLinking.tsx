@@ -1,4 +1,4 @@
-import {Colors, Icon, Tooltip, Box, Spinner, Tag, Caption} from '@dagster-io/ui';
+import {Colors, Icon, Tooltip, Box, Spinner, Tag, CaptionMono} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -105,13 +105,11 @@ export const AssetRunLink: React.FC<{
   runId: string;
   event?: Parameters<typeof linkToRunEvent>[1];
 }> = ({runId, children, event}) => (
-  <Caption>
-    <Link
-      to={event ? linkToRunEvent({runId}, event) : `/runs/${runId}`}
-      target="_blank"
-      rel="noreferrer"
-    >
-      {children || titleForRun({runId})}
-    </Link>
-  </Caption>
+  <Link
+    to={event ? linkToRunEvent({runId}, event) : `/runs/${runId}`}
+    target="_blank"
+    rel="noreferrer"
+  >
+    {children || <CaptionMono>{titleForRun({runId})}</CaptionMono>}
+  </Link>
 );

@@ -1,5 +1,5 @@
 import {Box, Caption, Colors, Icon, Mono} from '@dagster-io/ui';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -7,8 +7,10 @@ import styled from 'styled-components/macro';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
 
-import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {AssetObservationFragment} from './types/AssetObservationFragment';
+import {
+  AssetObservationFragment,
+  AssetMaterializationFragment,
+} from './types/useRecentAssetEvents.types';
 
 /**
  * This component shows the metadata entries attached to an Asset Materialization or Observation event.
@@ -65,7 +67,7 @@ export const AssetEventMetadataEntriesTable: React.FC<{
                       </span>
                     </Box>
                     <Caption style={{marginLeft: 24}}>
-                      {` (${moment(Number(obs.timestamp)).from(Number(timestamp), true)} later)`}
+                      {`(${dayjs(obs.timestamp).from(timestamp, true /* withoutSuffix */)} later)`}
                     </Caption>
                     {entry.description}
                   </td>

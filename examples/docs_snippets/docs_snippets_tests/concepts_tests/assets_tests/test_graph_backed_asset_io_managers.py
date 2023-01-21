@@ -1,6 +1,6 @@
 import pytest
 
-from docs_snippets.concepts.assets.graph_backed_asset import my_repo
+from docs_snippets.concepts.assets.graph_backed_asset import defs
 
 
 @pytest.mark.parametrize(
@@ -13,5 +13,5 @@ from docs_snippets.concepts.assets.graph_backed_asset import my_repo
     ],
 )
 def test_jobs(job):
-    job = my_repo.get_job(job)
+    job = defs.get_job_def(job)
     assert job.execute_in_process().success

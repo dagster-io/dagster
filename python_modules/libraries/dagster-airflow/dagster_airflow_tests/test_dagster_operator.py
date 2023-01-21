@@ -4,10 +4,13 @@ from unittest import mock
 
 import pendulum
 import pytest
-from airflow import DAG
-from airflow import __version__ as airflow_version
+from airflow import (
+    DAG,
+    __version__ as airflow_version,
+)
 from airflow.models import Connection, TaskInstance
 from dagster_airflow import DagsterCloudOperator
+
 from dagster_airflow_tests.marks import requires_airflow_db
 
 # pylint: disable=no-name-in-module,import-error

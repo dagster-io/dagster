@@ -18,7 +18,8 @@ def test_string_source():
         'You have attempted to fetch the environment variable "DAGSTER_TEST_ENV_VAR" '
         "which is not set. In order for this execution to succeed it must be set in "
         "this environment."
-    ) in process_config(StringSource, {"env": "DAGSTER_TEST_ENV_VAR"}).errors[0].message
+        in process_config(StringSource, {"env": "DAGSTER_TEST_ENV_VAR"}).errors[0].message
+    )
 
     with environ({"DAGSTER_TEST_ENV_VAR": "baz"}):
         assert process_config(StringSource, {"env": "DAGSTER_TEST_ENV_VAR"}).success
@@ -38,7 +39,8 @@ def test_int_source():
         'You have attempted to fetch the environment variable "DAGSTER_TEST_ENV_VAR" '
         "which is not set. In order for this execution to succeed it must be set in "
         "this environment."
-    ) in process_config(IntSource, {"env": "DAGSTER_TEST_ENV_VAR"}).errors[0].message
+        in process_config(IntSource, {"env": "DAGSTER_TEST_ENV_VAR"}).errors[0].message
+    )
 
     with environ({"DAGSTER_TEST_ENV_VAR": "4"}):
         assert process_config(IntSource, {"env": "DAGSTER_TEST_ENV_VAR"}).success
@@ -49,7 +51,8 @@ def test_int_source():
         assert (
             'Value "four" stored in env variable "DAGSTER_TEST_ENV_VAR" cannot '
             "be coerced into an int."
-        ) in process_config(IntSource, {"env": "DAGSTER_TEST_ENV_VAR"}).errors[0].message
+            in process_config(IntSource, {"env": "DAGSTER_TEST_ENV_VAR"}).errors[0].message
+        )
 
 
 def test_noneable_string_source_array():
@@ -59,11 +62,10 @@ def test_noneable_string_source_array():
         'You have attempted to fetch the environment variable "DAGSTER_TEST_ENV_VAR" '
         "which is not set. In order for this execution to succeed it must be set in "
         "this environment."
-    ) in process_config(
-        Noneable(Array(StringSource)), ["test", {"env": "DAGSTER_TEST_ENV_VAR"}]
-    ).errors[
-        0
-    ].message
+        in process_config(Noneable(Array(StringSource)), ["test", {"env": "DAGSTER_TEST_ENV_VAR"}])
+        .errors[0]
+        .message
+    )
 
     with environ({"DAGSTER_TEST_ENV_VAR": "baz"}):
         assert process_config(
@@ -87,7 +89,8 @@ def test_bool_source():
         'You have attempted to fetch the environment variable "DAGSTER_TEST_ENV_VAR" '
         "which is not set. In order for this execution to succeed it must be set in "
         "this environment."
-    ) in process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).errors[0].message
+        in process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).errors[0].message
+    )
 
     with environ({"DAGSTER_TEST_ENV_VAR": ""}):
         assert process_config(BoolSource, {"env": "DAGSTER_TEST_ENV_VAR"}).success

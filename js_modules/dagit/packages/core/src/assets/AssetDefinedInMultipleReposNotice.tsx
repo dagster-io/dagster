@@ -12,7 +12,7 @@ import {AssetKey} from './types';
 import {
   AssetDefinitionCollisionQuery,
   AssetDefinitionCollisionQueryVariables,
-} from './types/AssetDefinitionCollisionQuery';
+} from './types/AssetDefinedInMultipleReposNotice.types';
 
 export const MULTIPLE_DEFINITIONS_WARNING = 'Multiple asset definitions found';
 
@@ -23,7 +23,9 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
 }> = ({assetKey, loadedFromRepo, padded}) => {
   const {data} = useQuery<AssetDefinitionCollisionQuery, AssetDefinitionCollisionQueryVariables>(
     ASSET_DEFINITION_COLLISION_QUERY,
-    {variables: {assetKeys: [{path: assetKey.path}]}},
+    {
+      variables: {assetKeys: [{path: assetKey.path}]},
+    },
   );
 
   const collision = data?.assetNodeDefinitionCollisions[0];

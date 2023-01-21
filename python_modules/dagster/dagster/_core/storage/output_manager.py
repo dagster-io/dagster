@@ -11,7 +11,8 @@ class IOutputManagerDefinition:
     @abstractmethod
     def output_config_schema(self):
         """The schema for per-output configuration for outputs that are managed by this
-        manager"""
+        manager.
+        """
 
 
 class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
@@ -45,7 +46,7 @@ class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
     def output_config_schema(self):
         return self._output_config_schema
 
-    def copy_for_configured(self, description, config_schema, _):
+    def copy_for_configured(self, description, config_schema):
         return OutputManagerDefinition(
             config_schema=config_schema,
             description=description or self.description,

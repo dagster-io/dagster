@@ -2,15 +2,13 @@ import datetime
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 
-from dagster_graphql.implementation.loader import (
-    CrossRepoAssetDependedByLoader,
-    ProjectedLogicalVersionLoader,
-)
-from dagster_graphql.schema.util import HasContext
-
 import dagster._seven as seven
-from dagster import AssetKey, DagsterEventType, EventRecordsFilter
-from dagster import _check as check
+from dagster import (
+    AssetKey,
+    DagsterEventType,
+    EventRecordsFilter,
+    _check as check,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.events import ASSET_EVENTS
@@ -23,11 +21,20 @@ from dagster._core.host_representation.repository_location import RepositoryLoca
 from dagster._core.storage.tags import get_dimension_from_partition_tag
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
+from dagster_graphql.implementation.loader import (
+    CrossRepoAssetDependedByLoader,
+    ProjectedLogicalVersionLoader,
+)
+
+if TYPE_CHECKING:
+    pass
+
 from .utils import capture_error
 
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
+    from ..schema.util import HasContext
 
 
 def _normalize_asset_cursor_str(cursor_string):
@@ -86,7 +93,9 @@ def asset_node_iter(
                 yield location, repository, external_asset_node
 
 
-def get_asset_node_definition_collisions(graphene_info: HasContext, asset_keys: Sequence[AssetKey]):
+def get_asset_node_definition_collisions(
+    graphene_info: "HasContext", asset_keys: Sequence[AssetKey]
+):
     from ..schema.asset_graph import GrapheneAssetNodeDefinitionCollision
     from ..schema.external import GrapheneRepository
 
@@ -126,7 +135,6 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
     If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
     """
-
     from ..schema.asset_graph import GrapheneAssetNode
 
     depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
@@ -396,22 +404,14 @@ def get_freshness_info(
         asset_graph=asset_graph, record=latest_record
     )
 
-    # in the future, if you have upstream source assets with versioning policies, available data
-    # times will be based off of the timestamp of the most recent materializations.
     current_minutes_late = freshness_policy.minutes_late(
         evaluation_time=current_time,
         used_data_times=used_data_times,
-        available_data_times={
-            # assume materializing an asset at time T will update the data time of that asset to T
-            key: current_time
-            for key in used_data_times.keys()
-        },
     )
 
     latest_materialization_minutes_late = freshness_policy.minutes_late(
         evaluation_time=latest_materialization_time,
         used_data_times=used_data_times,
-        available_data_times={key: latest_materialization_time for key in used_data_times.keys()},
     )
 
     return GrapheneAssetFreshnessInfo(
@@ -428,7 +428,7 @@ def unique_repos(external_repositories):
             external_repository.handle.location_name,
             external_repository.name,
         )
-        if not repo_id in used:
+        if repo_id not in used:
             used.add(repo_id)
             repos.append(external_repository)
 

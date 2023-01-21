@@ -1,8 +1,9 @@
-Versioning and Memoization (Experimental)
-=========================================
+Job-Level Versioning and Memoization (Deprecated)
+=================================================
 
-Dagster allows for code versioning and memoization of previous outputs based upon that versioning.
-Listed here are APIs related to versioning and memoization.
+Dagster has deprecated functionality that allows for job-level code versioning and memoization of previous op outputs based upon that versioning.
+
+This is currently deprecated in favor of `asset versioning </concepts/assets/software-defined-assets#asset-code-versions>`_.
 
 .. currentmodule:: dagster
 

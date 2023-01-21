@@ -72,8 +72,8 @@ def inner_plan_execution_iterator(
                 check.invariant(
                     len(missing_resources) == 0,
                     (
-                        "Expected step context for solid {solid_name} to have all required resources, but "
-                        "missing {missing_resources}."
+                        "Expected step context for solid {solid_name} to have all required"
+                        " resources, but missing {missing_resources}."
                     ).format(
                         solid_name=step_context.solid.name, missing_resources=missing_resources
                     ),
@@ -155,7 +155,7 @@ def _handle_compute_log_teardown_error(context, exc_info):
 def _trigger_hook(
     step_context: StepExecutionContext, step_event_list: Sequence[DagsterEvent]
 ) -> Iterator[DagsterEvent]:
-    """Trigger hooks and record hook's operatonal events"""
+    """Trigger hooks and record hook's operatonal events."""
     hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.solid_handle)
     # when the solid doesn't have a hook configured
     if hook_defs is None:
@@ -253,7 +253,6 @@ def dagster_event_sequence_for_step(
     of launching steps that then launch steps, and so on, the remote process will run this with
     the force_local_execution argument set to True.
     """
-
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
     try:

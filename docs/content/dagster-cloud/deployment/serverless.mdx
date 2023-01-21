@@ -199,6 +199,67 @@ To build and upload the image, use the command line:
        --base-image-tag sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
      ```
 
+### Disabling PEX-based deploys
+
+Prior to using PEX files, Dagster Cloud deployed code using Docker images. This feature is still available. To deploy using a Docker image instead of PEX:
+
+- **With GitHub**: Delete the `ENABLE_FAST_DEPLOYS: 'true'` line in your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
+
+  ```yaml
+  env:
+    DAGSTER_CLOUD_URL: ...
+    DAGSTER_CLOUD_API_TOKEN: ...
+    # ENABLE_FAST_DEPLOYS: 'true' # disabled
+  ```
+
+- **With the CLI**: Use the `deploy` command instead of the `deploy-python-executable` command:
+
+  ```shell
+  dagster-cloud serverless deploy \
+    --location-name example \
+    --package-name assets_modern_data_stack
+  ```
+
+The Docker image deployed can be customized using either lifecycle hooks or customizing the base image.
+
+<TabGroup>
+<TabItem name="Use lifecycle hooks">
+
+This method is the easiest to set up, and does not require setting up any additional infrastructure.
+
+In the root of your repo, you can provide two optional shell scripts: `dagster_cloud_pre_install.sh` and `dagster_cloud_post_install.sh`. These will run before and after Python dependencies are installed. They are useful for installing any non-Python dependencies or otherwise configuring your environment.
+
+</TabItem>
+<TabItem name="Change the base image">
+
+This method is the most flexible, but requires setting up a pipeline outside of Dagster to build a custom base image.
+
+The default base image is `debian:bullseye-slim`, but it can be changed.
+
+- **With GitHub**: Provide a `base_image` input parameter to the **Build and deploy** step in your GitHub Actions configuration (usually at `.github/workflows/deploy.yml`):
+
+  ```yaml
+  - name: Build and deploy to Dagster Cloud serverless
+    uses: dagster-io/dagster-cloud-action/actions/serverless_prod_deploy@v0.1
+    with:
+      dagster_cloud_api_token: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+      location: ${{ toJson(matrix.location) }}
+      # Use a custom base image
+      base_image: "my_base_image:latest"
+      organization_id: ${{ secrets.ORGANIZATION_ID }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  ```
+
+- **With the CLI**: Add the `--base-image` CLI argument to the deploy command to specify the registry path to the desired base image:
+
+  ```shell
+  dagster-cloud serverless deploy --location-name=my_location --base-image=my_base_image:latest
+  ```
+
+</TabItem>
+</TabGroup>
+
 ---
 
 ## Transitioning to Hybrid

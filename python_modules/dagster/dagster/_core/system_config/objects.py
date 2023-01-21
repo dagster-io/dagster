@@ -226,7 +226,6 @@ class ResolvedRunConfig(
         )
 
     def to_dict(self) -> Mapping[str, Mapping[str, object]]:
-
         env_dict: Dict[str, Mapping[str, object]] = {}
 
         solid_configs: Dict[str, object] = {}
@@ -276,8 +275,8 @@ def config_map_resources(
 ) -> Mapping[str, ResourceConfig]:
     """This function executes the config mappings for resources with respect to ConfigurableDefinition.
     It iterates over resource_defs and looks up the corresponding config because resources need to
-    be mapped regardless of whether they receive config from run_config."""
-
+    be mapped regardless of whether they receive config from run_config.
+    """
     config_mapped_resource_configs = {}
     for resource_key, resource_def in resource_defs.items():
         resource_config = resource_configs.get(resource_key, {})
@@ -353,8 +352,8 @@ def config_map_objects(
     """This function executes the config mappings for executors definitions with respect to
     ConfigurableDefinition. It calls the ensure_single_item macro on the incoming config and then
     applies config mapping to the result and the first executor_def with the same name on
-    the mode_def."""
-
+    the mode_def.
+    """
     config = config_value.get(keyed_by)
 
     check.opt_mapping_param(config, "config", key_type=str)

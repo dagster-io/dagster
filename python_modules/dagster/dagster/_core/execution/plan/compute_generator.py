@@ -1,10 +1,23 @@
 import inspect
 import warnings
 from functools import wraps
-from typing import Any, Generator, Iterator, Sequence, Tuple, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Iterator,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from typing_extensions import get_args
 
+from dagster._config.structured_config import Config
 from dagster._core.definitions import (
     AssetMaterialization,
     DynamicOutput,
@@ -31,6 +44,8 @@ def create_solid_compute_wrapper(solid_def: OpDefinition):
     input_defs = solid_def.input_defs
     output_defs = solid_def.output_defs
     context_arg_provided = compute_fn.has_context_arg()
+    config_arg_cls = compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
+    resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
 
     input_names = [
         input_def.name
@@ -39,7 +54,7 @@ def create_solid_compute_wrapper(solid_def: OpDefinition):
     ]
 
     @wraps(fn)
-    def compute(context, input_defs) -> Generator[Output, None, None]:
+    def compute(context: OpExecutionContext, input_defs) -> Generator[Output, None, None]:
         kwargs = {}
         for input_name in input_names:
             kwargs[input_name] = input_defs[input_name]
@@ -50,7 +65,9 @@ def create_solid_compute_wrapper(solid_def: OpDefinition):
             or inspect.iscoroutinefunction(fn)
         ):
             # safe to execute the function, as doing so will not immediately execute user code
-            result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
+            result = invoke_compute_fn(
+                fn, context, kwargs, context_arg_provided, config_arg_cls, resource_arg_mapping
+            )
             if inspect.iscoroutine(result):
                 return _coerce_async_solid_to_async_gen(result, context, output_defs)
             # already a generator
@@ -59,7 +76,13 @@ def create_solid_compute_wrapper(solid_def: OpDefinition):
             # we have a regular function, do not execute it before we are in an iterator
             # (as we want all potential failures to happen inside iterators)
             return _coerce_solid_compute_fn_to_iterator(
-                fn, output_defs, context, context_arg_provided, kwargs
+                fn,
+                output_defs,
+                context,
+                context_arg_provided,
+                kwargs,
+                config_arg_cls,
+                resource_arg_mapping,
             )
 
     return compute
@@ -71,8 +94,33 @@ async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
         yield event
 
 
-def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_provided, kwargs):
-    result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
+def invoke_compute_fn(
+    fn: Callable,
+    context: OpExecutionContext,
+    kwargs: Dict[str, Any],
+    context_arg_provided: bool,
+    config_arg_cls: Optional[Type[Config]],
+    resource_args: Optional[Dict[str, str]] = None,
+) -> Any:
+    args_to_pass = kwargs
+    if config_arg_cls:
+        # config_arg_cls is either a Config class or a primitive type
+        if issubclass(config_arg_cls, Config):
+            args_to_pass["config"] = config_arg_cls(**context.op_config)
+        else:
+            args_to_pass["config"] = context.op_config
+    if resource_args:
+        for resource_name, arg_name in resource_args.items():
+            args_to_pass[arg_name] = getattr(context.resources, resource_name)
+    return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
+
+
+def _coerce_solid_compute_fn_to_iterator(
+    fn, output_defs, context, context_arg_provided, kwargs, config_arg_class, resource_arg_mapping
+):
+    result = invoke_compute_fn(
+        fn, context, kwargs, context_arg_provided, config_arg_class, resource_arg_mapping
+    )
     for event in validate_and_coerce_op_result_to_iterator(result, context, output_defs):
         yield event
 
@@ -148,7 +196,7 @@ def validate_and_coerce_op_result_to_iterator(
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: If you are "
             "returning an AssetMaterialization "
-            f"or an ExpectationResult from "
+            "or an ExpectationResult from "
             f"{context.op_def.node_type_str} you must yield them "
             "directly, or log them using the OpExecutionContext.log_event method to avoid "
             "ambiguity with an implied result from returning a "
@@ -157,9 +205,9 @@ def validate_and_coerce_op_result_to_iterator(
         )
     elif result is not None and not output_defs:
         raise DagsterInvariantViolationError(
-            f"Error in {context.describe_op()}: Unexpectedly returned output of "
-            f"type {type(result)}. {context.op_def.node_type_str.capitalize()} is explicitly defined to return no "
-            "results."
+            f"Error in {context.describe_op()}: Unexpectedly returned output of type"
+            f" {type(result)}. {context.op_def.node_type_str.capitalize()} is explicitly defined to"
+            " return no results."
         )
     elif output_defs:
         for position, output_def, element in _zip_and_iterate_solid_result(
@@ -199,7 +247,9 @@ def validate_and_coerce_op_result_to_iterator(
                     annotation
                 ):
                     raise DagsterInvariantViolationError(
-                        f"Error with output for {context.describe_op()}: received Output object for output '{output_def.name}' which does not have an Output annotation. Annotation has type {annotation}."
+                        f"Error with output for {context.describe_op()}: received Output object for"
+                        f" output '{output_def.name}' which does not have an Output annotation."
+                        f" Annotation has type {annotation}."
                     )
                 output = cast(Output, element)
                 _check_output_object_name(output, output_def, position)

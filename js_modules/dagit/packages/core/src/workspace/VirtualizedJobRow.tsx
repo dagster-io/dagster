@@ -17,7 +17,7 @@ import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 import {CaptionText, LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {buildPipelineSelector} from './WorkspaceContext';
 import {RepoAddress} from './types';
-import {SingleJobQuery, SingleJobQueryVariables} from './types/SingleJobQuery';
+import {SingleJobQuery, SingleJobQueryVariables} from './types/VirtualizedJobRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS = '1.5fr 1fr 180px 96px 80px';
@@ -36,7 +36,6 @@ export const VirtualizedJobRow = (props: JobRowProps) => {
   const [queryJob, queryResult] = useLazyQuery<SingleJobQuery, SingleJobQueryVariables>(
     SINGLE_JOB_QUERY,
     {
-      fetchPolicy: 'cache-and-network',
       variables: {
         selector: buildPipelineSelector(repoAddress, name),
       },

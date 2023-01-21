@@ -20,7 +20,7 @@ from dagster._core.definitions.resource_definition import (
 if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext
 
-InputLoadFn: TypeAlias = Callable[["InputContext", object], object]
+InputLoadFn: TypeAlias = Callable[["InputContext"], object]
 
 
 class InputManager(ABC):
@@ -45,7 +45,8 @@ class IInputManagerDefinition:
     @abstractmethod
     def input_config_schema(self) -> IDefinitionConfigSchema:
         """The schema for per-input configuration for inputs that are managed by this
-        input manager"""
+        input manager.
+        """
 
 
 class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
@@ -85,7 +86,9 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         return self._input_config_schema
 
     def copy_for_configured(
-        self, description: Optional[str], config_schema: CoercableToConfigSchema, _
+        self,
+        description: Optional[str],
+        config_schema: CoercableToConfigSchema,
     ) -> "InputManagerDefinition":
         return InputManagerDefinition(
             config_schema=config_schema,
@@ -149,7 +152,6 @@ def input_manager(
         def csv_loader(context):
             return read_csv(context.config["path"])
     """
-
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         return _InputManagerDecoratorCallable()(config_schema)
 
@@ -169,13 +171,13 @@ class InputManagerWrapper(InputManager):
     def __init__(self, load_fn):
         self._load_fn = load_fn
 
-    def load_input(self, context):
+    def load_input(self, context: "InputContext") -> object:
         # the @input_manager decorated function (self._load_fn) may return a direct value that
         # should be used or an instance of an InputManager. So we call self._load_fn and see if the
         # result is an InputManager. If so we call it's load_input method
         intermediate = (
             # type-ignore because function being used as attribute
-            self._load_fn(context)
+            self._load_fn(context)  # type: ignore  # fmt: skip
             if is_context_provided(self._load_fn)
             else self._load_fn()  # type: ignore
         )

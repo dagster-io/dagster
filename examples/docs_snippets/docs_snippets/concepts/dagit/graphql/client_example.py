@@ -60,6 +60,7 @@ except DagsterGraphQLClientError as exc:
 
 # start_run_status_marker
 from dagster_graphql import DagsterGraphQLClientError
+
 from dagster import DagsterRunStatus
 
 try:
@@ -75,10 +76,7 @@ except DagsterGraphQLClientError as exc:
 
 
 # start_reload_repo_location_marker
-from dagster_graphql import (
-    ReloadRepositoryLocationInfo,
-    ReloadRepositoryLocationStatus,
-)
+from dagster_graphql import ReloadRepositoryLocationInfo, ReloadRepositoryLocationStatus
 
 reload_info: ReloadRepositoryLocationInfo = client.reload_repository_location(REPO_NAME)
 if reload_info.status == ReloadRepositoryLocationStatus.SUCCESS:

@@ -14,7 +14,6 @@ def repo_fixture(tmpdir):
     └── foo/
         └── foo.txt
     """
-
     root = (tmpdir / "repo").mkdir()
     with root.as_cwd():
         subprocess.call(["git", "init", "-q"])

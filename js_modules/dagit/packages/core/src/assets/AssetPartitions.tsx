@@ -2,24 +2,25 @@ import {Box, Colors, Icon, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {PartitionRangeWizard} from '../partitions/PartitionRangeWizard';
+import {RepositorySelector} from '../graphql/types';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
-import {RepositorySelector} from '../types/globalTypes';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
 import {AssetViewParams} from './AssetView';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunsSinceMaterializationBanner} from './FailedRunsSinceMaterializationBanner';
-import {explodePartitionKeysInRanges, isTimeseriesDimension} from './MultipartitioningSupport';
+import {explodePartitionKeysInSelection, isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
-import {usePartitionDimensionRanges} from './usePartitionDimensionRanges';
-import {PartitionHealthDimensionRange, usePartitionHealthData} from './usePartitionHealthData';
+import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
+import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
 
 interface Props {
   assetKey: AssetKey;
-  assetPartitionNames?: string[];
+  assetPartitionDimensions?: string[];
   liveData?: LiveDataForNode;
   params: AssetViewParams;
   paramsTimeWindowOnly: boolean;
@@ -33,32 +34,40 @@ interface Props {
   opName?: string | null;
 }
 
+const DISPLAYED_STATES = [PartitionState.MISSING, PartitionState.SUCCESS];
+
 export const AssetPartitions: React.FC<Props> = ({
   assetKey,
-  assetPartitionNames,
+  assetPartitionDimensions,
   assetLastMaterializedAt,
   params,
   setParams,
   liveData,
 }) => {
   const [assetHealth] = usePartitionHealthData([assetKey], assetLastMaterializedAt);
-  const [ranges, setRanges] = usePartitionDimensionRanges(assetHealth, assetPartitionNames);
+  const [ranges, setRanges] = usePartitionDimensionSelections({
+    knownDimensionNames: assetPartitionDimensions,
+    modifyQueryString: true,
+    assetHealth,
+  });
 
-  const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
-    PartitionState.MISSING,
-    PartitionState.SUCCESS,
-  ]);
+  const [stateFilters, setStateFilters] = useQueryPersistedState<PartitionState[]>({
+    defaults: {states: [...DISPLAYED_STATES].sort().join(',')},
+    encode: (val) => ({states: [...val].sort().join(',')}),
+    decode: (qs) =>
+      (qs.states || '').split(',').filter((s: PartitionState) => DISPLAYED_STATES.includes(s)),
+  });
 
   const timeRangeIdx = ranges.findIndex((r) => isTimeseriesDimension(r.dimension));
   const timeRange = timeRangeIdx !== -1 ? ranges[timeRangeIdx] : null;
 
-  const allInRanges = React.useMemo(() => {
-    return assetHealth ? explodePartitionKeysInRanges(ranges, assetHealth.stateForKey) : [];
+  const keysInSelection = React.useMemo(() => {
+    return assetHealth ? explodePartitionKeysInSelection(ranges, assetHealth.stateForKey) : [];
   }, [ranges, assetHealth]);
 
-  const allSelected = React.useMemo(
-    () => allInRanges.filter((p) => stateFilters.includes(p.state)),
-    [allInRanges, stateFilters],
+  const keysFiltered = React.useMemo(
+    () => keysInSelection.filter((p) => stateFilters.includes(p.state)),
+    [keysInSelection, stateFilters],
   );
 
   const focusedDimensionKeys = params.partition
@@ -67,11 +76,13 @@ export const AssetPartitions: React.FC<Props> = ({
       : [params.partition] // "|" character is allowed in 1D partition keys for historical reasons
     : [];
 
-  const dimensionKeysOrdered = (range: PartitionHealthDimensionRange) => {
-    return isTimeseriesDimension(range.dimension) ? [...range.selected].reverse() : range.selected;
+  const dimensionKeysOrdered = (range: PartitionDimensionSelection) => {
+    return isTimeseriesDimension(range.dimension)
+      ? [...range.selectedKeys].reverse()
+      : range.selectedKeys;
   };
-  const dimensionRowsForRange = (range: PartitionHealthDimensionRange, idx: number) => {
-    if (timeRange && timeRange.selected.length === 0) {
+  const dimensionRowsForRange = (range: PartitionDimensionSelection, idx: number) => {
+    if (timeRange && timeRange.selectedKeys.length === 0) {
       return [];
     }
     return dimensionKeysOrdered(range)
@@ -85,7 +96,7 @@ export const AssetPartitions: React.FC<Props> = ({
             : assetHealth.stateForSingleDimension(
                 idx,
                 dimensionKey,
-                range !== timeRange ? timeRange?.selected : undefined,
+                range !== timeRange ? timeRange?.selectedKeys : undefined,
               );
 
         return {dimensionKey, state};
@@ -115,14 +126,14 @@ export const AssetPartitions: React.FC<Props> = ({
           padding={{vertical: 16, horizontal: 24}}
           border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         >
-          <PartitionRangeWizard
+          <DimensionRangeWizard
             partitionKeys={timeRange.dimension.partitionKeys}
             partitionStateForKey={(dimensionKey) =>
               assetHealth.stateForSingleDimension(timeRangeIdx, dimensionKey)
             }
-            selected={timeRange.selected}
-            setSelected={(selected) =>
-              setRanges(ranges.map((r) => (r === timeRange ? {...r, selected} : r)))
+            selected={timeRange.selectedKeys}
+            setSelected={(selectedKeys) =>
+              setRanges(ranges.map((r) => (r === timeRange ? {...r, selectedKeys} : r)))
             }
           />
         </Box>
@@ -133,9 +144,9 @@ export const AssetPartitions: React.FC<Props> = ({
         flex={{direction: 'row', justifyContent: 'space-between'}}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       >
-        <div>{allSelected.length.toLocaleString()} Partitions Selected</div>
+        <div>{keysFiltered.length.toLocaleString()} Partitions Selected</div>
         <PartitionStateCheckboxes
-          partitionKeysForCounts={allInRanges}
+          partitionKeysForCounts={keysInSelection}
           allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
           value={stateFilters}
           onChange={setStateFilters}

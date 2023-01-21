@@ -12,7 +12,7 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
 )
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 
 class TestStepHandler(StepHandler):
@@ -25,7 +25,6 @@ class TestStepHandler(StepHandler):
         return "TestStepHandler"
 
     def launch_step(self, step_handler_context):
-
         assert step_handler_context.execute_step_args.step_keys_to_execute == ["retry_op"]
 
         attempt_count = (
@@ -51,7 +50,6 @@ class TestStepHandler(StepHandler):
         return iter(())
 
     def check_step_health(self, step_handler_context) -> CheckStepHealthResult:
-
         assert step_handler_context.execute_step_args.step_keys_to_execute == ["retry_op"]
 
         attempt_count = (

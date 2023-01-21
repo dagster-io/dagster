@@ -1,7 +1,6 @@
 from typing import Tuple
 
 import pytest
-
 from dagster import DagsterTypeCheckDidNotPass, In, Out, op
 from dagster._core.types.python_tuple import create_typed_tuple
 from dagster._legacy import execute_solid

@@ -3,13 +3,17 @@ import uniq from 'lodash/uniq';
 import React from 'react';
 
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {AssetKeyInput} from '../graphql/types';
 import {useDidLaunchEvent} from '../runs/RunUtils';
-import {AssetKeyInput} from '../types/globalTypes';
 
 import {ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
 import {buildLiveData, tokenForAssetKey} from './Utils';
-import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
-import {AssetLiveRunLogsSubscription} from './types/AssetLiveRunLogsSubscription';
+import {
+  AssetGraphLiveQuery,
+  AssetGraphLiveQueryVariables,
+  AssetLiveRunLogsSubscription,
+  AssetLiveRunLogsSubscriptionVariables,
+} from './types/useLiveDataForAssetKeys.types';
 
 const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
@@ -119,39 +123,42 @@ const RunLogObserver: React.FC<{
     return () => console.log(`Unsubscribed from ${runId} after ${counter.current} messages`);
   }, [runId]);
 
-  useSubscription<AssetLiveRunLogsSubscription>(ASSET_LIVE_RUN_LOGS_SUBSCRIPTION, {
-    fetchPolicy: 'no-cache',
-    variables: {runId},
-    onSubscriptionData: (data) => {
-      const logs = data.subscriptionData.data?.pipelineRunLogs;
-      if (logs?.__typename !== 'PipelineRunLogsSubscriptionSuccess') {
-        return;
-      }
+  useSubscription<AssetLiveRunLogsSubscription, AssetLiveRunLogsSubscriptionVariables>(
+    ASSET_LIVE_RUN_LOGS_SUBSCRIPTION,
+    {
+      fetchPolicy: 'no-cache',
+      variables: {runId},
+      onSubscriptionData: (data) => {
+        const logs = data.subscriptionData.data?.pipelineRunLogs;
+        if (logs?.__typename !== 'PipelineRunLogsSubscriptionSuccess') {
+          return;
+        }
 
-      counter.current += logs.messages.length;
+        counter.current += logs.messages.length;
 
-      if (
-        logs.messages.some((m) => {
-          if (
-            m.__typename === 'AssetMaterializationPlannedEvent' ||
-            m.__typename === 'MaterializationEvent' ||
-            m.__typename === 'ObservationEvent'
-          ) {
-            return m.assetKey && assetKeyTokens.has(tokenForAssetKey(m.assetKey));
-          }
-          if (
-            m.__typename === 'ExecutionStepFailureEvent' ||
-            m.__typename === 'ExecutionStepStartEvent'
-          ) {
-            return m.stepKey && assetStepKeys.has(m.stepKey);
-          }
-          return false;
-        })
-      ) {
-        callback();
-      }
+        if (
+          logs.messages.some((m) => {
+            if (
+              m.__typename === 'AssetMaterializationPlannedEvent' ||
+              m.__typename === 'MaterializationEvent' ||
+              m.__typename === 'ObservationEvent'
+            ) {
+              return m.assetKey && assetKeyTokens.has(tokenForAssetKey(m.assetKey));
+            }
+            if (
+              m.__typename === 'ExecutionStepFailureEvent' ||
+              m.__typename === 'ExecutionStepStartEvent'
+            ) {
+              return m.stepKey && assetStepKeys.has(m.stepKey);
+            }
+            return false;
+          })
+        ) {
+          callback();
+        }
+      },
     },
-  });
+  );
 
   return <span />;
 });
@@ -164,9 +171,15 @@ export const ASSET_LATEST_INFO_FRAGMENT = gql`
     unstartedRunIds
     inProgressRunIds
     latestRun {
-      status
       id
+      ...AssetLatestInfoRun
     }
+  }
+
+  fragment AssetLatestInfoRun on Run {
+    status
+    endTime
+    id
   }
 `;
 

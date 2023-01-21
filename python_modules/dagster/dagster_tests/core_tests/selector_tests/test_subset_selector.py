@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import In, asset, define_asset_job, in_process_executor, job, op, repository
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
@@ -42,7 +41,7 @@ def add_one(num):
 def foo_job():
     """
     return_one ---> add_nums --> multiply_two --> add_one
-    return_two --|
+    return_two --|.
     """
     add_one(multiply_two(add_nums(return_one(), return_two())))
 
@@ -145,7 +144,6 @@ def test_parse_solid_selection_multi():
 
 
 def test_parse_solid_selection_invalid():
-
     with pytest.raises(
         DagsterInvalidSubsetError,
         match="No qualified ops to execute found for op_selection",
@@ -246,7 +244,6 @@ def test_parse_step_selection_multi():
 
 
 def test_parse_step_selection_invalid():
-
     with pytest.raises(
         DagsterInvalidSubsetError,
         match="No qualified steps to execute found for step_selection",
@@ -256,7 +253,7 @@ def test_parse_step_selection_invalid():
 
 @asset
 def my_asset(context):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return 1
 
 

@@ -80,6 +80,10 @@ export default ({setCodeBlockStats: setCodeBlockStats}: CodeTransformerOptions) 
           metaOptions.endbefore,
         );
 
+        // remove pragmas
+        contentWithLimit = contentWithLimit.replace(/^\s*# (type|noqa):.*$/g, '');
+        contentWithLimit = contentWithLimit.replace(/  # (type|noqa):.*$/g, '');
+
         if (metaOptions.trim) {
           contentWithLimit = contentWithLimit.trim();
         }

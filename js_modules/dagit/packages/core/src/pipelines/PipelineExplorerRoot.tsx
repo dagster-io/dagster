@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
@@ -26,7 +26,7 @@ import {ExplorerPath, explorerPathFromString, explorerPathToString} from './Pipe
 import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
-} from './types/PipelineExplorerRootQuery';
+} from './types/PipelineExplorerRoot.types';
 
 export const PipelineExplorerSnapshotRoot = () => {
   useTrackPageView();
@@ -157,8 +157,6 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
         metadataEntries {
           ...MetadataEntryFragment
         }
-        ...GraphExplorerFragment
-
         solidHandle(handleID: $rootHandleID) {
           ...GraphExplorerSolidHandleFragment
         }
@@ -175,6 +173,7 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
           }
           ...GraphExplorerSolidHandleFragment
         }
+        ...GraphExplorerFragment
       }
       ... on PipelineNotFoundError {
         message
@@ -185,6 +184,7 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
   }
+
   ${METADATA_ENTRY_FRAGMENT}
   ${GRAPH_EXPLORER_FRAGMENT}
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}

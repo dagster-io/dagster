@@ -13,7 +13,7 @@ import {RepoAddress} from './types';
 import {
   RepositoryGraphsListQuery,
   RepositoryGraphsListQueryVariables,
-} from './types/RepositoryGraphsListQuery';
+} from './types/RepositoryGraphsList.types';
 import {workspacePath} from './workspacePath';
 
 const REPOSITORY_GRAPHS_LIST_QUERY = gql`
@@ -77,7 +77,6 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
     RepositoryGraphsListQuery,
     RepositoryGraphsListQueryVariables
   >(REPOSITORY_GRAPHS_LIST_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {repositorySelector},
   });
 

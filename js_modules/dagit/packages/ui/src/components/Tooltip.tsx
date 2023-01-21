@@ -9,16 +9,20 @@ import {FontFamily} from './styles';
 
 export const GlobalTooltipStyle = createGlobalStyle`
   .dagit-tooltip .bp3-popover2-content {
-      background: ${Colors.Gray900};
       font-family: ${FontFamily.default};
       font-size: 12px;
       line-height: 16px;
+      background: ${Colors.Gray900};
       color: ${Colors.Gray50};
       padding: 8px 16px;
   }
 
   .block-tooltip.bp3-popover2-target {
     display: block;
+  }
+
+  .dagit-tooltip-bare .bp3-popover2-content {
+    padding: 0;
   }
 `;
 

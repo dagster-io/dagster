@@ -2,9 +2,6 @@ import os
 import pickle
 import uuid
 
-import dagstermill
-from dagstermill.io_managers import local_output_notebook_io_manager
-
 from dagster import (
     AssetIn,
     AssetSelection,
@@ -29,6 +26,9 @@ from dagster import (
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
+import dagstermill
+from dagstermill.io_managers import local_output_notebook_io_manager
+
 try:
     from dagster_pandas import DataFrame
 
@@ -37,14 +37,14 @@ except ImportError:
     DAGSTER_PANDAS_PRESENT = False
 
 try:
-    import sklearn as _
+    import sklearn  # noqa: F401
 
     SKLEARN_PRESENT = True
 except ImportError:
     SKLEARN_PRESENT = False
 
 try:
-    import matplotlib as _
+    import matplotlib  # noqa: F401
 
     MATPLOTLIB_PRESENT = True
 except ImportError:
@@ -261,7 +261,6 @@ def error_job():
 
 
 if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
-
     clean_data = test_nb_op("clean_data", outs={DEFAULT_OUTPUT: Out(DataFrame)})
 
     # FIXME add an output to this

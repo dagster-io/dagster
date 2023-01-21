@@ -8,7 +8,7 @@ import {AssetGraphQueryItem, calculateGraphDistances} from '../asset-graph/useAs
 import {AssetLineageScope, AssetNodeLineageGraph} from './AssetNodeLineageGraph';
 import {AssetViewParams} from './AssetView';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
+import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 export const AssetNodeLineage: React.FC<{
   params: AssetViewParams;

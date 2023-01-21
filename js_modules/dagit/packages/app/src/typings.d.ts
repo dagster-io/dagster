@@ -36,3 +36,13 @@ declare module 'worker-loader!*' {
   // eslint-disable-next-line import/no-default-export
   export default WebpackWorker;
 }
+
+declare namespace Intl {
+  type Key = 'calendar' | 'collation' | 'currency' | 'numberingSystem' | 'timeZone' | 'unit';
+
+  function supportedValuesOf(input: Key): string[];
+
+  interface Locale extends LocaleOptions {
+    timeZones: string[];
+  }
+}

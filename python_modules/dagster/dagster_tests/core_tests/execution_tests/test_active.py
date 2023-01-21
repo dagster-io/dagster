@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import job, op
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, DagsterEventType

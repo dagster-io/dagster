@@ -10,7 +10,7 @@ import {
   LiveData,
   toGraphId,
 } from '../asset-graph/Utils';
-import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
+import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -28,14 +28,16 @@ import {
 } from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
 import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
+import {DependsOnSelfBanner} from './DependsOnSelfBanner';
+import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
-  upstream: AssetGraphQuery_assetNodes[] | null;
-  downstream: AssetGraphQuery_assetNodes[] | null;
+  upstream: AssetNodeForGraphQueryFragment[] | null;
+  downstream: AssetNodeForGraphQueryFragment[] | null;
   liveDataByNode: LiveData;
-}> = ({assetNode, upstream, downstream, liveDataByNode}) => {
+  dependsOnSelf: boolean;
+}> = ({assetNode, upstream, downstream, liveDataByNode, dependsOnSelf}) => {
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
   const liveDataForNode = liveDataByNode[toGraphId(assetNode.assetKey)];
 
@@ -64,7 +66,7 @@ export const AssetNodeDefinition: React.FC<{
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Description</Subheading>
-            <DefinitionLocation assetNode={assetNode} repoAddress={repoAddress} />
+            <DescriptionAnnotations assetNode={assetNode} repoAddress={repoAddress} />
           </Box>
           <Box
             padding={{vertical: 16, horizontal: 24}}
@@ -117,6 +119,7 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </Link>
           </Box>
+          {dependsOnSelf && <DependsOnSelfBanner />}
           <AssetNodeList items={upstream} liveDataByNode={liveDataByNode} />
           <Box
             padding={{vertical: 16, horizontal: 24}}
@@ -195,7 +198,7 @@ export const AssetNodeDefinition: React.FC<{
   );
 };
 
-const DefinitionLocation: React.FC<{
+const DescriptionAnnotations: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   repoAddress: RepoAddress;
 }> = ({assetNode, repoAddress}) => (
@@ -267,7 +270,6 @@ const OpNamesDisplay = (props: {
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
-    ...AssetNodeConfigFragment
     description
     graphName
     opNames
@@ -284,9 +286,11 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
         name
       }
     }
+    ...AssetNodeConfigFragment
     ...AssetNodeFragment
     ...AssetNodeOpMetadataFragment
   }
+
   ${ASSET_NODE_CONFIG_FRAGMENT}
   ${ASSET_NODE_FRAGMENT}
   ${ASSET_NODE_OP_METADATA_FRAGMENT}

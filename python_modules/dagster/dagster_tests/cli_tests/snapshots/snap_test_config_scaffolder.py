@@ -4,9 +4,10 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
-snapshots['test_basic_solids_config 1'] = {
+snapshots['test_basic_ops_config 1'] = {
     'execution': {
         'in_process': {
             'config': {
@@ -35,7 +36,9 @@ snapshots['test_basic_solids_config 1'] = {
                     },
                     'spawn': {
                     }
-                }
+                },
+                'tag_concurrency_limits': [
+                ]
             }
         }
     },
@@ -56,7 +59,9 @@ snapshots['test_basic_solids_config 1'] = {
         'required_field_solid': {
             'config': {
                 'required_int': 0
-            }
+            },
+            'outputs': [
+            ]
         }
     }
 }
@@ -93,7 +98,9 @@ snapshots['test_two_modes 2'] = {
                     },
                     'spawn': {
                     }
-                }
+                },
+                'tag_concurrency_limits': [
+                ]
             }
         }
     },
@@ -151,7 +158,9 @@ snapshots['test_two_modes 4'] = {
                     },
                     'spawn': {
                     }
-                }
+                },
+                'tag_concurrency_limits': [
+                ]
             }
         }
     },

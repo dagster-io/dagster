@@ -9,7 +9,7 @@ import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable
 
 import {useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {RepoAddress} from './types';
-import {SingleGraphQuery, SingleGraphQueryVariables} from './types/SingleGraphQuery';
+import {SingleGraphQuery, SingleGraphQueryVariables} from './types/VirtualizedGraphTable.types';
 import {workspacePathFromAddress} from './workspacePath';
 
 export type Graph = {name: string; path: string; description: string | null};
@@ -85,7 +85,6 @@ const GraphRow = (props: GraphRowProps) => {
   const [queryGraph, queryResult] = useLazyQuery<SingleGraphQuery, SingleGraphQueryVariables>(
     SINGLE_GRAPH_QUERY,
     {
-      fetchPolicy: 'cache-and-network',
       variables: {
         selector: {
           repositoryName: repoAddress.name,

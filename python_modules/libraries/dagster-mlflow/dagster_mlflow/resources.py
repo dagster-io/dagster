@@ -10,9 +10,8 @@ from os import environ
 from typing import Any, Optional
 
 import mlflow
-from mlflow.entities.run_status import RunStatus
-
 from dagster import Field, Noneable, Permissive, StringSource, resource
+from mlflow.entities.run_status import RunStatus
 
 CONFIG_SCHEMA = {
     "experiment_name": Field(StringSource, is_required=True, description="MlFlow experiment name."),
@@ -63,7 +62,6 @@ class MlFlow(metaclass=MlflowMeta):
     """
 
     def __init__(self, context):
-
         # Context associated attributes
         self.log = context.log
         self.run_name = context.dagster_run.pipeline_name
@@ -122,6 +120,7 @@ class MlFlow(metaclass=MlflowMeta):
             dagster_run_id (optional): The Dagster run id.
             When none is passed it fetches the dagster_run_id object set in
             the constructor.  Defaults to None.
+
         Returns:
             run_id (str or None): run_id if it is found else None
         """
@@ -156,7 +155,6 @@ class MlFlow(metaclass=MlflowMeta):
         """
         Catches the Mlflow exception if a run is already active.
         """
-
         try:
             run = mlflow.start_run(**kwargs)
             self.log.info(
@@ -240,7 +238,6 @@ def mlflow_tracking(context):
        when the Dagster run is finished.
 
     Examples:
-
         .. code-block:: python
 
             from dagster_mlflow import end_mlflow_on_run_finished, mlflow_tracking

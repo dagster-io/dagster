@@ -22,6 +22,7 @@ def test_invoke_cli_wrapper_with_invalid_option():
     _, stderr = process.communicate()
     assert process.returncode != 0
     assert (
-        b"Error: Invalid set of CLI arguments for loading repository/pipeline. See --help for details.\n"
+        b"Error: Invalid set of CLI arguments for loading repository/pipeline. See --help for"
+        b" details.\n"
         in stderr
     )

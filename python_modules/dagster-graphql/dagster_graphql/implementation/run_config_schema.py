@@ -1,8 +1,7 @@
-from graphene import ResolveInfo
-
 import dagster._check as check
 from dagster._config import validate_config_from_snap
 from dagster._core.host_representation import RepresentedPipeline
+from graphene import ResolveInfo
 
 from .external import get_external_pipeline_or_raise
 from .utils import PipelineSelector, UserFacingGraphQLError, capture_error

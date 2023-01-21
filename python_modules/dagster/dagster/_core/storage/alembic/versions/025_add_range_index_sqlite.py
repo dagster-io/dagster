@@ -1,4 +1,4 @@
-"""add range index
+"""add range index.
 
 Revision ID: b37316bf5584
 Revises: 9c5f00e80ef2

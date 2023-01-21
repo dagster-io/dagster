@@ -39,7 +39,6 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   };
 
   const queryResult = useQuery<T, TVars>(options.query, {
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     variables: queryVars,
     notifyOnNetworkStatusChange: true,

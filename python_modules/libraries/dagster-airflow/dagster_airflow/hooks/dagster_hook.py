@@ -8,12 +8,10 @@ from airflow import __version__ as airflow_version
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook
 from airflow.models import Connection
-
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 
 
 class DagsterHook(BaseHook):
-
     conn_name_attr = "dagster_conn_id"
     default_conn_name = "dagster_default"
     conn_type = "dagster"
@@ -21,7 +19,7 @@ class DagsterHook(BaseHook):
 
     @staticmethod
     def get_ui_field_behaviour() -> Mapping[str, Any]:
-        """Returns custom field behaviour"""
+        """Returns custom field behaviour."""
         return {
             "hidden_fields": ["port", "schema", "extra"],
             "relabeling": {
@@ -152,7 +150,7 @@ fragment PythonErrorFragment on PythonError {
         """
         variables = {
             "executionParams": {
-                "runConfigData": json.dumps({} if run_config == None else run_config),
+                "runConfigData": json.dumps({} if run_config is None else run_config),
                 "selector": {
                     "repositoryName": repository_name,
                     "repositoryLocationName": repostitory_location_name,
@@ -174,7 +172,8 @@ fragment PythonErrorFragment on PythonError {
             return run["id"]
         else:
             raise AirflowException(
-                f'Error launching run: {response_json["data"]["launchPipelineExecution"]["message"]}'
+                "Error launching run:"
+                f' {response_json["data"]["launchPipelineExecution"]["message"]}'
             )
 
     def wait_for_run(
@@ -294,5 +293,6 @@ fragment PythonErrorFragment on PythonError {
             != "TerminateRunSuccess"
         ):
             raise AirflowException(
-                f'Error terminating run: {response_json["data"]["terminatePipelineExecution"]["message"]}'
+                "Error terminating run:"
+                f' {response_json["data"]["terminatePipelineExecution"]["message"]}'
             )

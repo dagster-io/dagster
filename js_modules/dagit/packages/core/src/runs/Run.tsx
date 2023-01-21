@@ -9,11 +9,11 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '../gantt/GanttChart';
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
+import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSupportsCapturedLogs} from '../instance/useSupportsCapturedLogs';
-import {RunStatus} from '../types/globalTypes';
 
 import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
@@ -22,11 +22,7 @@ import {LogsToolbar, LogType} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {ILogCaptureInfo, IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {
-  RunDagsterRunEventFragment,
-  RunDagsterRunEventFragment_ExecutionStepFailureEvent,
-} from './types/RunDagsterRunEventFragment';
-import {RunFragment} from './types/RunFragment';
+import {RunDagsterRunEventFragment, RunFragment} from './types/RunFragments.types';
 import {useJobReExecution} from './useJobReExecution';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
@@ -69,7 +65,7 @@ export const Run: React.FC<RunProps> = (props) => {
   const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragment[]) => {
     const errorNode = logs.find(
       (node) => node.__typename === 'ExecutionStepFailureEvent' && node.stepKey === stepKey,
-    ) as RunDagsterRunEventFragment_ExecutionStepFailureEvent;
+    );
 
     if (errorNode) {
       showCustomAlert({

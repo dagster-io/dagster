@@ -2,10 +2,9 @@ import itertools
 import re
 from typing import TYPE_CHECKING, Callable, Sequence, Type, Union
 
+import dagster._check as check
 import pandas as pd
 import pandera as pa
-
-import dagster._check as check
 from dagster import (
     DagsterType,
     MetadataEntry,
@@ -150,7 +149,9 @@ def _pandera_schema_to_type_check_fn(
         else:
             return TypeCheck(
                 success=False,
-                description=f"Must be one of {VALID_DATAFRAME_CLASSES}, not {type(value).__name__}.",
+                description=(
+                    f"Must be one of {VALID_DATAFRAME_CLASSES}, not {type(value).__name__}."
+                ),
             )
 
         return TypeCheck(success=True)

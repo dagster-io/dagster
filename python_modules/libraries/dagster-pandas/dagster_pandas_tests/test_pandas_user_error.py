@@ -3,7 +3,6 @@
 import dagster_pandas as dagster_pd
 import pandas as pd
 import pytest
-
 from dagster import DagsterTypeCheckDidNotPass, In, Out, graph, op
 
 
@@ -31,7 +30,7 @@ def test_wrong_input_value():
 
     @op
     def pass_str():
-        "not a dataframe"
+        """not a dataframe."""
 
     @graph
     def input_fails():

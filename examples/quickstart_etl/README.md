@@ -58,7 +58,7 @@ Bootstrap your own Dagster project with this example:
 dagster project from-example --name my-dagster-project --example quickstart_etl
 ```
 
-First, install your Dagster repository as a Python package. By using the `--editable` flag, pip will install your repository in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply. Check out [Dagster Installation](https://docs.dagster.io/getting-started/install) for more information.
+First, install your Dagster code as a Python package. By using the `--editable` flag, pip will install in ["editable mode"](https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs) so that as you develop, local code changes will automatically apply. Check out [Dagster Installation](https://docs.dagster.io/getting-started/install) for more information.
 
 ```bash
 pip install -e ".[dev]"
@@ -159,7 +159,7 @@ Note: You'll find a `path` metadata attached to every asset. This is because ass
 
 Finally, let's refresh our plots every day so we can monitor popular topics over time. To do so, we can use [schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#schedules).
 
-We've defined a daily schedule and job in [`quickstart_etl/repository.py`](./quickstart_etl/repository.py) for all assets that are defined in the [`quickstart_etl/assets/`](./quickstart_etl/assets) module.
+We've defined a daily schedule and job in [`quickstart_etl/__init__.py`](./quickstart_etl/__init__.py) for all assets that are defined in the [`quickstart_etl/assets/`](./quickstart_etl/assets) module.
 
 Now, let's turn on the daily schedule within Dagster.
 
@@ -170,7 +170,7 @@ Now, let's turn on the daily schedule within Dagster.
     <img height="500" src="../../docs/next/public/images/quickstarts/basic/step-3-1-schedule-off.png" />
 </p>
 
-You can now turn on the schedule switch to set up the daily job we defined in [quickstart_etl/repository.py](./quickstart_etl/repository.py).
+You can now turn on the schedule switch to set up the daily job we defined in [quickstart_etl/__init__.py](./quickstart_etl/__init__.py).
 
 <p align="center">
     <img height="500" src="../../docs/next/public/images/quickstarts/basic/step-3-2-schedule-on.png" />

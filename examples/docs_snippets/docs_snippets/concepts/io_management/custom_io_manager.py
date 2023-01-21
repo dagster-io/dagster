@@ -97,6 +97,7 @@ def my_job():
 
 # end_df_marker
 
+
 # start_metadata_marker
 class DataframeTableIOManagerWithMetadata(IOManager):
     def handle_output(self, context, obj):

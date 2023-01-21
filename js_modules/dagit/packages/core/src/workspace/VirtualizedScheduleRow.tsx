@@ -15,6 +15,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {InstigationStatus, InstigationType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TickTag, TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -23,14 +24,16 @@ import {ScheduleSwitch, SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwi
 import {errorDisplay} from '../schedules/SchedulesTable';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanCronString} from '../schedules/humanCronString';
-import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
 
 import {LoadingOrNone, useDelayedRowQuery} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext';
 import {RepoAddress} from './types';
-import {SingleScheduleQuery, SingleScheduleQueryVariables} from './types/SingleScheduleQuery';
+import {
+  SingleScheduleQuery,
+  SingleScheduleQueryVariables,
+} from './types/VirtualizedScheduleRow.types';
 import {workspacePathFromAddress} from './workspacePath';
 
 const TEMPLATE_COLUMNS = '76px 1fr 1fr 148px 180px 80px';
@@ -51,7 +54,6 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
     SingleScheduleQuery,
     SingleScheduleQueryVariables
   >(SINGLE_SCHEDULE_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {
       selector: {
         repositoryName: repoAddress.name,
@@ -293,7 +295,7 @@ const SINGLE_SCHEDULE_QUERY = gql`
     }
   }
 
-  ${SCHEDULE_SWITCH_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
   ${RUN_TIME_FRAGMENT}
+  ${SCHEDULE_SWITCH_FRAGMENT}
 `;

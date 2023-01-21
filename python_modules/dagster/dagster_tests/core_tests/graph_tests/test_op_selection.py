@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import List
 
 import pytest
-
 from dagster import (
     AssetKey,
     ConfigMapping,
@@ -683,7 +682,7 @@ def test_nested_op_selection_with_config_mapping():
 def test_op_selection_unsatisfied_input_failure():
     @op
     def basic() -> datetime:
-        return 5
+        return 5  # type: ignore  # (test error)
 
     @op
     def ingest(x: datetime) -> str:
@@ -722,7 +721,11 @@ def test_op_selection_nested_unsatisfied_input_values():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Attempted to invoke execute_in_process for 'the_top_level_graph' without specifying an input_value for input 'x', but downstream input x of op 'the_graph.ingest' has no other way of being loaded.",
+        match=(
+            "Attempted to invoke execute_in_process for 'the_top_level_graph' without specifying an"
+            " input_value for input 'x', but downstream input x of op 'the_graph.ingest' has no"
+            " other way of being loaded."
+        ),
     ):
         the_job.execute_in_process()
 

@@ -30,7 +30,6 @@ def show():
     """
     Displays the json schema on the console.
     """
-
     click.echo("--- Dagster Helm Values ---")
     click.echo(DagsterHelmValues.schema_json(indent=4))
 

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 class OpVersionContext(NamedTuple):
     """Provides execution-time information for computing the version for an op.
+
     Attributes:
         op_def (OpDefinition): The definition of the op to compute a version for.
         op_config (Any): The parsed config to be passed to the op during execution.

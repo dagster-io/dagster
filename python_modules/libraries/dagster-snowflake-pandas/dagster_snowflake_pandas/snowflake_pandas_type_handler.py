@@ -1,14 +1,13 @@
 from typing import Mapping, Union, cast
 
 import pandas as pd
+from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from snowflake.connector.pandas_tools import pd_writer
-
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 
 def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice: TableSlice):
@@ -30,7 +29,7 @@ def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice:
 def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
     """
     Converts columns of data of type pd.Timestamp to string so that it can be stored in
-    snowflake
+    snowflake.
     """
     if pd.core.dtypes.common.is_datetime_or_timedelta_dtype(s):
         return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
@@ -41,7 +40,7 @@ def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
 def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
     """
     Converts columns of strings in Timestamp format to pd.Timestamp to undo the conversion in
-    _convert_timestamp_to_string
+    _convert_timestamp_to_string.
 
     This will not convert non-timestamp strings into timestamps (pd.to_datetime will raise an
     exception if the string cannot be converted)
@@ -60,17 +59,16 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     Plugin for the Snowflake I/O Manager that can store and load Pandas DataFrames as Snowflake tables.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagster_snowflake import build_snowflake_io_manager
+            from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 
-        from dagster_snowflake import build_snowflake_io_manager
-        from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+            snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
-        snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
-
-        @job(resource_defs={'io_manager': snowflake_io_manager})
-        def my_job():
-            ...
+            @job(resource_defs={'io_manager': snowflake_io_manager})
+            def my_job():
+                ...
     """
 
     def handle_output(
@@ -128,6 +126,7 @@ Examples:
     .. code-block:: python
 
         from dagster_snowflake_pandas import snowflake_pandas_io_manager
+        from dagster import asset, Definitions
 
         @asset(
             key_prefix=["my_schema"]  # will be used as the schema in snowflake
@@ -135,16 +134,16 @@ Examples:
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
 
-        @repository
-        def my_repo():
-            return with_resources(
-                [my_table],
-                {"io_manager": snowflake_pandas_io_manager.configured({
+        defs = Definitions(
+            assets=[my_table],
+            resources={
+                "io_manager": snowflake_pandas_io_manager.configured({
                     "database": "my_database",
                     "account" : {"env": "SNOWFLAKE_ACCOUNT"}
                     ...
-                })}
-            )
+                })
+            }
+        )
 
     If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
     the IO Manager. For assets, the schema will be determined from the asset key.

@@ -11,7 +11,7 @@ import {metadataForCompositeParentIO, PARENT_IN, PARENT_OUT, OpIOBox} from './Op
 import {SVGLabeledRect} from './SVGComponents';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {Edge} from './common';
-import {OpGraphOpFragment} from './types/OpGraphOpFragment';
+import {OpGraphOpFragment} from './types/OpGraph.types';
 
 interface ParentOpNodeProps {
   layout: OpGraphLayout;
@@ -59,7 +59,7 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
       {def.inputMappings.map(({definition, mappedInput}, idx) => {
         const destination = layout.nodes[mappedInput.solid.name];
         if (!destination) {
-          return <g />;
+          return <g key={mappedInput.solid.name} />;
         }
         const sourcePort = parentLayout.inputs[definition.name].port;
         const trgtPort = destination.inputs[mappedInput.definition.name].port;
@@ -79,7 +79,7 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
       {def.outputMappings.map(({definition, mappedOutput}, idx) => {
         const destination = layout.nodes[mappedOutput.solid.name];
         if (!destination) {
-          return <g />;
+          return <g key={mappedOutput.solid.name} />;
         }
         const sourcePort = parentLayout.outputs[definition.name].port;
         const trgtPort = destination.outputs[mappedOutput.definition.name].port;

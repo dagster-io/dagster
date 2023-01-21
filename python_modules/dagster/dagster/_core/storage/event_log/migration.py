@@ -1,7 +1,6 @@
 import sqlalchemy as db
 from tqdm import tqdm
 
-from dagster import AssetKey
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster._utils import utc_datetime_from_timestamp
@@ -39,6 +38,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
     Utility method to build an asset key index from the data in existing event log records.
     Takes in event_log_storage, and a print_fn to keep track of progress.
     """
+    from dagster._core.definitions.events import AssetKey
     from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 
     from .schema import AssetKeyTable, SqlEventLogStorageTable
@@ -48,7 +48,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
 
     query = (
         db.select([SqlEventLogStorageTable.c.asset_key])
-        .where(SqlEventLogStorageTable.c.asset_key != None)
+        .where(SqlEventLogStorageTable.c.asset_key != None)  # noqa: E711
         .group_by(SqlEventLogStorageTable.c.asset_key)
     )
     with event_log_storage.index_connection() as conn:
@@ -72,6 +72,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
 
 
 def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
+    from dagster._core.definitions.events import AssetKey
     from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
     from dagster._serdes import serialize_dagster_namedtuple
 
@@ -168,14 +169,14 @@ def sql_asset_event_generator(conn, cursor=None, batch_size=1000):
 
     while True:
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
-            SqlEventLogStorageTable.c.asset_key != None
+            SqlEventLogStorageTable.c.asset_key != None  # noqa: E711
         )
         if cursor:
             query = query.where(SqlEventLogStorageTable.c.id < cursor)
         query = query.order_by(SqlEventLogStorageTable.c.id.desc()).limit(batch_size)
         fetched = conn.execute(query).fetchall()
 
-        for (record_id, event_json) in fetched:
+        for record_id, event_json in fetched:
             cursor = record_id
             event_record = deserialize_json_to_dagster_namedtuple(event_json)
             if not isinstance(event_record, EventLogEntry):

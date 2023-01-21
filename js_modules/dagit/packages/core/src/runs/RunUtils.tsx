@@ -6,18 +6,18 @@ import * as React from 'react';
 import {Mono} from '../../../ui/src';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetKey} from '../assets/types';
-import {ExecutionParams, RunStatus} from '../types/globalTypes';
+import {ExecutionParams, RunStatus} from '../graphql/types';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
-import {LaunchPipelineExecution_launchPipelineExecution} from './types/LaunchPipelineExecution';
-import {RunFragment} from './types/RunFragment';
-import {RunTableRunFragment} from './types/RunTableRunFragment';
-import {RunTimeFragment} from './types/RunTimeFragment';
+import {RunFragment} from './types/RunFragments.types';
+import {RunTableRunFragment} from './types/RunTable.types';
+import {LaunchPipelineExecutionMutation, RunTimeFragment} from './types/RunUtils.types';
 
 export function titleForRun(run: {runId: string}) {
   return run.runId.split('-').shift();
@@ -64,7 +64,7 @@ export type LaunchBehavior = 'open' | 'open-in-new-tab' | 'toast';
 
 export function handleLaunchResult(
   pipelineName: string,
-  result: void | null | LaunchPipelineExecution_launchPipelineExecution,
+  result: void | null | LaunchPipelineExecutionMutation['launchPipelineExecution'],
   history: History<unknown>,
   options: {behavior: LaunchBehavior; preserveQuerystring?: boolean},
 ) {
@@ -230,13 +230,13 @@ export const DELETE_MUTATION = gql`
   mutation Delete($runId: String!) {
     deletePipelineRun(runId: $runId) {
       __typename
-      ...PythonErrorFragment
       ... on UnauthorizedError {
         message
       }
       ... on RunNotFoundError {
         message
       }
+      ...PythonErrorFragment
     }
   }
 

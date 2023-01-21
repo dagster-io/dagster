@@ -3,21 +3,27 @@ import {Alert, Box, Checkbox, Colors, Group, Table, Subheading, Tooltip} from '@
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
+import {InstigationStatus, InstigationType} from '../graphql/types';
 import {
   displayScheduleMutationErrors,
   STOP_SCHEDULE_MUTATION,
 } from '../schedules/ScheduleMutations';
 import {humanCronString} from '../schedules/humanCronString';
-import {StopSchedule, StopScheduleVariables} from '../schedules/types/StopSchedule';
+import {
+  StopScheduleMutation,
+  StopScheduleMutationVariables,
+} from '../schedules/types/ScheduleMutations.types';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
-import {StopSensor, StopSensorVariables} from '../sensors/types/StopSensor';
-import {InstigationStatus, InstigationType} from '../types/globalTypes';
+import {
+  StopRunningSensorMutation,
+  StopRunningSensorMutationVariables,
+} from '../sensors/types/SensorMutations.types';
 import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation';
 
 import {TickTag} from './InstigationTick';
 import {InstigatedRunStatus} from './InstigationUtils';
-import {InstigationStateFragment} from './types/InstigationStateFragment';
+import {InstigationStateFragment} from './types/InstigationUtils.types';
 
 export const UnloadableSensors: React.FC<{
   sensorStates: InstigationStateFragment[];
@@ -123,14 +129,14 @@ const UnloadableScheduleInfo = () => (
 
 const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) => {
   const {id, selectorId, name, status, ticks} = sensorState;
-  const {canStopSensor} = usePermissions();
+  const {canStopSensor} = usePermissionsDEPRECATED();
 
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor, StopSensorVariables>(
-    STOP_SENSOR_MUTATION,
-    {
-      onCompleted: displaySensorMutationErrors,
-    },
-  );
+  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<
+    StopRunningSensorMutation,
+    StopRunningSensorMutationVariables
+  >(STOP_SENSOR_MUTATION, {
+    onCompleted: displaySensorMutationErrors,
+  });
   const confirm = useConfirmation();
 
   const onChangeSwitch = async () => {
@@ -193,10 +199,10 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
 const ScheduleStateRow: React.FC<{
   scheduleState: InstigationStateFragment;
 }> = ({scheduleState}) => {
-  const {canStopRunningSchedule} = usePermissions();
+  const {canStopRunningSchedule} = usePermissionsDEPRECATED();
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
-    StopSchedule,
-    StopScheduleVariables
+    StopScheduleMutation,
+    StopScheduleMutationVariables
   >(STOP_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
   });

@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional, Sequence
 
 import boto3
-from dagster_aws.utils import construct_boto_client_retry_config
-
 import dagster._check as check
+
+from dagster_aws.utils import construct_boto_client_retry_config
 
 
 def construct_ssm_client(
@@ -30,7 +30,6 @@ def get_parameters_by_tags(
     Return a dictionary of AWS Secrets Manager names to arns
     for any secret tagged with `secrets_tag`.
     """
-
     parameter_names = []
     paginator = ssm_manager.get_paginator("describe_parameters")
     for parameter_tag in parameter_tags:
@@ -55,7 +54,7 @@ def get_parameters_by_name(
     ssm_manager, parameter_names: List[str], with_decryption: bool
 ) -> Dict[str, str]:
     """
-    Return a dictionary of AWS Parameter Store parameter names and their values
+    Return a dictionary of AWS Parameter Store parameter names and their values.
     """
     parameter_values = {}
     for retrieved in ssm_manager.get_parameters(

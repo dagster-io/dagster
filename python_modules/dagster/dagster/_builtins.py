@@ -9,7 +9,6 @@ String = str
 
 
 class BuiltinEnum:
-
     ANY = Any
     BOOL = Bool
     FLOAT = Float

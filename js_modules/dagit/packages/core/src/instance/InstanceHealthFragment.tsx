@@ -10,5 +10,6 @@ export const INSTANCE_HEALTH_FRAGMENT = gql`
     }
     hasInfo
   }
+
   ${DAEMON_HEALTH_FRAGMENT}
 `;

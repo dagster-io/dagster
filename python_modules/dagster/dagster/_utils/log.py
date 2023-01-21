@@ -173,7 +173,6 @@ def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
                     log.info(f"Did {i+1} things!")
 
     """
-
     # enforce that the parent logger will always have a DEBUG log level
     BASE_DAGSTER_LOGGER.setLevel(logging.DEBUG)
     base_builtin = BASE_DAGSTER_LOGGER.getChild("builtin")
@@ -211,7 +210,8 @@ def get_stack_trace_array(exception):
 
 def _mockable_formatTime(record, datefmt=None):  # pylint: disable=unused-argument
     """Uses pendulum.now to determine the logging time, causing pendulum
-    mocking to affect the logger timestamp in tests."""
+    mocking to affect the logger timestamp in tests.
+    """
     return pendulum.now().strftime(datefmt if datefmt else default_date_format_string())
 
 

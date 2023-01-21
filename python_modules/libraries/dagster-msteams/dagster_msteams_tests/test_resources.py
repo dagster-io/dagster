@@ -1,9 +1,8 @@
 import json
 
+from dagster._legacy import ModeDefinition, execute_solid, solid
 from dagster_msteams import msteams_resource
 from mock import patch
-
-from dagster._legacy import ModeDefinition, execute_solid, solid
 
 
 @patch("dagster_msteams.client.TeamsClient.post_message")

@@ -16,7 +16,7 @@ import {TypeList, TYPE_LIST_FRAGMENT} from './TypeList';
 import {
   TypeListContainerQuery,
   TypeListContainerQueryVariables,
-} from './types/TypeListContainerQuery';
+} from './types/TypeListContainer.types';
 
 interface ITypeListContainerProps {
   explorerPath: ExplorerPath;
@@ -43,7 +43,6 @@ export const TypeListContainer: React.FC<ITypeListContainerProps> = ({
   const queryResult = useQuery<TypeListContainerQuery, TypeListContainerQueryVariables>(
     TYPE_LIST_CONTAINER_QUERY,
     {
-      fetchPolicy: 'cache-and-network',
       variables: {pipelineSelector: pipelineSelector!},
       skip: !pipelineSelector,
     },

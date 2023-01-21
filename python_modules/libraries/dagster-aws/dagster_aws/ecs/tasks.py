@@ -1,11 +1,10 @@
 import os
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
-import requests
-
 import dagster._check as check
-from dagster._utils import merge_dicts
+import requests
 from dagster._utils.backoff import backoff
+from dagster._utils.merger import merge_dicts
 
 
 class DagsterEcsTaskDefinitionConfig(
@@ -29,7 +28,8 @@ class DagsterEcsTaskDefinitionConfig(
     )
 ):
     """All the information that Dagster needs to create a task definition and compare two task
-    definitions to see if they should be reused."""
+    definitions to see if they should be reused.
+    """
 
     def __new__(
         cls,
@@ -54,8 +54,8 @@ class DagsterEcsTaskDefinitionConfig(
             check.str_param(container_name, "container_name"),
             check.opt_sequence_param(command, "command"),
             check.opt_mapping_param(log_configuration, "log_configuration"),
-            check.opt_sequence_param(secrets, "secrets"),
-            check.opt_sequence_param(environment, "environment"),
+            sorted(check.opt_sequence_param(secrets, "secrets"), key=lambda s: s["name"]),
+            sorted(check.opt_sequence_param(environment, "environment"), key=lambda e: e["name"]),
             check.opt_str_param(execution_role_arn, "execution_role_arn"),
             check.opt_str_param(task_role_arn, "task_role_arn"),
             check.opt_sequence_param(sidecars, "sidecars"),
@@ -100,7 +100,6 @@ class DagsterEcsTaskDefinitionConfig(
 
     @staticmethod
     def from_task_definition_dict(task_definition_dict, container_name):
-
         matching_container_defs = [
             container
             for container in task_definition_dict["containerDefinitions"]
@@ -161,7 +160,6 @@ def get_task_definition_dict_from_current_task(
     secrets=None,
     include_sidecars=False,
 ):
-
     current_container_name = current_ecs_container_name()
 
     current_task_definition_arn = current_task["taskDefinitionArn"]
@@ -199,18 +197,20 @@ def get_task_definition_dict_from_current_task(
     # entryPoint and containerOverrides are specified, they're concatenated
     # and the command will fail
     # https://aws.amazon.com/blogs/opensource/demystifying-entrypoint-cmd-docker/
-    new_container_definition = merge_dicts(
-        {
-            **container_definition,
-            "name": container_name,
-            "image": image,
-            "entryPoint": [],
-            "command": command if command else [],
-        },
-        ({"environment": environment} if environment else {}),
-        ({"secrets": secrets} if secrets else {}),
-        {} if include_sidecars else {"dependsOn": []},
-    )
+    new_container_definition = {
+        **container_definition,
+        "name": container_name,
+        "image": image,
+        "entryPoint": [],
+        "command": command if command else [],
+        **({"secrets": secrets} if secrets else {}),
+        **({} if include_sidecars else {"dependsOn": []}),
+    }
+    if environment:
+        new_container_definition["environment"] = [
+            *new_container_definition["environment"],
+            *environment,
+        ]
 
     if include_sidecars:
         container_definitions = current_task_definition_dict.get("containerDefinitions")

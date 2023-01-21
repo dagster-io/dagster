@@ -4,6 +4,7 @@
 import pytest
 from click.testing import CliRunner
 from dagster_airflow.cli import scaffold
+
 from dagster_airflow_tests.marks import requires_airflow_db
 
 

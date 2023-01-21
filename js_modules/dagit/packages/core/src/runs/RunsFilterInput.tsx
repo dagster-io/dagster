@@ -8,8 +8,8 @@ import {
 import qs from 'qs';
 import * as React from 'react';
 
+import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {RunStatus, RunsFilter} from '../types/globalTypes';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'job' | 'snapshotId' | 'tag';
@@ -93,7 +93,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;
     } else if (item.token === 'tag') {
-      const [key, value] = item.value.split('=');
+      const [key, value = ''] = item.value.split('=');
       if (obj.tags) {
         obj.tags.push({key, value});
       } else {

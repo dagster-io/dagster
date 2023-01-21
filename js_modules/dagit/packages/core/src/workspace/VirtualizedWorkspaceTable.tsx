@@ -43,10 +43,15 @@ export const RepoRow: React.FC<{
   );
 };
 
-export const LoadingOrNone: React.FC<{queryResult: QueryResult<any, any>}> = ({queryResult}) => {
+export const LoadingOrNone: React.FC<{
+  queryResult: QueryResult<any, any>;
+  noneString?: React.ReactNode;
+}> = ({queryResult, noneString = 'None'}) => {
   const {called, loading, data} = queryResult;
   return (
-    <div style={{color: Colors.Gray500}}>{!called || (loading && !data) ? 'Loading' : 'None'}</div>
+    <div style={{color: Colors.Gray500}}>
+      {!called || (loading && !data) ? 'Loading' : noneString}
+    </div>
   );
 };
 
@@ -71,7 +76,7 @@ const CaptionTextContainer = styled.div`
 
 const JOB_QUERY_DELAY = 100;
 
-export const useDelayedRowQuery = <Q, V>(lazyQueryFn: LazyQueryExecFunction<Q, V>) => {
+export const useDelayedRowQuery = (lazyQueryFn: LazyQueryExecFunction<any, any>) => {
   React.useEffect(() => {
     const timer = setTimeout(() => {
       lazyQueryFn();

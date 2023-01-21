@@ -3,10 +3,9 @@ import os
 import duckdb
 import pandas as pd
 import pytest
-from dagster_duckdb_pandas import duckdb_pandas_io_manager
-
 from dagster import AssetIn, DailyPartitionsDefinition, Out, asset, graph, materialize, op
 from dagster._check import CheckError
+from dagster_duckdb_pandas import duckdb_pandas_io_manager
 
 
 @op(out=Out(metadata={"schema": "a_df"}))

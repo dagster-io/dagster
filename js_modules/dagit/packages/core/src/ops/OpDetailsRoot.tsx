@@ -12,7 +12,7 @@ import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {OpCard, OP_CARD_SOLID_DEFINITION_FRAGMENT} from './OpCard';
-import {UsedSolidDetailsQuery, UsedSolidDetailsQueryVariables} from './types/UsedSolidDetailsQuery';
+import {UsedSolidDetailsQuery, UsedSolidDetailsQueryVariables} from './types/OpDetailsRoot.types';
 
 interface UsedSolidDetailsProps {
   name: string;

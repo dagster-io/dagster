@@ -1,6 +1,5 @@
-import graphene
-
 import dagster._check as check
+import graphene
 from dagster._core.host_representation import ExternalExecutionPlan
 from dagster._core.snap import ExecutionStepInputSnap, ExecutionStepOutputSnap, ExecutionStepSnap
 

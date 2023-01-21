@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import {YamlModeValidationResult} from '@dagster-io/ui';
 import yaml from 'yaml';
 
-import {ConfigEditorValidationFragment} from './types/ConfigEditorValidationFragment';
+import {ConfigEditorValidationFragment} from './types/ConfigEditorUtils.types';
 
 export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
   fragment ConfigEditorRunConfigSchemaFragment on RunConfigSchema {
@@ -10,38 +10,45 @@ export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
       key
     }
     allConfigTypes {
-      __typename
+      ...AllConfigTypesForEditor
+    }
+  }
+
+  fragment AllConfigTypesForEditor on ConfigType {
+    key
+    description
+    isSelector
+    typeParamKeys
+    ... on RegularConfigType {
+      givenName
+    }
+    ... on MapConfigType {
+      keyLabelName
+    }
+    ... on EnumConfigType {
+      givenName
+      values {
+        value
+        description
+      }
+    }
+    ... on CompositeConfigType {
+      ...CompositeConfigTypeForSchema
+    }
+    ... on ScalarUnionConfigType {
       key
+      scalarTypeKey
+      nonScalarTypeKey
+    }
+  }
+
+  fragment CompositeConfigTypeForSchema on CompositeConfigType {
+    fields {
+      name
       description
-      isSelector
-      typeParamKeys
-      ... on RegularConfigType {
-        givenName
-      }
-      ... on MapConfigType {
-        keyLabelName
-      }
-      ... on EnumConfigType {
-        givenName
-        values {
-          value
-          description
-        }
-      }
-      ... on CompositeConfigType {
-        fields {
-          name
-          description
-          isRequired
-          configTypeKey
-          defaultValueAsJson
-        }
-      }
-      ... on ScalarUnionConfigType {
-        key
-        scalarTypeKey
-        nonScalarTypeKey
-      }
+      isRequired
+      configTypeKey
+      defaultValueAsJson
     }
   }
 `;

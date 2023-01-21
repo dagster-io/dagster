@@ -73,6 +73,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
 
     let lastX: number = start.x;
     let lastY: number = start.y;
+    const travel = {x: 0, y: 0};
 
     const onMove = (e: MouseEvent) => {
       const offset = viewport.getOffsetXY(e);
@@ -85,16 +86,31 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
         x: viewport.state.x + delta.x,
         y: viewport.state.y + delta.y,
       });
+      travel.x += Math.abs(delta.x);
+      travel.y += Math.abs(delta.y);
       lastX = offset.x;
       lastY = offset.y;
     };
 
+    const onCancelClick = (e: MouseEvent) => {
+      // If you press, drag, and release the mouse we don't want it to trigger a click
+      // beneath your cursor. onClick's within the DAG should only fire if you did not
+      // drag the mouse.
+      if (Math.sqrt(travel.x + travel.y) > 5) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+      }
+    };
     const onUp = () => {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
+      setTimeout(() => {
+        document.removeEventListener('click', onCancelClick, {capture: true});
+      });
     };
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
+    document.addEventListener('click', onCancelClick, {capture: true});
   },
 
   onWheel(viewport: SVGViewport, event: WheelEvent) {
@@ -518,6 +534,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
         onDoubleClick={this.onDoubleClick}
         onKeyDown={this.onKeyDown}
+        onDragStart={(e) => e.preventDefault()}
         onClick={onClick}
         tabIndex={-1}
       >

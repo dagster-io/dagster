@@ -1,3 +1,10 @@
+## 1.0.8 (January 9, 2023)
+
+- Added ProductTour component
+- Build CJS output instead of ESM, with individual built components in subdirectories
+- Bump dependencies
+- Repair `MiddleTruncate` for Firefox
+
 ## 1.0.7 (October 31, 2022)
 
 - Added partition icon

@@ -3,7 +3,6 @@ import subprocess
 import time
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -30,7 +29,7 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
 )
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .retry_jobs import (
     assert_expected_failure_behavior,
@@ -223,7 +222,7 @@ def test_execute_intervals():
     assert TestStepHandler.check_step_health_count >= 3
 
 
-@op
+@op(tags={"database": "tiny"})
 def slow_op(_):
     time.sleep(2)
 
@@ -246,6 +245,39 @@ def test_max_concurrent():
     assert result.success
 
     # test that all the steps run serially, since max_concurrent is 1
+    active_step = None
+    for event in result.event_list:
+        if event.event_type_value == DagsterEventType.STEP_START.value:
+            assert active_step is None, "A second step started before the first finished!"
+            active_step = event.step_key
+        elif event.event_type_value == DagsterEventType.STEP_SUCCESS.value:
+            assert (
+                active_step == event.step_key
+            ), "A step finished that wasn't supposed to be active!"
+            active_step = None
+
+
+def test_tag_concurrency_limits():
+    TestStepHandler.reset()
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(three_op_job),
+            instance=instance,
+            run_config={
+                "execution": {
+                    "config": {
+                        "max_concurrent": 6001,
+                        "tag_concurrency_limits": [
+                            {"key": "database", "value": "tiny", "limit": 1}
+                        ],
+                    }
+                }
+            },
+        )
+        TestStepHandler.wait_for_processes()
+    assert result.success
+
+    # test that all the steps run serially, since database=tiny can only run one at a time
     active_step = None
     for event in result.event_list:
         if event.event_type_value == DagsterEventType.STEP_START.value:

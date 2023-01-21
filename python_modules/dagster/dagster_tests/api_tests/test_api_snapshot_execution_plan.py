@@ -1,7 +1,6 @@
 import re
 
 import pytest
-
 from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.handle import JobHandle

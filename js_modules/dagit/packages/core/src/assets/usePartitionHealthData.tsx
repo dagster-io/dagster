@@ -1,4 +1,4 @@
-import {ApolloClient, gql, useApolloClient} from '@apollo/client';
+import {gql, useApolloClient} from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 
@@ -6,7 +6,10 @@ import {PartitionState} from '../partitions/PartitionStatus';
 
 import {mergedStates} from './MultipartitioningSupport';
 import {AssetKey} from './types';
-import {PartitionHealthQuery, PartitionHealthQueryVariables} from './types/PartitionHealthQuery';
+import {
+  PartitionHealthQuery,
+  PartitionHealthQueryVariables,
+} from './types/usePartitionHealthData.types';
 
 /**
  * usePartitionHealthData retrieves partitionKeysByDimension + partitionMaterializationCounts and
@@ -34,20 +37,18 @@ export interface PartitionHealthDimension {
   partitionKeys: string[];
 }
 
-export type PartitionHealthDimensionRange = {
+export type PartitionDimensionSelectionRange = [
+  {idx: number; key: string},
+  {idx: number; key: string},
+];
+
+export type PartitionDimensionSelection = {
   dimension: PartitionHealthDimension;
-  selected: string[];
+  selectedKeys: string[];
+  selectedRanges: PartitionDimensionSelectionRange[];
 };
 
-async function loadPartitionHealthData(client: ApolloClient<any>, loadKey: AssetKey) {
-  const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
-    query: PARTITION_HEALTH_QUERY,
-    fetchPolicy: 'network-only',
-    variables: {
-      assetKey: {path: loadKey.path},
-    },
-  });
-
+export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: AssetKey) {
   const dimensions =
     data.assetNodeOrError.__typename === 'AssetNode'
       ? data.assetNodeOrError.partitionKeysByDimension
@@ -151,7 +152,14 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
     }
     const loadKey: AssetKey = JSON.parse(missingKeyJSON);
     const run = async () => {
-      const loaded = await loadPartitionHealthData(client, loadKey);
+      const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
+        query: PARTITION_HEALTH_QUERY,
+        fetchPolicy: 'network-only',
+        variables: {
+          assetKey: {path: loadKey.path},
+        },
+      });
+      const loaded = buildPartitionHealthData(data, loadKey);
       setResult((result) => [
         ...result.filter((r) => !isEqual(r.assetKey, loadKey)),
         {...loaded, fetchedAt: assetLastMaterializedAt},

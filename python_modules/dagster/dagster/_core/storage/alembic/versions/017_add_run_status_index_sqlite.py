@@ -1,4 +1,4 @@
-"""add run status index
+"""add run status index.
 
 Revision ID: 521d4caca7ad
 Revises: 3e71cf573ba6
@@ -22,7 +22,7 @@ def upgrade():
     has_tables = inspector.get_table_names()
     if "runs" in has_tables:
         indices = [x.get("name") for x in inspector.get_indexes("runs")]
-        if not "idx_run_status" in indices:
+        if "idx_run_status" not in indices:
             op.create_index("idx_run_status", "runs", ["status"], unique=False)
 
 

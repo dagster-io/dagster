@@ -1,8 +1,7 @@
 import pytest
 from click.testing import CliRunner
-from dagster_managed_elements.cli import main
-
 from dagster._utils import file_relative_path
+from dagster_managed_elements.cli import main
 
 TEST_ROOT_DIR = file_relative_path(__file__, ".")
 
@@ -12,7 +11,6 @@ TEST_ROOT_DIR = file_relative_path(__file__, ".")
     ["check", "apply"],
 )
 def test_commands(command):
-
     runner = CliRunner()
 
     is_check = command == "check"

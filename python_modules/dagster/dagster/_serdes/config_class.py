@@ -180,8 +180,7 @@ def class_from_code_pointer(module_name: str, class_name: str) -> Type[Any]:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError:
         check.failed(
-            "Couldn't import module {module_name} when attempting to load the "
-            "class {klass}".format(
+            "Couldn't import module {module_name} when attempting to load the class {klass}".format(
                 module_name=module_name,
                 klass=module_name + "." + class_name,
             )

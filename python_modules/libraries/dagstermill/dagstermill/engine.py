@@ -25,9 +25,7 @@ if is_papermill_2():
                         self.nb_man.cell_complete(self.nb.cells[index], cell_index=index)
             finally:
                 new_cell = nbformat.v4.new_code_cell(
-                    source=(
-                        "import dagstermill as __dm_dagstermill\n" "__dm_dagstermill._teardown()\n"
-                    )
+                    source="import dagstermill as __dm_dagstermill\n__dm_dagstermill._teardown()\n"
                 )
                 new_cell.metadata["tags"] = ["injected-teardown"]
                 new_cell.metadata["papermill"] = {
@@ -94,7 +92,7 @@ else:
             )
 
             new_cell = nbformat.v4.new_code_cell(
-                source=("import dagstermill as __dm_dagstermill\n" "__dm_dagstermill._teardown()\n")
+                source="import dagstermill as __dm_dagstermill\n__dm_dagstermill._teardown()\n"
             )
             new_cell.metadata["tags"] = ["injected-teardown"]
             new_cell.metadata["papermill"] = {}

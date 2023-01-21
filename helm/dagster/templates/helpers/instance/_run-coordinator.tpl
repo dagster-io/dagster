@@ -17,6 +17,14 @@ config:
   {{- if $queuedRunCoordinatorConfig.dequeueIntervalSeconds }}
   dequeue_interval_seconds: {{ $queuedRunCoordinatorConfig.dequeueIntervalSeconds }}
   {{- end }}
+
+  {{- if $queuedRunCoordinatorConfig.dequeueUseThreads }}
+  dequeue_use_threads: {{ $queuedRunCoordinatorConfig.dequeueUseThreads }}
+  {{- end }}
+
+  {{- if $queuedRunCoordinatorConfig.dequeueNumWorkers }}
+  dequeue_num_workers: {{ $queuedRunCoordinatorConfig.dequeueNumWorkers }}
+  {{- end }}
 {{- end }}
 {{- end }}
 

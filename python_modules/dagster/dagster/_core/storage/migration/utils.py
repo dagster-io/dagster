@@ -49,7 +49,7 @@ def upgrading_instance(instance):
 
 
 def get_currently_upgrading_instance():
-    global _UPGRADING_INSTANCE  # pylint: disable=global-statement,global-variable-not-assigned
+    global _UPGRADING_INSTANCE  # noqa: PLW0602
     check.invariant(_UPGRADING_INSTANCE is not None, "currently upgrading instance not set")
     return _UPGRADING_INSTANCE
 

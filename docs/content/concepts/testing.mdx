@@ -89,7 +89,7 @@ def get_data_without_resource(context):
 Dagster allows you to define multiple "jobs" from the same computation graph. With resources, you can modify the op above to:
 
 ```python file=/concepts/resources/tests.py startafter=start_test_after_marker endbefore=end_test_after_marker
-from dagster import op, graph
+from dagster import graph, op
 
 
 @op(required_resource_keys={"api"})
@@ -118,7 +118,6 @@ This is extremely helpful when it comes to testing. We can execute the computati
 
 ```python file=/concepts/resources/tests.py startafter=start_execution_marker endbefore=end_execution_marker
 def test_local():
-
     # Since we have access to the computation graph independent of the set of resources, we can
     # test it locally.
     result = download.execute_in_process(
@@ -145,7 +144,6 @@ Check out the following test examples:
 - [Job execution with config](#testing-job-execution-with-config)
 - [Event stream](#testing-event-stream)
 - [Jobs with top-level inputs](#testing-jobs-with-top-level-inputs)
-- [Loading repository definitions](#testing-loading-repository-definitions), such as assets, jobs, etc.
 
 ### Testing ops
 
@@ -437,22 +435,3 @@ job_result = the_job.execute_in_process(
     input_values={"x": 6}
 )  # Overrides existing input value
 ```
-
-### Testing loading repository definitions
-
-To check if your Dagster code loads correctly, you can implement a unit test like the following:
-
-```python file=/concepts/repositories_workspaces/unit_test.py startafter=start_repository_loads_all_definitions endbefore=end_repository_loads_all_definitions
-from .hello_world_repository import hello_world_repository
-
-
-def test_repository_loads_all_definitions():
-    """
-    Asserts that the repository can load all definitions (jobs, assets, schedules, etc)
-    without errors.
-    """
-
-    hello_world_repository.load_all_definitions()
-```
-
-This test attempts to load a Dagster repository and its definitions - including jobs, assets, schedules, etc. - and fails if there's an issue. This can be useful for identifying compilation-level errors before deploying your code.

@@ -1,8 +1,7 @@
 from typing import List, Optional, Union
 
-import graphene
-
 import dagster._check as check
+import graphene
 from dagster._config import ConfigTypeKind, get_recursive_type_keys
 from dagster._core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
 
@@ -124,7 +123,6 @@ class GrapheneRegularConfigType(graphene.ObjectType):
 
 
 class GrapheneMapConfigType(graphene.ObjectType):
-
     key_type = graphene.Field(graphene.NonNull(GrapheneConfigType))
     value_type = graphene.Field(graphene.NonNull(GrapheneConfigType))
     key_label_name = graphene.Field(graphene.String)

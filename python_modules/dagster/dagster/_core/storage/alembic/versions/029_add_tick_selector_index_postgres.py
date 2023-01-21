@@ -1,4 +1,4 @@
-"""add tick selector index
+"""add tick selector index.
 
 Revision ID: b601eb913efa
 Revises: d32d1d6de793

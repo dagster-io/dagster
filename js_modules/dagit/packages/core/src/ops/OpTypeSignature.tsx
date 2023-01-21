@@ -8,7 +8,7 @@ import styled from 'styled-components/macro';
 import {breakOnUnderscores} from '../app/Util';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 
-import {OpTypeSignatureFragment} from './types/OpTypeSignatureFragment';
+import {OpTypeSignatureFragment} from './types/OpTypeSignature.types';
 
 interface IOpTypeSignature {
   definition: OpTypeSignatureFragment;

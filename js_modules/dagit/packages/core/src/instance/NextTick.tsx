@@ -2,10 +2,10 @@ import {gql} from '@apollo/client';
 import {Colors, CaptionMono} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {InstigationStatus} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {InstigationStatus} from '../types/globalTypes';
 
-import {ScheduleFutureTicksFragment} from './types/ScheduleFutureTicksFragment';
+import {ScheduleFutureTicksFragment} from './types/NextTick.types';
 
 const TIME_FORMAT = {
   showTimezone: true,

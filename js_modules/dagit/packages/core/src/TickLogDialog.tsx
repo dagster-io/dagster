@@ -2,7 +2,8 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Button, DialogFooter, Dialog, Colors, DialogBody} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {TickHistoryQuery_instigationStateOrError_InstigationState_ticks} from './instigation/types/TickHistoryQuery';
+import {InstigationSelector} from './graphql/types';
+import {HistoryTickFragment} from './instigation/types/TickHistory.types';
 import {EventTypeColumn, TimestampColumn, Row} from './runs/LogsRowComponents';
 import {
   ColumnWidthsProvider,
@@ -13,23 +14,18 @@ import {
 } from './runs/LogsScrollingTableHeader';
 import {TimestampDisplay} from './schedules/TimestampDisplay';
 import {
+  TickLogEventFragment,
   TickLogEventsQuery,
   TickLogEventsQueryVariables,
-  TickLogEventsQuery_instigationStateOrError_InstigationState_tick_logEvents_events,
-} from './types/TickLogEventsQuery';
-import {InstigationSelector} from './types/globalTypes';
-
-type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
-type LogEvent = TickLogEventsQuery_instigationStateOrError_InstigationState_tick_logEvents_events;
+} from './types/TickLogDialog.types';
 
 export const TickLogDialog: React.FC<{
-  tick: InstigationTick;
+  tick: HistoryTickFragment;
   instigationSelector: InstigationSelector;
   onClose: () => void;
 }> = ({tick, instigationSelector, onClose}) => {
   const {data} = useQuery<TickLogEventsQuery, TickLogEventsQueryVariables>(TICK_LOG_EVENTS_QUERY, {
     variables: {instigationSelector, timestamp: tick.timestamp},
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
@@ -68,7 +64,7 @@ export const TickLogDialog: React.FC<{
   );
 };
 
-const TickLogsTable: React.FC<{events: LogEvent[]}> = ({events}) => {
+const TickLogsTable: React.FC<{events: TickLogEventFragment[]}> = ({events}) => {
   return (
     <div style={{overflow: 'hidden', borderBottom: '0.5px solid #ececec', flex: 1}}>
       <ColumnWidthsProvider onWidthsChanged={() => {}}>
@@ -103,7 +99,7 @@ const Headers = () => {
   );
 };
 
-const TickLogRow: React.FC<{event: LogEvent}> = ({event}) => {
+const TickLogRow: React.FC<{event: TickLogEventFragment}> = ({event}) => {
   return (
     <Row level={event.level} highlighted={false}>
       <EventTypeColumn>
@@ -129,13 +125,17 @@ const TICK_LOG_EVENTS_QUERY = gql`
           timestamp
           logEvents {
             events {
-              message
-              timestamp
-              level
+              ...TickLogEvent
             }
           }
         }
       }
     }
+  }
+
+  fragment TickLogEvent on InstigationEvent {
+    message
+    timestamp
+    level
   }
 `;

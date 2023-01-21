@@ -1,9 +1,8 @@
-from dagster_pyspark.resources import lazy_pyspark_resource, pyspark_resource
-from pyspark.sql import SparkSession
-
 from dagster import job, multiprocess_executor, op, reconstructable
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline
+from dagster_pyspark.resources import lazy_pyspark_resource, pyspark_resource
+from pyspark.sql import SparkSession
 
 
 def assert_pipeline_runs_with_resource(resource_def):
@@ -87,7 +86,6 @@ def test_multiproc_preload():
     # don't have defenses in place.
 
     with instance_for_test() as instance:
-
         # "smart" module preload
         result = execute_pipeline(reconstructable(multiproc_job), instance=instance)
         assert result.success

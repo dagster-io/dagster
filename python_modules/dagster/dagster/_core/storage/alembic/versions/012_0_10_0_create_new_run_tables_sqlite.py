@@ -1,4 +1,4 @@
-"""0.10.0 create new run tables
+"""0.10.0 create new run tables.
 
 Revision ID: f5bac2c36fad
 Revises: 5ae53cd67d0c

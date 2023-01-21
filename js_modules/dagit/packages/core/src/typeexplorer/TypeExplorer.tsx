@@ -11,7 +11,7 @@ import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
-import {TypeExplorerFragment} from './types/TypeExplorerFragment';
+import {TypeExplorerFragment} from './types/TypeExplorer.types';
 
 interface ITypeExplorerProps {
   isGraph: boolean;
@@ -87,6 +87,7 @@ export const TYPE_EXPLORER_FRAGMENT = gql`
       }
     }
   }
+
   ${METADATA_ENTRY_FRAGMENT}
   ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;

@@ -50,6 +50,7 @@ def job_with_mode():
 
 _explode_pid = {"pid": None}
 
+
 # Will throw if the run worker pid tries to access the definition, but subprocesses (the step
 # workers) can access the definition
 class ExplodingTestPipeline(ReconstructablePipeline):

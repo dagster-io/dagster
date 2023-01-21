@@ -17,6 +17,7 @@ def problematic():
 
 # problem_end
 
+
 # policy_start
 @op(retry_policy=RetryPolicy())
 def better():
@@ -24,6 +25,7 @@ def better():
 
 
 # policy_end
+
 
 # policy2_start
 @op(
@@ -51,6 +53,7 @@ def default_and_override_job():
 
 
 # policy3_end
+
 
 # manual_start
 @op

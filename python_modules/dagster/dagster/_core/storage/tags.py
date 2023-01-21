@@ -85,7 +85,7 @@ def check_reserved_tags(tags):
     check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
 
     for tag in tags.keys():
-        if not tag in USER_EDITABLE_SYSTEM_TAGS:
+        if tag not in USER_EDITABLE_SYSTEM_TAGS:
             check.invariant(
                 not tag.startswith(SYSTEM_TAG_PREFIX),
                 desc="Attempted to set tag with reserved system prefix: {tag}".format(tag=tag),

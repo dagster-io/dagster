@@ -9,7 +9,7 @@ IS_DOCSTRING_PARSER_AVAILABLE = is_module_available("docstring_parser")
 
 
 class InferredInputProps(NamedTuple):
-    """The information about an input that can be inferred from the function signature"""
+    """The information about an input that can be inferred from the function signature."""
 
     name: str
     annotation: Any
@@ -18,7 +18,7 @@ class InferredInputProps(NamedTuple):
 
 
 class InferredOutputProps(NamedTuple):
-    """The information about an input that can be inferred from the function signature"""
+    """The information about an input that can be inferred from the function signature."""
 
     annotation: Any
     description: Optional[str]
@@ -69,7 +69,7 @@ def infer_output_props(fn: Callable) -> InferredOutputProps:
 
 def has_explicit_return_type(fn: Callable) -> bool:
     signature = funcsigs.signature(fn)
-    return not signature.return_annotation is funcsigs.Signature.empty
+    return signature.return_annotation is not funcsigs.Signature.empty
 
 
 def _infer_inputs_from_params(

@@ -2,7 +2,6 @@ import datetime
 
 import boto3
 from botocore.stub import Stubber
-
 from dagster import resource
 
 
@@ -35,14 +34,20 @@ class FakeECRPublicResource(ECRPublicResource):
 
 
 @resource(
-    description="This resource enables connecting to AWS Public and getting a login password from it. Similar to the AWS CLI's `aws ecr-public get-login-password` command."
+    description=(
+        "This resource enables connecting to AWS Public and getting a login password from it."
+        " Similar to the AWS CLI's `aws ecr-public get-login-password` command."
+    )
 )
 def ecr_public_resource(_context):
     return ECRPublicResource()
 
 
 @resource(
-    description="This resource behaves like ecr_public_resource except it stubs out the real AWS API requests and always returns `'token'` as its login password."
+    description=(
+        "This resource behaves like ecr_public_resource except it stubs out the real AWS API"
+        " requests and always returns `'token'` as its login password."
+    )
 )
 def fake_ecr_public_resource(_context):
     return FakeECRPublicResource()

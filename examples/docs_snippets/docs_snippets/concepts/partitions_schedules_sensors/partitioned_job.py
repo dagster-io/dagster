@@ -1,4 +1,4 @@
-"""isort:skip_file"""
+# isort: skip_file
 from dagster import job, op
 
 
@@ -23,6 +23,7 @@ def my_partitioned_config(start: datetime, _end: datetime):
 
 
 # end_partitioned_config
+
 
 # start_partitioned_job
 @job(config=my_partitioned_config)

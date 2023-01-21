@@ -1,9 +1,8 @@
 """
-Repository of test pipelines
+Repository of test pipelines.
 """
 
 import pytest
-
 from dagster import (
     GraphDefinition,
     Int,

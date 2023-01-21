@@ -127,7 +127,8 @@ def run_migrate_command(from_label, **kwargs):
 
         count = len(records)
         confirmation = click.prompt(
-            f"Are you sure you want to migrate the run history for {job_name} from {from_label} to {to_label} ({count} runs)? Type MIGRATE"
+            f"Are you sure you want to migrate the run history for {job_name} from {from_label} to"
+            f" {to_label} ({count} runs)? Type MIGRATE"
         )
         should_migrate = confirmation == "MIGRATE"
 

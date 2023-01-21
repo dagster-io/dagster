@@ -4,10 +4,12 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {colorHash} from '../app/Util';
 
-import {PartitionGraphFragment} from './types/PartitionGraphFragment';
+import {PartitionGraphSetRunFragment} from './types/PartitionGraphSet.types';
+import {PartitionGraphFragment} from './types/PartitionGraphUtils.types';
+
 export const PARTITION_GRAPH_FRAGMENT = gql`
   fragment PartitionGraphFragment on PipelineRun {
     id
@@ -39,7 +41,7 @@ export const PARTITION_GRAPH_FRAGMENT = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-export const getPipelineDurationForRun = (run: PartitionGraphFragment) => {
+export const getPipelineDurationForRun = (run: PartitionGraphSetRunFragment) => {
   const {stats} = run;
   if (stats && stats.__typename === 'RunStatsSnapshot' && stats.endTime && stats.startTime) {
     return stats.endTime - stats.startTime;
@@ -48,7 +50,7 @@ export const getPipelineDurationForRun = (run: PartitionGraphFragment) => {
   return undefined;
 };
 
-export const getStepDurationsForRun = (run: PartitionGraphFragment) => {
+export const getStepDurationsForRun = (run: PartitionGraphSetRunFragment) => {
   const {stepStats} = run;
 
   const perStepDuration = {};

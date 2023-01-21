@@ -4,19 +4,20 @@ import * as React from 'react';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
-import {InstanceHealthQuery} from './types/InstanceHealthQuery';
+import {InstanceHealthQuery} from './types/InstanceHealthPage.types';
 
 export const InstanceHealthPage = () => {
   useTrackPageView();
+  useDocumentTitle('Daemons');
 
   const {pageTitle} = React.useContext(InstancePageContext);
   const queryData = useQuery<InstanceHealthQuery>(INSTANCE_HEALTH_QUERY, {
-    fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
   });
   const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);

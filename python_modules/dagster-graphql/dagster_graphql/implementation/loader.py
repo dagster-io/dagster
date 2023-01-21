@@ -3,17 +3,13 @@ from enum import Enum
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import (
+    DagsterInstance,
+    _check as check,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.logical_version import (
-    DEFAULT_LOGICAL_VERSION,
-    UNKNOWN_VALUE,
-    LogicalVersion,
-    LogicalVersionProvenance,
-    compute_logical_version,
-    extract_logical_version_from_entry,
-    extract_logical_version_provenance_from_entry,
+    CachingProjectedLogicalVersionResolver,
 )
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository
@@ -26,7 +22,6 @@ from dagster._core.scheduler.instigation import InstigatorType
 from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._utils.cached_method import cached_method
 
 
 class RepositoryDataType(Enum):
@@ -320,7 +315,8 @@ class BatchMaterializationLoader:
     ) -> Optional[EventLogEntry]:
         if asset_key not in self._asset_keys:
             check.failed(
-                f"Asset key {asset_key} not recognized for this loader.  Expected one of: {self._asset_keys}"
+                f"Asset key {asset_key} not recognized for this loader.  Expected one of:"
+                f" {self._asset_keys}"
             )
 
         if not self._fetched:
@@ -450,7 +446,9 @@ class ProjectedLogicalVersionLoader:
     """
     A batch loader that computes the projected logical version for a set of asset keys. This is
     necessary to avoid recomputation, since each asset's logical version is a function of its
-    dependency logical versions.
+    dependency logical versions. We use similar functionality in core, so this loader simply proxies
+    to `CachingProjectedLogicalVersionResolver` and extracts the string value of the returned
+    `LogicalVersion` objects.
     """
 
     def __init__(
@@ -459,71 +457,9 @@ class ProjectedLogicalVersionLoader:
         repositories: Sequence[ExternalRepository],
         key_to_node_map: Optional[Mapping[AssetKey, ExternalAssetNode]],
     ):
-        self._instance = instance
-        self._key_to_node_map = check.opt_mapping_param(key_to_node_map, "key_to_node_map")
-        self._repositories = repositories
-
-    def get(self, asset_key: AssetKey) -> str:
-        return self._get_version(key=asset_key).value
-
-    @cached_method
-    def _get_version(self, *, key: AssetKey) -> LogicalVersion:
-        node = self._fetch_node(key)
-        if node.is_source:
-            event = self._instance.get_latest_logical_version_record(key, True)
-            if event:
-                version = (
-                    extract_logical_version_from_entry(event.event_log_entry)
-                    or DEFAULT_LOGICAL_VERSION
-                )
-            else:
-                version = DEFAULT_LOGICAL_VERSION
-        elif node.code_version is not None:
-            version = self._compute_projected_new_materialization_logical_version(node)
-        else:
-            materialization = self._instance.get_latest_materialization_event(key)
-            if materialization is None:  # never been materialized
-                version = self._compute_projected_new_materialization_logical_version(node)
-            else:
-                logical_version = extract_logical_version_from_entry(materialization)
-                provenance = extract_logical_version_provenance_from_entry(materialization)
-                if (
-                    logical_version is None  # old materialization event before logical versions
-                    or provenance is None  # should never happen
-                    or self._is_provenance_stale(provenance)
-                ):
-                    version = self._compute_projected_new_materialization_logical_version(node)
-                else:
-                    version = logical_version
-        return version
-
-    # Returns true if the current logical version of at least one input asset differs from the
-    # recorded logical version for that asset in the provenance. This indicates that a new
-    # materialization with up-to-date data would produce a different logical verson.
-    def _is_provenance_stale(self, provenance: LogicalVersionProvenance) -> bool:
-        for k, v in provenance.input_logical_versions.items():
-            if self._get_version(key=k) != v:
-                return True
-        return False
-
-    def _compute_projected_new_materialization_logical_version(
-        self, node: ExternalAssetNode
-    ) -> LogicalVersion:
-        dep_keys = {dep.upstream_asset_key for dep in node.dependencies}
-        return compute_logical_version(
-            node.code_version or UNKNOWN_VALUE,
-            {dep_key: self._get_version(key=dep_key) for dep_key in dep_keys},
+        self._caching_resolver = CachingProjectedLogicalVersionResolver(
+            instance, repositories, key_to_node_map
         )
 
-    def _fetch_node(self, key: AssetKey) -> ExternalAssetNode:
-        if key in self._key_to_node_map:
-            return self._key_to_node_map[key]
-        else:
-            self._fetch_all_nodes()
-            return self._fetch_node(key)
-
-    def _fetch_all_nodes(self) -> None:
-        self._key_to_node_map = {}
-        for repository in self._repositories:
-            for node in repository.get_external_asset_nodes():
-                self._key_to_node_map[node.asset_key] = node
+    def get(self, asset_key: AssetKey) -> str:
+        return self._caching_resolver.get(asset_key).value

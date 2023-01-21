@@ -14,7 +14,7 @@ def get_version() -> str:
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "0+dev" else f"=={ver}"
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-airflow",
     version=ver,
@@ -50,6 +50,8 @@ setup(
             "kubernetes>=10.0.1",
             "apache-airflow-providers-docker>=3.2.0,<4",
             "apache-airflow-providers-apache-spark>=3.0.0,<4",
+            # Logging messages are set to debug starting 4.1.1
+            "apache-airflow-providers-http<4.1.1",
         ],
         "test_airflow_1": [
             "apache-airflow>=1.0.0,<2.0.0",

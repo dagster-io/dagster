@@ -14,7 +14,7 @@ def get_version() -> str:
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "0+dev" else f"=={ver}"
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagstermill",
     version=ver,
@@ -44,9 +44,7 @@ setup(
         # incidentally brought ipython_genutils, but in v5.1 it was dropped, so as
         # a workaround we need to manually specify it here
         "ipython_genutils>=0.2.0",
-        # packaging v22 has build compatibility issues with dbt as of 2022-12-07
-        # upper bound can be removed as soon as BK passes with packaging >=22
-        "packaging>=20.9,<22",
+        "packaging>=20.9",
         "papermill>=1.0.0",
         "scrapbook>=0.5.0",
         "nbconvert",

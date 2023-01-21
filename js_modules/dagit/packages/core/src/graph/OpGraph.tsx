@@ -18,7 +18,7 @@ import {
   isNodeOffscreen,
   isOpHighlighted,
 } from './common';
-import {OpGraphOpFragment} from './types/OpGraphOpFragment';
+import {OpGraphOpFragment} from './types/OpGraph.types';
 
 const NoOp = () => {};
 
@@ -232,6 +232,7 @@ export const OP_GRAPH_OP_FRAGMENT = gql`
       ...OpNodeDefinitionFragment
     }
   }
+
   ${OP_NODE_INVOCATION_FRAGMENT}
   ${OP_NODE_DEFINITION_FRAGMENT}
 `;

@@ -2,18 +2,14 @@ import {gql, useLazyQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
 import {SearchResult, SearchResultType} from './types';
-import {
-  SearchBootstrapQuery,
-  SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories as Repository,
-} from './types/SearchBootstrapQuery';
-import {SearchSecondaryQuery} from './types/SearchSecondaryQuery';
+import {SearchBootstrapQuery, SearchSecondaryQuery} from './types/useRepoSearch.types';
 
 const fuseOptions = {
   keys: ['label', 'segments', 'tags', 'type'],
@@ -36,7 +32,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
     }
 
     const repoLocation = locationEntry.locationOrLoadError;
-    const repos: Repository[] = repoLocation.repositories;
+    const repos = repoLocation.repositories;
     return [
       ...accum,
       ...repos.reduce((inner, repo) => {
@@ -131,16 +127,12 @@ export const useRepoSearch = () => {
   const [
     performBootstrapQuery,
     {data: bootstrapData, loading: bootstrapLoading},
-  ] = useLazyQuery<SearchBootstrapQuery>(SEARCH_BOOTSTRAP_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
+  ] = useLazyQuery<SearchBootstrapQuery>(SEARCH_BOOTSTRAP_QUERY);
 
   const [
     performSecondaryQuery,
     {data: secondaryData, loading: secondaryLoading, called: secondaryQueryCalled},
-  ] = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
+  ] = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY);
 
   const bootstrapFuse = React.useMemo(() => bootstrapDataToSearchResults(bootstrapData), [
     bootstrapData,
@@ -168,7 +160,6 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
   query SearchBootstrapQuery {
     workspaceOrError {
       __typename
-      ...PythonErrorFragment
       ... on Workspace {
         locationEntries {
           __typename
@@ -206,8 +197,10 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
           }
         }
       }
+      ...PythonErrorFragment
     }
   }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;
 

@@ -8,13 +8,14 @@ import 'chartjs-adapter-date-fns';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {SensorSelector} from '../types/globalTypes';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {SensorSelector} from '../graphql/types';
 
 import {
   SetSensorCursorMutation,
   SetSensorCursorMutationVariables,
-} from './types/SetSensorCursorMutation';
+} from './types/EditCursorDialog.types';
 
 export const EditCursorDialog: React.FC<{
   cursor: string;
@@ -109,5 +110,6 @@ const SET_CURSOR_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;

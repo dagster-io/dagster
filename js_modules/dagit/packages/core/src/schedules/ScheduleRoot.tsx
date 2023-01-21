@@ -3,7 +3,7 @@ import {Tabs, Tab, Page, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -21,12 +21,10 @@ import {SchedulerInfo} from './SchedulerInfo';
 import {
   PreviousRunsForScheduleQuery,
   PreviousRunsForScheduleQueryVariables,
-} from './types/PreviousRunsForScheduleQuery';
-import {
   ScheduleRootQuery,
   ScheduleRootQueryVariables,
-  ScheduleRootQuery_scheduleOrError_Schedule as Schedule,
-} from './types/ScheduleRootQuery';
+} from './types/ScheduleRoot.types';
+import {ScheduleFragment} from './types/ScheduleUtils.types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -51,7 +49,6 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
     variables: {
       scheduleSelector,
     },
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
@@ -105,14 +102,13 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
 export const SchedulePreviousRuns: React.FC<{
   repoAddress: RepoAddress;
-  schedule: Schedule;
+  schedule: ScheduleFragment;
   tabs?: React.ReactElement;
   highlightedIds?: string[];
 }> = ({schedule, highlightedIds, tabs}) => {
   const queryResult = useQuery<PreviousRunsForScheduleQuery, PreviousRunsForScheduleQueryVariables>(
     PREVIOUS_RUNS_FOR_SCHEDULE_QUERY,
     {
-      fetchPolicy: 'cache-and-network',
       variables: {
         limit: 20,
         filter: {
@@ -157,7 +153,6 @@ const SCHEDULE_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
     instance {
-      ...InstanceHealthFragment
       daemonHealth {
         id
         daemonStatus(daemonType: "SCHEDULER") {
@@ -165,12 +160,13 @@ const SCHEDULE_ROOT_QUERY = gql`
           healthy
         }
       }
+      ...InstanceHealthFragment
     }
   }
 
   ${SCHEDULE_FRAGMENT}
-  ${INSTANCE_HEALTH_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
+  ${INSTANCE_HEALTH_FRAGMENT}
 `;
 
 const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
@@ -190,5 +186,6 @@ const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
       }
     }
   }
+
   ${RUN_TABLE_RUN_FRAGMENT}
 `;

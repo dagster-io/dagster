@@ -3,12 +3,12 @@ import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
+import {RunStatus} from '../graphql/types';
 import {StorybookProvider} from '../testing/StorybookProvider';
 import {generateRunMocks} from '../testing/generateRunMocks';
-import {RunStatus} from '../types/globalTypes';
 
 import {RunStatusPez, RunStatusPezList} from './RunStatusPez';
-import {RunTimeFragment} from './types/RunTimeFragment';
+import {RunTimeFragment} from './types/RunUtils.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {

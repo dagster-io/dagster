@@ -4,7 +4,6 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from dagster._core.test_utils import environ
 
 

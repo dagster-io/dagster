@@ -1,7 +1,6 @@
 import responses
-from dagster_pagerduty import pagerduty_resource
-
 from dagster import build_op_context, op
+from dagster_pagerduty import pagerduty_resource
 
 
 @responses.activate
@@ -17,8 +16,10 @@ def test_pagerduty_resource():
                 json={"status": "success", "message": "Event processed", "dedup_key": "foobar"},
             )
             context.resources.pagerduty.EventV2_create(
-                summary="PING OK - Packet loss = 0%, RTA = 1.41 ms Host 'acme-andromeda-sv1-c40"
-                ":: 179.21.24.50' is DOWN",
+                summary=(
+                    "PING OK - Packet loss = 0%, RTA = 1.41 ms Host 'acme-andromeda-sv1-c40"
+                    ":: 179.21.24.50' is DOWN"
+                ),
                 source="prod05.theseus.acme-widgets.com",
                 severity="error",
                 event_action="trigger",

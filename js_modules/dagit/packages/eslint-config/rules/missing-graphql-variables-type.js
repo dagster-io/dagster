@@ -45,20 +45,16 @@ module.exports = {
           }
           const variablesName = queryName + 'Variables';
           let queryImportSpecifier = null;
-          const importDeclaration = context
-            .getSourceCode()
-            .ast.body.find(
-              (node) =>
-                node.type === 'ImportDeclaration' &&
-                node.specifiers.find(
-                  (node) => {
-                    if (node.type === 'ImportSpecifier' && node.local.name === queryName) {
-                      queryImportSpecifier = node;
-                      return true;
-                    }
-                  }
-                ),
-            )
+          const importDeclaration = context.getSourceCode().ast.body.find(
+            (node) =>
+              node.type === 'ImportDeclaration' &&
+              node.specifiers.find((node) => {
+                if (node.type === 'ImportSpecifier' && node.local.name === queryName) {
+                  queryImportSpecifier = node;
+                  return true;
+                }
+              }),
+          );
           const importPath = importDeclaration.source.value;
           const currentPath = context.getFilename().split('/').slice(0, -1).join('/');
           const fullPath = path.join(currentPath, importPath + '.ts');
@@ -86,7 +82,11 @@ module.exports = {
                 variablesType: variablesName,
               },
               *fix(fixer) {
-                if (!importDeclaration.specifiers.find(node => node.type === 'ImportSpecifier' && node.local.name === variablesName)) {
+                if (
+                  !importDeclaration.specifiers.find(
+                    (node) => node.type === 'ImportSpecifier' && node.local.name === variablesName,
+                  )
+                ) {
                   yield fixer.insertTextAfter(queryImportSpecifier, `, ${variablesName}`);
                 }
                 yield fixer.insertTextAfter(queryType, `, ${variablesName}`);

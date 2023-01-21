@@ -2,6 +2,11 @@ import os
 import time
 from typing import List
 
+from dagster import AssetKey, DagsterEventType
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.test_utils import poll_for_finished_run
+from dagster._legacy import DagsterRunStatus
+from dagster._utils import Counter, safe_tempfile_path, traced_counter
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -12,12 +17,6 @@ from dagster_graphql.test.utils import (
     infer_pipeline_selector,
     infer_repository_selector,
 )
-
-from dagster import AssetKey, DagsterEventType
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.test_utils import poll_for_finished_run
-from dagster._legacy import DagsterRunStatus
-from dagster._utils import Counter, safe_tempfile_path, traced_counter
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from .graphql_context_test_suite import (
@@ -130,6 +129,16 @@ GET_ASSET_LATEST_RUN_STATS = """
     }
 """
 
+GET_ASSET_LOGICAL_VERSIONS = """
+    query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
+        assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
+            id
+            currentLogicalVersion
+            projectedLogicalVersion
+        }
+    }
+"""
+
 
 GET_ASSET_NODES_FROM_KEYS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
@@ -170,6 +179,26 @@ GET_LATEST_MATERIALIZATION_PER_PARTITION = """
                 partition
                 stepStats {
                     startTime
+                }
+            }
+        }
+    }
+"""
+
+GET_MATERIALIZATION_USED_DATA = """
+    query AssetNodeQuery($assetKey: AssetKeyInput!, $timestamp: String!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ...on AssetNode {
+                id
+                assetMaterializationUsedData(timestampMillis: $timestamp) {
+                    __typename
+                    timestamp
+                    assetKey {
+                        path
+                    }
+                    downstreamAssetKey {
+                        path
+                    }
                 }
             }
         }
@@ -764,6 +793,36 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert new_start_time > start_time
 
         assert asset_node["latestMaterializationByPartition"][1] is None
+
+    def test_materialization_used_data(self, graphql_context):
+        def get_response_by_asset(response):
+            return {stat["assetKey"]["path"][0]: stat for stat in response}
+
+        _create_run(graphql_context, "two_assets_job")
+
+        # Obtain the timestamp of the asset_one, asset_two materializations
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_LATEST_RUN_STATS,
+            variables={"assetKeys": [{"path": ["asset_one"]}, {"path": ["asset_two"]}]},
+        )
+
+        assert result.data["assetsLatestInfo"]
+        info = get_response_by_asset(result.data["assetsLatestInfo"])
+        timestamp_a1 = info["asset_one"]["latestMaterialization"]["timestamp"]
+        timestamp_a2 = info["asset_two"]["latestMaterialization"]["timestamp"]
+
+        # Verify that the "used data" for asset_two matches the asset_one timestamp
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MATERIALIZATION_USED_DATA,
+            variables={"assetKey": {"path": ["asset_two"]}, "timestamp": timestamp_a2},
+        )
+
+        used_data = result.data["assetNodeOrError"]["assetMaterializationUsedData"]
+        assert len(used_data) == 1
+        assert used_data[0]["assetKey"]["path"] == ["asset_one"]
+        assert used_data[0]["timestamp"] == timestamp_a1
 
     def test_materialization_count_by_partition(self, graphql_context):
         # test for unpartitioned asset

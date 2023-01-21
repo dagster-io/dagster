@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import ConfigMapping, Field, graph, op
 from dagster._check import CheckError
 from dagster._config import ConfigAnyInstance

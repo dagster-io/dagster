@@ -2,10 +2,11 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Heading, NonIdealState, PageHeader, Spinner, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -15,21 +16,25 @@ import {RepoAddress} from '../workspace/types';
 import {OverviewJobsTable} from './OverviewJobsTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
-import {OverviewJobsQuery} from './types/OverviewJobsQuery';
+import {OverviewJobsQuery, OverviewJobsQueryVariables} from './types/OverviewJobsRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewJobsRoot = () => {
   useTrackPageView();
+  useDocumentTitle('Overview | Jobs');
 
   const [searchValue, setSearchValue] = React.useState('');
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
 
   const repoCount = allRepos.length;
 
-  const queryResultOverview = useQuery<OverviewJobsQuery>(OVERVIEW_JOBS_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-  });
+  const queryResultOverview = useQuery<OverviewJobsQuery, OverviewJobsQueryVariables>(
+    OVERVIEW_JOBS_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+    },
+  );
   const {data, loading} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);

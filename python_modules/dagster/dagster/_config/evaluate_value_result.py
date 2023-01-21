@@ -14,11 +14,11 @@ from .errors import EvaluationError
 
 T = TypeVar("T")
 
+
 # Python 3.6 doesn't simultaneously support NamedTuple and Generic, so we omit
 # the usual NamedTuple pattern here. See:
 # https://stackoverflow.com/questions/50530959/generic-namedtuple-in-python-3-6
 class EvaluateValueResult(Generic[T]):
-
     success: Optional[bool]
     value: Optional[T]
     errors: Optional[Sequence[EvaluationError]]

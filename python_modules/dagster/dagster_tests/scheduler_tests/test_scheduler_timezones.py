@@ -1,6 +1,5 @@
 import pendulum
 import pytest
-
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
@@ -142,7 +141,6 @@ def test_differing_timezones(instance, workspace_context, external_repo, executo
     # Past midnight central time, the central timezone schedule will now run
     freeze_datetime = freeze_datetime.add(hours=1)
     with pendulum.test(freeze_datetime):
-
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
 
         assert instance.get_runs_count() == 2

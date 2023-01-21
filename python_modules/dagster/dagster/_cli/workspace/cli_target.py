@@ -1,11 +1,22 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Generator, Iterable, List, Mapping, Optional, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Generator,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 import click
 import tomli
 from click import UsageError
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -21,10 +32,12 @@ from dagster._core.origin import (
 )
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.load_target import (
+    CompositeTarget,
     EmptyWorkspaceTarget,
     GrpcServerTarget,
     ModuleTarget,
     PackageTarget,
+    PyProjectFileTarget,
     PythonFileTarget,
     WorkspaceFileTarget,
 )
@@ -36,7 +49,12 @@ if TYPE_CHECKING:
 
 from dagster._core.host_representation.external import ExternalPipeline
 
-WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port, --grpc-socket."
+WORKSPACE_TARGET_WARNING = (
+    "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port,"
+    " --grpc-socket."
+)
+
+ClickArgMapping: TypeAlias = Mapping[str, Union[str, Tuple[str]]]
 
 
 def _cli_load_invariant(condition: object, msg=None) -> None:
@@ -48,12 +66,12 @@ def _cli_load_invariant(condition: object, msg=None) -> None:
         raise UsageError(msg)
 
 
-def _check_cli_arguments_none(kwargs: Mapping[str, str], *keys: str) -> None:
+def _check_cli_arguments_none(kwargs: ClickArgMapping, *keys: str) -> None:
     for key in keys:
         _cli_load_invariant(not kwargs.get(key))
 
 
-def are_all_keys_empty(kwargs: Mapping[str, str], keys: Iterable[str]) -> bool:
+def are_all_keys_empty(kwargs: ClickArgMapping, keys: Iterable[str]) -> bool:
     for key in keys:
         if kwargs.get(key):
             return False
@@ -75,34 +93,24 @@ WORKSPACE_CLI_ARGS = (
 )
 
 
-def get_target_from_toml(path) -> Optional[PackageTarget]:
+def _has_pyproject_dagster_block(path):
+    if not os.path.exists(path):
+        return False
     with open(path, "rb") as f:
         data = tomli.load(f)
         if not isinstance(data, dict):
-            return None
+            return False
 
-        dagster_block = data.get("tool", {}).get("dagster", {})
-        return (
-            PackageTarget(
-                package_name=dagster_block["python_package"],
-                attribute=None,
-                working_directory=os.getcwd(),
-                location_name=None,
-            )
-            if "python_package" in dagster_block
-            else None
-        )
+        return data.get("tool", {}).get("dagster")
 
 
-def get_workspace_load_target(kwargs: Mapping[str, str]):
+def get_workspace_load_target(kwargs: ClickArgMapping):
     check.mapping_param(kwargs, "kwargs")
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
             return EmptyWorkspaceTarget()
-        if os.path.exists("pyproject.toml"):
-            target = get_target_from_toml("pyproject.toml")
-            if target:
-                return target
+        if _has_pyproject_dagster_block("pyproject.toml"):
+            return PyProjectFileTarget("pyproject.toml")
 
         if os.path.exists("workspace.yaml"):
             return WorkspaceFileTarget(paths=["workspace.yaml"])
@@ -132,13 +140,37 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
             "grpc_port",
             "grpc_socket",
         )
+        python_files = kwargs["python_file"]
+
         working_directory = get_working_directory_from_kwargs(kwargs)
-        return PythonFileTarget(
-            python_file=check.str_elem(kwargs, "python_file"),
-            attribute=check.opt_str_elem(kwargs, "attribute"),
-            working_directory=working_directory,
-            location_name=None,
-        )
+
+        if len(python_files) == 1:
+            return PythonFileTarget(
+                python_file=python_files[0],
+                attribute=check.opt_str_elem(kwargs, "attribute"),
+                working_directory=working_directory,
+                location_name=None,
+            )
+        else:
+            # multiple files
+
+            if kwargs.get("attribute"):
+                raise UsageError(
+                    "If you are specifying multiple files you cannot specify an attribute."
+                )
+
+            return CompositeTarget(
+                targets=[
+                    PythonFileTarget(
+                        python_file=python_file,
+                        attribute=None,
+                        working_directory=working_directory,
+                        location_name=None,
+                    )
+                    for python_file in python_files
+                ]
+            )
+
     if kwargs.get("module_name"):
         _check_cli_arguments_none(
             kwargs,
@@ -147,13 +179,41 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
             "grpc_port",
             "grpc_socket",
         )
+
+        module_names = kwargs["module_name"]
+
+        check.is_tuple(module_names, of_type=str)
+
         working_directory = get_working_directory_from_kwargs(kwargs)
-        return ModuleTarget(
-            module_name=check.str_elem(kwargs, "module_name"),
-            attribute=check.opt_str_elem(kwargs, "attribute"),
-            working_directory=working_directory,
-            location_name=None,
-        )
+
+        if len(module_names) == 1:
+            return ModuleTarget(
+                module_name=module_names[0],
+                attribute=check.opt_str_elem(kwargs, "attribute"),
+                working_directory=working_directory,
+                location_name=None,
+            )
+        else:
+            # multiple modules
+
+            if kwargs.get("attribute"):
+                raise UsageError(
+                    "If you are specifying multiple modules you cannot specify an attribute. Got"
+                    f" modules {module_names}."
+                )
+
+            return CompositeTarget(
+                targets=[
+                    ModuleTarget(
+                        module_name=module_name,
+                        attribute=None,
+                        working_directory=working_directory,
+                        location_name=None,
+                    )
+                    for module_name in module_names
+                ]
+            )
+
     if kwargs.get("package_name"):
         _check_cli_arguments_none(
             kwargs,
@@ -200,18 +260,28 @@ def get_workspace_load_target(kwargs: Mapping[str, str]):
 
 
 def get_workspace_process_context_from_kwargs(
-    instance: DagsterInstance, version: str, read_only: bool, kwargs: Mapping[str, str]
+    instance: DagsterInstance,
+    version: str,
+    read_only: bool,
+    kwargs: ClickArgMapping,
+    code_server_log_level: str = "INFO",
 ) -> "WorkspaceProcessContext":
     from dagster._core.workspace.context import WorkspaceProcessContext
 
     return WorkspaceProcessContext(
-        instance, get_workspace_load_target(kwargs), version=version, read_only=read_only
+        instance,
+        get_workspace_load_target(kwargs),
+        version=version,
+        read_only=read_only,
+        code_server_log_level=code_server_log_level,
     )
 
 
 @contextmanager
 def get_workspace_from_kwargs(
-    instance: DagsterInstance, version: str, kwargs: Mapping[str, str]
+    instance: DagsterInstance,
+    version: str,
+    kwargs: ClickArgMapping,
 ) -> Generator[WorkspaceRequestContext, None, None]:
     with get_workspace_process_context_from_kwargs(
         instance, version, read_only=False, kwargs=kwargs
@@ -219,7 +289,52 @@ def get_workspace_from_kwargs(
         yield workspace_process_context.create_request_context()
 
 
-def python_target_click_options():
+def python_file_option(allow_multiple):
+    return click.option(
+        "--python-file",
+        "-f",
+        # Checks that the path actually exists lower in the stack, where we
+        # are better equipped to surface errors
+        type=click.Path(exists=False),
+        multiple=allow_multiple,
+        help=(
+            "Specify python file "
+            + ("or files (flag can be used multiple times) " if allow_multiple else "")
+            + "where dagster definitions reside as top-level symbols/variables and load "
+            + ("each" if allow_multiple else "the")
+            + " file as a code location in the current python environment."
+        ),
+        envvar="DAGSTER_PYTHON_FILE",
+    )
+
+
+def workspace_option():
+    return click.option(
+        "--workspace",
+        "-w",
+        multiple=True,
+        type=click.Path(exists=True),
+        help="Path to workspace file. Argument can be provided multiple times.",
+    )
+
+
+def python_module_option(allow_multiple):
+    return click.option(
+        "--module-name",
+        "-m",
+        multiple=allow_multiple,
+        help=(
+            "Specify module "
+            + ("or modules (flag can be used multiple times) " if allow_multiple else "")
+            + "where dagster definitions reside as top-level symbols/variables and load "
+            + ("each" if allow_multiple else "the")
+            + " module as a code location in the current python environment."
+        ),
+        envvar="DAGSTER_MODULE_NAME",
+    )
+
+
+def python_target_click_options(allow_multiple_python_targets):
     return [
         click.option(
             "--working-directory",
@@ -227,25 +342,12 @@ def python_target_click_options():
             help="Specify working directory to use when loading the repository or job",
             envvar="DAGSTER_WORKING_DIRECTORY",
         ),
-        click.option(
-            "--python-file",
-            "-f",
-            # Checks that the path actually exists lower in the stack, where we
-            # are better equipped to surface errors
-            type=click.Path(exists=False),
-            help="Specify python file where repository or job function lives",
-            envvar="DAGSTER_PYTHON_FILE",
-        ),
+        python_file_option(allow_multiple=allow_multiple_python_targets),
+        python_module_option(allow_multiple=allow_multiple_python_targets),
         click.option(
             "--package-name",
             help="Specify Python package where repository or job function lives",
             envvar="DAGSTER_PACKAGE_NAME",
-        ),
-        click.option(
-            "--module-name",
-            "-m",
-            help="Specify module where repository or job function lives",
-            envvar="DAGSTER_MODULE_NAME",
         ),
         click.option(
             "--attribute",
@@ -265,25 +367,25 @@ def grpc_server_target_click_options():
             "--grpc-port",
             type=click.INT,
             required=False,
-            help=("Port to use to connect to gRPC server"),
+            help="Port to use to connect to gRPC server",
         ),
         click.option(
             "--grpc-socket",
             type=click.Path(),
             required=False,
-            help=("Named socket to use to connect to gRPC server"),
+            help="Named socket to use to connect to gRPC server",
         ),
         click.option(
             "--grpc-host",
             type=click.STRING,
             required=False,
-            help=("Host to use to connect to gRPC server, defaults to localhost"),
+            help="Host to use to connect to gRPC server, defaults to localhost",
         ),
         click.option(
             "--use-ssl",
             is_flag=True,
             required=False,
-            help=("Use a secure channel when connecting to the gRPC server"),
+            help="Use a secure channel when connecting to the gRPC server",
         ),
     ]
 
@@ -292,27 +394,21 @@ def workspace_target_click_options():
     return (
         [
             click.option("--empty-workspace", is_flag=True, help="Allow an empty workspace"),
-            click.option(
-                "--workspace",
-                "-w",
-                multiple=True,
-                type=click.Path(exists=True),
-                help=("Path to workspace file. Argument can be provided multiple times."),
-            ),
+            workspace_option(),
         ]
-        + python_target_click_options()
+        + python_target_click_options(allow_multiple_python_targets=True)
         + grpc_server_target_click_options()
     )
 
 
 def python_job_target_click_options():
     return (
-        python_target_click_options()
+        python_target_click_options(allow_multiple_python_targets=False)
         + [
             click.option(
                 "--repository",
                 "-r",
-                help=("Repository name, necessary if more than one repository is present."),
+                help="Repository name, necessary if more than one repository is present.",
             )
         ]
         + [job_option()]
@@ -377,7 +473,7 @@ def grpc_server_origin_target_argument(f):
 def python_origin_target_argument(f):
     from dagster._cli.job import apply_click_params
 
-    options = python_target_click_options()
+    options = python_target_click_options(allow_multiple_python_targets=False)
     return apply_click_params(f, *options)
 
 
@@ -394,7 +490,8 @@ def repository_click_options():
             "--location",
             "-l",
             help=(
-                "RepositoryLocation within the workspace, necessary if more than one location is present."
+                "RepositoryLocation within the workspace, necessary if more than one location is"
+                " present."
             ),
         ),
     ]
@@ -417,7 +514,7 @@ def job_option():
         "--job",
         "-j",
         "job_name",
-        help=("Job within the repository, necessary if more than one job is present."),
+        help="Job within the repository, necessary if more than one job is present.",
     )
 
 
@@ -440,17 +537,13 @@ def get_job_python_origin_from_kwargs(kwargs):
         pipeline_name = next(iter(job_names))
     elif provided_name is None:
         raise click.UsageError(
-            (
-                "Must provide --job as there is more than one job "
-                f"in {repo_definition.name}. Options are: {_sorted_quoted(job_names)}."
-            )
+            "Must provide --job as there is more than one job "
+            f"in {repo_definition.name}. Options are: {_sorted_quoted(job_names)}."
         )
-    elif not provided_name in job_names:
+    elif provided_name not in job_names:
         raise click.UsageError(
-            (
-                f'Job "{provided_name}" not found in repository "{repo_definition.name}" '
-                f"Found {_sorted_quoted(job_names)} instead."
-            )
+            f'Job "{provided_name}" not found in repository "{repo_definition.name}" '
+            f"Found {_sorted_quoted(job_names)} instead."
         )
     else:
         pipeline_name = provided_name
@@ -458,12 +551,12 @@ def get_job_python_origin_from_kwargs(kwargs):
     return PipelinePythonOrigin(pipeline_name, repository_origin=repository_origin)
 
 
-def _get_code_pointer_dict_from_kwargs(kwargs: Mapping[str, str]) -> Mapping[str, CodePointer]:
-    python_file = kwargs.get("python_file")
-    module_name = kwargs.get("module_name")
-    package_name = kwargs.get("package_name")
+def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, CodePointer]:
+    python_file = check.opt_str_elem(kwargs, "python_file")
+    module_name = check.opt_str_elem(kwargs, "module_name")
+    package_name = check.opt_str_elem(kwargs, "package_name")
     working_directory = get_working_directory_from_kwargs(kwargs)
-    attribute = kwargs.get("attribute")
+    attribute = check.opt_str_elem(kwargs, "attribute")
     if python_file:
         _check_cli_arguments_none(kwargs, "module_name", "package_name")
         return {
@@ -507,7 +600,7 @@ def _get_code_pointer_dict_from_kwargs(kwargs: Mapping[str, str]) -> Mapping[str
         check.failed("Must specify a Python file or module name")
 
 
-def get_working_directory_from_kwargs(kwargs: Mapping[str, str]) -> Optional[str]:
+def get_working_directory_from_kwargs(kwargs: ClickArgMapping) -> Optional[str]:
     return check.opt_str_elem(kwargs, "working_directory") or os.getcwd()
 
 
@@ -524,23 +617,25 @@ def get_repository_python_origin_from_kwargs(kwargs: Mapping[str, str]) -> Repos
     if kwargs.get("attribute") and not provided_repo_name:
         if kwargs.get("python_file"):
             _check_cli_arguments_none(kwargs, "module_name", "package_name")
+            python_file = check.str_elem(kwargs, "python_file")
             code_pointer: CodePointer = CodePointer.from_python_file(
-                kwargs["python_file"],
-                kwargs["attribute"],
+                python_file,
+                check.str_elem(kwargs, "attribute"),
                 get_working_directory_from_kwargs(kwargs),
             )
         elif kwargs.get("module_name"):
             _check_cli_arguments_none(kwargs, "python_file", "package_name")
+            module_name = check.str_elem(kwargs, "module_name")
             code_pointer = CodePointer.from_module(
-                kwargs["module_name"],
-                kwargs["attribute"],
+                module_name,
+                check.str_elem(kwargs, "attribute"),
                 get_working_directory_from_kwargs(kwargs),
             )
         elif kwargs.get("package_name"):
             _check_cli_arguments_none(kwargs, "python_file", "module_name")
             code_pointer = CodePointer.from_python_package(
-                kwargs["package_name"],
-                kwargs["attribute"],
+                check.str_elem(kwargs, "package_name"),
+                check.str_elem(kwargs, "attribute"),
                 get_working_directory_from_kwargs(kwargs),
             )
         else:
@@ -557,12 +652,10 @@ def get_repository_python_origin_from_kwargs(kwargs: Mapping[str, str]) -> Repos
         code_pointer = next(iter(code_pointer_dict.values()))
     elif provided_repo_name is None:
         raise click.UsageError(
-            (
-                "Must provide --repository as there is more than one repository. "
-                f"Options are: {found_repo_names}."
-            )
+            "Must provide --repository as there is more than one repository. "
+            f"Options are: {found_repo_names}."
         )
-    elif not provided_repo_name in code_pointer_dict:
+    elif provided_repo_name not in code_pointer_dict:
         raise click.UsageError(
             f'Repository "{provided_repo_name}" not found. Found {found_repo_names} instead.'
         )
@@ -683,18 +776,14 @@ def get_external_job_from_external_repo(
 
     if provided_name is None:
         raise click.UsageError(
-            (
-                "Must provide --job as there is more than one job "
-                f"in {external_repo.name}. Options are: {_sorted_quoted(external_pipelines.keys())}."
-            )
+            "Must provide --job as there is more than one job "
+            f"in {external_repo.name}. Options are: {_sorted_quoted(external_pipelines.keys())}."
         )
 
-    if not provided_name in external_pipelines:
+    if provided_name not in external_pipelines:
         raise click.UsageError(
-            (
-                f'Job "{provided_name}" not found in repository "{external_repo.name}". '
-                f"Found {_sorted_quoted(external_pipelines.keys())} instead."
-            )
+            f'Job "{provided_name}" not found in repository "{external_repo.name}". '
+            f"Found {_sorted_quoted(external_pipelines.keys())} instead."
         )
 
     return external_pipelines[provided_name]

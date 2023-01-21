@@ -2,9 +2,10 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -14,10 +15,13 @@ import {RepoAddress} from './types';
 import {
   WorkspaceSchedulesQuery,
   WorkspaceSchedulesQueryVariables,
-} from './types/WorkspaceSchedulesQuery';
+} from './types/WorkspaceSchedulesRoot.types';
 
 export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
+
+  const repoName = repoAddressAsHumanString(repoAddress);
+  useDocumentTitle(`Schedules: ${repoName}`);
 
   const [searchValue, setSearchValue] = React.useState('');
   const selector = repoAddressToSelector(repoAddress);
@@ -59,8 +63,6 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
         </Box>
       );
     }
-
-    const repoName = repoAddressAsHumanString(repoAddress);
 
     if (!filteredBySearch.length) {
       if (anySearch) {

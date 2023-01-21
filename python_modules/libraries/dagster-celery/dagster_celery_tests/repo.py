@@ -1,7 +1,5 @@
 import time
 
-from dagster_celery import celery_executor
-
 from dagster import Int, Output, RetryRequested, VersionStrategy, fs_io_manager
 from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._legacy import (
@@ -13,6 +11,7 @@ from dagster._legacy import (
     pipeline,
     solid,
 )
+from dagster_celery import celery_executor
 
 celery_mode_defs = [
     ModeDefinition(

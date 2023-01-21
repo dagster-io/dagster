@@ -24,7 +24,6 @@ def build_integration_steps() -> List[BuildkiteStep]:
     # Shared dependency of some test suites
     steps += PackageSpec(
         os.path.join("integration_tests", "python_modules", "dagster-k8s-test-infra"),
-        upload_coverage=True,
     ).build_steps()
 
     # test suites
@@ -42,7 +41,6 @@ def build_integration_steps() -> List[BuildkiteStep]:
 
 
 def build_backcompat_suite_steps() -> List[GroupStep]:
-
     tox_factors = [
         "dagit-latest-release",
         "dagit-earliest-release",
@@ -54,12 +52,10 @@ def build_backcompat_suite_steps() -> List[GroupStep]:
         os.path.join("integration_tests", "test_suites", "backcompat-test-suite"),
         pytest_extra_cmds=backcompat_extra_cmds,
         pytest_tox_factors=tox_factors,
-        upload_coverage=False,
     )
 
 
 def backcompat_extra_cmds(_, factor: str) -> List[str]:
-
     tox_factor_map = {
         "dagit-latest-release": {
             "dagit": LATEST_DAGSTER_RELEASE,
@@ -88,7 +84,10 @@ def backcompat_extra_cmds(_, factor: str) -> List[str]:
     return [
         f"export EARLIEST_TESTED_RELEASE={EARLIEST_TESTED_RELEASE}",
         "pushd integration_tests/test_suites/backcompat-test-suite/dagit_service",
-        f"./build.sh {dagit_version} {dagit_library_version} {user_code_version} {user_code_library_version} {_extract_major_version(user_code_version)}",
+        (
+            "./build.sh"
+            f" {dagit_version} {dagit_library_version} {user_code_version} {user_code_library_version} {_extract_major_version(user_code_version)}"
+        ),
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
         *network_buildkite_container("dagit_service_network"),
         *connect_sibling_docker_container(
@@ -128,7 +127,7 @@ def build_celery_k8s_suite_steps() -> List[GroupStep]:
         "-markmonitoring",
     ]
     directory = os.path.join("integration_tests", "test_suites", "celery-k8s-test-suite")
-    return build_integration_suite_steps(directory, pytest_tox_factors, upload_coverage=True)
+    return build_integration_suite_steps(directory, pytest_tox_factors)
 
 
 # ########################
@@ -142,7 +141,6 @@ def build_daemon_suite_steps():
     return build_integration_suite_steps(
         directory,
         pytest_tox_factors,
-        upload_coverage=False,
         pytest_extra_cmds=daemon_pytest_extra_cmds,
     )
 
@@ -171,7 +169,7 @@ def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
 def build_k8s_suite_steps():
     pytest_tox_factors = ["-default", "-subchart"]
     directory = os.path.join("integration_tests", "test_suites", "k8s-test-suite")
-    return build_integration_suite_steps(directory, pytest_tox_factors, upload_coverage=True)
+    return build_integration_suite_steps(directory, pytest_tox_factors)
 
 
 # ########################
@@ -182,7 +180,6 @@ def build_k8s_suite_steps():
 def build_integration_suite_steps(
     directory: str,
     pytest_tox_factors: Optional[List[str]],
-    upload_coverage: bool,
     pytest_extra_cmds: Optional[Callable] = None,
     queue=None,
 ) -> List[GroupStep]:
@@ -197,7 +194,6 @@ def build_integration_suite_steps(
             "BUILDKITE_SECRETS_BUCKET",
             "GOOGLE_APPLICATION_CREDENTIALS",
         ],
-        upload_coverage=upload_coverage,
         pytest_extra_cmds=pytest_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
         pytest_tox_factors=pytest_tox_factors,

@@ -3,7 +3,13 @@ import os
 import time
 import uuid
 
+import dagster._check as check
 import pytest
+from dagster._core.events import DagsterEventType
+from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._utils.merger import deep_merge_dicts, merge_dicts
+from dagster._utils.yaml_utils import load_yaml_from_path
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
@@ -27,13 +33,6 @@ from dagster_test.test_project import (
     get_test_project_environments_path,
 )
 from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
-
-import dagster._check as check
-from dagster._core.events import DagsterEventType
-from dagster._core.storage.pipeline_run import DagsterRunStatus
-from dagster._core.storage.tags import DOCKER_IMAGE_TAG
-from dagster._utils import load_yaml_from_path, merge_dicts
-from dagster._utils.merger import deep_merge_dicts
 
 
 @pytest.mark.integration

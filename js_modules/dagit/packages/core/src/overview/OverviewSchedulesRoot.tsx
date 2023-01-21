@@ -14,9 +14,11 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
@@ -30,21 +32,29 @@ import {RepoAddress} from '../workspace/types';
 import {OverviewScheduleTable} from './OverviewSchedulesTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
-import {OverviewSchedulesQuery} from './types/OverviewSchedulesQuery';
-import {UnloadableSchedulesQuery} from './types/UnloadableSchedulesQuery';
+import {
+  OverviewSchedulesQuery,
+  OverviewSchedulesQueryVariables,
+  UnloadableSchedulesQuery,
+  UnloadableSchedulesQueryVariables,
+} from './types/OverviewSchedulesRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewSchedulesRoot = () => {
   useTrackPageView();
+  useDocumentTitle('Overview | Schedules');
 
   const [searchValue, setSearchValue] = React.useState('');
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
 
-  const queryResultOverview = useQuery<OverviewSchedulesQuery>(OVERVIEW_SCHEDULES_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-  });
+  const queryResultOverview = useQuery<OverviewSchedulesQuery, OverviewSchedulesQueryVariables>(
+    OVERVIEW_SCHEDULES_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+    },
+  );
   const {data, loading} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
@@ -222,7 +232,9 @@ const UnloadableSchedulesAlert: React.FC<{
 };
 
 const UnloadableScheduleDialog: React.FC = () => {
-  const {data} = useQuery<UnloadableSchedulesQuery>(UNLOADABLE_SCHEDULES_QUERY);
+  const {data} = useQuery<UnloadableSchedulesQuery, UnloadableSchedulesQueryVariables>(
+    UNLOADABLE_SCHEDULES_QUERY,
+  );
   if (!data) {
     return <Spinner purpose="section" />;
   }

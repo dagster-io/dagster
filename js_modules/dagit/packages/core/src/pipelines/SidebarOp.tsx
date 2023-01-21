@@ -10,12 +10,13 @@ import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarOpDefinition, SIDEBAR_OP_DEFINITION_FRAGMENT} from './SidebarOpDefinition';
 import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
 import {SidebarOpInvocation, SIDEBAR_OP_INVOCATION_FRAGMENT} from './SidebarOpInvocation';
-import {SidebarGraphOpQuery, SidebarGraphOpQueryVariables} from './types/SidebarGraphOpQuery';
-import {SidebarOpFragment} from './types/SidebarOpFragment';
 import {
+  SidebarGraphOpQuery,
+  SidebarGraphOpQueryVariables,
+  SidebarOpFragment,
   SidebarPipelineOpQuery,
   SidebarPipelineOpQueryVariables,
-} from './types/SidebarPipelineOpQuery';
+} from './types/SidebarOp.types';
 
 interface SidebarOpProps {
   handleID: string;
@@ -46,7 +47,6 @@ const useSidebarOpQuery = (
         },
         handleID,
       },
-      fetchPolicy: 'cache-and-network',
       skip: isGraph,
     },
   );
@@ -62,7 +62,6 @@ const useSidebarOpQuery = (
         },
         handleID,
       },
-      fetchPolicy: 'cache-and-network',
       skip: !isGraph,
     },
   );
@@ -156,7 +155,7 @@ export const SidebarOp: React.FC<SidebarOpProps> = ({
   );
 };
 
-const SIDEBAR_OP_FRAGMENT = gql`
+export const SIDEBAR_OP_FRAGMENT = gql`
   fragment SidebarOpFragment on SolidContainer {
     id
     name
@@ -171,6 +170,7 @@ const SIDEBAR_OP_FRAGMENT = gql`
       }
     }
   }
+
   ${SIDEBAR_OP_INVOCATION_FRAGMENT}
   ${SIDEBAR_OP_DEFINITION_FRAGMENT}
 `;
@@ -185,6 +185,7 @@ const SIDEBAR_PIPELINE_OP_QUERY = gql`
       }
     }
   }
+
   ${SIDEBAR_OP_FRAGMENT}
 `;
 
@@ -198,5 +199,6 @@ const SIDEBAR_GRAPH_OP_QUERY = gql`
       }
     }
   }
+
   ${SIDEBAR_OP_FRAGMENT}
 `;

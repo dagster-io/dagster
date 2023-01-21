@@ -2,9 +2,11 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, CursorPaginationControls, CursorPaginationProps, NonIdealState} from '@dagster-io/ui';
 import React from 'react';
 
+import {RepositorySelector} from '../graphql/types';
 import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/BackfillTable';
-import {RepositorySelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
+
+import {JobBackfillsQuery, JobBackfillsQueryVariables} from './types/JobBackfillsTable.types';
 
 const BACKFILL_PAGE_SIZE = 10;
 
@@ -21,7 +23,7 @@ export const JobBackfillsTable = ({
 }) => {
   const [cursorStack, setCursorStack] = React.useState<string[]>(() => []);
   const [cursor, setCursor] = React.useState<string | undefined>();
-  const queryResult = useQuery(JOB_BACKFILLS_QUERY, {
+  const queryResult = useQuery<JobBackfillsQuery, JobBackfillsQueryVariables>(JOB_BACKFILLS_QUERY, {
     variables: {
       partitionSetName,
       repositorySelector,
@@ -39,6 +41,22 @@ export const JobBackfillsTable = ({
   return (
     <Loading queryResult={queryResult}>
       {({partitionSetOrError}) => {
+        if (partitionSetOrError.__typename === 'PartitionSetNotFoundError') {
+          return (
+            <Box margin={{vertical: 20}}>
+              <NonIdealState title="Partition set not found." icon="no-results" />
+            </Box>
+          );
+        }
+
+        if (partitionSetOrError.__typename === 'PythonError') {
+          return (
+            <Box margin={{vertical: 20}}>
+              <NonIdealState title="An error occurred." icon="no-results" />
+            </Box>
+          );
+        }
+
         const {backfills, pipelineName} = partitionSetOrError;
 
         if (!backfills.length) {
@@ -108,5 +126,6 @@ const JOB_BACKFILLS_QUERY = gql`
       }
     }
   }
+
   ${BACKFILL_TABLE_FRAGMENT}
 `;

@@ -7,7 +7,6 @@ from contextlib import contextmanager
 import mock
 import pytest
 from click.testing import CliRunner
-
 from dagster import (
     Out,
     Output,
@@ -45,7 +44,8 @@ from dagster._legacy import (
     pipeline,
     solid,
 )
-from dagster._utils import file_relative_path, merge_dicts
+from dagster._utils import file_relative_path
+from dagster._utils.merger import merge_dicts
 from dagster.version import __version__
 
 
@@ -488,6 +488,16 @@ def non_existant_python_origin_target_args():
     }
 
 
+def non_existant_python_file_workspace_args():
+    return {
+        "workspace": None,
+        "job_name": "foo",
+        "python_file": (file_relative_path(__file__, "made_up_file.py"),),
+        "module_name": None,
+        "attribute": "bar",
+    }
+
+
 def valid_job_python_origin_target_args():
     job_name = "qux"
     job_fn_name = "qux_job"
@@ -577,6 +587,21 @@ def valid_job_python_origin_target_args():
     ]
 
 
+def job_python_args_to_workspace_args(args):
+    # Turn args expecting non-multiple files/modules into args allowing multiple
+    return [
+        {
+            "workspace": a.get("workspace"),
+            "job_name": a.get("job_name"),
+            "python_file": (a["python_file"],) if a.get("python_file") else None,
+            "module_name": (a["module_name"],) if a.get("module_name") else None,
+            "attribute": a["attribute"],
+            "package_name": a.get("package_name"),
+        }
+        for a in args
+    ]
+
+
 def valid_external_pipeline_target_args():
     return [
         {
@@ -593,7 +618,7 @@ def valid_external_pipeline_target_args():
             "module_name": None,
             "attribute": None,
         },
-    ] + [args for args in valid_job_python_origin_target_args()]
+    ] + job_python_args_to_workspace_args(valid_job_python_origin_target_args())
 
 
 def valid_pipeline_python_origin_target_cli_args():

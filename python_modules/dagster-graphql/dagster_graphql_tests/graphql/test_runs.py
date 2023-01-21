@@ -1,16 +1,6 @@
 import copy
 
 import yaml
-from dagster_graphql.test.utils import (
-    define_out_of_process_context,
-    execute_dagster_graphql,
-    infer_pipeline_selector,
-    infer_repository_selector,
-)
-from dagster_graphql_tests.graphql.graphql_context_test_suite import (
-    ExecutingGraphQLContextTestMatrix,
-)
-
 from dagster import AssetMaterialization, Output, job, op, repository
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import execute_run
@@ -19,6 +9,17 @@ from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline, lambda_solid, pipeline
 from dagster._utils import Counter, traced_counter
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    execute_dagster_graphql,
+    infer_pipeline_selector,
+    infer_repository_selector,
+)
+
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
+)
 
 RUNS_QUERY = """
 query PipelineRunsRootQuery($selector: PipelineSelector!) {
@@ -226,6 +227,20 @@ def _get_runs_data(result, run_id):
     return None
 
 
+class TestDeleteRunReadonly(ReadonlyGraphQLContextTestMatrix):
+    def test_delete_runs_permission_readonly(self, graphql_context):
+        repo = get_repo_at_time_1()
+        run_id = graphql_context.instance.create_run_for_pipeline(
+            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.STARTED
+        ).run_id
+
+        result = execute_dagster_graphql(
+            graphql_context, DELETE_RUN_MUTATION, variables={"runId": run_id}
+        )
+
+        assert result.data["deletePipelineRun"]["__typename"] == "UnauthorizedError"
+
+
 class TestGetRuns(ExecutingGraphQLContextTestMatrix):
     def test_get_runs_over_graphql(self, graphql_context):
         # This include needs to be here because its inclusion screws up
@@ -417,7 +432,6 @@ def get_asset_repo():
 
 def test_runs_over_time():
     with instance_for_test() as instance:
-
         repo_1 = get_repo_at_time_1()
 
         full_evolve_run_id = execute_pipeline(
@@ -518,7 +532,6 @@ def test_run_groups_over_time():
         with define_out_of_process_context(
             __file__, "get_repo_at_time_1", instance
         ) as context_at_time_1:
-
             result = execute_dagster_graphql(context_at_time_1, ALL_RUN_GROUPS_QUERY)
             assert result.data
             assert "runGroupsOrError" in result.data
@@ -814,7 +827,6 @@ def test_run_group_not_found():
         with define_out_of_process_context(
             __file__, "get_repo_at_time_1", instance
         ) as context_at_time_1:
-
             result = execute_dagster_graphql(
                 context_at_time_1,
                 RUN_GROUP_QUERY,

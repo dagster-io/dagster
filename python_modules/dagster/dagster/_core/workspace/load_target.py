@@ -1,5 +1,8 @@
+import os
 from abc import ABC, abstractmethod
 from typing import NamedTuple, Optional, Sequence
+
+import tomli
 
 from dagster._core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
@@ -20,11 +23,43 @@ class WorkspaceLoadTarget(ABC):
         """Reloads the RepositoryLocationOrigins for this workspace."""
 
 
+class CompositeTarget(
+    NamedTuple("CompositeTarget", [("targets", Sequence[WorkspaceLoadTarget])]), WorkspaceLoadTarget
+):
+    def create_origins(self):
+        origins = []
+        for target in self.targets:
+            origins += target.create_origins()
+        return origins
+
+
 class WorkspaceFileTarget(
     NamedTuple("WorkspaceFileTarget", [("paths", Sequence[str])]), WorkspaceLoadTarget
 ):
     def create_origins(self):
         return location_origins_from_yaml_paths(self.paths)
+
+
+def get_origins_from_toml(path) -> Sequence[RepositoryLocationOrigin]:
+    with open(path, "rb") as f:
+        data = tomli.load(f)
+        if not isinstance(data, dict):
+            return []
+
+        dagster_block = data.get("tool", {}).get("dagster", {})
+        if "module_name" in dagster_block:
+            return ModuleTarget(
+                module_name=dagster_block["module_name"],
+                attribute=None,
+                working_directory=os.getcwd(),
+                location_name=None,
+            ).create_origins()
+        return []
+
+
+class PyProjectFileTarget(NamedTuple("PyProjectFileTarget", [("path", str)]), WorkspaceLoadTarget):
+    def create_origins(self):
+        return get_origins_from_toml(self.path)
 
 
 class PythonFileTarget(

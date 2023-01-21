@@ -1,6 +1,10 @@
-from dagster import In, Nothing, Out
-from dagster import _check as check
-from dagster import op
+from dagster import (
+    In,
+    Nothing,
+    Out,
+    _check as check,
+    op,
+)
 
 from .configs import define_spark_config
 

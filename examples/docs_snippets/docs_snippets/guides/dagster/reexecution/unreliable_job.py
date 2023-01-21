@@ -5,7 +5,6 @@ def some_random_result():
     return RESULTS.pop()
 
 
-# isort: split
 # start_random_job
 from dagster import in_process_executor, job, op
 

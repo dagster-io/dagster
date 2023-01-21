@@ -28,7 +28,7 @@ import {
 } from '../runs/RunMetadataProvider';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {StepSelection} from '../runs/StepSelection';
-import {RunFragment} from '../runs/types/RunFragment';
+import {RunFragment} from '../runs/types/RunFragments.types';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 
 import {

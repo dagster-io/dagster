@@ -1,4 +1,5 @@
-from graphene import ResolveInfo
+from collections import defaultdict
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.host_representation import (
@@ -15,6 +16,7 @@ from dagster._core.storage.tags import (
     get_tag_type,
 )
 from dagster._utils.yaml_utils import dump_run_config_yaml
+from graphene import ResolveInfo
 
 from .utils import capture_error
 
@@ -174,7 +176,6 @@ def _apply_cursor_limit_reverse(items, cursor, limit, reverse):
 
 @capture_error
 def get_partition_set_partition_statuses(graphene_info, external_partition_set):
-
     check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
     repository_handle = external_partition_set.repository_handle
@@ -196,7 +197,7 @@ def get_partition_set_partition_statuses(graphene_info, external_partition_set):
 
 
 def partition_statuses_from_run_partition_data(
-    partition_set_name, run_partition_data, partition_names, backfill_id=None
+    partition_set_name: Optional[str], run_partition_data, partition_names, backfill_id=None
 ):
     from ..schema.partition_sets import GraphenePartitionStatus, GraphenePartitionStatuses
 
@@ -208,7 +209,7 @@ def partition_statuses_from_run_partition_data(
 
     results = []
     for name in partition_names:
-        partition_id = f"{partition_set_name}:{name}{suffix}"
+        partition_id = f'{partition_set_name or "__NO_PARTITION_SET__"}:{name}{suffix}'
         if not partition_data_by_name.get(name):
             results.append(
                 GraphenePartitionStatus(
@@ -231,6 +232,24 @@ def partition_statuses_from_run_partition_data(
         )
 
     return GraphenePartitionStatuses(results=results)
+
+
+def partition_status_counts_from_run_partition_data(run_partition_data, partition_names):
+    from ..schema.partition_sets import GraphenePartitionStatusCounts
+
+    partition_data_by_name = {
+        partition_data.partition: partition_data for partition_data in run_partition_data
+    }
+
+    count_by_status = defaultdict(int)
+    for name in partition_names:
+        if not partition_data_by_name.get(name):
+            count_by_status["NOT_STARTED"] += 1
+            continue
+        partition_data = partition_data_by_name[name]
+        count_by_status[partition_data.status.value] += 1
+
+    return [GraphenePartitionStatusCounts(runStatus=k, count=v) for k, v in count_by_status.items()]
 
 
 def get_partition_set_partition_runs(graphene_info, partition_set):

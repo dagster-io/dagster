@@ -16,7 +16,7 @@ import {getJSONForKey} from '../hooks/useStateWithStorage';
 import {AssetViewParams} from './AssetView';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
+import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 const LINEAGE_GRAPH_ZOOM_LEVEL = 'lineageGraphZoomLevel';
 
@@ -104,6 +104,7 @@ export const AssetNodeLineageGraph: React.FC<{
                 ) : scale < MINIMAL_SCALE ? (
                   <AssetNodeMinimal
                     definition={graphNode.definition}
+                    liveData={liveDataByNode[graphNode.id]}
                     selected={graphNode.id === assetGraphId}
                   />
                 ) : (

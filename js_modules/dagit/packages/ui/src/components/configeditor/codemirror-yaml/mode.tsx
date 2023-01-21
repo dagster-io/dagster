@@ -108,7 +108,6 @@ export const RegExps = {
 
 const defineYamlMode = () => {
   CodeMirror.defineMode('yaml', () => {
-    console.log('HEY');
     return {
       lineComment: '#',
       flattenSpans: false,

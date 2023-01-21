@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    reviewers:
+      - "hellendag"
+      - "salazarm"
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    reviewers:
+      - "sryza"

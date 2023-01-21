@@ -4,9 +4,9 @@ import {Link} from 'react-router-dom';
 
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {humanCronString} from '../schedules/humanCronString';
-import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitchFragment';
+import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitch.types';
 import {SensorSwitch} from '../sensors/SensorSwitch';
-import {SensorSwitchFragment} from '../sensors/types/SensorSwitchFragment';
+import {SensorSwitchFragment} from '../sensors/types/SensorSwitch.types';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 

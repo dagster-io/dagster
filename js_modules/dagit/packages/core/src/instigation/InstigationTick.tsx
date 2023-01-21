@@ -18,13 +18,17 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
+import {InstigationType, InstigationTickStatus} from '../graphql/types';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
-import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 
-import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/LaunchedRunListQuery';
-import {TickTagFragment} from './types/TickTagFragment';
+import {
+  LaunchedRunListQuery,
+  LaunchedRunListQueryVariables,
+  TickTagFragment,
+} from './types/InstigationTick.types';
 
 export const TickTag: React.FC<{
   tick: TickTagFragment;
@@ -235,6 +239,7 @@ const LAUNCHED_RUN_LIST_QUERY = gql`
       ...PythonErrorFragment
     }
   }
+
   ${RUN_TABLE_RUN_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

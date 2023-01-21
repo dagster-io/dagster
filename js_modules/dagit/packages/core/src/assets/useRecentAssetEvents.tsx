@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import uniq from 'lodash/uniq';
 import * as React from 'react';
 
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
@@ -6,7 +7,7 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetViewParams} from './AssetView';
 import {AssetKey} from './types';
-import {AssetEventsQuery, AssetEventsQueryVariables} from './types/AssetEventsQuery';
+import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
 
 /**
  * If the asset has a defined partition space, we load all materializations in the
@@ -65,7 +66,9 @@ export function useRecentAssetEvents(
     const loadedPartitionKeys =
       loadUsingPartitionKeys && allPartitionKeys
         ? allPartitionKeys.slice(allPartitionKeys.length - 120)
-        : undefined;
+        : uniq(
+            [...materializations, ...observations].map((p) => p.partition!).filter(Boolean),
+          ).sort();
 
     return {
       asset,
@@ -109,6 +112,7 @@ export const ASSET_MATERIALIZATION_FRAGMENT = gql`
       ...AssetLineageFragment
     }
   }
+
   ${METADATA_ENTRY_FRAGMENT}
   ${ASSET_LINEAGE_FRAGMENT}
 `;
@@ -140,6 +144,7 @@ export const ASSET_OBSERVATION_FRAGMENT = gql`
       ...MetadataEntryFragment
     }
   }
+
   ${METADATA_ENTRY_FRAGMENT}
 `;
 
@@ -178,6 +183,7 @@ const ASSET_EVENTS_QUERY = gql`
       }
     }
   }
+
   ${ASSET_OBSERVATION_FRAGMENT}
   ${ASSET_MATERIALIZATION_FRAGMENT}
 `;

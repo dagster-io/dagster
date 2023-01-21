@@ -4,12 +4,13 @@ import {Button, DialogBody, DialogFooter, Dialog, Group, Icon} from '@dagster-io
 import * as React from 'react';
 
 import {copyValue} from '../app/DomUtils';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {InstigationSelector, InstigationTickStatus} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {InstigationSelector, InstigationTickStatus} from '../types/globalTypes';
 
 import {FailedRunList, RunList, TickTag, TICK_TAG_FRAGMENT} from './InstigationTick';
-import {SelectedTickQuery, SelectedTickQueryVariables} from './types/SelectedTickQuery';
+import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
 
 export const TickDetailsDialog: React.FC<{
   timestamp: number | undefined;
@@ -18,7 +19,6 @@ export const TickDetailsDialog: React.FC<{
 }> = ({timestamp, instigationSelector, onClose}) => {
   const {data} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(JOB_SELECTED_TICK_QUERY, {
     variables: {instigationSelector, timestamp: timestamp || 0},
-    fetchPolicy: 'cache-and-network',
     skip: !timestamp,
     partialRefetch: true,
   });
@@ -92,6 +92,7 @@ const JOB_SELECTED_TICK_QUERY = gql`
       }
     }
   }
+
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
 `;

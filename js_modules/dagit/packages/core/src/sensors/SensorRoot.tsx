@@ -3,7 +3,8 @@ import {Box, Tab, Tabs, Page, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -17,7 +18,7 @@ import {SensorDetails} from './SensorDetails';
 import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorPreviousRuns} from './SensorPreviousRuns';
-import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRootQuery';
+import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRoot.types';
 
 export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
   useTrackPageView();
@@ -33,7 +34,6 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
   const queryResult = useQuery<SensorRootQuery, SensorRootQueryVariables>(SENSOR_ROOT_QUERY, {
     variables: {sensorSelector},
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
@@ -103,7 +103,6 @@ const SENSOR_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
     instance {
-      ...InstanceHealthFragment
       daemonHealth {
         id
         daemonStatus(daemonType: "SENSOR") {
@@ -111,9 +110,11 @@ const SENSOR_ROOT_QUERY = gql`
           healthy
         }
       }
+      ...InstanceHealthFragment
     }
   }
-  ${PYTHON_ERROR_FRAGMENT}
+
   ${SENSOR_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;

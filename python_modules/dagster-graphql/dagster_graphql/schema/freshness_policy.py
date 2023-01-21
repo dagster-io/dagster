@@ -1,6 +1,5 @@
-import graphene
-
 import dagster._check as check
+import graphene
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 
 
