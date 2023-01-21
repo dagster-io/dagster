@@ -1,12 +1,13 @@
 import subprocess
 from contextlib import contextmanager
-from typing import Callable, Iterator, Optional
+from typing import Callable, Dict, Iterator, Optional
 
 from dagster import Definitions, job, op, reconstructable
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.context.system import IStepContext
+from dagster._core.execution.execute_job_result import ExecuteJobResult
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.multi_environment.multi_environment_step_handler import (
     MultiEnvironmentExecutor,
@@ -21,9 +22,10 @@ from dagster._core.executor.step_delegating.step_handler.base import (
 from dagster._core.test_utils import instance_for_test
 
 
-class ProcessCollection:
+class PerRunState:
     def __init__(self):
         self.processes = []  # type: ignore
+        self.handler_dict: Dict[str, RemoteEnvironmentSingleStepHandler] = {}
 
     def wait_for_processes(self):
         for p in self.processes:
@@ -31,7 +33,7 @@ class ProcessCollection:
 
 
 class SubprocessSingleStepHandler(RemoteEnvironmentSingleStepHandler):
-    def __init__(self, process_collection: ProcessCollection):
+    def __init__(self, process_collection: PerRunState):
         self.process_collection = process_collection
 
     def launch_single_step(
@@ -54,13 +56,25 @@ class SubprocessSingleStepHandler(RemoteEnvironmentSingleStepHandler):
 
 
 def get_subprocess_executor_with_monkey_patched_process_collection():
-    collection = ProcessCollection()
+    per_run_state = PerRunState()
+
+    def _get_single_step_handler(step_context: IStepContext):
+        step_handler = SubprocessSingleStepHandler(per_run_state)
+        per_run_state.handler_dict[step_context.step.key] = step_handler
+        return step_handler
+
     executor = MultiEnvironmentExecutor(
-        lambda _step_context: SubprocessSingleStepHandler(collection),
+        single_step_handler_factory=_get_single_step_handler,
         retries=RetryMode.DISABLED,
     )
-    setattr(executor, "__collection", collection)
+    setattr(executor, "__per_run_state_for_test", per_run_state)
     return executor
+
+
+def get_per_run_state(result: ExecuteJobResult) -> PerRunState:
+    assert result.job_def.executor_def.executor_creation_fn
+    executor = result.job_def.executor_def.executor_creation_fn(None)  # type: ignore
+    return getattr(executor, "__per_run_state_for_test")
 
 
 @contextmanager
@@ -70,10 +84,8 @@ def execute_and_complete_job(job_fn: Callable):
             reconstructable(job_fn),
             instance=instance,
         ) as result:
-            assert result.job_def.executor_def.executor_creation_fn
-            executor = result.job_def.executor_def.executor_creation_fn(None)  # type: ignore
-            collection = getattr(executor, "__collection")
-            collection.wait_for_processes()
+            per_run_state = get_per_run_state(result)
+            per_run_state.wait_for_processes()
             yield result
 
 
@@ -100,3 +112,6 @@ def test_single_op_job():
     with execute_and_complete_job(return_single_op_job) as result:
         assert result.success
         assert result.output_for_node("return_one") == 1
+
+        per_run_state = get_per_run_state(result)
+        assert isinstance(per_run_state.handler_dict["return_one"], SubprocessSingleStepHandler)
