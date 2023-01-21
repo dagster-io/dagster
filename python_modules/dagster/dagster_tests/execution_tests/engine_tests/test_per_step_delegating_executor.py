@@ -1,10 +1,14 @@
+from contextlib import contextmanager
 import subprocess
-from typing import Iterator, Optional
+from typing import Callable, Iterator, Optional
 
 from dagster import Definitions, job, op, reconstructable
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.context.system import IStepContext
+from dagster._core.execution.execute_job_result import ExecuteJobResult
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.multi_environment.multi_environment_step_handler import (
     MultiEnvironmentExecutor,
@@ -19,24 +23,41 @@ from dagster._core.executor.step_delegating.step_handler.base import (
 from dagster._core.test_utils import instance_for_test
 
 
-class ProcessCollection:
-    processes = []  # type: ignore
+# class ProcessCollection:
+#     processes = []  # type: ignore
 
-    @classmethod
-    def reset(cls):
-        cls.processes = []
+#     @classmethod
+#     def reset(cls):
+#         cls.processes = []
 
-    @classmethod
-    def wait_for_processes(cls):
-        for p in cls.processes:
+#     @classmethod
+#     def wait_for_processes(cls):
+#         for p in cls.processes:
+#             p.wait(timeout=5)
+
+
+class ProcessCollectionObjectStyle:
+    def __init__(self):
+        self.processes = []  # type: ignore
+
+    def wait_for_processes(self):
+        for p in self.processes:
             p.wait(timeout=5)
 
 
-class OutOfProcessSingleStepHandlerForTest(RemoteEnvironmentSingleStepHandler):
+def unwrap_executor(result: ExecuteJobResult):
+    assert result.job_def.executor_def.executor_creation_fn
+    return result.job_def.executor_def.executor_creation_fn(None)  # type: ignore
+
+
+class SubprocessSingleStepHandler(RemoteEnvironmentSingleStepHandler):
+    def __init__(self, process_collection: ProcessCollectionObjectStyle):
+        self.process_collection = process_collection
+
     def launch_single_step(
         self, step_context: IStepContext, step_handler_context: StepHandlerContext
     ) -> Optional[Iterator[DagsterEvent]]:
-        ProcessCollection.processes.append(
+        self.process_collection.processes.append(
             subprocess.Popen(step_handler_context.execute_step_args.get_command_args())
         )
         return iter(())
@@ -52,13 +73,37 @@ class OutOfProcessSingleStepHandlerForTest(RemoteEnvironmentSingleStepHandler):
         raise NotImplementedError()
 
 
-def get_executor():
-    return MultiEnvironmentExecutor(
-        lambda _step_context: OutOfProcessSingleStepHandlerForTest(), retries=RetryMode.DISABLED
+def get_subprocess_executor_with_monkey_patched_process_collection():
+    collection = ProcessCollectionObjectStyle()
+    executor = MultiEnvironmentExecutor(
+        lambda _step_context: SubprocessSingleStepHandler(collection),
+        retries=RetryMode.DISABLED,
     )
+    setattr(executor, "__collection", collection)
+    return executor
 
 
-def return_a_job():
+@contextmanager
+def execute_and_complete_job(job_fn: Callable):
+    with instance_for_test() as instance:
+        with execute_job(
+            reconstructable(job_fn),
+            instance=instance,
+        ) as result:
+            executor = unwrap_executor(result)
+            collection = getattr(executor, "__collection")
+            collection.wait_for_processes()
+            yield result
+
+
+def get_job_for_execution(job_def: JobDefinition):
+    defs = Definitions(
+        jobs=[job_def], executor=get_subprocess_executor_with_monkey_patched_process_collection()
+    )
+    return defs.get_job_def(job_def.name)
+
+
+def return_single_op_job():
     @op
     def return_one():
         return 1
@@ -67,19 +112,10 @@ def return_a_job():
     def a_job():
         return_one()
 
-    defs = Definitions(jobs=[a_job], executor=get_executor())
-    return defs.get_job_def("a_job")
+    return get_job_for_execution(a_job)
 
 
-def test_per_step_delegating_executor():
-    ProcessCollection.reset()
-
-    with instance_for_test() as instance:
-        with execute_job(
-            reconstructable(return_a_job),
-            instance=instance,
-        ) as result:
-            ProcessCollection.wait_for_processes()
-
-            assert result.success
-            assert result.output_for_node("return_one") == 1
+def test_single_op_job():
+    with execute_and_complete_job(return_single_op_job) as result:
+        assert result.success
+        assert result.output_for_node("return_one") == 1
