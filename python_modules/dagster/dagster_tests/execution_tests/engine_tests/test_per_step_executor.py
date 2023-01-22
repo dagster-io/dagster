@@ -25,6 +25,7 @@ class SubprocessStepExecutor(StepExecutor):
         self._popen = subprocess.Popen(
             self.step_handler_context.execute_step_args.get_command_args()
         )
+        return None
 
     def check_step_health(self):
         return CheckStepHealthResult.healthy()
