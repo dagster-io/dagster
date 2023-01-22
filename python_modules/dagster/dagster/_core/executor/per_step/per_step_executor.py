@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import (
     Any,
     Callable,
@@ -80,7 +80,7 @@ class StepHandlerForPerStepExecutor(StepHandler):
             yield from iterator
 
 
-class StepExecutor:
+class StepExecutor(ABC):
     def __init__(self, step_handler_context: StepHandlerContext, step_context: IStepContext):
         # Users will inherit from this so doing runtime checks
         self.step_handler_context = check.inst_param(
@@ -92,12 +92,15 @@ class StepExecutor:
     def step_key(self) -> str:
         return self.step_context.step.key
 
+    @abstractmethod
     def execute(self) -> Optional[Iterator[DagsterEvent]]:
         raise NotImplementedError()
 
+    @abstractmethod
     def terminate(self) -> Optional[Iterator[DagsterEvent]]:
         raise NotImplementedError()
 
+    @abstractmethod
     def check_step_health(self) -> CheckStepHealthResult:
         raise NotImplementedError()
 
@@ -156,12 +159,11 @@ class GenericRunExecutor(StepExecutorBasedExecutor, Generic[TStepExecutor]):
     ) -> TStepExecutor:
         return self._step_executor_cls(step_handler_context, step_context)
 
-    # from https://stackoverflow.com/a/70231012
-    # This seems to be the most reliable way to be able to access the generic type parameter at runtime
-    # Requires slightly different instantiation
-
     def __init__(
         self,
+        # from https://stackoverflow.com/a/70231012
+        # This seems to be the most reliable way to be able to access the generic type parameter at runtime
+        # Requires type as first parameter rather than as generic type parameter
         step_executor_cls: Type[TStepExecutor],
         retries: RetryMode,
         sleep_seconds: Optional[float] = None,
