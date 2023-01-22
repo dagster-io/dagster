@@ -14,19 +14,19 @@ from dagster._core.executor.step_delegating.step_handler.base import (
 )
 
 
-class MultiEnvironmentStepHandler(StepHandler):
+class StepHandlerForPerStepExecutor(StepHandler):
     def __init__(
         self,
-        single_step_handler_factory: Callable[[IStepContext], "RemoteEnvironmentSingleStepHandler"],
+        step_executor_factory: Callable[[IStepContext], "StepExecutor"],
     ):
-        self._single_step_handler_factory = single_step_handler_factory
+        self._step_executor_factory = step_executor_factory
 
     @property
     def name(self) -> str:
-        return "MultiEnvironmentStepHandler"
+        return "StepHandlerForPerStepExecutor"
 
-    def handler_for_key(self, step_context: IStepContext) -> "RemoteEnvironmentSingleStepHandler":
-        return self._single_step_handler_factory(step_context)
+    def handler_for_key(self, step_context: IStepContext) -> "StepExecutor":
+        return self._step_executor_factory(step_context)
 
     def _get_step_context(self, step_handler_context: StepHandlerContext) -> IStepContext:
         step_keys = step_handler_context.step_keys
@@ -44,46 +44,41 @@ class MultiEnvironmentStepHandler(StepHandler):
             metadata_entries=[],
         )
 
-        iterator = remote_handler.launch_single_step(step_context, step_handler_context)
+        iterator = remote_handler.execute(step_handler_context)
         if iterator:
             yield from iterator
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
         step_context = self._get_step_context(step_handler_context)
-        return self.handler_for_key(step_context).check_step_health(
-            step_context, step_handler_context
-        )
+        return self.handler_for_key(step_context).check_step_health(step_handler_context)
 
     def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
         step_context = self._get_step_context(step_handler_context)
-        iterator = self.handler_for_key(step_context).terminate_single_step(
-            step_context, step_handler_context
-        )
+        iterator = self.handler_for_key(step_context).terminate(step_handler_context)
         if iterator:
             yield from iterator
 
 
-class RemoteEnvironmentSingleStepHandler:
-    def launch_single_step(
-        self, step_context: IStepContext, step_handler_context: StepHandlerContext
+class StepExecutor:
+    def __init__(self, step_context: IStepContext):
+        self.step_context = step_context
+
+    def execute(self, step_handler_context: StepHandlerContext) -> Optional[Iterator[DagsterEvent]]:
+        raise NotImplementedError()
+
+    def terminate(
+        self, step_handler_context: StepHandlerContext
     ) -> Optional[Iterator[DagsterEvent]]:
         raise NotImplementedError()
 
-    def terminate_single_step(
-        self, step_context: IStepContext, step_handler_context: StepHandlerContext
-    ) -> Optional[Iterator[DagsterEvent]]:
-        raise NotImplementedError()
-
-    def check_step_health(
-        self, step_context: IStepContext, step_handler_context: StepHandlerContext
-    ):
+    def check_step_health(self, step_handler_context: StepHandlerContext):
         raise NotImplementedError()
 
 
-class MultiEnvironmentExecutor(Executor):
+class StepExecutorBasedRunExecutor(Executor):
     def __init__(
         self,
-        single_step_handler_factory: Callable[[IStepContext], "RemoteEnvironmentSingleStepHandler"],
+        step_executor_factory: Callable[[IStepContext], "StepExecutor"],
         retries: RetryMode,
         sleep_seconds: Optional[float] = None,
         check_step_health_interval_seconds: Optional[int] = None,
@@ -92,7 +87,7 @@ class MultiEnvironmentExecutor(Executor):
         should_verify_step: bool = False,
     ):
         self._inner_executor = StepDelegatingExecutor(
-            MultiEnvironmentStepHandler(single_step_handler_factory),
+            StepHandlerForPerStepExecutor(step_executor_factory),
             retries=retries,
             sleep_seconds=sleep_seconds,
             check_step_health_interval_seconds=check_step_health_interval_seconds,
