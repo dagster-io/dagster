@@ -6,7 +6,7 @@ from dagster import Definitions, job, op, reconstructable
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import execute_job
-from dagster._core.execution.context.system import IStepContext, StepExecutionContext
+from dagster._core.execution.context.system import IStepContext
 from dagster._core.execution.execute_job_result import ExecuteJobResult
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.per_step.per_step_executor import (
