@@ -24,7 +24,8 @@ def test_default_launcher(
     run,
     subnet,
     image,
-    environment,
+    task_definition_environment,
+    run_launcher_environment,
     task_long_arn_format,
 ):
     ecs.put_account_setting(name="taskLongArnFormat", value=task_long_arn_format)
@@ -54,11 +55,9 @@ def test_default_launcher(
     assert container_definition["image"] == image
     assert not container_definition.get("entryPoint")
     assert not container_definition.get("dependsOn")
+
     # But other stuff is inherited from the parent task definition
-    assert all(item in container_definition["environment"] for item in environment)
-    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in container_definition[
-        "environment"
-    ]
+    assert all(item in container_definition["environment"] for item in task_definition_environment)
 
     # A new task is launched
     tasks = ecs.list_tasks()["taskArns"]
@@ -90,6 +89,10 @@ def test_default_launcher(
     assert "execute_run" in override["command"]
     assert run.run_id in str(override["command"])
 
+    # But other stuff is inherited from the parent task definition
+    assert all(item in override["environment"] for item in run_launcher_environment)
+    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in override["environment"]
+
     # And we log
     events = instance.event_log_storage.get_logs_for_run(run.run_id)
     latest_event = events[-1]
@@ -112,7 +115,7 @@ def test_launcher_dont_use_current_task(
     pipeline,
     subnet,
     image,
-    environment,
+    run_launcher_environment,
 ):
     instance = instance_dont_use_current_task
     run = instance.create_run_for_pipeline(
@@ -150,11 +153,6 @@ def test_launcher_dont_use_current_task(
     assert container_definition["image"] == image
     assert not container_definition.get("entryPoint")
     assert not container_definition.get("dependsOn")
-    # It takes in the environment configured on the instance
-    assert all(item in container_definition["environment"] for item in environment)
-    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in container_definition[
-        "environment"
-    ]
 
     # A new task is launched
     tasks = ecs.list_tasks(cluster=cluster)["taskArns"]
@@ -180,6 +178,10 @@ def test_launcher_dont_use_current_task(
     assert override["name"] == "run"
     assert "execute_run" in override["command"]
     assert run.run_id in str(override["command"])
+
+    # But other stuff is inherited from the parent task definition
+    assert all(item in override["environment"] for item in run_launcher_environment)
+    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in override["environment"]
 
     # And we log
     events = instance.event_log_storage.get_logs_for_run(run.run_id)

@@ -56,23 +56,24 @@ def test_environment(
     instance_cm,
     launch_run,
 ):
-    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
-
     config = {"env_vars": ["FOO_ENV_VAR=BAR_VALUE"]}
+
+    initial_tasks = ecs.list_tasks()["taskArns"]
 
     with instance_cm(config) as instance:
         launch_run(instance)
 
-    # A new task definition is created
-    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
-    assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
-    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
-    task_definition = task_definition["taskDefinition"]
+    tasks = ecs.list_tasks()["taskArns"]
+    assert len(tasks) == len(initial_tasks) + 1
+    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
-    # It includes the environment
-    environment = task_definition["containerDefinitions"][0]["environment"]
-    assert {"name": "FOO_ENV_VAR", "value": "BAR_VALUE"} in environment
+    overrides = task["overrides"]["containerOverrides"]
+    assert len(overrides) == 1
+    override = overrides[0]
+
+    # Launched task includes the environment
+    assert {"name": "FOO_ENV_VAR", "value": "BAR_VALUE"} in override["environment"]
 
 
 def test_environment_missing_env_var_value(
@@ -80,9 +81,9 @@ def test_environment_missing_env_var_value(
     instance_cm,
     launch_run,
 ):
-    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
-
     config = {"env_vars": ["FOO_ENV_VAR"]}
+
+    initial_tasks = ecs.list_tasks()["taskArns"]
 
     with instance_cm(config) as instance:
         with pytest.raises(
@@ -93,16 +94,17 @@ def test_environment_missing_env_var_value(
         with environ({"FOO_ENV_VAR": "BAR_VALUE"}):
             launch_run(instance)
 
-    # A new task definition is created
-    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
-    assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
-    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
-    task_definition = task_definition["taskDefinition"]
+    tasks = ecs.list_tasks()["taskArns"]
+    assert len(tasks) == len(initial_tasks) + 1
+    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    overrides = task["overrides"]["containerOverrides"]
+    assert len(overrides) == 1
+    override = overrides[0]
 
     # It includes the environment
-    environment = task_definition["containerDefinitions"][0]["environment"]
-    assert {"name": "FOO_ENV_VAR", "value": "BAR_VALUE"} in environment
+    assert {"name": "FOO_ENV_VAR", "value": "BAR_VALUE"} in override["environment"]
 
 
 def test_secrets_with_container_context(
@@ -148,7 +150,7 @@ def test_environment_with_container_context(
     instance_cm,
     launch_run_with_container_context,
 ):
-    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    initial_tasks = ecs.list_tasks()["taskArns"]
 
     # Secrets config is pulled from container context on the run, rather than run launcher config
     config = {"env_vars": ["RUN_LAUNCHER_NAME=RUN_LAUNCHER_VALUE"]}
@@ -156,15 +158,15 @@ def test_environment_with_container_context(
     with instance_cm(config) as instance:
         launch_run_with_container_context(instance)
 
-    # A new task definition is created
-    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
-    assert len(task_definitions) == len(initial_task_definitions) + 1
-    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
-    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
-    task_definition = task_definition["taskDefinition"]
+    tasks = ecs.list_tasks()["taskArns"]
+    assert len(tasks) == len(initial_tasks) + 1
+    task_arn = list(set(tasks).difference(initial_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    overrides = task["overrides"]["containerOverrides"]
 
     # It includes environment from run launcher
-    environment = task_definition["containerDefinitions"][0]["environment"]
+    environment = overrides[0]["environment"]
 
     assert {"name": "RUN_LAUNCHER_NAME", "value": "RUN_LAUNCHER_VALUE"} in environment
 

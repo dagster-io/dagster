@@ -335,12 +335,16 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         task_overrides = self._get_task_overrides(run)
 
+        environment = self._environment(container_context)
+        environment.append({"name": "DAGSTER_RUN_JOB_NAME", "value": run.job_name})
+
         container_overrides: List[Dict[str, Any]] = [
             {
                 "name": self._get_container_name(container_context),
                 "command": command,
                 # containerOverrides expects cpu/memory as integers
                 **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
+                "environment": environment,
             }
         ]
 
@@ -460,9 +464,6 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         Return a dictionary of args to launch the ECS task, registering a new task
         definition if needed.
         """
-        environment = self._environment(container_context)
-        environment.append({"name": "DAGSTER_RUN_JOB_NAME", "value": run.job_name})
-
         secrets = self._secrets(container_context)
 
         if container_context.task_definition_arn:
@@ -489,7 +490,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                         else None
                     ),
                     secrets=secrets if secrets else [],
-                    environment=environment,
+                    environment=[],
                     execution_role_arn=self.task_definition_dict.get("execution_role_arn"),
                     task_role_arn=self.task_definition_dict.get("task_role_arn"),
                     sidecars=self.task_definition_dict.get("sidecar_containers"),
@@ -505,7 +506,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     self._get_current_task(),
                     image,
                     self._get_container_name(container_context),
-                    environment=environment,
+                    environment=[],
                     secrets=secrets if secrets else {},
                     include_sidecars=self.include_sidecars,
                 )

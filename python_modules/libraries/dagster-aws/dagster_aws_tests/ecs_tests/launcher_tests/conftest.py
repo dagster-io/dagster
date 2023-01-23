@@ -33,19 +33,24 @@ def other_image():
 
 
 @pytest.fixture
-def environment():
+def task_definition_environment():
     return [{"name": "FOO", "value": "bar"}]
 
 
 @pytest.fixture
-def task_definition(ecs, image, environment):
+def run_launcher_environment():
+    return [{"name": "INJECTED_FOO", "value": "INJECTED_bar"}]
+
+
+@pytest.fixture
+def task_definition(ecs, image, task_definition_environment):
     return ecs.register_task_definition(
         family="dagster",
         containerDefinitions=[
             {
                 "name": "dagster",
                 "image": image,
-                "environment": environment,
+                "environment": task_definition_environment,
                 "entryPoint": ["ls"],
                 "dependsOn": [
                     {
@@ -132,28 +137,32 @@ def instance_cm(stub_aws, stub_ecs_metadata):
 
 
 @pytest.fixture
-def instance(instance_cm):
-    with instance_cm() as dagster_instance:
+def instance(instance_cm, run_launcher_environment):
+    with instance_cm(
+        config={"env_vars": [env["name"] + "=" + env["value"] for env in run_launcher_environment]}
+    ) as dagster_instance:
         yield dagster_instance
 
 
 @pytest.fixture
-def instance_with_resources(instance_cm):
+def instance_with_resources(instance_cm, run_launcher_environment):
     with instance_cm(
         config={
             "run_resources": {
                 "cpu": "1024",
                 "memory": "2048",
-            }
+            },
+            "env_vars": [env["name"] + "=" + env["value"] for env in run_launcher_environment],
         }
     ) as dagster_instance:
         yield dagster_instance
 
 
 @pytest.fixture
-def instance_dont_use_current_task(instance_cm, subnet):
+def instance_dont_use_current_task(instance_cm, subnet, run_launcher_environment):
     with instance_cm(
         config={
+            "env_vars": [env["name"] + "=" + env["value"] for env in run_launcher_environment],
             "use_current_ecs_task_config": False,
             "run_task_kwargs": {
                 "cluster": "my_cluster",
