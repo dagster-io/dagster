@@ -557,6 +557,28 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert result.data["evaluateSensor"]["runRequests"] is None
         assert result.data["evaluateSensor"]["skipMessage"] is None
 
+    def test_instigation_failure(self, graphql_context):
+        instigator_selector = infer_sensor_selector(graphql_context, "always_error_sensor")
+        result = execute_dagster_graphql(
+            graphql_context,
+            EVALUATE_SENSOR_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": "blah"},
+        )
+        assert result.data
+        assert result.data["evaluateSensor"]["__typename"] == "PythonError"
+        assert "Error occurred during the execution of evaluation_fn" in result.data["evaluateSensor"]["message"]
+
+    def test_instigation_non_existent_sensor(self, graphql_context):
+        instigator_selector = infer_sensor_selector(graphql_context, "sensor_doesnt_exist")
+        result = execute_dagster_graphql(
+            graphql_context,
+            EVALUATE_SENSOR_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": "blah"},
+        )
+        assert result.data
+        assert result.data["evaluateSensor"]["__typename"] == "SensorNotFoundError"
+        assert result.data["evaluateSensor"]["sensorName"] == "sensor_doesnt_exist"
+
 
 def test_sensor_next_ticks(graphql_context):
     external_repository = graphql_context.get_repository_location(

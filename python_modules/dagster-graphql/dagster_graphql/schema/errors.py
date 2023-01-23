@@ -427,7 +427,7 @@ class GrapheneSensorNotFoundError(graphene.ObjectType):
 
     def __init__(self, sensor_name):
         super().__init__()
-        self.name = check.str_param(sensor_name, "sensor_name")
+        self.sensor_name = check.str_param(sensor_name, "sensor_name")
         self.message = f"Could not find `{sensor_name}` in the currently loaded repository."
 
 
