@@ -30,7 +30,9 @@ from dagster_graphql.test.utils import (
 )
 
 from .graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
     NonLaunchableGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
 )
 
 GET_SENSORS_QUERY = """
@@ -543,9 +545,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert start_result.data["startSensor"]["sensorState"]["status"] == "RUNNING"
 
     def test_instigate_sensor(self, graphql_context):
-        instigator_selector = infer_sensor_selector(
-            graphql_context, "always_no_config_sensor"
-        )
+        instigator_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
         result = execute_dagster_graphql(
             graphql_context,
             EVALUATE_SENSOR_MUTATION,
