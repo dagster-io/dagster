@@ -1,4 +1,3 @@
-import functools
 import logging
 from abc import abstractmethod
 from collections import OrderedDict, defaultdict
@@ -133,7 +132,6 @@ class SqlEventLogStorage(EventLogStorage):
             partition=partition,
         )
 
-    @functools.lru_cache(maxsize=None)
     def has_asset_key_col(self, column_name: str):
         with self.index_connection() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]
@@ -988,7 +986,9 @@ class SqlEventLogStorage(EventLogStorage):
             result = conn.execute(db.select([db.func.max(SqlEventLogStorageTable.c.id)])).fetchone()
             return result[0]
 
-    def _construct_asset_record_from_row(self, row, last_materialization: Optional[EventLogEntry]):
+    def _construct_asset_record_from_row(
+        self, row, last_materialization: Optional[EventLogEntry], can_cache_asset_status_data: bool
+    ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
         asset_key = AssetKey.from_db_string(row[1])
@@ -1001,7 +1001,7 @@ class SqlEventLogStorage(EventLogStorage):
                     last_run_id=row[3],
                     asset_details=AssetDetails.from_db_string(row[4]),
                     cached_status=AssetStatusCacheValue.from_db_string(row[5])
-                    if self.can_cache_asset_status_data()
+                    if can_cache_asset_status_data
                     else None,
                 ),
             )
@@ -1075,6 +1075,7 @@ class SqlEventLogStorage(EventLogStorage):
     ) -> Iterable[AssetRecord]:
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         latest_materializations = self._get_latest_materializations(rows)
+        can_cache_asset_status_data = self.can_cache_asset_status_data()
 
         asset_records: List[AssetRecord] = []
         for row in rows:
@@ -1082,7 +1083,7 @@ class SqlEventLogStorage(EventLogStorage):
             if asset_key:
                 asset_records.append(
                     self._construct_asset_record_from_row(
-                        row, latest_materializations.get(asset_key)
+                        row, latest_materializations.get(asset_key), can_cache_asset_status_data
                     )
                 )
 

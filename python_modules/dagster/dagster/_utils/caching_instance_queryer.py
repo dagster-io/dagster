@@ -1,5 +1,6 @@
 import datetime
 import json
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -56,12 +57,15 @@ class CachingInstanceQueryer:
         self._no_materializations_after_cursor_cache: Dict[AssetKeyPartitionKey, int] = {}
 
         self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
+        self._asset_partition_count_cache: Dict[
+            Optional[int], Dict[AssetKey, Mapping[str, int]]
+        ] = defaultdict(dict)
 
     @property
     def instance(self) -> "DagsterInstance":
         return self._instance
 
-    def prefetch_for_keys(self, asset_keys: Sequence[AssetKey]):
+    def prefetch_for_keys(self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int]):
         """For performance, batches together queries for selected assets"""
         asset_records = self.instance.get_asset_records(asset_keys)
         for asset_record in asset_records:
@@ -85,6 +89,19 @@ class CachingInstanceQueryer:
             if asset_partition not in self._latest_materialization_record_cache:
                 self._latest_materialization_record_cache[asset_partition] = record
                 self._no_materializations_after_cursor_cache[asset_partition] = record.storage_id
+
+        self._asset_partition_count_cache[after_cursor] = dict(
+            self._instance.get_materialization_count_by_partition(
+                asset_keys=asset_keys,
+                after_cursor=after_cursor,
+            )
+        )
+        self._asset_partition_count_cache[None] = dict(
+            self._instance.get_materialization_count_by_partition(
+                asset_keys=asset_keys,
+                after_cursor=None,
+            )
+        )
 
     def get_asset_record(self, asset_key: AssetKey) -> Optional[AssetRecord]:
         if asset_key not in self._asset_record_cache:
@@ -258,6 +275,28 @@ class CachingInstanceQueryer:
                 tags=tags,
             )
         )
+
+    def get_materialized_partitions(
+        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+    ) -> Iterable[str]:
+        if (
+            after_cursor not in self._asset_partition_count_cache
+            or asset_key not in self._asset_partition_count_cache[after_cursor]
+        ):
+            self._asset_partition_count_cache[after_cursor][
+                asset_key
+            ] = self.instance.get_materialization_count_by_partition(
+                asset_keys=[asset_key], after_cursor=after_cursor
+            )[
+                asset_key
+            ]
+        return [
+            partition_key
+            for partition_key, count in self._asset_partition_count_cache[after_cursor][
+                asset_key
+            ].items()
+            if count > 0
+        ]
 
     @cached_method
     def is_reconciled(

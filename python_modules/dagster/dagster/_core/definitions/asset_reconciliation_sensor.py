@@ -222,24 +222,32 @@ def find_parent_materialized_asset_partitions(
 
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
-    for asset_key in target_asset_selection.upstream(depth=1).resolve(asset_graph):
-        # if the asset is non-partitioned, we only need the latest materialization
-        if not asset_graph.is_partitioned(asset_key):
-            latest_record = instance_queryer.get_latest_materialization_record(asset_key)
-            records = [latest_record] if latest_record else []
-        else:
-            records = instance_queryer.get_materialization_records(
-                asset_key=asset_key, after_cursor=latest_storage_id
-            )
-        for record in records:
-            for child in asset_graph.get_children_partitions(asset_key, record.partition_key):
-                if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
-                    record.run_id, child
-                ):
-                    result_asset_partitions.add(child)
+    target_parent_asset_keys = target_asset_selection.upstream(depth=1).resolve(asset_graph)
 
-            if result_latest_storage_id is None or record.storage_id > result_latest_storage_id:
-                result_latest_storage_id = record.storage_id
+    for asset_key in target_parent_asset_keys:
+        latest_record = instance_queryer.get_latest_materialization_record(
+            asset_key, after_cursor=latest_storage_id
+        )
+        if latest_record is None:
+            continue
+
+        for child in asset_graph.get_children_partitions(asset_key, latest_record.partition_key):
+            if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
+                latest_record.run_id, child
+            ):
+                result_asset_partitions.add(child)
+
+        if result_latest_storage_id is None or latest_record.storage_id > result_latest_storage_id:
+            result_latest_storage_id = latest_record.storage_id
+
+        # for partitioned assets, we'll want a count of all asset partitions that have been
+        # materialized since the latest_storage_id, not just the most recent
+        if asset_graph.is_partitioned(asset_key):
+            for partition_key in instance_queryer.get_materialized_partitions(
+                asset_key, after_cursor=latest_storage_id
+            ):
+                for child in asset_graph.get_children_partitions(asset_key, partition_key):
+                    result_asset_partitions.add(child)
 
     return (result_asset_partitions, result_latest_storage_id)
 
@@ -706,7 +714,9 @@ def reconcile(
     asset_graph = repository_def.asset_graph
 
     # fetch some data in advance to batch together some queries
-    instance_queryer.prefetch_for_keys(list(asset_selection.resolve(asset_graph)))
+    instance_queryer.prefetch_for_keys(
+        list(asset_selection.resolve(asset_graph)), after_cursor=cursor.latest_storage_id
+    )
 
     (
         asset_partitions_to_reconcile_for_freshness,
