@@ -511,6 +511,14 @@ one_asset_self_dependency = [
     )
 ]
 
+one_asset_self_dependency_hourly = [
+    asset_def(
+        "asset1",
+        partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"),
+        deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
+    )
+]
+
 scenarios = {
     ################################################################################################
     # Basics
@@ -883,6 +891,12 @@ scenarios = {
         unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-01")],
         current_time=create_pendulum_time(year=2020, month=1, day=2, hour=4),
+    ),
+    "self_dependency_never_materialized_recent": AssetReconciliationScenario(
+        assets=one_asset_self_dependency_hourly,
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-01-00:00")],
+        current_time=create_pendulum_time(year=2020, month=1, day=1, hour=4),
     ),
     "self_dependency_prior_partition_requested": AssetReconciliationScenario(
         assets=one_asset_self_dependency,

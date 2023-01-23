@@ -295,8 +295,20 @@ def allowable_time_window_for_partitions_def(
     latest_partition_window = partitions_def.get_last_partition_window()
     if latest_partition_window is None:
         return None
+
+    earliest_partition_window = partitions_def.get_first_partition_window()
+    if earliest_partition_window is None:
+        return None
+
+    start = max(
+        # we use a greater than check later on, so we want to make sure we allow the earliest
+        # partition to be materialized
+        earliest_partition_window.start - datetime.timedelta.resolution,
+        latest_partition_window.start - datetime.timedelta(days=1),
+    )
+
     return TimeWindow(
-        start=latest_partition_window.start - datetime.timedelta(days=1),
+        start=start,
         end=latest_partition_window.end,
     )
 
