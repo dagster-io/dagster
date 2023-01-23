@@ -121,8 +121,6 @@ class ExternalAssetGraph(AssetGraph):
 
                 source_asset_keys.add(node.asset_key)
 
-            print("-------------------")
-            print(node)
             upstream[node.asset_key] = {dep.upstream_asset_key for dep in node.dependencies}
             for dep in node.dependencies:
                 if dep.partition_mapping is not None:
