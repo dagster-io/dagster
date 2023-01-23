@@ -26,7 +26,7 @@ from dagster._utils.cached_method import cached_method
 from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
-from .partition import PartitionsDefinition
+from .partition import DefaultPartitionsSubset, PartitionsDefinition
 from .partition_mapping import PartitionMapping, infer_partition_mapping
 from .source_asset import SourceAsset
 from .time_window_partitions import TimeWindowPartitionsDefinition
@@ -199,8 +199,12 @@ class AssetGraph:
             )
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
+        parent_partitions_subset = DefaultPartitionsSubset(
+            partitions_def=parent_partitions_def, subset={parent_partition_key}
+        )
+
         child_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
-            parent_partitions_def.empty_subset().with_partition_keys([parent_partition_key]),
+            parent_partitions_subset,
             downstream_partitions_def=child_partitions_def,
         )
 
@@ -253,15 +257,20 @@ class AssetGraph:
             )
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
-        parent_partition_key_subset = partition_mapping.get_upstream_partitions_for_partitions(
-            cast(PartitionsDefinition, child_partitions_def)
-            .empty_subset()
-            .with_partition_keys([partition_key])
-            if partition_key
-            else None,
+
+        child_partitions_subset = (
+            DefaultPartitionsSubset(
+                cast(PartitionsDefinition, child_partitions_def), subset={partition_key}
+            )
+            if partition_key is not None
+            else None
+        )
+
+        parent_partitions_subset = partition_mapping.get_upstream_partitions_for_partitions(
+            child_partitions_subset,
             upstream_partitions_def=parent_partitions_def,
         )
-        return list(parent_partition_key_subset.get_partition_keys())
+        return list(parent_partitions_subset.get_partition_keys())
 
     def is_source(self, asset_key: AssetKey) -> bool:
         return asset_key in self.source_asset_keys or asset_key not in self.all_asset_keys

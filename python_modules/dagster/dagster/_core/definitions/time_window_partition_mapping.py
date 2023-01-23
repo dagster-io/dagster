@@ -1,9 +1,13 @@
 from datetime import datetime
-from typing import NamedTuple, Optional, Sequence, cast
+from typing import NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition import (
+    DefaultPartitionsSubset,
+    PartitionsDefinition,
+    PartitionsSubset,
+)
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.time_window_partitions import (
@@ -98,13 +102,18 @@ class TimeWindowPartitionMapping(
         downstream_partitions_subset: Optional[PartitionsSubset],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionsSubset:
-        if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
-            check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
+        if not isinstance(
+            downstream_partitions_subset, (DefaultPartitionsSubset, TimeWindowPartitionsSubset)
+        ):
+            check.failed(
+                "downstream_partitions_subset must be a DefaultPartitionsSubset or"
+                " TimeWindowPartitionsSubset"
+            )
 
         return self._map_partitions(
             downstream_partitions_subset.partitions_def,
             upstream_partitions_def,
-            downstream_partitions_subset.included_time_windows,
+            downstream_partitions_subset,
             self.start_offset,
             self.end_offset,
         )
@@ -125,13 +134,18 @@ class TimeWindowPartitionMapping(
         if not isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition):
             check.failed("downstream_partitions_def must be a TimeWindowPartitionsDefinitions")
 
-        if not isinstance(upstream_partitions_subset, TimeWindowPartitionsSubset):
-            check.failed("upstream_partitions_subset must be a TimeWindowPartitionsSubset")
+        if not isinstance(
+            upstream_partitions_subset, (DefaultPartitionsSubset, TimeWindowPartitionsSubset)
+        ):
+            check.failed(
+                "upstream_partitions_subset must be a DefaultPartitionsSubset or"
+                " TimeWindowPartitionsSubset"
+            )
 
         return self._map_partitions(
             upstream_partitions_subset.partitions_def,
             downstream_partitions_def,
-            upstream_partitions_subset.included_time_windows,
+            upstream_partitions_subset,
             -self.start_offset,
             -self.end_offset,
         )
@@ -140,7 +154,7 @@ class TimeWindowPartitionMapping(
         self,
         from_partitions_def: PartitionsDefinition,
         to_partitions_def: PartitionsDefinition,
-        from_partition_time_windows: Sequence[TimeWindow],
+        from_partitions_subset: Union[DefaultPartitionsSubset, TimeWindowPartitionsSubset],
         start_offset: int,
         end_offset: int,
     ) -> PartitionsSubset:
@@ -161,8 +175,22 @@ class TimeWindowPartitionMapping(
         if to_partitions_def.timezone != from_partitions_def.timezone:
             raise DagsterInvalidDefinitionError("Timezones don't match")
 
+        # avoid having to iterate through time windows if no fancy mapping is required
+        if from_partitions_def == to_partitions_def and start_offset == 0 and end_offset == 0:
+            return from_partitions_subset
+
+        if isinstance(from_partitions_subset, DefaultPartitionsSubset):
+            partition_keys = list(from_partitions_subset.get_partition_keys())
+            from_partitions_subset = TimeWindowPartitionsSubset(
+                partitions_def=from_partitions_def,
+                included_time_windows=from_partitions_def.time_windows_for_partition_keys(
+                    partition_keys
+                ),
+                num_partitions=len(partition_keys),
+            )
+
         time_windows = []
-        for from_partition_time_window in from_partition_time_windows:
+        for from_partition_time_window in from_partitions_subset.included_time_windows:
             from_start_dt, from_end_dt = from_partition_time_window
             offsetted_start_dt = _offsetted_datetime(
                 from_partitions_def, from_start_dt, start_offset

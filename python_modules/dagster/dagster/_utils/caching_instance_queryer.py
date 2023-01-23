@@ -326,9 +326,11 @@ class CachingInstanceQueryer:
         if latest_materialization_record is None:
             return False
 
+        print("AP", asset_partition)
         for parent in asset_graph.get_parents_partitions(
             asset_partition.asset_key, asset_partition.partition_key
         ):
+            print("PAP", parent)
             if (
                 self.get_latest_materialization_record(
                     parent, after_cursor=latest_materialization_record.storage_id
