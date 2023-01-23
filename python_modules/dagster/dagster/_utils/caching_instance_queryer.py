@@ -199,6 +199,15 @@ class CachingInstanceQueryer:
         else:
             asset_partition = asset
 
+        # no materialization exists for this asset partition
+        if (
+            asset_partition.partition_key is not None
+            and asset_partition.asset_key in self._asset_partition_count_cache[None]
+            and asset_partition.partition_key
+            not in self._asset_partition_count_cache[None][asset_partition.asset_key]
+        ):
+            return None
+
         if before_cursor is not None:
             latest_record = self._latest_materialization_record_cache.get(asset_partition)
             if latest_record is not None and latest_record.storage_id < before_cursor:
