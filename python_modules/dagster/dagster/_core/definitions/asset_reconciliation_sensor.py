@@ -301,10 +301,10 @@ def allowable_time_window_for_partitions_def(
         return None
 
     start = max(
-        # we use a greater than check later on, so we want to make sure we allow the earliest
-        # partition to be materialized
-        earliest_partition_window.start - datetime.timedelta.resolution,
-        latest_partition_window.start - datetime.timedelta(days=1),
+        earliest_partition_window.start,
+        # we add datetime.timedelta.resolution because if the latest partition starts at 2023-01-02,
+        # then we don't want 2023-01-01 to be within the allowable time window
+        latest_partition_window.start - datetime.timedelta(days=1) + datetime.timedelta.resolution,
     )
 
     return TimeWindow(
@@ -336,7 +336,7 @@ def candidates_unit_within_allowable_time_window(
 
     candidate_partition_window = partitions_def.time_window_for_partition_key(partition_key)
     return (
-        candidate_partition_window.start > allowable_time_window.start
+        candidate_partition_window.start >= allowable_time_window.start
         and candidate_partition_window.end <= allowable_time_window.end
     )
 
