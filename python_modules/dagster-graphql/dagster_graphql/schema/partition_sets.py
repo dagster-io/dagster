@@ -315,7 +315,7 @@ class GraphenePartitionDefinitionType(graphene.Enum):
         elif isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData):
             return GraphenePartitionDefinitionType.MULTIPARTITIONED
         elif isinstance(partition_def_data, ExternalRuntimePartitionsDefinitionData):
-            return GraphenePartitionDefinitionType.MULTIPARTITIONED
+            return GraphenePartitionDefinitionType.RUNTIME
         else:
             check.failed(
                 f"Invalid external partitions definition data type: {type(partition_def_data)}"

@@ -5,7 +5,11 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.instance import DagsterInstance
 
-from .partition import Partition, PartitionsDefinition
+from .partition import (
+    Partition,
+    PartitionsDefinition,
+    raise_error_on_invalid_partition_key_substring,
+)
 
 
 @experimental
@@ -24,6 +28,7 @@ class RuntimePartitionsDefinition(PartitionsDefinition):
 
     def add_partitions(self, partition_keys: Sequence[str]) -> None:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
+        raise_error_on_invalid_partition_key_substring(partition_keys)
         self._instance.add_runtime_partitions(self._name, partition_keys)
 
     @property

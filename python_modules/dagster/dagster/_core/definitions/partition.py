@@ -26,7 +26,6 @@ from dateutil.relativedelta import relativedelta
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.instance import DagsterInstance
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
@@ -218,9 +217,7 @@ class ScheduleType(Enum):
 
 class PartitionsDefinition(ABC, Generic[T]):
     @abstractmethod
-    def get_partitions(
-        self, current_time: Optional[datetime] = None
-    ) -> Sequence[Partition[T]]:
+    def get_partitions(self, current_time: Optional[datetime] = None) -> Sequence[Partition[T]]:
         ...
 
     def __str__(self) -> str:
@@ -286,22 +283,25 @@ class PartitionsDefinition(ABC, Generic[T]):
         return tags
 
 
+def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]) -> None:
+    for partition_key in partition_keys:
+        found_invalid_substrs = [
+            invalid_substr
+            for invalid_substr in INVALID_PARTITION_SUBSTRINGS
+            if invalid_substr in partition_key
+        ]
+        if found_invalid_substrs:
+            raise DagsterInvalidDefinitionError(
+                f"{found_invalid_substrs} are invalid substrings in a partition key"
+            )
+
 class StaticPartitionsDefinition(
     PartitionsDefinition[str],
 ):  # pylint: disable=unsubscriptable-object
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
-        for partition_key in partition_keys:
-            found_invalid_substrs = [
-                invalid_substr
-                for invalid_substr in INVALID_PARTITION_SUBSTRINGS
-                if invalid_substr in partition_key
-            ]
-            if found_invalid_substrs:
-                raise DagsterInvalidDefinitionError(
-                    f"{found_invalid_substrs} are invalid substrings in a partition key"
-                )
+        raise_error_on_invalid_partition_key_substring(partition_keys)
 
         self._partitions = [Partition(key) for key in partition_keys]
 

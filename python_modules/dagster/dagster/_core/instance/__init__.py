@@ -1709,7 +1709,7 @@ class DagsterInstance:
     def get_runtime_partitions(self, partitions_def_name: str) -> Sequence[str]:
         check.str_param(partitions_def_name, "partitions_def_name")
         if self._partitions_storage is None:
-            check.failed("Partitions storage not found")
+            check.failed("Your storage configuration currently does not support the partitions storage.")
         return self._partitions_storage.get_partitions(partitions_def_name)
 
     @traced
@@ -1719,7 +1719,7 @@ class DagsterInstance:
         check.str_param(partitions_def_name, "partitions_def_name")
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
         if self._partitions_storage is None:
-            check.failed("Partitions storage not found")
+            check.failed("Your storage configuration currently does not support the partitions storage.")
         return self._partitions_storage.add_partitions(partitions_def_name, partition_keys)
 
     # event subscriptions
