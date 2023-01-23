@@ -547,6 +547,14 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
 
 @responses.activate
 @pytest.mark.parametrize(
+    "dbt_materialization_command_options",
+    [
+        "",
+        "--selector xyz",
+    ],
+    ids=["no selector", "with selector"],
+)
+@pytest.mark.parametrize(
     "asset_selection, expected_dbt_asset_names",
     [
         (
@@ -571,11 +579,20 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
     ],
 )
 def test_subsetting(
-    mocker, dbt_cloud, dbt_cloud_service, asset_selection, expected_dbt_asset_names
+    mocker,
+    dbt_cloud,
+    dbt_cloud_service,
+    dbt_materialization_command_options,
+    asset_selection,
+    expected_dbt_asset_names,
 ):
+    dbt_materialization_command = "dbt build"
+    full_dbt_materialization_command = (
+        f"{dbt_materialization_command} {dbt_materialization_command_options}".strip()
+    )
     _add_dbt_cloud_job_responses(
         dbt_cloud_service=dbt_cloud_service,
-        dbt_commands=["dbt build"],
+        dbt_commands=[full_dbt_materialization_command],
     )
 
     dbt_cloud_cacheable_assets = load_assets_from_dbt_cloud_job(
@@ -622,5 +639,9 @@ def test_subsetting(
     mock_run_job_and_poll.assert_called_once_with(
         job_id=DBT_CLOUD_JOB_ID,
         cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
-        steps_override=[f"dbt build {dbt_filter_option}".strip()],
+        steps_override=[
+            f"{dbt_materialization_command} {dbt_filter_option}".strip()
+            if dbt_filter_option
+            else full_dbt_materialization_command
+        ],
     )
