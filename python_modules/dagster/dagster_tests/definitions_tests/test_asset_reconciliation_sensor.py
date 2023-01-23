@@ -895,7 +895,9 @@ scenarios = {
     "self_dependency_never_materialized_recent": AssetReconciliationScenario(
         assets=one_asset_self_dependency_hourly,
         unevaluated_runs=[],
-        expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-01-00:00")],
+        expected_run_requests=[
+            run_request(asset_keys=["asset1"], partition_key="2020-01-01-00:00")
+        ],
         current_time=create_pendulum_time(year=2020, month=1, day=1, hour=4),
     ),
     "self_dependency_prior_partition_requested": AssetReconciliationScenario(
