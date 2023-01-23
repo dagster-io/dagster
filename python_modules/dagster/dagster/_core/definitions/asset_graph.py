@@ -88,6 +88,8 @@ class AssetGraph:
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
                 source_assets.append(asset)
+                partitions_defs_by_key[asset.key] = asset.partitions_def
+                group_names_by_key[asset.key] = asset.group_name
             elif isinstance(asset, AssetsDefinition):
                 assets_defs.append(asset)
                 partition_mappings_by_key.update(

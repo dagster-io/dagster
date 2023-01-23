@@ -322,3 +322,21 @@ def test_get_non_source_roots_missing_source():
 
     asset_graph = AssetGraph.from_assets([foo, bar, source_asset])
     assert asset_graph.get_non_source_roots(AssetKey("bar")) == {AssetKey("foo")}
+
+
+def test_partitioned_source_asset():
+    partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+
+    partitioned_source = SourceAsset(
+        "partitioned_source",
+        partitions_def=partitions_def,
+    )
+
+    @asset(partitions_def=partitions_def, non_argument_deps={"partitioned_source"})
+    def downstream_of_partitioned_source():
+        pass
+
+    asset_graph = AssetGraph.from_assets([partitioned_source, downstream_of_partitioned_source])
+
+    assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
+    assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))

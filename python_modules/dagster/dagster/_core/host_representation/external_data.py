@@ -1084,6 +1084,11 @@ def external_asset_graph_from_defs(
                     group_name=source_asset.group_name,
                     is_source=True,
                     is_observable=source_asset.is_observable,
+                    partitions_def_data=external_partitions_definition_from_def(
+                        source_asset.partitions_def
+                    )
+                    if source_asset.partitions_def
+                    else None,
                 )
             )
 
