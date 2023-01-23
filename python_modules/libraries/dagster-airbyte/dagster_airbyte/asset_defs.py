@@ -114,7 +114,9 @@ def _build_airbyte_asset_defn_metadata(
         }
         if schema_by_table_name
         else None,
-        freshness_policies_by_output_name={output: freshness_policy for output in outputs},
+        freshness_policies_by_output_name={output: freshness_policy for output in outputs}
+        if freshness_policy
+        else None,
         extra_metadata={
             "connection_id": connection_id,
             "group_name": group_name,
@@ -149,7 +151,9 @@ def _build_airbyte_assets_from_metadata(
                 if assets_defn_meta.metadata_by_output_name
                 else None,
                 io_manager_key=io_manager_key,
-                freshness_policy=assets_defn_meta.freshness_policies_by_output_name.get(k),
+                freshness_policy=assets_defn_meta.freshness_policies_by_output_name.get(k)
+                if assets_defn_meta.freshness_policies_by_output_name
+                else None,
             )
             for k, v in (assets_defn_meta.keys_by_output_name or {}).items()
         },
