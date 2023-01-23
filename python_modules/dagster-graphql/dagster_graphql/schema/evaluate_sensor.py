@@ -5,11 +5,11 @@ import graphene
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.host_representation.selector import SensorSelector
-from dagster._core.workspace.permissions import Permissions
 
-from dagster_graphql.implementation.utils import capture_error, check_permission
+from dagster_graphql.implementation.utils import capture_error
 
 from ..implementation.evaluate_sensor_utils import evaluate_sensor
+from ..schema.errors import GrapheneSensorNotFoundError
 from .errors import GraphenePythonError
 from .inputs import GrapheneSensorSelector
 from .instigation import GrapheneRunRequest
@@ -51,8 +51,9 @@ class GrapheneEvaluateSensorResult(graphene.Union):
         types = (
             GrapheneSensorExecutionData,
             GraphenePythonError,
+            GrapheneSensorNotFoundError,
         )
-        name = "EvaluateSensorMutation"
+        name = "EvaluateSensorResult"
 
 
 class GrapheneEvaluateSensorMutation(graphene.Mutation):
@@ -68,12 +69,10 @@ class GrapheneEvaluateSensorMutation(graphene.Mutation):
         name = "EvaluateSensorMutation"
 
     @capture_error
-    @check_permission(Permissions.EDIT_SENSOR)
     def mutate(self, graphene_info: "HasContext", selector_data: Mapping[str, Any], cursor: str):
-        sensor_execution_data = evaluate_sensor(
+        return evaluate_sensor(
             graphene_info, SensorSelector.from_graphql_input(selector_data), cursor
         )
-        return GrapheneSensorExecutionData(sensor_execution_data)
 
 
 types = [
