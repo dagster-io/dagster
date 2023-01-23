@@ -819,9 +819,19 @@ class DagsterInstance:
 
     # run storage
     @public
-    @traced
     def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
-        return cast(DagsterRun, self._run_storage.get_run_by_id(run_id))
+        record = self.get_run_record_by_id(run_id)
+        if record is None:
+            return None
+        return record.dagster_run
+
+    @public
+    @traced
+    def get_run_record_by_id(self, run_id: str) -> Optional[RunRecord]:
+        records = self._run_storage.get_run_records(RunsFilter(run_ids=[run_id]))
+        if not records:
+            return None
+        return records[0]
 
     @traced
     def get_pipeline_snapshot(self, snapshot_id: str) -> "PipelineSnapshot":

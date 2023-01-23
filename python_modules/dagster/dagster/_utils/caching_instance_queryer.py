@@ -83,10 +83,7 @@ class CachingInstanceQueryer:
 
     @cached_method
     def _get_run_record_by_id(self, run_id: str) -> Optional[RunRecord]:
-        return next(
-            iter(self._instance.get_run_records(filters=RunsFilter(run_ids=[run_id]), limit=1)),
-            None,
-        )
+        return self._instance.get_run_record_by_id(run_id)
 
     @cached_method
     def _get_planned_materializations_for_run_from_events(

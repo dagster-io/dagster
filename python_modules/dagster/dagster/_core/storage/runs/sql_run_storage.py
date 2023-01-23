@@ -163,7 +163,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         if event.event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
             return
 
-        run = self.get_run_by_id(run_id)
+        run = self._get_run_by_id(run_id)
         if not run:
             # TODO log?
             return
@@ -464,15 +464,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         count = rows[0][0]
         return count
 
-    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
-        """Get a run by its id.
-
-        Args:
-            run_id (str): The id of the run
-
-        Returns:
-            Optional[PipelineRun]
-        """
+    def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         check.str_param(run_id, "run_id")
 
         query = db.select([RunsTable.c.run_body, RunsTable.c.status]).where(
@@ -537,7 +529,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.str_param(run_id, "run_id")
         check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
 
-        run = self.get_run_by_id(run_id)
+        run = self._get_run_by_id(run_id)
         if not run:
             raise DagsterRunNotFoundError(
                 f"Run {run_id} was not found in instance.", invalid_run_id=run_id
@@ -583,7 +575,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
         check.str_param(run_id, "run_id")
-        pipeline_run = self.get_run_by_id(run_id)
+        pipeline_run = self._get_run_by_id(run_id)
         if not pipeline_run:
             raise DagsterRunNotFoundError(
                 f"Run {run_id} was not found in instance.", invalid_run_id=run_id
@@ -591,7 +583,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         # find root_run
         root_run_id = pipeline_run.root_run_id if pipeline_run.root_run_id else pipeline_run.run_id
-        root_run = self.get_run_by_id(root_run_id)
+        root_run = self._get_run_by_id(root_run_id)
         if not root_run:
             raise DagsterRunNotFoundError(
                 (
@@ -776,7 +768,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def has_run(self, run_id: str) -> bool:
         check.str_param(run_id, "run_id")
-        return bool(self.get_run_by_id(run_id))
+        return bool(self._get_run_by_id(run_id))
 
     def delete_run(self, run_id: str):
         check.str_param(run_id, "run_id")

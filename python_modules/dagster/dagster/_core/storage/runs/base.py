@@ -138,17 +138,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         # more than 2x total instances of PipelineRun.
 
     @abstractmethod
-    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
-        """Get a run by its id.
-
-        Args:
-            run_id (str): The id of the run
-
-        Returns:
-            Optional[PipelineRun]
-        """
-
-    @abstractmethod
     def get_run_records(
         self,
         filters: Optional[RunsFilter] = None,
