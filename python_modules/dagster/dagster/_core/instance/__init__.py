@@ -115,10 +115,10 @@ if TYPE_CHECKING:
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import AssetRecord, EventLogRecord, EventRecordsFilter
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+    from dagster._core.storage.partitions.base import PartitionsStorage
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.schedules import ScheduleStorage
-    from dagster._core.storage.partitions.base import PartitionsStorage
     from dagster._core.workspace.workspace import IWorkspace
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
 
@@ -312,10 +312,10 @@ class DagsterInstance:
         from dagster._core.storage.captured_log_manager import CapturedLogManager
         from dagster._core.storage.compute_log_manager import ComputeLogManager
         from dagster._core.storage.event_log import EventLogStorage
+        from dagster._core.storage.partitions.base import PartitionsStorage
         from dagster._core.storage.root import LocalArtifactStorage
         from dagster._core.storage.runs import RunStorage
         from dagster._core.storage.schedules import ScheduleStorage
-        from dagster._core.storage.partitions.base import PartitionsStorage
 
         self._instance_type = check.inst_param(instance_type, "instance_type", InstanceType)
         self._local_artifact_storage = check.inst_param(
@@ -445,7 +445,7 @@ class DagsterInstance:
                 " file which can configure storing metadata in an external database.\nYou can"
                 " resolve this error by exporting the environment variable. For example, you can"
                 " run the following command in your shell or include it in your shell configuration"
-                " file:\n\texport DAGSTER_HOME=~\"/dagster_home\"\nor PowerShell\n$env:DAGSTER_HOME"
+                ' file:\n\texport DAGSTER_HOME=~"/dagster_home"\nor PowerShell\n$env:DAGSTER_HOME'
                 " = ($home + '\\dagster_home')or batchset"
                 " DAGSTER_HOME=%UserProfile%/dagster_homeAlternatively, DagsterInstance.ephemeral()"
                 " can be used for a transient instance.\n"
@@ -457,7 +457,7 @@ class DagsterInstance:
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" must be an absolute path. Dagster requires this '
-                    'environment variable to be set to an existing directory in your filesystem.'
+                    "environment variable to be set to an existing directory in your filesystem."
                 ).format(dagster_home_path)
             )
 
@@ -465,7 +465,7 @@ class DagsterInstance:
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this'
-                    ' environment variable to be set to an existing directory in your filesystem'
+                    " environment variable to be set to an existing directory in your filesystem"
                 ).format(dagster_home_path)
             )
 
@@ -636,6 +636,12 @@ class DagsterInstance:
     @property
     def event_log_storage(self) -> "EventLogStorage":
         return self._event_storage
+
+    # partition storage
+
+    @property
+    def partitions_storage(self) -> Optional["PartitionsStorage"]:
+        return self._partitions_storage
 
     # schedule storage
 
@@ -1115,8 +1121,8 @@ class DagsterInstance:
             execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id,
             (
                 "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
-                "\"{ep_pipeline_snapshot_id}\" and snapshot_id created in memory is "
-                "\"{pipeline_snapshot_id}\""
+                '"{ep_pipeline_snapshot_id}" and snapshot_id created in memory is '
+                '"{pipeline_snapshot_id}"'
             ).format(
                 ep_pipeline_snapshot_id=execution_plan_snapshot.pipeline_snapshot_id,
                 pipeline_snapshot_id=pipeline_snapshot_id,
@@ -1706,20 +1712,24 @@ class DagsterInstance:
     # partitions storage
 
     @traced
-    def get_runtime_partitions(self, partitions_def_name: str) -> Sequence[str]:
+    def get_mutable_partitions(self, partitions_def_name: str) -> Sequence[str]:
         check.str_param(partitions_def_name, "partitions_def_name")
         if self._partitions_storage is None:
-            check.failed("Your storage configuration currently does not support the partitions storage.")
+            check.failed(
+                "Your storage configuration currently does not support the partitions storage."
+            )
         return self._partitions_storage.get_partitions(partitions_def_name)
 
     @traced
-    def add_runtime_partitions(
+    def add_mutable_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
         check.str_param(partitions_def_name, "partitions_def_name")
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
         if self._partitions_storage is None:
-            check.failed("Your storage configuration currently does not support the partitions storage.")
+            check.failed(
+                "Your storage configuration currently does not support the partitions storage."
+            )
         return self._partitions_storage.add_partitions(partitions_def_name, partition_keys)
 
     # event subscriptions

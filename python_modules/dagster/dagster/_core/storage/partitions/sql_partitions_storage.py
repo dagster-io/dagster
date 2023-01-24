@@ -1,11 +1,13 @@
-from abc import ABC, abstractmethod
-from typing import Callable, Iterable, Mapping, Optional, Sequence
-from dagster._core.utils import check
-from dagster._core.instance import MayHaveInstanceWeakref
-from dagster._core.errors import DagsterInvalidInvocationError
-from .base import PartitionsStorage
-from dagster._core.storage.partitions.schema import RuntimePartitions
+from abc import abstractmethod
+from typing import Sequence
+
 import sqlalchemy as db
+
+from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.storage.partitions.schema import MutablePartitionsDefinitions
+from dagster._core.utils import check
+
+from .base import PartitionsStorage
 
 
 class SqlPartitionsStorage(PartitionsStorage):
@@ -18,7 +20,7 @@ class SqlPartitionsStorage(PartitionsStorage):
         """This method checks if a table exists in the database."""
 
     def _check_partitions_table(self):
-        if not self.has_table("runtime_partitions"):
+        if not self.has_table("mutable_partitions_definitions"):
             raise DagsterInvalidInvocationError(
                 "Cannot add partitions to non-existent table. Add this table by running `dagster"
                 " instance migrate`."
@@ -26,11 +28,11 @@ class SqlPartitionsStorage(PartitionsStorage):
 
     def _fetch_partition_keys_for_partition_def(self, partitions_def_name: str) -> Sequence[str]:
         columns = [
-            RuntimePartitions.c.partitions_def_name,
-            RuntimePartitions.c.partition_key,
+            MutablePartitionsDefinitions.c.partitions_def_name,
+            MutablePartitionsDefinitions.c.partition_key,
         ]
         query = db.select(columns).where(
-            RuntimePartitions.c.partitions_def_name == partitions_def_name
+            MutablePartitionsDefinitions.c.partitions_def_name == partitions_def_name
         )
         with self.connect() as conn:
             rows = conn.execute(query).fetchall()
@@ -60,7 +62,7 @@ class SqlPartitionsStorage(PartitionsStorage):
         if new_keys:
             with self.connect() as conn:
                 conn.execute(
-                    RuntimePartitions.insert(),
+                    MutablePartitionsDefinitions.insert(),
                     [
                         dict(partitions_def_name=partitions_def_name, partition_key=partition_key)
                         for partition_key in new_keys
@@ -74,9 +76,9 @@ class SqlPartitionsStorage(PartitionsStorage):
         self._check_partitions_table()
         with self.connect() as conn:
             conn.execute(
-                RuntimePartitions.delete().where(
-                    RuntimePartitions.c.partitions_def_name == partitions_def_name,
-                    RuntimePartitions.c.partition_key == partition_key,
+                MutablePartitionsDefinitions.delete().where(
+                    MutablePartitionsDefinitions.c.partitions_def_name == partitions_def_name,
+                    MutablePartitionsDefinitions.c.partition_key == partition_key,
                 )
             )
 

@@ -11,11 +11,11 @@ from dagster._utils import mkdir_p
 from .base_storage import DagsterStorage
 from .event_log.base import EventLogStorage
 from .event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from .partitions.base import PartitionsStorage
 from .runs.base import RunStorage
 from .runs.sqlite.sqlite_run_storage import SqliteRunStorage
 from .schedules.base import ScheduleStorage
 from .schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
-from .partitions.base import PartitionsStorage
 
 
 def _runs_directory(base):

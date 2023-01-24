@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-
-from dagster._core.instance import MayHaveInstanceWeakref
 from typing import Optional
 
+from dagster._core.instance import MayHaveInstanceWeakref
+
 from .event_log.base import EventLogStorage
+from .partitions.base import PartitionsStorage
 from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
-from .partitions.base import PartitionsStorage
 
 
 class DagsterStorage(ABC, MayHaveInstanceWeakref):

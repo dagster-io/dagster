@@ -3,10 +3,10 @@ import graphene
 from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.host_representation.external_data import (
     ExternalMultiPartitionsDefinitionData,
+    ExternalMutablePartitionsDefinitionData,
     ExternalPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
-    ExternalRuntimePartitionsDefinitionData,
 )
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
@@ -300,7 +300,7 @@ class GraphenePartitionDefinitionType(graphene.Enum):
     TIME_WINDOW = "TIME_WINDOW"
     STATIC = "STATIC"
     MULTIPARTITIONED = "MULTIPARTITIONED"
-    RUNTIME = "RUNTIME"
+    MUTABLE = "MUTABLE"
 
     class Meta:
         name = "PartitionDefinitionType"
@@ -314,8 +314,8 @@ class GraphenePartitionDefinitionType(graphene.Enum):
             return GraphenePartitionDefinitionType.TIME_WINDOW
         elif isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData):
             return GraphenePartitionDefinitionType.MULTIPARTITIONED
-        elif isinstance(partition_def_data, ExternalRuntimePartitionsDefinitionData):
-            return GraphenePartitionDefinitionType.RUNTIME
+        elif isinstance(partition_def_data, ExternalMutablePartitionsDefinitionData):
+            return GraphenePartitionDefinitionType.MUTABLE
         else:
             check.failed(
                 f"Invalid external partitions definition data type: {type(partition_def_data)}"

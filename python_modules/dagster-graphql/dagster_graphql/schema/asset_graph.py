@@ -17,9 +17,9 @@ from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalMultiPartitionsDefinitionData,
+    ExternalMutablePartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
-    ExternalRuntimePartitionsDefinitionData,
 )
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -306,7 +306,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     ExternalStaticPartitionsDefinitionData,
                     ExternalTimeWindowPartitionsDefinitionData,
                     ExternalMultiPartitionsDefinitionData,
-                    ExternalRuntimePartitionsDefinitionData,
+                    ExternalMutablePartitionsDefinitionData,
                 ),
             ):
                 return [

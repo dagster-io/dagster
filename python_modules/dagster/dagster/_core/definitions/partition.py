@@ -295,6 +295,7 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
                 f"{found_invalid_substrs} are invalid substrings in a partition key"
             )
 
+
 class StaticPartitionsDefinition(
     PartitionsDefinition[str],
 ):  # pylint: disable=unsubscriptable-object

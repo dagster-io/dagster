@@ -11,9 +11,9 @@ from .event_log.base import (
     EventLogStorage,
     EventRecordsFilter,
 )
+from .partitions.base import PartitionsStorage
 from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
-from .partitions.base import PartitionsStorage
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import AssetKey

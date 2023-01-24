@@ -4,15 +4,15 @@ from dagster import _check as check
 from dagster._core.storage.base_storage import DagsterStorage
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import EventLogStorage
+from dagster._core.storage.partitions.base import PartitionsStorage
 from dagster._core.storage.runs import RunStorage
 from dagster._core.storage.schedules import ScheduleStorage
-from dagster._core.storage.partitions.base import PartitionsStorage
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .event_log import PostgresEventLogStorage
+from .partitions_storage.partitions_storage import PostgresPartitionsStorage
 from .run_storage import PostgresRunStorage
 from .schedule_storage import PostgresScheduleStorage
-from .partitions_storage.partitions_storage import PostgresPartitionsStorage
 from .utils import pg_url_from_config
 
 

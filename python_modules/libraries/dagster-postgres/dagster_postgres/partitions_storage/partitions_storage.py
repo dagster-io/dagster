@@ -1,5 +1,4 @@
 import dagster._check as check
-import pendulum
 import sqlalchemy as db
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.partitions.schema import PartitionsStorageMetadata
@@ -10,7 +9,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import (
     create_pg_connection,
@@ -57,7 +56,7 @@ class PostgresPartitionsStorage(SqlPartitionsStorage, ConfigurableClass):
 
         # Stamp and create tables if the main table does not exist (we can't check alembic
         # revision because alembic config may be shared with other storage classes)
-        missing_main_table = "runtime_partitions" not in table_names
+        missing_main_table = "mutable_partitions_definitions" not in table_names
         if self.should_autocreate_tables and missing_main_table:
             retry_pg_creation_fn(self._init_db)
 
