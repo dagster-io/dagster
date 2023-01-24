@@ -22,7 +22,7 @@ def backoff(
     args: Optional[Sequence[object]] = None,
     kwargs: Optional[Mapping[str, object]] = None,
     max_retries: int = BACKOFF_MAX_RETRIES,
-    delay_generator: Generator[float, None, None] = backoff_delay_generator(),
+    delay_generator: Optional[Generator[float, None, None]] = None,
 ) -> T:
     """Straightforward backoff implementation.
 
@@ -44,7 +44,10 @@ def backoff(
     args = check.opt_sequence_param(args, "args")
     kwargs = check.opt_mapping_param(kwargs, "kwargs", key_type=str)
     check.int_param(max_retries, "max_retries")
-    check.generator_param(delay_generator, "delay_generator")
+    check.opt_generator_param(delay_generator, "delay_generator")
+
+    if not delay_generator:
+        delay_generator = backoff_delay_generator()
 
     retries = 0
 
