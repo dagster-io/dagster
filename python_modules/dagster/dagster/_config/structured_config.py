@@ -33,7 +33,8 @@ from dagster._config.field_utils import (
 from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
-Self = Any
+Self = TypeVar("Self", bound="Resource")
+IOSelf = TypeVar("IOSelf", bound="StructuredConfigIOManagerBase")
 
 
 def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
@@ -112,7 +113,8 @@ def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSch
     return configured_resource_def.config_schema
 
 
-T = TypeVar("T")
+ResValue = TypeVar("ResValue")
+IOManagerValue = TypeVar("IOManagerValue", bound=IOManager)
 
 import pydantic
 
@@ -120,7 +122,7 @@ import pydantic
 # Since a metaclass is invoked by Resource before Resource or PartialResource is defined, we need to
 # define a temporary class to use as a placeholder for use in the initial metaclass invocation.
 # When the metaclass is invoked for a Resource subclass, it will use the non-placeholder values.
-class _Temp(Generic[T]):
+class _Temp(Generic[ResValue]):
     pass
 
 
@@ -207,7 +209,7 @@ class AllowDelayedDependencies:
 
 
 class Resource(
-    Generic[T],
+    Generic[ResValue],
     ResourceDefinition,
     Config,
     AllowDelayedDependencies,
@@ -255,7 +257,7 @@ class Resource(
         )
 
     @classmethod
-    def configure_at_launch(cls, **kwargs) -> "PartialResource[Self]":
+    def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":
         """
         Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
@@ -266,7 +268,7 @@ class Resource(
     def required_resource_keys(self) -> AbstractSet[str]:
         return self._resolve_required_resource_keys()
 
-    def initialize_and_run(self, context: InitResourceContext) -> T:
+    def initialize_and_run(self, context: InitResourceContext) -> ResValue:
         # If we have any partially configured resources, we need to update them
         # with the fully configured resources from the context
 
@@ -291,12 +293,12 @@ class Resource(
 
         return self._create_object_fn(context)
 
-    def _create_object_fn(self, context: InitResourceContext) -> T:
+    def _create_object_fn(self, context: InitResourceContext) -> ResValue:
         return self.create_object_to_pass_to_user_code(context)
 
     def create_object_to_pass_to_user_code(
         self, context: InitResourceContext
-    ) -> T:  # pylint: disable=unused-argument
+    ) -> ResValue:  # pylint: disable=unused-argument
         """
         Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
@@ -305,26 +307,34 @@ class Resource(
         Default behavior for new class-based resources is to return itself, passing
         the actual resource object to user code.
         """
-        return cast(T, self)
+        return cast(ResValue, self)
 
-    # Python descriptor
+    # The following methods are used to implement the descriptor protocol
     # https://docs.python.org/3/howto/descriptor.html
+    #
     # Used to adjust the types of resource inputs and outputs, e.g. resource dependencies can be passed in
     # as PartialResources or Resources, but will always be returned as Resources
-    def __get__(self, obj: "Resource", __owner: Any) -> Self:
-        ...
+    # Very similar to https://github.com/pydantic/pydantic/discussions/4262
 
-    def __set__(self, obj: Optional[object], value: Union[T, "PartialResource[T]"]) -> None:
-        ...
+    def __set_name__(self, _owner, name):
+        self._assigned_name = name
+
+    def __get__(self: Self, obj: Any, __owner: Any) -> Self:
+        return cast(Self, getattr(obj, self._assigned_name))
+
+    def __set__(
+        self: Self, obj: Optional[object], value: Union[Self, "PartialResource[Self]"]
+    ) -> None:
+        setattr(obj, self._assigned_name, value)
 
 
 class PartialResource(
-    Generic[T], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
+    Generic[ResValue], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
 ):
     data: Dict[str, Any]
-    resource_cls: Type[Resource[T]]
+    resource_cls: Type[Resource[ResValue]]
 
-    def __init__(self, resource_cls: Type[Resource[T]], data: Dict[str, Any]):
+    def __init__(self, resource_cls: Type[Resource[ResValue]], data: Dict[str, Any]):
         resource_pointers, data_without_resources = _separate_resource_params(data)
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)
@@ -355,7 +365,7 @@ class PartialResource(
         return self._resolve_required_resource_keys()
 
 
-ResourceOrPartial: TypeAlias = Union[Resource[T], PartialResource[T]]
+ResourceOrPartial: TypeAlias = Union[Resource[ResValue], PartialResource[Resource[ResValue]]]
 
 
 V = TypeVar("V")
@@ -413,7 +423,7 @@ class StructuredResourceAdapter(Resource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
+class StructuredConfigIOManagerBase(Resource[IOManagerValue], IOManagerDefinition):
     """
     Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
@@ -433,21 +443,13 @@ class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
             description=self.__doc__,
         )
 
-    def _create_object_fn(self, context: InitResourceContext) -> IOManager:
+    def _create_object_fn(self, context: InitResourceContext) -> IOManagerValue:
         return self.create_io_manager_to_pass_to_user_code(context)
 
     @abstractmethod
-    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManagerValue:
         """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
-
-    @classmethod
-    def configure_at_launch(cls, **kwargs) -> "PartialIOManager":
-        """
-        Returns a partially initialized copy of the resource, with remaining config fields
-        set at runtime.
-        """
-        return PartialIOManager(cls, data=kwargs)
 
 
 class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
@@ -461,17 +463,6 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
 
     def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
         return self
-
-
-class PartialIOManager(PartialResource[IOManager], IOManagerDefinition):
-    def __init__(self, resource_cls: Type[StructuredConfigIOManagerBase], data: Dict[str, Any]):
-        PartialResource.__init__(self, resource_cls, data)
-        IOManagerDefinition.__init__(
-            self,
-            resource_fn=self._resource_fn,
-            config_schema=self._config_schema,
-            description=resource_cls.__doc__,
-        )
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
