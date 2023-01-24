@@ -1168,7 +1168,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                 for time_window in self.included_time_windows
                 for pk in self._partitions_def.get_partition_keys_in_time_window(time_window)
             ]
-        return self._included_partition_keys
+        return list(self._included_partition_keys)
 
     def get_partition_key_ranges(
         self, current_time: Optional[datetime] = None
