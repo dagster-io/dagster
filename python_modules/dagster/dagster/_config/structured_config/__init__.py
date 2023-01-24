@@ -43,6 +43,9 @@ from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from . import typing_utils
 from .typing_utils import BaseResourceMeta
 
+Self = TypeVar("Self", bound="Resource")
+IOSelf = TypeVar("IOSelf", bound="StructuredConfigIOManagerBase")
+
 
 def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
     """Version of issubclass that returns False if cls is not a Type."""
@@ -152,6 +155,7 @@ def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSch
 
 
 ResValue = TypeVar("ResValue")
+IOManagerValue = TypeVar("IOManagerValue", bound=IOManager)
 
 
 class AllowDelayedDependencies:
@@ -249,7 +253,7 @@ class Resource(
         )
 
     @classmethod
-    def configure_at_launch(cls, **kwargs) -> "PartialResource[ResValue]":
+    def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":
         """
         Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
@@ -260,7 +264,7 @@ class Resource(
     def required_resource_keys(self) -> AbstractSet[str]:
         return self._resolve_required_resource_keys()
 
-    def initialize_and_run(self, context: InitResourceContext) -> T:
+    def initialize_and_run(self, context: InitResourceContext) -> ResValue:
         # If we have any partially configured resources, we need to update them
         # with the fully configured resources from the context
 
@@ -285,12 +289,12 @@ class Resource(
 
         return self._create_object_fn(context)
 
-    def _create_object_fn(self, context: InitResourceContext) -> T:
+    def _create_object_fn(self, context: InitResourceContext) -> ResValue:
         return self.create_object_to_pass_to_user_code(context)
 
     def create_object_to_pass_to_user_code(
         self, context: InitResourceContext
-    ) -> T:  # pylint: disable=unused-argument
+    ) -> ResValue:  # pylint: disable=unused-argument
         """
         Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
@@ -339,7 +343,7 @@ class PartialResource(
         return self._resolve_required_resource_keys()
 
 
-ResourceOrPartial: TypeAlias = Union[Resource[ResValue], PartialResource[ResValue]]
+ResourceOrPartial: TypeAlias = Union[Resource[ResValue], PartialResource[Resource[ResValue]]]
 
 
 V = TypeVar("V")
@@ -397,7 +401,7 @@ class StructuredResourceAdapter(Resource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
+class StructuredConfigIOManagerBase(Resource[IOManagerValue], IOManagerDefinition):
     """
     Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
@@ -417,21 +421,13 @@ class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
             description=self.__doc__,
         )
 
-    def _create_object_fn(self, context: InitResourceContext) -> IOManager:
+    def _create_object_fn(self, context: InitResourceContext) -> IOManagerValue:
         return self.create_io_manager_to_pass_to_user_code(context)
 
     @abstractmethod
-    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManagerValue:
         """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
-
-    @classmethod
-    def configure_at_launch(cls, **kwargs) -> "PartialIOManager":
-        """
-        Returns a partially initialized copy of the resource, with remaining config fields
-        set at runtime.
-        """
-        return PartialIOManager(cls, data=kwargs)
 
 
 class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
