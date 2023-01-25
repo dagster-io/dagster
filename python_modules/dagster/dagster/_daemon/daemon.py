@@ -17,7 +17,7 @@ from dagster import (
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._daemon.backfill import execute_backfill_iteration
+from dagster._daemon.backfill import execute_backfill_iteration_loop
 from dagster._daemon.monitoring import execute_monitoring_iteration
 from dagster._daemon.sensor import execute_sensor_iteration_loop
 from dagster._daemon.types import DaemonHeartbeat
@@ -268,16 +268,21 @@ class SensorDaemon(DagsterDaemon):
         )
 
 
-class BackfillDaemon(IntervalDaemon):
+class BackfillDaemon(DagsterDaemon):
     @classmethod
     def daemon_type(cls):
         return "BACKFILL"
 
-    def run_iteration(
+    def core_loop(
         self,
         workspace_process_context: IWorkspaceProcessContext,
+        shutdown_event: Event,
     ) -> TDaemonGenerator:
-        yield from execute_backfill_iteration(workspace_process_context, self._logger)
+        yield from execute_backfill_iteration_loop(
+            workspace_process_context,
+            self._logger,
+            shutdown_event,
+        )
 
 
 class MonitoringDaemon(IntervalDaemon):

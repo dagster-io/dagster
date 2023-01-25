@@ -151,7 +151,7 @@ class AssetBackfillData(NamedTuple):
 
 def execute_asset_backfill_iteration(
     backfill: "PartitionBackfill", workspace: BaseWorkspaceRequestContext, instance: DagsterInstance
-) -> Iterable[None]:
+) -> Iterable[Optional["PartitionBackfill"]]:
     """
     Runs an iteration of the backfill, including submitting runs and updating the backfill object
     in the DB.
@@ -176,7 +176,7 @@ def execute_asset_backfill_iteration(
         instance=instance,
         asset_graph=asset_graph,
     ):
-        yield None
+        yield backfill
 
     if not isinstance(result, AssetBackfillIterationResult):
         check.failed(
@@ -189,7 +189,7 @@ def execute_asset_backfill_iteration(
         updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED)
 
     for run_request in result.run_requests:
-        yield None
+        yield updated_backfill
         submit_run_request(
             run_request=run_request, asset_graph=asset_graph, workspace=workspace, instance=instance
         )

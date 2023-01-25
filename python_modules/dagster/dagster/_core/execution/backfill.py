@@ -28,6 +28,10 @@ class BulkActionStatus(Enum):
     def from_graphql_input(graphql_str):
         return BulkActionStatus(graphql_str)
 
+    @property
+    def is_active(self) -> bool:
+        return self == self.REQUESTED
+
 
 @whitelist_for_serdes
 class PartitionBackfill(

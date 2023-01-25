@@ -30,7 +30,6 @@ from dagster._core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._core.workspace.workspace import IWorkspace
-from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
 from .backfill import BulkActionStatus, PartitionBackfill
@@ -47,7 +46,7 @@ def execute_job_backfill_iteration(
     workspace: BaseWorkspaceRequestContext,
     debug_crash_flags: Optional[Mapping[str, int]],
     instance: DagsterInstance,
-) -> Iterable[Optional[SerializableErrorInfo]]:
+) -> Iterable[Optional[PartitionBackfill]]:
     if not backfill.last_submitted_partition_name:
         logger.info(f"Starting backfill for {backfill.backfill_id}")
     else:
@@ -78,7 +77,7 @@ def execute_job_backfill_iteration(
             for _run_id in submit_backfill_runs(
                 instance, workspace, repo_location, backfill, chunk
             ):
-                yield None
+                yield backfill
                 # before submitting, refetch the backfill job to check for status changes
                 backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
                 if backfill.status != BulkActionStatus.REQUESTED:
@@ -89,8 +88,9 @@ def execute_job_backfill_iteration(
         if has_more:
             # refetch, in case the backfill was updated in the meantime
             backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
-            instance.update_backfill(backfill.with_partition_checkpoint(checkpoint))
-            yield None
+            updated_backfill = backfill.with_partition_checkpoint(checkpoint)
+            instance.update_backfill(updated_backfill)
+            yield updated_backfill
             time.sleep(CHECKPOINT_INTERVAL)
         else:
             partition_names = cast(Sequence[str], backfill.partition_names)
@@ -98,8 +98,9 @@ def execute_job_backfill_iteration(
                 f"Backfill completed for {backfill.backfill_id} for"
                 f" {len(partition_names)} partitions"
             )
-            instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED))
-            yield None
+            updated_backfill = backfill.with_status(BulkActionStatus.COMPLETED)
+            instance.update_backfill(updated_backfill)
+            yield updated_backfill
 
 
 def _check_repo_has_partition_set(

@@ -312,7 +312,7 @@ def create_daemon_of_type(daemon_type, instance):
             interval_seconds=instance.run_coordinator.dequeue_interval_seconds
         )
     elif daemon_type == BackfillDaemon.daemon_type():
-        return BackfillDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
+        return BackfillDaemon()
     elif daemon_type == MonitoringDaemon.daemon_type():
         return MonitoringDaemon(interval_seconds=instance.run_monitoring_poll_interval_seconds)
     elif daemon_type == EventLogConsumerDaemon.daemon_type():
