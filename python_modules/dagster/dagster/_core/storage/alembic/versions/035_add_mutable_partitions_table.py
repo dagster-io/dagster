@@ -36,6 +36,8 @@ def upgrade():
             "idx_mutable_partition_keys",
             "mutable_partitions_definitions",
             ["partitions_def_name", "partition_key"],
+            mysql_length={"partitions_def_name": 64, "partition_key": 64},
+            unique=True,
         )
 
 

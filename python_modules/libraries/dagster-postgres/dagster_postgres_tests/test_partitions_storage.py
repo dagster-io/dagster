@@ -1,7 +1,7 @@
 import pytest
 from dagster import AssetKey, asset, materialize
 from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
-from dagster._core.errors import DagsterUnknownPartitionError
+from dagster._core.errors import DagsterUnknownPartitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster_postgres.partitions_storage.partitions_storage import PostgresPartitionsStorage
 
@@ -67,6 +67,9 @@ class TestPartitionsStorage:
             materialization = instance.get_latest_materialization_event(AssetKey("my_asset"))
             assert materialization
             assert materialization.dagster_event.partition == "a"
+
+            with pytest.raises(DagsterInvalidInvocationError):
+                instance.add_mutable_partitions("foo", "a")
 
 
 class TestPostgresPartitionsStorage(TestPartitionsStorage):

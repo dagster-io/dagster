@@ -20,6 +20,8 @@ class SqlPartitionsStorage(PartitionsStorage):
         """This method checks if a table exists in the database."""
 
     def _check_partitions_table(self):
+        # Guards against cases where the user is not running the latest migration for
+        # partitions storage. Should be updated when the partitions storage schema changes.
         if not self.has_table("mutable_partitions_definitions"):
             raise DagsterInvalidInvocationError(
                 "Cannot add partitions to non-existent table. Add this table by running `dagster"
@@ -54,6 +56,9 @@ class SqlPartitionsStorage(PartitionsStorage):
     def add_partitions(self, partitions_def_name: str, partition_keys: Sequence[str]) -> None:
         """Add a partition for the specified partition definition."""
         check.str_param(partitions_def_name, "partitions_def_name")
+        if isinstance(partition_keys, str):
+            # Guard against a single string being passed in `partition_keys`
+            raise DagsterInvalidInvocationError("partition_keys must be a sequence of strings")
         check.sequence_param(partition_keys, "partition_keys")
         self._check_partitions_table()
         existing_partitions = set(self.get_partitions(partitions_def_name))

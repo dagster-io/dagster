@@ -1081,3 +1081,18 @@ def test_1_0_17_add_cached_status_data_column():
             assert instance.can_cache_asset_status_data() is False
             instance.upgrade()
             assert "cached_status_data" in set(get_sqlite3_columns(db_path, "asset_keys"))
+
+
+def test_add_mutable_partitions_definitions():
+    src_dir = file_relative_path(
+        __file__, "snapshot_1_0_17_pre_add_cached_status_data_column/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs", "index.db")
+        assert get_current_alembic_version(db_path) == "958a9495162d"
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "mutable_partitions_definitions" not in get_sqlite3_tables(db_path)
+            instance.upgrade()
+            assert "mutable_partitions_definitions" in get_sqlite3_tables(db_path)
