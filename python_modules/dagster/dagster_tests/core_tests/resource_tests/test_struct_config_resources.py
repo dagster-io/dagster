@@ -1,7 +1,11 @@
 import json
+import os
+import re
+import subprocess
 import sys
+import tempfile
 from abc import ABC, abstractmethod
-from typing import Any, Callable
+from typing import Any, Callable, List
 
 import pytest
 from dagster import IOManager, asset, job, op, resource
@@ -820,3 +824,116 @@ def test_nested_function_resource_runtime_config():
         .success
     )
     assert out_txt == ["msg: foo!", "msg: bar!"]
+
+
+def get_pyright_reveal_type_output(filename) -> List[str]:
+    stdout = subprocess.check_output(["pyright", filename]).decode("utf-8")
+    match = re.findall(r'Type of "(?:[^"]+)" is "([^"]+)"', stdout)
+    assert match
+    return match
+
+
+def get_mypy_type_output(filename) -> List[str]:
+    stdout = subprocess.check_output(["mypy", filename]).decode("utf-8")
+    match = re.findall(r'note: Revealed type is "([^"]+)"', stdout)
+    assert match
+    return match
+
+
+def test_constructor_signature_nested_resource():
+    with tempfile.TemporaryDirectory() as tempdir:
+        filename = os.path.join(tempdir, "test.py")
+
+        with open(filename, "w") as f:
+            f.write(
+                """
+from dagster._config.structured_config import Resource
+
+class InnerResource(Resource):
+    a_string: str
+
+class OuterResource(Resource):
+    inner: InnerResource
+    a_bool: bool
+
+reveal_type(InnerResource.__init__)
+reveal_type(OuterResource.__init__)
+
+my_outer = OuterResource(inner=InnerResource(a_string="foo"), a_bool=True)
+reveal_type(my_outer.inner)
+"""
+            )
+
+        pyright_out = get_pyright_reveal_type_output(filename)
+        mypy_out = get_mypy_type_output(filename)
+
+        # Ensure constructor signature is correct (mypy doesn't yet support Pydantic model constructor type hints)
+        assert pyright_out[0] == "(self: InnerResource, a_string: str) -> None"
+        assert (
+            pyright_out[1]
+            == "(self: OuterResource, inner: InnerResource | PartialResource[InnerResource],"
+            " a_bool: bool) -> None"
+        )
+
+        # Ensure that the retrieved type is the same as the type of the resource (no partial)
+        assert pyright_out[2] == "InnerResource"
+        assert mypy_out[2] == "test.InnerResource"
+
+
+def test_config_at_launch_signature():
+    with tempfile.TemporaryDirectory() as tempdir:
+        filename = os.path.join(tempdir, "test.py")
+
+        with open(filename, "w") as f:
+            f.write(
+                """
+from dagster._config.structured_config import Resource
+
+class MyResource(Resource):
+    a_string: str
+
+reveal_type(MyResource.configure_at_launch())
+"""
+            )
+
+        pyright_out = get_pyright_reveal_type_output(filename)
+        mypy_out = get_mypy_type_output(filename)
+
+        # Ensure partial resource is correctly parameterized
+        assert pyright_out[0] == "PartialResource[MyResource]"
+        assert mypy_out[0].endswith("PartialResource[test.MyResource]")
+
+
+def test_constructor_signature_resource_dependency():
+    with tempfile.TemporaryDirectory() as tempdir:
+        filename = os.path.join(tempdir, "test.py")
+
+        with open(filename, "w") as f:
+            f.write(
+                """
+from dagster._config.structured_config import Resource, ResourceDependency
+
+class StringDependentResource(Resource):
+    a_string: ResourceDependency[str]
+
+reveal_type(StringDependentResource.__init__)
+
+my_str_resource = StringDependentResource(a_string="foo")
+reveal_type(my_str_resource.a_string)
+"""
+            )
+
+        pyright_out = get_pyright_reveal_type_output(filename)
+        mypy_out = get_mypy_type_output(filename)
+
+        # Ensure constructor signature supports str Resource, PartialResource, raw str, or a
+        # resource function that returns a str
+        assert (
+            pyright_out[0]
+            == "(self: StringDependentResource, a_string: Resource[str] | PartialResource[str] |"
+            " ResourceDefinition | str) -> None"
+        )
+
+        # Ensure that the retrieved type is str
+        assert pyright_out[1] == "str"
+        assert mypy_out[1] == "builtins.str"

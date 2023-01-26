@@ -47,10 +47,10 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
             if not field.startswith("__"):
                 # Check if the annotation is a ResourceDependency
                 if get_origin(annotations[field]) == _ResourceDep:
-                    arg = get_args(annotations[field])[0]
+                    # arg = get_args(annotations[field])[0]
                     # If so, we treat it as a Union of a PartialResource and a Resource
                     # for Pydantic's sake.
-                    annotations[field] = Union[_PartialResource[arg], _Resource[arg]]
+                    annotations[field] = Any
                 elif safe_is_subclass(annotations[field], _Resource):
                     # If the annotation is a Resource, we treat it as a Union of a PartialResource
                     # and a Resource for Pydantic's sake, so that a user can pass in a partially

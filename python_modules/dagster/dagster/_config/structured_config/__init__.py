@@ -51,7 +51,6 @@ from . import typing_utils
 from .typing_utils import BaseResourceMeta
 
 Self = TypeVar("Self", bound="Resource")
-IOSelf = TypeVar("IOSelf", bound="StructuredConfigIOManagerBase")
 
 
 def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
@@ -346,7 +345,9 @@ class PartialResource(
 
 
 ResourceOrPartial: TypeAlias = Union[Resource[ResValue], PartialResource[ResValue]]
-ResourceOrPartialOrBase: TypeAlias = Union[Resource[ResValue], PartialResource[ResValue], ResValue]
+ResourceOrPartialOrBase: TypeAlias = Union[
+    Resource[ResValue], PartialResource[ResValue], ResourceDefinition, ResValue
+]
 
 
 V = TypeVar("V")
