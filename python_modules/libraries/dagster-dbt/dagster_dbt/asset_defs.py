@@ -83,10 +83,12 @@ def _select_unique_ids_from_manifest_json(
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
     try:
+        import dbt.flags as flags
         import dbt.graph.cli as graph_cli
         import dbt.graph.selector as graph_selector
         from dbt.contracts.graph.manifest import Manifest
         from dbt.graph import SelectionSpec
+        from dbt.graph.selector_spec import IndirectSelection
         from networkx import DiGraph
     except ImportError as e:
         raise check.CheckError(
@@ -119,6 +121,7 @@ def _select_unique_ids_from_manifest_json(
     )
 
     # create a parsed selection from the select string
+    flags.INDIRECT_SELECTION = IndirectSelection.Eager
     parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
 
     if exclude:
@@ -230,13 +233,13 @@ def _get_deps(
             continue
 
         asset_deps[unique_id] = set()
-        for parent_unique_id in node_info["depends_on"]["nodes"]:
+        for parent_unique_id in node_info.get("depends_on", {}).get("nodes", []):
             parent_node_info = dbt_nodes[parent_unique_id]
             # for metrics or ephemeral dbt models, BFS to find valid parents
             if _is_non_asset_node(parent_node_info):
                 visited = set()
                 replaced_parent_ids = set()
-                queue = parent_node_info["depends_on"]["nodes"]
+                queue = parent_node_info.get("depends_on", {}).get("nodes", [])
                 while queue:
                     candidate_parent_id = queue.pop()
                     if candidate_parent_id in visited:
@@ -245,7 +248,7 @@ def _get_deps(
 
                     candidate_parent_info = dbt_nodes[candidate_parent_id]
                     if _is_non_asset_node(candidate_parent_info):
-                        queue.extend(candidate_parent_info["depends_on"]["nodes"])
+                        queue.extend(candidate_parent_info.get("depends_on", {}).get("nodes", []))
                     elif _valid_parent_node(candidate_parent_info):
                         replaced_parent_ids.add(candidate_parent_id)
 
