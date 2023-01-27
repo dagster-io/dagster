@@ -693,6 +693,10 @@
         "path": "/guides/best-practices",
         "children": [
           {
+            "title": "Adopting a new orchestrator",
+            "path": "/guides/dagster/adopting-a-new-orchestrator"
+          },
+          {
             "title": "Using environment variables and secrets",
             "path": "/guides/dagster/using-environment-variables-and-secrets"
           },
