@@ -177,6 +177,21 @@ class JobDefinition(PipelineDefinition):
 
         if partitions_def:
             partitioned_config = PartitionedConfig.from_flexible_config(config, partitions_def)
+            if isinstance(config, dict):
+                # Using config mapping here is a trick to make it so that the config will be used
+                # even when no partition is supplied for the job.
+                config_mapping = _config_mapping_with_default_value(
+                    get_run_config_schema_for_job(
+                        graph_def,
+                        resource_defs_with_defaults,
+                        executor_def,
+                        logger_defs,
+                        asset_layer,
+                    ),
+                    config,
+                    name,
+                )
+                self._explicit_config = True
         else:
             if isinstance(config, ConfigMapping):
                 config_mapping = config
