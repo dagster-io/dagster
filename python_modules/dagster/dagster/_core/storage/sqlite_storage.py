@@ -11,6 +11,7 @@ from dagster._utils import mkdir_p
 from .base_storage import DagsterStorage
 from .event_log.base import EventLogStorage
 from .event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from .partitions.base import PartitionsStorage
 from .runs.base import RunStorage
 from .runs.sqlite.sqlite_run_storage import SqliteRunStorage
 from .schedules.base import ScheduleStorage
@@ -94,6 +95,10 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
     @property
     def schedule_storage(self) -> ScheduleStorage:
         return self._schedule_storage
+
+    @property
+    def partitions_storage(self) -> Optional[PartitionsStorage]:
+        return None
 
     @property
     def event_storage_data(self) -> Optional[ConfigurableClassData]:

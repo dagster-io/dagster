@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from dagster._core.instance import MayHaveInstanceWeakref
 
 from .event_log.base import EventLogStorage
+from .partitions.base import PartitionsStorage
 from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
 
@@ -30,4 +32,9 @@ class DagsterStorage(ABC, MayHaveInstanceWeakref):
     @property
     @abstractmethod
     def schedule_storage(self) -> ScheduleStorage:
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def partitions_storage(self) -> Optional[PartitionsStorage]:
         raise NotImplementedError()
