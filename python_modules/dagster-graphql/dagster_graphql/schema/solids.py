@@ -431,7 +431,10 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
 
     def __init__(self, represented_pipeline: RepresentedPipeline, solid_def_name: str):
         check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
-        self._solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
+        _solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
+        if not isinstance(_solid_def_snap, SolidDefSnap):
+            check.failed("Expected SolidDefSnap")
+        self._solid_def_snap = _solid_def_snap
         super().__init__(name=solid_def_name, description=self._solid_def_snap.description)  # type: ignore
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
 
