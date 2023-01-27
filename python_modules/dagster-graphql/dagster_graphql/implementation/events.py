@@ -20,10 +20,10 @@ from dagster import (
     TextMetadataValue,
     UrlMetadataValue,
 )
+from dagster._core.definitions.metadata import DagsterRunMetadataValue
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import StepFailureData
-from dagster._legacy import DagsterPipelineRunMetadataValue
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
@@ -134,7 +134,7 @@ def iterate_metadata_entries(metadata_entries: Sequence[MetadataEntry]) -> Itera
                 label=metadata_entry.label,
                 description=metadata_entry.description,
             )
-        elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataValue):
+        elif isinstance(metadata_entry.entry_data, DagsterRunMetadataValue):
             yield GraphenePipelineRunMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
