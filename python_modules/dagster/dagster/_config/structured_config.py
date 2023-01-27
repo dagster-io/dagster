@@ -152,11 +152,11 @@ def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSch
     return DefinitionConfigSchema(_apply_defaults_to_schema_field(schema_field, data))
 
 
-T = TypeVar("T")
+ResValue = TypeVar("ResValue")
 
 
 class Resource(
-    Generic[T],
+    Generic[ResValue],
     ResourceDefinition,
     Config,
 ):
@@ -196,10 +196,10 @@ class Resource(
         Default behavior for new class-based resources is to return itself, passing
         the actual resource object to user code.
         """
-        return cast(T, self)
+        return cast(ResValue, self)
 
     @classmethod
-    def configure_at_launch(cls, **kwargs) -> "PartialResource[Self]":
+    def configure_at_launch(cls, **kwargs) -> "PartialResource[ResValue]":
         """
         Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
@@ -207,7 +207,7 @@ class Resource(
         return PartialResource(cls, data=kwargs)
 
     # The following methods are used to implement the descriptor protocol
-    # https://docs.python.org/3/howto/descriptor.html
+    # https://docs.python.org/3/howto/de scriptor.html
     #
     # Used to adjust the types of resource inputs and outputs, e.g. resource dependencies can be passed in
     # as PartialResources or Resources, but will always be returned as Resources
@@ -225,11 +225,11 @@ class Resource(
         setattr(obj, self._assigned_name, value)
 
 
-class PartialResource(Generic[T], ResourceDefinition, MakeConfigCacheable):
+class PartialResource(Generic[ResValue], ResourceDefinition, MakeConfigCacheable):
     data: Dict[str, Any]
-    resource_cls: Type[Resource[T]]
+    resource_cls: Type[Resource[ResValue]]
 
-    def __init__(self, resource_cls: Type[Resource[T]], data: Dict[str, Any]):
+    def __init__(self, resource_cls: Type[Resource[ResValue]], data: Dict[str, Any]):
         check.invariant(data == {}, "PartialResource currently does not support config fields")
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)
@@ -250,7 +250,7 @@ class PartialResource(Generic[T], ResourceDefinition, MakeConfigCacheable):
         )
 
 
-ResourceOrPartial: TypeAlias = Union[Resource[T], PartialResource[T]]
+ResourceOrPartial: TypeAlias = Union[Resource[ResValue], PartialResource[ResValue]]
 
 
 class StructuredResourceAdapter(Resource, ABC):
