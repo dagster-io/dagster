@@ -1,41 +1,13 @@
 import {Box} from '@dagster-io/ui';
 import React from 'react';
 
-import {RunStatus} from '../graphql/types';
+import {KNOWN_TAGS} from '../graph/OpTags';
 
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
+import * as Mocks from './AssetNode.mocks';
 import {LiveDataForNode} from './Utils';
+import {getAssetNodeDimensions} from './layout';
 import {AssetNodeFragment} from './types/AssetNode.types';
-
-const ASSET_NODE_DEFINITION: AssetNodeFragment = {
-  __typename: 'AssetNode',
-  assetKey: {__typename: 'AssetKey', path: ['asset1']},
-  computeKind: null,
-  description: 'This is a test asset description',
-  graphName: null,
-  id: '["asset1"]',
-  isObservable: false,
-  isPartitioned: false,
-  isSource: false,
-  jobNames: ['job1'],
-  opNames: ['asset1'],
-  opVersion: '1',
-};
-
-const SOURCE_ASSET_NODE_DEFINITION: AssetNodeFragment = {
-  __typename: 'AssetNode',
-  assetKey: {__typename: 'AssetKey', path: ['source_asset']},
-  computeKind: null,
-  description: 'This is a test source asset',
-  graphName: null,
-  id: '["source_asset"]',
-  isObservable: true,
-  isPartitioned: false,
-  isSource: true,
-  jobNames: [],
-  opNames: [],
-  opVersion: '1',
-};
 
 // eslint-disable-next-line import/no-default-export
 export default {component: AssetNode};
@@ -44,11 +16,14 @@ export const LiveStates = () => {
   const caseWithLiveData = (
     name: string,
     liveData: LiveDataForNode | undefined = undefined,
-    def: AssetNodeFragment = ASSET_NODE_DEFINITION,
+    def: AssetNodeFragment = Mocks.AssetNodeFragmentBasic,
   ) => {
+    const dimensions = getAssetNodeDimensions(def);
     return (
       <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
-        <div style={{position: 'relative', width: 280}}>
+        <div
+          style={{position: 'relative', width: 280, height: dimensions.height, overflowY: 'hidden'}}
+        >
           <AssetNode definition={def} selected={false} liveData={liveData} />
         </div>
         <div style={{position: 'relative', width: 280, height: 82}}>
@@ -63,287 +38,153 @@ export const LiveStates = () => {
       </Box>
     );
   };
+
   return (
-    <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
-      {caseWithLiveData('No Live Data', undefined)}
-      {caseWithLiveData('Run Started - Not Materializing Yet', {
-        stepKey: 'asset1',
-        unstartedRunIds: ['ABCDEF'],
-        inProgressRunIds: [],
-        lastMaterialization: null,
-        lastMaterializationRunStatus: null,
-        lastObservation: null,
-        runWhichFailedToMaterialize: null,
-        currentLogicalVersion: null,
-        projectedLogicalVersion: null,
-        freshnessInfo: null,
-        freshnessPolicy: null,
-      })}
-      {caseWithLiveData('Run Started - Materializing', {
-        stepKey: 'asset1',
-        unstartedRunIds: [],
-        inProgressRunIds: ['ABCDEF'],
-        lastMaterialization: null,
-        lastMaterializationRunStatus: null,
-        lastObservation: null,
-        runWhichFailedToMaterialize: null,
-        currentLogicalVersion: null,
-        projectedLogicalVersion: null,
-        freshnessInfo: null,
-        freshnessPolicy: null,
-      })}
+    <>
+      <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+        {caseWithLiveData('No Live Data', undefined)}
 
-      {caseWithLiveData('Run Failed to Materialize', {
-        stepKey: 'asset1',
-        unstartedRunIds: [],
-        inProgressRunIds: [],
-        lastMaterialization: null,
-        lastMaterializationRunStatus: null,
-        lastObservation: null,
-        runWhichFailedToMaterialize: {
-          __typename: 'Run',
-          id: 'ABCDEF',
-          status: RunStatus.FAILURE,
-          endTime: 1673301346,
-        },
-        currentLogicalVersion: null,
-        projectedLogicalVersion: null,
-        freshnessInfo: null,
-        freshnessPolicy: null,
-      })}
+        {caseWithLiveData(
+          'Run Started - Not Materializing Yet',
+          Mocks.LiveDataForNodeRunStartedNotMaterializing,
+        )}
+        {caseWithLiveData(
+          'Run Started - Materializing',
+          Mocks.LiveDataForNodeRunStartedMaterializing,
+        )}
 
-      {caseWithLiveData('Never Materialized', {
-        stepKey: 'asset1',
-        unstartedRunIds: [],
-        inProgressRunIds: [],
-        lastMaterialization: null,
-        lastMaterializationRunStatus: null,
-        lastObservation: null,
-        runWhichFailedToMaterialize: null,
-        currentLogicalVersion: 'INITIAL',
-        projectedLogicalVersion: 'V_A',
-        freshnessInfo: null,
-        freshnessPolicy: null,
-      })}
+        {caseWithLiveData('Run Failed to Materialize', Mocks.LiveDataForNodeRunFailed)}
 
-      {caseWithLiveData('Materialized', {
-        stepKey: 'asset1',
-        unstartedRunIds: [],
-        inProgressRunIds: [],
-        lastMaterialization: {
-          __typename: 'MaterializationEvent',
-          runId: 'ABCDEF',
-          timestamp: `${Date.now()}`,
-        },
-        lastMaterializationRunStatus: null,
-        lastObservation: null,
-        runWhichFailedToMaterialize: null,
-        currentLogicalVersion: 'INITIAL',
-        projectedLogicalVersion: 'V_A',
-        freshnessInfo: null,
-        freshnessPolicy: null,
-      })}
+        {caseWithLiveData('Never Materialized', Mocks.LiveDataForNodeNeverMaterialized)}
 
-      {caseWithLiveData('Materialized and Stale', {
-        stepKey: 'asset1',
-        unstartedRunIds: [],
-        inProgressRunIds: [],
-        lastMaterialization: {
-          __typename: 'MaterializationEvent',
-          runId: 'ABCDEF',
-          timestamp: `${Date.now()}`,
-        },
-        lastMaterializationRunStatus: null,
-        lastObservation: null,
-        runWhichFailedToMaterialize: null,
-        currentLogicalVersion: 'V_A',
-        projectedLogicalVersion: 'V_B',
-        freshnessInfo: null,
-        freshnessPolicy: null,
-      })}
-      {caseWithLiveData('Materialized and Stale and Late', {
-        stepKey: 'asset1',
-        unstartedRunIds: [],
-        inProgressRunIds: [],
-        lastMaterialization: {
-          __typename: 'MaterializationEvent',
-          runId: 'ABCDEF',
-          timestamp: `${Date.now()}`,
-        },
-        lastMaterializationRunStatus: null,
-        lastObservation: null,
-        runWhichFailedToMaterialize: null,
-        currentLogicalVersion: 'V_A',
-        projectedLogicalVersion: 'V_B',
-        freshnessInfo: {
-          __typename: 'AssetFreshnessInfo',
-          currentMinutesLate: 12,
-        },
-        freshnessPolicy: {
-          __typename: 'FreshnessPolicy',
-          maximumLagMinutes: 10,
-          cronSchedule: null,
-        },
-      })}
-      {caseWithLiveData('Materialized and Stale and Fresh', {
-        stepKey: 'asset1',
-        unstartedRunIds: [],
-        inProgressRunIds: [],
-        lastMaterialization: {
-          __typename: 'MaterializationEvent',
-          runId: 'ABCDEF',
-          timestamp: `${Date.now()}`,
-        },
-        lastMaterializationRunStatus: null,
-        lastObservation: null,
-        runWhichFailedToMaterialize: null,
-        currentLogicalVersion: 'V_A',
-        projectedLogicalVersion: 'V_B',
-        freshnessInfo: {
-          __typename: 'AssetFreshnessInfo',
-          currentMinutesLate: 0,
-        },
-        freshnessPolicy: {
-          __typename: 'FreshnessPolicy',
-          maximumLagMinutes: 10,
-          cronSchedule: null,
-        },
-      })}
-      {caseWithLiveData('Materialized and Fresh', {
-        stepKey: 'asset1',
-        unstartedRunIds: [],
-        inProgressRunIds: [],
-        lastMaterialization: {
-          __typename: 'MaterializationEvent',
-          runId: 'ABCDEF',
-          timestamp: `${Date.now()}`,
-        },
-        lastMaterializationRunStatus: null,
-        lastObservation: null,
-        runWhichFailedToMaterialize: null,
-        currentLogicalVersion: 'V_B',
-        projectedLogicalVersion: 'V_B',
-        freshnessInfo: {
-          __typename: 'AssetFreshnessInfo',
-          currentMinutesLate: 0,
-        },
-        freshnessPolicy: {
-          __typename: 'FreshnessPolicy',
-          maximumLagMinutes: 10,
-          cronSchedule: null,
-        },
-      })}
-      {caseWithLiveData('Materialized and Late', {
-        stepKey: 'asset1',
-        unstartedRunIds: [],
-        inProgressRunIds: [],
-        lastMaterialization: {
-          __typename: 'MaterializationEvent',
-          runId: 'ABCDEF',
-          timestamp: `${Date.now()}`,
-        },
-        lastMaterializationRunStatus: null,
-        lastObservation: null,
-        runWhichFailedToMaterialize: null,
-        currentLogicalVersion: 'V_A',
-        projectedLogicalVersion: 'V_A',
-        freshnessInfo: {
-          __typename: 'AssetFreshnessInfo',
-          currentMinutesLate: 12,
-        },
-        freshnessPolicy: {
-          __typename: 'FreshnessPolicy',
-          maximumLagMinutes: 10,
-          cronSchedule: null,
-        },
-      })}
-      {caseWithLiveData('Source Asset - No Live Data', undefined, SOURCE_ASSET_NODE_DEFINITION)}
+        {caseWithLiveData('Materialized', Mocks.LiveDataForNodeMaterialized)}
 
-      {caseWithLiveData('Source Asset - Not Observable', undefined, {
-        ...SOURCE_ASSET_NODE_DEFINITION,
-        isObservable: false,
-      })}
+        {caseWithLiveData('Materialized and Stale', Mocks.LiveDataForNodeMaterializedAndStale)}
 
-      {caseWithLiveData(
-        'Source Asset - Never Observed',
-        {
-          stepKey: 'source_asset',
-          unstartedRunIds: [],
-          inProgressRunIds: [],
-          lastMaterialization: null,
-          lastMaterializationRunStatus: null,
-          lastObservation: null,
-          runWhichFailedToMaterialize: null,
-          currentLogicalVersion: 'INITIAL',
-          projectedLogicalVersion: null,
-          freshnessInfo: null,
-          freshnessPolicy: null,
-        },
-        SOURCE_ASSET_NODE_DEFINITION,
-      )}
+        {caseWithLiveData(
+          'Materialized and Stale and Late',
+          Mocks.LiveDataForNodeMaterializedAndStaleAndLate,
+        )}
 
-      {caseWithLiveData(
-        'Source Asset - Observation Running',
-        {
-          stepKey: 'source_asset',
-          unstartedRunIds: [],
-          inProgressRunIds: ['12345'],
-          lastMaterialization: null,
-          lastMaterializationRunStatus: null,
-          lastObservation: null,
-          runWhichFailedToMaterialize: null,
-          currentLogicalVersion: 'INITIAL',
-          projectedLogicalVersion: null,
-          freshnessInfo: null,
-          freshnessPolicy: null,
-        },
-        SOURCE_ASSET_NODE_DEFINITION,
-      )}
+        {caseWithLiveData(
+          'Materialized and Stale and Fresh',
+          Mocks.LiveDataForNodeMaterializedAndStaleAndFresh,
+        )}
 
-      {caseWithLiveData(
-        'Source Asset - Observed, Stale',
-        {
-          stepKey: 'source_asset',
-          unstartedRunIds: [],
-          inProgressRunIds: ['12345'],
-          lastMaterialization: null,
-          lastMaterializationRunStatus: null,
-          lastObservation: {
-            __typename: 'ObservationEvent',
-            runId: 'ABCDEF',
-            timestamp: `${Date.now()}`,
-          },
-          runWhichFailedToMaterialize: null,
-          currentLogicalVersion: 'INITIAL',
-          projectedLogicalVersion: 'DIFFERENT',
-          freshnessInfo: null,
-          freshnessPolicy: null,
-        },
-        SOURCE_ASSET_NODE_DEFINITION,
-      )}
+        {caseWithLiveData('Materialized and Fresh', Mocks.LiveDataForNodeMaterializedAndFresh)}
 
-      {caseWithLiveData(
-        'Source Asset - Observed, Up To Date',
-        {
-          stepKey: 'source_asset',
-          unstartedRunIds: [],
-          inProgressRunIds: [],
-          lastMaterialization: null,
-          lastMaterializationRunStatus: null,
-          lastObservation: {
-            __typename: 'ObservationEvent',
-            runId: 'ABCDEF',
-            timestamp: `${Date.now()}`,
-          },
-          runWhichFailedToMaterialize: null,
-          currentLogicalVersion: 'DIFFERENT',
-          projectedLogicalVersion: 'DIFFERENT',
-          freshnessInfo: null,
-          freshnessPolicy: null,
-        },
-        SOURCE_ASSET_NODE_DEFINITION,
-      )}
-    </Box>
+        {caseWithLiveData('Materialized and Late', Mocks.LiveDataForNodeMaterializedAndLate)}
+      </Box>
+
+      <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+        {caseWithLiveData('Source Asset - No Live Data', undefined, Mocks.AssetNodeFragmentSource)}
+
+        {caseWithLiveData('Source Asset - Not Observable', undefined, {
+          ...Mocks.AssetNodeFragmentSource,
+          isObservable: false,
+        })}
+
+        {caseWithLiveData('Source Asset - Not Observable, No Description', undefined, {
+          ...Mocks.AssetNodeFragmentSource,
+          isObservable: false,
+          description: null,
+        })}
+
+        {caseWithLiveData(
+          'Source Asset - Never Observed',
+          Mocks.LiveDataForNodeSourceNeverObserved,
+          Mocks.AssetNodeFragmentSource,
+        )}
+
+        {caseWithLiveData(
+          'Source Asset - Observation Running',
+          Mocks.LiveDataForNodeSourceObservationRunning,
+          Mocks.AssetNodeFragmentSource,
+        )}
+
+        {caseWithLiveData(
+          'Source Asset - Observed, Stale',
+          Mocks.LiveDataForNodeSourceObservedStale,
+          Mocks.AssetNodeFragmentSource,
+        )}
+
+        {caseWithLiveData(
+          'Source Asset - Observed, Up To Date',
+          Mocks.LiveDataForNodeSourceObservedUpToDate,
+          Mocks.AssetNodeFragmentSource,
+        )}
+      </Box>
+      <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+        {caseWithLiveData(
+          'Partitioned Asset - Some Missing',
+          Mocks.LiveDataForNodePartitionedSomeMissing,
+          Mocks.AssetNodeFragmentPartitioned,
+        )}
+
+        {caseWithLiveData(
+          'Partitioned Asset - None Missing',
+          Mocks.LiveDataForNodePartitionedNoneMissing,
+          Mocks.AssetNodeFragmentPartitioned,
+        )}
+
+        {caseWithLiveData(
+          'Never Materialized',
+          Mocks.LiveDataForNodePartitionedNeverMaterialized,
+          Mocks.AssetNodeFragmentPartitioned,
+        )}
+
+        {caseWithLiveData(
+          'Partitioned Asset - Stale',
+          Mocks.LiveDataForNodePartitionedStale,
+          Mocks.AssetNodeFragmentPartitioned,
+        )}
+
+        {caseWithLiveData(
+          'Partitioned Asset - Stale and Late',
+          Mocks.LiveDataForNodePartitionedStaleAndLate,
+          Mocks.AssetNodeFragmentPartitioned,
+        )}
+
+        {caseWithLiveData(
+          'Partitioned Asset - Stale and Fresh',
+          Mocks.LiveDataForNodePartitionedStaleAndFresh,
+          Mocks.AssetNodeFragmentPartitioned,
+        )}
+
+        {caseWithLiveData(
+          'Partitioned Asset - Last Run Failed',
+          Mocks.LiveDataForNodePartitionedLatestRunFailed,
+          Mocks.AssetNodeFragmentPartitioned,
+        )}
+      </Box>
+    </>
   );
   return;
+};
+
+export const PartnerTags = () => {
+  const caseWithComputeKind = (computeKind: string) => {
+    const def = {...Mocks.AssetNodeFragmentBasic, computeKind};
+    const liveData = Mocks.LiveDataForNodeMaterialized;
+    const dimensions = getAssetNodeDimensions(def);
+
+    return (
+      <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
+        <strong>{computeKind}</strong>
+        <div
+          style={{position: 'relative', width: 280, height: dimensions.height, overflowY: 'hidden'}}
+        >
+          <AssetNode definition={def} selected={false} liveData={liveData} />
+        </div>
+      </Box>
+    );
+  };
+
+  return (
+    <Box flex={{gap: 20, wrap: 'wrap', alignItems: 'flex-start'}}>
+      {Object.keys(KNOWN_TAGS).map(caseWithComputeKind)}
+      {caseWithComputeKind('Unknown-Kind-Long')}
+      {caseWithComputeKind('another')}
+    </Box>
+  );
 };

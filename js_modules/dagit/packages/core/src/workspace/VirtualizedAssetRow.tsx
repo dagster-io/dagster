@@ -167,22 +167,27 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
         ) : null}
         <RowCell>
           {liveData?.lastMaterialization ? (
-            <Box flex={{gap: 4, alignItems: 'flex-start', justifyContent: 'space-between'}}>
-              <AssetRunLink
-                runId={liveData.lastMaterialization.runId}
-                event={{
-                  stepKey: liveData.stepKey,
-                  timestamp: liveData.lastMaterialization.timestamp,
-                }}
-              >
-                <TimestampDisplay
-                  timestamp={Number(liveData.lastMaterialization.timestamp) / 1000}
-                  timeFormat={{showSeconds: false, showTimezone: false}}
-                />
-              </AssetRunLink>
-              <div style={{marginTop: '-2px'}}>
-                <StaleTag liveData={liveData} />
-              </div>
+            <Box flex={{direction: 'column'}}>
+              <Box flex={{gap: 4, alignItems: 'flex-start', justifyContent: 'space-between'}}>
+                <AssetRunLink
+                  runId={liveData.lastMaterialization.runId}
+                  event={{
+                    stepKey: liveData.stepKey,
+                    timestamp: liveData.lastMaterialization.timestamp,
+                  }}
+                >
+                  <TimestampDisplay
+                    timestamp={Number(liveData.lastMaterialization.timestamp) / 1000}
+                    timeFormat={{showSeconds: false, showTimezone: false}}
+                  />
+                </AssetRunLink>
+                <div style={{marginTop: '-2px'}}>
+                  <StaleTag liveData={liveData} />
+                </div>
+              </Box>
+              {liveData.partitionStats && (
+                <AssetPartitionStatsText stats={liveData.partitionStats} />
+              )}
             </Box>
           ) : (
             <LoadingOrNone queryResult={queryResult} noneString={'\u2013'} />
@@ -202,6 +207,20 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
         </RowCell>
       </RowGrid>
     </Row>
+  );
+};
+
+const AssetPartitionStatsText: React.FC<{
+  stats: {numMaterialized: number; numPartitions: number};
+}> = ({stats}) => {
+  const {numMaterialized, numPartitions} = stats;
+  const numMissing = numPartitions - numMaterialized;
+  return (
+    <span>
+      {numMissing > 0
+        ? `${numPartitions.toLocaleString()} Partitions (${numMissing.toLocaleString()} missing)`
+        : `${numPartitions.toLocaleString()} Partitions`}
+    </span>
   );
 };
 
