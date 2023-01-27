@@ -117,7 +117,9 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         if not self._mysql_version:
             return False
 
-        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(MINIMUM_MYSQL_BATCH_VERSION)
+        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(
+            MINIMUM_MYSQL_BATCH_VERSION
+        )
 
     def get_server_version(self):
         rows = self.execute("select version()")

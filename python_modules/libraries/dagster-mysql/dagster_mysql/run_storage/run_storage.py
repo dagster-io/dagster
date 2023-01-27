@@ -154,11 +154,15 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         if not self._mysql_version:
             return False
 
-        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(MINIMUM_MYSQL_BUCKET_VERSION)
+        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(
+            MINIMUM_MYSQL_BUCKET_VERSION
+        )
 
     @property
     def supports_intersect(self):
-        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(MINIMUM_MYSQL_INTERSECT_VERSION)
+        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(
+            MINIMUM_MYSQL_INTERSECT_VERSION
+        )
 
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:

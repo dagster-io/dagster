@@ -195,7 +195,9 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @property
     def supports_intersect(self):
-        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(MINIMUM_MYSQL_INTERSECT_VERSION)
+        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(
+            MINIMUM_MYSQL_INTERSECT_VERSION
+        )
 
     @property
     def event_watcher(self):

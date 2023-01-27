@@ -46,6 +46,7 @@ def get_conn_string(username, password, hostname, db_name, port="3306"):
         port=port,
     )
 
+
 def parse_mysql_version(version: str) -> tuple[int]:
     """Parse MySQL version into a tuple of ints.
 
@@ -56,7 +57,7 @@ def parse_mysql_version(version: str) -> tuple[int]:
         tuple: Tuple of ints representing the MySQL version.
     """
     parsed = []
-    for part in re.split(r'\D+', version):
+    for part in re.split(r"\D+", version):
         if len(part) == 0:
             continue
         try:
@@ -64,6 +65,7 @@ def parse_mysql_version(version: str) -> tuple[int]:
         except ValueError:
             continue
     return tuple(parsed)
+
 
 def retry_mysql_creation_fn(fn, retry_limit=5, retry_wait=0.2):
     # Retry logic to recover from the case where two processes are creating
