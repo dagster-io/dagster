@@ -26,11 +26,13 @@ def with_airflow():
 simple_asset = make_graph_backed_assets_from_airflow_dag(
     simple_dag,
     asset_key_to_task_ids={
-        "date": {"get_date"},
         "task_instances_0": {"get_task_instance_0", "get_task_instance_0_0", "get_task_instance_0_1", "get_task_instance_0_2"},
         "task_instance_2": {"get_task_instance_2"},
         "new_asset": {"sink_task_bar", "sink_task_foo"},
+        "task_instances_1": {"get_task_instance_1"},
+        "task_instances_1_0": {"get_task_instance_1_0"},
         "task_instances_1_1": {"get_task_instance_1_1"},
+        "task_instances_1_2": {"get_task_instance_1_2"},
     }
 )
 @repository
