@@ -464,31 +464,6 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> Mapping["AssetKey", Optional["EventLogEntry"]]:
         return self._storage.event_log_storage.get_latest_materialization_events(asset_keys)
 
-    def get_asset_events(
-        self,
-        asset_key: "AssetKey",
-        partitions: Optional[Sequence[str]] = None,
-        before_cursor: Optional[int] = None,
-        after_cursor: Optional[int] = None,
-        limit: Optional[int] = None,
-        ascending: bool = False,
-        include_cursor: bool = False,
-        before_timestamp=None,
-        cursor: Optional[int] = None,  # deprecated
-    ) -> Union[Iterable["EventLogEntry"], Iterable[Tuple[int, "EventLogEntry"]]]:
-        # Type ignore bc method does not exist-- unexecuted code?
-        return self._storage.event_log_storage.get_asset_events(  # type: ignore
-            asset_key,
-            partitions,
-            before_cursor,
-            after_cursor,
-            limit,
-            ascending,
-            include_cursor,
-            before_timestamp,
-            cursor,
-        )
-
     def get_asset_run_ids(self, asset_key: "AssetKey") -> Iterable[str]:
         return self._storage.event_log_storage.get_asset_run_ids(asset_key)
 
