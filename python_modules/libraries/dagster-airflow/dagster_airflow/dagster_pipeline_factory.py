@@ -20,20 +20,29 @@ from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
 from airflow.utils import db
-from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
-
-from dagster import (Array, DagsterInvariantViolationError,
-                     DependencyDefinition, Field, In, JobDefinition,
-                     MultiDependencyDefinition, Nothing, Out,
-                     ScheduleDefinition)
-from dagster import _check as check
-from dagster import op, repository, resource
+from dagster import (
+    Array,
+    DagsterInvariantViolationError,
+    DependencyDefinition,
+    Field,
+    In,
+    JobDefinition,
+    MultiDependencyDefinition,
+    Nothing,
+    Out,
+    ScheduleDefinition,
+    _check as check,
+    op,
+    repository,
+    resource,
+)
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
-from dagster._core.instance import (AIRFLOW_EXECUTION_DATE_STR,
-                                    IS_AIRFLOW_INGEST_PIPELINE_STR)
+from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
 from dagster._legacy import ModeDefinition, PipelineDefinition
 from dagster._utils.schedules import is_valid_cron_schedule
+
+from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
 # pylint: disable=no-name-in-module,import-error
 if str(airflow_version) >= "2.0.0":
@@ -556,21 +565,21 @@ def make_dagster_pipeline_from_airflow_dag(
                     execution_date = dateutil.parser.parse(execution_date_str)
                 except ValueError:
                     raise DagsterInvariantViolationError(
-                        'Could not parse execution_date "{execution_date_str}". Please use datetime format '
-                        "compatible with  dateutil.parser.parse.".format(
+                        'Could not parse execution_date "{execution_date_str}". Please use datetime'
+                        " format compatible with  dateutil.parser.parse.".format(
                             execution_date_str=execution_date_str,
                         )
                     )
                 except OverflowError:
                     raise DagsterInvariantViolationError(
-                        'Date "{execution_date_str}" exceeds the largest valid C integer on the system.'
-                        .format(
+                        'Date "{execution_date_str}" exceeds the largest valid C integer on the'
+                        " system.".format(
                             execution_date_str=execution_date_str,
                         )
                     )
-            elif 'dagster/partition' in context.dagster_run.tags:
+            elif "dagster/partition" in context.dagster_run.tags:
                 # for airflow DAGs that have been turned into SDAs
-                execution_date_str = context.dagster_run.tags.get('dagster/partition')
+                execution_date_str = context.dagster_run.tags.get("dagster/partition")
                 execution_date = dateutil.parser.parse(execution_date_str)
                 execution_date = execution_date.replace(tzinfo=pytz.timezone(dag.timezone.name))
             else:
@@ -787,7 +796,7 @@ def make_dagster_solid_from_airflow_task(
 
         if context.has_partition_key:
             # for airflow DAGs that have been turned into SDAs
-            execution_date_str = context.pipeline_run.tags.get('dagster/partition')
+            execution_date_str = context.pipeline_run.tags.get("dagster/partition")
             execution_date = dateutil.parser.parse(execution_date_str)
             # execution_date = execution_date.replace(tzinfo=pytz.timezone(dag.timezone.name))
         else:
@@ -806,8 +815,8 @@ def make_dagster_solid_from_airflow_task(
                 execution_date = dateutil.parser.parse(execution_date_str)
             except ValueError:
                 raise DagsterInvariantViolationError(
-                    'Could not parse execution_date "{execution_date_str}". Please use datetime format '
-                    "compatible with  dateutil.parser.parse.".format(
+                    'Could not parse execution_date "{execution_date_str}". Please use datetime'
+                    " format compatible with  dateutil.parser.parse.".format(
                         execution_date_str=execution_date_str,
                     )
                 )

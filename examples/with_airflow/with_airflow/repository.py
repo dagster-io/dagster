@@ -1,15 +1,15 @@
 import os
 
 # start_repo_marker_0
-from dagster_airflow import (make_dagster_job_from_airflow_dag,
+from dagster_airflow import (load_assets_from_airflow_dag,
+                             make_dagster_job_from_airflow_dag,
                              make_dagster_repo_from_airflow_dags_path,
-                             make_dagster_repo_from_airflow_example_dags,
-                             make_graph_backed_assets_from_airflow_dag)
+                             make_dagster_repo_from_airflow_example_dags)
 from with_airflow.airflow_complex_dag import complex_dag
 from with_airflow.airflow_kubernetes_dag import kubernetes_dag
 from with_airflow.airflow_simple_dag import simple_dag
 
-from dagster import repository
+from dagster import AssetKey, repository
 
 airflow_simple_dag = make_dagster_job_from_airflow_dag(simple_dag)
 airflow_complex_dag = make_dagster_job_from_airflow_dag(complex_dag)
@@ -23,18 +23,25 @@ def with_airflow():
 
 # end_repo_marker_0
 
-simple_asset = make_graph_backed_assets_from_airflow_dag(
+simple_asset = load_assets_from_airflow_dag(
     simple_dag,
-    asset_key_to_task_ids={
-        "task_instances_0": {"get_task_instance_0", "get_task_instance_0_0", "get_task_instance_0_1", "get_task_instance_0_2"},
-        "task_instance_2": {"get_task_instance_2"},
-        "new_asset": {"sink_task_bar", "sink_task_foo"},
-        "task_instances_1": {"get_task_instance_1"},
-        "task_instances_1_0": {"get_task_instance_1_0"},
-        "task_instances_1_1": {"get_task_instance_1_1"},
-        "task_instances_1_2": {"get_task_instance_1_2"},
-    }
+    task_ids_by_asset_key={
+        AssetKey("task_instances_0"): {
+            "get_task_instance_0",
+            "get_task_instance_0_0",
+            "get_task_instance_0_1",
+            "get_task_instance_0_2",
+        },
+        AssetKey("task_instance_2"): {"get_task_instance_2"},
+        AssetKey("new_asset"): {"sink_task_bar", "sink_task_foo"},
+        AssetKey("task_instances_1"): {"get_task_instance_1"},
+        AssetKey("task_instances_1_0"): {"get_task_instance_1_0"},
+        AssetKey("task_instances_1_1"): {"get_task_instance_1_1"},
+        AssetKey("task_instances_1_2"): {"get_task_instance_1_2"},
+    },
 )
+
+
 @repository
 def sda_examples():
     return [simple_asset]
