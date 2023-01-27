@@ -47,7 +47,7 @@ def get_conn_string(username, password, hostname, db_name, port="3306"):
     )
 
 
-def parse_mysql_version(version: str) -> tuple[int]:
+def parse_mysql_version(version: str) -> tuple:
     """Parse MySQL version into a tuple of ints.
 
     Args:
