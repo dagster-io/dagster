@@ -1,10 +1,7 @@
 from typing import Any, Dict, Mapping, Sequence, cast
 
-import graphene
-from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
-from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
-
 import dagster._check as check
+import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.selector import (
@@ -17,6 +14,9 @@ from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.host_representation.selector import ResourceSelector
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.scheduler.instigation import InstigatorType
+
+from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
+from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
 
 from ...implementation.external import (
     fetch_location_statuses,

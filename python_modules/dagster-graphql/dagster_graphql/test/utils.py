@@ -76,7 +76,11 @@ def define_out_of_process_context(python_file, fn_name, instance, read_only=Fals
     with define_out_of_process_workspace(
         python_file, fn_name, instance, read_only=read_only
     ) as workspace_process_context:
-        yield workspace_process_context.create_request_context()
+        x = workspace_process_context.create_request_context()
+        print(python_file)
+        print(x.repository_locations)
+        print(x.repository_location_errors())
+        yield x
 
 
 def define_out_of_process_workspace(python_file, fn_name, instance, read_only=False):
@@ -169,4 +173,10 @@ def infer_sensor_selector(graphql_context, sensor_name):
 def infer_instigation_selector(graphql_context, name):
     selector = infer_repository_selector(graphql_context)
     selector.update({"name": name})
+    return selector
+
+
+def infer_resource_selector(graphql_context, name):
+    selector = infer_repository_selector(graphql_context)
+    selector.update({"resourceName": name})
     return selector

@@ -1305,7 +1305,7 @@ def external_resource_data_from_def(
         resource_snapshot=build_resource_def_snap(name, resource_def),
         configured_values=configured_values,
         config_field_snaps=unconfigured_config_type_snap.fields or [],
-        config_schema_snap=ConfigSchemaSnapshot({config_type.key: unconfigured_config_type_snap}),
+        config_schema_snap=unconfigured_config_schema.config_type.get_schema_snapshot(),
     )
 
 
