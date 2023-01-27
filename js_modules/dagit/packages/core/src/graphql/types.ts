@@ -2163,6 +2163,7 @@ export type PartitionDefinition = {
 
 export enum PartitionDefinitionType {
   MULTIPARTITIONED = 'MULTIPARTITIONED',
+  RUNTIME = 'RUNTIME',
   STATIC = 'STATIC',
   TIME_WINDOW = 'TIME_WINDOW',
 }

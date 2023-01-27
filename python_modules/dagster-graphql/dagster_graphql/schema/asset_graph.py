@@ -17,6 +17,7 @@ from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalMultiPartitionsDefinitionData,
     ExternalPartitionsDefinitionData,
+    ExternalMutablePartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
@@ -339,6 +340,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     ExternalStaticPartitionsDefinitionData,
                     ExternalTimeWindowPartitionsDefinitionData,
                     ExternalMultiPartitionsDefinitionData,
+                    ExternalMutablePartitionsDefinitionData,
                 ),
             ):
                 if (
