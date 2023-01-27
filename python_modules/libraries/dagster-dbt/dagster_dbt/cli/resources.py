@@ -3,7 +3,8 @@ from typing import Any, Iterator, Mapping, Optional, Sequence, Set, Union
 import dagster._check as check
 from dagster import Permissive, resource
 from dagster._annotations import public
-from dagster._core.definitions.events import AssetMaterialization, Output
+from dagster._core.definitions.events import AssetMaterialization, AssetObservation, Output
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._utils.merger import merge_dicts
 
 from ..dbt_resource import DbtResource
@@ -114,9 +115,10 @@ class DbtCliResource(DbtResource):
         command: str,
         manifest_json: Mapping[str, Any],
         node_info_to_asset_key,
+        context: OpExecutionContext,
         runtime_metadata_fn,
         **kwargs,
-    ) -> Iterator[Union[Output, AssetMaterialization]]:
+    ) -> Iterator[Union[Output, AssetObservation]]:
         yield from execute_cli_event_generator(
             executable=self._executable,
             command=command,
@@ -128,6 +130,7 @@ class DbtCliResource(DbtResource):
             capture_logs=self._capture_logs,
             manifest_json=manifest_json,
             node_info_to_asset_key=node_info_to_asset_key,
+            context=context,
             runtime_metadata_fn=runtime_metadata_fn,
         )
 

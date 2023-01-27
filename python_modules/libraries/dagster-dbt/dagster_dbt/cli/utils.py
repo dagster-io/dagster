@@ -1,10 +1,13 @@
 import json
 import os
 import subprocess
+from dagster._core.execution.context.compute import OpExecutionContext
+import dateutil
 from typing import Any, Iterator, List, Mapping, Optional, Sequence, Tuple, Union
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetObservation, Output
+from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.utils import coerce_valid_log_level
 
 from ..errors import (
@@ -12,7 +15,7 @@ from ..errors import (
     DagsterDbtCliHandledRuntimeError,
     DagsterDbtCliOutputsNotFoundError,
 )
-from ..utils import _get_output_name
+from ..utils import ASSET_RESOURCE_TYPES, _get_output_name
 from .constants import DBT_RUN_RESULTS_COMMANDS, DEFAULT_DBT_TARGET_PATH
 from .types import DbtCliOutput
 
@@ -77,8 +80,12 @@ def _process_line(
         else:
             # in rare cases, the loaded json line may be a string rather than a dictionary
             if isinstance(json_line, dict):
-                message = json_line.get("message", json_line.get("msg", message))
-                log_level = json_line.get("levelname", json_line.get("level", "debug"))
+                message = json_line.get("info", {}).get("msg") or json_line.get(
+                    "message", json_line.get("msg", message)
+                )
+                log_level = json_line.get("info", {}).get("level") or json_line.get(
+                    "levelname", json_line.get("level", "debug")
+                )
     elif "Done." not in line:
         # attempt to parse a log level out of the line
         if "ERROR" in line:
@@ -209,26 +216,71 @@ def parse_manifest(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Map
         raise DagsterDbtCliOutputsNotFoundError(path=manifest_path)
 
 
-def _event_for_json_line(
-    json_line: Mapping[str, Any], manifest_json, node_info_to_asset_key, runtime_metadata_fn
-) -> Optional[Union[AssetObservation, Output]]:
-    """Parses a json line into a Dagster event."""
-    print(json.dumps(json_line, indent=2))
-    status = json_line.get("status")
-    node = json_line.get("data", {}).get("node_info", {})
-    if not node:
-        return None
+def _events_for_structured_json_line(
+    json_line: Mapping[str, Any],
+    manifest_json,
+    node_info_to_asset_key,
+    context: OpExecutionContext,
+    runtime_metadata_fn,
+) -> Iterator[Union[AssetObservation, Output]]:
+    """Parses a json line into a Dagster event. Attempts to replicate the behavior of result_to_events
+    as closely as possible.
+    """
+    runtime_node_info = json_line.get("data", {}).get("node_info", {})
+    if not runtime_node_info:
+        return
 
-    resource_type = node.get("resource_type")
-    unique_id = node.get("unique_id")
+    node_resource_type = runtime_node_info.get("resource_type")
+    node_status = runtime_node_info.get("node_status")
+    unique_id = runtime_node_info.get("unique_id")
 
-    if not resource_type or not unique_id:
-        return None
+    if not node_resource_type or not unique_id:
+        return
 
-    node_info = manifest_json["nodes"].get(unique_id)
+    compiled_node_info = manifest_json["nodes"][unique_id]
 
-    if resource_type == "model" and status == "OK":
-        return Output(value=None, output_name=_get_output_name(node_info))
+    if node_resource_type in ASSET_RESOURCE_TYPES and node_status == "success":
+        metadata = runtime_metadata_fn(context, compiled_node_info) if runtime_metadata_fn else {}
+        started_at_str = runtime_node_info.get("node_started_at")
+        finished_at_str = runtime_node_info.get("node_finished_at")
+        if started_at_str is None or finished_at_str is None:
+            return
+
+        started_at = dateutil.parser.isoparse(started_at_str)  # type: ignore
+        completed_at = dateutil.parser.isoparse(finished_at_str)  # type: ignore
+        duration = completed_at - started_at
+        metadata.update(
+            {
+                f"Execution Started At": started_at.isoformat(timespec="seconds"),
+                f"Execution Completed At": completed_at.isoformat(timespec="seconds"),
+                f"Execution Duration": duration.total_seconds(),
+            }
+        )
+        yield Output(
+            value=None,
+            output_name=_get_output_name(compiled_node_info),
+            metadata=metadata,
+        )
+    elif node_resource_type == "test" and runtime_node_info.get("node_finished_at") is not None:
+        upstream_unique_ids = (
+            manifest_json["nodes"][unique_id].get("depends_on", {}).get("nodes", [])
+        )
+        # tests can apply to multiple asset keys
+        for upstream_id in upstream_unique_ids:
+            # the upstream id can reference a node or a source
+            upstream_node_info = manifest_json["nodes"].get(upstream_id) or manifest_json[
+                "sources"
+            ].get(upstream_id)
+            if upstream_node_info is None:
+                continue
+            upstream_asset_key = node_info_to_asset_key(upstream_node_info)
+            yield AssetObservation(
+                asset_key=upstream_asset_key,
+                metadata={
+                    "Test ID": unique_id,
+                    "Test Status": node_status,
+                },
+            )
 
 
 def execute_cli_event_generator(
@@ -242,6 +294,7 @@ def execute_cli_event_generator(
     capture_logs: bool,
     manifest_json: Mapping[str, Any],
     node_info_to_asset_key,
+    context: OpExecutionContext,
     runtime_metadata_fn,
 ) -> Iterator[Union[AssetObservation, Output]]:
     if not json_log_format:
@@ -266,10 +319,8 @@ def execute_cli_event_generator(
         message, json_line = _process_line(line, log, json_log_format, capture_logs)
         messages.append(message)
         if json_line is not None:
-            event = _event_for_json_line(
-                json_line, manifest_json, node_info_to_asset_key, runtime_metadata_fn
+            yield from _events_for_structured_json_line(
+                json_line, manifest_json, node_info_to_asset_key, context, runtime_metadata_fn
             )
-            if event is not None:
-                yield event
 
     _cleanup_process(process, messages, log, ignore_handled_error)

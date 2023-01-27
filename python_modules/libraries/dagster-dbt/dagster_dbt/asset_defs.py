@@ -410,6 +410,7 @@ def _stream_event_iterator(
     yield from dbt_resource.stream_asset_events(
         command="build" if use_build_command else "run",
         manifest_json=check.not_none(dbt_resource.get_manifest_json()),
+        context=context,
         runtime_metadata_fn=runtime_metadata_fn,
         node_info_to_asset_key=node_info_to_asset_key,
         **kwargs,

@@ -62,7 +62,7 @@ def _timing_to_metadata(timings: Sequence[Mapping[str, Any]]) -> Mapping[str, Ra
         metadata.update(
             {
                 f"{desc} Started At": started_at.isoformat(timespec="seconds"),
-                f"{desc} Completed At": started_at.isoformat(timespec="seconds"),
+                f"{desc} Completed At": completed_at.isoformat(timespec="seconds"),
                 f"{desc} Duration": duration.total_seconds(),
             }
         )
@@ -138,7 +138,9 @@ def result_to_events(
             )
     # can only associate tests with assets if we have manifest_json available
     elif node_resource_type == "test" and manifest_json:
-        upstream_unique_ids = manifest_json["nodes"][unique_id]["depends_on"]["nodes"]
+        upstream_unique_ids = (
+            manifest_json["nodes"][unique_id].get("depends_on", {}).get("nodes", [])
+        )
         # tests can apply to multiple asset keys
         for upstream_id in upstream_unique_ids:
             # the upstream id can reference a node or a source
