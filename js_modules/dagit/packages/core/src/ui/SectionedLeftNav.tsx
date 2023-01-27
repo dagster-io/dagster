@@ -4,6 +4,7 @@ import {useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
+import {useFeatureFlags} from '../app/Flags';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {LeftNavItem} from '../nav/LeftNavItem';
@@ -143,7 +144,13 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
 
   const jobItems = React.useMemo(() => getJobItemsForOption(option), [option]);
   const assetGroupItems = React.useMemo(() => getAssetGroupItemsForOption(option), [option]);
-  const resourceItems = React.useMemo(() => getTopLevelResourceItemsForOption(option), [option]);
+
+  const {flagSidebarResources} = useFeatureFlags();
+  const resourceItems = React.useMemo(
+    () => (flagSidebarResources ? getTopLevelResourceItemsForOption(option) : []),
+    [option, flagSidebarResources],
+  );
+
   const empty = jobItems.length === 0 && assetGroupItems.length === 0 && resourceItems.length === 0;
   const showTypeLabels =
     expanded &&

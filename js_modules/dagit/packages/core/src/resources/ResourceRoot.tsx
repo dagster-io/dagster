@@ -14,14 +14,16 @@ import * as React from 'react';
 import {useParams} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
-import {ResourceRootQueryQuery} from '../graphql/graphql';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+
+import {ResourceRootQuery} from './types/ResourceRoot.types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -51,7 +53,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
     ...repoAddressToSelector(repoAddress),
     resourceName,
   };
-  const queryResult = useQuery<ResourceRootQueryQuery>(RESOURCE_ROOT_QUERY, {
+  const queryResult = useQuery<ResourceRootQuery>(RESOURCE_ROOT_QUERY, {
     variables: {
       resourceSelector,
     },
@@ -183,7 +185,7 @@ export const RightInfoPanelContent = styled.div`
   overflow-y: auto;
 `;
 
-const RESOURCE_ROOT_QUERY = gql(`
+const RESOURCE_ROOT_QUERY = gql`
   query ResourceRootQuery($resourceSelector: ResourceSelector!) {
     topLevelResourceOrError(resourceSelector: $resourceSelector) {
       ... on TopLevelResource {
@@ -204,4 +206,5 @@ const RESOURCE_ROOT_QUERY = gql(`
       ...PythonErrorFragment
     }
   }
-`);
+  ${PYTHON_ERROR_FRAGMENT}
+`;
