@@ -32,6 +32,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_spark_tests*"]),
-    install_requires=["dagster==1.1.13"],
+    install_requires=["dagster==1.1.14"],
     zip_safe=False,
 )

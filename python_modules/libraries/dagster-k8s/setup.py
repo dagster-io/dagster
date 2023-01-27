@@ -32,6 +32,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_k8s_tests*"]),
-    install_requires=["dagster==1.1.13", "kubernetes"],
+    install_requires=["dagster==1.1.14", "kubernetes"],
     zip_safe=False,
 )
