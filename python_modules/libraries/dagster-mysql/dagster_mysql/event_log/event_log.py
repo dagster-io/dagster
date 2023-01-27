@@ -16,12 +16,12 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from packaging.version import parse
 
 from ..utils import (
     create_mysql_connection,
     mysql_alembic_config,
     mysql_url_from_config,
+    parse_mysql_version,
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
@@ -195,7 +195,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @property
     def supports_intersect(self):
-        return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_INTERSECT_VERSION)
+        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(MINIMUM_MYSQL_INTERSECT_VERSION)
 
     @property
     def event_watcher(self):

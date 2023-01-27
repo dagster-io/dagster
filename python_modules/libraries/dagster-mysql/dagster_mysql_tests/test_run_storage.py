@@ -83,3 +83,21 @@ class TestMySQLRunStorage(TestRunStorage):
                         from_url_instance._run_storage.mysql_url
                         == from_env_instance._run_storage.mysql_url
                     )
+
+
+def test_mysql_version(conn_string):
+    class FakeNonBucketing(MySQLRunStorage):
+        def get_server_version(self):
+            # override the server version to make sure the parsing works
+            return "5.7.38-log"
+
+    storage = FakeNonBucketing(conn_string)
+    assert not storage.supports_bucket_queries
+
+    class FakeBucketing(MySQLRunStorage):
+        def get_server_version(self):
+            # override the server version to make sure the parsing works
+            return "8.0.31-google"
+
+    storage = FakeBucketing(conn_string)
+    assert storage.supports_bucket_queries
