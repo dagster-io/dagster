@@ -30,11 +30,11 @@ interface Props {
 }
 
 const remapName = (inName: string): string => {
-  if (inName == 'StringSourceType') {
+  if (inName === 'StringSourceType') {
     return 'String';
-  } else if (inName == 'IntSourceType') {
+  } else if (inName === 'IntSourceType') {
     return 'Int';
-  } else if (inName == 'BoolSourceType') {
+  } else if (inName === 'BoolSourceType') {
     return 'Bool';
   }
   return inName;
@@ -103,7 +103,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
                       const defaultValue = field.defaultValueAsJson;
                       const actualValue = configuredValues[field.name];
 
-                      const isDefault = defaultValue == actualValue;
+                      const isDefault = defaultValue === actualValue;
 
                       return (
                         <tr key={field.name}>
