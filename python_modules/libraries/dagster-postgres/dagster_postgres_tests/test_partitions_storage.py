@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetKey, asset, materialize
+from dagster import AssetKey, asset, materialize, materialize_to_memory, IOManager
 from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterUnknownPartitionError
 from dagster._core.test_utils import instance_for_test
@@ -83,6 +83,68 @@ class TestPartitionsStorage:
             foo.delete_partition("a")
             assert set([p.name for p in foo.get_partitions()]) == {"b"}
             assert foo.has_partition("a") is False
+
+    def test_asset_dep(self, storage):
+        with instance_for_test() as instance:
+            instance._partitions_storage = storage
+
+            partitions_def = MutablePartitionsDefinition.with_instance(
+                name="fruits", instance=instance
+            )
+
+            @asset(partitions_def=partitions_def)
+            def asset1():
+                pass
+
+            @asset(partitions_def=partitions_def, non_argument_deps={"asset1"})
+            def asset2(context):
+                assert context.partition_key == "apple"
+                assert context.asset_key_for_output() == "apple"
+                assert context.asset_keys_for_output() == ["apple"]
+                assert context.asset_key_for_input() == "apple"
+                assert context.asset_keys_for_input() == ["apple"]
+
+            partitions_def.add_partitions(["apple"])
+            materialize_to_memory([asset1], instance=instance, partition_key="apple")
+
+    def test_io_manager_context(self, storage):
+        with instance_for_test() as instance:
+            instance._partitions_storage = storage
+
+            partitions_def = MutablePartitionsDefinition.with_instance(
+                name="fruits", instance=instance
+            )
+
+            class MyIOManager(IOManager):
+                def handle_output(self, context, obj):
+                    assert context.partition_key == "apple"
+                    assert context.asset_partition_key == "apple"
+                    assert context.asset_partition_keys == ["apple"]
+
+                def load_input(self, context):
+                    assert context.partition_key == "apple"
+                    assert context.asset_partition_key == "apple"
+                    assert context.asset_partition_keys == ["apple"]
+
+            @asset(partitions_def=partitions_def, io_manager_key="custom_io")
+            def asset1():
+                return 1
+
+            @asset(
+                partitions_def=partitions_def,
+                io_manager_key="custom_io",
+            )
+            def asset2(context, asset1):
+                return asset1
+
+            partitions_def.add_partitions(["apple"])
+
+            materialize(
+                [asset1, asset2],
+                instance=instance,
+                partition_key="apple",
+                resources={"custom_io": MyIOManager()},
+            )
 
 
 class TestPostgresPartitionsStorage(TestPartitionsStorage):
