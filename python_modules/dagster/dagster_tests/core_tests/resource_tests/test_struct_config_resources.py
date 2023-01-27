@@ -840,7 +840,7 @@ def get_mypy_type_output(filename) -> List[str]:
     return match
 
 
-def test_constructor_signature_nested_resource():
+def test_type_signatures_constructor_nested_resource():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
 
@@ -880,7 +880,7 @@ reveal_type(my_outer.inner)
         assert mypy_out[2] == "test.InnerResource"
 
 
-def test_config_at_launch_signature():
+def test_type_signatures_config_at_launch():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
 
@@ -904,7 +904,7 @@ reveal_type(MyResource.configure_at_launch())
         assert mypy_out[0].endswith("PartialResource[test.MyResource]")
 
 
-def test_constructor_signature_resource_dependency():
+def test_type_signatures_constructor_resource_dependency():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
 
