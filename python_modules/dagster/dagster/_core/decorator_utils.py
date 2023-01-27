@@ -1,7 +1,13 @@
 import textwrap
-from typing import Any, Callable, Optional, Sequence, Set
+from typing import Any, Callable, Optional, Sequence, Set, TypeVar, Union
+
+from typing_extensions import Concatenate, ParamSpec, TypeGuard
 
 from dagster._seven import funcsigs
+
+R = TypeVar("R")
+T = TypeVar("T")
+P = ParamSpec("P")
 
 
 def get_valid_name_permutations(param_name: str) -> Set[str]:
@@ -75,3 +81,13 @@ def format_docstring_for_description(fn: Callable) -> Optional[str]:
                 )
     else:
         return None
+
+
+# Type-ignores are used throughout the codebase when this function returns False to ignore the type
+# error arising from assuming
+# When/if `StrictTypeGuard` is supported, we can drop `is_context_not_provided` since a False from
+# `is_context_provided` will be sufficient.
+def is_context_provided(
+    fn: Union[Callable[Concatenate[T, P], R], Callable[P, R]]
+) -> TypeGuard[Callable[Concatenate[T, P], R]]:
+    return len(get_function_params(fn)) >= 1

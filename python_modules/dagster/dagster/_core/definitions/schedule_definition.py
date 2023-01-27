@@ -18,7 +18,7 @@ from typing import (
 )
 
 import pendulum
-from typing_extensions import TypeAlias, TypeGuard
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -28,7 +28,7 @@ from dagster._utils import ensure_gen
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
 
-from ..decorator_utils import get_function_params
+from ..decorator_utils import get_function_params, is_context_provided
 from ..errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -212,12 +212,6 @@ class DecoratedScheduleFunction(NamedTuple):
     decorated_fn: RawScheduleEvaluationFunction
     wrapped_fn: Callable[[ScheduleEvaluationContext], RunRequestIterator]
     has_context_arg: bool
-
-
-def is_context_provided(
-    fn: Union[Callable[[ScheduleEvaluationContext], T], Callable[[], T]]
-) -> TypeGuard[Callable[[ScheduleEvaluationContext], T]]:
-    return len(get_function_params(fn)) == 1
 
 
 def build_schedule_context(
@@ -445,9 +439,9 @@ class ScheduleDefinition:
                 ):
                     _run_config_fn = check.not_none(self._run_config_fn)
                     evaluated_run_config = copy.deepcopy(
-                        _run_config_fn(context)
-                        if is_context_provided(_run_config_fn)  # type: ignore
-                        else run_config_fn()  # type: ignore
+                        _run_config_fn(context)  # type: ignore  # fmt: skip
+                        if is_context_provided(_run_config_fn)  # type: ignore  # fmt: skip
+                        else _run_config_fn()  # type: ignore  # (strict type guard)
                     )
 
                 with user_code_error_boundary(

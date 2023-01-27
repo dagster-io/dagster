@@ -325,8 +325,8 @@ def single_resource_event_generator(
             try:
                 with time_execution_scope() as timer_result:
                     resource_or_gen = (
-                        resource_def.resource_fn(context)
-                        if is_context_provided(resource_def.resource_fn)
+                        resource_def.resource_fn(context)  # type: ignore  # fmt: skip
+                        if is_context_provided(resource_def.resource_fn)  # type: ignore  # fmt: skip
                         else resource_def.resource_fn()  # type: ignore[call-arg]
                     )
 
