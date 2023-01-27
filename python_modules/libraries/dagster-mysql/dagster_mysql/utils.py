@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 from contextlib import contextmanager
 from urllib.parse import (
@@ -44,6 +45,26 @@ def get_conn_string(username, password, hostname, db_name, port="3306"):
         db_name=db_name,
         port=port,
     )
+
+
+def parse_mysql_version(version: str) -> tuple:
+    """Parse MySQL version into a tuple of ints.
+
+    Args:
+        version (str): MySQL version string.
+
+    Returns:
+        tuple: Tuple of ints representing the MySQL version.
+    """
+    parsed = []
+    for part in re.split(r"\D+", version):
+        if len(part) == 0:
+            continue
+        try:
+            parsed.append(int(part))
+        except ValueError:
+            continue
+    return tuple(parsed)
 
 
 def retry_mysql_creation_fn(fn, retry_limit=5, retry_wait=0.2):
