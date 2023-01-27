@@ -28,7 +28,6 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .asset_selection import AssetGraph, AssetSelection
 from .decorators.sensor_decorator import sensor
@@ -40,6 +39,7 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
 
 class AssetReconciliationCursor(NamedTuple):
@@ -203,7 +203,7 @@ class AssetReconciliationCursor(NamedTuple):
 
 
 def find_parent_materialized_asset_partitions(
-    instance_queryer: CachingInstanceQueryer,
+    instance_queryer: "CachingInstanceQueryer",
     latest_storage_id: Optional[int],
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
@@ -253,7 +253,7 @@ def find_parent_materialized_asset_partitions(
 
 
 def find_never_materialized_or_requested_root_asset_partitions(
-    instance_queryer: CachingInstanceQueryer,
+    instance_queryer: "CachingInstanceQueryer",
     cursor: AssetReconciliationCursor,
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
@@ -355,7 +355,7 @@ def candidates_unit_within_allowable_time_window(
 
 
 def determine_asset_partitions_to_reconcile(
-    instance_queryer: CachingInstanceQueryer,
+    instance_queryer: "CachingInstanceQueryer",
     cursor: AssetReconciliationCursor,
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
@@ -442,7 +442,7 @@ def determine_asset_partitions_to_reconcile(
 
 
 def get_freshness_constraints_by_key(
-    instance_queryer: CachingInstanceQueryer,
+    instance_queryer: "CachingInstanceQueryer",
     asset_graph: AssetGraph,
     plan_window_start: datetime.datetime,
     plan_window_end: datetime.datetime,
@@ -485,7 +485,7 @@ def get_freshness_constraints_by_key(
 
 
 def get_current_data_times_for_key(
-    instance_queryer: CachingInstanceQueryer,
+    instance_queryer: "CachingInstanceQueryer",
     asset_graph: AssetGraph,
     relevant_upstream_keys: AbstractSet[AssetKey],
     asset_key: AssetKey,
@@ -590,7 +590,7 @@ def get_execution_time_window_for_constraints(
 
 
 def determine_asset_partitions_to_reconcile_for_freshness(
-    instance_queryer: CachingInstanceQueryer,
+    instance_queryer: "CachingInstanceQueryer",
     asset_graph: AssetGraph,
     target_asset_selection: AssetSelection,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
@@ -723,6 +723,8 @@ def reconcile(
     cursor: AssetReconciliationCursor,
     run_tags: Optional[Mapping[str, str]],
 ):
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
+
     instance_queryer = CachingInstanceQueryer(instance=instance)
     asset_graph = repository_def.asset_graph
 
