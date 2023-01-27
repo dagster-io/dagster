@@ -8,7 +8,7 @@ noindex: True
 
 Dagster is an orchestrator that's designed for developing and maintaining data assets, such as tables, data sets, machine learning models, and reports.
 
-In this tutorial, you will analyze activity on a popular news aggregation website. Similar to your data pipelines, you will fetch data from the website, clean it up, and build a report that summarizes some findings. We'll then tell Dagster to occassionally update the data and the report, which Dagster calls _assets_.
+In this tutorial, you will analyze activity on a popular news aggregation website. Similar to your data pipelines, you will fetch data from the website, clean it up, and build a report that summarizes some findings. You'll then tell Dagster to occassionally update the data and the report, which Dagster calls _assets_.
 
 ---
 
@@ -39,17 +39,11 @@ By the end of this section, you will:
 
 Software-defined assets wrap objects to enable data engineers to do more with them.
 
-As a Dagster user, you're able to build assets in code.
+As a Dagster user, you're able to build assets in code. In the sample asset below, the data frame returned is an asset and Dagster recognizes that the function is an SDA 
 
-```python file=/intro_tutorial/basics/hackernews/hackernews.py startafter=start_topstories_asset_marker endbefore=end_topstories_asset_marker dagimage=images/asset-screenshots/intro_tutorial/basics/hackernews/hackernews.svg
-import pandas as pd
-import requests
-from dagster import MetadataValue, OpExecutionContext, asset
-
-@asset(group_name="hackernews", compute_kind="HackerNews API")
-def hackernews_topstories(
-    context: OpExecutionContext, hackernews_topstory_ids: List[int]
-) -> pd.DataFrame:
+```
+@asset
+def hackernews_topstories(hackernews_topstory_ids):
     results = []
     for item_id in hackernews_topstory_ids:
         item = requests.get(
@@ -57,18 +51,8 @@ def hackernews_topstories(
         ).json()
         results.append(item)
 
-    df = pd.DataFrame(results)
-
-    context.add_output_metadata(
-        {
-            "num_records": len(df),
-            "preview": MetadataValue.md(df.head().to_markdown()),
-        }
-    )
-    return df
+    return pd.DataFrame(results)
 ```
-
-As shown in the sample asset above, assets are a framework that wraps around your existing Python code and allows you to add more information and metadata about it.
 
 ### Building a DAG of assets
 
@@ -77,13 +61,11 @@ Defining multiple assets creates a DAG (directed acyclic graph) of what assets d
 - Understand how your assets relate to each other
 - Empower you and your teammates to act, learn, and debug your pipelines
 
-We'll walk you through using Dagster's UI to view and materialize assets later in the tutorial.
-
 ### Extending with ops and jobs
 
-Asset-based orchestration may seem like a new way to approach data orchestration, but it is similar to traditional task-based orchestration. Under the hood, assets are a wrapper around Dagster's task-based framework. Therefore, all work done with SDAs can also done with tasks.
+Asset-based orchestration may seem like a new way to approach data orchestration, but it is similar to traditional task-based orchestration. Under the hood, assets are a wrapper around Dagster's task-based framework. Therefore, all work done with SDAs can also done with tasks. You can even use multiple Ops to create an asset.
 
-Dagster's best practices believe that data engineers should use assets most of the time. However, users are able to use Dagster's Ops and Jobs' task-based framework when assets are not the right fit. Some common situations to use the task-based framework are when you are:
+Dagster's ideology believes that data engineers should use assets. However, users can use Dagster's Ops and Jobs' task-based framework when assets are not the right fit. Some common situations to use the task-based framework are when you are:
 
 - Sending emails
 - Generating assets you do not know of ahead of time
@@ -94,7 +76,7 @@ Once you've completed the basic section of this tutorial, the advanced tutorial 
 
 ## Next steps
 
-In this section, you learned how Software-defined assets are the building blocks of Dagster and the benefits of asset-based pipelines. We also hinted at other concepts you will learn, such as I/O managers, Ops, and Jobs.
+In this section, you learned how Software-defined assets are the building blocks of Dagster and also about the benefits of asset-based pipelines. You also were hinted at other concepts you will learn, such as Ops and Jobs.
 
 Within your current data pipelines, you likely have many assets. Or if you are earlier in your data journey, you might have an understanding of what data your stakeholders need.
 
