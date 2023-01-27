@@ -5,7 +5,6 @@ import without from 'lodash/without';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
@@ -39,7 +38,7 @@ import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {GraphData, graphHasCycles, LiveData, GraphNode, tokenForAssetKey} from './Utils';
 import {AssetGraphLayout} from './layout';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
-import {AssetGraphFetchScope, useAssetGraphData} from './useAssetGraphData';
+import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {useLiveDataForAssetKeys} from './useLiveDataForAssetKeys';
 
@@ -112,31 +111,32 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   );
 };
 
-export const AssetGraphExplorerWithData: React.FC<
-  {
-    allAssetKeys: AssetKey[];
-    assetGraphData: GraphData;
-    graphQueryItems: GraphQueryItem[];
-    liveDataByNode: LiveData;
-    liveDataRefreshState: QueryRefreshState;
-    applyingEmptyDefault: boolean;
-  } & Props
-> = (props) => {
-  const {
-    options,
-    setOptions,
-    explorerPath,
-    onChangeExplorerPath,
-    onNavigateToSourceAssetNode: onNavigateToSourceAssetNode,
-    liveDataRefreshState,
-    liveDataByNode,
-    assetGraphData,
-    graphQueryItems,
-    applyingEmptyDefault,
-    fetchOptions,
-  } = props;
+type WithDataProps = {
+  allAssetKeys: AssetKey[];
+  assetGraphData: GraphData;
+  graphQueryItems: AssetGraphQueryItem[];
+  liveDataByNode: LiveData;
+  liveDataRefreshState: QueryRefreshState;
+  applyingEmptyDefault: boolean;
+} & Props;
 
+export const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
+  options,
+  setOptions,
+  explorerPath,
+  onChangeExplorerPath,
+  onNavigateToSourceAssetNode: onNavigateToSourceAssetNode,
+  liveDataRefreshState,
+  liveDataByNode,
+  assetGraphData,
+  graphQueryItems,
+  applyingEmptyDefault,
+  fetchOptions,
+  fetchOptionFilters,
+}) => {
   const findAssetLocation = useFindAssetLocation();
+  const {layout, loading, async} = useAssetLayout(assetGraphData);
+  const viewportEl = React.useRef<SVGViewport>();
 
   const [highlighted, setHighlighted] = React.useState<string | null>(null);
 
@@ -146,9 +146,10 @@ export const AssetGraphExplorerWithData: React.FC<
   );
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
 
-  const {layout, loading, async} = useAssetLayout(assetGraphData);
-
-  const viewportEl = React.useRef<SVGViewport>();
+  const selectedDefinitions = selectedGraphNodes.map((a) => a.definition);
+  const allDefinitionsForMaterialize = applyingEmptyDefault
+    ? graphQueryItems.map((a) => a.node)
+    : Object.values(assetGraphData.nodes).map((a) => a.definition);
 
   const onSelectNode = React.useCallback(
     async (
@@ -218,11 +219,6 @@ export const AssetGraphExplorerWithData: React.FC<
       layout,
     ],
   );
-
-  // const layoutsEqual(layout1: AssetGraphLayout, layout2: AssetGraphLayout) {
-  //   return (layout1.width === layout2.width) &&
-  //     (layout1.height === layout2.height) &&
-  // }
 
   const [lastRenderedLayout, setLastRenderedLayout] = React.useState<AssetGraphLayout | null>(null);
   const renderingNewLayout = lastRenderedLayout !== layout;
@@ -382,13 +378,7 @@ export const AssetGraphExplorerWithData: React.FC<
                 checked={options.preferAssetRendering}
                 onChange={() => {
                   onChangeExplorerPath(
-                    {
-                      ...explorerPath,
-                      opNames:
-                        selectedGraphNodes.length && selectedGraphNodes[0].definition.opNames.length
-                          ? selectedGraphNodes[0].definition.opNames
-                          : [],
-                    },
+                    {...explorerPath, opNames: selectedDefinitions[0]?.opNames || []},
                     'replace',
                   );
                   setOptions({
@@ -411,26 +401,26 @@ export const AssetGraphExplorerWithData: React.FC<
               />
               <LaunchAssetObservationButton
                 preferredJobName={explorerPath.pipelineName}
-                assetKeys={(selectedGraphNodes.length
-                  ? selectedGraphNodes
-                  : Object.values(assetGraphData.nodes)
+                assetKeys={(selectedDefinitions.length
+                  ? selectedDefinitions
+                  : allDefinitionsForMaterialize
                 )
-                  .filter((a) => a.definition.isObservable)
+                  .filter((a) => a.isObservable)
                   .map((n) => n.assetKey)}
               />
               <LaunchAssetExecutionButton
                 preferredJobName={explorerPath.pipelineName}
                 liveDataForStale={liveDataByNode}
                 scope={
-                  selectedGraphNodes.length
-                    ? {selected: selectedGraphNodes.map((a) => a.definition)}
-                    : {all: Object.values(assetGraphData.nodes).map((a) => a.definition)}
+                  selectedDefinitions.length
+                    ? {selected: selectedDefinitions}
+                    : {all: allDefinitionsForMaterialize}
                 }
               />
             </Box>
           </Box>
           <QueryOverlay>
-            {props.fetchOptionFilters}
+            {fetchOptionFilters}
 
             <GraphQueryInput
               items={graphQueryItems}
