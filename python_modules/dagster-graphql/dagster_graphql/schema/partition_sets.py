@@ -358,7 +358,7 @@ class GraphenePartitionDefinition(graphene.ObjectType):
 
             partitions_def = partition_def_data.get_partitions_definition()
             return GrapheneTimePartitionsDefinitionMetadata(
-                startTime=partitions_def.start_time,
+                startTime=partitions_def.start.timestamp(),
                 endTime=partitions_def.get_current_timestamp(),
                 startKey=partitions_def.get_first_partition_key(),
                 endKey=partitions_def.get_last_partition_key(),
