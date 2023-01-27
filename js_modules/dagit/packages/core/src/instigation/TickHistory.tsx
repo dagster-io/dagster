@@ -385,7 +385,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
     }
   }
 
-  fragment NextTickForHistoy on FutureInstigationTick {
+  fragment NextTickForHistoy on DryRunInstigationTick {
     timestamp
   }
 

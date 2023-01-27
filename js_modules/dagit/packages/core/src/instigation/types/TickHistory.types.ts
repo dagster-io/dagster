@@ -17,7 +17,7 @@ export type TickHistoryQuery = {
         __typename: 'InstigationState';
         id: string;
         instigationType: Types.InstigationType;
-        nextTick: {__typename: 'FutureInstigationTick'; timestamp: number} | null;
+        nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number} | null;
         ticks: Array<{
           __typename: 'InstigationTick';
           id: string;
@@ -55,7 +55,7 @@ export type TickHistoryQuery = {
       };
 };
 
-export type NextTickForHistoyFragment = {__typename: 'FutureInstigationTick'; timestamp: number};
+export type NextTickForHistoyFragment = {__typename: 'DryRunInstigationTick'; timestamp: number};
 
 export type HistoryTickFragment = {
   __typename: 'InstigationTick';

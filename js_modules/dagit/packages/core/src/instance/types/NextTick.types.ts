@@ -8,7 +8,7 @@ export type ScheduleFutureTicksFragment = {
   executionTimezone: string | null;
   scheduleState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
   futureTicks: {
-    __typename: 'FutureInstigationTicks';
-    results: Array<{__typename: 'FutureInstigationTick'; timestamp: number}>;
+    __typename: 'DryRunInstigationTicks';
+    results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
   };
 };

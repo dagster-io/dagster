@@ -168,12 +168,12 @@ class GrapheneInstigationTick(graphene.ObjectType):
         return get_tick_log_events(graphene_info, self._tick)
 
 
-class GrapheneFutureInstigationTick(graphene.ObjectType):
+class GrapheneDryRunInstigationTick(graphene.ObjectType):
     timestamp = graphene.NonNull(graphene.Float)
     evaluationResult = graphene.Field(lambda: GrapheneTickEvaluation)
 
     class Meta:
-        name = "FutureInstigationTick"
+        name = "DryRunInstigationTick"
 
     def __init__(self, state, timestamp):
         self._state = check.inst_param(state, "state", InstigatorState)
@@ -281,12 +281,12 @@ class GrapheneRunRequest(graphene.ObjectType):
         return dump_run_config_yaml(self._run_request.run_config)
 
 
-class GrapheneFutureInstigationTicks(graphene.ObjectType):
-    results = non_null_list(GrapheneFutureInstigationTick)
+class GrapheneDryRunInstigationTicks(graphene.ObjectType):
+    results = non_null_list(GrapheneDryRunInstigationTick)
     cursor = graphene.NonNull(graphene.Float)
 
     class Meta:
-        name = "FutureInstigationTicks"
+        name = "DryRunInstigationTicks"
 
 
 class GrapheneInstigationState(graphene.ObjectType):
@@ -313,7 +313,7 @@ class GrapheneInstigationState(graphene.ObjectType):
         cursor=graphene.String(),
         statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
     )
-    nextTick = graphene.Field(GrapheneFutureInstigationTick)
+    nextTick = graphene.Field(GrapheneDryRunInstigationTick)
     runningCount = graphene.NonNull(graphene.Int)  # remove with cron scheduler
 
     class Meta:
@@ -519,8 +519,8 @@ class GrapheneInstigationStatesOrError(graphene.Union):
 
 
 types = [
-    GrapheneFutureInstigationTick,
-    GrapheneFutureInstigationTicks,
+    GrapheneDryRunInstigationTick,
+    GrapheneDryRunInstigationTicks,
     GrapheneInstigationTypeSpecificData,
     GrapheneInstigationState,
     GrapheneInstigationStateNotFoundError,

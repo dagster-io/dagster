@@ -26,7 +26,7 @@ export type SensorRootQuery = {
         name: string;
         description: string | null;
         minIntervalSeconds: number;
-        nextTick: {__typename: 'FutureInstigationTick'; timestamp: number} | null;
+        nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number} | null;
         sensorState: {
           __typename: 'InstigationState';
           id: string;

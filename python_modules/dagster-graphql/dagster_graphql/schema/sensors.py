@@ -26,7 +26,7 @@ from .errors import (
     GrapheneUnauthorizedError,
 )
 from .inputs import GrapheneSensorSelector
-from .instigation import GrapheneFutureInstigationTick, GrapheneInstigationState
+from .instigation import GrapheneDryRunInstigationTick, GrapheneInstigationState
 from .util import ResolveInfo, non_null_list
 
 
@@ -64,7 +64,7 @@ class GrapheneSensor(graphene.ObjectType):
     sensorState = graphene.NonNull(GrapheneInstigationState)
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
-    nextTick = graphene.Field(GrapheneFutureInstigationTick)
+    nextTick = graphene.Field(GrapheneDryRunInstigationTick)
     metadata = graphene.NonNull(GrapheneSensorMetadata)
 
     class Meta:
