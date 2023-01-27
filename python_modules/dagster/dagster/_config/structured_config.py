@@ -42,7 +42,7 @@ from dagster._config.field_utils import (
 from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
-Self = Any
+Self = TypeVar("Self", bound="Resource")
 
 
 def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
@@ -206,15 +206,23 @@ class Resource(
         """
         return PartialResource(cls, data=kwargs)
 
-    # Python descriptor
+    # The following methods are used to implement the descriptor protocol
     # https://docs.python.org/3/howto/descriptor.html
+    #
     # Used to adjust the types of resource inputs and outputs, e.g. resource dependencies can be passed in
     # as PartialResources or Resources, but will always be returned as Resources
-    def __get__(self, obj: "Resource", __owner: Any) -> Self:
-        ...
+    # Very similar to https://github.com/pydantic/pydantic/discussions/4262
 
-    def __set__(self, obj: Optional[object], value: Union[T, "PartialResource[T]"]) -> None:
-        ...
+    def __set_name__(self, _owner, name):
+        self._assigned_name = name
+
+    def __get__(self: Self, obj: Any, __owner: Any) -> Self:
+        return cast(Self, getattr(obj, self._assigned_name))
+
+    def __set__(
+        self: Self, obj: Optional[object], value: Union[Self, "PartialResource[Self]"]
+    ) -> None:
+        setattr(obj, self._assigned_name, value)
 
 
 class PartialResource(Generic[T], ResourceDefinition, MakeConfigCacheable):
