@@ -433,6 +433,25 @@ class StructuredConfigIOManagerBase(Resource[IOManagerValue], IOManagerDefinitio
         """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
 
+    @classmethod
+    def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialIOManager[Self]":
+        """
+        Returns a partially initialized copy of the IO manager, with remaining config fields
+        set at runtime.
+        """
+        return PartialIOManager(cls, data=kwargs)
+
+
+class PartialIOManager(Generic[ResValue], PartialResource[ResValue], IOManagerDefinition):
+    def __init__(self, resource_cls: Type[Resource[ResValue]], data: Dict[str, Any]):
+        PartialResource.__init__(self, resource_cls, data)
+        IOManagerDefinition.__init__(
+            self,
+            resource_fn=self._resource_fn,
+            config_schema=self._config_schema,
+            description=resource_cls.__doc__,
+        )
+
 
 class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
     """
