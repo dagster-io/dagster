@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import (
+    Any,
     Dict,
     Generic,
     Mapping,
@@ -13,6 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._check import CheckError
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -98,17 +100,26 @@ class DbIOManager(IOManager):
 
         if obj is not None:
             obj_type = type(obj)
-            check.invariant(
-                obj_type in self._handlers_by_type,
-                (
+            if obj_type not in self._handlers_by_type:
+                msg = (
                     f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has"
                     " handlers for types"
                     f" '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'."
-                    " Please add type hints to your assets and ops, or build the"
-                    f" {self._io_manager_name} with an type handler for type '{obj_type}', so the"
-                    f" {self._io_manager_name} can correctly handle the output."
-                ),
-            )
+                )
+
+                if obj_type is Any:
+                    type_hints = " or ".join(
+                        [str(handler_type) for handler_type in self._handlers_by_type.keys()]
+                    )
+                    msg += f" Please add {type_hints} type hints to your assets and ops."
+                else:
+                    msg += (
+                        f" Please build the {self._io_manager_name} with an type handler for type"
+                        f" '{obj_type}', so the {self._io_manager_name} can correctly handle the"
+                        " output."
+                    )
+
+                raise CheckError(msg)
 
             self._db_client.delete_table_slice(context, table_slice)
 
@@ -132,17 +143,27 @@ class DbIOManager(IOManager):
 
     def load_input(self, context: InputContext) -> object:
         obj_type = context.dagster_type.typing_type
-        check.invariant(
-            obj_type in self._handlers_by_type,
-            (
+        if obj_type not in self._handlers_by_type:
+            msg = (
                 f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has"
                 " handlers for types"
-                f" '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'"
-                " Please add type hints to your assets and ops, or build the"
-                f" {self._io_manager_name} with an type handler for type '{obj_type}', so the"
-                f" {self._io_manager_name} can correctly load the input."
-            ),
-        )
+                f" '{', '.join([str(handler_type) for handler_type in self._handlers_by_type.keys()])}'."
+            )
+
+            if obj_type is Any:
+                type_hints = " or ".join(
+                    [str(handler_type) for handler_type in self._handlers_by_type.keys()]
+                )
+                msg += f" Please add {type_hints} type hints to your assets and ops."
+            else:
+                msg += (
+                    f" Please build the {self._io_manager_name} with an type handler for type"
+                    f" '{obj_type}', so the {self._io_manager_name} can correctly handle the"
+                    " output."
+                )
+
+            raise CheckError(msg)
+
         return self._handlers_by_type[obj_type].load_input(
             context, self._get_table_slice(context, cast(OutputContext, context.upstream_output))
         )
