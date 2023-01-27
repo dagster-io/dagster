@@ -1288,7 +1288,10 @@ def external_resource_data_from_def(
     # we parse the JSON and break it out into defaults for each individual nested Field
     # for display in the UI
     configured_values_expanded = cast(
-        Mapping[str, Any], json.loads(resource_def.config_schema.default_value_as_json_str)
+        Mapping[str, Any],
+        json.loads(resource_def.config_schema.default_value_as_json_str)
+        if resource_def.config_schema.default_provided
+        else {},
     )
     configured_values = {k: json.dumps(v) for k, v in configured_values_expanded.items()}
 
@@ -1296,7 +1299,7 @@ def external_resource_data_from_def(
         name=name,
         resource_snapshot=build_resource_def_snap(name, resource_def),
         configured_values=configured_values,
-        config_field_snaps=unconfigured_config_type_snap.fields,
+        config_field_snaps=unconfigured_config_type_snap.fields or [],
         config_schema_snap=ConfigSchemaSnapshot(
             {unconfigured_config_schema.config_type.key: unconfigured_config_type_snap}
         ),
