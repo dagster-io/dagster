@@ -1,59 +1,39 @@
 from collections import OrderedDict, defaultdict
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import (TYPE_CHECKING, AbstractSet, Any, Dict, Iterable, Iterator,
+                    List, Mapping, Optional, Sequence, Set, Tuple, TypeVar,
+                    Union, cast)
 
 from toposort import CircularDependencyError, toposort_flatten
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.config import ConfigMapping
-from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster._core.definitions.definition_config_schema import \
+    IDefinitionConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._core.types.dagster_type import (
-    DagsterType,
-    DagsterTypeKind,
-    construct_dagster_type_dictionary,
-)
+    DagsterType, DagsterTypeKind, construct_dagster_type_dictionary)
 
-from .dependency import (
-    DependencyStructure,
-    GraphNode,
-    IDependencyDefinition,
-    Node,
-    NodeHandle,
-    NodeInput,
-    NodeInvocation,
-)
+from .dependency import (DependencyStructure, GraphNode, IDependencyDefinition,
+                         Node, NodeHandle, NodeInput, NodeInvocation)
 from .hook_definition import HookDefinition
-from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
+from .input import (FanInInputPointer, InputDefinition, InputMapping,
+                    InputPointer)
 from .logger_definition import LoggerDefinition
 from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .resource_requirement import ResourceRequirement
-from .solid_container import create_execution_structure, validate_dependency_dict
+from .solid_container import (create_execution_structure,
+                              validate_dependency_dict)
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster._core.execution.execute_in_process_result import \
+        ExecuteInProcessResult
     from dagster._core.instance import DagsterInstance
 
     from .asset_layer import AssetLayer
@@ -285,6 +265,10 @@ class GraphDefinition(NodeDefinition):
 
     @property
     def solids(self) -> Sequence[Node]:
+        return list(set(self._node_dict.values()))
+
+    @property
+    def nodes(self) -> Sequence[Node]:
         return list(set(self._node_dict.values()))
 
     @property
@@ -662,7 +646,8 @@ class GraphDefinition(NodeDefinition):
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
         """
-        from dagster._core.execution.build_resources import wrap_resources_for_execution
+        from dagster._core.execution.build_resources import \
+            wrap_resources_for_execution
         from dagster._core.instance import DagsterInstance
 
         from .executor_definition import execute_in_process_executor
