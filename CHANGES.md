@@ -1,5 +1,19 @@
 # Changelog
 
+# 1.1.14 (core) / 0.17.14 (libraries)
+
+### New
+
+- Large asset graphs can now be materialized in Dagit without needing to first enter an asset subset. Previously, if you wanted to materialize every asset in such a graph, you needed to first enter `*` as the asset selection before materializing the assets.
+- Added a pin of the `sqlalchemy` package to `<2.0.0` due to a breaking change in that version.
+- Added a pin of the `dbt-core` package to `<1.4.0` due to breaking changes in that release that affected the Dagster dbt integration. We plan to remove this pin in the next release.
+- Added a pin of the `jupyter-client` package to `<8.0` due to an issue with the most recent release causing hangs while running dagstermill ops.
+
+### Bugfixes
+- Fixed an issue where the Backfills page in Dagit didn't show partition status for some backfills.
+- [dagster-aws] Fixed an issue where the `EcsRunLauncher` sometimes waited much longer than intended before retrying after a failure launching a run.
+- [dagster-mysql] Fixed an issue where some implementations of MySQL storage were raising invalid version errors.
+
 # 1.1.13 (core) / 0.17.13 (libraries)
 
 ### Bugfixes
