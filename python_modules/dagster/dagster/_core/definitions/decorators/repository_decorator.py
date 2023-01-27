@@ -191,6 +191,7 @@ def repository(
     description: Optional[str] = ...,
     default_executor_def: Optional[ExecutorDefinition] = ...,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
+    top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
 ) -> _Repository:
     ...
 

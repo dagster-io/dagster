@@ -139,7 +139,9 @@ class ExternalRepository:
     def _external_resources(self) -> Dict[str, ExternalResource]:
         return {
             external_resource_data.name: ExternalResource(external_resource_data, self._handle)
-            for external_resource_data in self.external_repository_data.external_resource_data
+            for external_resource_data in (
+                self.external_repository_data.external_resource_data or []
+            )
         }
 
     def has_external_resource(self, resource_name: str) -> bool:

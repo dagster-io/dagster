@@ -486,6 +486,10 @@ class RepositoryData(ABC):
     def get_source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
         return {}
 
+    @public
+    def get_assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
+        return {}
+
     def load_all_definitions(self):
         # force load of all lazy constructed code artifacts
         self.get_all_pipelines()

@@ -1280,9 +1280,14 @@ def external_resource_data_from_def(
     # longer visible. We walk up the list of parent schemas to find the base, unconfigured
     # schema so we can display all fields in the UI.
     unconfigured_config_schema = resource_def.config_schema
-    while isinstance(unconfigured_config_schema, ConfiguredDefinitionConfigSchema):
+    while (
+        isinstance(unconfigured_config_schema, ConfiguredDefinitionConfigSchema)
+        and unconfigured_config_schema.parent_def.config_schema
+    ):
         unconfigured_config_schema = unconfigured_config_schema.parent_def.config_schema
-    unconfigured_config_type_snap = snap_from_config_type(unconfigured_config_schema.config_type)
+
+    config_type = check.not_none(unconfigured_config_schema.config_type)
+    unconfigured_config_type_snap = snap_from_config_type(config_type)
 
     # Right now, .configured sets the default value of the top-level Field
     # we parse the JSON and break it out into defaults for each individual nested Field
@@ -1300,9 +1305,7 @@ def external_resource_data_from_def(
         resource_snapshot=build_resource_def_snap(name, resource_def),
         configured_values=configured_values,
         config_field_snaps=unconfigured_config_type_snap.fields or [],
-        config_schema_snap=ConfigSchemaSnapshot(
-            {unconfigured_config_schema.config_type.key: unconfigured_config_type_snap}
-        ),
+        config_schema_snap=ConfigSchemaSnapshot({config_type.key: unconfigured_config_type_snap}),
     )
 
 
