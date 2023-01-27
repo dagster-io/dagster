@@ -22,6 +22,7 @@ from .event_log.base import (
     EventLogStorage,
     EventRecordsFilter,
 )
+from .partitions.base import PartitionsStorage
 from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
 
@@ -146,6 +147,10 @@ class CompositeStorage(DagsterStorage, ConfigurableClass):
     @property
     def schedule_storage(self) -> ScheduleStorage:
         return self._schedule_storage
+
+    @property
+    def partitions_storage(self) -> Optional[PartitionsStorage]:
+        return None
 
 
 class LegacyRunStorage(RunStorage, ConfigurableClass):
