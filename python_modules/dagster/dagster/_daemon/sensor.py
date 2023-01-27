@@ -14,10 +14,10 @@ import pendulum
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterError
-from dagster._core.host_representation import PipelineSelector
 from dagster._core.host_representation.external import ExternalPipeline, ExternalSensor
 from dagster._core.host_representation.external_data import ExternalTargetData
 from dagster._core.host_representation.repository_location import RepositoryLocation

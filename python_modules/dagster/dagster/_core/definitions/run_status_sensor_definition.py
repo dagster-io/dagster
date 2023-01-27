@@ -57,7 +57,7 @@ from .sensor_definition import (
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.selector import (
+    from dagster._core.definitions.selector import (
         CodeLocationSelector,
         JobSelector,
         RepositorySelector,
@@ -432,12 +432,12 @@ class RunStatusSensorDefinition(SensorDefinition):
         request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     ):
-        from dagster._core.event_api import RunShardedEventsCursor
-        from dagster._core.host_representation.selector import (
+        from dagster._core.definitions.selector import (
             CodeLocationSelector,
             JobSelector,
             RepositorySelector,
         )
+        from dagster._core.event_api import RunShardedEventsCursor
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
         check.str_param(name, "name")

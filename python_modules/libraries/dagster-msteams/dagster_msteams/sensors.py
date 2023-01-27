@@ -12,7 +12,7 @@ from dagster_msteams.card import Card
 from dagster_msteams.client import TeamsClient
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
+    from dagster._core.definitions.selector import JobSelector, RepositorySelector
 
 
 def _default_failure_message(context: RunFailureSensorContext) -> str:

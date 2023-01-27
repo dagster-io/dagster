@@ -18,9 +18,9 @@ from dagster import (
     AssetKey,
     _check as check,
 )
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
-from dagster._core.host_representation import PipelineSelector
 from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
 from dagster._legacy import DagsterRunStatus

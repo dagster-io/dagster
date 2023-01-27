@@ -1,6 +1,6 @@
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
+from dagster._core.definitions.selector import PipelineSelector, RepositorySelector, SensorSelector
 from dagster._core.scheduler.instigation import InstigatorState, SensorInstigatorData
 from dagster._core.workspace.permissions import Permissions
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set, Union,
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import (
     DagsterRepositoryLocationLoadError,
     DagsterRepositoryLocationNotFoundError,
@@ -20,7 +21,6 @@ from dagster._core.host_representation import (
     ExternalPartitionSet,
     ExternalPipeline,
     GrpcServerRepositoryLocation,
-    PipelineSelector,
     RepositoryHandle,
     RepositoryLocation,
     RepositoryLocationOrigin,

@@ -4,13 +4,13 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.execution.backfill import BulkActionStatus
-from dagster._core.host_representation import (
+from dagster._core.definitions.selector import (
     InstigatorSelector,
     RepositorySelector,
     ScheduleSelector,
     SensorSelector,
 )
+from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.scheduler.instigation import InstigatorType
 
