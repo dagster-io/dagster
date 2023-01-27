@@ -1,6 +1,8 @@
 from unittest import mock
 
 import dagster
+import dagster_databricks
+import dagster_pyspark
 import pytest
 from dagster._utils.test import create_test_pipeline_execution_context
 from dagster_databricks.databricks import DatabricksError, DatabricksJobRunner, DatabricksRunState
@@ -24,8 +26,8 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
         spark_jar_task=task["spark_jar_task"],
         libraries=[
             {"pypi": {"package": "dagster=={}".format(dagster.__version__)}},
-            {"pypi": {"package": "dagster-databricks=={}".format(dagster.__version__)}},
-            {"pypi": {"package": "dagster-pyspark=={}".format(dagster.__version__)}},
+            {"pypi": {"package": "dagster-databricks=={}".format(dagster_databricks.__version__)}},
+            {"pypi": {"package": "dagster-pyspark=={}".format(dagster_pyspark.__version__)}},
         ],
     )
 
@@ -67,8 +69,8 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
         spark_jar_task=task["spark_jar_task"],
         libraries=[
             {"pypi": {"package": "dagster=={}".format(dagster.__version__)}},
-            {"pypi": {"package": "dagster-databricks=={}".format(dagster.__version__)}},
-            {"pypi": {"package": "dagster-pyspark=={}".format(dagster.__version__)}},
+            {"pypi": {"package": "dagster-databricks=={}".format(dagster_databricks.__version__)}},
+            {"pypi": {"package": "dagster-pyspark=={}".format(dagster_pyspark.__version__)}},
         ],
     )
 
