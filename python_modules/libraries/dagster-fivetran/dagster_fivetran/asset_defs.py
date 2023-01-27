@@ -41,6 +41,7 @@ def _build_fivetran_assets(
     metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
     table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    group_name: Optional[str] = None,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
@@ -66,6 +67,7 @@ def _build_fivetran_assets(
         required_resource_keys={"fivetran"},
         compute_kind="fivetran",
         resource_defs=resource_defs,
+        group_name=group_name,
     )
     def _assets(context):
         fivetran_output = context.resources.fivetran.sync_and_poll(
@@ -101,6 +103,7 @@ def build_fivetran_assets(
     io_manager_key: Optional[str] = None,
     asset_key_prefix: Optional[Sequence[str]] = None,
     metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
+    group_name: Optional[str] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Build a set of assets for a given Fivetran connector.
@@ -124,6 +127,8 @@ def build_fivetran_assets(
             If left blank, assets will have a key of `AssetKey([schema_name, table_name])`.
         metadata_by_table_name (Optional[Mapping[str, MetadataUserInput]]): A mapping from destination
             table name to user-supplied metadata that should be associated with the asset for that table.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. This
+            group name will be applied to all assets produced by this multi_asset.
 
     **Examples:**
 
@@ -168,6 +173,7 @@ def build_fivetran_assets(
         io_manager_key=io_manager_key,
         asset_key_prefix=asset_key_prefix,
         metadata_by_table_name=metadata_by_table_name,
+        group_name=group_name,
     )
 
 

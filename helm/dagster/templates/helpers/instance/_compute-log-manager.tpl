@@ -33,6 +33,10 @@ config:
   {{- if $azureBlobComputeLogManagerConfig.uploadInterval }}
   upload_interval: {{ $azureBlobComputeLogManagerConfig.uploadInterval }}
   {{- end }}
+
+  {{- if $azureBlobComputeLogManagerConfig.defaultAzureCredential }}
+  default_azure_credential: {{ $azureBlobComputeLogManagerConfig.defaultAzureCredential | toYaml | nindent 4 }}
+  {{- end }}
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.gcs" }}

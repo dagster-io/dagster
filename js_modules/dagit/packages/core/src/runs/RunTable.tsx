@@ -10,6 +10,7 @@ import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {AnchorButton} from '../ui/AnchorButton';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,
@@ -37,7 +38,6 @@ interface RunTableProps {
   runs: RunTableRunFragment[];
   filter?: RunsFilter;
   onAddTag?: (token: RunFilterToken) => void;
-  nonIdealState?: React.ReactNode;
   actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
   additionalColumnHeaders?: React.ReactNode[];
@@ -45,7 +45,7 @@ interface RunTableProps {
 }
 
 export const RunTable = (props: RunTableProps) => {
-  const {runs, filter, onAddTag, nonIdealState, highlightedIds, actionBarComponents} = props;
+  const {runs, filter, onAddTag, highlightedIds, actionBarComponents} = props;
   const allIds = runs.map((r) => r.runId);
 
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
@@ -64,14 +64,29 @@ export const RunTable = (props: RunTableProps) => {
           <Box padding={{vertical: 8, left: 24, right: 12}}>{actionBarComponents}</Box>
         ) : null}
         <Box margin={{vertical: 32}}>
-          {nonIdealState || (
+          {anyFilter ? (
             <NonIdealState
               icon="run"
-              title={anyFilter ? 'No matching runs' : 'No runs to display'}
+              title="No matching runs"
+              description="No runs were found for this filter."
+            />
+          ) : (
+            <NonIdealState
+              icon="run"
+              title="No runs found"
               description={
-                anyFilter
-                  ? 'No runs were found for this filter.'
-                  : 'Use the Launchpad to launch a run.'
+                <Box flex={{direction: 'column', gap: 12}}>
+                  <div>You have not launched any runs yet.</div>
+                  <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+                    <AnchorButton icon={<Icon name="add_circle" />} to="/overview/jobs">
+                      Launch a run
+                    </AnchorButton>
+                    <span>or</span>
+                    <AnchorButton icon={<Icon name="materialization" />} to="/asset-groups">
+                      Materialize an asset
+                    </AnchorButton>
+                  </Box>
+                </Box>
               }
             />
           )}

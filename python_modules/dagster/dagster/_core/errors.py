@@ -65,6 +65,10 @@ class DagsterInvalidSubsetError(DagsterError):
     """
 
 
+class DagsterInvalidDeserializationVersionError(DagsterError):
+    """Indicates that a serialized value has an unsupported version and cannot be deserialized."""
+
+
 CONFIG_ERROR_VERBIAGE = """
 This value can be a:
     - Field
@@ -589,4 +593,11 @@ class DagsterUnknownPartitionError(DagsterError):
 class DagsterUndefinedLogicalVersionError(DagsterError):
     """
     The user attempted to retrieve the most recent logical version for an asset, but no logical version is defined.
+    """
+
+
+class DagsterDefinitionChangedDeserializationError(DagsterError):
+    """
+    Indicates that a stored value can't be deserialized because the definition needed to interpret
+    it has changed.
     """

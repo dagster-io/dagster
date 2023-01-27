@@ -631,7 +631,7 @@ def test_backfill_from_partitioned_job(instance, workspace_context, external_rep
 def test_backfill_with_asset_selection(instance, workspace_context, external_repo):
     partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
-    asset_job_name = the_repo.get_base_job_for_assets(asset_selection).name
+    asset_job_name = the_repo.get_implicit_job_def_for_assets(asset_selection).name
     partition_set_name = f"{asset_job_name}_partition_set"
     external_partition_set = external_repo.get_external_partition_set(partition_set_name)
     instance.add_backfill(

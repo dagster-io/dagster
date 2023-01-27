@@ -51,6 +51,13 @@ from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 win_py36 = _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
 
+def _get_run_by_id(storage, run_id):
+    records = storage.get_run_records(RunsFilter(run_ids=[run_id]))
+    if not records:
+        return None
+    return records[0].dagster_run
+
+
 class TestRunStorage:
     """
     You can extend this class to easily run these set of tests on any run storage. When extending,
@@ -142,7 +149,7 @@ class TestRunStorage:
         assert run.tags
         assert run.tags.get("foo") == "bar"
         assert storage.has_run(run_id)
-        fetched_run = storage.get_run_by_id(run_id)
+        fetched_run = _get_run_by_id(storage, run_id)
         assert fetched_run.run_id == run_id
         assert fetched_run.pipeline_name == "some_pipeline"
 
@@ -259,7 +266,7 @@ class TestRunStorage:
         # Adding both existing tags and a new tag
         storage.add_run_tags(one, {"tag1": "val2", "tag3": "val3"})
 
-        test_run = storage.get_run_by_id(one)
+        test_run = _get_run_by_id(storage, one)
 
         assert len(test_run.tags) == 3
         assert test_run.tags["tag1"] == "val2"
@@ -275,7 +282,7 @@ class TestRunStorage:
         # Adding only existing tags
         storage.add_run_tags(one, {"tag1": "val3"})
 
-        test_run = storage.get_run_by_id(one)
+        test_run = _get_run_by_id(storage, one)
 
         assert len(test_run.tags) == 3
         assert test_run.tags["tag1"] == "val3"
@@ -291,7 +298,7 @@ class TestRunStorage:
         # Adding only a new tag that wasn't there before
         storage.add_run_tags(one, {"tag4": "val4"})
 
-        test_run = storage.get_run_by_id(one)
+        test_run = _get_run_by_id(storage, one)
 
         assert len(test_run.tags) == 4
         assert test_run.tags["tag1"] == "val3"
@@ -306,7 +313,7 @@ class TestRunStorage:
             ("tag4", {"val4"}),
         ]
 
-        test_run = storage.get_run_by_id(one)
+        test_run = _get_run_by_id(storage, one)
         assert len(test_run.tags) == 4
         assert test_run.tags["tag1"] == "val3"
         assert test_run.tags["tag2"] == "val2"
@@ -829,7 +836,7 @@ class TestRunStorage:
 
         storage.add_run(run)
 
-        assert storage.get_run_by_id(run_id) == run
+        assert _get_run_by_id(storage, run_id) == run
         assert dict(storage.get_run_tags()) == {"foo": {"bar"}}
 
         storage.wipe()
@@ -887,7 +894,7 @@ class TestRunStorage:
 
         storage.add_run(run_with_snapshot)
 
-        assert storage.get_run_by_id(run_with_snapshot_id) == run_with_snapshot
+        assert _get_run_by_id(storage, run_with_snapshot_id) == run_with_snapshot
 
         if self.can_delete_runs():
             storage.wipe()
@@ -1284,7 +1291,7 @@ class TestRunStorage:
 
         storage.handle_run_event(run_id, dagster_pipeline_start_event)
 
-        assert storage.get_run_by_id(run_id).status == DagsterRunStatus.STARTED
+        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
 
         storage.handle_run_event(
             make_new_run_id(),  # diff run
@@ -1299,7 +1306,7 @@ class TestRunStorage:
             ),
         )
 
-        assert storage.get_run_by_id(run_id).status == DagsterRunStatus.STARTED
+        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.STARTED
 
         storage.handle_run_event(
             run_id,  # correct run
@@ -1314,7 +1321,7 @@ class TestRunStorage:
             ),
         )
 
-        assert storage.get_run_by_id(run_id).status == DagsterRunStatus.SUCCESS
+        assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.SUCCESS
 
     def test_debug_snapshot_import(self, storage):
         from dagster._core.execution.api import create_execution_plan

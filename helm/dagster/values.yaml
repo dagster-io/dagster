@@ -205,6 +205,7 @@ computeLogManager:
   #     storageAccount: ~
   #     container: ~
   #     secretKey: ~
+  #     defaultAzureCredential: ~
   #     localDir: ~
   #     prefix: ~
   #     uploadInterval: ~

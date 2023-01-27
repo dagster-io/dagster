@@ -357,10 +357,7 @@ def launch_scheduled_runs(
                 )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(
-                f"Scheduler caught an error for schedule {external_schedule.name} :"
-                f" {error_info.to_string()}"
-            )
+            logger.exception(f"Scheduler caught an error for schedule {external_schedule.name}")
         yield error_info
 
 
@@ -529,6 +526,11 @@ def launch_scheduled_runs_for_schedule_iterator(
                     except:
                         error_data = serializable_error_info_from_exc_info(sys.exc_info())
 
+                        logger.exception(
+                            "Scheduler daemon caught an error for schedule "
+                            f"{external_schedule.name}"
+                        )
+
                         tick_context.update_state(
                             TickStatus.FAILURE,
                             error=error_data,
@@ -662,10 +664,7 @@ def _schedule_runs_at_time(
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                logger.error(
-                    f"Run {run.run_id} created successfully but failed to launch:"
-                    f" {str(serializable_error_info_from_exc_info(sys.exc_info()))}"
-                )
+                logger.exception(f"Run {run.run_id} created successfully but failed to launch")
                 yield error_info
 
         _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
@@ -682,7 +681,7 @@ def _get_existing_run_for_request(
     external_schedule: ExternalSchedule,
     schedule_time,
     run_request: RunRequest,
-):
+) -> Optional[DagsterRun]:
     tags = merge_dicts(
         DagsterRun.tags_for_schedule(external_schedule),
         {
@@ -720,7 +719,7 @@ def _create_scheduler_run(
     external_schedule: ExternalSchedule,
     external_pipeline: ExternalPipeline,
     run_request: RunRequest,
-):
+) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     run_config = run_request.run_config

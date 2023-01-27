@@ -357,7 +357,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def get_materialization_count_by_partition(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         pass
 

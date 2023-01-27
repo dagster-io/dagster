@@ -14,7 +14,6 @@ import dagster._seven as seven
 from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
-    unwrap_single_code_location_target_cli_arg,
 )
 from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -95,6 +94,8 @@ def _execute_run_command_body(
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
             instance, pipeline_run_id
         )
+    else:
+        cancellation_thread, cancellation_thread_shutdown_event = None, None
 
     pipeline_run: DagsterRun = check.not_none(
         instance.get_run_by_id(pipeline_run_id),
@@ -135,6 +136,8 @@ def _execute_run_command_body(
         run_worker_failed = True
     finally:
         if instance.should_start_background_run_thread:
+            cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
+            cancellation_thread = check.not_none(cancellation_thread)
             cancellation_thread_shutdown_event.set()
             if cancellation_thread.is_alive():
                 cancellation_thread.join(timeout=15)
@@ -198,6 +201,8 @@ def _resume_run_command_body(
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
             instance, pipeline_run_id
         )
+    else:
+        cancellation_thread, cancellation_thread_shutdown_event = None, None
     pipeline_run = check.not_none(
         instance.get_run_by_id(pipeline_run_id),  # type: ignore
         "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
@@ -238,6 +243,8 @@ def _resume_run_command_body(
         run_worker_failed = True
     finally:
         if instance.should_start_background_run_thread:
+            cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
+            cancellation_thread = check.not_none(cancellation_thread)
             cancellation_thread_shutdown_event.set()
             if cancellation_thread.is_alive():
                 cancellation_thread.join(timeout=15)
@@ -672,18 +679,8 @@ def grpc_command(
         ]
     ):
         # in the gRPC api CLI we never load more than one module or python file at a time
-
-        module_name = (
-            unwrap_single_code_location_target_cli_arg(kwargs, "module_name")
-            if kwargs["module_name"]
-            else None
-        )
-
-        python_file = (
-            unwrap_single_code_location_target_cli_arg(kwargs, "python_file")
-            if kwargs["python_file"]
-            else None
-        )
+        module_name = check.opt_str_elem(kwargs, "module_name")
+        python_file = check.opt_str_elem(kwargs, "python_file")
 
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,

@@ -56,7 +56,7 @@ def log_asset_sensor_job():
 
 
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+    monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
     job=log_asset_sensor_job,
 )
 def asset_a_and_b_sensor(context):
@@ -76,7 +76,7 @@ def asset_a_and_b_sensor(context):
 
 
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
+    monitored_assets=[AssetKey("asset_c"), AssetKey("asset_d")],
     job=log_asset_sensor_job,
 )
 def asset_c_or_d_sensor(context):
@@ -96,7 +96,7 @@ def asset_c_or_d_sensor(context):
 
 
 @multi_asset_sensor(
-    asset_keys=[AssetKey("my_string_asset"), AssetKey("my_int_asset")],
+    monitored_assets=[AssetKey("my_string_asset"), AssetKey("my_int_asset")],
     job=log_asset_sensor_job,
 )
 def asset_string_and_int_sensor(context):
@@ -114,7 +114,7 @@ def asset_string_and_int_sensor(context):
 
 
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a")],
+    monitored_assets=[AssetKey("asset_a")],
     job=log_asset_sensor_job,
 )
 def every_fifth_materialization_sensor(context):

@@ -89,15 +89,14 @@ export const extractPermissions = (
 export type PermissionsMap = ReturnType<typeof extractPermissions>;
 
 type PermissionsContextType = {
-  // todo dish: Optional for Cloud compatibility. Make them non-optional.
-  unscopedPermissions?: PermissionsMap;
-  locationPermissions?: Record<string, PermissionsMap>;
+  unscopedPermissions: PermissionsMap;
+  locationPermissions: Record<string, PermissionsMap>;
   loading: boolean;
   // Raw unscoped permission data, for Cloud extraction
-  rawUnscopedData?: PermissionFragment[];
+  rawUnscopedData: PermissionFragment[];
 
   // todo dish: For Cloud compatibility, delete in favor of `rawUnscopedData`
-  data: PermissionFragment[];
+  data?: PermissionFragment[];
 };
 
 export const PermissionsContext = React.createContext<PermissionsContextType>({
@@ -105,9 +104,6 @@ export const PermissionsContext = React.createContext<PermissionsContextType>({
   locationPermissions: {},
   loading: true,
   rawUnscopedData: [],
-
-  // todo dish: For Cloud compatibility, delete in favor of `rawUnscopedData`
-  data: [],
 });
 
 export const PermissionsProvider: React.FC = (props) => {
@@ -135,9 +131,6 @@ export const PermissionsProvider: React.FC = (props) => {
       locationPermissions,
       loading,
       rawUnscopedData: unscopedPermissionsRaw,
-
-      // todo dish: For Cloud compatibility, delete.
-      data: unscopedPermissionsRaw,
     };
   }, [data, loading]);
 
@@ -148,9 +141,7 @@ export const PermissionsProvider: React.FC = (props) => {
  * Retrieve a permission that is intentionally unscoped.
  */
 export const useUnscopedPermissions = () => {
-  const {unscopedPermissions: unscoped, loading} = React.useContext(PermissionsContext);
-  // todo dish: Clean up once `unscopedPermissions` is non-optional.
-  const unscopedPermissions = unscoped!;
+  const {unscopedPermissions, loading} = React.useContext(PermissionsContext);
   return {...unscopedPermissions, loading};
 };
 
@@ -161,9 +152,8 @@ export const useUnscopedPermissions = () => {
  */
 export const usePermissionsForLocation = (locationName: string | null | undefined) => {
   const {unscopedPermissions, locationPermissions, loading} = React.useContext(PermissionsContext);
-  // todo dish: Clean up once `unscopedPermissions` is non-optional.
-  let permissionsForLocation = unscopedPermissions!;
-  if (locationName && locationPermissions && locationPermissions.hasOwnProperty(locationName)) {
+  let permissionsForLocation = unscopedPermissions;
+  if (locationName && locationPermissions.hasOwnProperty(locationName)) {
     permissionsForLocation = locationPermissions[locationName];
   }
   return {...permissionsForLocation, loading};
@@ -171,9 +161,6 @@ export const usePermissionsForLocation = (locationName: string | null | undefine
 
 // todo dish: Update callsites to either location-based perms or intentionally unscoped perms.
 export const usePermissionsDEPRECATED = useUnscopedPermissions;
-
-// todo dish: Temporary to pass Cloud build. Delete after Cloud callsites are updated.
-export const usePermissions = useUnscopedPermissions;
 
 const PERMISSIONS_QUERY = gql`
   query PermissionsQuery {

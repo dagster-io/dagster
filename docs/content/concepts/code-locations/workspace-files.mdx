@@ -9,7 +9,7 @@ description: Dagster workspace files are used to define collections of code loca
 
 Workspace files contain a collection of user-defined [code locations](/concepts/code-locations) and information about where to find them. Code locations loaded via workspace files can contain either a <PyObject object="Definitions" /> object or multiple [repositories](/concepts/repositories-workspaces/repositories).
 
-Workspace files are used by Dagit and other CLI tools to load code locations in complex or customized environments, such as a production OSS deployment. For local development within a single Python environment, <PyObject object="Definitions" /> users can use the `-m` or `-f` flags with our CLI tools, or set the `pyproject.toml` file to avoid using command line flags entirely.
+Workspace files are used by Dagster to load code locations in complex or customized environments, such as a production OSS deployment. For local development within a single Python environment, <PyObject object="Definitions" /> users can use the `-m` or `-f` flags with our CLI tools, or set the `pyproject.toml` file to avoid using command line flags entirely.
 
 ---
 
@@ -89,23 +89,23 @@ load_from:
 
 ---
 
-## Loading workspace files into Dagit
+## Loading workspace files
 
-By default, Dagit and the [Dagster daemon process](/deployment/dagster-daemon) look for workspace files (by default, `workspace.yaml`) in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments:
+By default, Dagster command-line tools (like `dagster dev`, `dagit`, or `dagster-daemon run`) look for workspace files (by default, `workspace.yaml`) in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments:
 
 ```shell
-dagit
+dagster dev
 ```
 
 To load the `workspace.yaml` file from a different folder, use the `-w` argument:
 
 ```shell
-dagit -w path/to/workspace.yaml
+dagster dev -w path/to/workspace.yaml
 ```
 
-When `dagit` is run, Dagit will load all the code locations defined by the workspace file. Refer to the [CLI reference](/\_apidocs/cli#dagit) for more info and examples.
+When `dagster dev` is run, Dagster will load all the code locations defined by the workspace file. Refer to the [CLI reference](/\_apidocs/cli#dagster-dev) for more info and examples.
 
-If a code location can't be loaded - for example, due to a syntax or some other unrecoverable error - a warning message will display in Dagit. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagit was unable to load.
+If a code location can't be loaded - for example, due to a syntax or some other unrecoverable error - a warning message will display in Dagit. You'll be directed to a status page with a descriptive error and stack trace for any locations Dagster was unable to load.
 
 **Note**: If a code location is re-named or its configuration in a workspace file is modified, you'll need to stop and re-start any running schedules or sensors in that code location. You can do this in Dagit by navigating to the [**Deployment overview** page](/concepts/dagit/dagit#deployment-overview) and using the **Schedules** and **Sensors** tabs.
 

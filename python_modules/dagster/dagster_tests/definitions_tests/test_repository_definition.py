@@ -1473,9 +1473,11 @@ def test_base_jobs():
     def repo():
         return [asset1, asset2, asset3]
 
-    assert sorted(repo.get_base_asset_job_names()) == ["__ASSET_JOB_0", "__ASSET_JOB_1"]
-    assert repo.get_base_job_for_assets([asset1.key, asset2.key]).asset_layer.asset_keys == {
+    assert sorted(repo.get_implicit_asset_job_names()) == ["__ASSET_JOB_0", "__ASSET_JOB_1"]
+    assert repo.get_implicit_job_def_for_assets(
+        [asset1.key, asset2.key]
+    ).asset_layer.asset_keys == {
         asset1.key,
         asset2.key,
     }
-    assert repo.get_base_job_for_assets([asset2.key, asset3.key]) is None
+    assert repo.get_implicit_job_def_for_assets([asset2.key, asset3.key]) is None

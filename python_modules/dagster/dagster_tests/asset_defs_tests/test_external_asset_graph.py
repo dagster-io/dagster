@@ -3,7 +3,7 @@ import sys
 import time
 from unittest import mock
 
-from dagster import AssetKey, Definitions, SourceAsset, asset
+from dagster import AssetKey, DailyPartitionsDefinition, Definitions, SourceAsset, asset
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import InProcessRepositoryLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -44,6 +44,21 @@ def downstream_non_arg_dep():
 
 
 downstream_defs_no_source = Definitions(assets=[downstream_non_arg_dep])
+
+partitioned_source = SourceAsset(
+    "partitioned_source", partitions_def=DailyPartitionsDefinition(start_date="2022-01-01")
+)
+
+
+@asset(
+    partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+    non_argument_deps={"partitioned_source"},
+)
+def downstream_of_partitioned_source():
+    pass
+
+
+partitioned_defs = Definitions(assets=[partitioned_source, downstream_of_partitioned_source])
 
 
 def make_location_entry(defs_attr: str):
@@ -135,3 +150,10 @@ def test_cross_repo_dep_no_source_asset():
         ).repository_python_origin.code_pointer.fn_name
         == "downstream_defs_no_source"
     )
+
+
+def test_partitioned_source_asset():
+    asset_graph = ExternalAssetGraph.from_workspace(make_context(["partitioned_defs"]))
+
+    assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
+    assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))

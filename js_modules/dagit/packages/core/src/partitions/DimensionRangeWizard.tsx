@@ -3,10 +3,10 @@ import * as React from 'react';
 
 import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 
-import {PartitionRangeInput} from './PartitionRangeInput';
+import {DimensionRangeInput} from './DimensionRangeInput';
 import {PartitionState, PartitionStatus} from './PartitionStatus';
 
-export const PartitionRangeWizard: React.FC<{
+export const DimensionRangeWizard: React.FC<{
   selected: string[];
   setSelected: (selected: string[]) => void;
   partitionKeys: string[];
@@ -18,7 +18,7 @@ export const PartitionRangeWizard: React.FC<{
     <>
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} padding={{vertical: 4}}>
         <Box flex={{direction: 'column'}} style={{flex: 1}}>
-          <PartitionRangeInput
+          <DimensionRangeInput
             value={selected}
             partitionKeys={partitionKeys}
             onChange={setSelected}

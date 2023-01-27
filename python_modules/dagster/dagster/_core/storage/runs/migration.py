@@ -1,6 +1,7 @@
 from contextlib import ExitStack
 
 import sqlalchemy as db
+import sqlalchemy.exc as db_exc
 from tqdm import tqdm
 
 import dagster._check as check
@@ -206,7 +207,7 @@ def write_repo_tag(conn, run: DagsterRun):
                 value=repository_label,
             )
         )
-    except db.exc.IntegrityError:
+    except db_exc.IntegrityError:
         # tag already exists, swallow
         pass
 

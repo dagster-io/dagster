@@ -691,6 +691,22 @@ class DagsterInstance:
         else:
             return dagster_telemetry_enabled_default
 
+    @property
+    def nux_enabled(self) -> bool:
+        if self.is_ephemeral:
+            return False
+
+        nux_enabled_by_default = True
+
+        nux_settings = self.get_settings("nux")
+        if not nux_settings:
+            return nux_enabled_by_default
+
+        if "enabled" in nux_settings:
+            return nux_settings["enabled"]
+        else:
+            return nux_enabled_by_default
+
     # run monitoring
 
     @property
@@ -803,9 +819,19 @@ class DagsterInstance:
 
     # run storage
     @public
-    @traced
     def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
-        return cast(DagsterRun, self._run_storage.get_run_by_id(run_id))
+        record = self.get_run_record_by_id(run_id)
+        if record is None:
+            return None
+        return record.dagster_run
+
+    @public
+    @traced
+    def get_run_record_by_id(self, run_id: str) -> Optional[RunRecord]:
+        records = self._run_storage.get_run_records(RunsFilter(run_ids=[run_id]))
+        if not records:
+            return None
+        return records[0]
 
     @traced
     def get_pipeline_snapshot(self, snapshot_id: str) -> "PipelineSnapshot":
@@ -1274,8 +1300,8 @@ class DagsterInstance:
     ) -> DagsterRun:
         from dagster._core.execution.plan.resume_retry import (
             ReexecutionStrategy,
-            get_retry_steps_from_parent_run,
         )
+        from dagster._core.execution.plan.state import KnownExecutionState
         from dagster._core.host_representation import ExternalPipeline, RepositoryLocation
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
@@ -1311,7 +1337,10 @@ class DagsterInstance:
                 "Cannot reexecute from failure a run that is not failed",
             )
 
-            step_keys_to_execute, known_state = get_retry_steps_from_parent_run(
+            (
+                step_keys_to_execute,
+                known_state,
+            ) = KnownExecutionState.build_resume_retry_reexecution(
                 self,
                 parent_run=parent_run,
             )
@@ -1649,9 +1678,9 @@ class DagsterInstance:
 
     @traced
     def get_materialization_count_by_partition(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
-        return self._event_storage.get_materialization_count_by_partition(asset_keys)
+        return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
 
     # event subscriptions
 

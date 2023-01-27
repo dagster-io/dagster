@@ -32,7 +32,7 @@ const hourWindowToOffset = (hourWindow: HourWindow) => {
 
 export const OverviewTimelineRoot = () => {
   useTrackPageView();
-  useDocumentTitle('Runs');
+  useDocumentTitle('Overview | Timeline');
 
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
 

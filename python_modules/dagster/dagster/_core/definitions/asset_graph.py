@@ -21,6 +21,7 @@ import toposort
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
+from dagster._utils.cached_method import cached_method
 
 from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
@@ -74,7 +75,9 @@ class AssetGraph:
         return self._freshness_policies_by_key
 
     @staticmethod
-    def from_assets(all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]) -> "AssetGraph":
+    def from_assets(
+        all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]
+    ) -> "InternalAssetGraph":
         assets_defs = []
         source_assets = []
         partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
@@ -88,6 +91,8 @@ class AssetGraph:
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
                 source_assets.append(asset)
+                partitions_defs_by_key[asset.key] = asset.partitions_def
+                group_names_by_key[asset.key] = asset.group_name
             elif isinstance(asset, AssetsDefinition):
                 assets_defs.append(asset)
                 partition_mappings_by_key.update(
@@ -105,7 +110,7 @@ class AssetGraph:
 
             else:
                 check.failed(f"Expected SourceAsset or AssetsDefinition, got {type(asset)}")
-        return AssetGraph(
+        return InternalAssetGraph(
             asset_dep_graph=generate_asset_dep_graph(assets_defs, source_assets),
             source_asset_keys={source_asset.key for source_asset in source_assets},
             partitions_defs_by_key=partitions_defs_by_key,
@@ -113,6 +118,8 @@ class AssetGraph:
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
+            assets=assets_defs,
+            source_assets=source_assets,
         )
 
     @property
@@ -311,6 +318,7 @@ class AssetGraph:
             return self._required_multi_asset_sets_by_key[asset_key]
         return set()
 
+    @cached_method
     def toposort_asset_keys(self) -> Sequence[AbstractSet[AssetKey]]:
         return [
             {key for key in level} for level in toposort.toposort(self._asset_dep_graph["upstream"])
@@ -364,6 +372,40 @@ class AssetGraph:
 
     def __eq__(self, other):
         return self is other
+
+
+class InternalAssetGraph(AssetGraph):
+    def __init__(
+        self,
+        asset_dep_graph: DependencyGraph,
+        source_asset_keys: AbstractSet[AssetKey],
+        partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
+        partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
+        group_names_by_key: Mapping[AssetKey, Optional[str]],
+        freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
+        required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
+        assets: Sequence[AssetsDefinition],
+        source_assets: Sequence[SourceAsset],
+    ):
+        super().__init__(
+            asset_dep_graph=asset_dep_graph,
+            source_asset_keys=source_asset_keys,
+            partitions_defs_by_key=partitions_defs_by_key,
+            partition_mappings_by_key=partition_mappings_by_key,
+            group_names_by_key=group_names_by_key,
+            freshness_policies_by_key=freshness_policies_by_key,
+            required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
+        )
+        self._assets = assets
+        self._source_assets = source_assets
+
+    @property
+    def assets(self) -> Sequence[AssetsDefinition]:
+        return self._assets
+
+    @property
+    def source_assets(self) -> Sequence[SourceAsset]:
+        return self._source_assets
 
 
 class ToposortedPriorityQueue:

@@ -15,6 +15,7 @@ import {StaleTag} from '../assets/StaleTag';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
+import {AssetComputeKindTag} from '../graph/OpTags';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
@@ -106,15 +107,25 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           </RowCell>
         ) : null}
         <RowCell>
-          <div style={{maxWidth: '100%'}}>
-            <AssetLink
-              path={type === 'folder' || view === 'directory' ? path.slice(-1) : path}
-              url={linkUrl}
-              isGroup={type === 'folder'}
-              icon={type}
-              textStyle="middle-truncate"
-            />
-          </div>
+          <Box flex={{alignItems: 'center'}}>
+            <div style={{flex: 1, minWidth: 0}}>
+              <AssetLink
+                path={type === 'folder' || view === 'directory' ? path.slice(-1) : path}
+                url={linkUrl}
+                isGroup={type === 'folder'}
+                icon={type}
+                textStyle="middle-truncate"
+              />
+            </div>
+            {asset?.definition && (
+              <AssetComputeKindTag
+                reduceColor
+                reduceText
+                definition={asset.definition}
+                style={{position: 'relative'}}
+              />
+            )}
+          </Box>
           <div
             style={{
               maxWidth: '100%',
@@ -122,12 +133,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
               textOverflow: 'ellipsis',
             }}
           >
-            <Caption
-              style={{
-                color: Colors.Gray500,
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <Caption style={{color: Colors.Gray500, whiteSpace: 'nowrap'}}>
               {asset?.definition?.description}
             </Caption>
           </div>
@@ -264,6 +270,7 @@ const SINGLE_ASSET_QUERY = gql`
         }
         definition {
           id
+          computeKind
           ...AssetNodeLiveFragment
         }
         ...AssetTableFragment

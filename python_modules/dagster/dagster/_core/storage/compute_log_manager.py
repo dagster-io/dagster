@@ -82,7 +82,8 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
             step_key (Optional[String]): The step_key for a compute step
         """
 
-    def get_local_path(self, run_id, key, io_type):
+    @abstractmethod
+    def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
         """Get the local path of the logfile for a given execution step.  This determines the
         location on the local filesystem to which stdout/stderr will be rerouted.
 
@@ -95,6 +96,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         Returns:
             str
         """
+        ...
 
     @abstractmethod
     def is_watch_completed(self, run_id, key):

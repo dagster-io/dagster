@@ -6,14 +6,14 @@ import {PartitionState, PartitionStatus} from '../partitions/PartitionStatus';
 
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
-import {PartitionHealthData, PartitionHealthDimensionRange} from './usePartitionHealthData';
+import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
 
 export const PartitionHealthSummary: React.FC<{
   assetKey: AssetKey;
   showAssetKey?: boolean;
   data: PartitionHealthData[];
-  ranges?: PartitionHealthDimensionRange[];
-}> = ({showAssetKey, assetKey, data, ranges}) => {
+  selections?: PartitionDimensionSelection[];
+}> = ({showAssetKey, assetKey, data, selections}) => {
   const assetData = data.find((d) => JSON.stringify(d.assetKey) === JSON.stringify(assetKey));
 
   if (!assetData) {
@@ -24,8 +24,8 @@ export const PartitionHealthSummary: React.FC<{
     );
   }
 
-  const keysForTotals = ranges
-    ? ranges.map((r) => r.selected)
+  const keysForTotals = selections
+    ? selections.map((r) => r.selectedKeys)
     : assetData.dimensions.map((d) => d.partitionKeys);
 
   const total = keysForTotals.reduce((total, d) => d.length * total, 1);
@@ -53,12 +53,12 @@ export const PartitionHealthSummary: React.FC<{
             small
             partitionNames={dimension.partitionKeys}
             splitPartitions={!isTimeseriesDimension(dimension)}
-            selected={ranges ? ranges[dimensionIdx].selected : undefined}
+            selected={selections ? selections[dimensionIdx].selectedKeys : undefined}
             partitionStateForKey={(key) =>
               assetData.stateForSingleDimension(
                 dimensionIdx,
                 key,
-                ranges?.length === 2 ? ranges[1 - dimensionIdx].selected : undefined,
+                selections?.length === 2 ? selections[1 - dimensionIdx].selectedKeys : undefined,
               )
             }
           />

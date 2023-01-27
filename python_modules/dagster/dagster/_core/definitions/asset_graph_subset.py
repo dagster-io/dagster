@@ -3,6 +3,7 @@ from typing import AbstractSet, Any, Dict, Iterable, Mapping, Optional, Set, Uni
 
 from dagster import _check as check
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 
 from .asset_graph import AssetGraph
 from .events import AssetKey, AssetKeyPartitionKey
@@ -158,7 +159,12 @@ class AssetGraphSubset:
         partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
         for key, value in serialized_dict["partitions_subsets_by_asset_key"].items():
             asset_key = AssetKey.from_user_string(key)
-            partitions_def = cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
+            partitions_def = asset_graph.get_partitions_def(asset_key)
+            if partitions_def is None:
+                raise DagsterDefinitionChangedDeserializationError(
+                    f"Asset {key} had a PartitionsDefinition at storage-time, but no longer does"
+                )
+
             partitions_subsets_by_asset_key[asset_key] = partitions_def.deserialize_subset(value)
 
         non_partitioned_asset_keys = {

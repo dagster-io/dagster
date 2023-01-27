@@ -637,6 +637,7 @@ type AssetNode {
     beforeTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
+  assetMaterializationUsedData(timestampMillis: String!): [MaterializationUpstreamDataVersion!]!
   assetObservations(
     partitions: [String]
     beforeTimestampMillis: String
@@ -674,6 +675,12 @@ type AssetNode {
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
   type: DagsterType
+}
+
+type MaterializationUpstreamDataVersion {
+  assetKey: AssetKey!
+  downstreamAssetKey: AssetKey!
+  timestamp: String!
 }
 
 type AssetDependency {
@@ -2242,6 +2249,7 @@ type PartitionBackfill {
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
   partitionStatuses: PartitionStatuses!
+  partitionStatusCounts: [PartitionStatusCounts!]!
 }
 
 enum BulkActionStatus {
@@ -2267,6 +2275,11 @@ type PartitionStatus {
   runId: String
   runStatus: RunStatus
   runDuration: Float
+}
+
+type PartitionStatusCounts {
+  runStatus: RunStatus!
+  count: Int!
 }
 
 type PartitionStatuses {
@@ -2644,6 +2657,7 @@ type DagitQuery {
   logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
   capturedLogsMetadata(logKey: [String!]!): CapturedLogsMetadata!
   capturedLogs(logKey: [String!]!, cursor: String, limit: Int): CapturedLogs!
+  shouldShowNux: Boolean!
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -2765,6 +2779,7 @@ type DagitMutation {
     clientTime: String!
     metadata: String!
   ): LogTelemetryMutationResult!
+  setNuxSeen: Boolean!
 }
 
 input ReexecutionParams {

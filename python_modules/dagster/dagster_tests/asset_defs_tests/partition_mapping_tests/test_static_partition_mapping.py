@@ -1,6 +1,10 @@
 import pytest
 from dagster import StaticPartitionMapping, StaticPartitionsDefinition
 from dagster._core.definitions.partition import DefaultPartitionsSubset
+from dagster._serdes.serdes import (
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
 
 
 def test_single_valued_static_mapping():
@@ -69,3 +73,12 @@ def test_error_on_extra_keys_in_mapping():
             downstream_partitions_subset=downstream_parts.empty_subset(),
             upstream_partitions_def=upstream_parts,
         )
+
+
+def test_static_partition_mapping_serdes():
+    mapping = StaticPartitionMapping(
+        {"p1": "p", "p2": "p", "p3": "p", "q": ["q1", "q2"], "r1": "r"}
+    )
+    ser = serialize_dagster_namedtuple(mapping)
+    deser = deserialize_json_to_dagster_namedtuple(ser)
+    assert mapping == deser

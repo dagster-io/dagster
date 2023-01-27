@@ -7,6 +7,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.workspace.workspace import IWorkspace
@@ -118,9 +119,14 @@ class PartitionBackfill(
 
     def get_num_partitions(self, workspace: IWorkspace) -> int:
         if self.serialized_asset_backfill_data is not None:
-            asset_backfill_data = AssetBackfillData.from_serialized(
-                self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
-            )
+            try:
+                asset_backfill_data = AssetBackfillData.from_serialized(
+                    self.serialized_asset_backfill_data,
+                    ExternalAssetGraph.from_workspace(workspace),
+                )
+            except DagsterDefinitionChangedDeserializationError:
+                return 0
+
             return asset_backfill_data.get_num_partitions()
         else:
             if self.partition_names is None:
@@ -130,9 +136,14 @@ class PartitionBackfill(
 
     def get_partition_names(self, workspace: IWorkspace) -> Sequence[str]:
         if self.serialized_asset_backfill_data is not None:
-            asset_backfill_data = AssetBackfillData.from_serialized(
-                self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
-            )
+            try:
+                asset_backfill_data = AssetBackfillData.from_serialized(
+                    self.serialized_asset_backfill_data,
+                    ExternalAssetGraph.from_workspace(workspace),
+                )
+            except DagsterDefinitionChangedDeserializationError:
+                return []
+
             return asset_backfill_data.get_partition_names()
         else:
             if self.partition_names is None:

@@ -496,10 +496,7 @@ def _process_tick_generator(
 
     except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
-        logger.error(
-            f"Sensor daemon caught an error for sensor {external_sensor.name} :"
-            f" {error_info.to_string()}"
-        )
+        logger.exception(f"Sensor daemon caught an error for sensor {external_sensor.name}")
 
     yield error_info
 

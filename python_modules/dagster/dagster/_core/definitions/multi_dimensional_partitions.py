@@ -1,11 +1,13 @@
 import itertools
-import json
 from datetime import datetime
-from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, cast
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+)
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
@@ -15,8 +17,10 @@ from .partition import (
     DefaultPartitionsSubset,
     Partition,
     PartitionsDefinition,
+    PartitionsSubset,
     StaticPartitionsDefinition,
 )
+from .time_window_partitions import TimeWindowPartitionsDefinition
 
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
 
@@ -232,7 +236,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def __repr__(self) -> str:
         return f"{type(self).__name__}(dimensions={[str(dim) for dim in self.partitions_defs]}"
 
-    def get_multi_partition_key_from_str(self, partition_key_str: str) -> MultiPartitionKey:
+    def get_partition_key_from_str(self, partition_key_str: str) -> str:
         """
         Given a string representation of a partition key, returns a MultiPartitionKey object.
         """
@@ -246,43 +250,74 @@ class MultiPartitionsDefinition(PartitionsDefinition):
                 f" {partition_key_str}, but got {len(partition_key_strs)}"
             ),
         )
-        keys_per_dimension = [
-            (dim.name, dim.partitions_def.get_partition_keys()) for dim in self._partitions_defs
-        ]
 
-        partition_key_dims_by_idx = dict(enumerate([dim.name for dim in self._partitions_defs]))
-        for idx, key in enumerate(partition_key_strs):
-            check.invariant(
-                key in keys_per_dimension[idx][1],
-                f"Partition key {key} not found in dimension {partition_key_dims_by_idx[idx][0]}",
+        return MultiPartitionKey(
+            {dim.name: partition_key_strs[i] for i, dim in enumerate(self._partitions_defs)}
+        )
+
+    def empty_subset(self) -> "MultiPartitionsSubset":
+        return MultiPartitionsSubset(self, set())
+
+    def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
+        return MultiPartitionsSubset.from_serialized(self, serialized)
+
+    def _get_primary_and_secondary_dimension(
+        self,
+    ) -> Tuple[PartitionDimensionDefinition, PartitionDimensionDefinition]:
+        # Multipartitions subsets are serialized by primary dimension. If changing
+        # the selection of primary/secondary dimension, will need to also update the
+        # serialization of MultiPartitionsSubsets
+
+        time_dimensions = [
+            dim
+            for dim in self.partitions_defs
+            if isinstance(dim.partitions_def, TimeWindowPartitionsDefinition)
+        ]
+        if len(time_dimensions) == 1:
+            primary_dimension, secondary_dimension = time_dimensions[0], next(
+                iter([dim for dim in self.partitions_defs if dim != time_dimensions[0]])
+            )
+        else:
+            primary_dimension, secondary_dimension = (
+                self.partitions_defs[0],
+                self.partitions_defs[1],
             )
 
-        multi_partition_key = MultiPartitionKey(
-            {partition_key_dims_by_idx[idx]: key for idx, key in enumerate(partition_key_strs)}
-        )
-        return multi_partition_key
+        return primary_dimension, secondary_dimension
 
-    def deserialize_subset(self, serialized: str) -> "MultiPartitionsSubset":
-        return MultiPartitionsSubset.from_serialized(self, serialized)
+    @property
+    def primary_dimension(self) -> PartitionDimensionDefinition:
+        return self._get_primary_and_secondary_dimension()[0]
+
+    @property
+    def secondary_dimension(self) -> PartitionDimensionDefinition:
+        return self._get_primary_and_secondary_dimension()[1]
+
+    def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
+        partition_key = cast(MultiPartitionKey, self.get_partition_key_from_str(partition_key))
+        tags = {**super().get_tags_for_partition_key(partition_key)}
+        tags.update(get_tags_from_multi_partition_key(partition_key))
+        return tags
 
 
 class MultiPartitionsSubset(DefaultPartitionsSubset):
-    @staticmethod
-    def from_serialized(
-        partitions_def: PartitionsDefinition, serialized: str
-    ) -> "MultiPartitionsSubset":
-        if not isinstance(partitions_def, MultiPartitionsDefinition):
-            check.failed(
-                "Must pass a MultiPartitionsDefinition object to deserialize MultiPartitionsSubset."
-            )
+    def __init__(
+        self,
+        partitions_def: MultiPartitionsDefinition,
+        subset: Optional[Set[str]] = None,
+    ):
+        check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
+        subset = (
+            set(partitions_def.get_partition_key_from_str(key) for key in subset)
+            if subset
+            else set()
+        )
+        super(MultiPartitionsSubset, self).__init__(partitions_def, subset)
+
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "MultiPartitionsSubset":
         return MultiPartitionsSubset(
-            subset=set(
-                [
-                    partitions_def.get_multi_partition_key_from_str(key)
-                    for key in json.loads(serialized)
-                ]
-            ),
-            partitions_def=partitions_def,
+            cast(MultiPartitionsDefinition, self._partitions_def),
+            self._subset | set(partition_keys),
         )
 
 

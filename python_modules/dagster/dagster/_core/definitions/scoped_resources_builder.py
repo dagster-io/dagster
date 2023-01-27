@@ -6,7 +6,7 @@
 # See: https://github.com/python/mypy/issues/7281
 
 from collections import namedtuple
-from typing import AbstractSet, Mapping, NamedTuple, Optional
+from typing import AbstractSet, Any, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterUnknownResourceError
@@ -24,6 +24,9 @@ class Resources:
     incompatible with type annotations on its own due to its dynamic attributes, so this tag class
     provides a workaround.
     """
+
+    def __getattr__(self, name: str) -> Any:
+        raise DagsterUnknownResourceError(name)
 
 
 class ScopedResourcesBuilder(
@@ -85,8 +88,7 @@ class ScopedResourcesBuilder(
                 Resources,
                 IContainsGenerator,
             ):
-                def __getattr__(self, attr):
-                    raise DagsterUnknownResourceError(attr)
+                ...
 
             return _ScopedResourcesContainsGenerator(**resource_instance_dict)  # type: ignore[call-arg]
 
@@ -96,7 +98,6 @@ class ScopedResourcesBuilder(
                 namedtuple("_ScopedResources", list(resource_instance_dict.keys())),  # type: ignore[misc]
                 Resources,
             ):
-                def __getattr__(self, attr):
-                    raise DagsterUnknownResourceError(attr)
+                ...
 
             return _ScopedResources(**resource_instance_dict)  # type: ignore[call-arg]

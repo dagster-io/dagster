@@ -316,7 +316,7 @@ class Definitions:
     def get_implicit_job_def_for_assets(
         self, asset_keys: Iterable[AssetKey]
     ) -> Optional[JobDefinition]:
-        return self.get_repository_def().get_base_job_for_assets(asset_keys)
+        return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
 
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:

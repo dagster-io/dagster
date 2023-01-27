@@ -20,6 +20,7 @@ from .utils import UserFacingGraphQLError, capture_error
 
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
+    from ..schema.util import HasContext
 
 
 def is_config_valid(pipeline_def, run_config, mode):
@@ -51,16 +52,16 @@ def get_validated_config(pipeline_def, run_config, mode):
     return validated_config
 
 
-def get_run_by_id(graphene_info, run_id):
+def get_run_by_id(graphene_info: "HasContext", run_id):
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.pipelines.pipeline import GrapheneRun
 
     instance = graphene_info.context.instance
-    records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
-    if not records:
+    record = instance.get_run_record_by_id(run_id)
+    if not record:
         return GrapheneRunNotFoundError(run_id)
     else:
-        return GrapheneRun(records[0])
+        return GrapheneRun(record)
 
 
 def get_run_tags(graphene_info):

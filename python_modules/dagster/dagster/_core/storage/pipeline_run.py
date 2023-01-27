@@ -16,6 +16,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Self
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
@@ -35,7 +37,6 @@ from dagster._serdes.serdes import (
 
 from .tags import (
     BACKFILL_ID_TAG,
-    PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
@@ -44,6 +45,10 @@ from .tags import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.partition import (
+        Partition,
+        PartitionSetDefinition,
+    )
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
 
@@ -424,7 +429,7 @@ class DagsterRun(
             ),
         )
 
-    def with_status(self, status):
+    def with_status(self, status: DagsterRunStatus) -> Self:  # type: ignore  # fmt: skip
         if status == DagsterRunStatus.QUEUED:
             # Placing this with the other imports causes a cyclic import
             # https://github.com/dagster-io/dagster/issues/3181
@@ -438,16 +443,16 @@ class DagsterRun(
 
         return self._replace(status=status)
 
-    def with_job_origin(self, origin):
+    def with_job_origin(self, origin: "ExternalPipelineOrigin") -> Self:  # type: ignore  # fmt: skip
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
         check.inst_param(origin, "origin", ExternalPipelineOrigin)
         return self._replace(external_pipeline_origin=origin)
 
-    def with_mode(self, mode):
+    def with_mode(self, mode: str) -> Self:  # type: ignore  # fmt: skip
         return self._replace(mode=mode)
 
-    def with_tags(self, tags):
+    def with_tags(self, tags: Mapping[str, str]) -> Self:  # type: ignore  # fmt: skip
         return self._replace(tags=tags)
 
     def get_root_run_id(self):
@@ -477,12 +482,12 @@ class DagsterRun(
 
     @public  # type: ignore
     @property
-    def is_success(self):
+    def is_success(self) -> bool:
         return self.status == DagsterRunStatus.SUCCESS
 
     @public  # type: ignore
     @property
-    def is_failure(self):
+    def is_failure(self) -> bool:
         return self.status == DagsterRunStatus.FAILURE
 
     @public  # type: ignore
@@ -492,11 +497,11 @@ class DagsterRun(
 
     @public  # type: ignore
     @property
-    def is_resume_retry(self):
+    def is_resume_retry(self) -> bool:
         return self.tags.get(RESUME_RETRY_TAG) == "true"
 
     @property
-    def previous_run_id(self):
+    def previous_run_id(self) -> Optional[str]:
         # Compat
         return self.parent_run_id
 
@@ -506,30 +511,23 @@ class DagsterRun(
         return self.pipeline_name
 
     @staticmethod
-    def tags_for_schedule(schedule):
+    def tags_for_schedule(schedule) -> Mapping[str, str]:
         return {SCHEDULE_NAME_TAG: schedule.name}
 
     @staticmethod
-    def tags_for_sensor(sensor):
+    def tags_for_sensor(sensor) -> Mapping[str, str]:
         return {SENSOR_NAME_TAG: sensor.name}
 
     @staticmethod
-    def tags_for_backfill_id(backfill_id):
+    def tags_for_backfill_id(backfill_id: str) -> Mapping[str, str]:
         return {BACKFILL_ID_TAG: backfill_id}
 
     @staticmethod
-    def tags_for_partition_set(partition_set, partition):
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionKey,
-            get_tags_from_multi_partition_key,
-        )
-
+    def tags_for_partition_set(
+        partition_set: "PartitionSetDefinition", partition: "Partition"
+    ) -> Mapping[str, str]:
         tags = {PARTITION_SET_TAG: partition_set.name}
-        if isinstance(partition.name, MultiPartitionKey):
-            tags.update(get_tags_from_multi_partition_key(partition.name))
-        else:
-            tags[PARTITION_NAME_TAG] = partition.name
-
+        tags.update(partition_set.partitions_def.get_tags_for_partition_key(partition.name))
         return tags
 
 
@@ -721,6 +719,10 @@ class RunRecord(
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
         )
+
+    @property
+    def dagster_run(self) -> DagsterRun:
+        return self.pipeline_run
 
 
 @whitelist_for_serdes

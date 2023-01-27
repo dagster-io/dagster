@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Optional
 
 import dagster._check as check
@@ -231,6 +232,24 @@ def partition_statuses_from_run_partition_data(
         )
 
     return GraphenePartitionStatuses(results=results)
+
+
+def partition_status_counts_from_run_partition_data(run_partition_data, partition_names):
+    from ..schema.partition_sets import GraphenePartitionStatusCounts
+
+    partition_data_by_name = {
+        partition_data.partition: partition_data for partition_data in run_partition_data
+    }
+
+    count_by_status = defaultdict(int)
+    for name in partition_names:
+        if not partition_data_by_name.get(name):
+            count_by_status["NOT_STARTED"] += 1
+            continue
+        partition_data = partition_data_by_name[name]
+        count_by_status[partition_data.status.value] += 1
+
+    return [GraphenePartitionStatusCounts(runStatus=k, count=v) for k, v in count_by_status.items()]
 
 
 def get_partition_set_partition_runs(graphene_info, partition_set):

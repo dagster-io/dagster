@@ -10,6 +10,8 @@ from dagster._core.definitions.logical_version import (
     DEFAULT_LOGICAL_VERSION,
     extract_logical_version_from_entry,
 )
+from dagster._core.event_api import EventRecordsFilter
+from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import ExternalRepository, RepositoryLocation
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.external_data import (
@@ -53,7 +55,10 @@ from .asset_key import GrapheneAssetKey
 from .dagster_types import GrapheneDagsterType, to_dagster_type
 from .errors import GrapheneAssetNotFoundError
 from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
-from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
+from .logs.events import (
+    GrapheneMaterializationEvent,
+    GrapheneObservationEvent,
+)
 from .pipelines.pipeline import (  # GraphenePartitionMaterializationS,
     GrapheneMaterializationCountGroupedByDimension,
     GrapheneMaterializationCountSingleDimension,
@@ -131,6 +136,15 @@ class GrapheneAssetNodeDefinitionCollision(graphene.ObjectType):
         name = "AssetNodeDefinitionCollision"
 
 
+class GrapheneMaterializationUpstreamDataVersion(graphene.ObjectType):
+    assetKey = graphene.NonNull(GrapheneAssetKey)
+    downstreamAssetKey = graphene.NonNull(GrapheneAssetKey)
+    timestamp = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "MaterializationUpstreamDataVersion"
+
+
 class GrapheneAssetNode(graphene.ObjectType):
     _depended_by_loader: Optional[CrossRepoAssetDependedByLoader]
     _external_asset_node: ExternalAssetNode
@@ -147,6 +161,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions=graphene.List(graphene.String),
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
+    )
+    assetMaterializationUsedData = graphene.Field(
+        non_null_list(GrapheneMaterializationUpstreamDataVersion),
+        timestampMillis=graphene.NonNull(graphene.String),
     )
     assetObservations = graphene.Field(
         non_null_list(GrapheneObservationEvent),
@@ -330,6 +348,51 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def is_source_asset(self) -> bool:
         return self._external_asset_node.is_source
+
+    def resolve_assetMaterializationUsedData(
+        self, graphene_info, **kwargs
+    ) -> Sequence[GrapheneMaterializationUpstreamDataVersion]:
+        timestamp_millis: Optional[str] = kwargs.get("timestampMillis")
+        if not timestamp_millis:
+            return []
+
+        instance = graphene_info.context.instance
+        asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
+        asset_key = self._external_asset_node.asset_key
+
+        # in the future, we can share this same CachingInstanceQueryer across all
+        # GrapheneMaterializationEvent which share an external repository for improved performance
+        data_time_queryer = CachingInstanceQueryer(instance=graphene_info.context.instance)
+        event_records = instance.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                before_timestamp=int(timestamp_millis) / 1000.0 + 1,
+                after_timestamp=int(timestamp_millis) / 1000.0 - 1,
+                asset_key=asset_key,
+            ),
+            limit=1,
+        )
+
+        if not event_records:
+            return []
+
+        if not asset_graph.has_non_source_parents(asset_key):
+            return []
+
+        used_data_times = data_time_queryer.get_used_data_times_for_record(
+            asset_graph=asset_graph,
+            record=event_records[0],
+        )
+
+        return [
+            GrapheneMaterializationUpstreamDataVersion(
+                assetKey=used_asset_key,
+                downstreamAssetKey=asset_key,
+                timestamp=int(materialization_time.timestamp() * 1000),
+            )
+            for used_asset_key, materialization_time in used_data_times.items()
+            if materialization_time
+        ]
 
     def resolve_assetMaterializations(
         self, graphene_info, **kwargs

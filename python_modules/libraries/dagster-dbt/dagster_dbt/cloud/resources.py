@@ -146,6 +146,30 @@ class DbtCloudResource:
 
         raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
 
+    def list_jobs(
+        self, project_id: int, order_by: Optional[str] = "-id"
+    ) -> Sequence[Mapping[str, Any]]:
+        """
+        List all dbt jobs in a dbt Cloud project.
+
+        Args:
+            project_id (int): The ID of the relevant dbt Cloud project. You can find this value by
+                going to your account settings in the dbt Cloud UI. It will be the final
+                number in the url, e.g.: ``https://cloud.getdbt.com/next/settings/accounts/{account_id}/projects/{project_id}/``
+            order_by (Optional[str]): An identifier designated by dbt Cloud in which to sort the
+                results before returning them. Useful when combined with offset and limit to load
+                runs for a job. Defaults to "-id" where "-" designates reverse order and "id" is
+                the key to filter on.
+
+        Returns:
+            List[Dict[str, Any]]: Parsed json data from the response to this request
+        """
+        return self.make_request(
+            "GET",
+            f"{self._account_id}/jobs",
+            params={"project_id": project_id, "order_by": order_by},
+        )
+
     def get_job(self, job_id: int) -> Mapping[str, Any]:
         """
         Gets details about a given dbt job from the dbt Cloud API.
@@ -205,13 +229,16 @@ class DbtCloudResource:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
-        if self._disable_schedule_on_trigger:
-            self._log.info("Disabling dbt Cloud job schedule.")
-            self.update_job(job_id, triggers={"schedule": False})
         self._log.info(f"Initializing run for job with job_id={job_id}")
         if "cause" not in kwargs:
             kwargs["cause"] = "Triggered via Dagster"
         resp = self.make_request("POST", f"{self._account_id}/jobs/{job_id}/run/", data=kwargs)
+
+        has_schedule: bool = resp.get("job", {}).get("triggers", {}).get("schedule", False)
+        if has_schedule and self._disable_schedule_on_trigger:
+            self._log.info("Disabling dbt Cloud job schedule.")
+            self.update_job(job_id, triggers={"schedule": False})
+
         self._log.info(
             f"Run initialized with run_id={resp['id']}. View this run in "
             f"the dbt Cloud UI: {resp['href']}"

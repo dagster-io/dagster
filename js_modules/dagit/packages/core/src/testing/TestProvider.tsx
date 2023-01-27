@@ -81,9 +81,6 @@ export const TestProvider: React.FC<Props> = (props) => {
             locationPermissions: {}, // Allow all permissions to fall back
             loading: false,
             rawUnscopedData: [],
-
-            // todo dish: For Cloud compatibility, delete.
-            data: [],
           }}
         >
           <AnalyticsContext.Provider value={analytics}>

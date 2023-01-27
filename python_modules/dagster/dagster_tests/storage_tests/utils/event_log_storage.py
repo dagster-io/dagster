@@ -1906,8 +1906,8 @@ class TestEventLogStorage:
             yield AssetMaterialization(c, partition="b")
             yield Output(None)
 
-        def _fetch_counts(storage):
-            return storage.get_materialization_count_by_partition([c, d])
+        def _fetch_counts(storage, after_cursor=None):
+            return storage.get_materialization_count_by_partition([c, d], after_cursor=after_cursor)
 
         with instance_for_test() as created_instance:
             if not storage._instance:  # pylint: disable=protected-access
@@ -1923,6 +1923,12 @@ class TestEventLogStorage:
                 )
                 for event in events_one:
                     storage.store_event(event)
+
+                cursor_run1 = storage.get_event_records(
+                    EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION),
+                    limit=1,
+                    ascending=False,
+                )[0].storage_id
 
                 materialization_count_by_key = storage.get_materialization_count_by_partition(
                     [a, b, c]
@@ -1947,6 +1953,25 @@ class TestEventLogStorage:
                 assert materialization_count_by_key.get(c)["a"] == 2
                 assert materialization_count_by_key.get(c)["b"] == 1
 
+                # after_cursor
+                materialization_count_by_key_after_run1 = (
+                    storage.get_materialization_count_by_partition(
+                        [a, b, c], after_cursor=cursor_run1
+                    )
+                )
+                assert materialization_count_by_key_after_run1.get(a) == {}
+                assert materialization_count_by_key_after_run1.get(b) == {}
+                assert materialization_count_by_key_after_run1.get(c)["a"] == 1
+                assert materialization_count_by_key_after_run1.get(c)["b"] == 1
+                assert len(materialization_count_by_key_after_run1.get(c)) == 2
+
+                materialization_count_by_key_after_everything = (
+                    storage.get_materialization_count_by_partition([a, b, c], after_cursor=9999999)
+                )
+                assert materialization_count_by_key_after_everything.get(a) == {}
+                assert materialization_count_by_key_after_everything.get(b) == {}
+                assert materialization_count_by_key_after_everything.get(c) == {}
+
                 # wipe asset, make sure we respect that
                 if self.can_wipe():
                     storage.wipe_asset(c)
@@ -1965,6 +1990,13 @@ class TestEventLogStorage:
                     materialization_count_by_partition = _fetch_counts(storage)
                     assert materialization_count_by_partition.get(c)["a"] == 1
                     assert materialization_count_by_partition.get(d)["x"] == 2
+
+                    # make sure adding an after_cursor doesn't mess with the wiped events
+                    assert (
+                        _fetch_counts(storage, after_cursor=cursor_run1)
+                        == materialization_count_by_partition
+                    )
+                    assert _fetch_counts(storage, after_cursor=9999999) == {c: {}, d: {}}
 
     def test_get_observation(self, storage, test_run_id):
         a = AssetKey(["key_a"])

@@ -1,6 +1,7 @@
+import collections.abc
 import inspect
 from functools import update_wrapper
-from typing import Callable, Optional, Sequence
+from typing import Callable, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -187,8 +188,7 @@ def asset_sensor(
 
 @experimental
 def multi_asset_sensor(
-    asset_keys: Optional[Sequence[AssetKey]] = None,
-    asset_selection: Optional[AssetSelection] = None,
+    monitored_assets: Union[Sequence[AssetKey], AssetSelection],
     *,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
@@ -197,6 +197,7 @@ def multi_asset_sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    request_assets: Optional[AssetSelection] = None,
 ) -> Callable[[MultiAssetMaterializationFunction,], MultiAssetSensorDefinition,]:
     """
     Creates an asset sensor that can monitor multiple assets.
@@ -208,17 +209,14 @@ def multi_asset_sensor(
     2. Return a list of `RunRequest` objects.
     3. Return a `SkipReason` object, providing a descriptive message of why no runs were requested.
     4. Return nothing (skipping without providing a reason)
-    5. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
+    5. Yield a `SkipReason` or yield one or more `RunRequest` objects.
 
     Takes a :py:class:`~dagster.MultiAssetSensorEvaluationContext`.
 
     Args:
-        asset_keys (Optional[Sequence[AssetKey]]): The asset keys this sensor monitors. If not
-            provided, asset_selection argument must be provided. To monitor assets that aren't defined
-            in the repository that this sensor is part of, you must use asset_keys.
-        asset_selection (Optional[AssetSelection]): The asset selection this sensor monitors. If not
-            provided, asset_keys argument must be provided. If you use asset_selection, all assets that
-            are part of the selection must be in the repository that this sensor is part of.
+        monitored_assets (Union[Sequence[AssetKey], AssetSelection]): The assets this
+            sensor monitors. If an AssetSelection object is provided, it will only apply to assets
+            within the Definitions that this sensor is part of.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
@@ -230,8 +228,19 @@ def multi_asset_sensor(
             (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        request_assets (Optional[AssetSelection]): (Experimental) an asset selection to launch a run
+            for if the sensor condition is met. This can be provided instead of specifying a job.
     """
     check.opt_str_param(name, "name")
+
+    if not isinstance(monitored_assets, AssetSelection) and not (
+        isinstance(monitored_assets, collections.abc.Sequence)
+        and all(isinstance(el, AssetKey) for el in monitored_assets)
+    ):
+        check.failed(
+            "The value passed to monitored_assets param must be either an AssetSelection"
+            f" or a Sequence of AssetKeys, but was a {type(monitored_assets)}"
+        )
 
     def inner(fn: MultiAssetMaterializationFunction) -> MultiAssetSensorDefinition:
         check.callable_param(fn, "fn")
@@ -239,8 +248,7 @@ def multi_asset_sensor(
 
         sensor_def = MultiAssetSensorDefinition(
             name=sensor_name,
-            asset_keys=asset_keys,
-            asset_selection=asset_selection,
+            monitored_assets=monitored_assets,
             job_name=job_name,
             asset_materialization_fn=fn,
             minimum_interval_seconds=minimum_interval_seconds,
@@ -248,6 +256,7 @@ def multi_asset_sensor(
             job=job,
             jobs=jobs,
             default_status=default_status,
+            request_assets=request_assets,
         )
         update_wrapper(sensor_def, wrapped=fn)
         return sensor_def

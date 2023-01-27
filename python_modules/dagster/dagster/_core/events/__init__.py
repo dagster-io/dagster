@@ -754,9 +754,9 @@ class DagsterEvent(
         return self.event_specific_data
 
     @property
-    def logs_captured_data(self):
+    def logs_captured_data(self) -> "ComputeLogsCaptureData":
         _assert_type("logs_captured_data", DagsterEventType.LOGS_CAPTURED, self.event_type)
-        return self.event_specific_data
+        return cast(ComputeLogsCaptureData, self.event_specific_data)
 
     @staticmethod
     def step_output_event(

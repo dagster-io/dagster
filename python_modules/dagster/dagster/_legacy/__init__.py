@@ -10,8 +10,6 @@ from dagster._core.definitions import (
     PartitionSetDefinition as PartitionSetDefinition,
     PipelineDefinition as PipelineDefinition,
     PresetDefinition as PresetDefinition,
-    ScheduleExecutionContext as ScheduleExecutionContext,
-    SensorExecutionContext as SensorExecutionContext,
     build_assets_job as build_assets_job,
     daily_schedule as daily_schedule,
     default_executors as default_executors,

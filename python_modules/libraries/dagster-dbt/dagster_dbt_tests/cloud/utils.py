@@ -1,10 +1,62 @@
 from dagster._utils.merger import deep_merge_dicts
 
 SAMPLE_ACCOUNT_ID = 30000
+SAMPLE_PROJECT_ID = 35000
 SAMPLE_JOB_ID = 40000
 SAMPLE_RUN_ID = 5000000
 
 SAMPLE_API_PREFIX = f"https://cloud.getdbt.com/api/v2/accounts/{SAMPLE_ACCOUNT_ID}"
+SAMPLE_API_V3_PREFIX = f"https://cloud.getdbt.com/api/v3/accounts/{SAMPLE_ACCOUNT_ID}"
+
+
+def job_details_data(job_id: int):
+    return {
+        "execution": {"timeout_seconds": 0},
+        "generate_docs": False,
+        "run_generate_sources": False,
+        "id": job_id,
+        "account_id": SAMPLE_ACCOUNT_ID,
+        "project_id": 50000,
+        "environment_id": 47000,
+        "name": "MyCoolJob",
+        "dbt_version": None,
+        "created_at": "2021-10-29T21:35:33.278228+00:00",
+        "updated_at": "2021-11-01T22:47:48.056913+00:00",
+        "execute_steps": ["dbt run"],
+        "state": 1,
+        "deferring_job_definition_id": None,
+        "lifecycle_webhooks": False,
+        "lifecycle_webhooks_url": None,
+        "triggers": {
+            "github_webhook": False,
+            "git_provider_webhook": False,
+            "custom_branch_only": False,
+            "schedule": False,
+        },
+        "settings": {"threads": 4, "target_name": "default"},
+        "schedule": {
+            "cron": "0 * * * *",
+            "date": {"type": "every_day"},
+            "time": {"type": "every_hour", "interval": 1},
+        },
+        "is_deferrable": False,
+        "generate_sources": False,
+        "cron_humanized": "Every hour",
+        "next_run": None,
+        "next_run_humanized": None,
+    }
+
+
+def sample_list_job_details():
+    return {
+        "status": {
+            "code": 200,
+            "is_success": True,
+            "user_message": "Success!",
+            "developer_message": "",
+        },
+        "data": [job_details_data(job_id=SAMPLE_JOB_ID)],
+    }
 
 
 def sample_job_details():
@@ -15,41 +67,7 @@ def sample_job_details():
             "user_message": "Success!",
             "developer_message": "",
         },
-        "data": {
-            "execution": {"timeout_seconds": 0},
-            "generate_docs": False,
-            "run_generate_sources": False,
-            "id": SAMPLE_JOB_ID,
-            "account_id": SAMPLE_ACCOUNT_ID,
-            "project_id": 50000,
-            "environment_id": 47000,
-            "name": "MyCoolJob",
-            "dbt_version": None,
-            "created_at": "2021-10-29T21:35:33.278228+00:00",
-            "updated_at": "2021-11-01T22:47:48.056913+00:00",
-            "execute_steps": ["dbt run"],
-            "state": 1,
-            "deferring_job_definition_id": None,
-            "lifecycle_webhooks": False,
-            "lifecycle_webhooks_url": None,
-            "triggers": {
-                "github_webhook": False,
-                "git_provider_webhook": False,
-                "custom_branch_only": False,
-                "schedule": False,
-            },
-            "settings": {"threads": 4, "target_name": "default"},
-            "schedule": {
-                "cron": "0 * * * *",
-                "date": {"type": "every_day"},
-                "time": {"type": "every_hour", "interval": 1},
-            },
-            "is_deferrable": False,
-            "generate_sources": False,
-            "cron_humanized": "Every hour",
-            "next_run": None,
-            "next_run_humanized": None,
-        },
+        "data": [job_details_data(job_id=SAMPLE_JOB_ID)],
     }
 
 
@@ -117,7 +135,7 @@ def sample_run_details(include_related=None, **kwargs):
         "last_heartbeat_at": None,
         "should_start_at": "2021-11-01 22:47:48.501943+00:00",
         "trigger": None,
-        "job": None,
+        "job": {"triggers": {"schedule": True}},
         "environment": None,
         "run_steps": [],
         "status_humanized": "Success",
@@ -293,5 +311,49 @@ def sample_run_results():
             "version_check": True,
             "which": "run",
             "rpc_method": "run",
+        },
+    }
+
+
+def sample_get_environment_variables(environment_variable_id: int, name: str, value: str):
+    return {
+        "status": {
+            "code": 200,
+            "is_success": True,
+            "user_message": "Success!",
+            "developer_message": "",
+        },
+        "data": {
+            name: {
+                "project": {"id": 1, "value": "-1"},
+                "environment": {"id": 2, "value": "-1"},
+                "job": {"id": environment_variable_id, "value": value},
+            },
+        },
+    }
+
+
+def sample_set_environment_variable(environment_variable_id: int, name: str, value: str):
+    return {
+        "status": {
+            "code": 200,
+            "is_success": True,
+            "user_message": "Success!",
+            "developer_message": "",
+        },
+        "data": {
+            "account_id": SAMPLE_ACCOUNT_ID,
+            "project_id": SAMPLE_PROJECT_ID,
+            "name": name,
+            "type": "job",
+            "state": 1,
+            "user_id": None,
+            "environment_id": None,
+            "job_definition_id": SAMPLE_JOB_ID,
+            "environment": None,
+            "display_value": value,
+            "id": environment_variable_id,
+            "created_at": "2023-01-01 10:00:00.000000+00:00",
+            "updated_at": "2023-01-02 10:00:00.000000+00:00",
         },
     }

@@ -10,6 +10,7 @@ from dagster._core.host_representation import (
     ScheduleSelector,
     SensorSelector,
 )
+from dagster._core.nux import get_has_seen_nux
 from dagster._core.scheduler.instigation import InstigatorType
 
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
@@ -409,6 +410,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
         description="Captured logs are the stdout/stderr logs for a given log key",
     )
 
+    shouldShowNux = graphene.Field(
+        graphene.NonNull(graphene.Boolean),
+        description="Whether or not the NUX should be shown to the user",
+    )
+
     def resolve_repositoriesOrError(self, graphene_info, **kwargs):
         if kwargs.get("repositorySelector"):
             return GrapheneRepositoryConnection(
@@ -723,3 +729,6 @@ class GrapheneDagitQuery(graphene.ObjectType):
             logKey, cursor=cursor, max_bytes=limit
         )
         return from_captured_log_data(log_data)
+
+    def resolve_shouldShowNux(self, graphene_info):
+        return graphene_info.context.instance.nux_enabled and not get_has_seen_nux()

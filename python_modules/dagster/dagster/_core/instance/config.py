@@ -1,5 +1,5 @@
+import logging
 import os
-import warnings
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Type, cast
 
 from dagster import (
@@ -38,7 +38,7 @@ def dagster_instance_config(
     config_yaml_path = os.path.join(base_dir, config_filename)
 
     if not os.path.exists(config_yaml_path) and is_dagster_home_set():
-        warnings.warn(
+        logging.getLogger("dagster").warning(
             f"No dagster instance configuration file ({config_filename}) found at {base_dir}."
             f" Defaulting to loading and storing all metadata with {base_dir}. If this is the"
             f" desired behavior, create an empty {config_filename} file in {base_dir}."
@@ -272,6 +272,9 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "run_coordinator": config_field_for_configurable_class(),
         "run_launcher": config_field_for_configurable_class(),
         "telemetry": Field(
+            {"enabled": Field(Bool, is_required=False)},
+        ),
+        "nux": Field(
             {"enabled": Field(Bool, is_required=False)},
         ),
         "instance_class": config_field_for_configurable_class(),
