@@ -1,17 +1,21 @@
+from datetime import datetime
+from pprint import pprint
+
 from airflow.models.connection import Connection
 from airflow.models.dagbag import DagBag
-from dagster import (
-    Definitions,
-    _check as check,
-)
-
 from dagster_airflow.dagster_pipeline_factory import (
-    DagsterAirflowError,
-    _create_airflow_connections,
+    DagsterAirflowError, _create_airflow_connections,
     _make_schedules_and_jobs_from_airflow_dag_bag,
-    make_dagster_pipeline_from_airflow_dag,
-    patch_airflow_example_dag,
-)
+    make_dagster_pipeline_from_airflow_dag, patch_airflow_example_dag)
+
+from dagster import (AssetKey, AssetOut, AssetsDefinition, Definitions,
+                     GraphDefinition, GraphOut, Output, OutputMapping,
+                     TimeWindowPartitionsDefinition)
+from dagster import _check as check
+from dagster import multi_asset
+from dagster._core.definitions.graph_definition import _create_adjacency_lists
+from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
+from dagster._utils.schedules import is_valid_cron_schedule
 
 
 def make_dagster_job_from_airflow_dag(
@@ -249,3 +253,106 @@ def make_dagster_definitions_from_airflow_example_dags(use_ephemeral_airflow_db=
     return make_dagster_definitions_from_airflow_dag_bag(
         dag_bag=dag_bag, use_ephemeral_airflow_db=use_ephemeral_airflow_db
     )
+
+def make_graph_backed_assets_from_airflow_dag(
+    dag,
+    asset_key_to_task_ids=None,
+    connections=None,
+):
+    """Construct a Dagster Assets forr Airflow DAG.
+
+    Args:
+        dag (DAG): The Airflow DAG to compile into a Dagster job
+        asset_key_to_task_ids (Optional[Dict[str, Union[str, set[str]]]]): A mapping from asset keys to task ids
+        connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
+            Airflow DB
+
+    Returns:
+        AssetDefinition
+    """
+    cron_schedule = dag.normalized_schedule_interval
+
+    job = make_dagster_job_from_airflow_dag(dag, use_ephemeral_airflow_db=True, connections=connections)
+    graph = job._graph_def
+    start_date = dag.start_date if dag.start_date else dag.default_args.get("start_date")
+
+    # if no asset_
+    if asset_key_to_task_ids is None or asset_key_to_task_ids == {}:
+        # leaf nodes have no downstream nodes
+        forward_edges, _ = _create_adjacency_lists(graph.solids, graph.dependency_structure)
+        leaf_nodes = {
+            node_name.replace('airflow_', "") for node_name, downstream_nodes in forward_edges.items() if not downstream_nodes
+        }
+        asset_key_to_task_ids = {
+            dag.dag_id: leaf_nodes
+        }
+
+    output_mappings=set()
+    keys_by_output_name = {}
+    internal_asset_deps={}
+
+    visit_dict = {}
+    upstream_deps = set()
+
+    def find_upstream_dependency(solid_name: str) -> None:
+        # DFS to find all upsteam dependencies
+        # this node has been visited
+        if visit_dict[solid_name]:
+            return
+        # mark node as visted
+        visit_dict[solid_name] = True
+        # traverse upstream nodes
+        for output_handle in graph.dependency_structure.all_upstream_outputs_from_node(solid_name):
+            forward_node = output_handle.node_name
+            match = False
+            # find any assets produced by upstream nodes and add them to the internal asset deps
+            for asset_key in asset_key_to_task_ids:
+                if forward_node.replace('airflow_', "") in asset_key_to_task_ids[asset_key]:
+                    upstream_deps.add(AssetKey(asset_key))
+                    match = True
+            # don't traverse past nodes that have assets
+            if not match:
+                find_upstream_dependency(forward_node)
+
+    for asset_key in asset_key_to_task_ids:
+        asset_upstream_deps = set()
+        for task_id in asset_key_to_task_ids[asset_key]:
+            visit_dict = {s.name: False for s in graph.solids}
+            upstream_deps = set()
+            find_upstream_dependency(f"airflow_{task_id}")
+            for dep in upstream_deps:
+                asset_upstream_deps.add(dep)
+            internal_asset_deps[f"result_airflow_{task_id}"] = upstream_deps
+            keys_by_output_name[f"result_airflow_{task_id}"] = AssetKey(asset_key)
+            output_mappings.add(OutputMapping(
+                graph_output_name=f"result_airflow_{task_id}",
+                mapped_node_name=f"airflow_{task_id}",
+                mapped_node_output_name="airflow_task_complete" # Default output name
+            ))
+
+        # the tasks for a given asset should have the same internal deps
+        for task_id in asset_key_to_task_ids[asset_key]:
+            internal_asset_deps[f"result_airflow_{task_id}"] = asset_upstream_deps
+
+    new_graph = GraphDefinition(
+        name=graph.name,
+        node_defs=graph.node_defs,
+        dependencies=graph.dependencies,
+        output_mappings=list(output_mappings),
+    )
+
+    asset_def = AssetsDefinition.from_graph(
+        graph_def=new_graph,
+        partitions_def=TimeWindowPartitionsDefinition(
+            cron_schedule=cron_schedule,
+            timezone=dag.timezone.name,
+            start=start_date.strftime("%Y-%m-%d"),
+            fmt="%Y-%m-%d"
+        ) if isinstance(cron_schedule, str) and is_valid_cron_schedule(cron_schedule) else None,
+        resource_defs=job.resource_defs,
+        group_name=dag.dag_id,
+        keys_by_output_name=keys_by_output_name,
+        internal_asset_deps=internal_asset_deps,
+        can_subset=True
+    )
+    return asset_def
