@@ -390,6 +390,12 @@ export type ConfigTypeOrError =
   | PythonError
   | RegularConfigType;
 
+export type ConfiguredValue = {
+  __typename: 'ConfiguredValue';
+  key: Scalars['String'];
+  value: Scalars['String'];
+};
+
 export type ConflictingExecutionParamsError = Error & {
   __typename: 'ConflictingExecutionParamsError';
   message: Scalars['String'];
@@ -572,6 +578,8 @@ export type DagitQuery = {
   sensorOrError: SensorOrError;
   sensorsOrError: SensorsOrError;
   shouldShowNux: Scalars['Boolean'];
+  topLevelResourceOrError: TopLevelResourceOrError;
+  topLevelResourcesOrError: ResourcesOrError;
   unloadableInstigationStatesOrError: InstigationStatesOrError;
   version: Scalars['String'];
   workspaceOrError: WorkspaceOrError;
@@ -727,6 +735,14 @@ export type DagitQuerySensorOrErrorArgs = {
 };
 
 export type DagitQuerySensorsOrErrorArgs = {
+  repositorySelector: RepositorySelector;
+};
+
+export type DagitQueryTopLevelResourceOrErrorArgs = {
+  resourceSelector: ResourceSelector;
+};
+
+export type DagitQueryTopLevelResourcesOrErrorArgs = {
   repositorySelector: RepositorySelector;
 };
 
@@ -2630,6 +2646,7 @@ export type Repository = {
   pipelines: Array<Pipeline>;
   schedules: Array<Schedule>;
   sensors: Array<Sensor>;
+  topLevelResources: Array<TopLevelResource>;
   usedSolid: Maybe<UsedSolid>;
   usedSolids: Array<UsedSolid>;
 };
@@ -2759,10 +2776,24 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
     timestamp: Scalars['String'];
   };
 
+export type ResourceNotFoundError = Error & {
+  __typename: 'ResourceNotFoundError';
+  message: Scalars['String'];
+  resourceName: Scalars['String'];
+};
+
 export type ResourceRequirement = {
   __typename: 'ResourceRequirement';
   resourceKey: Scalars['String'];
 };
+
+export type ResourceSelector = {
+  repositoryLocationName: Scalars['String'];
+  repositoryName: Scalars['String'];
+  resourceName: Scalars['String'];
+};
+
+export type ResourcesOrError = PythonError | RepositoryNotFoundError | TopLevelResources;
 
 export type ResumeBackfillResult = PythonError | ResumeBackfillSuccess | UnauthorizedError;
 
@@ -3556,6 +3587,21 @@ export type TimePartitionsDefinitionMetadata = {
   endTime: Scalars['Float'];
   startKey: Scalars['String'];
   startTime: Scalars['Float'];
+};
+
+export type TopLevelResource = {
+  __typename: 'TopLevelResource';
+  configFields: Array<ConfigTypeField>;
+  configuredValues: Array<ConfiguredValue>;
+  description: Maybe<Scalars['String']>;
+  name: Scalars['String'];
+};
+
+export type TopLevelResourceOrError = PythonError | ResourceNotFoundError | TopLevelResource;
+
+export type TopLevelResources = {
+  __typename: 'TopLevelResources';
+  results: Array<TopLevelResource>;
 };
 
 export type TypeCheck = DisplayableEvent & {

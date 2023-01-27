@@ -7,11 +7,11 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.selector import (
     InstigatorSelector,
     RepositorySelector,
+    ResourceSelector,
     ScheduleSelector,
     SensorSelector,
 )
 from dagster._core.execution.backfill import BulkActionStatus
-from dagster._core.host_representation.selector import ResourceSelector
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.scheduler.instigation import InstigatorType
 
