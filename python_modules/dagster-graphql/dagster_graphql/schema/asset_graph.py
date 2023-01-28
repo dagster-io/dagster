@@ -52,7 +52,13 @@ from ..implementation.loader import (
 )
 from . import external
 from .asset_key import GrapheneAssetKey
-from .dagster_types import GrapheneDagsterType, to_dagster_type
+from .dagster_types import (
+    GrapheneDagsterType,
+    GrapheneListDagsterType,
+    GrapheneNullableDagsterType,
+    GrapheneRegularDagsterType,
+    to_dagster_type,
+)
 from .errors import GrapheneAssetNotFoundError
 from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
 from .logs.events import (
@@ -751,7 +757,13 @@ class GrapheneAssetNode(graphene.ObjectType):
         all_unique_keys = self.get_required_resource_keys(node_def_snap)
         return [GrapheneResourceRequirement(key) for key in all_unique_keys]
 
-    def resolve_type(self, _graphene_info) -> Optional[str]:
+    def resolve_type(
+        self, _graphene_info: HasContext
+    ) -> Optional[
+        Union[
+            "GrapheneListDagsterType", "GrapheneNullableDagsterType", "GrapheneRegularDagsterType"
+        ]
+    ]:
         if self.is_source_asset():
             return None
         external_pipeline = self.get_external_pipeline()
