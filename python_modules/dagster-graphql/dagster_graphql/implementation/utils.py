@@ -28,11 +28,11 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.host_representation import GraphSelector, PipelineSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
-from graphene import ResolveInfo
 from typing_extensions import ParamSpec, TypeAlias
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GrapheneError, GraphenePythonError
+    from dagster_graphql.schema.util import ResolveInfo
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -41,7 +41,9 @@ GrapheneResolverFn: TypeAlias = Callable[..., object]
 T_Callable = TypeVar("T_Callable", bound=Callable)
 
 
-def assert_permission_for_location(graphene_info: ResolveInfo, permission: str, location_name: str):
+def assert_permission_for_location(
+    graphene_info: "ResolveInfo", permission: str, location_name: str
+):
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
     context = cast(BaseWorkspaceRequestContext, graphene_info.context)
@@ -80,7 +82,7 @@ def check_permission(permission: str) -> Callable[[GrapheneResolverFn], Graphene
     return decorator
 
 
-def assert_permission(graphene_info: ResolveInfo, permission: str) -> None:
+def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
     context = cast(BaseWorkspaceRequestContext, graphene_info.context)

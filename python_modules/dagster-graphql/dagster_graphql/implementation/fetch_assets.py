@@ -37,15 +37,12 @@ from dagster_graphql.implementation.loader import (
     StaleStatusLoader,
 )
 
-if TYPE_CHECKING:
-    pass
-
 from .utils import capture_error
 
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
-    from ..schema.util import HasContext
+    from ..schema.util import ResolveInfo
 
 
 def _normalize_asset_cursor_str(cursor_string):
@@ -105,7 +102,7 @@ def asset_node_iter(
 
 
 def get_asset_node_definition_collisions(
-    graphene_info: "HasContext", asset_keys: AbstractSet[AssetKey]
+    graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
 ):
     from ..schema.asset_graph import GrapheneAssetNodeDefinitionCollision
     from ..schema.external import GrapheneRepository
@@ -142,7 +139,7 @@ def get_asset_node_definition_collisions(
 
 
 def get_asset_nodes_by_asset_key(
-    graphene_info: "HasContext",
+    graphene_info: "ResolveInfo",
 ) -> Mapping[AssetKey, "GrapheneAssetNode"]:
     """
     If multiple repositories have asset nodes for the same asset key, chooses the asset node that

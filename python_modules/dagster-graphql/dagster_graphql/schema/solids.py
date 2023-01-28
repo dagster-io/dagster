@@ -18,7 +18,7 @@ from .config_types import GrapheneConfigTypeField
 from .dagster_types import GrapheneDagsterType, to_dagster_type
 from .errors import GrapheneError
 from .metadata import GrapheneMetadataItemDefinition
-from .util import HasContext, non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class _ArgNotPresentSentinel:
@@ -56,7 +56,7 @@ class GrapheneInputDefinition(graphene.ObjectType):
         )
 
     def resolve_solid_definition(
-        self, _graphene_info: HasContext
+        self, _graphene_info: ResolveInfo
     ) -> Union["GrapheneSolidDefinition", "GrapheneCompositeSolidDefinition"]:
         return build_solid_definition(
             self._represented_pipeline, self._solid_def_snap.name  # pylint: disable=no-member
@@ -144,19 +144,19 @@ class GrapheneInput(graphene.ObjectType):
 
         super().__init__()
 
-    def resolve_solid(self, _graphene_info: HasContext) -> "GrapheneSolid":
+    def resolve_solid(self, _graphene_info: ResolveInfo) -> "GrapheneSolid":
         return GrapheneSolid(
             self._represented_pipeline, self._solid_name, self._current_dep_structure
         )
 
-    def resolve_definition(self, _graphene_info: HasContext) -> GrapheneInputDefinition:
+    def resolve_definition(self, _graphene_info: ResolveInfo) -> GrapheneInputDefinition:
         return GrapheneInputDefinition(
             self._represented_pipeline,
             self._solid_def_snap.name,
             self._input_def_snap.name,
         )
 
-    def resolve_depends_on(self, _graphene_info: HasContext) -> Sequence["GrapheneOutput"]:
+    def resolve_depends_on(self, _graphene_info: ResolveInfo) -> Sequence["GrapheneOutput"]:
         return [
             GrapheneOutput(
                 self._represented_pipeline,
@@ -202,7 +202,7 @@ class GrapheneOutput(graphene.ObjectType):
             self._represented_pipeline, self._solid_name, self._current_dep_structure
         )
 
-    def resolve_definition(self, _graphene_info: HasContext) -> GrapheneOutputDefinition:
+    def resolve_definition(self, _graphene_info: ResolveInfo) -> GrapheneOutputDefinition:
         return GrapheneOutputDefinition(
             self._represented_pipeline,
             self._solid_def_snap.name,
@@ -210,7 +210,7 @@ class GrapheneOutput(graphene.ObjectType):
             self._output_def_snap.is_dynamic,
         )
 
-    def resolve_depended_by(self, _graphene_info: HasContext) -> Sequence[GrapheneInput]:
+    def resolve_depended_by(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneInput]:
         return [
             GrapheneInput(
                 self._represented_pipeline,
@@ -544,11 +544,11 @@ class GrapheneSolid(graphene.ObjectType):
         return self._represented_pipeline.name
 
     def resolve_definition(
-        self, _graphene_info: HasContext
+        self, _graphene_info: ResolveInfo
     ) -> Union[GrapheneSolidDefinition, "GrapheneCompositeSolidDefinition"]:
         return self.get_solid_definition()
 
-    def resolve_inputs(self, _graphene_info: HasContext) -> Sequence[GrapheneInput]:
+    def resolve_inputs(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneInput]:
         return [
             GrapheneInput(
                 self._represented_pipeline,
@@ -559,7 +559,7 @@ class GrapheneSolid(graphene.ObjectType):
             for input_def_snap in self._solid_def_snap.input_def_snaps
         ]
 
-    def resolve_outputs(self, _graphene_info: HasContext) -> Sequence[GrapheneOutput]:
+    def resolve_outputs(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneOutput]:
         return [
             GrapheneOutput(
                 self._represented_pipeline,
@@ -570,7 +570,7 @@ class GrapheneSolid(graphene.ObjectType):
             for output_def_snap in self._solid_def_snap.output_def_snaps
         ]
 
-    def resolve_is_dynamic_mapped(self, _graphene_info: HasContext) -> bool:
+    def resolve_is_dynamic_mapped(self, _graphene_info: ResolveInfo) -> bool:
         return self._solid_invocation_snap.is_dynamic_mapped
 
 

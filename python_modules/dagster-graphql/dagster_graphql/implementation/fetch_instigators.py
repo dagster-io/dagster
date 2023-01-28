@@ -11,11 +11,11 @@ from dagster._core.scheduler.instigation import InstigatorStatus
 from .utils import capture_error
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.util import HasContext
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 @capture_error
-def get_unloadable_instigator_states_or_error(graphene_info: "HasContext", instigator_type=None):
+def get_unloadable_instigator_states_or_error(graphene_info: "ResolveInfo", instigator_type=None):
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
     check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)

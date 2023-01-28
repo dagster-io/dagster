@@ -71,7 +71,7 @@ from .pipelines.pipeline import (
     GraphenePipeline,
     GrapheneRun,
 )
-from .util import HasContext, non_null_list
+from .util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
     from .external import GrapheneRepository
@@ -108,7 +108,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         )
         super().__init__(inputName=input_name)
 
-    def resolve_asset(self, _graphene_info):
+    def resolve_asset(self, _graphene_info: ResolveInfo):
         asset_node = self._external_repository.get_external_asset_node(self._asset_key)
         if not asset_node and self._depended_by_loader:
             # Only load from dependency loader if asset node cannot be found in current repository
@@ -363,7 +363,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.is_source
 
     def resolve_assetMaterializationUsedData(
-        self, graphene_info, **kwargs
+        self, graphene_info: ResolveInfo, **kwargs
     ) -> Sequence[GrapheneMaterializationUpstreamDataVersion]:
         timestamp_millis: Optional[str] = kwargs.get("timestampMillis")
         if not timestamp_millis:
@@ -408,7 +408,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_assetMaterializations(
-        self, graphene_info, **kwargs
+        self, graphene_info: ResolveInfo, **kwargs
     ) -> Sequence[GrapheneMaterializationEvent]:
         beforeTimestampMillis: Optional[str] = kwargs.get("beforeTimestampMillis")
         try:
@@ -449,7 +449,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_assetObservations(
-        self, graphene_info, **kwargs
+        self, graphene_info: ResolveInfo, **kwargs
     ) -> Sequence[GrapheneObservationEvent]:
         beforeTimestampMillis: Optional[str] = kwargs.get("beforeTimestampMillis")
         try:
@@ -472,7 +472,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         ]
 
-    def resolve_configField(self, _graphene_info) -> Optional[GrapheneConfigTypeField]:
+    def resolve_configField(self, _graphene_info: ResolveInfo) -> Optional[GrapheneConfigTypeField]:
         if self.is_source_asset():
             return None
         external_pipeline = self.get_external_pipeline()
@@ -486,16 +486,16 @@ class GrapheneAssetNode(graphene.ObjectType):
             else None
         )
 
-    def resolve_computeKind(self, _graphene_info) -> Optional[str]:
+    def resolve_computeKind(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._external_asset_node.compute_kind
 
-    def resolve_currentLogicalVersion(self, graphene_info: HasContext) -> Optional[str]:
+    def resolve_currentLogicalVersion(self, _graphene_info: ResolveInfo) -> Optional[str]:
         version = self.stale_status_loader.get_current_logical_version(
             self._external_asset_node.asset_key
         )
         return None if version == NULL_LOGICAL_VERSION else version.value
 
-    def resolve_projectedLogicalVersion(self, _graphene_info) -> Optional[str]:
+    def resolve_projectedLogicalVersion(self, _graphene_info: ResolveInfo) -> Optional[str]:
         if (
             self.external_asset_node.is_source
             or self.external_asset_node.partitions_def_data is not None
@@ -507,7 +507,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
             return version.value
 
-    def resolve_dependedBy(self, graphene_info) -> List[GrapheneAssetDependency]:
+    def resolve_dependedBy(self, graphene_info: ResolveInfo) -> List[GrapheneAssetDependency]:
         # CrossRepoAssetDependedByLoader class loads cross-repo asset dependencies workspace-wide.
         # In order to avoid recomputing workspace-wide values per asset node, we add a loader
         # that batch loads all cross-repo dependencies for the whole workspace.
@@ -543,7 +543,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in depended_by_asset_nodes
         ]
 
-    def resolve_dependedByKeys(self, _graphene_info) -> Sequence[GrapheneAssetKey]:
+    def resolve_dependedByKeys(self, _graphene_info: ResolveInfo) -> Sequence[GrapheneAssetKey]:
         # CrossRepoAssetDependedByLoader class loads all cross-repo asset dependencies workspace-wide.
         # In order to avoid recomputing workspace-wide values per asset node, we add a loader
         # that batch loads all cross-repo dependencies for the whole workspace.
@@ -563,13 +563,13 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneAssetKey(path=dep.downstream_asset_key.path) for dep in depended_by_asset_nodes
         ]
 
-    def resolve_dependencyKeys(self, _graphene_info):
+    def resolve_dependencyKeys(self, _graphene_info: ResolveInfo):
         return [
             GrapheneAssetKey(path=dep.upstream_asset_key.path)
             for dep in self._external_asset_node.dependencies
         ]
 
-    def resolve_dependencies(self, graphene_info) -> Sequence[GrapheneAssetDependency]:
+    def resolve_dependencies(self, graphene_info: ResolveInfo) -> Sequence[GrapheneAssetDependency]:
         if not self._external_asset_node.dependencies:
             return []
 
@@ -588,7 +588,9 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.dependencies
         ]
 
-    def resolve_freshnessInfo(self, graphene_info) -> Optional[GrapheneAssetFreshnessInfo]:
+    def resolve_freshnessInfo(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[GrapheneAssetFreshnessInfo]:
         if self._external_asset_node.freshness_policy:
             asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
             return get_freshness_info(
@@ -601,15 +603,17 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         return None
 
-    def resolve_freshnessPolicy(self, _graphene_info) -> Optional[GrapheneFreshnessPolicy]:
+    def resolve_freshnessPolicy(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GrapheneFreshnessPolicy]:
         if self._external_asset_node.freshness_policy:
             return GrapheneFreshnessPolicy(self._external_asset_node.freshness_policy)
         return None
 
-    def resolve_jobNames(self, _graphene_info) -> Sequence[str]:
+    def resolve_jobNames(self, _graphene_info: ResolveInfo) -> Sequence[str]:
         return self._external_asset_node.job_names
 
-    def resolve_jobs(self, _graphene_info) -> Sequence[GraphenePipeline]:
+    def resolve_jobs(self, _graphene_info: ResolveInfo) -> Sequence[GraphenePipeline]:
         job_names = self._external_asset_node.job_names or []
         return [
             GraphenePipeline(self._external_repository.get_full_external_job(job_name))
@@ -617,17 +621,17 @@ class GrapheneAssetNode(graphene.ObjectType):
             if self._external_repository.has_external_job(job_name)
         ]
 
-    def resolve_isSource(self, _graphene_info) -> bool:
+    def resolve_isSource(self, _graphene_info: ResolveInfo) -> bool:
         return self.is_source_asset()
 
-    def resolve_isPartitioned(self, _graphene_info) -> bool:
+    def resolve_isPartitioned(self, _graphene_info: ResolveInfo) -> bool:
         return self._external_asset_node.partitions_def_data is not None
 
-    def resolve_isObservable(self, _graphene_info) -> bool:
+    def resolve_isObservable(self, _graphene_info: ResolveInfo) -> bool:
         return self._external_asset_node.is_observable
 
     def resolve_latestMaterializationByPartition(
-        self, graphene_info, **kwargs
+        self, graphene_info: ResolveInfo, **kwargs
     ) -> Sequence[Optional[GrapheneMaterializationEvent]]:
         get_partition = (
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
@@ -661,8 +665,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_partitionMaterializationCounts(
-        self, graphene_info
-    ) -> GraphenePartitionMaterializationCounts:
+        self, graphene_info: ResolveInfo
+    ) -> Union[
+        GrapheneMaterializationCountSingleDimension, GrapheneMaterializationCountGroupedByDimension
+    ]:
         asset_key = self._external_asset_node.asset_key
 
         if not self.is_multipartitioned():
@@ -686,11 +692,13 @@ class GrapheneAssetNode(graphene.ObjectType):
                 )
             )
 
-    def resolve_metadata_entries(self, _graphene_info) -> Sequence[GrapheneMetadataEntry]:
+    def resolve_metadata_entries(
+        self, _graphene_info: ResolveInfo
+    ) -> Sequence[GrapheneMetadataEntry]:
         return list(iterate_metadata_entries(self._external_asset_node.metadata_entries))
 
     def resolve_op(
-        self, _graphene_info
+        self, _graphene_info: ResolveInfo
     ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
         if self.is_source_asset():
             return None
@@ -704,14 +712,14 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         check.failed(f"Unknown solid definition type {type(node_def_snap)}")
 
-    def resolve_opNames(self, _graphene_info) -> Sequence[str]:
+    def resolve_opNames(self, _graphene_info: ResolveInfo) -> Sequence[str]:
         return self._external_asset_node.op_names or []
 
-    def resolve_graphName(self, _graphene_info) -> Optional[str]:
+    def resolve_graphName(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._external_asset_node.graph_name
 
     def resolve_partitionKeysByDimension(
-        self, _graphene_info
+        self, _graphene_info: ResolveInfo
     ) -> Sequence[GrapheneDimensionPartitionKeys]:
         if not self._external_asset_node.partitions_def_data:
             return []
@@ -732,21 +740,25 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneDimensionPartitionKeys(name="default", partition_keys=self.get_partition_keys())
         ]
 
-    def resolve_partitionKeys(self, _graphene_info) -> Sequence[str]:
+    def resolve_partitionKeys(self, _graphene_info: ResolveInfo) -> Sequence[str]:
         return self.get_partition_keys()
 
-    def resolve_partitionDefinition(self, _graphene_info) -> Optional[GraphenePartitionDefinition]:
+    def resolve_partitionDefinition(
+        self, _graphene_info: ResolveInfo
+    ) -> Optional[GraphenePartitionDefinition]:
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
             return GraphenePartitionDefinition(partitions_def_data)
         return None
 
-    def resolve_repository(self, graphene_info) -> "GrapheneRepository":
+    def resolve_repository(self, graphene_info: ResolveInfo) -> "GrapheneRepository":
         return external.GrapheneRepository(
             graphene_info.context.instance, self._external_repository, self._repository_location
         )
 
-    def resolve_required_resources(self, _graphene_info) -> Sequence[GrapheneResourceRequirement]:
+    def resolve_required_resources(
+        self, _graphene_info: ResolveInfo
+    ) -> Sequence[GrapheneResourceRequirement]:
         if self.is_source_asset():
             return []
         node_def_snap = self.get_node_definition_snap()
@@ -754,7 +766,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return [GrapheneResourceRequirement(key) for key in all_unique_keys]
 
     def resolve_type(
-        self, _graphene_info: HasContext
+        self, _graphene_info: ResolveInfo
     ) -> Optional[
         Union[
             "GrapheneListDagsterType", "GrapheneNullableDagsterType", "GrapheneRegularDagsterType"
