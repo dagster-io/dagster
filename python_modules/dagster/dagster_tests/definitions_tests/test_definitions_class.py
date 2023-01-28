@@ -8,6 +8,7 @@ from dagster import (
     ScheduleDefinition,
     SourceAsset,
     asset,
+    build_schedule_from_partitioned_job,
     create_repository_using_definitions_args,
     define_asset_job,
     materialize,
@@ -511,3 +512,25 @@ def test_implicit_job_with_source_assets():
     assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
     assert defs.has_implicit_global_asset_job_def()
     assert defs.get_implicit_global_asset_job_def()
+
+
+def test_unresolved_partitioned_asset_schedule():
+    partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        ...
+
+    job1 = define_asset_job("job1")
+    schedule1 = build_schedule_from_partitioned_job(job1)
+
+    defs_with_explicit_job = Definitions(jobs=[job1], schedules=[schedule1], assets=[asset1])
+    assert defs_with_explicit_job.get_job_def("job1").name == "job1"
+    assert defs_with_explicit_job.get_job_def("job1").partitions_def == partitions_def
+    assert defs_with_explicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
+
+    defs_with_implicit_job = Definitions(schedules=[schedule1], assets=[asset1])
+    defs_with_implicit_job = Definitions(jobs=[job1], schedules=[schedule1], assets=[asset1])
+    assert defs_with_implicit_job.get_job_def("job1").name == "job1"
+    assert defs_with_implicit_job.get_job_def("job1").partitions_def == partitions_def
+    assert defs_with_implicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
