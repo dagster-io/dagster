@@ -1,7 +1,9 @@
-# pylint: disable=pointless-statement
+# pyright: reportUnusedExpression=none
 
+# Type errors ignored because some of these imports target deprecated modules for compatibility with
+# airflow 1.x and 2.x.
 from airflow import models
-from airflow.operators.bash_operator import BashOperator
+from airflow.operators.bash_operator import BashOperator  # type: ignore  # (airflow 1 compat)
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.utils.dates import days_ago
 
