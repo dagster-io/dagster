@@ -1,4 +1,5 @@
 import asyncio
+from typing import Dict, List
 
 import graphene
 from dagster import (
@@ -12,6 +13,7 @@ from dagster._core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
+from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,
@@ -318,7 +320,7 @@ class GrapheneRepository(graphene.ObjectType):
         ]
 
     def resolve_assetGroups(self, _graphene_info):
-        groups = {}
+        groups: Dict[str, List[ExternalAssetNode]] = {}
         for external_asset_node in self._repository.get_external_asset_nodes():
             if not external_asset_node.group_name:
                 continue

@@ -362,12 +362,14 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
                 graphene_info,
                 execution_params_dict=kwargs["executionParams"],
             )
-        else:
+        elif reexecution_params:
             return launch_reexecution_from_parent_run(
                 graphene_info,
                 reexecution_params["parentRunId"],
                 reexecution_params["strategy"],
             )
+        else:
+            check.failed("Unreachable")
 
 
 class GrapheneTerminateRunPolicy(graphene.Enum):

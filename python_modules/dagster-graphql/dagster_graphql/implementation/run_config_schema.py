@@ -54,6 +54,7 @@ def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, run_c
     )
 
     if not validated_config.success:
+        errors = check.not_none(validated_config.errors)
         raise UserFacingGraphQLError(
             GrapheneRunConfigValidationInvalid(
                 pipeline_name=represented_pipeline.name,
@@ -62,7 +63,7 @@ def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, run_c
                         represented_pipeline.config_schema_snapshot,
                         err,
                     )
-                    for err in validated_config.errors
+                    for err in errors
                 ],
             )
         )

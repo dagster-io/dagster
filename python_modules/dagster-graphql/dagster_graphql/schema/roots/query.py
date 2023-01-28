@@ -549,14 +549,14 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_partition_sets_or_error(
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
-            kwargs.get("pipelineName"),
+            kwargs["pipelineName"],
         )
 
     def resolve_partitionSetOrError(self, graphene_info, **kwargs):
         return get_partition_set(
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
-            kwargs.get("partitionSetName"),
+            kwargs.get("partitionSetName"),  # type: ignore  # (partitionSetName should prob be required)
         )
 
     def resolve_pipelineRunTags(self, graphene_info):
@@ -577,7 +577,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=True),
+            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=True),  # type: ignore
             kwargs.get("mode"),
         )
 
@@ -598,7 +598,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         repo = None
         if "group" in kwargs:
-            group_name = kwargs.get("group").get("groupName")
+            group_name = kwargs["group"].get("groupName")
             repo_sel = RepositorySelector.from_graphql_input(kwargs.get("group"))
             repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
@@ -613,7 +613,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 else []
             )
         elif "pipeline" in kwargs:
-            pipeline_name = kwargs.get("pipeline").get("pipelineName")
+            pipeline_name = kwargs["pipeline"].get("pipelineName")
             repo_sel = RepositorySelector.from_graphql_input(kwargs.get("pipeline"))
             repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)

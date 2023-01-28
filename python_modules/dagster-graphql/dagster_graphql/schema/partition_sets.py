@@ -237,7 +237,7 @@ class GraphenePartitionSet(graphene.ObjectType):
             self._external_partition_set,
             cursor=kwargs.get("cursor"),
             limit=kwargs.get("limit"),
-            reverse=kwargs.get("reverse"),
+            reverse=kwargs.get("reverse") or False,
         )
 
     def resolve_partition(self, graphene_info, partition_name):

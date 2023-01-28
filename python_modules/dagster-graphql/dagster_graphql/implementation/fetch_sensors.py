@@ -240,10 +240,13 @@ def set_sensor_cursor(graphene_info, selector, cursor):
         external_sensor.selector_id,
     )
     sensor_state = external_sensor.get_current_instigator_state(stored_state)
+    instigator_data = sensor_state.instigator_data
+    if not isinstance(instigator_data, SensorInstigatorData):
+        check.failed("Expected SensorInstigatorData")
     updated_state = sensor_state.with_data(
         SensorInstigatorData(
-            last_tick_timestamp=sensor_state.instigator_data.last_tick_timestamp,
-            last_run_key=sensor_state.instigator_data.last_run_key,
+            last_tick_timestamp=instigator_data.last_tick_timestamp,
+            last_run_key=instigator_data.last_run_key,
             min_interval=external_sensor.min_interval_seconds,
             cursor=cursor,
         )
