@@ -10,14 +10,14 @@ from dagster_pandas import DataFrame
 
 def check_parquet_support():
     try:
-        import pyarrow  # noqa: F401
+        import pyarrow  # type: ignore  # noqa: F401
 
         return
     except ImportError:
         pass
 
     try:
-        import fastparquet  # noqa: F401
+        import fastparquet  # type: ignore  # noqa: F401
 
         return
     except ImportError:
