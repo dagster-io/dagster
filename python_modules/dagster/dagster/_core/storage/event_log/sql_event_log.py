@@ -1010,7 +1010,12 @@ class SqlEventLogStorage(EventLogStorage):
                 storage_id=row[0],
                 asset_entry=AssetEntry(
                     asset_key=asset_key,
-                    last_materialization_record=last_materialization_record,
+                    last_materialization=last_materialization_record.event_log_entry
+                    if last_materialization_record
+                    else None,
+                    last_storage_id=last_materialization_record.storage_id
+                    if last_materialization_record
+                    else None,
                     last_run_id=row[3],
                     asset_details=AssetDetails.from_db_string(row[4]),
                     cached_status=AssetStatusCacheValue.from_db_string(row[5])

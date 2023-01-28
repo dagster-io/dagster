@@ -89,7 +89,8 @@ class AssetEntry(
         "_AssetEntry",
         [
             ("asset_key", AssetKey),
-            ("last_materialization_record", Optional[EventLogRecord]),
+            ("last_materialization", Optional[EventLogEntry]),
+            ("last_storage_id", Optional[int]),
             ("last_run_id", Optional[str]),
             ("asset_details", Optional[AssetDetails]),
             ("cached_status", Optional["AssetStatusCacheValue"]),
@@ -99,7 +100,8 @@ class AssetEntry(
     def __new__(
         cls,
         asset_key: AssetKey,
-        last_materialization_record: Optional[EventLogRecord] = None,
+        last_materialization: Optional[EventLogEntry] = None,
+        last_storage_id: Optional[int] = None,
         last_run_id: Optional[str] = None,
         asset_details: Optional[AssetDetails] = None,
         cached_status: Optional["AssetStatusCacheValue"] = None,
@@ -109,9 +111,10 @@ class AssetEntry(
         return super(AssetEntry, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            last_materialization_record=check.opt_inst_param(
-                last_materialization_record, "last_materialization_record", EventLogRecord
+            last_materialization=check.opt_inst_param(
+                last_materialization, "last_materialization", EventLogEntry
             ),
+            last_storage_id=check.opt_int_param(last_storage_id, "last_storage_id"),
             last_run_id=check.opt_str_param(last_run_id, "last_run_id"),
             asset_details=check.opt_inst_param(asset_details, "asset_details", AssetDetails),
             cached_status=check.opt_inst_param(
@@ -120,10 +123,13 @@ class AssetEntry(
         )
 
     @property
-    def last_materialization(self) -> Optional[EventLogEntry]:
-        if self.last_materialization_record is None:
+    def last_materialization_record(self) -> Optional[EventLogRecord]:
+        if self.last_materialization is None or self.last_storage_id is None:
             return None
-        return self.last_materialization_record.event_log_entry
+        return EventLogRecord(
+            storage_id=self.last_storage_id,
+            event_log_entry=self.last_materialization,
+        )
 
 
 class AssetRecord(NamedTuple):
