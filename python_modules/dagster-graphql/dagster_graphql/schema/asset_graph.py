@@ -59,7 +59,7 @@ from .logs.events import (
     GrapheneMaterializationEvent,
     GrapheneObservationEvent,
 )
-from .pipelines.pipeline import (  # GraphenePartitionMaterializationS,
+from .pipelines.pipeline import (
     GrapheneMaterializationCountGroupedByDimension,
     GrapheneMaterializationCountSingleDimension,
     GraphenePartitionMaterializationCounts,

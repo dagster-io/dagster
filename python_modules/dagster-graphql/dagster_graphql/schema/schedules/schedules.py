@@ -71,7 +71,7 @@ class GrapheneSchedule(graphene.ObjectType):
             description=external_schedule.description,
         )
 
-    def resolve_id(self, _):
+    def resolve_id(self, _graphene_info):
         return self._external_schedule.get_external_origin_id()
 
     def resolve_scheduleState(self, _graphene_info):
@@ -130,7 +130,7 @@ class GrapheneSchedule(graphene.ObjectType):
         new_cursor = tick_times[-1] + 1 if tick_times else cursor
         return GrapheneFutureInstigationTicks(results=future_ticks, cursor=new_cursor)
 
-    def resolve_futureTick(self, _graphene_info, tick_timestamp):
+    def resolve_futureTick(self, _graphene_info, tick_timestamp: int):
         return GrapheneFutureInstigationTick(self._schedule_state, float(tick_timestamp))
 
 

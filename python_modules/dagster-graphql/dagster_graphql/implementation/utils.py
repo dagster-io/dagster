@@ -136,7 +136,9 @@ def capture_error(fn: Callable[P, T]) -> Callable[P, Union[T, GrapheneError, Gra
 
 
 class UserFacingGraphQLError(Exception):
-    def __init__(self, error):
+    # The `error` arg here should be a Graphene type implementing the interface `GrapheneError`, but
+    # this is not trackable by the Python type system.
+    def __init__(self, error: Any):
         self.error = error
         message = "[{cls}] {message}".format(
             cls=error.__class__.__name__,
