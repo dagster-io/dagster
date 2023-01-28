@@ -608,7 +608,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return validate_pipeline_config(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            parse_run_config_input(runConfigData or {}, raise_on_error=False),
+            parse_run_config_input(runConfigData or {}, raise_on_error=False),  # type: ignore
             mode,
         )
 
@@ -622,7 +622,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            parse_run_config_input(runConfigData or {}, raise_on_error=True),
+            parse_run_config_input(runConfigData or {}, raise_on_error=True),  # type: ignore
             mode,
         )
 
@@ -644,14 +644,14 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_assetNodes(
         self,
         graphene_info: ResolveInfo,
-        load_materializations: bool,
+        loadMaterializations: bool,
         group: Optional[GrapheneAssetGroupSelector] = None,
         pipeline: Optional[GraphenePipelineSelector] = None,
-        asset_keys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
+        assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
     ) -> Sequence[GrapheneAssetNode]:
         resolved_asset_keys = set(
             AssetKey.from_graphql_input(cast(Mapping[str, Sequence[str]], asset_key_input))
-            for asset_key_input in asset_keys or []
+            for asset_key_input in assetKeys or []
         )
         use_all_asset_keys = len(resolved_asset_keys) == 0
 

@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 import dagster._check as check
 import graphene
@@ -357,24 +357,24 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
     def mutate(
         self,
         graphene_info: ResolveInfo,
-        execution_params: Any = None,
-        reexecution_params: Any = None,
+        executionParams: Optional[GrapheneExecutionParams] = None,
+        reexecutionParams: Optional[GrapheneReexecutionParams] = None,
     ):
         check.invariant(
-            bool(execution_params) != bool(reexecution_params),
+            bool(executionParams) != bool(reexecutionParams),
             "Must only provide one of either executionParams or reexecutionParams",
         )
 
-        if execution_params:
+        if executionParams:
             return create_execution_params_and_launch_pipeline_reexec(
                 graphene_info,
-                execution_params_dict=execution_params,
+                execution_params_dict=executionParams,
             )
-        elif reexecution_params:
+        elif reexecutionParams:
             return launch_reexecution_from_parent_run(
                 graphene_info,
-                reexecution_params["parentRunId"],
-                reexecution_params["strategy"],
+                reexecutionParams["parentRunId"],
+                reexecutionParams["strategy"],
             )
         else:
             check.failed("Unreachable")
