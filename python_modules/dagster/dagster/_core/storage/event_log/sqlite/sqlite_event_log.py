@@ -250,7 +250,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 result = conn.execute(insert_event_statement)
                 event_id = result.inserted_primary_key[0]
 
-            self.store_asset_event(event)
+            self.store_asset_event(event, event_id)
 
             if event_id is None:
                 raise DagsterInvariantViolationError(

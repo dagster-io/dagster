@@ -142,8 +142,9 @@ class SqlEventLogStorage(EventLogStorage):
     def has_asset_key_index_cols(self):
         return self.has_asset_key_col("last_materialization_timestamp")
 
-    def store_asset_event(self, event: EventLogEntry):
+    def store_asset_event(self, event: EventLogEntry, event_id: int):
         check.inst_param(event, "event", EventLogEntry)
+
         if not (event.dagster_event and event.dagster_event.asset_key):
             return
 
@@ -159,7 +160,7 @@ class SqlEventLogStorage(EventLogStorage):
         #
         # https://github.com/dagster-io/dagster/issues/3945
 
-        values = self._get_asset_entry_values(event, self.has_asset_key_index_cols())
+        values = self._get_asset_entry_values(event, event_id, self.has_asset_key_index_cols())
         insert_statement = AssetKeyTable.insert().values(
             asset_key=event.dagster_event.asset_key.to_string(), **values
         )
@@ -177,7 +178,9 @@ class SqlEventLogStorage(EventLogStorage):
             except db_exc.IntegrityError:
                 conn.execute(update_statement)
 
-    def _get_asset_entry_values(self, event: EventLogEntry, has_asset_key_index_cols: bool):
+    def _get_asset_entry_values(
+        self, event: EventLogEntry, event_id: int, has_asset_key_index_cols: bool
+    ):
         # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
         # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
@@ -195,7 +198,12 @@ class SqlEventLogStorage(EventLogStorage):
         if dagster_event.is_step_materialization:
             entry_values.update(
                 {
-                    "last_materialization": serialize_dagster_namedtuple(event),
+                    "last_materialization": serialize_dagster_namedtuple(
+                        EventLogRecord(
+                            storage_id=event_id,
+                            event_log_entry=event,
+                        )
+                    ),
                     "last_run_id": event.run_id,
                 }
             )
@@ -362,7 +370,7 @@ class SqlEventLogStorage(EventLogStorage):
             and event.dagster_event_type in ASSET_EVENTS
             and event.dagster_event.asset_key
         ):
-            self.store_asset_event(event)
+            self.store_asset_event(event, event_id)
 
             if event_id is None:
                 raise DagsterInvariantViolationError(
