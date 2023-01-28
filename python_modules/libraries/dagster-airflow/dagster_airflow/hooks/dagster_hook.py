@@ -1,12 +1,14 @@
 import json
 import logging
 import time
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, cast
 
+# Type errors ignored because some of these imports target deprecated modules for compatibility with
+# airflow 1.x and 2.x.
 import requests
 from airflow import __version__ as airflow_version
 from airflow.exceptions import AirflowException
-from airflow.hooks.base_hook import BaseHook
+from airflow.hooks.base_hook import BaseHook  # type: ignore  # (airflow 1 compat)
 from airflow.models import Connection
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 
@@ -59,7 +61,7 @@ class DagsterHook(BaseHook):
         if airflow_version >= "2.0.0":
             super().__init__()
         else:
-            super().__init__(source=None)
+            super().__init__(source=None)  # type: ignore  # (airflow 1 compat)
         self.url = url
         self.user_token = user_token
         self.organization_id = organization_id
@@ -98,7 +100,7 @@ class DagsterHook(BaseHook):
         self.url = f"{base_url}{self.organization_id}/{self.deployment_name}/graphql"
 
     def set_hook_for_oss(self, conn: Connection):
-        self.url = conn.login
+        self.url = cast(str, conn.login)
 
     def launch_run(
         self,
