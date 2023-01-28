@@ -97,18 +97,20 @@ class GrapheneSchedule(graphene.ObjectType):
         )
 
     def resolve_futureTicks(self, _graphene_info, **kwargs):
-        cursor = kwargs.get(
-            "cursor", get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+        cursor = cast(
+            float,
+            kwargs.get("cursor", get_timestamp_from_utc_datetime(get_current_datetime_in_utc())),
         )
-        tick_times = []
+        limit = cast(Optional[int], kwargs.get("limit"))
+        until = cast(Optional[float], kwargs.get("until"))
+
+        tick_times: List[float] = []
         time_iter = self._external_schedule.execution_time_iterator(cursor)
 
-        until = float(kwargs.get("until")) if kwargs.get("until") else None
-
-        if until:
+        if until is not None:
             currentTime = None
             while (not currentTime or currentTime < until) and (
-                not kwargs.get("limit") or len(tick_times) < kwargs.get("limit")
+                limit is None or len(tick_times) < limit
             ):
                 try:
                     currentTime = next(time_iter).timestamp()
@@ -117,7 +119,7 @@ class GrapheneSchedule(graphene.ObjectType):
                 except StopIteration:
                     break
         else:
-            limit = kwargs.get("limit", 10)
+            limit = limit if limit is not None else 10
 
             for _ in range(limit):
                 tick_times.append(next(time_iter).timestamp())
