@@ -3,6 +3,8 @@ from typing import Any, Dict, Sequence
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.logical_version import CachingStaleStatusResolver
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.host_representation import (
     InstigatorSelector,
@@ -28,7 +30,6 @@ from ...implementation.fetch_assets import (
     get_asset_node_definition_collisions,
     get_asset_nodes,
     get_assets,
-    unique_repos,
 )
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
@@ -60,7 +61,6 @@ from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.loader import (
     BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
-    ProjectedLogicalVersionLoader,
 )
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
@@ -642,14 +642,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
         depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
         if repo is not None:
-            repos = [repo]
+            asset_graph = ExternalAssetGraph.from_external_repository(repo)
         else:
-            repos = unique_repos(result.external_repository for result in results)
+            asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
 
-        projected_logical_version_loader = ProjectedLogicalVersionLoader(
+        stale_status_loader = CachingStaleStatusResolver(
             instance=graphene_info.context.instance,
-            key_to_node_map={node.assetKey: node.external_asset_node for node in results},
-            repositories=repos,
+            asset_graph=asset_graph,
         )
 
         return [
@@ -659,7 +658,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 node.external_asset_node,
                 materialization_loader=materialization_loader,
                 depended_by_loader=depended_by_loader,
-                projected_logical_version_loader=projected_logical_version_loader,
+                stale_status_loader=stale_status_loader,
             )
             for node in results
         ]

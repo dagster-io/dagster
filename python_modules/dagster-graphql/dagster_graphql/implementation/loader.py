@@ -8,9 +8,6 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import (
-    CachingProjectedLogicalVersionResolver,
-)
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -440,26 +437,3 @@ class CrossRepoAssetDependedByLoader:
         return external_asset_deps.get((repository_location_name, repository_name), {}).get(
             asset_key, []
         )
-
-
-class ProjectedLogicalVersionLoader:
-    """
-    A batch loader that computes the projected logical version for a set of asset keys. This is
-    necessary to avoid recomputation, since each asset's logical version is a function of its
-    dependency logical versions. We use similar functionality in core, so this loader simply proxies
-    to `CachingProjectedLogicalVersionResolver` and extracts the string value of the returned
-    `LogicalVersion` objects.
-    """
-
-    def __init__(
-        self,
-        instance: DagsterInstance,
-        repositories: Sequence[ExternalRepository],
-        key_to_node_map: Optional[Mapping[AssetKey, ExternalAssetNode]],
-    ):
-        self._caching_resolver = CachingProjectedLogicalVersionResolver(
-            instance, repositories, key_to_node_map
-        )
-
-    def get(self, asset_key: AssetKey) -> str:
-        return self._caching_resolver.get(asset_key).value

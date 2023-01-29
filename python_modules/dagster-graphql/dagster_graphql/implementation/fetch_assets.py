@@ -10,7 +10,9 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.logical_version import CachingStaleStatusResolver
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -23,7 +25,6 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_graphql.implementation.loader import (
     CrossRepoAssetDependedByLoader,
-    ProjectedLogicalVersionLoader,
 )
 
 if TYPE_CHECKING:
@@ -130,7 +131,9 @@ def get_asset_node_definition_collisions(
     return results
 
 
-def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAssetNode"]:
+def get_asset_nodes_by_asset_key(
+    graphene_info: "HasContext",
+) -> Mapping[AssetKey, "GrapheneAssetNode"]:
     """
     If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
@@ -139,10 +142,9 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
 
     depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
-    projected_logical_version_loader = ProjectedLogicalVersionLoader(
+    stale_status_loader = CachingStaleStatusResolver(
         instance=graphene_info.context.instance,
-        key_to_node_map={node.asset_key: node for _, _, node in asset_node_iter(graphene_info)},
-        repositories=unique_repos(repo for _, repo, _ in asset_node_iter(graphene_info)),
+        asset_graph=ExternalAssetGraph.from_workspace(graphene_info.context),
     )
 
     asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
@@ -154,7 +156,7 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
                 repo,
                 external_asset_node,
                 depended_by_loader=depended_by_loader,
-                projected_logical_version_loader=projected_logical_version_loader,
+                stale_status_loader=stale_status_loader,
             )
 
     return asset_nodes_by_asset_key

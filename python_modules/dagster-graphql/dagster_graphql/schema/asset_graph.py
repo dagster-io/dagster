@@ -7,8 +7,8 @@ from dagster import (
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.logical_version import (
-    DEFAULT_LOGICAL_VERSION,
-    extract_logical_version_from_entry,
+    NULL_LOGICAL_VERSION,
+    CachingStaleStatusResolver,
 )
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
@@ -48,7 +48,6 @@ from ..implementation.fetch_assets import (
 from ..implementation.loader import (
     BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
-    ProjectedLogicalVersionLoader,
 )
 from . import external
 from .asset_key import GrapheneAssetKey
@@ -152,7 +151,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     _external_pipeline: Optional[ExternalPipeline]
     _external_repository: ExternalRepository
     _latest_materialization_loader: Optional[BatchMaterializationLoader]
-    _projected_logical_version_loader: Optional[ProjectedLogicalVersionLoader]
+    _stale_status_loader: Optional[CachingStaleStatusResolver]
 
     # NOTE: properties/resolvers are listed alphabetically
     assetKey = graphene.NonNull(GrapheneAssetKey)
@@ -218,7 +217,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         external_asset_node: ExternalAssetNode,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
-        projected_logical_version_loader: Optional[ProjectedLogicalVersionLoader] = None,
+        stale_status_loader: Optional[CachingStaleStatusResolver] = None,
     ):
         from ..implementation.fetch_assets import get_unique_asset_id
 
@@ -239,10 +238,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._depended_by_loader = check.opt_inst_param(
             depended_by_loader, "depended_by_loader", CrossRepoAssetDependedByLoader
         )
-        self._projected_logical_version_loader = check.opt_inst_param(
-            projected_logical_version_loader,
-            "projected_logical_version_loader",
-            ProjectedLogicalVersionLoader,
+        self._stale_status_loader = check.opt_inst_param(
+            stale_status_loader,
+            "stale_status_loader",
+            CachingStaleStatusResolver,
         )
         self._external_pipeline = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
@@ -269,6 +268,14 @@ class GrapheneAssetNode(graphene.ObjectType):
     @property
     def external_asset_node(self) -> ExternalAssetNode:
         return self._external_asset_node
+
+    @property
+    def stale_status_loader(self) -> CachingStaleStatusResolver:
+        loader = check.not_none(
+            self._stale_status_loader,
+            "stale_status_loader must exist in order to logical versioning information",
+        )
+        return loader
 
     def get_external_pipeline(self) -> ExternalPipeline:
         if self._external_pipeline is None:
@@ -477,17 +484,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.compute_kind
 
     def resolve_currentLogicalVersion(self, graphene_info: HasContext) -> Optional[str]:
-        event = graphene_info.context.instance.get_latest_logical_version_record(
-            self._external_asset_node.asset_key,
-            self._external_asset_node.is_source,
+        version = self.stale_status_loader.get_current_logical_version(
+            self._external_asset_node.asset_key
         )
-        if event is None and self._external_asset_node.is_source:
-            return DEFAULT_LOGICAL_VERSION.value
-        elif event is None:
-            return None
-        else:
-            logical_version = extract_logical_version_from_entry(event.event_log_entry)
-            return (logical_version or DEFAULT_LOGICAL_VERSION).value
+        return None if version == NULL_LOGICAL_VERSION else version.value
 
     def resolve_projectedLogicalVersion(self, _graphene_info) -> Optional[str]:
         if (
@@ -496,14 +496,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         ):
             return None
         else:
-            loader = check.not_none(
-                self._projected_logical_version_loader,
-                (
-                    "projected_logical_version_loader must exist in order to resolve projected"
-                    " logical versions"
-                ),
+            version = self.stale_status_loader.get_projected_logical_version(
+                self.external_asset_node.asset_key
             )
-            return loader.get(self.external_asset_node.asset_key)
+            return version.value
 
     def resolve_dependedBy(self, graphene_info) -> List[GrapheneAssetDependency]:
         # CrossRepoAssetDependedByLoader class loads cross-repo asset dependencies workspace-wide.
