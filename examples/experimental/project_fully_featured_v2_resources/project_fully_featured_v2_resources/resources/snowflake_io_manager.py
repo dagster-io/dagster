@@ -160,7 +160,7 @@ class SnowflakeIOManager(IOManager):
                 ),
                 con=con,
             )
-            result.columns = map(str.lower, result.columns)
+            result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
             return result
 
     def _get_select_statement(

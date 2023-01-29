@@ -76,7 +76,7 @@ if is_papermill_2():
 
 else:
     from papermill.engines import NBConvertEngine  # type: ignore  # (papermill 1 compat)
-    from papermill.preprocess import (
+    from papermill.preprocess import (  # type: ignore  # (papermill 1 compat)
         PapermillExecutePreprocessor,  # type: ignore  # (papermill 1 compat)
     )
 

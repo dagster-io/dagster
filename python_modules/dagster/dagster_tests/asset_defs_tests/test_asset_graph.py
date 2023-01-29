@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 from unittest.mock import MagicMock
 
-import pendulum.helpers
+import pendulum
 import pytest
 from dagster import (
     AssetIn,
@@ -182,7 +182,7 @@ def test_get_parent_partitions_non_default_partition_mapping():
     internal_asset_graph = AssetGraph.from_assets([parent, child])
     external_asset_graph = to_external_asset_graph([parent, child])
 
-    with pendulum.helpers.test(create_pendulum_time(year=2022, month=1, day=3, hour=4)):
+    with pendulum.test(create_pendulum_time(year=2022, month=1, day=3, hour=4)):
         assert internal_asset_graph.get_parents_partitions(child.key) == {
             AssetKeyPartitionKey(parent.key, "2022-01-02")
         }

@@ -1,5 +1,3 @@
-# pyright: strict
-
 import sys
 import threading
 import time

@@ -19,7 +19,9 @@ from mysql.connector.pooling import PooledMySQLConnection
 from typing_extensions import TypeAlias
 
 # Represents the output of mysql connection function
-MySQLConnectionUnion: TypeAlias = Union[mysql.MySQLConnection, PooledMySQLConnection]
+MySQLConnectionUnion: TypeAlias = Union[
+    db.engine.Connection, mysql.MySQLConnection, PooledMySQLConnection
+]
 
 
 class DagsterMySQLException(Exception):

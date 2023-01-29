@@ -641,10 +641,10 @@ def test_time_window_partition_len():
     )
 
     @daily_partitioned_config(start_date="2021-05-01", end_offset=2)
-    def my_partitioned_config(_start, _end):
+    def my_partitioned_config_2(_start, _end):
         return {}
 
-    partitions_def = cast(TimeWindowPartitionsDefinition, my_partitioned_config.partitions_def)
+    partitions_def = cast(TimeWindowPartitionsDefinition, my_partitioned_config_2.partitions_def)
     current_time = datetime.strptime("2021-06-20", "%Y-%m-%d")
     assert (
         partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)

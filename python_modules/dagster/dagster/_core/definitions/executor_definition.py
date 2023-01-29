@@ -133,7 +133,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     def copy_for_configured(self, name, description, config_schema) -> "ExecutorDefinition":
         return ExecutorDefinition(
             name=name,
-            config_schema=config_schema,
+            config_schema=config_schema,  # type: ignore
             executor_creation_fn=self.executor_creation_fn,
             description=description or self.description,
             requirements=self._requirements_fn,

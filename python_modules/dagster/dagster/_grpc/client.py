@@ -133,14 +133,14 @@ class DagsterGrpcClient:
 
     def _raise_grpc_exception(self, e: Exception, timeout, custom_timeout_message=None):
         if isinstance(e, grpc.RpcError):
-            if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+            if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:  # type: ignore  # (bad stubs)
                 raise DagsterUserCodeUnreachableError(
                     custom_timeout_message
                     or f"User code server request timed out due to taking longer than {timeout} seconds to complete."
                 ) from e
             else:
                 raise DagsterUserCodeUnreachableError(
-                    f"Could not reach user code server. gRPC Error code: {e.code().name}"
+                    f"Could not reach user code server. gRPC Error code: {e.code().name}"  # type: ignore  # (bad stubs)
                 ) from e
         else:
             raise DagsterUserCodeUnreachableError("Could not reach user code server") from e
