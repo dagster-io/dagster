@@ -441,13 +441,13 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_assetMaterializations(
         self,
         graphene_info: ResolveInfo,
-        partitions: Optional[List[str]] = None,
+        partitions: Optional[Sequence[Optional[str]]] = None,
         beforeTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[GrapheneMaterializationEvent]:
         try:
             before_timestamp = (
-                int(beforeTimestampMillis) / 1000.0 if beforeTimestampMillis is not None else None
+                int(beforeTimestampMillis) / 1000.0 if beforeTimestampMillis else None
             )
         except ValueError:
             before_timestamp = None
@@ -483,13 +483,13 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_assetObservations(
         self,
         graphene_info: ResolveInfo,
-        partitions: Optional[List[str]] = None,
+        partitions: Optional[Sequence[Optional[str]]] = None,
         beforeTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[GrapheneObservationEvent]:
         try:
             before_timestamp = (
-                int(beforeTimestampMillis) / 1000.0 if beforeTimestampMillis is not None else None
+                int(beforeTimestampMillis) / 1000.0 if beforeTimestampMillis else None
             )
         except ValueError:
             before_timestamp = None
@@ -665,13 +665,13 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_latestMaterializationByPartition(
         self,
         graphene_info: ResolveInfo,
-        partitions: Optional[Sequence[str]] = None,
+        partitions: Optional[Sequence[Optional[str]]] = None,
     ) -> Sequence[Optional[GrapheneMaterializationEvent]]:
         get_partition = (
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
         )
 
-        partitions = partitions if partitions is not None else self.get_partition_keys()
+        partitions = partitions or self.get_partition_keys()
 
         events_for_partitions = get_asset_materializations(
             graphene_info,
