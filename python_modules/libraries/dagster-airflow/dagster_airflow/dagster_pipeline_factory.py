@@ -20,29 +20,20 @@ from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
 from airflow.utils import db
-from dagster import (
-    Array,
-    DagsterInvariantViolationError,
-    DependencyDefinition,
-    Field,
-    In,
-    JobDefinition,
-    MultiDependencyDefinition,
-    Nothing,
-    Out,
-    ScheduleDefinition,
-    _check as check,
-    op,
-    repository,
-    resource,
-)
+from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
+
+from dagster import (Array, DagsterInvariantViolationError,
+                     DependencyDefinition, Field, In, JobDefinition,
+                     MultiDependencyDefinition, Nothing, Out, RetryPolicy,
+                     ScheduleDefinition)
+from dagster import _check as check
+from dagster import op, repository, resource
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
-from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
+from dagster._core.instance import (AIRFLOW_EXECUTION_DATE_STR,
+                                    IS_AIRFLOW_INGEST_PIPELINE_STR)
 from dagster._legacy import ModeDefinition, PipelineDefinition
 from dagster._utils.schedules import is_valid_cron_schedule
-
-from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
 # pylint: disable=no-name-in-module,import-error
 if str(airflow_version) >= "2.0.0":
@@ -50,7 +41,8 @@ if str(airflow_version) >= "2.0.0":
     from airflow.utils.state import DagRunState
     from airflow.utils.types import DagRunType
 else:
-    from airflow.utils.db import create_session  # type: ignore  # (airflow 1 compat)
+    from airflow.utils.db import \
+        create_session  # type: ignore  # (airflow 1 compat)
     from airflow.utils.state import State
 # pylint: enable=no-name-in-module,import-error
 
@@ -786,6 +778,10 @@ def make_dagster_solid_from_airflow_task(
             "mock_xcom": Field(bool, default_value=mock_xcom),
             "use_ephemeral_airflow_db": Field(bool, default_value=use_ephemeral_airflow_db),
         },
+        retry_policy=RetryPolicy(
+            max_retries=task.max_tries if task.max_tries is not None else 0,
+            delay=task.retry_delay if task.retry_delay is not None else datetime.timedelta(seconds=0),
+        )
     )
     def _solid(context):  # pylint: disable=unused-argument
         # reloading forces picking up any config that's been set for execution
