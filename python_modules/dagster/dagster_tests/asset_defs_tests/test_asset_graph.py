@@ -44,7 +44,7 @@ def to_external_asset_graph(assets) -> AssetGraph:
 
 
 def test_basics():
-    @asset
+    @asset(code_version="1")
     def asset0():
         ...
 
@@ -74,6 +74,8 @@ def test_basics():
         assert asset_graph.get_parents(asset3.key) == {asset1.key, asset2.key}
         for asset_def in assets:
             assert asset_graph.get_required_multi_asset_keys(asset_def.key) == set()
+        assert asset_graph.get_code_version(asset0.key) == "1"
+        assert asset_graph.get_code_version(asset1.key) is None
 
     assert_stuff(internal_asset_graph)
     assert_stuff(external_asset_graph)
