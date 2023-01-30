@@ -9,7 +9,8 @@ from typing import Any, Dict, List
 
 
 class SerializationModule(TypedDict, total=False):
-    """W&B Artifacts IO Manager configuration of the serialization module. Useful for type checking."""
+    """W&B Artifacts IO Manager configuration of the serialization module. Useful for type checking.
+    """
 
     name: str
     parameters: Dict[str, Any]
