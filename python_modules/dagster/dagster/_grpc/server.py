@@ -1182,7 +1182,6 @@ class GrpcServerProcess:
     ):
         self.port = None
         self.socket = None
-        self.server_process = None
 
         self.loadable_target_origin = check.opt_inst_param(
             loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
@@ -1204,7 +1203,7 @@ class GrpcServerProcess:
         )
 
         if seven.IS_WINDOWS or force_port:
-            self.server_process, self.port = _open_server_process_on_dynamic_port(
+            server_process, self.port = _open_server_process_on_dynamic_port(
                 instance_ref=instance_ref,
                 location_name=location_name,
                 max_retries=max_retries,
@@ -1221,7 +1220,7 @@ class GrpcServerProcess:
         else:
             self.socket = safe_tempfile_path_unmanaged()
 
-            self.server_process = open_server_process(
+            server_process = open_server_process(
                 instance_ref=instance_ref,
                 location_name=location_name,
                 port=None,
@@ -1237,8 +1236,10 @@ class GrpcServerProcess:
                 env=env,
             )
 
-        if self.server_process is None:
+        if server_process is None:
             raise CouldNotStartServerProcess(port=self.port, socket=self.socket)
+        else:
+            self.server_process = server_process
 
     @property
     def pid(self):
