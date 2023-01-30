@@ -577,7 +577,7 @@ def make_dagster_pipeline_from_airflow_dag(
             print("FETCHING TICKS", ticks)
             print("FETCHING TICKS", context.instance.get_ticks(
                 origin_id="airflow_simple_dag_test",
-                selector_id=schedule_id,
+                selector_id="task_flow_repo@with_airflow",
             ))
 
         return {
