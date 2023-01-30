@@ -1,18 +1,33 @@
+from __future__ import annotations
+
 import sys
 import threading
 import uuid
 from abc import abstractmethod
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Generic, NamedTuple, Optional, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Generic,
+    List,
+    NamedTuple,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import pendulum
+from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.origin import (
+    GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocationOrigin,
 )
+from dagster._core.instance import DagsterInstance
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -32,7 +47,7 @@ class GrpcServerEndpoint(
         ],
     )
 ):
-    def __new__(cls, server_id, host, port, socket):
+    def __new__(cls, server_id: str, host: str, port: Optional[int], socket: Optional[str]):
         return super(GrpcServerEndpoint, cls).__new__(
             cls,
             check.str_param(server_id, "server_id"),
@@ -47,22 +62,31 @@ class GrpcServerEndpoint(
         return DagsterGrpcClient(port=self.port, socket=self.socket, host=self.host)
 
 
-T = TypeVar("T")
+T_GrpcRepositoryLocationOrigin = TypeVar(
+    "T_GrpcRepositoryLocationOrigin",
+    GrpcServerRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    # default=ManagedGrpcPythonEnvRepositoryLocationOrigin,
+)
 
 
 # Daemons in different threads can use a shared GrpcServerRegistry to ensure that
 # a single GrpcServerProcess is created for each origin
-class GrpcServerRegistry(AbstractContextManager, Generic[T]):
+class GrpcServerRegistry(AbstractContextManager, Generic[T_GrpcRepositoryLocationOrigin]):
     @abstractmethod
     def supports_origin(self, repository_location_origin: RepositoryLocationOrigin) -> bool:
         pass
 
     @abstractmethod
-    def get_grpc_endpoint(self, repository_location_origin: T) -> GrpcServerEndpoint:
+    def get_grpc_endpoint(
+        self, repository_location_origin: T_GrpcRepositoryLocationOrigin
+    ) -> GrpcServerEndpoint:
         pass
 
     @abstractmethod
-    def reload_grpc_endpoint(self, repository_location_origin: T) -> GrpcServerEndpoint:
+    def reload_grpc_endpoint(
+        self, repository_location_origin: T_GrpcRepositoryLocationOrigin
+    ) -> GrpcServerEndpoint:
         pass
 
     @property
@@ -82,7 +106,13 @@ class ProcessRegistryEntry(
         ],
     )
 ):
-    def __new__(cls, process_or_error, loadable_target_origin, creation_timestamp, server_id):
+    def __new__(
+        cls,
+        process_or_error: Union[GrpcServerProcess, SerializableErrorInfo],
+        loadable_target_origin: LoadableTargetOrigin,
+        creation_timestamp: float,
+        server_id: Optional[str],
+    ):
         return super(ProcessRegistryEntry, cls).__new__(
             cls,
             check.inst_param(
@@ -98,28 +128,28 @@ class ProcessRegistryEntry(
 
 # GrpcServerRegistry that creates local gRPC python processes from
 # ManagedGrpcPythonEnvRepositoryLocationOrigins and shares them between threads.
-class ProcessGrpcServerRegistry(GrpcServerRegistry):
+class ProcessGrpcServerRegistry(GrpcServerRegistry[ManagedGrpcPythonEnvRepositoryLocationOrigin]):
     def __init__(
         self,
-        instance,
+        instance: DagsterInstance,
         # How long each process should run before a new process should be created the next
         # time a given origin is requested (which will pick up any changes that have been
         # made to the code)
-        reload_interval,
+        reload_interval: int,
         # How long the process can live without a heartbeat before it dies. You should ensure
         # that either heartbeat_ttl is greater than reload_interval (so that the process will reload
         # before it ends due to heartbeat failure), or if reload_interval is 0, that any processes
         # returned by this registry have at least one GrpcServerRepositoryLocation hitting the
         # server with a heartbeat while you want the process to stay running.
-        heartbeat_ttl,
+        heartbeat_ttl: int,
         # How long to wait for the server to start up and receive connections before timing out
-        startup_timeout,
-        log_level="INFO",
+        startup_timeout: int,
+        log_level: str = "INFO",
     ):
         self.instance = instance
 
         # ProcessRegistryEntry map of servers being currently returned, keyed by origin ID
-        self._active_entries = {}
+        self._active_entries: Dict[str, ProcessRegistryEntry] = {}
 
         self._waited_for_processes = False
 
@@ -137,10 +167,10 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
 
         self._lock = threading.Lock()
 
-        self._all_processes = []
+        self._all_processes: List[GrpcServerProcess] = []
 
-        self._cleanup_thread_shutdown_event = None
-        self._cleanup_thread = None
+        self._cleanup_thread_shutdown_event: Optional[threading.Event] = None
+        self._cleanup_thread: Optional[threading.Thread] = None
 
         self._log_level = check.str_param(log_level, "log_level")
 
@@ -155,11 +185,13 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
             self._cleanup_thread.daemon = True
             self._cleanup_thread.start()
 
-    def supports_origin(self, repository_location_origin):
+    def supports_origin(
+        self, repository_location_origin: RepositoryLocationOrigin
+    ) -> TypeGuard[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
         return isinstance(repository_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin)
 
     @property
-    def supports_reload(self):
+    def supports_reload(self) -> bool:
         return True
 
     def reload_grpc_endpoint(
@@ -189,7 +221,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
 
     def _get_loadable_target_origin(
         self, repository_location_origin: ManagedGrpcPythonEnvRepositoryLocationOrigin
-    ):
+    ) -> LoadableTargetOrigin:
         check.inst_param(
             repository_location_origin,
             "repository_location_origin",
@@ -250,7 +282,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
             )
 
         return GrpcServerEndpoint(
-            server_id=active_entry.server_id,
+            server_id=active_entry.server_id,  # type: ignore
             host="localhost",
             port=active_entry.process_or_error.port,
             socket=active_entry.process_or_error.socket,
@@ -259,7 +291,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
     # Clear out processes from the map periodically so that they'll be re-created the next
     # time the origins are requested. Lack of any heartbeats will ensure that the server will
     # eventually die once they're no longer being held by any threads.
-    def _clear_old_processes(self, shutdown_event, reload_interval):
+    def _clear_old_processes(self, shutdown_event: threading.Event, reload_interval: int) -> None:
         while True:
             shutdown_event.wait(5)
             if shutdown_event.is_set():
@@ -267,7 +299,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
 
             current_time = pendulum.now("UTC").timestamp()
             with self._lock:
-                origin_ids_to_clear = []
+                origin_ids_to_clear: List[str] = []
 
                 for origin_id, entry in self._active_entries.items():
                     if (
@@ -279,7 +311,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
                     del self._active_entries[origin_id]
 
                 # Remove any dead processes from the all_processes map
-                dead_process_indexes = []
+                dead_process_indexes: List[int] = []
                 for index in range(len(self._all_processes)):
                     process = self._all_processes[index]
                     if process.server_process.poll() is not None:
@@ -296,7 +328,7 @@ class ProcessGrpcServerRegistry(GrpcServerRegistry):
         for process in self._all_processes:
             process.create_ephemeral_client().cleanup_server()
 
-    def wait_for_processes(self):
+    def wait_for_processes(self) -> None:
         # Wait for any processes created by this registry. Generally not needed outside
         # of tests, since the processes have heartbeats and will end on their own once
         # they finish any outstanding executions.
