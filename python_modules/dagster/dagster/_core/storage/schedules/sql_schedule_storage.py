@@ -10,23 +10,19 @@ import sqlalchemy.exc as db_exc
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.scheduler.instigation import (
-    InstigatorState,
-    InstigatorTick,
-    TickData,
-    TickStatus,
-)
-from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster._core.scheduler.instigation import (InstigatorState,
+                                                 InstigatorTick, TickData,
+                                                 TickStatus)
+from dagster._serdes import (deserialize_json_to_dagster_namedtuple,
+                             serialize_dagster_namedtuple)
 from dagster._utils import utc_datetime_from_timestamp
 
 from .base import ScheduleStorage
-from .migration import (
-    OPTIONAL_SCHEDULE_DATA_MIGRATIONS,
-    REQUIRED_SCHEDULE_DATA_MIGRATIONS,
-    SCHEDULE_JOBS_SELECTOR_ID,
-    SCHEDULE_TICKS_SELECTOR_ID,
-)
-from .schema import InstigatorsTable, JobTable, JobTickTable, SecondaryIndexMigrationTable
+from .migration import (OPTIONAL_SCHEDULE_DATA_MIGRATIONS,
+                        REQUIRED_SCHEDULE_DATA_MIGRATIONS,
+                        SCHEDULE_JOBS_SELECTOR_ID, SCHEDULE_TICKS_SELECTOR_ID)
+from .schema import (InstigatorsTable, JobTable, JobTickTable,
+                     SecondaryIndexMigrationTable)
 
 
 class SqlScheduleStorage(ScheduleStorage):
@@ -298,6 +294,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.opt_float_param(after, "after")
         check.opt_int_param(limit, "limit")
         check.opt_list_param(statuses, "statuses", of_type=TickStatus)
+        print("GETTING TICKS")
 
         base_query = (
             db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
@@ -322,6 +319,8 @@ class SqlScheduleStorage(ScheduleStorage):
         )
 
         rows = self.execute(query)
+
+        print(self.execute(db.select([JobTickTable.c.id, JobTickTable.c.tick_body, JobTickTable.c.selector_id, JobTickTable.c.job_origin_id]).select_from(JobTickTable)))
         return list(
             map(lambda r: InstigatorTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
         )
