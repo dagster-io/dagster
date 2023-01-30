@@ -1,6 +1,5 @@
-from os import environ
-
 from dagster import (
+    StringSource,
     load_assets_from_package_module,
     make_values_resource,
     repository,
@@ -26,10 +25,12 @@ def dagster_with_wandb():
             load_assets_from_package_module(assets),
             resource_defs={
                 "wandb_config": make_values_resource(
-                    entity=str,
-                    project=str,
+                    entity=StringSource,
+                    project=StringSource,
                 ),
-                "wandb_resource": wandb_resource.configured({"api_key": {"env": "WANDB_API_KEY"}}),
+                "wandb_resource": wandb_resource.configured(
+                    {"api_key": {"env": "WANDB_API_KEY"}}
+                ),
                 "io_manager": wandb_artifacts_io_manager.configured(
                     {"cache_duration_in_minutes": 60}
                 ),
@@ -37,8 +38,8 @@ def dagster_with_wandb():
             resource_config_by_key={
                 "wandb_config": {
                     "config": {
-                        "entity": environ["WANDB_ENTITY"],
-                        "project": environ["WANDB_PROJECT"],
+                        "entity": {"env": "WANDB_ENTITY"},
+                        "project": {"env": "WANDB_PROJECT"},
                     }
                 }
             },
