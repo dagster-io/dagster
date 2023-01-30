@@ -42,6 +42,7 @@ from dagster._config.field_utils import (
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ResourceFunction,
+    ResourceFunctionWithContext,
     ResourceFunctionWithoutContext,
     is_context_provided,
 )
@@ -666,8 +667,8 @@ def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourc
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
         context = context.replace_config(obj.config_schema.default_value)
-    if is_context_provided(obj.resource_fn):
-        return obj.resource_fn(context)
+    if is_context_provided(obj.resource_fn):  # type: ignore  # fmt: skip
+        return cast(ResourceFunctionWithContext, obj.resource_fn)(context)
     else:
         return cast(ResourceFunctionWithoutContext, obj.resource_fn)()
 
