@@ -44,6 +44,7 @@ ROOT_ADDRESS_STATIC_RESOURCES = [
     "/favicon-run-success.svg",
     "/asset-manifest.json",
     "/robots.txt",
+    "/Dagster_world.mp4",
 ]
 
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
