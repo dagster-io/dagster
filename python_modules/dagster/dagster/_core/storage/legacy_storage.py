@@ -147,10 +147,6 @@ class CompositeStorage(DagsterStorage, ConfigurableClass):
     def schedule_storage(self) -> ScheduleStorage:
         return self._schedule_storage
 
-    @property
-    def partitions_storage(self) -> Optional[PartitionsStorage]:
-        return None
-
 
 class LegacyRunStorage(RunStorage, ConfigurableClass):
     def __init__(self, storage: DagsterStorage, inst_data: Optional[ConfigurableClassData] = None):

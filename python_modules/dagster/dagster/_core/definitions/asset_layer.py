@@ -642,7 +642,10 @@ class AssetLayer:
                     return set(
                         cast(
                             PartitionsDefinition, context.asset_partitions_def
-                        ).get_partition_keys_in_range(context.asset_partition_key_range)
+                        ).get_partition_keys_in_range(
+                            context.asset_partition_key_range,
+                            instance=context.step_context.instance,
+                        )
                     )
 
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(

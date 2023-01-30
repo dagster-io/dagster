@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 import dagster._check as check
 import sqlalchemy as db

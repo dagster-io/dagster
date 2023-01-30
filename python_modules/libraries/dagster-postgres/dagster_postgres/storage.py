@@ -4,13 +4,11 @@ from dagster import _check as check
 from dagster._core.storage.base_storage import DagsterStorage
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import EventLogStorage
-from dagster._core.storage.partitions.base import PartitionsStorage
 from dagster._core.storage.runs import RunStorage
 from dagster._core.storage.schedules import ScheduleStorage
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .event_log import PostgresEventLogStorage
-from .partitions_storage.partitions_storage import PostgresPartitionsStorage
 from .run_storage import PostgresRunStorage
 from .schedule_storage import PostgresScheduleStorage
 from .utils import pg_url_from_config
@@ -44,7 +42,6 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         self._run_storage = PostgresRunStorage(postgres_url, should_autocreate_tables)
         self._event_log_storage = PostgresEventLogStorage(postgres_url, should_autocreate_tables)
         self._schedule_storage = PostgresScheduleStorage(postgres_url, should_autocreate_tables)
-        self._partitions_storage = PostgresPartitionsStorage(postgres_url, should_autocreate_tables)
         super().__init__()
 
     @property
@@ -74,10 +71,6 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
     @property
     def schedule_storage(self) -> ScheduleStorage:
         return self._schedule_storage
-
-    @property
-    def partitions_storage(self) -> Optional[PartitionsStorage]:
-        return self._partitions_storage
 
     @property
     def event_storage_data(self) -> Optional[ConfigurableClassData]:

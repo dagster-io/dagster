@@ -116,7 +116,6 @@ if TYPE_CHECKING:
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import AssetRecord, EventLogRecord, EventRecordsFilter
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
-    from dagster._core.storage.partitions.base import PartitionsStorage
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.runs.base import RunGroupInfo
@@ -305,7 +304,6 @@ class DagsterInstance:
         settings: Optional[Mapping[str, Any]] = None,
         secrets_loader: Optional["SecretsLoader"] = None,
         ref: Optional[InstanceRef] = None,
-        partitions_storage: Optional["PartitionsStorage"] = None,
     ):
         from dagster._core.launcher import RunLauncher
         from dagster._core.run_coordinator import RunCoordinator
@@ -314,7 +312,6 @@ class DagsterInstance:
         from dagster._core.storage.captured_log_manager import CapturedLogManager
         from dagster._core.storage.compute_log_manager import ComputeLogManager
         from dagster._core.storage.event_log import EventLogStorage
-        from dagster._core.storage.partitions.base import PartitionsStorage
         from dagster._core.storage.root import LocalArtifactStorage
         from dagster._core.storage.runs import RunStorage
         from dagster._core.storage.schedules import ScheduleStorage
@@ -344,12 +341,6 @@ class DagsterInstance:
         )
         if self._schedule_storage:
             self._schedule_storage.register_instance(self)
-
-        self._partitions_storage = check.opt_inst_param(
-            partitions_storage, "partitions_storage", PartitionsStorage
-        )
-        if self._partitions_storage:
-            self._partitions_storage.register_instance(self)
 
         self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
         self._run_coordinator.register_instance(self)
@@ -447,7 +438,7 @@ class DagsterInstance:
                 " file which can configure storing metadata in an external database.\nYou can"
                 " resolve this error by exporting the environment variable. For example, you can"
                 " run the following command in your shell or include it in your shell configuration"
-                ' file:\n\texport DAGSTER_HOME=~"/dagster_home"\nor PowerShell\n$env:DAGSTER_HOME'
+                " file:\n\texport DAGSTER_HOME=~\"/dagster_home\"\nor PowerShell\n$env:DAGSTER_HOME"
                 " = ($home + '\\dagster_home')or batchset"
                 " DAGSTER_HOME=%UserProfile%/dagster_homeAlternatively, DagsterInstance.ephemeral()"
                 " can be used for a transient instance.\n"
@@ -459,7 +450,7 @@ class DagsterInstance:
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" must be an absolute path. Dagster requires this '
-                    "environment variable to be set to an existing directory in your filesystem."
+                    'environment variable to be set to an existing directory in your filesystem.'
                 ).format(dagster_home_path)
             )
 
@@ -467,7 +458,7 @@ class DagsterInstance:
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this'
-                    " environment variable to be set to an existing directory in your filesystem"
+                    ' environment variable to be set to an existing directory in your filesystem'
                 ).format(dagster_home_path)
             )
 
@@ -507,7 +498,6 @@ class DagsterInstance:
         schedule_storage = (
             unified_storage.schedule_storage if unified_storage else instance_ref.schedule_storage
         )
-        partitions_storage = unified_storage.partitions_storage if unified_storage else None
 
         return klass(
             instance_type=InstanceType.PERSISTENT,
@@ -522,7 +512,6 @@ class DagsterInstance:
             settings=instance_ref.settings,
             secrets_loader=instance_ref.secrets_loader,
             ref=instance_ref,
-            partitions_storage=partitions_storage,
             **kwargs,
         )
 
@@ -638,12 +627,6 @@ class DagsterInstance:
     @property
     def event_log_storage(self) -> "EventLogStorage":
         return self._event_storage
-
-    # partition storage
-
-    @property
-    def partitions_storage(self) -> Optional["PartitionsStorage"]:
-        return self._partitions_storage
 
     # schedule storage
 
@@ -806,12 +789,6 @@ class DagsterInstance:
             self._schedule_storage.upgrade()
             self._schedule_storage.migrate(print_fn)
 
-            if self._partitions_storage:
-                if print_fn:
-                    print_fn("Updating partitions storage...")
-                self._partitions_storage.upgrade()
-                self._partitions_storage.migrate(print_fn)
-
     def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
         if self._schedule_storage:
             self._schedule_storage.optimize_for_dagit(
@@ -823,10 +800,6 @@ class DagsterInstance:
         self._event_storage.optimize_for_dagit(
             statement_timeout=statement_timeout, pool_recycle=pool_recycle
         )
-        if self._partitions_storage:
-            self._partitions_storage.optimize_for_dagit(
-                statement_timeout=statement_timeout, pool_recycle=pool_recycle
-            )
 
     def reindex(self, print_fn=lambda _: None):
         print_fn("Checking for reindexing...")
@@ -1123,8 +1096,8 @@ class DagsterInstance:
             execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id,
             (
                 "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
-                '"{ep_pipeline_snapshot_id}" and snapshot_id created in memory is '
-                '"{pipeline_snapshot_id}"'
+                "\"{ep_pipeline_snapshot_id}\" and snapshot_id created in memory is "
+                "\"{pipeline_snapshot_id}\""
             ).format(
                 ep_pipeline_snapshot_id=execution_plan_snapshot.pipeline_snapshot_id,
                 pipeline_snapshot_id=pipeline_snapshot_id,

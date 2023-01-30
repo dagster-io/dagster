@@ -380,7 +380,7 @@ class InputContext:
                 "Tried to access asset_partition_key_range, but the asset is not partitioned.",
             )
 
-        partition_key_ranges = subset.get_partition_key_ranges()
+        partition_key_ranges = subset.get_partition_key_ranges(instance=self.instance)
         if len(partition_key_ranges) != 1:
             check.failed(
                 (
@@ -623,7 +623,7 @@ def build_input_context(
     )
     if asset_partitions_def and asset_partition_key_range:
         asset_partitions_subset = asset_partitions_def.empty_subset().with_partition_key_range(
-            asset_partition_key_range
+            asset_partition_key_range, instance=instance
         )
     elif asset_partition_key_range:
         asset_partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(asset_partition_key_range)
@@ -668,7 +668,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
             raise NotImplementedError()
 
     def get_partition_key_ranges(
-        self, current_time: Optional[datetime] = None
+        self, current_time: Optional[datetime] = None, instance: Optional[DagsterInstance] = None
     ) -> Sequence[PartitionKeyRange]:
         return [self._key_range]
 
@@ -676,7 +676,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     def with_partition_key_range(
-        self, partition_key_range: PartitionKeyRange
+        self, partition_key_range: PartitionKeyRange, instance: Optional[DagsterInstance] = None
     ) -> "PartitionsSubset":
         raise NotImplementedError()
 

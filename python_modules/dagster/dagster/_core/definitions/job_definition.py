@@ -53,6 +53,7 @@ from dagster._core.selector.subset_selector import (
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.utils import str_format_set
 from dagster._utils.merger import merge_dicts
+from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
 
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
@@ -387,7 +388,7 @@ class JobDefinition(PipelineDefinition):
                     " partitioned config"
                 )
 
-            partition = partition_set.get_partition(partition_key)
+            partition = partition_set.get_partition(partition_key, instance)
             run_config = (
                 run_config if run_config else partition_set.run_config_for_partition(partition)
             )
@@ -584,6 +585,7 @@ class JobDefinition(PipelineDefinition):
         tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
+        instance: Optional["DagsterInstance"] = None,
     ) -> RunRequest:
         """
         Creates a RunRequest object for a run that processes the given partition.
@@ -607,7 +609,14 @@ class JobDefinition(PipelineDefinition):
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        partition = partition_set.get_partition(partition_key)
+        if isinstance(partition_set.partitions_def, MutablePartitionsDefinition):
+            if not instance:
+                check.failed(
+                    "Must provide a dagster instance when calling run_request_for_partition on a "
+                    "mutable partition set"
+                )
+
+        partition = partition_set.get_partition(partition_key, instance)
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags

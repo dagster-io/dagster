@@ -18,7 +18,7 @@ from typing import (
 )
 
 import pendulum
-
+from dagster._core.instance import DagsterInstance
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
@@ -198,7 +198,9 @@ class TimeWindowPartitionsDefinition(
         return partition_keys
 
     def get_partitions(
-        self, current_time: Optional[datetime] = None
+        self,
+        current_time: Optional[datetime] = None,
+        instance: Optional[DagsterInstance] = None,
     ) -> Sequence[Partition[TimeWindow]]:
         current_timestamp = self.get_current_timestamp(current_time=current_time)
 
@@ -395,7 +397,9 @@ class TimeWindowPartitionsDefinition(
 
         return first_window.start.strftime(self.fmt)
 
-    def get_last_partition_key(self, current_time: Optional[datetime] = None) -> Optional[str]:
+    def get_last_partition_key(
+        self, current_time: Optional[datetime] = None, instance: Optional[DagsterInstance] = None
+    ) -> Optional[str]:
         last_window = self.get_last_partition_window(current_time)
         if last_window is None:
             return None
@@ -429,7 +433,9 @@ class TimeWindowPartitionsDefinition(
 
         return PartitionKeyRange(start_partition_key, end_partition_key)
 
-    def get_partition_keys_in_range(self, partition_key_range: PartitionKeyRange) -> Sequence[str]:
+    def get_partition_keys_in_range(
+        self, partition_key_range: PartitionKeyRange, instance: Optional[DagsterInstance] = None
+    ) -> Sequence[str]:
         start_time = self.start_time_for_partition_key(partition_key_range.start)
         end_time = self.end_time_for_partition_key(partition_key_range.end)
 
@@ -1237,7 +1243,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return time_windows
 
     def get_partition_keys_not_in_subset(
-        self, current_time: Optional[datetime] = None
+        self, current_time: Optional[datetime] = None, instance: Optional[DagsterInstance] = None
     ) -> Iterable[str]:
         partition_keys: List[str] = []
         for tw in self._get_partition_time_windows_not_in_subset(current_time):
@@ -1254,7 +1260,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return list(self._included_partition_keys) if self._included_partition_keys else []
 
     def get_partition_key_ranges(
-        self, current_time: Optional[datetime] = None
+        self, current_time: Optional[datetime] = None, instance: Optional[DagsterInstance] = None
     ) -> Sequence[PartitionKeyRange]:
         return [
             self._partitions_def.get_partition_key_range_for_time_window(window)
@@ -1331,13 +1337,6 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             self._partitions_def,
             num_partitions=self._num_partitions + added_partitions,
             included_time_windows=result_windows,
-        )
-
-    def with_partition_key_range(
-        self, partition_key_range: PartitionKeyRange
-    ) -> "PartitionsSubset":
-        return self.with_partition_keys(
-            self._partitions_def.get_partition_keys_in_range(partition_key_range)
         )
 
     @classmethod
