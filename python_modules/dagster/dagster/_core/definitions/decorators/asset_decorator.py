@@ -10,6 +10,7 @@ from typing import (
     Tuple,
     Union,
     cast,
+    overload,
 )
 
 import dagster._check as check
@@ -41,7 +42,42 @@ from ..resource_definition import ResourceDefinition
 from ..utils import DEFAULT_IO_MANAGER_KEY, NoValueSentinel
 
 
+@overload
 def asset(
+    compute_fn: Callable,
+) -> AssetsDefinition:
+    ...
+
+
+@overload
+def asset(
+    *,
+    name: Optional[str] = ...,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    ins: Optional[Mapping[str, AssetIn]] = ...,
+    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
+    metadata: Optional[Mapping[str, Any]] = ...,
+    description: Optional[str] = ...,
+    config_schema: Optional[UserConfigSchema] = None,
+    required_resource_keys: Optional[Set[str]] = ...,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
+    io_manager_def: Optional[IOManagerDefinition] = ...,
+    io_manager_key: Optional[str] = ...,
+    compute_kind: Optional[str] = ...,
+    dagster_type: Optional[DagsterType] = ...,
+    partitions_def: Optional[PartitionsDefinition[Any]] = ...,
+    op_tags: Optional[Mapping[str, Any]] = ...,
+    group_name: Optional[str] = ...,
+    output_required: bool = ...,
+    freshness_policy: Optional[FreshnessPolicy] = ...,
+    retry_policy: Optional[RetryPolicy] = ...,
+    code_version: Optional[str] = ...,
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    ...
+
+
+def asset(
+    compute_fn: Optional[Callable] = None,
     *,
     name: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -134,20 +170,7 @@ def asset(
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
     """
-    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        check.invariant(
-            not (io_manager_key and io_manager_def),
-            (
-                "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please"
-                " provide one or the other. "
-            ),
-        )
-        if resource_defs is not None:
-            experimental_arg_warning("resource_defs", "asset")
-
-        if io_manager_def is not None:
-            experimental_arg_warning("io_manager_def", "asset")
-
+    def create_asset():
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
@@ -168,7 +191,26 @@ def asset(
             freshness_policy=freshness_policy,
             retry_policy=retry_policy,
             code_version=code_version,
-        )(fn)
+        )
+
+    if compute_fn is not None:
+        return create_asset()(compute_fn)
+
+    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
+        check.invariant(
+            not (io_manager_key and io_manager_def),
+            (
+                "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please"
+                " provide one or the other. "
+            ),
+        )
+        if resource_defs is not None:
+            experimental_arg_warning("resource_defs", "asset")
+
+        if io_manager_def is not None:
+            experimental_arg_warning("io_manager_def", "asset")
+
+        return create_asset()(fn)
 
     return inner
 
