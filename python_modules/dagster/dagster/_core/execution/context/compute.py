@@ -438,7 +438,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
         """Returns a list of the partition keys for the given output."""
         return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
-            self._step_execution_context.asset_partition_key_range_for_output(output_name)
+            self._step_execution_context.asset_partition_key_range_for_output(output_name),
+            instance=self.instance,
         )
 
     @public
@@ -447,7 +448,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         given input.
         """
         return self.asset_partitions_def_for_input(input_name).get_partition_keys_in_range(
-            self._step_execution_context.asset_partition_key_range_for_input(input_name)
+            self._step_execution_context.asset_partition_key_range_for_input(input_name),
+            instance=self.instance,
         )
 
     @public

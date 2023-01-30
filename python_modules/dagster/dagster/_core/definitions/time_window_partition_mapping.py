@@ -11,6 +11,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.instance import DagsterInstance
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
 
@@ -97,6 +98,7 @@ class TimeWindowPartitionMapping(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
         upstream_partitions_def: PartitionsDefinition,
+        instance: Optional[DagsterInstance] = None,
     ) -> PartitionsSubset:
         if not isinstance(downstream_partitions_subset, TimeWindowPartitionsSubset):
             check.failed("downstream_partitions_subset must be a TimeWindowPartitionsSubset")
@@ -121,6 +123,7 @@ class TimeWindowPartitionMapping(
         self,
         upstream_partitions_subset: PartitionsSubset,
         downstream_partitions_def: Optional[PartitionsDefinition],
+        instance: Optional[DagsterInstance] = None,
     ) -> PartitionsSubset:
         if not isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition):
             check.failed("downstream_partitions_def must be a TimeWindowPartitionsDefinitions")

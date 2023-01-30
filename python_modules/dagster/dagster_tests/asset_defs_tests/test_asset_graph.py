@@ -28,6 +28,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
 from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._core.test_utils import instance_for_test
 
 
 def to_external_asset_graph(assets) -> AssetGraph:
@@ -90,14 +91,15 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child():
     def child(parent):
         ...
 
-    internal_asset_graph = AssetGraph.from_assets([parent, child])
-    external_asset_graph = to_external_asset_graph([parent, child])
-    assert internal_asset_graph.get_children_partitions(parent.key) == set(
-        [AssetKeyPartitionKey(child.key, "a"), AssetKeyPartitionKey(child.key, "b")]
-    )
-    assert external_asset_graph.get_children_partitions(parent.key) == set(
-        [AssetKeyPartitionKey(child.key, "a"), AssetKeyPartitionKey(child.key, "b")]
-    )
+    with instance_for_test() as instance:
+        internal_asset_graph = AssetGraph.from_assets([parent, child])
+        external_asset_graph = to_external_asset_graph([parent, child])
+        assert internal_asset_graph.get_children_partitions(instance, parent.key) == set(
+            [AssetKeyPartitionKey(child.key, "a"), AssetKeyPartitionKey(child.key, "b")]
+        )
+        assert external_asset_graph.get_children_partitions(instance, parent.key) == set(
+            [AssetKeyPartitionKey(child.key, "a"), AssetKeyPartitionKey(child.key, "b")]
+        )
 
 
 def test_get_parent_partitions_unpartitioned_child_partitioned_parent():

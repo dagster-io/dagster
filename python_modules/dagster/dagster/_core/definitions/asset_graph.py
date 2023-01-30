@@ -19,6 +19,7 @@ from typing import (
 import toposort
 
 import dagster._check as check
+from dagster._core.instance import DagsterInstance
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
 from dagster._utils.cached_method import cached_method
@@ -157,7 +158,10 @@ class AssetGraph:
         return self._asset_dep_graph["upstream"][asset_key]
 
     def get_children_partitions(
-        self, asset_key: AssetKey, partition_key: Optional[str] = None
+        self,
+        instance: DagsterInstance,
+        asset_key: AssetKey,
+        partition_key: Optional[str] = None,
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """
         Returns every partition in every of the given asset's children that depends on the given
@@ -167,7 +171,7 @@ class AssetGraph:
         for child_asset_key in self.get_children(asset_key):
             if self.is_partitioned(child_asset_key):
                 for child_partition_key in self.get_child_partition_keys_of_parent(
-                    partition_key, asset_key, child_asset_key
+                    instance, partition_key, asset_key, child_asset_key
                 ):
                     result.add(AssetKeyPartitionKey(child_asset_key, child_partition_key))
             else:
@@ -176,6 +180,7 @@ class AssetGraph:
 
     def get_child_partition_keys_of_parent(
         self,
+        instance: DagsterInstance,
         parent_partition_key: Optional[str],
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
@@ -202,7 +207,7 @@ class AssetGraph:
                 f"Asset key {child_asset_key} is not partitioned. Cannot get partition keys."
             )
         if parent_partition_key is None:
-            return child_partitions_def.get_partition_keys()
+            return child_partitions_def.get_partition_keys(instance=instance)
 
         if parent_partitions_def is None:
             raise DagsterInvalidInvocationError(
@@ -213,12 +218,16 @@ class AssetGraph:
         child_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
             parent_partitions_def.empty_subset().with_partition_keys([parent_partition_key]),
             downstream_partitions_def=child_partitions_def,
+            instance=instance,
         )
 
         return list(child_partitions_subset.get_partition_keys())
 
     def get_parents_partitions(
-        self, asset_key: AssetKey, partition_key: Optional[str] = None
+        self,
+        instance: DagsterInstance,
+        asset_key: AssetKey,
+        partition_key: Optional[str] = None,
     ) -> AbstractSet[AssetKeyPartitionKey]:
         """
         Returns every partition in every of the given asset's parents that the given partition of
@@ -228,7 +237,7 @@ class AssetGraph:
         for parent_asset_key in self.get_parents(asset_key):
             if self.is_partitioned(parent_asset_key):
                 for parent_partition_key in self.get_parent_partition_keys_for_child(
-                    partition_key, parent_asset_key, asset_key
+                    partition_key, parent_asset_key, asset_key, instance=instance
                 ):
                     result.add(AssetKeyPartitionKey(parent_asset_key, parent_partition_key))
             else:
@@ -236,7 +245,11 @@ class AssetGraph:
         return result
 
     def get_parent_partition_keys_for_child(
-        self, partition_key: Optional[str], parent_asset_key: AssetKey, child_asset_key: AssetKey
+        self,
+        partition_key: Optional[str],
+        parent_asset_key: AssetKey,
+        child_asset_key: AssetKey,
+        instance: Optional[DagsterInstance] = None,
     ) -> Sequence[str]:
         """
         Converts a partition key from one asset to the corresponding partition keys in one of its
@@ -271,6 +284,7 @@ class AssetGraph:
             if partition_key
             else None,
             upstream_partitions_def=parent_partitions_def,
+            instance=instance,
         )
         return list(parent_partition_key_subset.get_partition_keys())
 
@@ -337,6 +351,7 @@ class AssetGraph:
 
     def bfs_filter_asset_partitions(
         self,
+        instance: DagsterInstance,
         condition_fn: Callable[
             [Iterable[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]], bool
         ],
@@ -367,7 +382,7 @@ class AssetGraph:
 
                 for candidate in candidates_unit:
                     for child in self.get_children_partitions(
-                        candidate.asset_key, candidate.partition_key
+                        instance, candidate.asset_key, candidate.partition_key
                     ):
                         if child not in all_nodes:
                             queue.enqueue(child)

@@ -12,6 +12,7 @@ from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
 )
+from dagster._core.instance import DagsterInstance
 
 from .partition import (
     DefaultPartitionsSubset,
@@ -108,6 +109,9 @@ class PartitionDimensionDefinition(
         )
 
 
+ALLOWED_PARTITION_DIMENSION_TYPES = (StaticPartitionsDefinition, TimeWindowPartitionsDefinition)
+
+
 @experimental
 class MultiPartitionsDefinition(PartitionsDefinition):
     """
@@ -149,6 +153,13 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         )
 
         for dim_name, partitions_def in partitions_defs.items():
+            if not any(isinstance(partitions_def, t) for t in ALLOWED_PARTITION_DIMENSION_TYPES):
+                raise DagsterInvalidDefinitionError(
+                    f"Invalid partitions definition for dimension {dim_name}. "
+                    "A multi-partitions definition can only contain partitions definitions of types"
+                    f" {ALLOWED_PARTITION_DIMENSION_TYPES}."
+                )
+
             if isinstance(partitions_def, StaticPartitionsDefinition):
                 if any(
                     [
@@ -178,9 +189,13 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def partitions_defs(self) -> Sequence[PartitionDimensionDefinition]:
         return self._partitions_defs
 
-    def get_partitions(self, current_time: Optional[datetime] = None) -> Sequence[Partition]:
+    def get_partitions(
+        self, current_time: Optional[datetime] = None, instance: Optional[DagsterInstance] = None
+    ) -> Sequence[Partition]:
         partition_sequences = [
-            partition_dim.partitions_def.get_partitions(current_time=current_time)
+            partition_dim.partitions_def.get_partitions(
+                current_time=current_time, instance=instance
+            )
             for partition_dim in self._partitions_defs
         ]
 

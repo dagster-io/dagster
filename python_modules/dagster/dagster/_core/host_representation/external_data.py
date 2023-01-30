@@ -33,6 +33,7 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
 from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
@@ -652,6 +653,15 @@ class ExternalMultiPartitionsDefinitionData(
 
 
 @whitelist_for_serdes
+class ExternalMutablePartitionsDefinitionData(
+    ExternalPartitionsDefinitionData,
+    NamedTuple("_ExternalMutablePartitionsDefinitionData", [("name", str)]),
+):
+    def get_partitions_definition(self):
+        return MutablePartitionsDefinition(self.name)
+
+
+@whitelist_for_serdes
 class ExternalPartitionSetData(
     NamedTuple(
         "_ExternalPartitionSetData",
@@ -1221,6 +1231,8 @@ def external_partitions_definition_from_def(
         return external_static_partitions_definition_from_def(partitions_def)
     elif isinstance(partitions_def, MultiPartitionsDefinition):
         return external_multi_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, MutablePartitionsDefinition):
+        return external_mutable_partitions_definition_from_def(partitions_def)
     else:
         raise DagsterInvalidDefinitionError(
             "Only static, time window, and multi-dimensional partitions are currently supported."
@@ -1275,6 +1287,13 @@ def external_multi_partitions_definition_from_def(
             for dimension in partitions_def.partitions_defs
         ]
     )
+
+
+def external_mutable_partitions_definition_from_def(
+    partitions_def: MutablePartitionsDefinition,
+) -> ExternalMutablePartitionsDefinitionData:
+    check.inst_param(partitions_def, "partitions_def", MutablePartitionsDefinition)
+    return ExternalMutablePartitionsDefinitionData(name=partitions_def.name)
 
 
 def external_partition_set_data_from_def(

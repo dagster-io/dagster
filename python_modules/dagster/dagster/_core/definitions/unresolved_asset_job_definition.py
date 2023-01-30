@@ -9,6 +9,7 @@ from dagster._core.selector.subset_selector import parse_clause
 
 from .asset_layer import build_asset_selection_job
 from .config import ConfigMapping
+from dagster._core.instance import DagsterInstance
 
 if TYPE_CHECKING:
     from dagster._core.definitions import (
@@ -102,6 +103,7 @@ class UnresolvedAssetJobDefinition(
         tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
+        instance: Optional[DagsterInstance] = None,
     ) -> RunRequest:
         """
         Creates a RunRequest object for a run that processes the given partition.
@@ -121,11 +123,22 @@ class UnresolvedAssetJobDefinition(
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
+        from dagster._core.definitions.mutable_partitions_definition import (
+            MutablePartitionsDefinition,
+        )
+
         partition_set = self.get_partition_set_def()
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        partition = partition_set.get_partition(partition_key)
+        if isinstance(partition_set.partitions_def, MutablePartitionsDefinition):
+            if not instance:
+                check.failed(
+                    "Must provide a dagster instance when calling run_request_for_partition on a "
+                    "mutable partition set"
+                )
+
+        partition = partition_set.get_partition(partition_key, instance)
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags

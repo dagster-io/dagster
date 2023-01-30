@@ -457,7 +457,8 @@ class OutputContext:
             )
 
         return self.asset_partitions_def.get_partition_keys_in_range(
-            self.step_context.asset_partition_key_range_for_output(self.name)
+            self.step_context.asset_partition_key_range_for_output(self.name),
+            instance=self.step_context.instance,
         )
 
     @public  # type: ignore

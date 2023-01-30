@@ -31,6 +31,7 @@ from dagster import (
     multi_asset,
     repository,
 )
+from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
 from dagster._core.definitions.asset_reconciliation_sensor import (
     AssetReconciliationCursor,
     reconcile,
@@ -517,6 +518,16 @@ one_asset_self_dependency_hourly = [
         partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"),
         deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
     )
+]
+
+unpartitioned_after_mutable_asset = [
+    asset_def("asset1"),
+    asset_def("asset2", ["asset1"], partitions_def=MutablePartitionsDefinition("foo")),
+]
+
+two_mutable_assets = [
+    asset_def("asset1", partitions_def=MutablePartitionsDefinition("foo")),
+    asset_def("asset2", ["asset1"], partitions_def=MutablePartitionsDefinition("foo")),
 ]
 
 scenarios = {

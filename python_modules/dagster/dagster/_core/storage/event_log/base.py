@@ -361,6 +361,26 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         pass
 
+    @abstractmethod
+    def get_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        """Get the list of partition keys for a partition definition."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def has_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        """Check if a partition exists."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def add_partitions(self, partitions_def_name: str, partition_keys: Sequence[str]) -> None:
+        """Add a partition for the specified partition definition."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_partition(self, partitions_def_name: str, partition_key: str) -> None:
+        """Delete a partition for the specified partition definition."""
+        raise NotImplementedError()
+
     def alembic_version(self):
         return None
 

@@ -63,7 +63,7 @@ class AssetReconciliationCursor(NamedTuple):
         return asset_key in self.materialized_or_requested_root_asset_keys
 
     def get_never_requested_never_materialized_partitions(
-        self, asset_key: AssetKey, asset_graph
+        self, asset_key: AssetKey, asset_graph, instance: "DagsterInstance"
     ) -> Iterable[str]:
         partitions_def = asset_graph.get_partitions_def(asset_key)
 
@@ -86,7 +86,9 @@ class AssetReconciliationCursor(NamedTuple):
                 if partition_key not in materialized_or_requested_subset
             ]
         else:
-            return materialized_or_requested_subset.get_partition_keys_not_in_subset()
+            return materialized_or_requested_subset.get_partition_keys_not_in_subset(
+                instance=instance
+            )
 
     def with_updates(
         self,
@@ -231,7 +233,11 @@ def find_parent_materialized_asset_partitions(
         if latest_record is None:
             continue
 
-        for child in asset_graph.get_children_partitions(asset_key, latest_record.partition_key):
+        for child in asset_graph.get_children_partitions(
+            instance_queryer.instance,
+            asset_key,
+            latest_record.partition_key,
+        ):
             if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
                 latest_record.run_id, child
             ):
@@ -246,7 +252,11 @@ def find_parent_materialized_asset_partitions(
             for partition_key in instance_queryer.get_materialized_partitions(
                 asset_key, after_cursor=latest_storage_id
             ):
-                for child in asset_graph.get_children_partitions(asset_key, partition_key):
+                for child in asset_graph.get_children_partitions(
+                    instance_queryer.instance,
+                    asset_key,
+                    partition_key,
+                ):
                     result_asset_partitions.add(child)
 
     return (result_asset_partitions, result_latest_storage_id)
@@ -277,7 +287,7 @@ def find_never_materialized_or_requested_root_asset_partitions(
     for asset_key in (target_asset_selection & AssetSelection.all().sources()).resolve(asset_graph):
         if asset_graph.is_partitioned(asset_key):
             for partition_key in cursor.get_never_requested_never_materialized_partitions(
-                asset_key, asset_graph
+                asset_key, asset_graph, instance_queryer.instance
             ):
                 asset_partition = AssetKeyPartitionKey(asset_key, partition_key)
                 if instance_queryer.get_latest_materialization_record(asset_partition, None):
@@ -403,7 +413,9 @@ def determine_asset_partitions_to_reconcile(
                 or (instance_queryer.is_reconciled(asset_partition=parent, asset_graph=asset_graph))
             )
             for parent in asset_graph.get_parents_partitions(
-                candidate.asset_key, candidate.partition_key
+                instance_queryer.instance,
+                candidate.asset_key,
+                candidate.partition_key,
             )
         )
 
@@ -429,6 +441,7 @@ def determine_asset_partitions_to_reconcile(
         )
 
     to_reconcile = asset_graph.bfs_filter_asset_partitions(
+        instance_queryer.instance,
         should_reconcile,
         set(itertools.chain(never_materialized_or_requested_roots, stale_candidates)),
     )

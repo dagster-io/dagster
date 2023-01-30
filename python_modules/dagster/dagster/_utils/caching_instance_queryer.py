@@ -327,7 +327,7 @@ class CachingInstanceQueryer:
             return False
 
         for parent in asset_graph.get_parents_partitions(
-            asset_partition.asset_key, asset_partition.partition_key
+            asset_partition.asset_key, asset_partition.partition_key, instance=self.instance
         ):
             if (
                 self.get_latest_materialization_record(
