@@ -1094,9 +1094,19 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         self._included_time_windows = check.opt_nullable_sequence_param(
             included_time_windows, "included_time_windows", of_type=TimeWindow
         )
-        self._included_partition_keys = check.opt_nullable_set_param(
+
+        pkeys = check.opt_nullable_set_param(
             included_partition_keys, "included_partition_keys", of_type=str
         )
+        self._included_partition_keys = (
+            sorted(
+                list(pkeys),
+                key=lambda pkey: self._partitions_def.start_time_for_partition_key(pkey),
+            )
+            if pkeys is not None
+            else None
+        )
+        print(self._included_partition_keys)
 
     @property
     def included_time_windows(self) -> Sequence[TimeWindow]:
@@ -1168,7 +1178,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                 for time_window in self.included_time_windows
                 for pk in self._partitions_def.get_partition_keys_in_time_window(time_window)
             ]
-        return list(self._included_partition_keys)
+        return self._included_partition_keys
 
     def get_partition_key_ranges(
         self, current_time: Optional[datetime] = None
@@ -1318,8 +1328,15 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return (
             isinstance(other, TimeWindowPartitionsSubset)
             and self._partitions_def == other._partitions_def
-            and self._included_time_windows == other._included_time_windows
-            and self._included_partition_keys == other._included_partition_keys
+            and (
+                # faster comparison, but will not catch all cases
+                (
+                    self._included_time_windows == other._included_time_windows
+                    and self._included_partition_keys == other._included_partition_keys
+                )
+                # slower comparison, catches all cases
+                or self.included_time_windows == other.included_time_windows
+            )
         )
 
     def __len__(self) -> int:
