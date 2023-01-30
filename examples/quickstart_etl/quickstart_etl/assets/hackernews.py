@@ -5,7 +5,7 @@ from typing import List
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from dagster import MetadataValue, OpExecutionContext, asset
+from dagster import MetadataValue, OpExecutionContext, Output, asset
 from wordcloud import STOPWORDS, WordCloud
 
 
@@ -82,6 +82,6 @@ def hackernews_topstories_word_cloud(
 
     # Attach the Markdown content as metadata to the asset
     # Read about more metadata types in https://docs.dagster.io/_apidocs/ops#metadata-types
-    context.add_output_metadata({"plot": MetadataValue.md(md_content)})
-
-    return image_data
+    return Output(value=image_data, metadata={
+        "plot": MetadataValue.md(md_content)
+    })

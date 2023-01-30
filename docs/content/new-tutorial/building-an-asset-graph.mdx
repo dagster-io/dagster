@@ -1,0 +1,221 @@
+---
+title: Building an asset graph | Dagster Docs"
+description: "Learn and build an asset graph that connects assets and their dependencies, and add metadata."
+noindex: True
+---
+
+# Building an asset graph
+
+In the previous portion of the tutorial, you wrote your first Software-defined asset (SDA), looked at the Dagster UI, and materialized your asset manually.
+
+Continuing from there, you will now add more assets to your Dagster project, connect them to finish migrating the pipeline, and give users more knowledge about the assets by adding metadata.
+
+--- 
+
+## Adding the data frame asset
+
+You'll now write your next asset. The first step is the same as the previous asset. Copy and paste the next chunk of code into a new function and add the `@asset` decorator to the function.
+
+```python
+import pandas as pd
+
+# Note: This code will *not* run.
+@asset
+def hackernews_topstories():
+    results = []
+    for item_id in top_100_newstories:
+        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
+        results.append(item)
+
+        if len(results) % 20 == 0:
+            print(f"Got {len(results)} items so far.")
+
+    df = pd.DataFrame(results)
+
+    return df
+```
+
+You'll notice that the code is not syntactically correct because `top_100_newstories` is not a variable that the function can use. This is because the new `hackernews_topstories` SDA does not know that it is dependent on the `top_100_newstories` asset.
+
+Fixing that is easy! To add the asset to the function scope and have Dagster know that the `hackernews_topstories` depends on the `top_100_newstories` asset, add the name of the asset (`top_100_newstories`) as a parameter to the function definition of `hackernews_topstories`.
+
+```python
+import pandas as pd
+
+@asset
+def hackernews_topstories(top_100_newstories):
+    results = []
+    for item_id in top_100_newstories:
+        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
+        results.append(item)
+
+        if len(results) % 20 == 0:
+            print(f"Got {len(results)} items so far.")
+
+    df = pd.DataFrame(results)
+
+    return df
+```
+
+The code should now be free of syntax errors, and you can access the `top_100_newstories` asset. If you head over to the Dagster UI, you'll see that an asset graph is built for you. The asset graph is a visual representation of the assets and their dependencies.
+
+<Note>
+If this syntax is too magical for you, you can explicitly define an asset's dependencies a parameter called "inputs" in the @asset decorator. The explicit dependency syntax is also helpful when referencing assets from other asset groups. TODO: Add link to this.
+</Note>
+
+
+### Context and logging
+
+When defining an asset, you can optionally create a `context` parameter for the function. The `context` argument contains information about the asset, such as the asset's name, the run ID, and the logger.
+
+Using the `context` argument gives you access to features. With the `context.log` object, you can print text that will appear with the job's run in the Dagster UI. With this, you can log the progress of your asset like below.
+
+```python
+import pandas as pd
+
+@asset
+def hackernews_topstories(context, top_100_newstories):
+    results = []
+    for item_id in top_100_newstories:
+        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
+        results.append(item)
+
+        if len(results) % 20 == 0:
+            context.log.info(f"Got {len(results)} items so far.")
+
+    df = pd.DataFrame(results)
+
+    return df
+```
+
+For more information about loggers, such as the different types of logging, you can read the [logging documentation](/concepts/logging/loggers).
+
+---
+
+## Creating and exporting the visualization asset
+
+The last asset you'll add is the visualization asset. This asset will take the dataframe asset and create a visualization of the data. You can copy most of the last chunk of code from the original pipeline. Once again, we'll also add the relevant imports.
+
+```python
+import matplotlib.pyplot as plt
+import base64
+from io import BytesIO
+from wordcloud import STOPWORDS, WordCloud
+from dagster import asset
+
+@asset
+def hackernews_topstories_word_cloud(context, hackernews_topstories):
+    stopwords = set(STOPWORDS)
+    stopwords.update(["Ask", "Show", "HN"])
+    titles_text = " ".join([str(item) for item in hackernews_topstories["title"]])
+    titles_cloud = WordCloud(stopwords=stopwords, background_color="white").generate(titles_text)
+
+    # Generate the word cloud image
+    plt.figure(figsize=(8, 8), facecolor=None)
+    plt.imshow(titles_cloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+
+    # Save the image to a buffer
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    image_data = base64.b64encode(buffer.getvalue())
+
+    return image_data
+```
+
+Right now, materializing the asset will save the file to local storage. In a real-world scenario, you would save the file to a cloud storage bucket. In a later section, you'll learn how to tell Dagster where to store the data by using IO managers.
+
+### Metadata and previews
+
+As mentioned, the asset is materialized in storage. You can add metadata to help users explore the asset and understand it. For example, you can add a preview of the asset to the metadata.
+
+By modifying your code to match the snippet below, you will add metadata to your asset.
+
+```python
+from dagster import MetadataValue, Output, asset
+
+@asset
+def hackernews_topstories_word_cloud(context, hackernews_topstories):
+    stopwords = set(STOPWORDS)
+    stopwords.update(["Ask", "Show", "HN"])
+    titles_text = " ".join([str(item) for item in hackernews_topstories["title"]])
+    titles_cloud = WordCloud(stopwords=stopwords, background_color="white").generate(titles_text)
+
+    # Generate the word cloud image
+    plt.figure(figsize=(8, 8), facecolor=None)
+    plt.imshow(titles_cloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+
+    # Save the image to a buffer and embed the image into Markdown content for quick view
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    image_data = base64.b64encode(buffer.getvalue())
+
+    md_content = f"![img](data:image/png;base64,{image_data.decode()})"
+
+    # Attach the Markdown content as metadata to the asset
+    return Output(value=image_data, metadata={
+        "plot": MetadataValue.md(md_content)
+    })
+```
+
+For more information about metadata, you can read the [metadata documentation](/concepts/metadata).
+
+--- 
+
+## Adding more metadata
+
+You just used asset metadata to add a preview of the visualization asset. Software-defined assets can be enriched with different types of metadata. Dagster has some specific types of metadata that can be set. However, as you've seen, you can freely add any value as metadata to an SDA.
+
+A couple of Dagster's specific metadata are defining the asset group that an SDA belongs to or the type of computation it is. In the snippet below, the `hackernews_topstory_ids` asset that you wrote earlier has these metadata defined.
+
+```python
+@asset(group_name="hackernews", compute_kind="HackerNews API")
+def hackernews_topstory_ids():
+    newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
+    top_100_newstories = requests.get(newstories_url).json()
+    return top_100_newstories[:100]
+```
+
+For the freeform metadata, some common ways to use metadata are by adding row counts, data profiling, or a preview of the data. The following code adds a row count and a preview of the Hacker News story titles.
+
+```python
+@asset(group_name="hackernews", compute_kind="HackerNews API")
+def hackernews_topstories(context, hackernews_topstory_ids):
+    results = []
+    for item_id in hackernews_topstory_ids:
+        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
+        results.append(item)
+
+        if len(results) % 20 == 0:
+            context.log.info(f"Got {len(results)} items so far.")
+
+    df = pd.DataFrame(results)
+
+    return Output(
+        value=df,
+        metadata={
+            "num_records": len(df),
+            "preview": MetadataValue.md(df.head().to_markdown()),
+        }
+    )
+```
+
+<Note>
+If your data is sensitive, such as PHI or PII, be careful and follow your organization's policies for surfacing data. You should practice due diligence before showing your data in metadata or logs.
+</Note>
+
+---
+
+## Next Steps
+
+Congratulations! 🎉 You've migrated the entire pipeline into Dagster! While doing so, you:
+
+- wrote three assets
+- saved the data to local storage
+- previewed the data in Dagster
+- empowered stakeholders and your future self with context and metadata
+
+In the next sections, you'll learn how to productionize this pipeline by using declarative scheduling to make sure the data is always up-to-date. You'll also learn to use IO managers to save the data in different locations (such as a data warehouse or blob storage).
