@@ -458,8 +458,6 @@ def _get_dbt_op(
         ),
     )
     def _dbt_op(context):
-        dbt_output = None
-
         dbt_resource = getattr(context.resources, dbt_resource_key)
         # clean up any run results from the last run
         dbt_resource.remove_run_results_json()

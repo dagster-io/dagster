@@ -180,6 +180,10 @@ def test_basic(
     use_build,
     fail_test,
 ):  # pylint: disable=unused-argument
+    from dbt.version import __version__ as dbt_version
+
+    if not dbt_version.startswith("1.4"):
+        pytest.skip("dbt 1.4.x required for this test")
     # expected to emit json-formatted messages
     with capsys.disabled():
         dbt_assets = load_assets_from_dbt_project(
@@ -228,7 +232,9 @@ def test_basic(
         if event.event_type_value == "ASSET_OBSERVATION"
     ]
     if use_build:
-        assert len(observations) == 17
+        # in the non-streaming case, we emit events for skipped tests, and in the streaming case we
+        # do not
+        assert len(observations) == (16 if stream_events else 17)
     else:
         assert len(observations) == 0
 

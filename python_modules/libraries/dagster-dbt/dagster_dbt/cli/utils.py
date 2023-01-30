@@ -1,13 +1,12 @@
 import json
 import os
 import subprocess
-from dagster._core.execution.context.compute import OpExecutionContext
-import dateutil
 from typing import Any, Iterator, List, Mapping, Optional, Sequence, Tuple, Union
 
 import dagster._check as check
+import dateutil
 from dagster._core.definitions.events import AssetObservation, Output
-from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.utils import coerce_valid_log_level
 
 from ..errors import (
@@ -80,11 +79,25 @@ def _process_line(
         else:
             # in rare cases, the loaded json line may be a string rather than a dictionary
             if isinstance(json_line, dict):
-                message = json_line.get("info", {}).get("msg") or json_line.get(
-                    "message", json_line.get("msg", message)
+                message = json_line.get(
+                    # Attempt to get the message from the dbt-core==1.3.* format
+                    "msg",
+                    # Otherwise, try to get the message from the dbt-core==1.4.* format
+                    json_line.get("info", {}).get(
+                        "msg",
+                        # If all else fails, default to the whole line
+                        message,
+                    ),
                 )
-                log_level = json_line.get("info", {}).get("level") or json_line.get(
-                    "levelname", json_line.get("level", "debug")
+                log_level = json_line.get(
+                    # Attempt to get the log level from the dbt-core==1.3.* format
+                    "level",
+                    # Otherwise, try to get the message from the dbt-core==1.4.* format
+                    json_line.get("info", {}).get(
+                        "level",
+                        # If all else fails, default to the `debug` level
+                        "debug",
+                    ),
                 )
     elif "Done." not in line:
         # attempt to parse a log level out of the line
@@ -164,7 +177,7 @@ def execute_cli(
         stderr=subprocess.STDOUT,
     )
     for raw_line in process.stdout or []:
-        line = raw_line.decode("utf-8").rstrip()
+        line = raw_line.decode().rstrip()
         message, json_line = _process_line(line, log, json_log_format, capture_logs)
         lines.append(line)
         messages.append(message)
@@ -251,9 +264,9 @@ def _events_for_structured_json_line(
         duration = completed_at - started_at
         metadata.update(
             {
-                f"Execution Started At": started_at.isoformat(timespec="seconds"),
-                f"Execution Completed At": completed_at.isoformat(timespec="seconds"),
-                f"Execution Duration": duration.total_seconds(),
+                "Execution Started At": started_at.isoformat(timespec="seconds"),
+                "Execution Completed At": completed_at.isoformat(timespec="seconds"),
+                "Execution Duration": duration.total_seconds(),
             }
         )
         yield Output(

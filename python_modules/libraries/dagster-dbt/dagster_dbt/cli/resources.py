@@ -3,7 +3,7 @@ from typing import Any, Iterator, Mapping, Optional, Sequence, Set, Union
 import dagster._check as check
 from dagster import Permissive, resource
 from dagster._annotations import public
-from dagster._core.definitions.events import AssetMaterialization, AssetObservation, Output
+from dagster._core.definitions.events import AssetObservation, Output
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._utils.merger import merge_dicts
 
