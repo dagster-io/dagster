@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import tempfile
+import time
 from contextlib import contextmanager, nullcontext
 from unittest.mock import patch
 
@@ -19,29 +20,20 @@ from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
 from airflow.utils import db
-from dagster import (
-    Array,
-    DagsterInvariantViolationError,
-    DependencyDefinition,
-    Field,
-    In,
-    JobDefinition,
-    MultiDependencyDefinition,
-    Nothing,
-    Out,
-    ScheduleDefinition,
-    _check as check,
-    op,
-    repository,
-    resource,
-)
+from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
+
+from dagster import (Array, DagsterInvariantViolationError,
+                     DependencyDefinition, Field, In, JobDefinition,
+                     MultiDependencyDefinition, Nothing, Out,
+                     ScheduleDefinition)
+from dagster import _check as check
+from dagster import op, repository, resource
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
-from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
+from dagster._core.instance import (AIRFLOW_EXECUTION_DATE_STR,
+                                    IS_AIRFLOW_INGEST_PIPELINE_STR)
 from dagster._legacy import ModeDefinition, PipelineDefinition
 from dagster._utils.schedules import is_valid_cron_schedule
-
-from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
 # pylint: disable=no-name-in-module,import-error
 if str(airflow_version) >= "2.0.0":
@@ -49,7 +41,8 @@ if str(airflow_version) >= "2.0.0":
     from airflow.utils.state import DagRunState
     from airflow.utils.types import DagRunType
 else:
-    from airflow.utils.db import create_session  # type: ignore  # (airflow 1 compat)
+    from airflow.utils.db import \
+        create_session  # type: ignore  # (airflow 1 compat)
     from airflow.utils.state import State
 # pylint: enable=no-name-in-module,import-error
 
@@ -572,6 +565,20 @@ def make_dagster_pipeline_from_airflow_dag(
                         state=State.RUNNING,
                         execution_date=execution_date,
                     )
+            print("FETCHING TICKS")
+            schedule_id = f"airflow_{context.resource_config['dag_id']}_schedule"
+            print(schedule_id)
+            ticks = context.instance.get_ticks(
+                origin_id=schedule_id,
+                selector_id=schedule_id,
+                # before=time.time(),
+                # limit=1
+            )
+            print("FETCHING TICKS", ticks)
+            print("FETCHING TICKS", context.instance.get_ticks(
+                origin_id="airflow_simple_dag_test",
+                selector_id=schedule_id,
+            ))
 
         return {
             "dag": dag,
