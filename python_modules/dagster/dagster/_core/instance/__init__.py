@@ -117,6 +117,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
+    from dagster._core.storage.runs.base import RunGroupInfo
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.workspace.workspace import IWorkspace
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
@@ -1489,8 +1490,8 @@ class DagsterInstance:
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Mapping[str, Mapping[str, Union[Iterable[DagsterRun], int]]]:
-        return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
+    ) -> Mapping[str, "RunGroupInfo"]:
+        return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)  # type: ignore  # fmt: skip
 
     @public
     @traced
