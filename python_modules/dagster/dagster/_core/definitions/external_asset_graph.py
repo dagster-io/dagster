@@ -48,10 +48,10 @@ class ExternalAssetGraph(AssetGraph):
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
+            code_versions_by_key=code_versions_by_key,
         )
         self._repo_handles_by_key = repo_handles_by_key
         self._job_names_by_key = job_names_by_key
-        self._code_versions_by_key = code_versions_by_key
 
     @classmethod
     def from_workspace(cls, context: IWorkspace) -> "ExternalAssetGraph":
@@ -180,6 +180,3 @@ class ExternalAssetGraph(AssetGraph):
 
     def get_job_names(self, asset_key: AssetKey) -> Iterable[str]:
         return self._job_names_by_key[asset_key]
-
-    def get_code_version(self, asset_key: AssetKey) -> Optional[str]:
-        return self._code_versions_by_key[asset_key]

@@ -42,6 +42,7 @@ class AssetGraph:
         group_names_by_key: Mapping[AssetKey, Optional[str]],
         freshness_policies_by_key: Mapping[AssetKey, Optional[FreshnessPolicy]],
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
+        code_versions_by_key: Mapping[AssetKey, Optional[str]],
     ):
         self._asset_dep_graph = asset_dep_graph
         self._source_asset_keys = source_asset_keys
@@ -50,6 +51,7 @@ class AssetGraph:
         self._group_names_by_key = group_names_by_key
         self._freshness_policies_by_key = freshness_policies_by_key
         self._required_multi_asset_sets_by_key = required_multi_asset_sets_by_key
+        self._code_versions_by_key = code_versions_by_key
 
     @property
     def asset_dep_graph(self):
@@ -87,6 +89,7 @@ class AssetGraph:
         group_names_by_key: Dict[AssetKey, Optional[str]] = {}
         freshness_policies_by_key: Dict[AssetKey, Optional[FreshnessPolicy]] = {}
         required_multi_asset_sets_by_key: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+        code_versions_by_key: Dict[AssetKey, Optional[str]] = {}
 
         for asset in all_assets:
             if isinstance(asset, SourceAsset):
@@ -107,6 +110,7 @@ class AssetGraph:
                 if len(asset.keys) > 1 and not asset.can_subset:
                     for key in asset.keys:
                         required_multi_asset_sets_by_key[key] = asset.keys
+                code_versions_by_key.update(asset.code_versions_by_key)
 
             else:
                 check.failed(f"Expected SourceAsset or AssetsDefinition, got {type(asset)}")
@@ -120,6 +124,7 @@ class AssetGraph:
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             assets=assets_defs,
             source_assets=source_assets,
+            code_versions_by_key=code_versions_by_key,
         )
 
     @property
@@ -318,6 +323,9 @@ class AssetGraph:
             return self._required_multi_asset_sets_by_key[asset_key]
         return set()
 
+    def get_code_version(self, asset_key: AssetKey) -> Optional[str]:
+        return self._code_versions_by_key[asset_key]
+
     @cached_method
     def toposort_asset_keys(self) -> Sequence[AbstractSet[AssetKey]]:
         return [
@@ -386,6 +394,7 @@ class InternalAssetGraph(AssetGraph):
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         assets: Sequence[AssetsDefinition],
         source_assets: Sequence[SourceAsset],
+        code_versions_by_key: Mapping[AssetKey, Optional[str]],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -395,6 +404,7 @@ class InternalAssetGraph(AssetGraph):
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
+            code_versions_by_key=code_versions_by_key,
         )
         self._assets = assets
         self._source_assets = source_assets

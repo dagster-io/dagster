@@ -11,7 +11,7 @@ from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 
 
-@asset(code_version="1")
+@asset
 def asset1():
     ...
 
@@ -96,12 +96,6 @@ def make_context(defs_attrs):
         source=None,
         read_only=True,
     )
-
-
-def test_get_code_version():
-    asset_graph = ExternalAssetGraph.from_workspace(make_context(["defs1", "defs2"]))
-    assert asset_graph.get_code_version(AssetKey("asset1")) == "1"
-    assert asset_graph.get_code_version(AssetKey("asset2")) is None
 
 
 def test_get_repository_handle():
