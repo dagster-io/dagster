@@ -7,6 +7,8 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.objects import ErrorSource
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 
+from dagster_graphql.schema.tags import GrapheneEventTag
+
 from ...implementation.events import construct_basic_params
 from ...implementation.fetch_runs import get_run_by_id, get_step_stats
 from ...implementation.loader import BatchRunLoader
@@ -314,6 +316,7 @@ class AssetEventMixin:
     runOrError = graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRunOrError")
     stepStats = graphene.NonNull(lambda: GrapheneRunStepStats)
     partition = graphene.Field(graphene.String)
+    tags = non_null_list(GrapheneEventTag)
 
     def __init__(self, event, metadata):
         self._event = event
@@ -346,6 +349,9 @@ class AssetEventMixin:
 
     def resolve_partition(self, _graphene_info: ResolveInfo):
         return self._metadata.partition
+
+    def resolve_tags(self, _graphene_info):
+        return self._metadata.tags
 
 
 class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
