@@ -13,9 +13,13 @@ from dagster import (
     job,
     op,
 )
+from dagster._config.structured_config import ResourceDependency, StructuredConfigIOManagerBase
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
+from dagster._core.storage.branching.branching_io_manager import (
+    BranchingIOManager as _BranchingIOManager,
+)
 from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
+from dagster._core.storage.io_manager import IOManager
 
 from .hackernews import extract, transform
 
@@ -98,34 +102,38 @@ def get_branch_name():
     return os.getenv("DAGSTER_DEPLOYMENT", DEFAULT_BRANCH_NAME)
 
 
-def construct_branching_io_manager(get_prod_io_manager, get_branch_io_manager):
-    if is_prod():
-        return get_prod_io_manager()
+class BranchingIOManager(StructuredConfigIOManagerBase):
+    parent_io_manager: ResourceDependency[IOManager]
+    branch_io_manager: ResourceDependency[IOManager]
+    branch_name: str = "dev"
+    branch_metadata_key: str = "io_manager_branch"
 
+    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+        return _BranchingIOManager(
+            parent_io_manager=self.parent_io_manager,
+            branch_io_manager=self.branch_io_manager,
+            branch_name=self.branch_name,
+            branch_metadata_key=self.branch_metadata_key,
+        )
+
+
+prod_io_manager = PickledObjectFilesystemIOManager(base_dir="prod_storage")
+
+if is_prod():
+    io_manager = prod_io_manager
+else:
     branch_name = get_branch_name()
+    branch_io_manager = PickledObjectFilesystemIOManager(base_dir=f"{branch_name}_storage")
 
-    prod_io_manager = get_prod_io_manager()
-
-    return BranchingIOManager(
+    io_manager = BranchingIOManager(
         parent_io_manager=prod_io_manager,
-        branch_io_manager=get_branch_io_manager(branch_name),
+        branch_io_manager=branch_io_manager,
         branch_name=branch_name,
     )
-
-
-def get_prod_io_manager():
-    return PickledObjectFilesystemIOManager(base_dir="prod_storage")
-
-
-def get_branch_io_manager(branch_name: str):
-    branch_storage_folder = f"{branch_name}_storage"
-    return PickledObjectFilesystemIOManager(base_dir=branch_storage_folder)
 
 
 dev_defs = Definitions(
     assets=[hackernews_source_data, hackernews_wordcloud, process_wordcloud],
     jobs=[] if is_prod() else [ship_asset_materializations],
-    resources={
-        "io_manager": construct_branching_io_manager(get_prod_io_manager, get_branch_io_manager)
-    },
+    resources={"io_manager": io_manager},
 )
