@@ -10,5 +10,5 @@ setup(
         "skl2onnx",
         "joblib",
     ],
-    extras_require={"test": ["dagit", "pytest"]},
+    extras_require={"dev": ["dagit", "pytest"]},
 )
