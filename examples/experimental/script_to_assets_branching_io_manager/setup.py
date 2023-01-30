@@ -15,6 +15,7 @@ setup(
     packages=find_packages(exclude=["test"]),
     install_requires=[
         "dagster",
+        "dagster-graphql",
         "dagit",
         "matplotlib",
         "pandas",
