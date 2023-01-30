@@ -36,6 +36,6 @@ setup(
         "dagster",
         "wandb>=0.13.5",
     ],
-    extras_require={"dev": ["cloudpickle", "joblib", "callee"]},
+    extras_require={"dev": ["cloudpickle", "joblib", "callee", "dill"]},
     zip_safe=False,
 )
