@@ -6,11 +6,13 @@ from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 
 
-def _get_pod_logs(cluster_provider, job_name, namespace):
+def _get_pod_logs(cluster_provider, job_name, namespace, container_name=None):
     kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
     api_client = DagsterKubernetesClient.production_client()
     pod_names = api_client.get_pod_names_in_job(job_name, namespace=namespace)
-    return api_client.retrieve_pod_logs(pod_names[0], namespace=namespace)
+    return api_client.retrieve_pod_logs(
+        pod_names[0], namespace=namespace, container_name=container_name
+    )
 
 
 @pytest.mark.default
@@ -215,6 +217,49 @@ def test_k8s_job_op_with_container_config_and_command(namespace, cluster_provide
     job_name = get_k8s_job_name(run_id, with_container_config.name)
 
     assert "OVERRIDES_CONTAINER_CONFIG" in _get_pod_logs(cluster_provider, job_name, namespace)
+
+
+@pytest.mark.default
+def test_k8s_job_op_with_multiple_containers(namespace, cluster_provider):
+    with_multiple_containers = k8s_job_op.configured(
+        {
+            "image": "busybox",
+            "container_config": {
+                "name": "first-container",
+            },
+            "command": ["/bin/sh", "-c"],
+            "args": ["echo MAIN_CONTAINER"],
+            "namespace": namespace,
+            "load_incluster_config": False,
+            "kubeconfig_file": cluster_provider.kubeconfig_file,
+            "pod_spec_config": {
+                "containers": [
+                    {
+                        "name": "other-container",
+                        "image": "busybox",
+                        "command": ["/bin/sh", "-c"],
+                        "args": ["echo OTHER_CONTAINER"],
+                    }
+                ]
+            },
+        },
+        name="with_multiple_containers",
+    )
+
+    @job
+    def with_multiple_containers_job():
+        with_multiple_containers()
+
+    execute_result = with_multiple_containers_job.execute_in_process()
+    run_id = execute_result.dagster_run.run_id
+    job_name = get_k8s_job_name(run_id, with_multiple_containers.name)
+
+    assert "MAIN_CONTAINER" in _get_pod_logs(
+        cluster_provider, job_name, namespace, container_name="first-container"
+    )
+    assert "OTHER_CONTAINER" in _get_pod_logs(
+        cluster_provider, job_name, namespace, container_name="other-container"
+    )
 
 
 @pytest.mark.default

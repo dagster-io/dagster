@@ -48,6 +48,7 @@ setup(
         "papermill>=1.0.0",
         "scrapbook>=0.5.0",
         "nbconvert",
+        "jupyter-client<8",  # jupyter-client 8 causing test hangs
     ],
     extras_require={
         "test": [

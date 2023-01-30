@@ -14,6 +14,7 @@ from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
 from .decorators import repository
 from .job_definition import JobDefinition
+from .partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from .repository_definition import (
     SINGLETON_REPOSITORY_NAME,
     PendingRepositoryDefinition,
@@ -63,7 +64,9 @@ def _create_repository_using_definitions_args(
     assets: Optional[
         Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
     ] = None,
-    schedules: Optional[Iterable[ScheduleDefinition]] = None,
+    schedules: Optional[
+        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    ] = None,
     sensors: Optional[Iterable[SensorDefinition]] = None,
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
     resources: Optional[Mapping[str, Any]] = None,
@@ -76,7 +79,11 @@ def _create_repository_using_definitions_args(
         )
 
     if schedules:
-        check.iterable_param(schedules, "schedules", ScheduleDefinition)
+        check.iterable_param(
+            schedules,
+            "schedules",
+            (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition),
+        )
 
     if sensors:
         check.iterable_param(sensors, "sensors", SensorDefinition)
@@ -123,7 +130,7 @@ class Definitions:
             Or they can by directly instantiating :py:class:`AssetsDefinition`,
             :py:class:`SourceAsset`, or :py:class:`CacheableAssetsDefinition`.
 
-        schedules (Optional[Iterable[ScheduleDefinition]]):
+        schedules (Optional[Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]]):
             List of schedules.
 
         sensors (Optional[Iterable[SensorDefinition]]):
@@ -203,7 +210,9 @@ class Definitions:
         assets: Optional[
             Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
         ] = None,
-        schedules: Optional[Iterable[ScheduleDefinition]] = None,
+        schedules: Optional[
+            Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+        ] = None,
         sensors: Optional[Iterable[SensorDefinition]] = None,
         jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
         resources: Optional[Mapping[str, Any]] = None,

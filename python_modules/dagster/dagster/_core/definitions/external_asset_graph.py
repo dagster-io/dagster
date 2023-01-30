@@ -38,6 +38,7 @@ class ExternalAssetGraph(AssetGraph):
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         repo_handles_by_key: Mapping[AssetKey, RepositoryHandle],
         job_names_by_key: Mapping[AssetKey, Sequence[str]],
+        code_versions_by_key: Mapping[AssetKey, Optional[str]],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -47,6 +48,7 @@ class ExternalAssetGraph(AssetGraph):
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
+            code_versions_by_key=code_versions_by_key,
         )
         self._repo_handles_by_key = repo_handles_by_key
         self._job_names_by_key = job_names_by_key
@@ -108,6 +110,11 @@ class ExternalAssetGraph(AssetGraph):
             for _, node in repo_handle_external_asset_nodes
             if not node.is_source
         }
+        code_versions_by_key = {
+            node.asset_key: node.code_version
+            for _, node in repo_handle_external_asset_nodes
+            if not node.is_source
+        }
 
         all_non_source_keys = {
             node.asset_key for _, node in repo_handle_external_asset_nodes if not node.is_source
@@ -161,6 +168,7 @@ class ExternalAssetGraph(AssetGraph):
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             repo_handles_by_key=repo_handles_by_key,
             job_names_by_key=job_names_by_key,
+            code_versions_by_key=code_versions_by_key,
         )
 
     @property

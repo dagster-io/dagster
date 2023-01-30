@@ -1,4 +1,5 @@
 import pyspark
+import pyspark.sql
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager

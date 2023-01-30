@@ -162,14 +162,14 @@ class AirbyteResource:
     def cancel_job(self, job_id: int):
         self.make_request(endpoint="/jobs/cancel", data={"id": job_id})
 
-    def get_default_workspace(self):
+    def get_default_workspace(self) -> str:
         workspaces = cast(
             List[Dict[str, Any]],
-            check.not_none(self.make_request_cached(endpoint="/workspaces/list", data={})).get(
+            check.not_none(self.make_request_cached(endpoint="/workspaces/list", data={})).get(  # type: ignore  # fmt: skip
                 "workspaces", []
             ),
         )
-        return workspaces[0].get("workspaceId")
+        return workspaces[0]["workspaceId"]
 
     def get_source_definition_by_name(self, name: str, workspace_id: str) -> Optional[str]:
         name_lower = name.lower()

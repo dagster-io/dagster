@@ -207,6 +207,8 @@ def execute_k8s_job(
     if command:
         container_config["command"] = command
 
+    container_name = container_config.get("name", "dagster")
+
     op_container_context = K8sContainerContext(
         image_pull_policy=image_pull_policy,
         image_pull_secrets=image_pull_secrets,
@@ -315,7 +317,10 @@ def execute_k8s_job(
     api_client.wait_for_pod(pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time)
 
     log_stream = watch.stream(
-        api_client.core_api.read_namespaced_pod_log, name=pod_to_watch, namespace=namespace
+        api_client.core_api.read_namespaced_pod_log,
+        name=pod_to_watch,
+        namespace=namespace,
+        container=container_name,
     )
 
     while True:

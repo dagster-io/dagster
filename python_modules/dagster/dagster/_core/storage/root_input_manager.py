@@ -100,11 +100,11 @@ def root_input_manager(
 
 @overload
 def root_input_manager(
-    config_schema: Optional[CoercableToConfigSchema] = None,
-    description: Optional[str] = None,
-    input_config_schema: Optional[CoercableToConfigSchema] = None,
-    required_resource_keys: Optional[AbstractSet[str]] = None,
-    version: Optional[str] = None,
+    config_schema: Optional[CoercableToConfigSchema] = ...,
+    description: Optional[str] = ...,
+    input_config_schema: Optional[CoercableToConfigSchema] = ...,
+    required_resource_keys: Optional[AbstractSet[str]] = ...,
+    version: Optional[str] = ...,
 ) -> Callable[[InputLoadFn], RootInputManagerDefinition]:
     ...
 

@@ -2,6 +2,7 @@ from typing import Mapping
 
 import dagster._check as check
 import sqlalchemy as db
+import sqlalchemy.dialects.mysql as db_dialects_mysql
 from dagster._core.storage.config import mysql_config
 from dagster._core.storage.runs import (
     DaemonHeartbeatsTable,
@@ -18,12 +19,12 @@ from dagster._core.storage.sql import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster._utils import utc_datetime_from_timestamp
-from packaging.version import parse
 
 from ..utils import (
     create_mysql_connection,
     mysql_alembic_config,
     mysql_url_from_config,
+    parse_mysql_version,
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
@@ -154,16 +155,20 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         if not self._mysql_version:
             return False
 
-        return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_BUCKET_VERSION)
+        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(
+            MINIMUM_MYSQL_BUCKET_VERSION
+        )
 
     @property
     def supports_intersect(self):
-        return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_INTERSECT_VERSION)
+        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(
+            MINIMUM_MYSQL_INTERSECT_VERSION
+        )
 
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:
             conn.execute(
-                db.dialects.mysql.insert(DaemonHeartbeatsTable)
+                db_dialects_mysql.insert(DaemonHeartbeatsTable)
                 .values(
                     timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type,
@@ -182,7 +187,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         db_values = [{"key": k, "value": v} for k, v in pairs.items()]
 
         with self.connect() as conn:
-            insert_stmt = db.dialects.mysql.insert(KeyValueStoreTable).values(db_values)
+            insert_stmt = db_dialects_mysql.insert(KeyValueStoreTable).values(db_values)
             conn.execute(
                 insert_stmt.on_duplicate_key_update(
                     value=insert_stmt.inserted.value,

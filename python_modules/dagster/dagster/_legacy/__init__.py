@@ -1,6 +1,5 @@
 from dagster._core.definitions import (
     AssetGroup as AssetGroup,
-    DagsterRunMetadataValue as DagsterPipelineRunMetadataValue,  # noqa: F401
     DynamicOutputDefinition as DynamicOutputDefinition,
     InputDefinition as InputDefinition,
     Materialization as Materialization,

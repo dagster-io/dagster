@@ -117,6 +117,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
+    from dagster._core.storage.runs.base import RunGroupInfo
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.workspace.workspace import IWorkspace
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
@@ -819,9 +820,19 @@ class DagsterInstance:
 
     # run storage
     @public
-    @traced
     def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
-        return cast(DagsterRun, self._run_storage.get_run_by_id(run_id))
+        record = self.get_run_record_by_id(run_id)
+        if record is None:
+            return None
+        return record.dagster_run
+
+    @public
+    @traced
+    def get_run_record_by_id(self, run_id: str) -> Optional[RunRecord]:
+        records = self._run_storage.get_run_records(RunsFilter(run_ids=[run_id]))
+        if not records:
+            return None
+        return records[0]
 
     @traced
     def get_pipeline_snapshot(self, snapshot_id: str) -> "PipelineSnapshot":
@@ -1290,8 +1301,8 @@ class DagsterInstance:
     ) -> DagsterRun:
         from dagster._core.execution.plan.resume_retry import (
             ReexecutionStrategy,
-            get_retry_steps_from_parent_run,
         )
+        from dagster._core.execution.plan.state import KnownExecutionState
         from dagster._core.host_representation import ExternalPipeline, RepositoryLocation
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
@@ -1327,7 +1338,10 @@ class DagsterInstance:
                 "Cannot reexecute from failure a run that is not failed",
             )
 
-            step_keys_to_execute, known_state = get_retry_steps_from_parent_run(
+            (
+                step_keys_to_execute,
+                known_state,
+            ) = KnownExecutionState.build_resume_retry_reexecution(
                 self,
                 parent_run=parent_run,
             )
@@ -1476,8 +1490,8 @@ class DagsterInstance:
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Mapping[str, Mapping[str, Union[Iterable[DagsterRun], int]]]:
-        return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
+    ) -> Mapping[str, "RunGroupInfo"]:
+        return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)  # type: ignore  # fmt: skip
 
     @public
     @traced

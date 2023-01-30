@@ -438,6 +438,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
                 dbt_options.append(f"--vars '{json.dumps(partition_var)}'")
 
+            # Prepare the materialization step to be overriden with the selection filter
+            materialization_command = job_commands[job_materialization_command_step]
+
             # Map the selected outputs to dbt models that should be materialized.
             #
             # HACK: This selection filter works even if an existing `--select` is specified in the
@@ -456,8 +459,19 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
                 dbt_options.append(f"--select {' '.join(sorted(selected_models))}")
 
-            # Override the materialization step with the selection filter
-            materialization_command = job_commands[job_materialization_command_step]
+                # If the `--selector` option is used, we need to remove it from the command, since
+                # it disables other selection options from being functional.
+                #
+                # See https://docs.getdbt.com/reference/node-selection/syntax for details.
+                split_materialization_command = shlex.split(materialization_command)
+                if "--selector" in split_materialization_command:
+                    idx = split_materialization_command.index("--selector")
+
+                    materialization_command = " ".join(
+                        split_materialization_command[:idx]
+                        + split_materialization_command[idx + 2 :]
+                    )
+
             job_commands[
                 job_materialization_command_step
             ] = f"{materialization_command} {' '.join(dbt_options)}".strip()

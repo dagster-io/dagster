@@ -44,7 +44,7 @@ def to_external_asset_graph(assets) -> AssetGraph:
 
 
 def test_basics():
-    @asset
+    @asset(code_version="1")
     def asset0():
         ...
 
@@ -74,6 +74,8 @@ def test_basics():
         assert asset_graph.get_parents(asset3.key) == {asset1.key, asset2.key}
         for asset_def in assets:
             assert asset_graph.get_required_multi_asset_keys(asset_def.key) == set()
+        assert asset_graph.get_code_version(asset0.key) == "1"
+        assert asset_graph.get_code_version(asset1.key) is None
 
     assert_stuff(internal_asset_graph)
     assert_stuff(external_asset_graph)
@@ -322,3 +324,21 @@ def test_get_non_source_roots_missing_source():
 
     asset_graph = AssetGraph.from_assets([foo, bar, source_asset])
     assert asset_graph.get_non_source_roots(AssetKey("bar")) == {AssetKey("foo")}
+
+
+def test_partitioned_source_asset():
+    partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+
+    partitioned_source = SourceAsset(
+        "partitioned_source",
+        partitions_def=partitions_def,
+    )
+
+    @asset(partitions_def=partitions_def, non_argument_deps={"partitioned_source"})
+    def downstream_of_partitioned_source():
+        pass
+
+    asset_graph = AssetGraph.from_assets([partitioned_source, downstream_of_partitioned_source])
+
+    assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
+    assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))

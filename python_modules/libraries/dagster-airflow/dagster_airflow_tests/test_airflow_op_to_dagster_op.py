@@ -4,11 +4,11 @@ from tempfile import TemporaryDirectory
 import pytest
 import responses
 from airflow import __version__ as airflow_version
-from airflow.models import Connection
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.http_operator import SimpleHttpOperator
-from airflow.operators.python_operator import PythonOperator
-from airflow.operators.sqlite_operator import SqliteOperator
+from airflow.models import Connection  # type: ignore  # (airflow 1 compat)
+from airflow.operators.bash_operator import BashOperator  # type: ignore  # (airflow 1 compat)
+from airflow.operators.http_operator import SimpleHttpOperator  # type: ignore  # (airflow 1 compat)
+from airflow.operators.python_operator import PythonOperator  # type: ignore  # (airflow 1 compat)
+from airflow.operators.sqlite_operator import SqliteOperator  # type: ignore  # (airflow 1 compat)
 from dagster import job, op
 from dagster._core.test_utils import instance_for_test
 from dagster_airflow import airflow_operator_to_op

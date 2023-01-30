@@ -247,3 +247,7 @@ class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
             solid_handle,
             solid_config,
         )
+
+    @property
+    def step_context(self) -> StepExecutionContext:
+        return self._step_context

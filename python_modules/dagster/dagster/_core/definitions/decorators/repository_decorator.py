@@ -21,6 +21,7 @@ from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
 from ..logger_definition import LoggerDefinition
 from ..partition import PartitionSetDefinition
+from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from ..pipeline_definition import PipelineDefinition
 from ..repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
@@ -89,6 +90,7 @@ class _Repository:
                         PipelineDefinition,
                         PartitionSetDefinition,
                         ScheduleDefinition,
+                        UnresolvedPartitionedAssetScheduleDefinition,
                         SensorDefinition,
                         GraphDefinition,
                         AssetGroup,

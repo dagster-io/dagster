@@ -82,14 +82,14 @@ def _build_airbyte_asset_defn_metadata(
 
     internal_deps: Dict[str, Set[AssetKey]] = {}
 
-    normalization_tables = (
+    metadata_encodable_normalization_tables = (
         {k: list(v) for k, v in normalization_tables.items()} if normalization_tables else {}
     )
 
     # If normalization tables are specified, we need to add a dependency from the destination table
     # to the affilitated normalization table
-    if normalization_tables:
-        for base_table, derived_tables in normalization_tables.items():
+    if len(metadata_encodable_normalization_tables) > 0:
+        for base_table, derived_tables in metadata_encodable_normalization_tables.items():
             for derived_table in derived_tables:
                 internal_deps[derived_table] = {
                     AssetKey([*asset_key_prefix, *table_to_asset_key_fn(base_table).path])
@@ -114,13 +114,15 @@ def _build_airbyte_asset_defn_metadata(
         }
         if schema_by_table_name
         else None,
+        freshness_policies_by_output_name={output: freshness_policy for output in outputs}
+        if freshness_policy
+        else None,
         extra_metadata={
             "connection_id": connection_id,
             "group_name": group_name,
             "destination_tables": destination_tables,
-            "normalization_tables": normalization_tables,
+            "normalization_tables": metadata_encodable_normalization_tables,
             "io_manager_key": io_manager_key,
-            "freshness_policy": freshness_policy,
         },
     )
 
@@ -135,7 +137,6 @@ def _build_airbyte_assets_from_metadata(
     destination_tables = cast(List[str], metadata["destination_tables"])
     normalization_tables = cast(Mapping[str, List[str]], metadata["normalization_tables"])
     io_manager_key = cast(Optional[str], metadata["io_manager_key"])
-    freshness_policy = cast(Optional[FreshnessPolicy], metadata["freshness_policy"])
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
@@ -150,7 +151,9 @@ def _build_airbyte_assets_from_metadata(
                 if assets_defn_meta.metadata_by_output_name
                 else None,
                 io_manager_key=io_manager_key,
-                freshness_policy=freshness_policy,
+                freshness_policy=assets_defn_meta.freshness_policies_by_output_name.get(k)
+                if assets_defn_meta.freshness_policies_by_output_name
+                else None,
             )
             for k, v in (assets_defn_meta.keys_by_output_name or {}).items()
         },

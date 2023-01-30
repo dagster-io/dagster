@@ -1,5 +1,6 @@
 import datetime
 import json
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -21,6 +22,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
+from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -54,9 +56,59 @@ class CachingInstanceQueryer:
         # materialization record for a >= cursor, we don't need to query the instance
         self._no_materializations_after_cursor_cache: Dict[AssetKeyPartitionKey, int] = {}
 
+        self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
+        self._asset_partition_count_cache: Dict[
+            Optional[int], Dict[AssetKey, Mapping[str, int]]
+        ] = defaultdict(dict)
+
     @property
     def instance(self) -> "DagsterInstance":
         return self._instance
+
+    def prefetch_for_keys(self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int]):
+        """For performance, batches together queries for selected assets"""
+        asset_records = self.instance.get_asset_records(asset_keys)
+        for asset_record in asset_records:
+            self._asset_record_cache[asset_record.asset_entry.asset_key] = asset_record
+
+        # get the latest N materialization records. in most cases, this will hit a large portion of
+        # the latest materialization records per asset key, although a more sophisticated method
+        # of bucketing queries could be used here to guarantee that we actually get the exact set
+        # we're aiming for here.
+        latest_records = self._instance.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            ),
+            limit=len(asset_keys),
+            ascending=False,
+        )
+        for record in latest_records:
+            asset_partition = AssetKeyPartitionKey(
+                asset_key=check.not_none(record.asset_key), partition_key=record.partition_key
+            )
+            if asset_partition not in self._latest_materialization_record_cache:
+                self._latest_materialization_record_cache[asset_partition] = record
+                self._no_materializations_after_cursor_cache[asset_partition] = record.storage_id
+
+        self._asset_partition_count_cache[after_cursor] = dict(
+            self._instance.get_materialization_count_by_partition(
+                asset_keys=asset_keys,
+                after_cursor=after_cursor,
+            )
+        )
+        self._asset_partition_count_cache[None] = dict(
+            self._instance.get_materialization_count_by_partition(
+                asset_keys=asset_keys,
+                after_cursor=None,
+            )
+        )
+
+    def get_asset_record(self, asset_key: AssetKey) -> Optional[AssetRecord]:
+        if asset_key not in self._asset_record_cache:
+            self._asset_record_cache[asset_key] = next(
+                iter(self.instance.get_asset_records([asset_key])), None
+            )
+        return self._asset_record_cache[asset_key]
 
     def is_asset_in_run(self, run_id: str, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
         run = self._get_run_by_id(run_id=run_id)
@@ -83,10 +135,7 @@ class CachingInstanceQueryer:
 
     @cached_method
     def _get_run_record_by_id(self, run_id: str) -> Optional[RunRecord]:
-        return next(
-            iter(self._instance.get_run_records(filters=RunsFilter(run_ids=[run_id]), limit=1)),
-            None,
-        )
+        return self._instance.get_run_record_by_id(run_id)
 
     @cached_method
     def _get_planned_materializations_for_run_from_events(
@@ -150,8 +199,20 @@ class CachingInstanceQueryer:
         else:
             asset_partition = asset
 
-        # fancy caching only applies to after_cursor
+        # no materialization exists for this asset partition
+        if (
+            asset_partition.partition_key is not None
+            and asset_partition.asset_key in self._asset_partition_count_cache[None]
+            and asset_partition.partition_key
+            not in self._asset_partition_count_cache[None][asset_partition.asset_key]
+        ):
+            return None
+
         if before_cursor is not None:
+            latest_record = self._latest_materialization_record_cache.get(asset_partition)
+            if latest_record is not None and latest_record.storage_id < before_cursor:
+                return latest_record
+
             return self._get_materialization_record(
                 asset_partition=asset_partition,
                 after_cursor=after_cursor,
@@ -223,6 +284,28 @@ class CachingInstanceQueryer:
                 tags=tags,
             )
         )
+
+    def get_materialized_partitions(
+        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+    ) -> Iterable[str]:
+        if (
+            after_cursor not in self._asset_partition_count_cache
+            or asset_key not in self._asset_partition_count_cache[after_cursor]
+        ):
+            self._asset_partition_count_cache[after_cursor][
+                asset_key
+            ] = self.instance.get_materialization_count_by_partition(
+                asset_keys=[asset_key], after_cursor=after_cursor
+            )[
+                asset_key
+            ]
+        return [
+            partition_key
+            for partition_key, count in self._asset_partition_count_cache[after_cursor][
+                asset_key
+            ].items()
+            if count > 0
+        ]
 
     @cached_method
     def is_reconciled(
@@ -515,8 +598,7 @@ class CachingInstanceQueryer:
         the expected data times for that asset once the run completed. Otherwise, returns an empty
         mapping.
         """
-        asset_records = self._instance.get_asset_records([asset_key])
-        asset_record = next(iter(asset_records), None)
+        asset_record = self.get_asset_record(asset_key)
 
         # no latest run
         if asset_record is None or asset_record.asset_entry.last_run_id is None:

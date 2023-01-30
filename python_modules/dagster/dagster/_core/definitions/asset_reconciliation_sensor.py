@@ -222,19 +222,32 @@ def find_parent_materialized_asset_partitions(
 
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
-    for asset_key in target_asset_selection.upstream(depth=1).resolve(asset_graph):
-        records = instance_queryer.get_materialization_records(
-            asset_key=asset_key, after_cursor=latest_storage_id
-        )
-        for record in records:
-            for child in asset_graph.get_children_partitions(asset_key, record.partition_key):
-                if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
-                    record.run_id, child
-                ):
-                    result_asset_partitions.add(child)
+    target_parent_asset_keys = target_asset_selection.upstream(depth=1).resolve(asset_graph)
 
-            if result_latest_storage_id is None or record.storage_id > result_latest_storage_id:
-                result_latest_storage_id = record.storage_id
+    for asset_key in target_parent_asset_keys:
+        latest_record = instance_queryer.get_latest_materialization_record(
+            asset_key, after_cursor=latest_storage_id
+        )
+        if latest_record is None:
+            continue
+
+        for child in asset_graph.get_children_partitions(asset_key, latest_record.partition_key):
+            if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
+                latest_record.run_id, child
+            ):
+                result_asset_partitions.add(child)
+
+        if result_latest_storage_id is None or latest_record.storage_id > result_latest_storage_id:
+            result_latest_storage_id = latest_record.storage_id
+
+        # for partitioned assets, we'll want a count of all asset partitions that have been
+        # materialized since the latest_storage_id, not just the most recent
+        if asset_graph.is_partitioned(asset_key):
+            for partition_key in instance_queryer.get_materialized_partitions(
+                asset_key, after_cursor=latest_storage_id
+            ):
+                for child in asset_graph.get_children_partitions(asset_key, partition_key):
+                    result_asset_partitions.add(child)
 
     return (result_asset_partitions, result_latest_storage_id)
 
@@ -295,8 +308,20 @@ def allowable_time_window_for_partitions_def(
     latest_partition_window = partitions_def.get_last_partition_window()
     if latest_partition_window is None:
         return None
+
+    earliest_partition_window = partitions_def.get_first_partition_window()
+    if earliest_partition_window is None:
+        return None
+
+    start = max(
+        earliest_partition_window.start,
+        # we add datetime.timedelta.resolution because if the latest partition starts at 2023-01-02,
+        # then we don't want 2023-01-01 to be within the allowable time window
+        latest_partition_window.start - datetime.timedelta(days=1) + datetime.timedelta.resolution,
+    )
+
     return TimeWindow(
-        start=latest_partition_window.start - datetime.timedelta(days=1),
+        start=start,
         end=latest_partition_window.end,
     )
 
@@ -324,7 +349,7 @@ def candidates_unit_within_allowable_time_window(
 
     candidate_partition_window = partitions_def.time_window_for_partition_key(partition_key)
     return (
-        candidate_partition_window.start > allowable_time_window.start
+        candidate_partition_window.start >= allowable_time_window.start
         and candidate_partition_window.end <= allowable_time_window.end
     )
 
@@ -611,7 +636,7 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
             # the set of asset keys which are involved in some constraint and are actually upstream
             # of this asset
-            relevant_upstream_keys = frozenset(
+            relevant_upstream_keys = set(
                 set().union(
                     *(
                         expected_data_times_by_key[parent_key].keys()
@@ -625,13 +650,14 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             current_data_times = get_current_data_times_for_key(
                 instance_queryer, asset_graph, relevant_upstream_keys, key
             )
+            expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
 
             # should not execute if key is not targeted or previous run failed
             if key not in target_asset_keys:
                 # cannot execute this asset, so if something consumes it, it should expect to
                 # recieve the current contents of the asset
                 execution_window_start = None
-                expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
+                expected_data_times = {}
             else:
                 # calculate the data times you would expect after all currently-executing runs
                 # were to successfully complete
@@ -699,6 +725,11 @@ def reconcile(
 ):
     instance_queryer = CachingInstanceQueryer(instance=instance)
     asset_graph = repository_def.asset_graph
+
+    # fetch some data in advance to batch together some queries
+    instance_queryer.prefetch_for_keys(
+        list(asset_selection.resolve(asset_graph)), after_cursor=cursor.latest_storage_id
+    )
 
     (
         asset_partitions_to_reconcile_for_freshness,

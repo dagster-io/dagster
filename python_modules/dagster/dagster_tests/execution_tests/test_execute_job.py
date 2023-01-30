@@ -6,6 +6,9 @@ from dagster import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     Field,
+    OpExecutionContext,
+    Out,
+    Output,
     ReexecutionOptions,
     asset,
     define_asset_job,
@@ -361,3 +364,48 @@ def test_asset_selection():
         assert result.success
         assert len(result.get_step_success_events()) == 1
         assert result.get_step_success_events()[0].step_key == "upstream_asset"
+
+
+@op(out={"a": Out(is_required=False), "b": Out(is_required=False)})
+def a_or_b():
+    yield Output("wow", "a")
+
+
+@op
+def echo(x):
+    return x
+
+
+@op
+def fail_once(context: OpExecutionContext, x):
+    key = context.op_handle.name
+    if context.instance.run_storage.kvs_get({key}).get(key):
+        return x
+    context.instance.run_storage.kvs_set({key: "true"})
+    raise Exception("failed (just this once)")
+
+
+@job(executor_def=in_process_executor)
+def branching_job():
+    a, b = a_or_b()
+    echo(
+        [
+            fail_once.alias("fail_once_a")(a),
+            fail_once.alias("fail_once_b")(b),
+        ]
+    )
+
+
+def test_branching():
+    with instance_for_test() as instance:
+        result = execute_job(reconstructable(branching_job), instance)
+        assert not result.success
+
+        result_2 = execute_job(
+            reconstructable(branching_job),
+            instance,
+            reexecution_options=ReexecutionOptions.from_failure(result.run_id, instance),
+        )
+        assert result_2.success
+        success_steps = {ev.step_key for ev in result_2.get_step_success_events()}
+        assert success_steps == {"fail_once_a", "echo"}

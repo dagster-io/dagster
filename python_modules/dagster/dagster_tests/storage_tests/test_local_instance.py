@@ -60,7 +60,7 @@ def test_fs_stores():
             result = simple.execute_in_process(instance=instance)
 
             assert run_store.has_run(result.run_id)
-            assert run_store.get_run_by_id(result.run_id).status == DagsterRunStatus.SUCCESS
+            assert instance.get_run_by_id(result.run_id).status == DagsterRunStatus.SUCCESS
             assert DagsterEventType.PIPELINE_SUCCESS in [
                 event.dagster_event.event_type
                 for event in event_store.get_logs_for_run(result.run_id)
