@@ -79,8 +79,11 @@ def test_backcompat_asset_read():
             _validate_instance_assets(instance)
 
 
-def test_backcompat_asset_materializations():
-    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_11_0_asset_materialization")
+@pytest.mark.parametrize(
+    "snapshot", ["snapshot_0_11_0_asset_materialization", "snapshot_1_1_14_asset_materialization"]
+)
+def test_backcompat_asset_materializations(snapshot):
+    src_dir = file_relative_path(__file__, f"compat_tests/{snapshot}")
     # should contain materialization events for asset keys a, b, c, d, e, f
     # events a and b have been wiped, but b has been rematerialized
 
