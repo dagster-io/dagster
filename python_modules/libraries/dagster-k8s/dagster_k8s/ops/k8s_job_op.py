@@ -1,9 +1,11 @@
+import sys
 import time
 from typing import Any, Dict, List, Optional
 
 import kubernetes
 from dagster import Field, In, Noneable, Nothing, OpExecutionContext, Permissive, StringSource, op
 from dagster._annotations import experimental
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
 
 from ..client import DagsterKubernetesClient
@@ -288,58 +290,71 @@ def execute_k8s_job(
 
     api_client.batch_api.create_namespaced_job(namespace, job)
 
-    context.log.info("Waiting for Kubernetes job to finish...")
+    try:
+        context.log.info("Waiting for Kubernetes job to finish...")
 
-    timeout = timeout or 0
+        timeout = timeout or 0
 
-    api_client.wait_for_job(
-        job_name=job_name,
-        namespace=namespace,
-        wait_timeout=timeout,
-        start_time=start_time,
-    )
+        api_client.wait_for_job(
+            job_name=job_name,
+            namespace=namespace,
+            wait_timeout=timeout,
+            start_time=start_time,
+        )
 
-    pods = api_client.wait_for_job_to_have_pods(
-        job_name,
-        namespace,
-        wait_timeout=timeout,
-        start_time=start_time,
-    )
+        pods = api_client.wait_for_job_to_have_pods(
+            job_name,
+            namespace,
+            wait_timeout=timeout,
+            start_time=start_time,
+        )
 
-    pod_names = [p.metadata.name for p in pods]
+        pod_names = [p.metadata.name for p in pods]
 
-    if not pod_names:
-        raise Exception("No pod names in job after it started")
+        if not pod_names:
+            raise Exception("No pod names in job after it started")
 
-    pod_to_watch = pod_names[0]
-    watch = kubernetes.watch.Watch()  # consider moving in to api_client
+        pod_to_watch = pod_names[0]
+        watch = kubernetes.watch.Watch()  # consider moving in to api_client
 
-    api_client.wait_for_pod(pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time)
+        api_client.wait_for_pod(
+            pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time
+        )
 
-    log_stream = watch.stream(
-        api_client.core_api.read_namespaced_pod_log,
-        name=pod_to_watch,
-        namespace=namespace,
-        container=container_name,
-    )
+        log_stream = watch.stream(
+            api_client.core_api.read_namespaced_pod_log,
+            name=pod_to_watch,
+            namespace=namespace,
+            container=container_name,
+        )
 
-    while True:
-        if timeout and time.time() - start_time > timeout:
-            watch.stop()
-            raise Exception("Timed out waiting for pod to finish")
+        while True:
+            if timeout and time.time() - start_time > timeout:
+                watch.stop()
+                raise Exception("Timed out waiting for pod to finish")
+
+            try:
+                log_entry = next(log_stream)
+                print(log_entry)  # pylint: disable=print-call
+            except StopIteration:
+                break
+
+        api_client.wait_for_running_job_to_succeed(
+            job_name=job_name,
+            namespace=namespace,
+            wait_timeout=timeout,
+            start_time=start_time,
+        )
+    except:
+        context.log.info("Deleting K8s job {job_name} after an exception...")
 
         try:
-            log_entry = next(log_stream)
-            print(log_entry)  # pylint: disable=print-call
-        except StopIteration:
-            break
-
-    api_client.wait_for_running_job_to_succeed(
-        job_name=job_name,
-        namespace=namespace,
-        wait_timeout=timeout,
-        start_time=start_time,
-    )
+            api_client.delete_job(job_name=job_name, namespace=namespace)
+        except:
+            context.log.warning(
+                f"Failure deleting K8s job: {serializable_error_info_from_exc_info(sys.exc_info())}"
+            )
+        raise
 
 
 @op(ins={"start_after": In(Nothing)}, config_schema=K8S_JOB_OP_CONFIG)

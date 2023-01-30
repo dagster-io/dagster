@@ -1,6 +1,6 @@
 import kubernetes
 import pytest
-from dagster import RetryRequested, job, op
+from dagster import DagsterRunStatus, RetryRequested, job, op
 from dagster_k8s import execute_k8s_job, k8s_job_op
 from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
@@ -130,7 +130,7 @@ def test_k8s_job_op_with_timeout_fail(namespace, cluster_provider):
         {
             "image": "busybox",
             "command": ["/bin/sh", "-c"],
-            "args": ["sleep 15 && echo HI"],
+            "args": ["sleep 3600 && echo HI"],
             "namespace": namespace,
             "load_incluster_config": False,
             "kubeconfig_file": cluster_provider.kubeconfig_file,
@@ -143,8 +143,22 @@ def test_k8s_job_op_with_timeout_fail(namespace, cluster_provider):
     def timeout_job():
         timeout_op()
 
-    with pytest.raises(DagsterK8sError, match="Timed out while waiting for pod to become ready"):
-        timeout_job.execute_in_process()
+    result = timeout_job.execute_in_process(raise_on_error=False)
+
+    assert any(
+        [
+            "Timed out while waiting for pod to become ready" in str(event)
+            for event in result.all_events
+        ]
+    )
+
+    assert result.dagster_run.status == DagsterRunStatus.FAILURE
+
+    k8s_job_name = get_k8s_job_name(result.run_id, timeout_op.name)
+    api_client = DagsterKubernetesClient.production_client()
+
+    # False means the job does not exist
+    assert not api_client.delete_job(k8s_job_name, namespace)
 
 
 @pytest.mark.default
