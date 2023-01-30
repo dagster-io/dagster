@@ -2,14 +2,20 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Dict,
     Iterator,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
+    Union,
     cast,
 )
+
+from pydantic import BaseModel
+from typing_extensions import TypeAlias
 
 from dagster._config import (
     ALL_CONFIG_BUILTINS,
@@ -20,6 +26,7 @@ from dagster._config import (
     Selector,
     Shape,
 )
+from dagster._config.structured_config import Config
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
@@ -670,3 +677,48 @@ def construct_config_type_dictionary(
         type_dict_by_key[config_type.key] = config_type
 
     return type_dict_by_name, type_dict_by_key
+
+
+def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        k: {"config": v._as_config_dict() if isinstance(v, Config) else v}
+        for k, v in configs.items()
+    }
+
+
+class RunConfig:
+    def __init__(
+        self,
+        loggers: Optional[Dict[str, Any]] = None,
+        resources: Optional[Dict[str, Any]] = None,
+        ops: Optional[Dict[str, Any]] = None,
+        assets: Optional[Dict[str, Any]] = None,
+    ):
+        self.loggers = check.opt_dict_param(loggers, "loggers")
+        self.resources = check.opt_dict_param(resources, "resources")
+
+        check.invariant(
+            ops is None or assets is None, "Cannot specify both ops and assets config in RunConfig"
+        )
+        self.op_or_asset_config = (
+            check.opt_dict_param(ops, "ops") if ops else check.opt_dict_param(assets, "assets")
+        )
+
+    def to_config_dict(self):
+        return {
+            "loggers": self.loggers,
+            "resources": _convert_config_classes(self.resources),
+            "ops": _convert_config_classes(self.op_or_asset_config),
+        }
+
+
+CoercibleToRunConfig: TypeAlias = Union[Dict[str, Any], RunConfig]
+
+T = TypeVar("T")
+
+
+def convert_run_config(input: Union[CoercibleToRunConfig, T]) -> Union[T, Mapping[str, Any]]:
+    if isinstance(input, RunConfig):
+        return input.to_config_dict()
+    else:
+        return input
