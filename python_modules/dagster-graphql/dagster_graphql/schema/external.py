@@ -6,7 +6,6 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.logical_version import CachingStaleStatusResolver
 from dagster._core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,
@@ -27,6 +26,7 @@ from dagster._core.workspace.context import (
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import (
     RepositoryScopedBatchLoader,
+    StaleStatusLoader,
 )
 
 from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
@@ -225,7 +225,7 @@ class GrapheneRepository(graphene.ObjectType):
         )
         check.inst_param(instance, "instance", DagsterInstance)
         self._batch_loader = RepositoryScopedBatchLoader(instance, repository)
-        self._stale_status_loader = CachingStaleStatusResolver(
+        self._stale_status_loader = StaleStatusLoader(
             instance=instance,
             asset_graph=ExternalAssetGraph.from_external_repository(repository),
         )

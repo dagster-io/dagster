@@ -8,6 +8,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.logical_version import CachingStaleStatusResolver
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -437,3 +438,7 @@ class CrossRepoAssetDependedByLoader:
         return external_asset_deps.get((repository_location_name, repository_name), {}).get(
             asset_key, []
         )
+
+
+# CachingStaleStatusResolver from core can be used directly as a GQL batch loader.
+StaleStatusLoader = CachingStaleStatusResolver

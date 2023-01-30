@@ -4,7 +4,6 @@ import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.logical_version import CachingStaleStatusResolver
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.host_representation import (
     InstigatorSelector,
@@ -61,6 +60,7 @@ from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.loader import (
     BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
+    StaleStatusLoader,
 )
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
@@ -646,7 +646,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         else:
             asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
 
-        stale_status_loader = CachingStaleStatusResolver(
+        stale_status_loader = StaleStatusLoader(
             instance=graphene_info.context.instance,
             asset_graph=asset_graph,
         )

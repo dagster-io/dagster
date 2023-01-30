@@ -12,7 +12,6 @@ from dagster import (
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.logical_version import CachingStaleStatusResolver
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -25,6 +24,7 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_graphql.implementation.loader import (
     CrossRepoAssetDependedByLoader,
+    StaleStatusLoader,
 )
 
 if TYPE_CHECKING:
@@ -142,7 +142,7 @@ def get_asset_nodes_by_asset_key(
 
     depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
-    stale_status_loader = CachingStaleStatusResolver(
+    stale_status_loader = StaleStatusLoader(
         instance=graphene_info.context.instance,
         asset_graph=ExternalAssetGraph.from_workspace(graphene_info.context),
     )

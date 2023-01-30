@@ -8,7 +8,6 @@ from dagster import (
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.logical_version import (
     NULL_LOGICAL_VERSION,
-    CachingStaleStatusResolver,
 )
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
@@ -48,6 +47,7 @@ from ..implementation.fetch_assets import (
 from ..implementation.loader import (
     BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
+    StaleStatusLoader,
 )
 from . import external
 from .asset_key import GrapheneAssetKey
@@ -151,7 +151,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     _external_pipeline: Optional[ExternalPipeline]
     _external_repository: ExternalRepository
     _latest_materialization_loader: Optional[BatchMaterializationLoader]
-    _stale_status_loader: Optional[CachingStaleStatusResolver]
+    _stale_status_loader: Optional[StaleStatusLoader]
 
     # NOTE: properties/resolvers are listed alphabetically
     assetKey = graphene.NonNull(GrapheneAssetKey)
@@ -217,7 +217,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         external_asset_node: ExternalAssetNode,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
-        stale_status_loader: Optional[CachingStaleStatusResolver] = None,
+        stale_status_loader: Optional[StaleStatusLoader] = None,
     ):
         from ..implementation.fetch_assets import get_unique_asset_id
 
@@ -241,7 +241,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._stale_status_loader = check.opt_inst_param(
             stale_status_loader,
             "stale_status_loader",
-            CachingStaleStatusResolver,
+            StaleStatusLoader,
         )
         self._external_pipeline = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
@@ -270,7 +270,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node
 
     @property
-    def stale_status_loader(self) -> CachingStaleStatusResolver:
+    def stale_status_loader(self) -> StaleStatusLoader:
         loader = check.not_none(
             self._stale_status_loader,
             "stale_status_loader must exist in order to logical versioning information",
