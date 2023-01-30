@@ -1,3 +1,5 @@
+from typing import List
+
 from dagster import In, Out, job, make_values_resource, op
 from dagster_wandb import wandb_artifacts_io_manager, wandb_resource
 
@@ -14,14 +16,14 @@ MY_FIRST_LIST = "my_first_list"
         }
     )
 )
-def create_my_first_list() -> list[int]:
+def create_my_first_list() -> List[int]:
     """Example writing a simple Python list into an W&B Artifact.
 
     The list is pickled in the Artifact. We can configure the Artifact name and type with the
     metadata object.
 
     Returns:
-        list[int]: The list we want to store in an Artifact
+        List[int]: The list we want to store in an Artifact
     """
     return [1, 2, 3]
 
@@ -45,14 +47,14 @@ def create_my_first_list() -> list[int]:
         }
     ),
 )
-def create_my_final_list(downloaded_artifact: list[int]) -> list[int]:
+def create_my_final_list(downloaded_artifact: List[int]) -> List[int]:
     """Example downloading an Artifact and creating a new one.
 
     Args:
-        my_first_list (list[int]): Unpickled content of Artifact created in the previous asset
+        my_first_list (List[int]): Unpickled content of Artifact created in the previous asset
 
     Returns:
-        list[int]: The content of the new Artifact.
+        List[int]: The content of the new Artifact.
 
     my_first_list is unpickled from the Artifact. We then concatene that list with another one into
     a new Artifact.
@@ -66,7 +68,9 @@ def create_my_final_list(downloaded_artifact: list[int]) -> list[int]:
             entity=str,
             project=str,
         ),
-        "wandb_resource": wandb_resource.configured({"api_key": {"env": "WANDB_API_KEY"}}),
+        "wandb_resource": wandb_resource.configured(
+            {"api_key": {"env": "WANDB_API_KEY"}}
+        ),
         "io_manager": wandb_artifacts_io_manager.configured(
             {"wandb_run_id": "my_resumable_run_id"}
         ),
