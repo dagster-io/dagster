@@ -40,7 +40,7 @@ def prod_storage_fixture(package_dir):
 
 @pytest.fixture(name="branch_storage")
 def branch_storage_fixture(package_dir):
-    branch_storage_dir = os.path.join(package_dir, "my-feature-branch_storage")
+    branch_storage_dir = os.path.join(package_dir, "my-featured-branch_storage")
     if os.path.exists(branch_storage_dir):
         subprocess.check_output(["rm", "-rf", branch_storage_dir])
     os.mkdir(branch_storage_dir)
@@ -70,7 +70,7 @@ def branch_instance(temp_dir):
     dev_dagster_home = file_relative_path(temp_dir, "dev_dagster_home")
     if not os.path.exists(dev_dagster_home):
         os.mkdir(dev_dagster_home)
-    with environ({"DAGSTER_HOME": dev_dagster_home, "DAGSTER_DEPLOYMENT": "my-feature-branch"}):
+    with environ({"DAGSTER_HOME": dev_dagster_home, "DAGSTER_DEPLOYMENT": "my-featured-branch"}):
         with instance_for_test(
             temp_dir=dev_dagster_home,
         ) as instance:
