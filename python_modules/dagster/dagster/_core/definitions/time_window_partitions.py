@@ -653,6 +653,9 @@ def daily_partitioned_config(
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
+        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
+            accepts a partition time window and returns a dictionary of tags to attach to runs for
+            that partition.
 
     .. code-block:: python
 
@@ -770,6 +773,9 @@ def hourly_partitioned_config(
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
+        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
+            accepts a partition time window and returns a dictionary of tags to attach to runs for
+            that partition.
 
     .. code-block:: python
 
@@ -900,6 +906,9 @@ def monthly_partitioned_config(
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
+        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
+            accepts a partition time window and returns a dictionary of tags to attach to runs for
+            that partition.
 
     .. code-block:: python
 
@@ -1034,6 +1043,9 @@ def weekly_partitioned_config(
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
             and so on.
+        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
+            accepts a partition time window and returns a dictionary of tags to attach to runs for
+            that partition.
 
     .. code-block:: python
 

@@ -972,6 +972,9 @@ def static_partitioned_config(
     Args:
         partition_keys (Sequence[str]): A list of valid partition keys, which serve as the range of
             values that can be provided to the decorated run config function.
+        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
+            accepts a partition key and returns a dictionary of tags to attach to runs for that
+            partition.
 
     Returns:
         PartitionedConfig
@@ -1014,6 +1017,9 @@ def dynamic_partitioned_config(
         partition_fn (Callable[[datetime.datetime], Sequence[str]]): A function that generates a
             list of valid partition keys, which serve as the range of values that can be provided
             to the decorated run config function.
+        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
+            accepts a partition key and returns a dictionary of tags to attach to runs for that
+            partition.
 
     Returns:
         PartitionedConfig
