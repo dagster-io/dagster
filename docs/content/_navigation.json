@@ -35,28 +35,20 @@
     "path": "/tutorial",
     "children": [
       {
+        "title": "Introduction",
+        "path": "/new-tutorial/intro-to-assets"
+      },
+      {
         "title": "Setup",
-        "path": "/tutorial/setup"
+        "path": "/new-tutorial/setup"
       },
       {
-        "title": "Defining an asset",
-        "path": "/tutorial/assets/defining-an-asset"
+        "title": "Your First Asset",
+        "path": "/new-tutorial/your-first-asset"
       },
       {
-        "title": "Building graphs of assets",
-        "path": "/tutorial/assets/asset-graph"
-      },
-      {
-        "title": "Assets without arguments and return values",
-        "path": "/tutorial/assets/non-argument-deps"
-      },
-      {
-        "title": "Testing assets",
-        "path": "/tutorial/assets/testing-assets"
-      },
-      {
-        "title": "Next steps",
-        "path": "/tutorial/assets/next-steps"
+        "title": "Building an Asset Graph",
+        "path": "/new-tutorial/building-an-asset-graph"
       }
     ]
   },
