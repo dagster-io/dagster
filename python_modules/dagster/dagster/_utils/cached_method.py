@@ -5,12 +5,17 @@ from typing_extensions import Concatenate, Final, ParamSpec
 
 from dagster import _check as check
 
-NO_VALUE_IN_CACHE_SENTINEL: Final = object()
-
 S = TypeVar("S")
 T = TypeVar("T")
 T_Callable = TypeVar("T_Callable", bound=Callable)
 P = ParamSpec("P")
+
+
+class _Sentinel:
+    ...
+
+
+NO_VALUE_IN_CACHE_SENTINEL: Final = _Sentinel()
 
 
 def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
@@ -61,8 +66,8 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
 
         key = _make_key(args, kwargs)
         cached_result = cache.get(key, NO_VALUE_IN_CACHE_SENTINEL)
-        if cached_result is not NO_VALUE_IN_CACHE_SENTINEL:
-            return cached_result  # type: ignore
+        if not isinstance(cached_result, _Sentinel):
+            return cached_result
         else:
             result = method(self, *args, **kwargs)
             cache[key] = result
