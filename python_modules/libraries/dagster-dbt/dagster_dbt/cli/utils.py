@@ -167,7 +167,7 @@ def execute_cli(
         stderr=subprocess.STDOUT,
     )
     for raw_line in process.stdout or []:
-        line = raw_line.decode().rstrip()
+        line = raw_line.decode(errors="replace").rstrip()
 
         message, json_line = _process_line(line, log, json_log_format, capture_logs)
         lines.append(line)
@@ -319,7 +319,7 @@ def execute_cli_event_generator(
         stderr=subprocess.STDOUT,
     )
     for raw_line in process.stdout or []:
-        line = raw_line.decode().rstrip()
+        line = raw_line.decode(errors="replace").rstrip()
         message, json_line = _process_line(line, log, json_log_format, capture_logs)
         messages.append(message)
         if json_line is not None:
