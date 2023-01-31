@@ -1,26 +1,18 @@
-from typing import List, Mapping, Optional, Set, Tuple
+from typing import List, Mapping, Optional, Set, Tuple, Union
 
 from airflow.models.connection import Connection
 from airflow.models.dagbag import DagBag
-from dagster import (
-    AssetKey,
-    AssetsDefinition,
-    Definitions,
-    GraphDefinition,
-    OutputMapping,
-    TimeWindowPartitionsDefinition,
-    _check as check,
-)
+from dagster_airflow.dagster_pipeline_factory import (
+    DagsterAirflowError, _create_airflow_connections,
+    _make_schedules_and_jobs_from_airflow_dag_bag,
+    make_dagster_pipeline_from_airflow_dag, patch_airflow_example_dag)
+
+from dagster import (AssetIn, AssetKey, AssetsDefinition, Definitions,
+                     GraphDefinition, OutputMapping,
+                     TimeWindowPartitionsDefinition)
+from dagster import _check as check
 from dagster._core.definitions.graph_definition import _create_adjacency_lists
 from dagster._utils.schedules import is_valid_cron_schedule
-
-from dagster_airflow.dagster_pipeline_factory import (
-    DagsterAirflowError,
-    _create_airflow_connections,
-    _make_schedules_and_jobs_from_airflow_dag_bag,
-    make_dagster_pipeline_from_airflow_dag,
-    patch_airflow_example_dag,
-)
 
 
 def make_dagster_job_from_airflow_dag(
@@ -262,7 +254,8 @@ def make_dagster_definitions_from_airflow_example_dags(use_ephemeral_airflow_db=
 
 def _build_asset_dependencies(
     graph: GraphDefinition,
-    task_ids_by_asset_key: Mapping[AssetKey, str],
+    task_ids_by_asset_key: Mapping[AssetKey, Set[str]],
+    upstream_asset_keys_by_task_id: Mapping[str, Set[AssetKey]],
 ) -> Tuple[Set[OutputMapping], Mapping[str, AssetKey], Mapping[str, Set[AssetKey]]]:
     """Builds the asset dependency graph for a given set of airflow task mappings and a dagster graph
     """
@@ -272,6 +265,20 @@ def _build_asset_dependencies(
 
     visited_nodes = {}
     upstream_deps = set()
+
+    # add new upstream asset dependencies to the internal deps
+    for task_id in upstream_asset_keys_by_task_id:
+        if f"result_airflow_{task_id}" in internal_asset_deps:
+            internal_asset_deps[f"result_airflow_{task_id}"].update(upstream_asset_keys_by_task_id[task_id])
+        else:
+            output_mappings.add(
+                OutputMapping(
+                    graph_output_name=f"result_airflow_{task_id}",
+                    mapped_node_name=f"airflow_{task_id}",
+                    mapped_node_output_name="airflow_task_complete",  # Default output name
+                )
+            )
+            internal_asset_deps[f"result_airflow_{task_id}"] = upstream_asset_keys_by_task_id[task_id]
 
     def find_upstream_dependency(node_name: str) -> None:
         # find_upstream_dependency uses Depth-Firs-Search to find all upstream asset dependencies as described in task_ids_by_asset_key
@@ -316,19 +323,24 @@ def _build_asset_dependencies(
         for task_id in task_ids_by_asset_key[asset_key]:
             internal_asset_deps[f"result_airflow_{task_id}"] = asset_upstream_deps
 
+    print("OUTPUT MAPPINGS", output_mappings)
+    print("KEYS BY OUTPUT NAME", keys_by_output_name)
+
     return (output_mappings, keys_by_output_name, internal_asset_deps)
 
 
 def load_assets_from_airflow_dag(
     dag,
-    task_ids_by_asset_key: Optional[Mapping[AssetKey, str]] = None,
+    task_ids_by_asset_key: Optional[Mapping[AssetKey,Set[str]]] = None,
+    upstream_asset_keys_by_task_id: Optional[Mapping[str, Set[AssetKey]]] = None,
     connections: List[Connection] = None,
 ) -> AssetsDefinition:
     """Construct Dagster Assets for a given Airflow DAG.
 
     Args:
         dag (DAG): The Airflow DAG to compile into a Dagster job
-        task_ids_by_asset_key (Optional[Dict[str, Union[str, set[str]]]]): A mapping from asset keys to task ids
+        task_ids_by_asset_key (Optional[Mapping[AssetKey,Set[str]]]): A mapping from asset keys to task ids. Used break up the Airflow Dag into multiple SDAs
+        upstream_asset_keys_by_task_id (Optional[Mapping[str, Set[AssetKey]]]): A mapping from upstream asset keys to airflow task ids. Used to declare new upstream SDA depenencies for a given airflow task.
         connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
             Airflow DB
 
@@ -347,19 +359,30 @@ def load_assets_from_airflow_dag(
     graph = job._graph_def
     start_date = dag.start_date if dag.start_date else dag.default_args.get("start_date")
 
-    # if no mappings are provided the dag becomes a single SDA
+    # leaf nodes have no downstream nodes
+    forward_edges, _ = _create_adjacency_lists(graph.nodes, graph.dependency_structure)
+    leaf_nodes = {
+        node_name.replace("airflow_", "")
+        for node_name, downstream_nodes in forward_edges.items()
+        if not downstream_nodes
+    }
+
     if task_ids_by_asset_key is None or task_ids_by_asset_key == {}:
-        # leaf nodes have no downstream nodes
-        forward_edges, _ = _create_adjacency_lists(graph.nodes, graph.dependency_structure)
-        leaf_nodes = {
-            node_name.replace("airflow_", "")
-            for node_name, downstream_nodes in forward_edges.items()
-            if not downstream_nodes
-        }
+        # if no mappings are provided the dag becomes a single SDA
         task_ids_by_asset_key = {AssetKey(dag.dag_id): leaf_nodes}
+    else:
+        # if mappings were provide any unmapped leaf nodes are added to a default asset
+        used_nodes = set()
+        for key in task_ids_by_asset_key:
+            used_nodes.update(task_ids_by_asset_key[key])
+
+        if AssetKey(dag.dag_id) not in task_ids_by_asset_key:
+            task_ids_by_asset_key[AssetKey(dag.dag_id)] = leaf_nodes - used_nodes
+        else:
+            task_ids_by_asset_key[AssetKey(dag.dag_id)].update(leaf_nodes - used_nodes)
 
     output_mappings, keys_by_output_name, internal_asset_deps = _build_asset_dependencies(
-        graph, task_ids_by_asset_key
+        graph, task_ids_by_asset_key, upstream_asset_keys_by_task_id
     )
 
     new_graph = GraphDefinition(
