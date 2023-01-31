@@ -7,23 +7,41 @@ class MyDatabaseConnection:
 
 
 # start_marker
-@op(config_schema={"person_name": str})
-def op_using_config(context):
-    return f'hello {context.op_config["person_name"]}'
+from dagster._config.structured_config import Config
 
 
-@asset(config_schema={"person_name": str})
-def asset_using_config(context):
-    # Note how asset config is also accessed with context.op_config
-    return f'hello {context.op_config["person_name"]}'
+class MyOpConfig(Config):
+    person_name: str
 
 
-@resource(config_schema={"url": str})
-def resource_using_config(context):
-    return MyDatabaseConnection(context.resource_config["url"])
+@op
+def op_using_config(config: MyOpConfig):
+    return f"hello {config.person_name}"
+
+
+class MyAssetConfig(Config):
+    person_name: str
+
+
+@asset
+def asset_using_config(config: MyAssetConfig):
+    return f"hello {config.person_name}"
 
 
 # end_marker
+
+# start_resource_marker
+from dagster._config.structured_config import Resource
+
+
+class ResourceUsingConfig(Resource):
+    url: str
+
+    def db_connection(self):
+        return MyDatabaseConnection(self.url)
+
+
+# end_resource_marker
 
 
 @job

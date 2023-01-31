@@ -9,7 +9,7 @@ Run configuration allows providing parameters to jobs at the time they're execut
 
 It's often useful to provide user-chosen values to Dagster jobs or software-defined assets at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
 
-Various Dagster entities (ops, assets, resources) can be individually configured. When launching a job that executes (ops), materializes (assets), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration off of the `context`. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the op/asset/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
+Various Dagster entities (ops, assets, resources) can be individually configured. When launching a job that executes (ops), materializes (assets), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration through the `config` parameter. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the op/asset/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
 
 A common use of configuration is for a [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/schedules) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the ops as a config value, and that op might use that config value to decide what day's data to read.
 
@@ -23,38 +23,58 @@ A common use of configuration is for a [schedule](/concepts/partitions-schedules
 
 ---
 
-## Defining and accessing configuration for an op, asset, or resource
+## Defining and accessing configuration for an op or asset
 
-Configurable parameters accepted by an op, asset, or resource are specified by providing a `config_schema` to the corresponding decorator. The structure of a `config_schema` is flexible and [fully documented in the API Reference](/\_apidocs/config). However, most of the time you will want to provide a Python dictionary, with keys the names of parameters and values the types of those parameters.
+Configurable parameters accepted by an op or asset are specified by defining a config model extending `Config` and a `config` parameter to the corresponding function. Under the hood, these config models utilize [Pydantic](https://docs.pydantic.dev/), a popular Python library for data validation and serialization.
 
-During execution, the specified parameters are accessible within the body of the op/asset/resource under `context.op_config` (for ops/assets) or `context.resource_config` (for resources). It might seem confusing that asset config is accessed under `context.op_config` instead of `context.asset_config`. However, assets are wrappers for ops, so when we access asset config we are literally just accessing config for the underlying op.
+During execution, the specified config is accessed within the body of the op or asset using the `config` parameter.
 
-Below we define a simple op and asset with identical `config_schemas` defining a single configurable parameter, `person_name`, as well as a resource with a configurable `url` parameter:
+Below we define a simple op and asset, each with a single configurable parameter, `person_name`:
 
 ```python file=/concepts/configuration/configurable_op_asset_resource.py startafter=start endbefore=end
-@op(config_schema={"person_name": str})
-def op_using_config(context):
-    return f'hello {context.op_config["person_name"]}'
+from dagster._config.structured_config import Config
 
 
-@asset(config_schema={"person_name": str})
-def asset_using_config(context):
-    # Note how asset config is also accessed with context.op_config
-    return f'hello {context.op_config["person_name"]}'
+class MyOpConfig(Config):
+    person_name: str
 
 
-@resource(config_schema={"url": str})
-def resource_using_config(context):
-    return MyDatabaseConnection(context.resource_config["url"])
+@op
+def op_using_config(config: MyOpConfig):
+    return f"hello {config.person_name}"
+
+
+class MyAssetConfig(Config):
+    person_name: str
+
+
+@asset
+def asset_using_config(config: MyAssetConfig):
+    return f"hello {config.person_name}"
 ```
 
-<Note>
-  It is technically possible to access <code>context.op_config</code> inside ops
-  (not assets) without defining a <code>config_schema</code>. However, this is
-  not recommended.
-</Note>
-
 You can also build config into jobs, as described in [the Jobs documentation](/concepts/ops-jobs-graphs/jobs#configuring-jobs).
+
+---
+
+## Defining and accessing configuration for a resource
+
+Configurable parameters for a resource are defined by specifying attributes for the resource class, which is itself a [Pydantic model](https://docs.pydantic.dev/usage/models/).
+
+During execution, the specified attributes are accessible from the resource instance.
+
+Below we define a simple resource with a configurable `url` parameter:
+
+```python file=/concepts/configuration/configurable_op_asset_resource.py startafter=start_resource endbefore=end_resource
+from dagster._config.structured_config import Resource
+
+
+class ResourceUsingConfig(Resource):
+    url: str
+
+    def db_connection(self):
+        return MyDatabaseConnection(self.url)
+```
 
 ---
 
@@ -68,9 +88,30 @@ If you want to execute `op_using_config` or materialize `asset_using_config`, we
 
 ### Python
 
-From the Python API, we can use the `run_config` argument for <PyObject object="JobDefinition" method="execute_in_process"/> or <PyObject object="materialize"/>. This takes a dictionary where configuration values for ops/assets are specified under `ops.<op_or_asset_name>.config` (for resources under `resources.<resource_name>.config`):
+From the Python API, we can use the `run_config` argument for <PyObject object="JobDefinition" method="execute_in_process"/> or <PyObject object="materialize"/>. This takes a `RunConfig` object, within which we can supply config on a per-op or per-asset basis. The config is specified as a dictionary, with the keys corresponding to the op/asset names and the values corresponding to the config values.
 
 ```python file=/concepts/configuration/execute_with_config.py startafter=start_execute_with_config endbefore=end_execute_with_config dedent=4
+from dagster._core.definitions.run_config import RunConfig
+
+@job
+def example_job():
+    op_using_config()
+
+job_result = example_job.execute_in_process(
+    run_config=RunConfig(ops={"op_using_config": MyOpConfig(person_name="Alice")})
+)
+
+asset_result = materialize(
+    [asset_using_config],
+    run_config=RunConfig(assets={"asset_using_config": MyAssetConfig(person_name="Alice")}),
+)
+```
+
+Config can alternatively be provided in the form of a dictionary, where configuration values for ops/assets are specified under `ops.<op_or_asset_name>.config`:
+
+```python file=/concepts/configuration/execute_with_config.py startafter=start_execute_with_config_old endbefore=end_execute_with_config_old dedent=4
+from dagster._core.definitions.run_config import RunConfig
+
 @job
 def example_job():
     op_using_config()
@@ -81,9 +122,7 @@ job_result = example_job.execute_in_process(
 
 asset_result = materialize(
     [asset_using_config],
-    run_config={
-        "ops": {"asset_using_config": {"config": {"person_name": "Alice"}}}
-    },
+    run_config={"ops": {"asset_using_config": {"config": {"person_name": "Alice"}}}},
 )
 ```
 
@@ -125,16 +164,12 @@ def example_job():
     op_using_config()
 
 op_result = example_job.execute_in_process(
-    run_config={
-        "ops": {"op_using_config": {"config": {"nonexistent_config_value": 1}}}
-    }
+    run_config={"ops": {"op_using_config": {"config": {"nonexistent_config_value": 1}}}}
 )
 
 asset_result = materialize(
     [asset_using_config],
-    run_config={
-        "ops": {"asset_using_config": {"config": {"nonexistent_config_value": 1}}}
-    },
+    run_config={"ops": {"asset_using_config": {"config": {"nonexistent_config_value": 1}}}},
 )
 ```
 

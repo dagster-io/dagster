@@ -3,19 +3,21 @@ import os
 from dagster import job, make_values_resource, op
 
 # start_file_example
+from dagster._core.definitions.resource_output import ResourceOutput
 
 
-@op(required_resource_keys={"file_dir"})
-def add_file(context):
-    filename = f"{context.resources.file_dir}/new_file.txt"
+@op
+def add_file(context, file_dir: ResourceOutput[str]):
+    filename = f"{file_dir}/new_file.txt"
     open(filename, "x", encoding="utf8").close()
 
     context.log.info(f"Created file: {filename}")
 
 
-@op(required_resource_keys={"file_dir"})
-def total_num_files(context):
-    files_in_dir = os.listdir(context.resources.file_dir)
+@op
+def total_num_files(context, file_dir: ResourceOutput[str]):
+    files_in_dir = os.listdir(file_dir)
+
     context.log.info(f"Total number of files: {len(files_in_dir)}")
 
 
