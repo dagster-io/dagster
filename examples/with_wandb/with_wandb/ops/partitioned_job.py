@@ -74,9 +74,7 @@ def read_partitioned_artifact(context: OpExecutionContext, content: List[int]) -
             entity=str,
             project=str,
         ),
-        "wandb_resource": wandb_resource.configured(
-            {"api_key": {"env": "WANDB_API_KEY"}}
-        ),
+        "wandb_resource": wandb_resource.configured({"api_key": {"env": "WANDB_API_KEY"}}),
         "io_manager": wandb_artifacts_io_manager,
     },
 )
