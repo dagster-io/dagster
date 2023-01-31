@@ -20,6 +20,7 @@ class RunShardedEventsCursor(NamedTuple):
     run_updated_after: datetime
 
 
+@whitelist_for_serdes
 class EventLogRecord(NamedTuple):
     """Internal representation of an event record, as stored in a
     :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
