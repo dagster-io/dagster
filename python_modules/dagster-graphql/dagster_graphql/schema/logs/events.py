@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 import graphene
-from dagster._core.definitions.events import AssetLineageInfo
-from dagster._core.events import DagsterEventType
+from dagster._core.events import AssetLineageInfo, DagsterEventType
+from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import ErrorSource
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 
@@ -351,6 +351,7 @@ class AssetEventMixin:
         return self._metadata.partition
 
     def resolve_tags(self, _graphene_info):
+        print("TAGS ARE: ", self._metadata.tags)
         return self._metadata.tags
 
 
@@ -361,11 +362,12 @@ class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
 
     assetLineage = non_null_list(GrapheneAssetLineageInfo)
 
-    def __init__(self, event, assetLineage=None, loader=None):
+    def __init__(self, event: EventLogEntry, assetLineage=None, loader=None):
         self._asset_lineage = check.opt_list_param(assetLineage, "assetLineage", AssetLineageInfo)
         self._batch_run_loader = check.opt_inst_param(loader, "loader", BatchRunLoader)
 
-        materialization = event.dagster_event.step_materialization_data.materialization
+        dagster_event = check.not_none(event.dagster_event)
+        materialization = dagster_event.step_materialization_data.materialization
         super().__init__(**_construct_asset_event_metadata_params(event, materialization))
         AssetEventMixin.__init__(
             self,
