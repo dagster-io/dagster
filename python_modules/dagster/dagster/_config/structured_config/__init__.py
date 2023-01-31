@@ -44,28 +44,15 @@ from dagster._core.definitions.resource_definition import (
     ResourceFunction,
     ResourceFunctionWithContext,
     ResourceFunctionWithoutContext,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
 from . import typing_utils
 from .typing_utils import BaseResourceMeta
+from .utils import safe_is_subclass
 
 Self = TypeVar("Self", bound="Resource")
-
-
-def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
-    """Version of issubclass that returns False if cls is not a Type."""
-    if not isinstance(cls, type):
-        return False
-
-    try:
-        return issubclass(cls, possible_parent_cls)
-    except TypeError:
-        # Using builtin Python types in python 3.9+ will raise a TypeError when using issubclass
-        # even though the isinstance check will succeed (as will inspect.isclass), for example
-        # list[dict[str, str]] will raise a TypeError
-        return False
 
 
 class MakeConfigCacheable(BaseModel):
@@ -521,7 +508,7 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
         if pydantic_field.key_field
         else None
     )
-    if _safe_is_subclass(pydantic_field.type_, Config):
+    if safe_is_subclass(pydantic_field.type_, Config):
         inferred_field = infer_schema_from_config_class(
             pydantic_field.type_,
             description=pydantic_field.field_info.description,
@@ -596,7 +583,7 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
     """
     Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
     """
-    if _safe_is_subclass(model_cls, Config):
+    if safe_is_subclass(model_cls, Config):
         check.invariant(
             config_arg_default is inspect.Parameter.empty,
             "Cannot provide a default value when using a Config class",
@@ -667,7 +654,7 @@ def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourc
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
         context = context.replace_config(obj.config_schema.default_value)
-    if is_context_provided(obj.resource_fn):  # type: ignore  # fmt: skip
+    if has_at_least_one_parameter(obj.resource_fn):  # type: ignore  # fmt: skip
         return cast(ResourceFunctionWithContext, obj.resource_fn)(context)
     else:
         return cast(ResourceFunctionWithoutContext, obj.resource_fn)()
