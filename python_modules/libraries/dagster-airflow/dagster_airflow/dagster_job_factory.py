@@ -1,18 +1,26 @@
-from typing import List, Mapping, Optional, Set, Tuple, Union
+from typing import List, Mapping, Optional, Set, Tuple
 
 from airflow.models.connection import Connection
 from airflow.models.dagbag import DagBag
-from dagster_airflow.dagster_pipeline_factory import (
-    DagsterAirflowError, _create_airflow_connections,
-    _make_schedules_and_jobs_from_airflow_dag_bag,
-    make_dagster_pipeline_from_airflow_dag, patch_airflow_example_dag)
-
-from dagster import (AssetIn, AssetKey, AssetsDefinition, Definitions,
-                     GraphDefinition, OutputMapping,
-                     TimeWindowPartitionsDefinition)
-from dagster import _check as check
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    Definitions,
+    GraphDefinition,
+    OutputMapping,
+    TimeWindowPartitionsDefinition,
+    _check as check,
+)
 from dagster._core.definitions.graph_definition import _create_adjacency_lists
 from dagster._utils.schedules import is_valid_cron_schedule
+
+from dagster_airflow.dagster_pipeline_factory import (
+    DagsterAirflowError,
+    _create_airflow_connections,
+    _make_schedules_and_jobs_from_airflow_dag_bag,
+    make_dagster_pipeline_from_airflow_dag,
+    patch_airflow_example_dag,
+)
 
 
 def make_dagster_job_from_airflow_dag(
@@ -269,7 +277,9 @@ def _build_asset_dependencies(
     # add new upstream asset dependencies to the internal deps
     for task_id in upstream_asset_keys_by_task_id:
         if f"result_airflow_{task_id}" in internal_asset_deps:
-            internal_asset_deps[f"result_airflow_{task_id}"].update(upstream_asset_keys_by_task_id[task_id])
+            internal_asset_deps[f"result_airflow_{task_id}"].update(
+                upstream_asset_keys_by_task_id[task_id]
+            )
         else:
             output_mappings.add(
                 OutputMapping(
@@ -278,7 +288,9 @@ def _build_asset_dependencies(
                     mapped_node_output_name="airflow_task_complete",  # Default output name
                 )
             )
-            internal_asset_deps[f"result_airflow_{task_id}"] = upstream_asset_keys_by_task_id[task_id]
+            internal_asset_deps[f"result_airflow_{task_id}"] = upstream_asset_keys_by_task_id[
+                task_id
+            ]
 
     def find_upstream_dependency(node_name: str) -> None:
         # find_upstream_dependency uses Depth-Firs-Search to find all upstream asset dependencies as described in task_ids_by_asset_key
@@ -328,7 +340,7 @@ def _build_asset_dependencies(
 
 def load_assets_from_airflow_dag(
     dag,
-    task_ids_by_asset_key: Optional[Mapping[AssetKey,Set[str]]] = None,
+    task_ids_by_asset_key: Optional[Mapping[AssetKey, Set[str]]] = None,
     upstream_asset_keys_by_task_id: Optional[Mapping[str, Set[AssetKey]]] = None,
     connections: List[Connection] = None,
 ) -> AssetsDefinition:
