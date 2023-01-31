@@ -1095,18 +1095,9 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             included_time_windows, "included_time_windows", of_type=TimeWindow
         )
 
-        pkeys = check.opt_nullable_set_param(
+        self._included_partition_keys = check.opt_nullable_set_param(
             included_partition_keys, "included_partition_keys", of_type=str
         )
-        self._included_partition_keys = (
-            sorted(
-                list(pkeys),
-                key=lambda pkey: self._partitions_def.start_time_for_partition_key(pkey),
-            )
-            if pkeys is not None
-            else None
-        )
-        print(self._included_partition_keys)
 
     @property
     def included_time_windows(self) -> Sequence[TimeWindow]:
@@ -1173,12 +1164,15 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
         if self._included_partition_keys is None:
-            self._included_partition_keys = [
+            return [
                 pk
                 for time_window in self.included_time_windows
                 for pk in self._partitions_def.get_partition_keys_in_time_window(time_window)
             ]
-        return self._included_partition_keys
+        return sorted(
+            list(self._included_partition_keys),
+            key=lambda pkey: self._partitions_def.start_time_for_partition_key(pkey),
+        )
 
     def get_partition_key_ranges(
         self, current_time: Optional[datetime] = None
@@ -1191,7 +1185,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
     def _add_partitions_to_time_windows(
         self, initial_windows: Sequence[TimeWindow], partition_keys: Sequence[str]
     ) -> Tuple[Sequence[TimeWindow], int]:
-        """Merges a set of partition keys into an existing set of time windows, reuturning the
+        """Merges a set of partition keys into an existing set of time windows, returning the
         minimized set of time windows and the number of partitions added.
         """
         result_windows = [*initial_windows]
