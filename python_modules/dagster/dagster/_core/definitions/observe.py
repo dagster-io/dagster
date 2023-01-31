@@ -6,8 +6,7 @@ from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.merger import merge_dicts
 
 from ..instance import DagsterInstance
-from .assets import AssetsDefinition
-from .assets_job import build_assets_job
+from .assets_job import build_source_asset_observation_job
 from .job_definition import default_job_io_manager_with_fs_io_manager_schema
 from .source_asset import SourceAsset
 from .utils import DEFAULT_IO_MANAGER_KEY
@@ -31,7 +30,7 @@ def observe(
     By default, will materialize assets to the local filesystem.
 
     Args:
-        assets (Sequence[Union[AssetsDefinition, SourceAsset]]):
+        source_assets (Sequence[SourceAsset]):
             The assets to materialize. Can also provide :py:class:`SourceAsset` objects to fill dependencies for asset defs.
         resources (Optional[Mapping[str, object]]):
             The resources needed for execution. Can provide resource instances
@@ -48,9 +47,7 @@ def observe(
     """
     from ..execution.build_resources import wrap_resources_for_execution
 
-    assets = check.sequence_param(source_assets, "assets", of_type=(AssetsDefinition, SourceAsset))
-    assets_defs = [the_def for the_def in assets if isinstance(the_def, AssetsDefinition)]
-    source_assets = [the_def for the_def in assets if isinstance(the_def, SourceAsset)]
+    source_assets = check.sequence_param(source_assets, "assets", of_type=(SourceAsset))
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     partition_key = check.opt_str_param(partition_key, "partition_key")
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
@@ -61,12 +58,11 @@ def observe(
 
     with warnings.catch_warnings():
         warnings.filterwarnings(
-            "ignore", category=ExperimentalWarning, message=".*build_assets_job.*"
+            "ignore", category=ExperimentalWarning, message=".*build_source_asset_observation_job.*"
         )
 
-        return build_assets_job(
-            "in_process_materialization_job",
-            assets=assets_defs,
+        return build_source_asset_observation_job(
+            "in_process_observation_job",
             source_assets=source_assets,
             resource_defs=resource_defs,
         ).execute_in_process(
