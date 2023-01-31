@@ -1,14 +1,23 @@
-from typing import List, Mapping, Optional, Set, Tuple
+from typing import List, Mapping, Optional, Set, AbstractSet, Tuple
 
 from airflow.models.connection import Connection
 from airflow.models.dagbag import DagBag
 from dagster_airflow.dagster_pipeline_factory import (
-    DagsterAirflowError, _create_airflow_connections,
+    DagsterAirflowError,
+    _create_airflow_connections,
     _make_schedules_and_jobs_from_airflow_dag_bag,
-    make_dagster_pipeline_from_airflow_dag, patch_airflow_example_dag)
+    make_dagster_pipeline_from_airflow_dag,
+    patch_airflow_example_dag,
+)
 
-from dagster import (AssetKey, AssetsDefinition, Definitions, GraphDefinition,
-                     OutputMapping, TimeWindowPartitionsDefinition)
+from dagster import (
+    AssetKey,
+    AssetsDefinition,
+    Definitions,
+    GraphDefinition,
+    OutputMapping,
+    TimeWindowPartitionsDefinition,
+)
 from dagster import _check as check
 from dagster._core.definitions.graph_definition import _create_adjacency_lists
 from dagster._utils.schedules import is_valid_cron_schedule
@@ -253,8 +262,8 @@ def make_dagster_definitions_from_airflow_example_dags(use_ephemeral_airflow_db=
 
 def _build_asset_dependencies(
     graph: GraphDefinition,
-    task_ids_by_asset_key: Mapping[AssetKey, Set[str]],
-    upstream_asset_keys_by_task_id: Mapping[str, Set[AssetKey]],
+    task_ids_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
+    upstream_asset_keys_by_task_id: Mapping[str, AbstractSet[AssetKey]],
 ) -> Tuple[Set[OutputMapping], Mapping[str, AssetKey], Mapping[str, Set[AssetKey]]]:
     """Builds the asset dependency graph for a given set of airflow task mappings and a dagster graph
     """
@@ -284,8 +293,10 @@ def _build_asset_dependencies(
             ]
 
     def find_upstream_dependency(node_name: str) -> None:
-        # find_upstream_dependency uses Depth-Firs-Search to find all upstream asset dependencies as described in task_ids_by_asset_key
-        # this node has been visited
+        """find_upstream_dependency uses Depth-Firs-Search to find all upstream asset dependencies
+        as described in task_ids_by_asset_key
+        """
+        # node has been visited
         if visited_nodes[node_name]:
             return
         # mark node as visted
@@ -331,24 +342,27 @@ def _build_asset_dependencies(
 
 def load_assets_from_airflow_dag(
     dag,
-    task_ids_by_asset_key: Optional[Mapping[AssetKey, Set[str]]] = None,
-    upstream_asset_keys_by_task_id: Optional[Mapping[str, Set[AssetKey]]] = None,
-    connections: List[Connection] = None,
-) -> AssetsDefinition:
+    task_ids_by_asset_key: Optional[Mapping[AssetKey, AbstractSet[str]]] = None,
+    upstream_asset_keys_by_task_id: Optional[Mapping[str, AbstractSet[AssetKey]]] = None,
+    connections: Optional[List[Connection]] = None,
+) -> List[AssetsDefinition]:
     """[Experimental] Construct Dagster Assets for a given Airflow DAG.
 
     Args:
         dag (DAG): The Airflow DAG to compile into a Dagster job
-        task_ids_by_asset_key (Optional[Mapping[AssetKey,Set[str]]]): A mapping from asset keys to task ids. Used break up the Airflow Dag into multiple SDAs
-        upstream_asset_keys_by_task_id (Optional[Mapping[str, Set[AssetKey]]]): A mapping from upstream asset keys to airflow task ids. Used to declare new upstream SDA depenencies for a given airflow task.
+        task_ids_by_asset_key (Optional[Mapping[AssetKey, AbstractSet[str]]]): A mapping from asset keys to
+            task ids. Used break up the Airflow Dag into multiple SDAs
+        upstream_asset_keys_by_task_id (Optional[Mapping[str, AbstractSet[AssetKey]]]): A mapping from
+            upstream asset keys to airflow task ids. Used to declare new upstream SDA depenencies
+            for a given airflow task.
         connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
             Airflow DB
 
     Returns:
-        AssetDefinition
+        List[AssetsDefinition]
     """
     cron_schedule = dag.normalized_schedule_interval
-    if isinstance(cron_schedule, str) and not is_valid_cron_schedule(cron_schedule):
+    if cron_schedule is not None and not is_valid_cron_schedule(cron_schedule):
         raise DagsterAirflowError(
             "Invalid cron schedule: {} in DAG {}".format(cron_schedule, dag.dag_id)
         )
@@ -408,4 +422,4 @@ def load_assets_from_airflow_dag(
         internal_asset_deps=internal_asset_deps,
         can_subset=True,
     )
-    return asset_def
+    return [asset_def]
