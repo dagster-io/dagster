@@ -39,11 +39,11 @@ if TYPE_CHECKING:
     from ..schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
     from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
     from ..schema.runs import GrapheneRunGroup
-    from ..schema.util import HasContext
+    from ..schema.util import ResolveInfo
 
 
 def get_run_by_id(
-    graphene_info: "HasContext", run_id: str
+    graphene_info: "ResolveInfo", run_id: str
 ) -> Union["GrapheneRun", "GrapheneRunNotFoundError"]:
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.pipelines.pipeline import GrapheneRun
@@ -56,7 +56,7 @@ def get_run_by_id(
         return GrapheneRun(record)
 
 
-def get_run_tags(graphene_info: "HasContext") -> List["GraphenePipelineTagAndValues"]:
+def get_run_tags(graphene_info: "ResolveInfo") -> List["GraphenePipelineTagAndValues"]:
     from ..schema.tags import GraphenePipelineTagAndValues
 
     instance = graphene_info.context.instance
@@ -68,7 +68,7 @@ def get_run_tags(graphene_info: "HasContext") -> List["GraphenePipelineTagAndVal
 
 
 @capture_error
-def get_run_group(graphene_info: "HasContext", run_id: str) -> "GrapheneRunGroup":
+def get_run_group(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunGroup":
     from ..schema.errors import GrapheneRunGroupNotFoundError
     from ..schema.pipelines.pipeline import GrapheneRun
     from ..schema.runs import GrapheneRunGroup
@@ -93,7 +93,7 @@ def get_run_group(graphene_info: "HasContext", run_id: str) -> "GrapheneRunGroup
 
 
 def get_runs(
-    graphene_info: "HasContext",
+    graphene_info: "ResolveInfo",
     filters: Optional[RunsFilter],
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
@@ -147,7 +147,7 @@ def add_all_upstream_keys(
 
 
 def get_assets_latest_info(
-    graphene_info: "HasContext", step_keys_by_asset: Mapping[AssetKey, Sequence[str]]
+    graphene_info: "ResolveInfo", step_keys_by_asset: Mapping[AssetKey, Sequence[str]]
 ) -> Sequence["GrapheneAssetLatestInfo"]:
     from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 
@@ -215,7 +215,7 @@ def get_assets_latest_info(
 
 
 def _get_in_progress_runs_for_assets(
-    graphene_info,
+    graphene_info: "ResolveInfo",
     in_progress_records: Sequence[RunRecord],
     step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
 ) -> Tuple[Mapping[AssetKey, AbstractSet[str]], Mapping[AssetKey, AbstractSet[str]]]:
@@ -273,12 +273,12 @@ def _get_in_progress_runs_for_assets(
     return in_progress_run_ids_by_asset, unstarted_run_ids_by_asset
 
 
-def get_runs_count(graphene_info: "HasContext", filters: Optional[RunsFilter]) -> int:
+def get_runs_count(graphene_info: "ResolveInfo", filters: Optional[RunsFilter]) -> int:
     return graphene_info.context.instance.get_runs_count(filters)
 
 
 def get_run_groups(
-    graphene_info: "HasContext",
+    graphene_info: "ResolveInfo",
     filters: Optional[RunsFilter] = None,
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
@@ -311,7 +311,7 @@ def get_run_groups(
 
 @capture_error
 def validate_pipeline_config(
-    graphene_info: "HasContext",
+    graphene_info: "ResolveInfo",
     selector: PipelineSelector,
     run_config: Union[str, Mapping[str, object]],
     mode: Optional[str],
@@ -328,7 +328,7 @@ def validate_pipeline_config(
 
 @capture_error
 def get_execution_plan(
-    graphene_info: "HasContext",
+    graphene_info: "ResolveInfo",
     selector: PipelineSelector,
     run_config: Mapping[str, Any],
     mode: Optional[str],
@@ -352,7 +352,7 @@ def get_execution_plan(
 
 
 @capture_error
-def get_stats(graphene_info: "HasContext", run_id: str) -> "GrapheneRunStatsSnapshot":
+def get_stats(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunStatsSnapshot":
     from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
 
     stats = graphene_info.context.instance.get_run_stats(run_id)
@@ -361,7 +361,7 @@ def get_stats(graphene_info: "HasContext", run_id: str) -> "GrapheneRunStatsSnap
 
 
 def get_step_stats(
-    graphene_info: "HasContext", run_id: str, step_keys: Optional[Sequence[str]] = None
+    graphene_info: "ResolveInfo", run_id: str, step_keys: Optional[Sequence[str]] = None
 ) -> Sequence["GrapheneRunStepStats"]:
     from ..schema.logs.events import GrapheneRunStepStats
 
@@ -371,7 +371,7 @@ def get_step_stats(
 
 @capture_error
 def get_logs_for_run(
-    graphene_info: "HasContext",
+    graphene_info: "ResolveInfo",
     run_id: str,
     cursor: Optional[str] = None,
     limit: Optional[int] = None,

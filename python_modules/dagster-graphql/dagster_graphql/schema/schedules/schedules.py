@@ -15,7 +15,7 @@ from ..instigation import (
     GrapheneFutureInstigationTicks,
     GrapheneInstigationState,
 )
-from ..util import non_null_list
+from ..util import ResolveInfo, non_null_list
 
 
 class GrapheneSchedule(graphene.ObjectType):
@@ -74,11 +74,11 @@ class GrapheneSchedule(graphene.ObjectType):
     def resolve_id(self, _graphene_info):
         return self._external_schedule.get_external_origin_id()
 
-    def resolve_scheduleState(self, _graphene_info):
+    def resolve_scheduleState(self, _graphene_info: ResolveInfo):
         # forward the batch run loader to the instigation state, which provides the schedule runs
         return GrapheneInstigationState(self._schedule_state, self._batch_loader)
 
-    def resolve_partition_set(self, graphene_info):
+    def resolve_partition_set(self, graphene_info: ResolveInfo):
         from ..partition_sets import GraphenePartitionSet
 
         if self._external_schedule.partition_set_name is None:

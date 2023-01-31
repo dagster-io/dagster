@@ -1,18 +1,18 @@
 import dagster._check as check
 from dagster._config import validate_config_from_snap
 from dagster._core.host_representation import RepresentedPipeline
-from graphene import ResolveInfo
+
+from dagster_graphql.schema.util import ResolveInfo
 
 from .external import get_external_pipeline_or_raise
 from .utils import PipelineSelector, UserFacingGraphQLError, capture_error
 
 
 @capture_error
-def resolve_run_config_schema_or_error(graphene_info, selector, mode):
+def resolve_run_config_schema_or_error(graphene_info: ResolveInfo, selector, mode):
     from ..schema.errors import GrapheneModeNotFoundError
     from ..schema.run_config import GrapheneRunConfigSchema
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
     check.opt_str_param(mode, "mode")
 
@@ -31,14 +31,13 @@ def resolve_run_config_schema_or_error(graphene_info, selector, mode):
 
 
 @capture_error
-def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, run_config):
+def resolve_is_run_config_valid(graphene_info: ResolveInfo, represented_pipeline, mode, run_config):
     from ..schema.pipelines.config import (
         GraphenePipelineConfigValidationError,
         GraphenePipelineConfigValidationValid,
         GrapheneRunConfigValidationInvalid,
     )
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
     check.str_param(mode, "mode")
     check.dict_param(run_config, "run_config", key_type=str)

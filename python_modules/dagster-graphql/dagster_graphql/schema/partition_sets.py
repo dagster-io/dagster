@@ -32,7 +32,7 @@ from .pipelines.pipeline import GrapheneRun
 from .pipelines.status import GrapheneRunStatus
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GraphenePartitionTags(graphene.ObjectType):
@@ -136,7 +136,7 @@ class GraphenePartition(graphene.ObjectType):
             mode=external_partition_set.mode,
         )
 
-    def resolve_runConfigOrError(self, graphene_info):
+    def resolve_runConfigOrError(self, graphene_info: ResolveInfo):
         return get_partition_config(
             graphene_info,
             self._external_repository_handle,
@@ -144,7 +144,7 @@ class GraphenePartition(graphene.ObjectType):
             self._partition_name,
         )
 
-    def resolve_tagsOrError(self, graphene_info):
+    def resolve_tagsOrError(self, graphene_info: ResolveInfo):
         return get_partition_tags(
             graphene_info,
             self._external_repository_handle,
@@ -152,7 +152,7 @@ class GraphenePartition(graphene.ObjectType):
             self._partition_name,
         )
 
-    def resolve_runs(self, graphene_info, **kwargs):
+    def resolve_runs(self, graphene_info: ResolveInfo, **kwargs):
         filters = kwargs.get("filter")
         partition_tags = {
             PARTITION_SET_TAG: self._external_partition_set.name,
@@ -227,10 +227,10 @@ class GraphenePartitionSet(graphene.ObjectType):
             mode=external_partition_set.mode,
         )
 
-    def resolve_id(self, _graphene_info):
+    def resolve_id(self, _graphene_info: ResolveInfo):
         return self._external_partition_set.get_external_origin_id()
 
-    def resolve_partitionsOrError(self, graphene_info, **kwargs):
+    def resolve_partitionsOrError(self, graphene_info: ResolveInfo, **kwargs):
         return get_partitions(
             graphene_info,
             self._external_repository_handle,
@@ -240,7 +240,7 @@ class GraphenePartitionSet(graphene.ObjectType):
             reverse=kwargs.get("reverse") or False,
         )
 
-    def resolve_partition(self, graphene_info, partition_name):
+    def resolve_partition(self, graphene_info: ResolveInfo, partition_name):
         return get_partition_by_name(
             graphene_info,
             self._external_repository_handle,
@@ -248,10 +248,10 @@ class GraphenePartitionSet(graphene.ObjectType):
             partition_name,
         )
 
-    def resolve_partitionRuns(self, graphene_info):
+    def resolve_partitionRuns(self, graphene_info: ResolveInfo):
         return get_partition_set_partition_runs(graphene_info, self._external_partition_set)
 
-    def resolve_partitionStatusesOrError(self, graphene_info):
+    def resolve_partitionStatusesOrError(self, graphene_info: ResolveInfo):
         return get_partition_set_partition_statuses(
             graphene_info,
             self._external_partition_set,
@@ -261,7 +261,7 @@ class GraphenePartitionSet(graphene.ObjectType):
         origin = self._external_partition_set.get_external_origin().external_repository_origin
         return GrapheneRepositoryOrigin(origin)
 
-    def resolve_backfills(self, graphene_info, **kwargs):
+    def resolve_backfills(self, graphene_info: ResolveInfo, **kwargs):
         matching = [
             backfill
             for backfill in graphene_info.context.instance.get_backfills(

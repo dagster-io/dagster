@@ -3,14 +3,12 @@ from typing import cast
 import graphene
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.workspace.context import WorkspaceRequestContext
-from typing_extensions import Protocol
 
 
-# Assign this type to `graphene_info` in a resolver to apply typing to `graphene_info.context`.
-class HasContext(Protocol):
+class ResolveInfo(graphene.ResolveInfo):
     @property
     def context(self) -> WorkspaceRequestContext:
-        ...
+        return cast(WorkspaceRequestContext, super().context)
 
 
 def non_null_list(of_type):
@@ -21,5 +19,5 @@ def non_null_list(of_type):
 # always also an instance of `CapturedLogManager`, which defines the APIs that we access in
 # dagster-graphql. Probably `ComputeLogManager` should subclass `CapturedLogManager`-- this is a
 # temporary workaround to satisfy type-checking.
-def get_compute_log_manager(graphene_info: HasContext) -> CapturedLogManager:
+def get_compute_log_manager(graphene_info: ResolveInfo) -> CapturedLogManager:
     return cast(CapturedLogManager, graphene_info.context.instance.compute_log_manager)

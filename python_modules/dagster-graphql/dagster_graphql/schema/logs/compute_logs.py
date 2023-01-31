@@ -3,7 +3,7 @@ import graphene
 from dagster._core.storage.captured_log_manager import CapturedLogData
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 
-from dagster_graphql.schema.util import non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 
 class GrapheneComputeIOType(graphene.Enum):
@@ -49,15 +49,15 @@ class GrapheneComputeLogs(graphene.ObjectType):
     class Meta:
         name = "ComputeLogs"
 
-    def _resolve_compute_log(self, graphene_info, io_type):
+    def _resolve_compute_log(self, graphene_info: ResolveInfo, io_type):
         return graphene_info.context.instance.compute_log_manager.read_logs_file(
             self.runId, self.stepKey, io_type, 0
         )
 
-    def resolve_stdout(self, graphene_info):
+    def resolve_stdout(self, graphene_info: ResolveInfo):
         return self._resolve_compute_log(graphene_info, ComputeIOType.STDOUT)
 
-    def resolve_stderr(self, graphene_info):
+    def resolve_stderr(self, graphene_info: ResolveInfo):
         return self._resolve_compute_log(graphene_info, ComputeIOType.STDERR)
 
 

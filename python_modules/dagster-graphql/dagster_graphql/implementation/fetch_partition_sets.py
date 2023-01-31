@@ -18,7 +18,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
-from dagster_graphql.schema.util import HasContext
+from dagster_graphql.schema.util import ResolveInfo
 
 from .utils import capture_error
 
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 @capture_error
 def get_partition_sets_or_error(
-    graphene_info: HasContext, repository_selector: RepositorySelector, pipeline_name: str
+    graphene_info: ResolveInfo, repository_selector: RepositorySelector, pipeline_name: str
 ) -> "GraphenePartitionSets":
     from ..schema.partition_sets import GraphenePartitionSet, GraphenePartitionSets
 
@@ -67,7 +67,7 @@ def get_partition_sets_or_error(
 
 @capture_error
 def get_partition_set(
-    graphene_info: HasContext, repository_selector: RepositorySelector, partition_set_name: str
+    graphene_info: ResolveInfo, repository_selector: RepositorySelector, partition_set_name: str
 ) -> Union["GraphenePartitionSet", "GraphenePartitionSetNotFoundError"]:
     from ..schema.partition_sets import GraphenePartitionSet, GraphenePartitionSetNotFoundError
 
@@ -141,7 +141,7 @@ def get_partition_tags(graphene_info, repository_handle, partition_set_name, par
 
 @capture_error
 def get_partitions(
-    graphene_info: HasContext,
+    graphene_info: ResolveInfo,
     repository_handle: RepositoryHandle,
     partition_set: ExternalPartitionSet,
     cursor: Optional[str] = None,
@@ -269,7 +269,7 @@ def partition_status_counts_from_run_partition_data(run_partition_data, partitio
     return [GraphenePartitionStatusCounts(runStatus=k, count=v) for k, v in count_by_status.items()]
 
 
-def get_partition_set_partition_runs(graphene_info: HasContext, partition_set):
+def get_partition_set_partition_runs(graphene_info: ResolveInfo, partition_set):
     from ..schema.partition_sets import GraphenePartitionRun
     from ..schema.pipelines.pipeline import GrapheneRun
 

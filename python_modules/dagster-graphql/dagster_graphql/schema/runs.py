@@ -15,7 +15,7 @@ from .errors import (
     GraphenePythonError,
     GrapheneRunGroupNotFoundError,
 )
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneStepEventStatus(graphene.Enum):
@@ -110,10 +110,10 @@ class GrapheneRuns(graphene.ObjectType):
         self._cursor = cursor
         self._limit = limit
 
-    def resolve_results(self, graphene_info):
+    def resolve_results(self, graphene_info: ResolveInfo):
         return get_runs(graphene_info, self._filters, self._cursor, self._limit)
 
-    def resolve_count(self, graphene_info):
+    def resolve_count(self, graphene_info: ResolveInfo):
         return get_runs_count(graphene_info, self._filters)
 
 
