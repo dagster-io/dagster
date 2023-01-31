@@ -16,9 +16,5 @@ setup(
     ],
     extras_require={
         "dev": ["dagit", "pytest"],
-        "test": [
-            # coerce a version resolution that causes pip backtracking related timeouts
-            "snowflake-connector-python==2.7.12",
-        ],
     },
 )
