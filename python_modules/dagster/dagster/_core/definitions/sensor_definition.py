@@ -29,7 +29,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
 
-from ..decorator_utils import get_function_params, is_context_provided
+from ..decorator_utils import get_function_params, has_at_least_one_parameter
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
@@ -330,7 +330,7 @@ class SensorDefinition:
         )
 
     def __call__(self, *args, **kwargs):
-        if is_context_provided(self._raw_fn):
+        if has_at_least_one_parameter(self._raw_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Sensor evaluation function expected context argument, but no context argument "
@@ -575,7 +575,7 @@ def wrap_sensor_evaluation(
     fn: RawSensorEvaluationFunction,
 ) -> SensorEvaluationFunction:
     def _wrapped_fn(context: SensorEvaluationContext):
-        if is_context_provided(fn):  # type: ignore  # fmt: skip
+        if has_at_least_one_parameter(fn):  # type: ignore  # fmt: skip
             result = fn(context)  # type: ignore  # fmt: skip
         else:
             result = fn()  # type: ignore

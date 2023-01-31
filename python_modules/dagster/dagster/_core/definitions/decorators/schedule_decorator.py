@@ -45,7 +45,7 @@ from ..schedule_definition import (
     RunRequestIterator,
     ScheduleDefinition,
     ScheduleEvaluationContext,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
 from ..target import ExecutableDefinition
 from ..utils import validate_tags
@@ -148,7 +148,7 @@ def schedule(
                 ScheduleExecutionError,
                 lambda: f"Error occurred during the evaluation of schedule {schedule_name}",
             ):
-                if is_context_provided(fn):  # type: ignore  # fmt: skip
+                if has_at_least_one_parameter(fn):  # type: ignore  # fmt: skip
                     result = fn(context)  # type: ignore  # fmt: skip
                 else:
                     result = fn()  # type: ignore
@@ -173,7 +173,7 @@ def schedule(
                     # this is a run-request based decorated function
                     yield from cast(RunRequestIterator, ensure_gen(result))
 
-        has_context_arg = is_context_provided(fn)  # type: ignore  # fmt: skip
+        has_context_arg = has_at_least_one_parameter(fn)  # type: ignore  # fmt: skip
         evaluation_fn = DecoratedScheduleFunction(
             decorated_fn=fn,
             wrapped_fn=_wrapped_fn,

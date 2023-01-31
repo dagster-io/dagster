@@ -13,7 +13,7 @@ from dagster._core.definitions.definition_config_schema import (
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ResourceFunction,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
 from dagster._core.storage.input_manager import IInputManagerDefinition, InputLoadFn, InputManager
 from dagster._utils.backcompat import deprecation_warning
@@ -190,7 +190,7 @@ class RootInputManagerWrapper(RootInputManager):
 
     def load_input(self, context: "InputContext") -> object:
         # type-ignore because function being used as attribute
-        return self._load_fn(context) if is_context_provided(self._load_fn) else self._load_fn()  # type: ignore
+        return self._load_fn(context) if has_at_least_one_parameter(self._load_fn) else self._load_fn()  # type: ignore
 
 
 class _InputManagerDecoratorCallable:

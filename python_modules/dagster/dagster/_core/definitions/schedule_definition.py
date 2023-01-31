@@ -28,7 +28,7 @@ from dagster._utils import ensure_gen
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
 
-from ..decorator_utils import get_function_params, is_context_provided
+from ..decorator_utils import get_function_params, has_at_least_one_parameter
 from ..errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -440,7 +440,7 @@ class ScheduleDefinition:
                     _run_config_fn = check.not_none(self._run_config_fn)
                     evaluated_run_config = copy.deepcopy(
                         _run_config_fn(context)  # type: ignore  # fmt: skip
-                        if is_context_provided(_run_config_fn)  # type: ignore  # fmt: skip
+                        if has_at_least_one_parameter(_run_config_fn)  # type: ignore  # fmt: skip
                         else _run_config_fn()  # type: ignore  # (strict type guard)
                     )
 
