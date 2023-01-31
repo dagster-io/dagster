@@ -31,7 +31,7 @@ def observe(
 
     Args:
         source_assets (Sequence[SourceAsset]):
-            The assets to materialize. Can also provide :py:class:`SourceAsset` objects to fill dependencies for asset defs.
+            The source assets to materialize.
         resources (Optional[Mapping[str, object]]):
             The resources needed for execution. Can provide resource instances
             directly, or resource definitions. Note that if provided resources

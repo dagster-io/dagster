@@ -228,6 +228,9 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey as MultiPartitionKey,
     MultiPartitionsDefinition as MultiPartitionsDefinition,
 )
+from dagster._core.definitions.observe import (
+    observe as observe,
+)
 from dagster._core.definitions.op_definition import OpDefinition as OpDefinition
 from dagster._core.definitions.output import (
     DynamicOut as DynamicOut,
