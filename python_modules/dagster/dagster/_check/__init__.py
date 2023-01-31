@@ -1269,6 +1269,18 @@ def iterable_param(
     return _check_iterable_items(obj, of_type, "iterable")
 
 
+def opt_iterable_param(
+    obj: Optional[Iterable[T]],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Optional[Iterable[T]]:
+    if obj is None:
+        return None
+
+    return iterable_param(obj, param_name, of_type, additional_message)
+
+
 # ########################
 # ##### SET
 # ########################
