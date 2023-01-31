@@ -1683,6 +1683,31 @@ class DagsterInstance:
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
 
+    @traced
+    def get_mutable_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        return self._event_storage.get_partitions(partitions_def_name)
+
+    @traced
+    def add_mutable_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        check.sequence_param(partition_keys, "partition_keys", of_type=str)
+        return self._event_storage.add_partitions(partitions_def_name, partition_keys)
+
+    @traced
+    def delete_mutable_partition(self, partitions_def_name: str, partition_key: str) -> None:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        check.sequence_param(partition_key, "partition_key", of_type=str)
+        self._event_storage.delete_partition(partitions_def_name, partition_key)
+
+    @traced
+    def has_mutable_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        check.str_param(partition_key, "partition_key")
+        return self._event_storage.has_partition(partitions_def_name, partition_key)
+
     # event subscriptions
 
     def _get_yaml_python_handlers(self):

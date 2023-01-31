@@ -56,6 +56,7 @@ from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DA
 from .schema import (
     AssetEventTagsTable,
     AssetKeyTable,
+    MutablePartitionsTable,
     SecondaryIndexMigrationTable,
     SqlEventLogStorageTable,
 )
@@ -1651,6 +1652,69 @@ class SqlEventLogStorage(EventLogStorage):
                 materialization_count_by_partition[asset_key][row[1]] = row[2]
 
         return materialization_count_by_partition
+
+    def _check_partitions_table(self):
+        # Guards against cases where the user is not running the latest migration for
+        # partitions storage. Should be updated when the partitions storage schema changes.
+        if not self.has_table("mutable_partitions"):
+            raise DagsterInvalidInvocationError(
+                "Cannot add partitions to non-existent table. Add this table by running `dagster"
+                " instance migrate`."
+            )
+
+    def _fetch_partition_keys_for_partition_def(self, partitions_def_name: str) -> Sequence[str]:
+        columns = [
+            MutablePartitionsTable.c.partitions_def_name,
+            MutablePartitionsTable.c.partition_key,
+        ]
+        query = db.select(columns).where(
+            MutablePartitionsTable.c.partitions_def_name == partitions_def_name
+        )
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+
+        return [row[1] for row in rows]
+
+    def get_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        """Get the list of partition keys for a partition definition."""
+        self._check_partitions_table()
+        return self._fetch_partition_keys_for_partition_def(partitions_def_name)
+
+    def has_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        self._check_partitions_table()
+        return partition_key in self._fetch_partition_keys_for_partition_def(partitions_def_name)
+
+    def add_partitions(self, partitions_def_name: str, partition_keys: Sequence[str]) -> None:
+        if isinstance(partition_keys, str):
+            # Guard against a single string being passed in `partition_keys`
+            raise DagsterInvalidInvocationError("partition_keys must be a sequence of strings")
+        check.sequence_param(partition_keys, "partition_keys")
+
+        self._check_partitions_table()
+        existing_partitions = set(self.get_partitions(partitions_def_name))
+
+        new_keys = list(set(partition_keys) - existing_partitions)
+        if new_keys:
+            with self.index_connection() as conn:
+                conn.execute(
+                    MutablePartitionsTable.insert(),
+                    [
+                        dict(partitions_def_name=partitions_def_name, partition_key=partition_key)
+                        for partition_key in new_keys
+                    ],
+                )
+
+    def delete_partition(self, partitions_def_name: str, partition_key: str) -> None:
+        self._check_partitions_table()
+        with self.index_connection() as conn:
+            conn.execute(
+                MutablePartitionsTable.delete().where(
+                    db.and_(
+                        MutablePartitionsTable.c.partitions_def_name == partitions_def_name,
+                        MutablePartitionsTable.c.partition_key == partition_key,
+                    )
+                )
+            )
 
 
 def _get_from_row(row, column):

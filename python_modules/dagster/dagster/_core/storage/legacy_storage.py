@@ -477,6 +477,18 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_keys, after_cursor
         )
 
+    def get_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self._storage.event_log_storage.get_partitions(partitions_def_name)
+
+    def has_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        return self._storage.event_log_storage.has_partition(partitions_def_name, partition_key)
+
+    def add_partitions(self, partitions_def_name: str, partition_keys: Sequence[str]) -> None:
+        return self._storage.event_log_storage.add_partitions(partitions_def_name, partition_keys)
+
+    def delete_partition(self, partitions_def_name: str, partition_key: str) -> None:
+        return self._storage.event_log_storage.delete_partition(partitions_def_name, partition_key)
+
     def get_event_tags_for_asset(
         self,
         asset_key: "AssetKey",
