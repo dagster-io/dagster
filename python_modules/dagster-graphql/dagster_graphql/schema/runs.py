@@ -1,4 +1,5 @@
 import sys
+from typing import Mapping, Union
 
 import dagster._check as check
 import graphene
@@ -146,7 +147,9 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
         name = "RunConfigData"
 
 
-def parse_run_config_input(run_config, raise_on_error: bool):
+def parse_run_config_input(
+    run_config: Union[str, Mapping[str, object]], raise_on_error: bool
+) -> Union[str, Mapping[str, object]]:
     if run_config and isinstance(run_config, str):
         try:
             return load_run_config_yaml(run_config)

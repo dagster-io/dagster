@@ -718,7 +718,9 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_logsForRun(self, graphene_info, runId, afterCursor=None, limit=None):
         return get_logs_for_run(graphene_info, runId, afterCursor, limit)
 
-    def resolve_capturedLogsMetadata(self, graphene_info, logKey):
+    def resolve_capturedLogsMetadata(
+        self, graphene_info, logKey: Sequence[str]
+    ) -> GrapheneCapturedLogsMetadata:
         return get_captured_log_metadata(graphene_info, logKey)
 
     def resolve_capturedLogs(self, graphene_info, logKey, cursor=None, limit=None):

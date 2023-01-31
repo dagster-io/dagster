@@ -1,6 +1,9 @@
+from typing import TYPE_CHECKING, Optional, Union
+
 import dagster._check as check
 import graphene
-from dagster._core.events import AssetLineageInfo, DagsterEventType
+from dagster._core.definitions.events import AssetLineageInfo
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.objects import ErrorSource
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 
@@ -13,6 +16,9 @@ from ..metadata import GrapheneMetadataEntry
 from ..runs import GrapheneStepEventStatus
 from ..util import non_null_list
 from .log_level import GrapheneLogLevel
+
+if TYPE_CHECKING:
+    from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
 
 class GrapheneMessageEvent(graphene.Interface):
@@ -192,7 +198,7 @@ class GrapheneObjectStoreOperationResult(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
+        return _to_metadata_entries(self.metadata_entries)
 
 
 class GrapheneExpectationResult(graphene.ObjectType):
@@ -205,7 +211,7 @@ class GrapheneExpectationResult(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
+        return _to_metadata_entries(self.metadata_entries)
 
 
 class GrapheneTypeCheck(graphene.ObjectType):
@@ -218,7 +224,7 @@ class GrapheneTypeCheck(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
+        return _to_metadata_entries(self.metadata_entries)
 
 
 class GrapheneFailureMetadata(graphene.ObjectType):
@@ -229,7 +235,7 @@ class GrapheneFailureMetadata(graphene.ObjectType):
     def resolve_metadataEntries(self, _graphene_info):
         from ...implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
+        return _to_metadata_entries(self.metadata_entries)
 
 
 class GrapheneExecutionStepInputEvent(graphene.ObjectType):
@@ -313,7 +319,7 @@ class AssetEventMixin:
         self._event = event
         self._metadata = metadata
 
-    def resolve_assetKey(self, _graphene_info):
+    def resolve_assetKey(self, _graphene_info) -> Optional[GrapheneAssetKey]:
         asset_key = self._metadata.asset_key
 
         if not asset_key:
@@ -321,12 +327,15 @@ class AssetEventMixin:
 
         return GrapheneAssetKey(path=asset_key.path)
 
-    def resolve_runOrError(self, graphene_info):
+    def resolve_runOrError(
+        self,
+        graphene_info,
+    ) -> Union["GrapheneRun", GrapheneRunNotFoundError]:
         return get_run_by_id(graphene_info, self._event.run_id)
 
-    def resolve_stepStats(self, graphene_info):
-        run_id = self.runId  # pylint: disable=no-member
-        step_key = self.stepKey  # pylint: disable=no-member
+    def resolve_stepStats(self, graphene_info) -> "GrapheneRunStepStats":
+        run_id = self.runId  # type: ignore  # (value obj access)
+        step_key = self.stepKey  # type: ignore  # (value obj access)
         stats = get_step_stats(graphene_info, run_id, step_keys=[step_key])
         return stats[0]
 
