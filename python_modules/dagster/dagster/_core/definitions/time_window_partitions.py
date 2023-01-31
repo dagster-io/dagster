@@ -1169,10 +1169,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                 for time_window in self.included_time_windows
                 for pk in self._partitions_def.get_partition_keys_in_time_window(time_window)
             ]
-        return sorted(
-            list(self._included_partition_keys),
-            key=lambda pkey: self._partitions_def.start_time_for_partition_key(pkey),
-        )
+        return list(self._included_partition_keys) if self._included_partition_keys else []
 
     def get_partition_key_ranges(
         self, current_time: Optional[datetime] = None
