@@ -282,6 +282,9 @@ class PartitionsDefinition(ABC, Generic[T]):
         tags = {PARTITION_NAME_TAG: partition_key}
         return tags
 
+    def get_num_partitions(self, current_time: Optional[datetime] = None) -> int:
+        return len(self.get_partition_keys(current_time))
+
 
 class StaticPartitionsDefinition(
     PartitionsDefinition[str],

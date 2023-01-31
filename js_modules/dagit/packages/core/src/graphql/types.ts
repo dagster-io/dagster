@@ -193,6 +193,7 @@ export type AssetNode = {
   jobNames: Array<Scalars['String']>;
   jobs: Array<Pipeline>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
+  materializedPartitions: MaterializedPartitions;
   metadataEntries: Array<MetadataEntry>;
   op: Maybe<SolidDefinition>;
   opName: Maybe<Scalars['String']>;
@@ -201,7 +202,7 @@ export type AssetNode = {
   partitionDefinition: Maybe<PartitionDefinition>;
   partitionKeys: Array<Scalars['String']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
-  partitionMaterializationCounts: PartitionMaterializationCounts;
+  partitionStats: Maybe<PartitionStats>;
   projectedLogicalVersion: Maybe<Scalars['String']>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
@@ -226,6 +227,11 @@ export type AssetNodeAssetObservationsArgs = {
 
 export type AssetNodeLatestMaterializationByPartitionArgs = {
   partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+};
+
+export type AssetNodePartitionKeysByDimensionArgs = {
+  endIdx?: InputMaybe<Scalars['Int']>;
+  startIdx?: InputMaybe<Scalars['Int']>;
 };
 
 export type AssetNodeDefinitionCollision = {
@@ -867,6 +873,12 @@ export type DagsterTypeOrError =
   | PythonError
   | RegularDagsterType;
 
+export type DefaultPartitions = {
+  __typename: 'DefaultPartitions';
+  materializedPartitions: Array<Scalars['String']>;
+  unmaterializedPartitions: Array<Scalars['String']>;
+};
+
 export type DeletePipelineRunResult =
   | DeletePipelineRunSuccess
   | PythonError
@@ -886,6 +898,7 @@ export type DeleteRunMutation = {
 export type DimensionDefinitionType = {
   __typename: 'DimensionDefinitionType';
   description: Scalars['String'];
+  isPrimaryDimension: Scalars['Boolean'];
   name: Scalars['String'];
   type: PartitionDefinitionType;
 };
@@ -1832,16 +1845,6 @@ export type MarshalledOutput = {
   outputName: Scalars['String'];
 };
 
-export type MaterializationCountGroupedByDimension = {
-  __typename: 'MaterializationCountGroupedByDimension';
-  materializationCountsGrouped: Array<Array<Scalars['Int']>>;
-};
-
-export type MaterializationCountSingleDimension = {
-  __typename: 'MaterializationCountSingleDimension';
-  materializationCounts: Array<Scalars['Int']>;
-};
-
 export type MaterializationEvent = DisplayableEvent &
   MessageEvent &
   StepEvent & {
@@ -1869,6 +1872,17 @@ export type MaterializationUpstreamDataVersion = {
   downstreamAssetKey: AssetKey;
   timestamp: Scalars['String'];
 };
+
+export type MaterializedPartitionRange2D = {
+  __typename: 'MaterializedPartitionRange2D';
+  primaryDimEndKey: Scalars['String'];
+  primaryDimEndTime: Maybe<Scalars['Float']>;
+  primaryDimStartKey: Scalars['String'];
+  primaryDimStartTime: Maybe<Scalars['Float']>;
+  secondaryDim: PartitionStatus1D;
+};
+
+export type MaterializedPartitions = DefaultPartitions | MultiPartitions | TimePartitions;
 
 export type MessageEvent = {
   eventType: Maybe<DagsterEventType>;
@@ -1927,6 +1941,12 @@ export type ModeNotFoundError = Error & {
   __typename: 'ModeNotFoundError';
   message: Scalars['String'];
   mode: Scalars['String'];
+};
+
+export type MultiPartitions = {
+  __typename: 'MultiPartitions';
+  primaryDimensionName: Scalars['String'];
+  ranges: Array<MaterializedPartitionRange2D>;
 };
 
 export type NoModeProvidedError = Error & {
@@ -2113,6 +2133,7 @@ export type PartitionDefinition = {
   __typename: 'PartitionDefinition';
   description: Scalars['String'];
   dimensionTypes: Array<DimensionDefinitionType>;
+  timeWindowMetadata: Maybe<TimePartitionsDefinitionMetadata>;
   type: PartitionDefinitionType;
 };
 
@@ -2121,10 +2142,6 @@ export enum PartitionDefinitionType {
   STATIC = 'STATIC',
   TIME_WINDOW = 'TIME_WINDOW',
 }
-
-export type PartitionMaterializationCounts =
-  | MaterializationCountGroupedByDimension
-  | MaterializationCountSingleDimension;
 
 export type PartitionRun = {
   __typename: 'PartitionRun';
@@ -2190,6 +2207,12 @@ export type PartitionSets = {
 
 export type PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError;
 
+export type PartitionStats = {
+  __typename: 'PartitionStats';
+  numMaterialized: Scalars['Int'];
+  numPartitions: Scalars['Int'];
+};
+
 export type PartitionStatus = {
   __typename: 'PartitionStatus';
   id: Scalars['String'];
@@ -2198,6 +2221,8 @@ export type PartitionStatus = {
   runId: Maybe<Scalars['String']>;
   runStatus: Maybe<RunStatus>;
 };
+
+export type PartitionStatus1D = DefaultPartitions | TimePartitions;
 
 export type PartitionStatusCounts = {
   __typename: 'PartitionStatusCounts';
@@ -3510,6 +3535,27 @@ export type TickEvaluation = {
   error: Maybe<PythonError>;
   runRequests: Maybe<Array<Maybe<RunRequest>>>;
   skipReason: Maybe<Scalars['String']>;
+};
+
+export type TimePartitionRange = {
+  __typename: 'TimePartitionRange';
+  endKey: Scalars['String'];
+  endTime: Scalars['Float'];
+  startKey: Scalars['String'];
+  startTime: Scalars['Float'];
+};
+
+export type TimePartitions = {
+  __typename: 'TimePartitions';
+  ranges: Array<TimePartitionRange>;
+};
+
+export type TimePartitionsDefinitionMetadata = {
+  __typename: 'TimePartitionsDefinitionMetadata';
+  endKey: Scalars['String'];
+  endTime: Scalars['Float'];
+  startKey: Scalars['String'];
+  startTime: Scalars['Float'];
 };
 
 export type TypeCheck = DisplayableEvent & {

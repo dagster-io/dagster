@@ -2,11 +2,13 @@ import {gql, useApolloClient} from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 
+import {assertUnreachable} from '../app/Util';
 import {PartitionState} from '../partitions/PartitionStatus';
 
 import {mergedStates} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {
+  PartitionHealthMaterializedPartitionsFragment,
   PartitionHealthQuery,
   PartitionHealthQueryVariables,
 } from './types/usePartitionHealthData.types';
@@ -24,7 +26,6 @@ export interface PartitionHealthData {
   assetKey: AssetKey;
   dimensions: PartitionHealthDimension[];
   stateForKey: (dimensionKeys: string[]) => PartitionState;
-  stateForPartialKey: (dimensionKeys: string[]) => PartitionState;
   stateForSingleDimension: (
     dimensionIdx: number,
     dimensionKey: string,
@@ -49,82 +50,182 @@ export type PartitionDimensionSelection = {
 };
 
 export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: AssetKey) {
-  const dimensions =
+  const __dims =
     data.assetNodeOrError.__typename === 'AssetNode'
       ? data.assetNodeOrError.partitionKeysByDimension
       : [];
 
-  const counts = (data.assetNodeOrError.__typename === 'AssetNode' &&
-    data.assetNodeOrError.partitionMaterializationCounts) || {
-    __typename: 'MaterializationCountSingleDimension',
-    materializationCounts: [],
+  const materializedPartitions = (data.assetNodeOrError.__typename === 'AssetNode' &&
+    data.assetNodeOrError.materializedPartitions) || {
+    __typename: 'DefaultPartitions',
+    unmaterializedPartitions: [],
+    materializedPartitions: [],
   };
 
-  const stateByKey = Object.fromEntries(
-    counts.__typename === 'MaterializationCountSingleDimension'
-      ? counts.materializationCounts.map((count, idx) => [
-          dimensions[0].partitionKeys[idx],
-          count > 0 ? PartitionState.SUCCESS : PartitionState.MISSING,
-        ])
-      : counts.materializationCountsGrouped.map((dim0, idx0) => [
-          dimensions[0].partitionKeys[idx0],
-          Object.fromEntries(
-            dim0.map((count, idx1) => [
-              dimensions[1].partitionKeys[idx1],
-              count > 0 ? PartitionState.SUCCESS : PartitionState.MISSING,
-            ]),
-          ),
-        ]),
-  );
+  // The backend re-orders the dimensions only for the materializedPartitions ranges so that
+  // the time partition is the "primary" one, even if it's dimension[1] elsewhere.
+  // This matches the way we display them in the UI and makes some common data retrieval faster,
+  // but Dagit's internals always use the REAL ordering of the partition keys, we need to flip
+  // everything in this function to match the range data.
+  const isRangeDataInverted =
+    __dims.length === 2 &&
+    materializedPartitions.__typename === 'MultiPartitions' &&
+    materializedPartitions.primaryDimensionName !== __dims[0].name;
 
-  const stateForKey = (dimensionKeys: string[]): PartitionState =>
-    dimensionKeys.reduce((counts, dimensionKey) => counts[dimensionKey], stateByKey);
+  const dimensions = isRangeDataInverted ? [__dims[1], __dims[0]] : __dims;
+  const ranges = addKeyIndexesToMaterializedRanges(dimensions, materializedPartitions);
+  const stateForKey = (dimensionKeys: string[]): PartitionState => {
+    return stateForKeyWithRangeOrdering(
+      isRangeDataInverted ? dimensionKeys.reverse() : dimensionKeys,
+    );
+  };
+
+  const stateForKeyWithRangeOrdering = (dimensionKeys: string[]): PartitionState => {
+    if (dimensionKeys.length !== dimensions.length) {
+      console.warn('[stateForKey] called with incorrect number of dimensions');
+      return PartitionState.MISSING;
+    }
+
+    const dIndexes = dimensionKeys.map((key, idx) => dimensions[idx].partitionKeys.indexOf(key));
+    const d0Range = ranges.find((r) => r.start.idx <= dIndexes[0] && r.end.idx >= dIndexes[0]);
+
+    if (!d0Range) {
+      return PartitionState.MISSING;
+    }
+    if (!d0Range.subranges) {
+      return PartitionState.SUCCESS; // 1D case
+    }
+    const d1Range = d0Range.subranges.find(
+      (r) => r.start.idx <= dIndexes[1] && r.end.idx >= dIndexes[1],
+    );
+    return d1Range ? PartitionState.SUCCESS : PartitionState.MISSING;
+  };
 
   const stateForSingleDimension = (
     dimensionIdx: number,
     dimensionKey: string,
-    otherDimensionSelectedKeys?: string[],
+    otherDimensionSelectedKeys?: string[], // using this feature is slow
   ) => {
     if (dimensionIdx === 0 && dimensions.length === 1) {
-      return stateForKey([dimensionKey]);
+      return stateForKeyWithRangeOrdering([dimensionKey]);
     }
-    if (dimensionIdx === 0) {
-      return mergedStates(
-        Object.entries<PartitionState>(stateByKey[dimensionKey])
-          .filter(
-            ([key]) => !otherDimensionSelectedKeys || otherDimensionSelectedKeys.includes(key),
-          )
-          .map(([_, val]) => val),
-      );
-    } else if (dimensionIdx === 1) {
-      return mergedStates(
-        Object.entries<{[subdimensionKey: string]: PartitionState}>(stateByKey)
-          .filter(
-            ([key]) => !otherDimensionSelectedKeys || otherDimensionSelectedKeys.includes(key),
-          )
-          .map(([_, val]) => val[dimensionKey]),
-      );
-    } else {
-      throw new Error('stateForSingleDimension asked for third dimension');
-    }
-  };
 
-  const stateForPartialKey = (dimensionKeys: string[]) => {
-    return dimensionKeys.length === dimensions.length
-      ? stateForKey(dimensionKeys)
-      : mergedStates(Object.values(stateByKey[dimensionKeys[0]]));
+    const [d0, d1] = dimensions;
+    if (isRangeDataInverted) {
+      dimensionIdx = 1 - dimensionIdx;
+    }
+
+    if (dimensionIdx === 0) {
+      if (otherDimensionSelectedKeys) {
+        return mergedStates(
+          otherDimensionSelectedKeys.map((k) => stateForKeyWithRangeOrdering([dimensionKey, k])),
+        );
+      }
+      const d0Idx = d0.partitionKeys.indexOf(dimensionKey);
+      const d0Range = ranges.find((r) => r.start.idx <= d0Idx && r.end.idx >= d0Idx);
+      return d0Range?.value || PartitionState.MISSING;
+    }
+    if (dimensionIdx === 1) {
+      if (otherDimensionSelectedKeys) {
+        return mergedStates(
+          otherDimensionSelectedKeys.map((k) => stateForKeyWithRangeOrdering([k, dimensionKey])),
+        );
+      }
+
+      const d1Idx = d1.partitionKeys.indexOf(dimensionKey);
+      const d0RangesContainingSubrangeWithD1Idx = ranges.filter((r) =>
+        r.subranges?.some((sr) => sr.start.idx <= d1Idx && sr.end.idx >= d1Idx),
+      );
+      return ranges.length && d0RangesContainingSubrangeWithD1Idx.length === ranges.length
+        ? PartitionState.SUCCESS
+        : d0RangesContainingSubrangeWithD1Idx.length > 0
+        ? PartitionState.SUCCESS_MISSING
+        : PartitionState.MISSING;
+    }
+
+    throw new Error('stateForSingleDimension asked for third dimension');
   };
 
   const result: PartitionHealthData = {
     assetKey: loadKey,
+    dimensions: __dims.map((d) => ({name: d.name, partitionKeys: d.partitionKeys})),
     stateForKey,
-    stateForPartialKey,
     stateForSingleDimension,
-    dimensions: dimensions.map((d) => ({
-      name: d.name,
-      partitionKeys: d.partitionKeys,
-    })),
   };
+
+  return result;
+}
+
+// Add indexes to the materializedPartitions data so that we can find specific keys in
+// the range structures without having to indexOf the start and end key of every range.
+//
+type Range = {
+  start: {key: string; idx: number};
+  end: {key: string; idx: number};
+  value: PartitionState.SUCCESS | PartitionState.SUCCESS_MISSING;
+  subranges?: Range[];
+};
+
+function addKeyIndexesToMaterializedRanges(
+  dimensions: {name: string; partitionKeys: string[]}[],
+  materializedPartitions: PartitionHealthMaterializedPartitionsFragment,
+) {
+  const result: Range[] = [];
+
+  if (materializedPartitions.__typename === 'DefaultPartitions') {
+    const dim = dimensions[0];
+    const count = dim.partitionKeys.length;
+    if (materializedPartitions.materializedPartitions.length === count) {
+      return [
+        {
+          start: {key: dim.partitionKeys[0], idx: 0},
+          end: {key: dim.partitionKeys[count - 1], idx: count - 1},
+          value: PartitionState.SUCCESS as const,
+        },
+      ];
+    } else {
+      return materializedPartitions.materializedPartitions.map<Range>((key) => {
+        const idx = dim.partitionKeys.indexOf(key);
+        return {start: {key, idx}, end: {key, idx}, value: PartitionState.SUCCESS};
+      });
+    }
+  }
+
+  for (const range of materializedPartitions.ranges) {
+    if (range.__typename === 'TimePartitionRange') {
+      result.push({
+        value: PartitionState.SUCCESS,
+        start: {key: range.startKey, idx: dimensions[0].partitionKeys.indexOf(range.startKey)},
+        end: {key: range.endKey, idx: dimensions[0].partitionKeys.indexOf(range.endKey)},
+      });
+    } else if (range.__typename === 'MaterializedPartitionRange2D') {
+      if (dimensions.length !== 2) {
+        console.warn('[addKeyIndexesToMaterializedRanges] Found 2D health data for 1D asset');
+        return result;
+      }
+      const [dim0, dim1] = dimensions;
+      const subranges: Range[] = addKeyIndexesToMaterializedRanges([dim1], range.secondaryDim);
+      const subrangeIsAll =
+        subranges.length === 1 &&
+        subranges[0].start.idx === 0 &&
+        subranges[0].end.idx === dim1.partitionKeys.length - 1;
+
+      result.push({
+        value: subrangeIsAll ? PartitionState.SUCCESS : PartitionState.SUCCESS_MISSING,
+        subranges,
+        start: {
+          key: range.primaryDimStartKey,
+          idx: dim0.partitionKeys.indexOf(range.primaryDimStartKey),
+        },
+        end: {
+          key: range.primaryDimEndKey,
+          idx: dim0.partitionKeys.indexOf(range.primaryDimEndKey),
+        },
+      });
+    } else {
+      assertUnreachable(range);
+    }
+  }
 
   return result;
 }
@@ -132,7 +233,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
 // Note: assetLastMaterializedAt is used as a "hint" - if the input value changes, it's
 // a sign that we should invalidate and reload previously loaded health stats. We don't
 // clear them immediately to avoid an empty state.
-//
+
 export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMaterializedAt = '') {
   const [result, setResult] = React.useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
   const client = useApolloClient();
@@ -183,13 +284,38 @@ const PARTITION_HEALTH_QUERY = gql`
           name
           partitionKeys
         }
-        partitionMaterializationCounts {
-          ... on MaterializationCountGroupedByDimension {
-            materializationCountsGrouped
-          }
-          ... on MaterializationCountSingleDimension {
-            materializationCounts
-          }
+        materializedPartitions {
+          ...PartitionHealthMaterializedPartitionsFragment
+        }
+      }
+    }
+  }
+
+  fragment PartitionHealthMaterialized1DPartitionsFragment on PartitionStatus1D {
+    ... on TimePartitions {
+      ranges {
+        startTime
+        endTime
+        startKey
+        endKey
+      }
+    }
+    ... on DefaultPartitions {
+      materializedPartitions
+    }
+  }
+
+  fragment PartitionHealthMaterializedPartitionsFragment on MaterializedPartitions {
+    ...PartitionHealthMaterialized1DPartitionsFragment
+    ... on MultiPartitions {
+      primaryDimensionName
+      ranges {
+        primaryDimStartKey
+        primaryDimEndKey
+        primaryDimStartTime
+        primaryDimEndTime
+        secondaryDim {
+          ...PartitionHealthMaterialized1DPartitionsFragment
         }
       }
     }

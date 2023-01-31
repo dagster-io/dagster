@@ -662,7 +662,8 @@ type AssetNode {
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
-  partitionMaterializationCounts: PartitionMaterializationCounts!
+  materializedPartitions: MaterializedPartitions!
+  partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
@@ -670,7 +671,7 @@ type AssetNode {
   opVersion: String
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
-  partitionKeysByDimension: [DimensionPartitionKeys!]!
+  partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
   projectedLogicalVersion: String
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
@@ -698,22 +699,49 @@ type FreshnessPolicy {
   cronSchedule: String
 }
 
-union PartitionMaterializationCounts =
-    MaterializationCountSingleDimension
-  | MaterializationCountGroupedByDimension
+union MaterializedPartitions = DefaultPartitions | MultiPartitions | TimePartitions
 
-type MaterializationCountSingleDimension {
-  materializationCounts: [Int!]!
+type DefaultPartitions {
+  materializedPartitions: [String!]!
+  unmaterializedPartitions: [String!]!
 }
 
-type MaterializationCountGroupedByDimension {
-  materializationCountsGrouped: [[Int!]!]!
+type MultiPartitions {
+  ranges: [MaterializedPartitionRange2D!]!
+  primaryDimensionName: String!
+}
+
+type MaterializedPartitionRange2D {
+  primaryDimStartKey: String!
+  primaryDimEndKey: String!
+  primaryDimStartTime: Float
+  primaryDimEndTime: Float
+  secondaryDim: PartitionStatus1D!
+}
+
+union PartitionStatus1D = TimePartitions | DefaultPartitions
+
+type TimePartitions {
+  ranges: [TimePartitionRange!]!
+}
+
+type TimePartitionRange {
+  startTime: Float!
+  endTime: Float!
+  startKey: String!
+  endKey: String!
+}
+
+type PartitionStats {
+  numMaterialized: Int!
+  numPartitions: Int!
 }
 
 type PartitionDefinition {
   description: String!
   type: PartitionDefinitionType!
   dimensionTypes: [DimensionDefinitionType!]!
+  timeWindowMetadata: TimePartitionsDefinitionMetadata
 }
 
 enum PartitionDefinitionType {
@@ -726,6 +754,14 @@ type DimensionDefinitionType {
   name: String!
   description: String!
   type: PartitionDefinitionType!
+  isPrimaryDimension: Boolean!
+}
+
+type TimePartitionsDefinitionMetadata {
+  startTime: Float!
+  endTime: Float!
+  startKey: String!
+  endKey: String!
 }
 
 type DimensionPartitionKeys {

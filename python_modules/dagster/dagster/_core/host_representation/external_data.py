@@ -614,10 +614,17 @@ class ExternalStaticPartitionsDefinitionData(
 class ExternalPartitionDimensionDefinition(
     NamedTuple(
         "_ExternalPartitionDimensionDefinition",
-        [("name", str), ("external_partitions_def_data", ExternalPartitionsDefinitionData)],
+        [
+            ("name", str),
+            ("external_partitions_def_data", ExternalPartitionsDefinitionData),
+        ],
     )
 ):
-    def __new__(cls, name: str, external_partitions_def_data: ExternalPartitionsDefinitionData):
+    def __new__(
+        cls,
+        name: str,
+        external_partitions_def_data: ExternalPartitionsDefinitionData,
+    ):
         return super(ExternalPartitionDimensionDefinition, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -1270,7 +1277,8 @@ def external_multi_partitions_definition_from_def(
     return ExternalMultiPartitionsDefinitionData(
         external_partition_dimension_definitions=[
             ExternalPartitionDimensionDefinition(
-                dimension.name, external_partitions_definition_from_def(dimension.partitions_def)
+                dimension.name,
+                external_partitions_definition_from_def(dimension.partitions_def),
             )
             for dimension in partitions_def.partitions_defs
         ]
