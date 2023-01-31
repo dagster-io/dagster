@@ -323,9 +323,6 @@ def _build_asset_dependencies(
         for task_id in task_ids_by_asset_key[asset_key]:
             internal_asset_deps[f"result_airflow_{task_id}"] = asset_upstream_deps
 
-    print("OUTPUT MAPPINGS", output_mappings)
-    print("KEYS BY OUTPUT NAME", keys_by_output_name)
-
     return (output_mappings, keys_by_output_name, internal_asset_deps)
 
 
