@@ -36,7 +36,7 @@ def cleanup_result_notebook(result):
     if not result:
         return
     materialization_events = [
-        x for x in result.step_event_list if x.event_type_value == "ASSET_MATERIALIZATION"
+        x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"
     ]
     for materialization_event in materialization_events:
         result_path = get_path(materialization_event)
@@ -51,14 +51,14 @@ def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
 
     with instance_for_test() as instance:
         try:
-            result = execute_job(
+            with execute_job(
                 job=recon_pipeline,
                 run_config=env,
                 instance=instance,
                 raise_on_error=raise_on_error,
                 **kwargs,
-            )
-            yield result
+            ) as result:
+                yield result
         finally:
             if result:
                 cleanup_result_notebook(result)
@@ -150,7 +150,7 @@ def test_reexecute_result_notebook():
         assert result.success
 
         materialization_events = [
-            x for x in result.step_event_list if x.event_type_value == "ASSET_MATERIALIZATION"
+            x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"
         ]
         for materialization_event in materialization_events:
             result_path = get_path(materialization_event)
@@ -170,14 +170,14 @@ def test_reexecute_result_notebook():
 def test_hello_world_with_output():
     with exec_for_test("hello_world_output_job") as result:
         assert result.success
-        assert result.result_for_node("hello_world_output").output_value() == "hello, world"
+        assert result.output_for_node("hello_world_output") == "hello, world"
 
 
 @pytest.mark.notebook_test
 def test_hello_world_explicit_yield():
     with exec_for_test("hello_world_explicit_yield_job") as result:
         materializations = [
-            x for x in result.event_list if x.event_type_value == "ASSET_MATERIALIZATION"
+            x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"
         ]
         assert len(materializations) == 2
         assert get_path(materializations[1]) == "/path/to/file"
@@ -189,7 +189,7 @@ def test_add_job():
         "add_job", {"loggers": {"console": {"config": {"log_level": "ERROR"}}}}
     ) as result:
         assert result.success
-        assert result.result_for_node("add_two_numbers").output_value() == 3
+        assert result.output_for_node("add_two_numbers") == 3
 
 
 @pytest.mark.notebook_test
@@ -199,8 +199,8 @@ def test_double_add_job():
         {"loggers": {"console": {"config": {"log_level": "ERROR"}}}},
     ) as result:
         assert result.success
-        assert result.result_for_node("add_two_numbers_1").output_value() == 3
-        assert result.result_for_node("add_two_numbers_2").output_value() == 7
+        assert result.output_for_node("add_two_numbers_1") == 3
+        assert result.output_for_node("add_two_numbers_2") == 7
 
 
 @pytest.mark.notebook_test
@@ -216,9 +216,9 @@ def test_fan_in_notebook_job():
         },
     ) as result:
         assert result.success
-        assert result.result_for_node("op_1").output_value() == "hello"
-        assert result.result_for_node("op_2").output_value() == "world"
-        assert result.result_for_node("fan_in").output_value() == "hello world"
+        assert result.output_for_node("op_1") == "hello"
+        assert result.output_for_node("op_2") == "world"
+        assert result.output_for_node("fan_in") == "hello world"
 
 
 @pytest.mark.notebook_test
@@ -231,10 +231,7 @@ def test_graph_job():
         },
     ) as result:
         assert result.success
-        assert (
-            result.result_for_node("outer").result_for_node("yield_something").output_value()
-            == "hello"
-        )
+        assert result.output_for_node("outer.yield_something") == "hello"
 
 
 @pytest.mark.notebook_test
@@ -261,8 +258,8 @@ def test_notebook_dag():
         {"ops": {"load_a": {"config": 1}, "load_b": {"config": 2}}},
     ) as result:
         assert result.success
-        assert result.result_for_node("add_two_numbers").output_value() == 3
-        assert result.result_for_node("mult_two_numbers").output_value() == 6
+        assert result.output_for_node("add_two_numbers") == 3
+        assert result.output_for_node("mult_two_numbers") == 6
 
 
 @pytest.mark.notebook_test
@@ -278,7 +275,7 @@ def test_error_notebook():
         "error_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
         assert not result.success
-        assert result.step_event_list[1].event_type.value == "STEP_FAILURE"
+        assert len(result.get_failed_step_keys()) > 0
 
     result = None
     recon_pipeline = ReconstructablePipeline.for_module(
@@ -327,7 +324,7 @@ def test_hello_world_reexecution():
         assert result.success
 
         output_notebook_path = get_path(
-            [x for x in result.step_event_list if x.event_type_value == "ASSET_MATERIALIZATION"][0]
+            [x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION"][0]
         )
 
         with tempfile.NamedTemporaryFile("w+", suffix=".py") as reexecution_notebook_file:
@@ -378,7 +375,7 @@ def test_resources_notebook():
             messages = [message.split(": ") for message in messages]
 
             resource_ids = [x[0] for x in messages]
-            assert len(set(resource_ids)) == 2
+            assert len(set(resource_ids)) == 3
             assert resource_ids[0] == resource_ids[1] == resource_ids[5]
             assert resource_ids[2] == resource_ids[3] == resource_ids[4]
 
@@ -401,10 +398,9 @@ def test_resources_notebook_with_exception():
             raise_on_error=False,
         ) as result:
             assert not result.success
-            assert result.step_event_list[8].event_type.value == "STEP_FAILURE"
+            assert result.all_events[8].event_type.value == "STEP_FAILURE"
             assert (
-                "raise Exception()"
-                in result.step_event_list[8].event_specific_data.error.cause.message
+                "raise Exception()" in result.all_events[8].event_specific_data.error.cause.message
             )
 
             # Expect something like:
@@ -446,21 +442,21 @@ def test_hello_logging():
 def test_reimport():
     with exec_for_test("reimport_job") as result:
         assert result.success
-        assert result.result_for_node("reimport").output_value() == 6
+        assert result.output_for_node("reimport") == 6
 
 
 @pytest.mark.notebook_test
 def test_yield_3_job():
     with exec_for_test("yield_3_job") as result:
         assert result.success
-        assert result.result_for_node("yield_3").output_value() == 3
+        assert result.output_for_node("yield_3") == 3
 
 
 @pytest.mark.notebook_test
 def test_yield_obj_job():
     with exec_for_test("yield_obj_job") as result:
         assert result.success
-        assert result.result_for_node("yield_obj").output_value().x == 3
+        assert result.output_for_node("yield_obj").x == 3
 
 
 @pytest.mark.notebook_test
@@ -531,7 +527,7 @@ def test_retries(capsys):
     with exec_for_test(
         "retries_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
-        assert result.result_for_node("yield_retry").retry_attempts == 1
+        assert result.retry_attempts_for_node("yield_retry") == 1
 
         # the raise_retry op should trigger a warning to use yield_event
         warn_found = False
@@ -549,7 +545,7 @@ def test_failure(capsys):
         "failure_job", {"execution": {"config": {"in_process": {}}}}, raise_on_error=False
     ) as result:
         assert (
-            result.result_for_node("yield_failure").failure_data.user_failure_data.description
+            result.failure_data_for_node("yield_failure").user_failure_data.description
             == "bad bad notebook"
         )
 

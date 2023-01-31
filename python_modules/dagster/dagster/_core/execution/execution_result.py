@@ -1,7 +1,7 @@
 # pyright: strict
 
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Callable, List, Sequence, Set, Union, cast
+from typing import AbstractSet, Callable, List, Optional, Sequence, Set, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import JobDefinition, NodeHandle
@@ -16,6 +16,7 @@ from dagster._core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
+from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.step import StepKind
 from dagster._core.storage.pipeline_run import DagsterRun
 
@@ -200,3 +201,16 @@ class ExecutionResult(ABC):
             cast(StepExpectationResultData, event.event_specific_data).expectation_result
             for event in expectation_result_events
         ]
+
+    def retry_attempts_for_node(self, node_str: str) -> int:
+        count = 0
+        for event in self.events_for_node(node_str):
+            if event.event_type == DagsterEventType.STEP_RESTARTED:
+                count += 1
+        return count
+
+    def failure_data_for_node(self, node_str: str) -> Optional[StepFailureData]:
+        for event in self.events_for_node(node_str):
+            if event.event_type == DagsterEventType.STEP_FAILURE:
+                return event.step_failure_data
+        return None

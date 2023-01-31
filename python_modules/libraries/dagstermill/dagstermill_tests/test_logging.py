@@ -61,7 +61,7 @@ def test_logging():
             with instance_for_test() as instance:
                 execute_job(
                     reconstructable(hello_logging_pipeline),
-                    {
+                    run_config={
                         "loggers": {
                             "test": {
                                 "config": {
