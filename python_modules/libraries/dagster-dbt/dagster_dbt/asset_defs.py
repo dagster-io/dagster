@@ -383,7 +383,7 @@ def _batch_event_iterator(
 
         manifest_json = check.not_none(dbt_resource.get_manifest_json())
 
-        for result in dbt_output.result["results"]:
+        for result in check.not_none(dbt_output).result["results"]:
             if runtime_metadata_fn:
                 node_info = manifest_json["nodes"][result["unique_id"]]
                 extra_metadata = runtime_metadata_fn(context, node_info)

@@ -52,16 +52,6 @@ def _create_command_list(
     return prefix + full_command
 
 
-def _execute_cli_stream(command_list: Sequence[str]) -> Iterator[str]:
-    process = subprocess.Popen(
-        command_list,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    for raw_line in process.stdout or []:
-        yield raw_line.decode("utf-8").rstrip()
-
-
 def _process_line(
     line: str, log: Any, json_log_format: bool, capture_logs: bool
 ) -> Tuple[str, Optional[Mapping[str, Any]]]:
@@ -177,7 +167,11 @@ def execute_cli(
         stderr=subprocess.STDOUT,
     )
     for raw_line in process.stdout or []:
-        line = raw_line.decode().rstrip()
+        try:
+            line = raw_line.decode().rstrip()
+        except UnicodeDecodeError:
+            line = raw_line.decode("latin-1").rstrip()
+
         message, json_line = _process_line(line, log, json_log_format, capture_logs)
         lines.append(line)
         messages.append(message)
