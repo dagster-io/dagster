@@ -68,9 +68,7 @@ def create_my_final_list(downloaded_artifact: List[int]) -> List[int]:
             entity=str,
             project=str,
         ),
-        "wandb_resource": wandb_resource.configured(
-            {"api_key": {"env": "WANDB_API_KEY"}}
-        ),
+        "wandb_resource": wandb_resource.configured({"api_key": {"env": "WANDB_API_KEY"}}),
         "io_manager": wandb_artifacts_io_manager.configured(
             {"wandb_run_id": "my_resumable_run_id"}
         ),

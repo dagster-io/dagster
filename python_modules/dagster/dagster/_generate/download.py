@@ -33,6 +33,7 @@ AVAILABLE_EXAMPLES = [
     "with_great_expectations",
     "with_pyspark",
     "with_pyspark_emr",
+    "with_wandb",
 ]
 
 
