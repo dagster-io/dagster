@@ -708,6 +708,7 @@ type DefaultPartitions {
 
 type MultiPartitions {
   ranges: [MaterializedPartitionRange2D!]!
+  primaryDimensionName: String!
 }
 
 type MaterializedPartitionRange2D {
