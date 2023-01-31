@@ -27,8 +27,8 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
-from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._core.test_utils import instance_for_test
+from dagster._seven.compat.pendulum import create_pendulum_time
 
 
 def to_external_asset_graph(assets) -> AssetGraph:
@@ -113,12 +113,14 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent():
 
     internal_asset_graph = AssetGraph.from_assets([parent, child])
     external_asset_graph = to_external_asset_graph([parent, child])
-    assert internal_asset_graph.get_parents_partitions(child.key) == set(
-        [AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")]
-    )
-    assert external_asset_graph.get_parents_partitions(child.key) == set(
-        [AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")]
-    )
+
+    with instance_for_test() as instance:
+        assert internal_asset_graph.get_parents_partitions(instance, child.key) == set(
+            [AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")]
+        )
+        assert external_asset_graph.get_parents_partitions(instance, child.key) == set(
+            [AssetKeyPartitionKey(parent.key, "a"), AssetKeyPartitionKey(parent.key, "b")]
+        )
 
 
 def test_get_children_partitions_fan_out():
@@ -132,19 +134,24 @@ def test_get_children_partitions_fan_out():
 
     internal_asset_graph = AssetGraph.from_assets([parent, child])
     external_asset_graph = to_external_asset_graph([parent, child])
-    assert internal_asset_graph.get_children_partitions(parent.key, "2022-01-03") == set(
-        [
-            AssetKeyPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
-            for hour in range(24)
-        ]
-    )
+    with instance_for_test() as instance:
+        assert internal_asset_graph.get_children_partitions(
+            instance, parent.key, "2022-01-03"
+        ) == set(
+            [
+                AssetKeyPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
+                for hour in range(24)
+            ]
+        )
 
-    assert external_asset_graph.get_children_partitions(parent.key, "2022-01-03") == set(
-        [
-            AssetKeyPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
-            for hour in range(24)
-        ]
-    )
+        assert external_asset_graph.get_children_partitions(
+            instance, parent.key, "2022-01-03"
+        ) == set(
+            [
+                AssetKeyPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
+                for hour in range(24)
+            ]
+        )
 
 
 def test_get_parent_partitions_fan_in():
@@ -158,18 +165,23 @@ def test_get_parent_partitions_fan_in():
 
     internal_asset_graph = AssetGraph.from_assets([parent, child])
     external_asset_graph = to_external_asset_graph([parent, child])
-    assert internal_asset_graph.get_parents_partitions(child.key, "2022-01-03") == set(
-        [
-            AssetKeyPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
-            for hour in range(24)
-        ]
-    )
-    assert external_asset_graph.get_parents_partitions(child.key, "2022-01-03") == set(
-        [
-            AssetKeyPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
-            for hour in range(24)
-        ]
-    )
+    with instance_for_test() as instance:
+        assert internal_asset_graph.get_parents_partitions(
+            instance, child.key, "2022-01-03"
+        ) == set(
+            [
+                AssetKeyPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
+                for hour in range(24)
+            ]
+        )
+        assert external_asset_graph.get_parents_partitions(
+            instance, child.key, "2022-01-03"
+        ) == set(
+            [
+                AssetKeyPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
+                for hour in range(24)
+            ]
+        )
 
 
 def test_get_parent_partitions_non_default_partition_mapping():
@@ -185,12 +197,13 @@ def test_get_parent_partitions_non_default_partition_mapping():
     external_asset_graph = to_external_asset_graph([parent, child])
 
     with pendulum.test(create_pendulum_time(year=2022, month=1, day=3, hour=4)):
-        assert internal_asset_graph.get_parents_partitions(child.key) == {
-            AssetKeyPartitionKey(parent.key, "2022-01-02")
-        }
-        assert external_asset_graph.get_parents_partitions(child.key) == {
-            AssetKeyPartitionKey(parent.key, "2022-01-02")
-        }
+        with instance_for_test() as instance:
+            assert internal_asset_graph.get_parents_partitions(instance, child.key) == {
+                AssetKeyPartitionKey(parent.key, "2022-01-02")
+            }
+            assert external_asset_graph.get_parents_partitions(instance, child.key) == {
+                AssetKeyPartitionKey(parent.key, "2022-01-02")
+            }
 
 
 def test_custom_unsupported_partition_mapping():
@@ -231,14 +244,16 @@ def test_custom_unsupported_partition_mapping():
 
     internal_asset_graph = AssetGraph.from_assets([parent, child])
     external_asset_graph = to_external_asset_graph([parent, child])
-    assert internal_asset_graph.get_parents_partitions(child.key, "2") == {
-        AssetKeyPartitionKey(parent.key, "1"),
-        AssetKeyPartitionKey(parent.key, "2"),
-    }
-    # external falls back to default PartitionMapping
-    assert external_asset_graph.get_parents_partitions(child.key, "2") == {
-        AssetKeyPartitionKey(parent.key, "2")
-    }
+
+    with instance_for_test() as instance:
+        assert internal_asset_graph.get_parents_partitions(instance, child.key, "2") == {
+            AssetKeyPartitionKey(parent.key, "1"),
+            AssetKeyPartitionKey(parent.key, "2"),
+        }
+        # external falls back to default PartitionMapping
+        assert external_asset_graph.get_parents_partitions(instance, child.key, "2") == {
+            AssetKeyPartitionKey(parent.key, "2")
+        }
 
 
 def test_required_multi_asset_sets_non_subsettable_multi_asset():

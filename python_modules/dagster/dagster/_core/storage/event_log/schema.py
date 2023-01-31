@@ -71,8 +71,8 @@ AssetEventTagsTable = db.Table(
 )
 
 
-MutablePartitionsDefinitions = db.Table(
-    "mutable_partitions_definitions",
+MutablePartitionsTable = db.Table(
+    "mutable_partitions",
     SqlEventLogStorageMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
     db.Column("partitions_def_name", db.Text, nullable=False),
@@ -133,7 +133,7 @@ db.Index(
 )
 db.Index(
     "idx_mutable_partition_keys",
-    MutablePartitionsDefinitions.c.partitions_def_name,
-    MutablePartitionsDefinitions.c.partition_key,
+    MutablePartitionsTable.c.partitions_def_name,
+    MutablePartitionsTable.c.partition_key,
     mysql_length={"partitions_def_name": 64, "partition_key": 64},
 )

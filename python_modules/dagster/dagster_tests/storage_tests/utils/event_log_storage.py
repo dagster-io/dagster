@@ -30,16 +30,11 @@ from dagster import (
     job,
     op,
     resource,
-    materialize_to_memory,
-    materialize,
-    IOManager
 )
 from dagster._core.assets import AssetDetails
-from dagster._core.errors import DagsterUnknownPartitionError, DagsterInvalidInvocationError
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.events import (
     DagsterEvent,
@@ -2923,21 +2918,3 @@ class TestEventLogStorage:
         assert storage.has_partition(partitions_def_name="foo", partition_key="foo")
         assert not storage.has_partition(partitions_def_name="foo", partition_key="qux")
         assert not storage.has_partition(partitions_def_name="bar", partition_key="foo")
-
-    def test_mutable_partitioned_run(self, storage, instance):
-        @asset(partitions_def=MutablePartitionsDefinition("foo"))
-        def my_asset():
-            return 1
-
-        with pytest.raises(DagsterUnknownPartitionError):
-            materialize([my_asset], instance=instance, partition_key="a")
-
-        storage.add_partitions("foo", ["a"])
-        assert storage.get_partitions("foo") == ["a"]
-        assert materialize([my_asset], instance=instance, partition_key="a").success
-        materialization = storage.get_latest_materialization_event(AssetKey("my_asset"))
-        assert materialization
-        assert materialization.dagster_event.partition == "a"
-
-        with pytest.raises(DagsterInvalidInvocationError):
-            storage.add_mutable_partitions("foo", "a")

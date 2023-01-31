@@ -288,11 +288,15 @@ def test_fs_io_manager_partitioned_no_partitions():
                 self,
                 downstream_partitions_subset: Optional[PartitionsSubset],
                 upstream_partitions_def: PartitionsDefinition,
+                instance: Optional[DagsterInstance] = None,
             ) -> PartitionsSubset:
                 return upstream_partitions_def.empty_subset()
 
             def get_downstream_partitions_for_partitions(
-                self, upstream_partitions_subset, downstream_partitions_def
+                self,
+                upstream_partitions_subset,
+                downstream_partitions_def,
+                instance: Optional[DagsterInstance] = None,
             ):
                 raise NotImplementedError()
 

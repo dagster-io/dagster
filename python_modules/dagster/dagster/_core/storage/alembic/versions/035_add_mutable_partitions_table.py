@@ -19,9 +19,9 @@ depends_on = None
 
 
 def upgrade():
-    if not has_table("mutable_partitions_definitions"):
+    if not has_table("mutable_partitions"):
         op.create_table(
-            "mutable_partitions_definitions",
+            "mutable_partitions",
             db.Column(
                 "id",
                 db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
@@ -34,7 +34,7 @@ def upgrade():
         )
         op.create_index(
             "idx_mutable_partition_keys",
-            "mutable_partitions_definitions",
+            "mutable_partitions",
             ["partitions_def_name", "partition_key"],
             mysql_length={"partitions_def_name": 64, "partition_key": 64},
             unique=True,
@@ -42,8 +42,8 @@ def upgrade():
 
 
 def downgrade():
-    if has_index("mutable_partitions_definitions", "idx_mutable_partition_keys"):
-        op.drop_index("idx_mutable_partition_keys", "mutable_partitions_definitions")
+    if has_index("mutable_partitions", "idx_mutable_partition_keys"):
+        op.drop_index("idx_mutable_partition_keys", "mutable_partitions")
 
-    if has_table("mutable_partitions_definitions"):
-        op.drop_table("mutable_partitions_definitions")
+    if has_table("mutable_partitions"):
+        op.drop_table("mutable_partitions")

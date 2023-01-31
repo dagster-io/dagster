@@ -8,11 +8,11 @@ from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
 )
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
 )
-from dagster._core.instance import DagsterInstance
 
 from .partition import (
     DefaultPartitionsSubset,

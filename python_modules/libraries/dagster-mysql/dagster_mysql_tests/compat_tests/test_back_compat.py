@@ -343,7 +343,7 @@ def test_add_cached_status_data_column(conn_string):
             assert new_columns <= get_columns(instance, "asset_keys")
 
 
-def test_add_mutable_partitions_definitions(conn_string):
+def test_add_mutable_partitions_table(conn_string):
     hostname, port = _reconstruct_from_file(
         conn_string,
         file_relative_path(__file__, "snapshot_1_0_17_add_cached_status_data_column.sql"),
@@ -358,11 +358,11 @@ def test_add_mutable_partitions_definitions(conn_string):
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
-            assert "mutable_partitions_definitions" not in get_tables(instance)
+            assert "mutable_partitions" not in get_tables(instance)
 
             with pytest.raises(DagsterInvalidInvocationError, match="non-existent table"):
                 instance.get_mutable_partitions("foo")
 
             instance.upgrade()
-            assert "mutable_partitions_definitions" in get_tables(instance)
+            assert "mutable_partitions" in get_tables(instance)
             assert instance.get_mutable_partitions("foo") == []
