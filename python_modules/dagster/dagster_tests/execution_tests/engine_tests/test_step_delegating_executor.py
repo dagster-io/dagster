@@ -68,10 +68,12 @@ class TestStepHandler(StepHandler):
 
     def check_step_health(self, step_handler_context) -> CheckStepHealthResult:
         TestStepHandler.check_step_health_count += 1
+        print("HERE!!!", "check_step_health")
         return CheckStepHealthResult.healthy()
 
     def terminate_step(self, step_handler_context):
         TestStepHandler.terminate_step_count += 1
+        print("HERE!!!", "terminate_step")
         raise NotImplementedError()
 
     @classmethod
@@ -191,6 +193,7 @@ def test_skipping():
 
 
 def test_execute_intervals():
+    print("??")
     TestStepHandler.reset()
     with instance_for_test() as instance:
         result = execute_pipeline(
@@ -220,6 +223,8 @@ def test_execute_intervals():
     assert TestStepHandler.terminate_step_count == 0
     # every step should get checked at least once
     assert TestStepHandler.check_step_health_count >= 3
+    print("!!!!!!!HERE!!!!!!!!!!")
+    print(TestStepHandler.check_step_health_count)
 
 
 @op(tags={"database": "tiny"})
