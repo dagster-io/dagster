@@ -5,7 +5,7 @@ import time
 import pytest
 from dagster import file_relative_path, repository
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RegisteredRepositoryLocationOrigin,
@@ -60,7 +60,7 @@ def test_error_repo_in_registry(instance):
             python_file=file_relative_path(__file__, "error_repo.py"),
         ),
     )
-    with ProcessGrpcServerRegistry(
+    with GrpcServerRegistry(
         instance=instance, reload_interval=5, heartbeat_ttl=10, startup_timeout=5
     ) as registry:
         # Repository with a loading error does not raise an exception
@@ -91,7 +91,7 @@ def test_error_repo_in_registry(instance):
                 pass
 
 
-def test_process_server_registry(instance):
+def test_server_registry(instance):
     origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -100,7 +100,7 @@ def test_process_server_registry(instance):
         ),
     )
 
-    with ProcessGrpcServerRegistry(
+    with GrpcServerRegistry(
         instance=instance, reload_interval=5, heartbeat_ttl=10, startup_timeout=5
     ) as registry:
         endpoint_one = registry.get_grpc_endpoint(origin)
@@ -165,7 +165,7 @@ def test_registry_multithreading(instance):
         ),
     )
 
-    with ProcessGrpcServerRegistry(
+    with GrpcServerRegistry(
         instance=instance, reload_interval=300, heartbeat_ttl=600, startup_timeout=30
     ) as registry:
         endpoint = registry.get_grpc_endpoint(origin)
@@ -193,7 +193,7 @@ def test_registry_multithreading(instance):
     assert not _can_connect(origin, endpoint)
 
 
-class TestMockProcessGrpcServerRegistry(ProcessGrpcServerRegistry):
+class TestMockProcessGrpcServerRegistry(GrpcServerRegistry):
     def __init__(self, instance):
         self.mocked_loadable_target_origin = None
         super(TestMockProcessGrpcServerRegistry, self).__init__(

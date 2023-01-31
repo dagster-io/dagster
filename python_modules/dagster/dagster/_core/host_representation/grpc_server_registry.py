@@ -3,12 +3,10 @@ from __future__ import annotations
 import sys
 import threading
 import uuid
-from abc import abstractmethod
 from contextlib import AbstractContextManager
 from typing import (
     TYPE_CHECKING,
     Dict,
-    Generic,
     List,
     NamedTuple,
     Optional,
@@ -70,31 +68,6 @@ T_GrpcRepositoryLocationOrigin = TypeVar(
 )
 
 
-# Daemons in different threads can use a shared GrpcServerRegistry to ensure that
-# a single GrpcServerProcess is created for each origin
-class GrpcServerRegistry(AbstractContextManager, Generic[T_GrpcRepositoryLocationOrigin]):
-    @abstractmethod
-    def supports_origin(self, repository_location_origin: RepositoryLocationOrigin) -> bool:
-        pass
-
-    @abstractmethod
-    def get_grpc_endpoint(
-        self, repository_location_origin: T_GrpcRepositoryLocationOrigin
-    ) -> GrpcServerEndpoint:
-        pass
-
-    @abstractmethod
-    def reload_grpc_endpoint(
-        self, repository_location_origin: T_GrpcRepositoryLocationOrigin
-    ) -> GrpcServerEndpoint:
-        pass
-
-    @property
-    @abstractmethod
-    def supports_reload(self) -> bool:
-        pass
-
-
 class ProcessRegistryEntry(
     NamedTuple(
         "_ProcessRegistryEntry",
@@ -126,9 +99,9 @@ class ProcessRegistryEntry(
         )
 
 
-# GrpcServerRegistry that creates local gRPC python processes from
-# ManagedGrpcPythonEnvRepositoryLocationOrigins and shares them between threads.
-class ProcessGrpcServerRegistry(GrpcServerRegistry[ManagedGrpcPythonEnvRepositoryLocationOrigin]):
+# Creates local gRPC python processes from ManagedGrpcPythonEnvRepositoryLocationOrigins and shares
+# them between threads.
+class GrpcServerRegistry(AbstractContextManager):
     def __init__(
         self,
         instance: DagsterInstance,
