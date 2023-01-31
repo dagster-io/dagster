@@ -11,8 +11,8 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
-from dagster._core.instance import DagsterInstance
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.instance import DagsterInstance
 from dagster._serdes import whitelist_for_serdes
 
 

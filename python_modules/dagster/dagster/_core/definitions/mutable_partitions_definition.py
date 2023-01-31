@@ -21,16 +21,17 @@ class MutablePartitionsDefinition(PartitionsDefinition):
     but is instead determined at runtime.
 
     Partitions can be added and removed using the `add_partitions` and `remove_partitions` methods.
-    For example:
 
-    ```
-    foo = MutablePartitionsDefinition("foo")
+    Examples:
+        .. code-block:: python
 
-    @sensor(job=my_job)
-    def my_sensor(context):
-        foo.add_partitions([partition_key], instance=context.instance)
-        return my_job.run_request_for_partition(partition_key, instance=context.instance)
-    ```
+            foo = MutablePartitionsDefinition("foo")
+
+            @sensor(job=my_job)
+            def my_sensor(context):
+                foo.add_partitions([partition_key], instance=context.instance)
+                return my_job.run_request_for_partition(partition_key, instance=context.instance)
+
     """
 
     def __init__(self, name: str):

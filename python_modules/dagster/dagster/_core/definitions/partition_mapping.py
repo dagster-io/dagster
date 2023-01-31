@@ -9,13 +9,13 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
-from dagster._core.instance import DagsterInstance
 from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.instance import DagsterInstance
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 

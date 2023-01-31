@@ -19,8 +19,8 @@ from typing import (
 import toposort
 
 import dagster._check as check
-from dagster._core.instance import DagsterInstance
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
+from dagster._core.instance import DagsterInstance
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
 from dagster._utils.cached_method import cached_method
 

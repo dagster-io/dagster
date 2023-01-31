@@ -35,6 +35,7 @@ from dagster._core.definitions.dependency import (
     NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.utils import check_valid_name
@@ -53,7 +54,6 @@ from dagster._core.selector.subset_selector import (
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.utils import str_format_set
 from dagster._utils.merger import merge_dicts
-from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
 
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping

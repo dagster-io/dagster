@@ -657,7 +657,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         self._key_range = key_range
 
     def get_partition_keys_not_in_subset(
-        self, current_time: Optional[datetime] = None
+        self, current_time: Optional[datetime] = None, instance: Optional[DagsterInstance] = None
     ) -> Iterable[str]:
         raise NotImplementedError()
 

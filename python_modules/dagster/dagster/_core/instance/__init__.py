@@ -438,7 +438,7 @@ class DagsterInstance:
                 " file which can configure storing metadata in an external database.\nYou can"
                 " resolve this error by exporting the environment variable. For example, you can"
                 " run the following command in your shell or include it in your shell configuration"
-                " file:\n\texport DAGSTER_HOME=~\"/dagster_home\"\nor PowerShell\n$env:DAGSTER_HOME"
+                ' file:\n\texport DAGSTER_HOME=~"/dagster_home"\nor PowerShell\n$env:DAGSTER_HOME'
                 " = ($home + '\\dagster_home')or batchset"
                 " DAGSTER_HOME=%UserProfile%/dagster_homeAlternatively, DagsterInstance.ephemeral()"
                 " can be used for a transient instance.\n"
@@ -450,7 +450,7 @@ class DagsterInstance:
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" must be an absolute path. Dagster requires this '
-                    'environment variable to be set to an existing directory in your filesystem.'
+                    "environment variable to be set to an existing directory in your filesystem."
                 ).format(dagster_home_path)
             )
 
@@ -458,7 +458,7 @@ class DagsterInstance:
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this'
-                    ' environment variable to be set to an existing directory in your filesystem'
+                    " environment variable to be set to an existing directory in your filesystem"
                 ).format(dagster_home_path)
             )
 
@@ -1096,8 +1096,8 @@ class DagsterInstance:
             execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id,
             (
                 "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
-                "\"{ep_pipeline_snapshot_id}\" and snapshot_id created in memory is "
-                "\"{pipeline_snapshot_id}\""
+                '"{ep_pipeline_snapshot_id}" and snapshot_id created in memory is '
+                '"{pipeline_snapshot_id}"'
             ).format(
                 ep_pipeline_snapshot_id=execution_plan_snapshot.pipeline_snapshot_id,
                 pipeline_snapshot_id=pipeline_snapshot_id,

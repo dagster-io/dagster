@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from dagster._core.instance import MayHaveInstanceWeakref
 

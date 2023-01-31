@@ -365,9 +365,6 @@ def test_add_dynamic_partitions_table(conn_string):
             with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
                 instance.get_dynamic_partitions("foo")
 
-            with pytest.raises(DagsterInvalidInvocationError, match="non-existent table"):
-                instance.get_mutable_partitions("foo")
-
             instance.upgrade()
             assert "dynamic_partitions" in get_tables(instance)
             assert instance.get_dynamic_partitions("foo") == []

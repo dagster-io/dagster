@@ -11,7 +11,6 @@ from dagster import (
     RunRequest,
     SourceAsset,
 )
-from dagster._core.test_utils import instance_for_test
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
@@ -21,6 +20,7 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration_inner,
 )
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
+from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
 
 from dagster_tests.definitions_tests.test_asset_reconciliation_sensor import (
@@ -35,8 +35,8 @@ from dagster_tests.definitions_tests.test_asset_reconciliation_sensor import (
     two_assets_in_sequence_fan_out_partitions,
     two_assets_in_sequence_one_partition,
     two_assets_in_sequence_two_partitions,
-    unpartitioned_after_mutable_asset,
     two_mutable_assets,
+    unpartitioned_after_mutable_asset,
 )
 
 

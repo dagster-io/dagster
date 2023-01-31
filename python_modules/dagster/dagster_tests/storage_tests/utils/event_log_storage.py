@@ -30,16 +30,11 @@ from dagster import (
     job,
     op,
     resource,
-    materialize_to_memory,
-    materialize,
-    IOManager,
 )
 from dagster._core.assets import AssetDetails
-from dagster._core.errors import DagsterUnknownPartitionError, DagsterInvalidInvocationError
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.events import (
     DagsterEvent,

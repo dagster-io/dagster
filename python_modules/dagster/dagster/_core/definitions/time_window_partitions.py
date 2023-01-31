@@ -18,9 +18,10 @@ from typing import (
 )
 
 import pendulum
-from dagster._core.instance import DagsterInstance
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.instance import DagsterInstance
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
 

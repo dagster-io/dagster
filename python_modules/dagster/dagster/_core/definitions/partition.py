@@ -21,7 +21,6 @@ from typing import (
     cast,
 )
 
-from dagster._core.instance import DagsterInstance
 import pendulum
 from dateutil.relativedelta import relativedelta
 from typing_extensions import TypeAlias
@@ -30,6 +29,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
