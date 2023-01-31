@@ -10,7 +10,7 @@ from pyspark.sql import DataFrame, SparkSession
 SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
 
 
-def _get_sf_options(config, table_slice):
+def _get_snowflake_options(config, table_slice: TableSlice) -> Mapping[str, str]:
     check.invariant(
         config.get("warehouse", None) is not None,
         "Missing config: Warehouse is required when using PySpark with the Snowflake I/O manager.",
@@ -43,13 +43,6 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
 
             snowflake_io_manager = build_snowflake_io_manager([SnowflakePySparkTypeHandler()])
 
-            @job(resource_defs={'io_manager': snowflake_io_manager})
-            def my_job():
-                ...
-
-
-            # OR
-
             @asset
             def my_asset() -> DataFrame:
                 ...
@@ -60,12 +53,19 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
                     "io_manager": snowflake_io_manager.configured(...)
                 }
             )
+
+            # OR
+
+            @job(resource_defs={'io_manager': snowflake_io_manager})
+            def my_job():
+                ...
+
     """
 
     def handle_output(
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame
     ) -> Mapping[str, RawMetadataValue]:
-        options = _get_sf_options(context.resource_config, table_slice)
+        options = _get_snowflake_options(context.resource_config, table_slice)
 
         with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
 
@@ -74,7 +74,6 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         ).save()
 
         return {
-            "row_count": obj.count(),
             "dataframe_columns": MetadataValue.table_schema(
                 TableSchema(
                     columns=[
@@ -86,7 +85,7 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         }
 
     def load_input(self, context: InputContext, table_slice: TableSlice) -> DataFrame:
-        options = _get_sf_options(context.resource_config, table_slice)
+        options = _get_snowflake_options(context.resource_config, table_slice)
 
         spark = SparkSession.builder.getOrCreate()
         df = spark.read.format(SNOWFLAKE_CONNECTOR).options(**options).load()
