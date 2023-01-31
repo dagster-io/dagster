@@ -90,7 +90,6 @@ def test_handle_output():
             "dataframe_columns": MetadataValue.table_schema(
                 TableSchema(columns=[TableColumn("col1", "string"), TableColumn("col2", "string")])
             ),
-            "row_count": 1,
         }
 
         assert len(mock_write.method_calls) == 1
