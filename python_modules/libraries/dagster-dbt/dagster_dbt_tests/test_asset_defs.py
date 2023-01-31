@@ -234,7 +234,7 @@ def test_basic(
     if use_build:
         # in the non-streaming case, we emit events for skipped tests, and in the streaming case we
         # do not
-        assert len(observations) == (16 if stream_events else 17)
+        assert len(observations) == (16 if (stream_events and fail_test) else 17)
     else:
         assert len(observations) == 0
 
