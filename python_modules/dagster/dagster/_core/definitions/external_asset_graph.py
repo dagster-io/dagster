@@ -180,3 +180,6 @@ class ExternalAssetGraph(AssetGraph):
 
     def get_job_names(self, asset_key: AssetKey) -> Iterable[str]:
         return self._job_names_by_key[asset_key]
+
+    def get_asset_keys_for_job(self, job_name: str) -> Sequence[AssetKey]:
+        return [k for k in self.all_asset_keys if job_name in self.get_job_names(k)]
