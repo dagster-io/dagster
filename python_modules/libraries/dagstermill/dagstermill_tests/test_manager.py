@@ -17,7 +17,6 @@ from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import ModeDefinition
 from dagster._serdes import pack_value
 from dagster._utils import safe_tempfile_path
 from dagstermill import DagstermillError
@@ -75,9 +74,7 @@ def in_job_manager(
 
 
 def test_get_out_of_job_context():
-    context = dagstermill.get_context(
-        mode_def=ModeDefinition(resource_defs={"list": ResourceDefinition(lambda _: [])})
-    )
+    context = dagstermill.get_context(resource_defs={"list": ResourceDefinition(lambda _: [])})
 
     assert context.pipeline_name == "ephemeral_dagstermill_pipeline"
     assert context.resources.list == []

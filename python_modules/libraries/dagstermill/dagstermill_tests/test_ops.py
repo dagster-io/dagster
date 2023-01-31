@@ -6,12 +6,11 @@ from contextlib import contextmanager
 
 import nbformat
 import pytest
-from dagster import job
+from dagster import execute_job, job
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path, safe_tempfile_path
 from dagstermill import DagstermillError
 from dagstermill.compat import ExecutionError
@@ -52,9 +51,9 @@ def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
 
     with instance_for_test() as instance:
         try:
-            result = execute_pipeline(
-                recon_pipeline,
-                env,
+            result = execute_job(
+                job=recon_pipeline,
+                run_config=env,
                 instance=instance,
                 raise_on_error=raise_on_error,
                 **kwargs,
@@ -289,9 +288,9 @@ def test_error_notebook():
     # test that the notebook is saved on failure
     with instance_for_test() as instance:
         try:
-            result = execute_pipeline(
+            result = execute_job(
                 recon_pipeline,
-                {"execution": {"config": {"in_process": {}}}},
+                run_config={"execution": {"config": {"in_process": {}}}},
                 instance=instance,
                 raise_on_error=False,
             )
@@ -354,7 +353,7 @@ def test_hello_world_reexecution():
             reexecution_result = None
             with instance_for_test() as instance:
                 try:
-                    reexecution_result = execute_pipeline(reexecution_job, instance=instance)
+                    reexecution_result = execute_job(reexecution_job, instance=instance)
                     assert reexecution_result.success
                 finally:
                     if reexecution_result:
@@ -572,7 +571,7 @@ def test_hello_world_graph():
     with instance_for_test() as instance:
         result = None
         try:
-            result = execute_pipeline(
+            result = execute_job(
                 reconstructable(build_hello_world_job),
                 instance=instance,
             )
