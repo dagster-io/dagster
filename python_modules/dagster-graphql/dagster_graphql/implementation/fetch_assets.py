@@ -2,12 +2,12 @@ import datetime
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Dict,
     Iterator,
     List,
     Mapping,
     Optional,
-    Sequence,
     Tuple,
     Union,
     cast,
@@ -55,12 +55,12 @@ from .utils import capture_error
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
-    from ..schema.util import ResolveInfo
     from ..schema.pipelines.pipeline import (
         GrapheneDefaultPartitions,
         GrapheneMultiPartitions,
         GrapheneTimePartitions,
     )
+    from ..schema.util import ResolveInfo
 
 
 def _normalize_asset_cursor_str(cursor_string):

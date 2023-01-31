@@ -346,7 +346,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     and end_idx
                     and isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData)
                 ):
-                    return partitions_def_data.get_partitions_definition().get_partition_keys_between_idxs(
+                    return partitions_def_data.get_partitions_definition().get_partition_keys_between_indexes(
                         start_idx, end_idx
                     )
                 else:

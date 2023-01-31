@@ -131,7 +131,6 @@ class TimeWindowPartitionsDefinition(
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
-        # return pendulum.now(self.timezone).timestamp()
         return (
             pendulum.instance(current_time, tz=self.timezone)
             if current_time
@@ -164,7 +163,7 @@ class TimeWindowPartitionsDefinition(
 
         return num_partitions
 
-    def get_partition_keys_between_idxs(
+    def get_partition_keys_between_indexes(
         self, start_idx: int, end_idx: int, current_time: Optional[datetime] = None
     ) -> List[str]:
         # Fetches the partition keys between the given start and end indices.

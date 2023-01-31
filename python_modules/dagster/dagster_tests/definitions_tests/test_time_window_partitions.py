@@ -599,12 +599,12 @@ def test_time_window_partition_len():
     partitions_def = HourlyPartitionsDefinition(start_date="2021-05-05-01:00", minute_offset=15)
     assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
     assert (
-        partitions_def.get_partition_keys_between_idxs(50, 51)
+        partitions_def.get_partition_keys_between_indexes(50, 51)
         == partitions_def.get_partition_keys()[50:51]
     )
     current_time = datetime.strptime("2021-05-07-03:15", "%Y-%m-%d-%H:%M")
     assert (
-        partitions_def.get_partition_keys_between_idxs(50, 51, current_time=current_time)
+        partitions_def.get_partition_keys_between_indexes(50, 51, current_time=current_time)
         == partitions_def.get_partition_keys(current_time)[50:51]
     )
 
@@ -615,12 +615,12 @@ def test_time_window_partition_len():
     partitions_def = cast(TimeWindowPartitionsDefinition, my_partitioned_config.partitions_def)
     assert partitions_def.get_num_partitions() == len(partitions_def.get_partitions())
     assert (
-        partitions_def.get_partition_keys_between_idxs(50, 53)
+        partitions_def.get_partition_keys_between_indexes(50, 53)
         == partitions_def.get_partition_keys()[50:53]
     )
     current_time = datetime.strptime("2021-06-23", "%Y-%m-%d")
     assert (
-        partitions_def.get_partition_keys_between_idxs(50, 53, current_time=current_time)
+        partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)
         == partitions_def.get_partition_keys(current_time)[50:53]
     )
 
@@ -630,7 +630,7 @@ def test_time_window_partition_len():
     )
     current_time = datetime.strptime("2023-01-21", "%Y-%m-%d")
     assert (
-        weekly_partitions_def.get_partition_keys_between_idxs(50, 53, current_time=current_time)
+        weekly_partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)
         == weekly_partitions_def.get_partition_keys(current_time)[50:53]
     )
 
@@ -641,6 +641,6 @@ def test_time_window_partition_len():
     partitions_def = cast(TimeWindowPartitionsDefinition, my_partitioned_config.partitions_def)
     current_time = datetime.strptime("2021-06-20", "%Y-%m-%d")
     assert (
-        partitions_def.get_partition_keys_between_idxs(50, 53, current_time=current_time)
+        partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)
         == partitions_def.get_partition_keys(current_time=current_time)[50:53]
     )
