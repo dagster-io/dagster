@@ -2,10 +2,10 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
+from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.host_representation import (
     ExternalPartitionSet,
     RepositoryHandle,
-    RepositorySelector,
 )
 from dagster._core.host_representation.external_data import ExternalPartitionNamesData
 from dagster._core.storage.pipeline_run import RunsFilter

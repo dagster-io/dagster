@@ -1,6 +1,7 @@
 import dagster._check as check
 import graphene
-from dagster._core.host_representation import ExternalSensor, ExternalTargetData, SensorSelector
+from dagster._core.definitions.selector import SensorSelector
+from dagster._core.host_representation import ExternalSensor, ExternalTargetData
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.workspace.permissions import Permissions
 

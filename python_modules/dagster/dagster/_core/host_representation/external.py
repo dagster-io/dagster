@@ -20,6 +20,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import (
     DEFAULT_SENSOR_DAEMON_INTERVAL,
     DefaultSensorStatus,
@@ -55,7 +56,6 @@ from .external_data import (
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
-from .selector import InstigatorSelector, RepositorySelector
 
 if TYPE_CHECKING:
     from dagster._core.scheduler.instigation import InstigatorState
