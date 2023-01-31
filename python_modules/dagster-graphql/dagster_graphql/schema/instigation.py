@@ -1,5 +1,6 @@
 import sys
 import warnings
+from typing import Union
 
 import dagster._check as check
 import graphene
@@ -209,6 +210,7 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
 
         next_tick_datetime = next(external_schedule.execution_time_iterator(self._timestamp))
         schedule_time = to_timezone(pendulum.instance(next_tick_datetime), timezone_str)
+        schedule_data: Union[ScheduleExecutionData, SerializableErrorInfo]
         try:
             schedule_data = repository_location.get_external_schedule_execution_data(
                 instance=graphene_info.context.instance,

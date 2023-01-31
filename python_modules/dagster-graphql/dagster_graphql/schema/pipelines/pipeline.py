@@ -1,11 +1,16 @@
-from typing import List
+from typing import List, Optional
 
 import dagster._check as check
 import graphene
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster._core.host_representation.external_data import ExternalPresetData
-from dagster._core.storage.pipeline_run import DagsterRunStatus, RunRecord, RunsFilter
+from dagster._core.storage.pipeline_run import (
+    DagsterRunStatus,
+    PipelineRunStatsSnapshot,
+    RunRecord,
+    RunsFilter,
+)
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
 from dagster._utils import datetime_as_float
 from dagster._utils.yaml_utils import dump_run_config_yaml
@@ -314,7 +319,7 @@ class GrapheneRun(graphene.ObjectType):
         )
         self._pipeline_run = pipeline_run
         self._run_record = record
-        self._run_stats = None
+        self._run_stats: Optional[PipelineRunStatsSnapshot] = None
 
     def resolve_id(self, _graphene_info):
         return self._pipeline_run.run_id
