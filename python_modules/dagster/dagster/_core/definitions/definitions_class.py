@@ -7,6 +7,7 @@ from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
+from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
 from dagster._utils.cached_method import cached_method
 
@@ -70,7 +71,7 @@ def _create_repository_using_definitions_args(
     sensors: Optional[Iterable[SensorDefinition]] = None,
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
     resources: Optional[Mapping[str, Any]] = None,
-    executor: Optional[ExecutorDefinition] = None,
+    executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
 ):
     if assets:
@@ -91,20 +92,23 @@ def _create_repository_using_definitions_args(
     if jobs:
         check.iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
 
-    if resources:
-        check.mapping_param(resources, "resources", key_type=str)
-
-    if executor:
-        check.inst_param(executor, "executor", ExecutorDefinition)
-
-    if loggers:
-        check.mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
+    check.opt_mapping_param(resources, "resources", key_type=str)
 
     resource_defs = wrap_resources_for_execution(resources or {})
 
+    check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor))
+
+    executor_def = (
+        executor
+        if isinstance(executor, ExecutorDefinition) or executor is None
+        else ExecutorDefinition.hardcoded_executor(executor)
+    )
+
+    check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
+
     @repository(
         name=name,
-        default_executor_def=executor,
+        default_executor_def=executor_def,
         default_logger_defs=loggers,
     )
     def created_repo():
@@ -153,12 +157,14 @@ class Definitions:
             resources already bound using :py:func:`with_resources <with_resources>` will
             override this dictionary.
 
-        executor (Optional[ExecutorDefinition]):
+        executor (Optional[Union[ExecutorDefinition, Executor]]):
             Default executor for jobs. Individual jobs
             can override this and define their own executors by setting the executor
             on :py:func:`@job <job>` or :py:func:`define_asset_job <define_asset_job>`
             explicitly. This executor will also be used for materializing assets directly
             outside of the context of jobs.
+
+            If an Executor is passed, it is coerced into an ExecutorDefinition.
 
 
         loggers (Optional[Mapping[str, LoggerDefinition]):
@@ -216,7 +222,7 @@ class Definitions:
         sensors: Optional[Iterable[SensorDefinition]] = None,
         jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
         resources: Optional[Mapping[str, Any]] = None,
-        executor: Optional[ExecutorDefinition] = None,
+        executor: Optional[Union[ExecutorDefinition, Executor]] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     ):
         self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
