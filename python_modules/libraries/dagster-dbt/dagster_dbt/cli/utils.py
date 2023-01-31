@@ -206,7 +206,7 @@ def parse_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> 
     """Parses the `target/run_results.json` artifact that is produced by a dbt process."""
     run_results_path = os.path.join(path, target_path, "run_results.json")
     try:
-        with open(run_results_path, encoding="utf8") as file:
+        with open(run_results_path) as file:
             return json.load(file)
     except FileNotFoundError:
         raise DagsterDbtCliOutputsNotFoundError(path=run_results_path)
@@ -223,7 +223,7 @@ def parse_manifest(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Map
     """Parses the `target/manifest.json` artifact that is produced by a dbt process."""
     manifest_path = os.path.join(path, target_path, "manifest.json")
     try:
-        with open(manifest_path, encoding="utf8") as file:
+        with open(manifest_path) as file:
             return json.load(file)
     except FileNotFoundError:
         raise DagsterDbtCliOutputsNotFoundError(path=manifest_path)
@@ -328,7 +328,7 @@ def execute_cli_event_generator(
         stderr=subprocess.STDOUT,
     )
     for raw_line in process.stdout or []:
-        line = raw_line.decode("utf-8").rstrip()
+        line = raw_line.decode().rstrip()
         message, json_line = _process_line(line, log, json_log_format, capture_logs)
         messages.append(message)
         if json_line is not None:
