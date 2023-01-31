@@ -164,7 +164,7 @@ class Definitions:
             explicitly. This executor will also be used for materializing assets directly
             outside of the context of jobs.
 
-            If an Executor is passed, it is coerced into a ExecutorDefinition.
+            If an Executor is passed, it is coerced into an ExecutorDefinition.
 
 
         loggers (Optional[Mapping[str, LoggerDefinition]):
