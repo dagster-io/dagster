@@ -356,15 +356,15 @@ def k8s_job_op(context):
       - You want to run the rest of a Dagster job using a specific executor, and only a single
         op in k8s.
 
-    You can create your own op with the same implementation by calling the `execute_k8s_job` function
-    inside your own op.
-
     For example:
 
     .. literalinclude:: ../../../../../../python_modules/libraries/dagster-k8s/dagster_k8s_tests/unit_tests/test_example_k8s_job_op.py
       :start-after: start_marker
       :end-before: end_marker
       :language: python
+
+    You can create your own op with the same implementation by calling the `execute_k8s_job` function
+    inside your own op.
 
     The service account that is used to run this job should have the following RBAC permissions:
 
