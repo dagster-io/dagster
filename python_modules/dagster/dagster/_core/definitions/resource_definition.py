@@ -25,7 +25,7 @@ from dagster._utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (
     get_function_params,
-    is_context_provided,
+    has_at_least_one_parameter,
     is_required_param,
     positional_arg_name_list,
     validate_expected_params,
@@ -199,7 +199,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     def __call__(self, *args, **kwargs):
         from dagster._core.execution.context.init import UnboundInitResourceContext
 
-        if is_context_provided(self.resource_fn):
+        if has_at_least_one_parameter(self.resource_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Resource initialization function has context argument, but no context was"
@@ -265,7 +265,7 @@ class _ResourceDecoratorCallable:
     def __call__(self, resource_fn: ResourceFunction) -> ResourceDefinition:
         check.callable_param(resource_fn, "resource_fn")
 
-        any_name = ["*"] if is_context_provided(resource_fn) else []  # type: ignore  # fmt: skip
+        any_name = ["*"] if has_at_least_one_parameter(resource_fn) else []  # type: ignore  # fmt: skip
 
         params = get_function_params(resource_fn)
 

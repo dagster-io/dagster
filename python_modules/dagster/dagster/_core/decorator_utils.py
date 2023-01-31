@@ -86,15 +86,7 @@ def format_docstring_for_description(fn: Callable) -> Optional[str]:
 # error arising from assuming
 # When/if `StrictTypeGuard` is supported, we can drop `is_context_not_provided` since a False from
 # `is_context_provided` will be sufficient.
-def is_context_provided(
+def has_at_least_one_parameter(
     fn: Union[Callable[Concatenate[T, P], R], Callable[P, R]],
-    valid_names: Optional[Sequence[str]] = None,
 ) -> TypeGuard[Callable[Concatenate[T, P], R]]:
-    params = get_function_params(fn)
-    if valid_names is None:
-        return len(params) >= 1
-    else:
-        valid_name_permutations = [
-            x for name in valid_names for x in get_valid_name_permutations(name)
-        ]
-        return len(params) >= 1 and params[0].name in valid_name_permutations
+    return len(get_function_params(fn)) >= 1

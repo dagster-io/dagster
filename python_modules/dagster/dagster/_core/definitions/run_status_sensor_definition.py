@@ -52,7 +52,7 @@ from .sensor_definition import (
     SensorDefinition,
     SensorEvaluationContext,
     SkipReason,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
@@ -678,7 +678,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         )
 
     def __call__(self, *args, **kwargs):
-        if is_context_provided(self._run_status_sensor_fn):
+        if has_at_least_one_parameter(self._run_status_sensor_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Run status sensor function expected context argument, but no context argument "

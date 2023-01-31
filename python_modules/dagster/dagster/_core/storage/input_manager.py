@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union, cast, 
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
-from dagster._core.decorator_utils import is_context_provided
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
@@ -202,7 +202,7 @@ class InputManagerWrapper(InputManager):
         intermediate = (
             # type-ignore because function being used as attribute
             self._load_fn(context)  # type: ignore  # fmt: skip
-            if is_context_provided(self._load_fn)  # type: ignore  # fmt: skip
+            if has_at_least_one_parameter(self._load_fn)  # type: ignore  # fmt: skip
             else self._load_fn()  # type: ignore  # (strict type guard)
         )
 

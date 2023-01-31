@@ -37,7 +37,7 @@ from .sensor_definition import (
     DefaultSensorStatus,
     SensorDefinition,
     SensorEvaluationContext,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
 from .target import ExecutableDefinition
 from .utils import check_valid_name
@@ -1138,7 +1138,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
         )
 
     def __call__(self, *args, **kwargs):
-        if is_context_provided(self._raw_asset_materialization_fn):
+        if has_at_least_one_parameter(self._raw_asset_materialization_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Sensor evaluation function expected context argument, but no context argument "

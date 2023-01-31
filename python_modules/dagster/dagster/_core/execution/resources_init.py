@@ -20,7 +20,7 @@ from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ScopedResourcesBuilder,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
 from dagster._core.errors import (
     DagsterInvariantViolationError,
@@ -326,7 +326,7 @@ def single_resource_event_generator(
                 with time_execution_scope() as timer_result:
                     resource_or_gen = (
                         resource_def.resource_fn(context)  # type: ignore  # fmt: skip
-                        if is_context_provided(resource_def.resource_fn)  # type: ignore  # fmt: skip
+                        if has_at_least_one_parameter(resource_def.resource_fn)  # type: ignore  # fmt: skip
                         else resource_def.resource_fn()  # type: ignore[call-arg]
                     )
 
