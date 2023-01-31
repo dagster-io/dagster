@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Generic, Optional, Type, Union, cast
 
 import pydantic
-from typing_extensions import TypeVar, dataclass_transform, get_args, get_origin
+from typing_extensions import dataclass_transform, get_origin
 
 from .utils import safe_is_subclass
 
@@ -18,9 +18,6 @@ Self = TypeVar("Self", bound="TypecheckAllowPartialResourceInitParams")
 _ResValue = TypeVar("_ResValue")
 
 
-# Since a metaclass is invoked by Resource before Resource or PartialResource is defined, we need to
-# define a temporary class to use as a placeholder for use in the initial metaclass invocation.
-# When the metaclass is invoked for a Resource subclass, it will use the non-placeholder values.
 class _Temp(Generic[_ResValue]):
     pass
 
@@ -34,7 +31,24 @@ _PartialResource: Type = _Temp
 class BaseResourceMeta(pydantic.main.ModelMetaclass):
     """
     Custom metaclass for Resource and PartialResource. This metaclass is responsible for
-    transforming the type annotations on the class to allow for partially configured resources.
+    transforming the type annotations on the class so that Pydantic constructor-time validation
+    does not error when users provide partially configured resources to resource params.
+
+    For example, the following code would ordinarily fail Pydantic validation:
+
+    .. code-block:: python
+
+        class FooResource(Resource):
+            bar: BarResource
+
+        # Types as PartialResource[BarResource]
+        partial_bar = BarResource.configure_at_runtime()
+
+        # Pydantic validation fails because bar is not a BarResource
+        foo = FooResource(bar=partial_bar)
+
+    This metaclass transforms the type annotations on the class so that Pydantic validation
+    accepts either a PartialResource or a Resource as a value for the resource dependency.
     """
 
     def __new__(self, name, bases, namespaces, **kwargs):

@@ -85,7 +85,7 @@ def format_docstring_for_description(fn: Callable) -> Optional[str]:
 # Type-ignores are used throughout the codebase when this function returns False to ignore the type
 # error arising from assuming
 # When/if `StrictTypeGuard` is supported, we can drop `is_context_not_provided` since a False from
-# `is_context_provided` will be sufficient.
+# `has_at_least_one_parameter` will be sufficient.
 def has_at_least_one_parameter(
     fn: Union[Callable[Concatenate[T, P], R], Callable[P, R]],
 ) -> TypeGuard[Callable[Concatenate[T, P], R]]:
