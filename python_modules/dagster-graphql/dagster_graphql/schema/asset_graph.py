@@ -340,7 +340,6 @@ class GrapheneAssetNode(graphene.ObjectType):
                     ExternalStaticPartitionsDefinitionData,
                     ExternalTimeWindowPartitionsDefinitionData,
                     ExternalMultiPartitionsDefinitionData,
-                    ExternalMutablePartitionsDefinitionData,
                 ),
             ):
                 if (

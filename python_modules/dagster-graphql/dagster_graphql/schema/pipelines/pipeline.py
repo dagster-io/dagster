@@ -210,7 +210,9 @@ class GrapheneAsset(graphene.ObjectType):
         partitions = kwargs.get("partitions")
         partitionInLast = kwargs.get("partitionInLast")
         if partitionInLast and self._definition:
-            partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
+            partitions = self._definition.get_partition_keys(graphene_info.context.instance)[
+                -int(partitionInLast) :
+            ]
         tags = kwargs.get("tags")
 
         events = get_asset_materializations(
@@ -234,7 +236,9 @@ class GrapheneAsset(graphene.ObjectType):
         partitions = kwargs.get("partitions")
         partitionInLast = kwargs.get("partitionInLast")
         if partitionInLast and self._definition:
-            partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
+            partitions = self._definition.get_partition_keys(graphene_info.context.instance)[
+                -int(partitionInLast) :
+            ]
 
         return [
             GrapheneObservationEvent(event=event)

@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Sequence
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.instance import DagsterInstance
 from dagster._core.host_representation.external_data import (
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
@@ -46,6 +47,7 @@ def sync_get_external_partition_config_grpc(
     repository_handle: RepositoryHandle,
     partition_set_name: str,
     partition_name: str,
+    instance: DagsterInstance,
 ) -> ExternalPartitionConfigData:
     from dagster._grpc.client import DagsterGrpcClient
 
@@ -60,6 +62,7 @@ def sync_get_external_partition_config_grpc(
                 repository_origin=repository_origin,
                 partition_set_name=partition_set_name,
                 partition_name=partition_name,
+                instance_ref=instance.get_ref(),
             ),
         ),
         (ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
@@ -75,6 +78,7 @@ def sync_get_external_partition_tags_grpc(
     repository_handle: RepositoryHandle,
     partition_set_name: str,
     partition_name: str,
+    instance: DagsterInstance,
 ) -> ExternalPartitionTagsData:
     from dagster._grpc.client import DagsterGrpcClient
 
@@ -90,6 +94,7 @@ def sync_get_external_partition_tags_grpc(
                 repository_origin=repository_origin,
                 partition_set_name=partition_set_name,
                 partition_name=partition_name,
+                instance_ref=instance.get_ref(),
             ),
         ),
         (ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
@@ -105,6 +110,7 @@ def sync_get_external_partition_set_execution_param_data_grpc(
     repository_handle: RepositoryHandle,
     partition_set_name: str,
     partition_names: Sequence[str],
+    instance: DagsterInstance,
 ) -> ExternalPartitionSetExecutionParamData:
     from dagster._grpc.client import DagsterGrpcClient
 
@@ -121,6 +127,7 @@ def sync_get_external_partition_set_execution_param_data_grpc(
                 repository_origin=repository_origin,
                 partition_set_name=partition_set_name,
                 partition_names=partition_names,
+                instance_ref=instance.get_ref(),
             ),
         ),
         (ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData),

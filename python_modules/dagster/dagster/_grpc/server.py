@@ -442,6 +442,7 @@ class DagsterApiServer(DagsterApiServicer):
                 self._get_repo_for_origin(args.repository_origin),
                 partition_set_name=args.partition_set_name,
                 partition_names=args.partition_names,
+                instance=DagsterInstance.from_ref(args.instance_ref),
             )
         )
 
@@ -456,6 +457,7 @@ class DagsterApiServer(DagsterApiServicer):
                     self._get_repo_for_origin(args.repository_origin),
                     args.partition_set_name,
                     args.partition_name,
+                    DagsterInstance.from_ref(args.instance_ref),
                 )
             )
         )
@@ -469,6 +471,7 @@ class DagsterApiServer(DagsterApiServicer):
                     self._get_repo_for_origin(partition_args.repository_origin),
                     partition_args.partition_set_name,
                     partition_args.partition_name,
+                    DagsterInstance.from_ref(partition_args.instance_ref),
                 )
             )
         )
