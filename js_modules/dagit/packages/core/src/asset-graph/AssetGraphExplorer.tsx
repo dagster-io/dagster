@@ -1,4 +1,11 @@
-import {Box, Checkbox, Colors, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
+import {
+  Box,
+  Checkbox,
+  Colors,
+  NonIdealState,
+  SplitPanelContainer,
+  ErrorBoundary,
+} from '@dagster-io/ui';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
@@ -268,7 +275,7 @@ export const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
       firstInitialPercent={70}
       firstMinSize={400}
       first={
-        <>
+        <ErrorBoundary region="graph">
           {graphQueryItems.length === 0 ? (
             <EmptyDAGNotice nodeType="asset" isGraph />
           ) : applyingEmptyDefault ? (
@@ -430,22 +437,26 @@ export const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               popoverPosition="bottom-left"
             />
           </QueryOverlay>
-        </>
+        </ErrorBoundary>
       }
       second={
         selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
           <RightInfoPanel>
             <RightInfoPanelContent>
-              <SidebarAssetInfo
-                assetNode={selectedGraphNodes[0]}
-                liveData={liveDataByNode[selectedGraphNodes[0].id]}
-              />
+              <ErrorBoundary region="asset sidebar" resetErrorOnChange={[selectedGraphNodes[0].id]}>
+                <SidebarAssetInfo
+                  assetNode={selectedGraphNodes[0]}
+                  liveData={liveDataByNode[selectedGraphNodes[0].id]}
+                />
+              </ErrorBoundary>
             </RightInfoPanelContent>
           </RightInfoPanel>
         ) : fetchOptions.pipelineSelector ? (
           <RightInfoPanel>
             <RightInfoPanelContent>
-              <AssetGraphJobSidebar pipelineSelector={fetchOptions.pipelineSelector} />
+              <ErrorBoundary region="asset job sidebar">
+                <AssetGraphJobSidebar pipelineSelector={fetchOptions.pipelineSelector} />
+              </ErrorBoundary>
             </RightInfoPanelContent>
           </RightInfoPanel>
         ) : null
