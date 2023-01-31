@@ -23,7 +23,7 @@ from dagster._core.types.dagster_type import DagsterTypeKind
 
 from ...decorator_utils import (
     get_function_params,
-    get_valid_name_permutations,
+    is_context_provided,
     param_is_var_keyword,
     positional_arg_name_list,
 )
@@ -41,7 +41,7 @@ class DecoratedOpFunction(NamedTuple):
 
     @lru_cache(maxsize=1)
     def has_context_arg(self) -> bool:
-        return is_context_provided(get_function_params(self.decorated_fn))
+        return is_context_provided(self.decorated_fn, valid_names=["context"])
 
     @lru_cache(maxsize=1)
     def _get_function_params(self) -> Sequence[Parameter]:
@@ -467,12 +467,6 @@ def resolve_checked_solid_fn_inputs(
     input_defs.extend(inferred_input_defs)
 
     return input_defs
-
-
-def is_context_provided(params: Sequence[Parameter]) -> bool:
-    if len(params) == 0:
-        return False
-    return params[0].name in get_valid_name_permutations("context")
 
 
 def lambda_solid(
