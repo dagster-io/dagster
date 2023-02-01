@@ -337,6 +337,9 @@ class CachingInstanceQueryer:
         for parent in asset_graph.get_parents_partitions(
             asset_partition.asset_key, asset_partition.partition_key
         ):
+            if asset_graph.is_source(parent.asset_key):
+                continue
+
             if (
                 self.get_latest_materialization_record(
                     parent, after_cursor=latest_materialization_record.storage_id
