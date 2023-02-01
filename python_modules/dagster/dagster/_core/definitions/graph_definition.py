@@ -288,6 +288,10 @@ class GraphDefinition(NodeDefinition):
         return list(set(self._node_dict.values()))
 
     @property
+    def nodes(self) -> Sequence[Node]:
+        return list(set(self._node_dict.values()))
+
+    @property
     def node_dict(self) -> Mapping[str, Node]:
         return self._node_dict
 

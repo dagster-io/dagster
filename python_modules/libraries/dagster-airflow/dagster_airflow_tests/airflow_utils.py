@@ -31,7 +31,7 @@ from airflow.utils.helpers import chain
 default_args = {"start_date": days_ago(1)}
 
 with models.DAG(
-    dag_id="example_complex", default_args=default_args, schedule_interval=None, tags=['example'],
+    dag_id="example_complex", default_args=default_args, schedule_interval='* * * * *', tags=['example'],
 ) as complex_dag:
 
     # Create
@@ -383,7 +383,7 @@ from airflow.models.baseoperator import chain
 default_args = {"start_date": pendulum.today('UTC').add(days=-1)}
 
 with models.DAG(
-    dag_id="example_complex", default_args=default_args, schedule=None, tags=['example'],
+    dag_id="example_complex", default_args=default_args, schedule='* * * * *', tags=['example'],
 ) as complex_dag:
 
     # Create

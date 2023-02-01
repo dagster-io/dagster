@@ -11,6 +11,7 @@ import airflow
 import dateutil
 import lazy_object_proxy
 import pendulum
+import pytz
 from airflow import __version__ as airflow_version
 from airflow.models import TaskInstance
 from airflow.models.baseoperator import BaseOperator
@@ -556,8 +557,40 @@ def make_dagster_pipeline_from_airflow_dag(
                 dag_folder=context.resource_config["dag_location"], include_examples=False
             )
             dag = dag_bag.get_dag(context.resource_config["dag_id"])
-            execution_date_str = context.dagster_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
-            execution_date = dateutil.parser.parse(execution_date_str)
+            if AIRFLOW_EXECUTION_DATE_STR in context.dagster_run.tags:
+                # for airflow DAGs that have not been turned into SDAs
+                execution_date_str = context.dagster_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
+                check.str_param(execution_date_str, "execution_date_str")
+                try:
+                    execution_date = dateutil.parser.parse(execution_date_str)
+                except ValueError:
+                    raise DagsterInvariantViolationError(
+                        'Could not parse execution_date "{execution_date_str}". Please use datetime'
+                        " format compatible with  dateutil.parser.parse.".format(
+                            execution_date_str=execution_date_str,
+                        )
+                    )
+                except OverflowError:
+                    raise DagsterInvariantViolationError(
+                        'Date "{execution_date_str}" exceeds the largest valid C integer on the'
+                        " system.".format(
+                            execution_date_str=execution_date_str,
+                        )
+                    )
+            elif "dagster/partition" in context.dagster_run.tags:
+                # for airflow DAGs that have been turned into SDAs
+                execution_date_str = context.dagster_run.tags.get("dagster/partition")
+                execution_date = dateutil.parser.parse(execution_date_str)
+                execution_date = execution_date.replace(tzinfo=pytz.timezone(dag.timezone.name))
+            else:
+                raise DagsterInvariantViolationError(
+                    'Could not find "{AIRFLOW_EXECUTION_DATE_STR}" in tags "{tags}". Please '
+                    'add "{AIRFLOW_EXECUTION_DATE_STR}" to tags before executing'.format(
+                        AIRFLOW_EXECUTION_DATE_STR=AIRFLOW_EXECUTION_DATE_STR,
+                        tags=context.dagster_run.tags,
+                    )
+                )
+
             dagrun = dag.get_dagrun(execution_date=execution_date)
             if not dagrun:
                 if airflow_version >= "2.0.0":
@@ -759,34 +792,41 @@ def make_dagster_solid_from_airflow_task(
         importlib.reload(airflow)
         mock_xcom = context.op_config["mock_xcom"]
         use_ephemeral_airflow_db = context.op_config["use_ephemeral_airflow_db"]
-        if AIRFLOW_EXECUTION_DATE_STR not in context.pipeline_run.tags:
-            raise DagsterInvariantViolationError(
-                'Could not find "{AIRFLOW_EXECUTION_DATE_STR}" in {target} tags "{tags}". Please '
-                'add "{AIRFLOW_EXECUTION_DATE_STR}" to {target} tags before executing'.format(
-                    target="job" if context.pipeline_def.is_graph_job_op_target else "pipeline",
-                    AIRFLOW_EXECUTION_DATE_STR=AIRFLOW_EXECUTION_DATE_STR,
-                    tags=context.pipeline_run.tags,
-                )
-            )
-        execution_date_str = context.pipeline_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
+        context.log.info("Running Airflow task: {task_id}".format(task_id=task.task_id))
 
-        check.str_param(execution_date_str, "execution_date_str")
-        try:
+        if context.has_partition_key:
+            # for airflow DAGs that have been turned into SDAs
+            execution_date_str = context.pipeline_run.tags.get("dagster/partition")
             execution_date = dateutil.parser.parse(execution_date_str)
-        except ValueError:
-            raise DagsterInvariantViolationError(
-                'Could not parse execution_date "{execution_date_str}". Please use datetime format '
-                "compatible with  dateutil.parser.parse.".format(
-                    execution_date_str=execution_date_str,
+            # execution_date = execution_date.replace(tzinfo=pytz.timezone(dag.timezone.name))
+        else:
+            # for airflow DAGs that have not been turned into SDAs
+            if AIRFLOW_EXECUTION_DATE_STR not in context.pipeline_run.tags:
+                raise DagsterInvariantViolationError(
+                    'Could not find "{AIRFLOW_EXECUTION_DATE_STR}" in tags "{tags}". Please '
+                    'add "{AIRFLOW_EXECUTION_DATE_STR}" to job tags before executing'.format(
+                        AIRFLOW_EXECUTION_DATE_STR=AIRFLOW_EXECUTION_DATE_STR,
+                        tags=context.pipeline_run.tags,
+                    )
                 )
-            )
-        except OverflowError:
-            raise DagsterInvariantViolationError(
-                'Date "{execution_date_str}" exceeds the largest valid C integer on the system.'
-                .format(
-                    execution_date_str=execution_date_str,
+            execution_date_str = context.pipeline_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
+            check.str_param(execution_date_str, "execution_date_str")
+            try:
+                execution_date = dateutil.parser.parse(execution_date_str)
+            except ValueError:
+                raise DagsterInvariantViolationError(
+                    'Could not parse execution_date "{execution_date_str}". Please use datetime'
+                    " format compatible with  dateutil.parser.parse.".format(
+                        execution_date_str=execution_date_str,
+                    )
                 )
-            )
+            except OverflowError:
+                raise DagsterInvariantViolationError(
+                    'Date "{execution_date_str}" exceeds the largest valid C integer on the system.'
+                    .format(
+                        execution_date_str=execution_date_str,
+                    )
+                )
 
         check.inst_param(execution_date, "execution_date", datetime.datetime)
 
