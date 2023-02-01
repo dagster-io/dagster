@@ -1,7 +1,7 @@
 import json
 from unittest import mock
 
-from dagster import reconstructable
+from dagster import job, reconstructable
 from dagster._core.host_representation import RepositoryHandle
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
@@ -13,7 +13,6 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteRunArgs
-from dagster._legacy import pipeline
 from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
 from dagster._utils.merger import merge_dicts
 from dagster_k8s import K8sRunLauncher
@@ -489,7 +488,7 @@ def test_no_postgres(kubeconfig_file):
         ]
 
 
-@pipeline
+@job
 def fake_pipeline():
     pass
 
