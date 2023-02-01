@@ -21,7 +21,10 @@ def test_load_assets_from_airflow_dag():
         with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:
             f.write(bytes(COMPLEX_DAG_FILE_CONTENTS.encode("utf-8")))
 
-        dag_bag = DagBag(dag_folder=tmpdir_path)
+        dag_bag = DagBag(
+            dag_folder=tmpdir_path,
+            include_examples=False,
+        )
         complex_dag = dag_bag.get_dag(dag_id="example_complex")
 
         @asset
