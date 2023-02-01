@@ -125,6 +125,7 @@ def test_airflow_example_dags(
 
 
 @pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
+@requires_airflow_db
 def test_retry_conversion():
     with tempfile.TemporaryDirectory(suffix="retries") as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:
