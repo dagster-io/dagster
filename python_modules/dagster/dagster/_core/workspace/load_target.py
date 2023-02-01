@@ -6,6 +6,7 @@ import tomli
 
 from dagster._core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocationOrigin,
 )
 
@@ -36,11 +37,11 @@ class CompositeTarget(
 class WorkspaceFileTarget(
     NamedTuple("WorkspaceFileTarget", [("paths", Sequence[str])]), WorkspaceLoadTarget
 ):
-    def create_origins(self):
+    def create_origins(self) -> Sequence[RepositoryLocationOrigin]:
         return location_origins_from_yaml_paths(self.paths)
 
 
-def get_origins_from_toml(path) -> Sequence[RepositoryLocationOrigin]:
+def get_origins_from_toml(path: str) -> Sequence[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
     with open(path, "rb") as f:
         data = tomli.load(f)
         if not isinstance(data, dict):
@@ -58,7 +59,7 @@ def get_origins_from_toml(path) -> Sequence[RepositoryLocationOrigin]:
 
 
 class PyProjectFileTarget(NamedTuple("PyProjectFileTarget", [("path", str)]), WorkspaceLoadTarget):
-    def create_origins(self):
+    def create_origins(self) -> Sequence[RepositoryLocationOrigin]:
         return get_origins_from_toml(self.path)
 
 
@@ -74,7 +75,7 @@ class PythonFileTarget(
     ),
     WorkspaceLoadTarget,
 ):
-    def create_origins(self):
+    def create_origins(self) -> Sequence[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
         return [
             location_origin_from_python_file(
                 python_file=self.python_file,
@@ -97,7 +98,7 @@ class ModuleTarget(
     ),
     WorkspaceLoadTarget,
 ):
-    def create_origins(self):
+    def create_origins(self) -> Sequence[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
         return [
             location_origin_from_module_name(
                 self.module_name,
@@ -120,7 +121,7 @@ class PackageTarget(
     ),
     WorkspaceLoadTarget,
 ):
-    def create_origins(self):
+    def create_origins(self) -> Sequence[ManagedGrpcPythonEnvRepositoryLocationOrigin]:
         return [
             location_origin_from_package_name(
                 self.package_name,
@@ -143,7 +144,7 @@ class GrpcServerTarget(
     ),
     WorkspaceLoadTarget,
 ):
-    def create_origins(self):
+    def create_origins(self) -> Sequence[GrpcServerRepositoryLocationOrigin]:
         return [
             GrpcServerRepositoryLocationOrigin(
                 port=self.port,
@@ -156,5 +157,5 @@ class GrpcServerTarget(
 
 #  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
 class EmptyWorkspaceTarget(NamedTuple("EmptyWorkspaceTarget", []), WorkspaceLoadTarget):
-    def create_origins(self):
+    def create_origins(self) -> Sequence[RepositoryLocationOrigin]:
         return []
