@@ -269,11 +269,16 @@ class _Asset:
         asset_ins = build_asset_ins(fn, self.ins or {}, self.non_argument_deps)
 
         cwd = os.getcwd()
-        origin = (os.path.join(cwd, inspect.getsourcefile(fn)), inspect.getsourcelines(fn)[1])
+
+        source_file: str = os.path.join(cwd, inspect.getsourcefile(fn))
+        source_lines = inspect.getsourcelines(fn)[1]
+
+        module_name = inspect.getmodule(fn).__name__
+        path_from_module_root = source_file[source_file.index(module_name.replace(".", "/")) :]
 
         metadata = {
             **(self.metadata or {}),
-            "__code_origin": MetadataValue.json({"file": origin[0], "line": origin[1]}),
+            "__code_origin": MetadataValue.json({"file": source_file, "line": source_lines, "pathInModule": path_from_module_root}),
         }
 
         out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))

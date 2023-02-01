@@ -63,11 +63,18 @@ export const SidebarAssetInfo: React.FC<{
     codeOriginInfo.__typename === 'JsonMetadataEntry' &&
     JSON.parse(codeOriginInfo.jsonString);
 
+  const gitPath = asset.repository?.displayMetadata.find((e) => e.key === 'url')?.value;
+
   const OpMetadataPlugin = asset.op?.metadata && pluginForMetadata(asset.op.metadata);
 
   return (
     <>
-      <Header assetKey={assetKey} opName={asset.op?.name} codeOrigin={codeOrigin} />
+      <Header
+        assetKey={assetKey}
+        opName={asset.op?.name}
+        codeOrigin={codeOrigin}
+        gitPath={gitPath}
+      />
 
       <AssetDefinedInMultipleReposNotice
         assetKey={assetKey}
@@ -151,9 +158,32 @@ const TypeSidebarSection: React.FC<{
 const Header: React.FC<{
   assetKey: AssetKey;
   opName?: string;
-  codeOrigin?: {file: string; line: number};
-}> = ({assetKey, opName, codeOrigin}) => {
+  codeOrigin?: {file: string; line: number; pathInModule: string};
+  gitPath?: string;
+}> = ({assetKey, opName, codeOrigin, gitPath}) => {
   const displayName = displayNameForAssetKey(assetKey);
+
+  let openExternallyButton = null;
+  if (codeOrigin) {
+    if (gitPath) {
+      const gitFilePath = gitPath + '/' + codeOrigin.pathInModule + '#L' + codeOrigin.line;
+      openExternallyButton = (
+        <ExternalAnchorButton icon={<Icon name="github" />} href={gitFilePath}>
+          Open in GitHub
+        </ExternalAnchorButton>
+      );
+    } else {
+      openExternallyButton = (
+        <ExternalAnchorButton
+          icon={<Icon name="open_in_new" />}
+          href={`vscode://file/${codeOrigin.file}:${codeOrigin.line}`}
+        >
+          Open in editor
+        </ExternalAnchorButton>
+      );
+    }
+  }
+
   return (
     <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
       <Box flex={{gap: 4, direction: 'row', justifyContent: 'space-between'}}>
@@ -173,14 +203,7 @@ const Header: React.FC<{
             </Box>
           ) : undefined}
         </SidebarTitle>
-        {codeOrigin && (
-          <ExternalAnchorButton
-            icon={<Icon name="open_in_new" />}
-            href={`vscode://file/${codeOrigin.file}:${codeOrigin.line}`}
-          >
-            Open in editor
-          </ExternalAnchorButton>
-        )}
+        {openExternallyButton}
       </Box>
       <AssetCatalogLink to={assetDetailsPathForKey(assetKey)}>
         {'View in Asset Catalog '}
@@ -224,6 +247,10 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
     repository {
       id
       name
+      displayMetadata {
+        key
+        value
+      }
       location {
         id
         name
