@@ -8,11 +8,14 @@ import {PartitionState} from '../partitions/PartitionStatus';
 import {mergedStates} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {
-  PartitionHealthMaterializedPartitionsFragment,
   PartitionHealthQuery,
   PartitionHealthQueryVariables,
 } from './types/usePartitionHealthData.types';
 
+type PartitionHealthMaterializedPartitions = Extract<
+  PartitionHealthQuery['assetNodeOrError'],
+  {__typename: 'AssetNode'}
+>['materializedPartitions'];
 /**
  * usePartitionHealthData retrieves partitionKeysByDimension + partitionMaterializationCounts and
  * reshapes the data for rapid retrieval from the UI. The hook exposes a series of getter methods
@@ -168,7 +171,7 @@ type Range = {
 
 function addKeyIndexesToMaterializedRanges(
   dimensions: {name: string; partitionKeys: string[]}[],
-  materializedPartitions: PartitionHealthMaterializedPartitionsFragment,
+  materializedPartitions: PartitionHealthMaterializedPartitions,
 ) {
   const result: Range[] = [];
 
@@ -285,37 +288,39 @@ const PARTITION_HEALTH_QUERY = gql`
           partitionKeys
         }
         materializedPartitions {
-          ...PartitionHealthMaterializedPartitionsFragment
-        }
-      }
-    }
-  }
-
-  fragment PartitionHealthMaterialized1DPartitionsFragment on PartitionStatus1D {
-    ... on TimePartitions {
-      ranges {
-        startTime
-        endTime
-        startKey
-        endKey
-      }
-    }
-    ... on DefaultPartitions {
-      materializedPartitions
-    }
-  }
-
-  fragment PartitionHealthMaterializedPartitionsFragment on MaterializedPartitions {
-    ...PartitionHealthMaterialized1DPartitionsFragment
-    ... on MultiPartitions {
-      primaryDimensionName
-      ranges {
-        primaryDimStartKey
-        primaryDimEndKey
-        primaryDimStartTime
-        primaryDimEndTime
-        secondaryDim {
-          ...PartitionHealthMaterialized1DPartitionsFragment
+          ... on TimePartitions {
+            ranges {
+              startTime
+              endTime
+              startKey
+              endKey
+            }
+          }
+          ... on DefaultPartitions {
+            materializedPartitions
+          }
+          ... on MultiPartitions {
+            primaryDimensionName
+            ranges {
+              primaryDimStartKey
+              primaryDimEndKey
+              primaryDimStartTime
+              primaryDimEndTime
+              secondaryDim {
+                ... on TimePartitions {
+                  ranges {
+                    startTime
+                    endTime
+                    startKey
+                    endKey
+                  }
+                }
+                ... on DefaultPartitions {
+                  materializedPartitions
+                }
+              }
+            }
+          }
         }
       }
     }
