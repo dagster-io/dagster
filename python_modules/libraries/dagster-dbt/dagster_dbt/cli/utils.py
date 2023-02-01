@@ -165,7 +165,6 @@ def execute_cli(
         command_list,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        encoding="utf-8",
     )
     for raw_line in process.stdout or []:
         line = _decode(raw_line)
@@ -320,6 +319,9 @@ def execute_cli_event_generator(
         stderr=subprocess.STDOUT,
     )
     for raw_line in process.stdout or []:
+        print("--" * 40)
+        print("bytes:", raw_line)
+        print("~~" * 40)
         line = _decode(raw_line)
         message, json_line = _process_line(line, log, json_log_format, capture_logs)
         messages.append(message)
@@ -331,8 +333,7 @@ def execute_cli_event_generator(
     _cleanup_process(process, messages, log, ignore_handled_error)
 
 
-def _decode(raw_line: str) -> str:
-    return raw_line
+def _decode(raw_line: bytes) -> str:
     return raw_line.decode("utf-8").rstrip()
     try:
         return raw_line.decode("utf-8").strip()
