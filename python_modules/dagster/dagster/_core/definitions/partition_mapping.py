@@ -267,7 +267,11 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
 
 
 @experimental
-class SingleDimensionDependencyMapping(PartitionMapping):
+@whitelist_for_serdes
+class SingleDimensionDependencyMapping(
+    PartitionMapping,
+    NamedTuple("_SingleDimensionDependencyMapping", [("partition_dimension_name", str)]),
+):
     """
     Defines a correspondence between an upstream single-dimensional partitions definition
     and a downstream MultiPartitionsDefinition. The upstream partitions definition must be
@@ -281,8 +285,13 @@ class SingleDimensionDependencyMapping(PartitionMapping):
             MultiPartitionsDefinition that matches the upstream partitions definition.
     """
 
-    def __init__(self, partition_dimension_name: str):
-        self.partition_dimension_name = partition_dimension_name
+    def __new__(cls, partition_dimension_name: str):
+        return super(SingleDimensionDependencyMapping, cls).__new__(
+            cls,
+            partition_dimension_name=check.str_param(
+                partition_dimension_name, "partition_dimension_name"
+            ),
+        )
 
     def _check_upstream_partitions_def_equals_selected_dimension(
         self,
@@ -524,4 +533,5 @@ def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
         LastPartitionMapping,
         StaticPartitionMapping,
         TimeWindowPartitionMapping,
+        SingleDimensionDependencyMapping,
     )
