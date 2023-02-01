@@ -1,6 +1,8 @@
 from collections import defaultdict
 from typing import AbstractSet, Dict, Iterable, List, Mapping, Tuple, cast
 
+from fuzzywuzzy import fuzz
+
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.backcompat import experimental_warning
@@ -104,12 +106,58 @@ def resolve_assets_def_deps(
 
                     warned = True
             elif not assets_def.node_def.input_def_named(input_name).dagster_type.is_nothing:
-                raise DagsterInvalidDefinitionError(
+                similar_names: List[AssetKey] = []
+
+                for asset_def in assets_defs:
+                    for asset_key in asset_def.keys:
+                        # Whether the asset key or upstream key has the same prefix and a similar
+                        # name
+                        # e.g. [snowflake, elementl, key] and [snowflake, elementl, ey]
+                        is_same_prefix_similar_name = (
+                            asset_key.path[:-1] == upstream_key.path[:-1]
+                            and fuzz.ratio(asset_key.path[-1], upstream_key.path[-1]) > 80
+                        )
+
+                        # Whether the asset key or upstream key has a similar prefix and the same
+                        # name
+                        # e.g. [snowflake, elementl, key] and [nowflake, elementl, key]
+                        is_similar_prefix_same_name = (
+                            asset_key.path[-1] == upstream_key.path[-1]
+                            and fuzz.ratio(
+                                " ".join(asset_key.path[:-1]), " ".join(upstream_key.path[:-1])
+                            )
+                            > 80
+                        )
+
+                        # Whether the asset key or upstream key has one more prefix component than
+                        # the other, and the same name
+                        # e.g. [snowflake, elementl, key] and [snowflake, elementl, prod, key]
+                        is_off_by_one_prefix_component_same_name = (
+                            asset_key.path[-1] == upstream_key.path[-1],
+                            len(set(asset_key.path).symmetric_difference(set(upstream_key.path)))
+                            == 1
+                            and max(len(asset_key.path), len(upstream_key.path)) > 1,
+                        )
+
+                        if (
+                            is_same_prefix_similar_name
+                            or is_similar_prefix_same_name
+                            or is_off_by_one_prefix_component_same_name
+                        ):
+                            similar_names.append(asset_key)
+
+                msg = (
                     f"Input asset '{upstream_key.to_string()}' for asset "
                     f"'{next(iter(assets_def.keys)).to_string()}' is not "
                     "produced by any of the provided asset ops and is not one of the provided "
-                    "sources"
+                    "sources."
                 )
+                if similar_names:
+                    similar_to_string = ", ".join(
+                        (similar.to_string() for similar in similar_names)
+                    )
+                    msg += f" Did you mean one of the following?\n\t{similar_to_string}"
+                raise DagsterInvalidDefinitionError(msg)
 
         if resolved_keys_by_unresolved_key:
             result[id(assets_def)] = resolved_keys_by_unresolved_key

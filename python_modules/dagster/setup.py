@@ -75,6 +75,7 @@ setup(
         "croniter>=0.3.34",
         # grpcio>=1.48.1 has hanging/crashing issues: https://github.com/grpc/grpc/issues/30843 and https://github.com/grpc/grpc/issues/31885
         # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
+        "fuzzywuzzy",
         "grpcio>=1.32.0,<1.48.1",
         "grpcio-health-checking>=1.32.0,<1.44.0",
         "packaging>=20.9",
