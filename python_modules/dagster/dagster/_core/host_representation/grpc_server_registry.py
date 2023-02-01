@@ -68,35 +68,17 @@ T_GrpcRepositoryLocationOrigin = TypeVar(
 )
 
 
-class ProcessRegistryEntry(
-    NamedTuple(
-        "_ProcessRegistryEntry",
-        [
-            ("process_or_error", Union[GrpcServerProcess, SerializableErrorInfo]),
-            ("loadable_target_origin", LoadableTargetOrigin),
-            ("creation_timestamp", float),
-            ("server_id", Optional[str]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        process_or_error: Union[GrpcServerProcess, SerializableErrorInfo],
-        loadable_target_origin: LoadableTargetOrigin,
-        creation_timestamp: float,
-        server_id: Optional[str],
-    ):
-        return super(ProcessRegistryEntry, cls).__new__(
-            cls,
-            check.inst_param(
-                process_or_error, "process_or_error", (GrpcServerProcess, SerializableErrorInfo)
-            ),
-            check.inst_param(
-                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
-            ),
-            check.float_param(creation_timestamp, "creation_timestamp"),
-            check.opt_str_param(server_id, "server_id"),
-        )
+class ServerRegistryEntry(NamedTuple):
+    loadable_target_origin: LoadableTargetOrigin
+    creation_timestamp: float
+    process: GrpcServerProcess
+    server_id: str
+
+
+class ErrorRegistryEntry(NamedTuple):
+    loadable_target_origin: LoadableTargetOrigin
+    creation_timestamp: float
+    error: SerializableErrorInfo
 
 
 # Creates local gRPC python processes from ManagedGrpcPythonEnvRepositoryLocationOrigins and shares
@@ -121,8 +103,8 @@ class GrpcServerRegistry(AbstractContextManager):
     ):
         self.instance = instance
 
-        # ProcessRegistryEntry map of servers being currently returned, keyed by origin ID
-        self._active_entries: Dict[str, ProcessRegistryEntry] = {}
+        # map of servers being currently returned, keyed by origin ID
+        self._active_entries: Dict[str, Union[ServerRegistryEntry, ErrorRegistryEntry]] = {}
 
         self._waited_for_processes = False
 
@@ -219,7 +201,6 @@ class GrpcServerRegistry(AbstractContextManager):
             active_entry = self._active_entries[origin_id]
             refresh_server = loadable_target_origin != active_entry.loadable_target_origin
 
-        server_process: Union[GrpcServerProcess, SerializableErrorInfo]
         new_server_id: Optional[str]
         if refresh_server:
             try:
@@ -235,30 +216,32 @@ class GrpcServerRegistry(AbstractContextManager):
                     log_level=self._log_level,
                 )
                 self._all_processes.append(server_process)
+                self._active_entries[origin_id] = ServerRegistryEntry(
+                    process=server_process,
+                    loadable_target_origin=loadable_target_origin,
+                    creation_timestamp=pendulum.now("UTC").timestamp(),
+                    server_id=new_server_id,
+                )
             except Exception:
-                server_process = serializable_error_info_from_exc_info(sys.exc_info())
-                new_server_id = None
-
-            self._active_entries[origin_id] = ProcessRegistryEntry(
-                process_or_error=server_process,
-                loadable_target_origin=loadable_target_origin,
-                creation_timestamp=pendulum.now("UTC").timestamp(),
-                server_id=new_server_id,
-            )
+                self._active_entries[origin_id] = ErrorRegistryEntry(
+                    error=serializable_error_info_from_exc_info(sys.exc_info()),
+                    loadable_target_origin=loadable_target_origin,
+                    creation_timestamp=pendulum.now("UTC").timestamp(),
+                )
 
         active_entry = self._active_entries[origin_id]
 
-        if isinstance(active_entry.process_or_error, SerializableErrorInfo):
+        if isinstance(active_entry, ErrorRegistryEntry):
             raise DagsterUserCodeProcessError(
-                active_entry.process_or_error.to_string(),
-                user_code_process_error_infos=[active_entry.process_or_error],
+                active_entry.error.to_string(),
+                user_code_process_error_infos=[active_entry.error],
             )
 
         return GrpcServerEndpoint(
             server_id=active_entry.server_id,  # type: ignore
             host="localhost",
-            port=active_entry.process_or_error.port,
-            socket=active_entry.process_or_error.socket,
+            port=active_entry.process.port,
+            socket=active_entry.process.socket,
         )
 
     # Clear out processes from the map periodically so that they'll be re-created the next
