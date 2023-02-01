@@ -964,6 +964,10 @@
             "path": "/_apidocs/libraries/dagster-snowflake-pandas"
           },
           {
+            "title": "Snowflake + PySpark (dagster-snowflake-pyspark)",
+            "path": "/_apidocs/libraries/dagster-snowflake-pyspark"
+          },
+          {
             "title": "Spark (dagster-spark)",
             "path": "/_apidocs/libraries/dagster-spark"
           },

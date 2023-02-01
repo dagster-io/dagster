@@ -31,6 +31,8 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
             from dagster_snowflake import build_snowflake_io_manager
             from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+            from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
+            from dagster import Definitions
 
             @asset(
                 key_prefix=["my_schema"]  # will be used as the schema in snowflake
@@ -38,17 +40,18 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
-            @repository
-            def my_repo():
-                return with_resources(
-                    [my_table],
-                    {"io_manager": snowflake_io_manager.configured({
+            snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()])
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "io_manager": snowflake_pandas_io_manager.configured({
                         "database": "my_database",
                         "account" : {"env": "SNOWFLAKE_ACCOUNT"}
                         ...
-                    })}
-                )
+                    })
+                }
+            )
 
         If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
         the IO Manager. For assets, the schema will be determined from the asset key.
