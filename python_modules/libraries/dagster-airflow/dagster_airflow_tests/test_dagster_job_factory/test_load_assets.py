@@ -1,5 +1,3 @@
-import imp
-
 import tempfile
 import os
 import pytest
