@@ -165,6 +165,7 @@ def execute_cli(
         command_list,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        encoding="utf-8",
     )
     for raw_line in process.stdout or []:
         line = _decode(raw_line)
@@ -330,8 +331,9 @@ def execute_cli_event_generator(
     _cleanup_process(process, messages, log, ignore_handled_error)
 
 
-def _decode(raw_line: bytes) -> str:
-    return raw_line.decode("utf-8", errors="ignore").strip()
+def _decode(raw_line: str) -> str:
+    return raw_line
+    return raw_line.decode("utf-8").rstrip()
     try:
         return raw_line.decode("utf-8").strip()
     except:
