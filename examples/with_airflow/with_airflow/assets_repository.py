@@ -34,10 +34,10 @@ simple_asset = load_assets_from_airflow_dag(
         AssetKey("task_instances_1_1"): {"get_task_instance_1_1"},
         AssetKey("task_instances_1_2"): {"get_task_instance_1_2"},
     },
-    upstream_asset_keys_by_task_id={
-        "sink_task_bar": {AssetKey("new_upstream_asset_1"), AssetKey("new_upstream_asset_2")},
-        "get_task_instance_1_2": {AssetKey("new_upstream_asset_2")},
-        "get_task_instance_2_2": {AssetKey("new_upstream_asset_2")},
+    upstream_dependencies_by_asset_key={
+        AssetKey("new_asset"): {AssetKey("new_upstream_asset_1"), AssetKey("new_upstream_asset_2")},
+        AssetKey("task_instances_1_2"): {AssetKey("new_upstream_asset_2")},
+        AssetKey("task_instances_1"): {AssetKey("new_upstream_asset_2")},
     },
 )
 
