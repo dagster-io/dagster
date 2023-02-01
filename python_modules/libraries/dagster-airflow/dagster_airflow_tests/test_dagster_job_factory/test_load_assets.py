@@ -11,7 +11,7 @@ from ..airflow_utils import COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2
 
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
-def test_asset_apis_airflow_2():
+def test_load_assets_from_airflow_dag():
     dag_module = imp.new_module("dag_module")
     exec(COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2, dag_module.__dict__)
 
