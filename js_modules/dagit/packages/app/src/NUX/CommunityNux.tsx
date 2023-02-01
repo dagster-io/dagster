@@ -103,7 +103,10 @@ const Form: React.FC<{
             Connect with thousands of other data practitioners building with Dagster. Share
             knowledge, get help, and contribute to the open-source project.
           </Body>
-          <ExternalAnchorButton icon={<Icon name="slack" />} href="https://www.dagster.io/slack">
+          <ExternalAnchorButton
+            icon={<Icon name="slack" />}
+            href="https://www.dagster.io/slack?utm_source=local-nux"
+          >
             Join us on Slack
           </ExternalAnchorButton>
         </Box>
