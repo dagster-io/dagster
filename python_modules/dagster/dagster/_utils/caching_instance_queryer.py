@@ -71,25 +71,33 @@ class CachingInstanceQueryer:
         for asset_record in asset_records:
             self._asset_record_cache[asset_record.asset_entry.asset_key] = asset_record
 
-        # get the latest N materialization records. in most cases, this will hit a large portion of
-        # the latest materialization records per asset key, although a more sophisticated method
-        # of bucketing queries could be used here to guarantee that we actually get the exact set
-        # we're aiming for here.
-        latest_records = self._instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            ),
-            limit=len(asset_keys),
-            ascending=False,
-        )
-        for record in latest_records:
-            asset_partition = AssetKeyPartitionKey(
-                asset_key=check.not_none(record.asset_key), partition_key=record.partition_key
+        # based on those asset records, fill in our caches with values of the latest materailization
+        # records per key
+        for asset_key in asset_keys:
+            # we just prefetched all the asset records, so if it's not in the cache, there are
+            # no materializations for this key
+            asset_record = self._asset_record_cache.get(asset_key)  # type: ignore
+            last_materialization_record = (
+                asset_record.asset_entry.last_materialization_record if asset_record else None
             )
-            if asset_partition not in self._latest_materialization_record_cache:
-                self._latest_materialization_record_cache[asset_partition] = record
-                self._no_materializations_after_cursor_cache[asset_partition] = record.storage_id
+            if asset_record is None or last_materialization_record is None:
+                self._no_materializations_after_cursor_cache[
+                    AssetKeyPartitionKey(asset_key=asset_key)
+                ] = -1
+            else:
+                asset_partition = AssetKeyPartitionKey(
+                    asset_key=asset_record.asset_entry.asset_key,
+                    partition_key=last_materialization_record.partition_key,
+                )
 
+                self._latest_materialization_record_cache[
+                    asset_partition
+                ] = last_materialization_record
+                self._no_materializations_after_cursor_cache[
+                    asset_partition
+                ] = last_materialization_record.storage_id
+
+        # fill in the cache for partitioned assets
         self._asset_partition_count_cache[after_cursor] = dict(
             self._instance.get_materialization_count_by_partition(
                 asset_keys=asset_keys,
