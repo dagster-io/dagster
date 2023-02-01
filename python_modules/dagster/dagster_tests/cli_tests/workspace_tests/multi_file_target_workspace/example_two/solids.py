@@ -1,3 +1,4 @@
+# type: ignore
 from dagster._legacy import solid
 
 

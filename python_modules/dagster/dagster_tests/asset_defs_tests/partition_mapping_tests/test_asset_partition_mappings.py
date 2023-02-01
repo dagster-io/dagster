@@ -58,6 +58,7 @@ def test_filter_mapping_partitions_dep():
             ],  # pylint: disable=unused-argument
             upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
         ) -> PartitionKeyRange:
+            assert downstream_partition_key_range is not None
             return PartitionKeyRange(
                 f"{self.hemisphere}|{downstream_partition_key_range.start}",
                 f"{self.hemisphere}|{downstream_partition_key_range.end}",
@@ -125,6 +126,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
             assert downstream_partitions_def
             assert upstream_partitions_def
 
+            assert downstream_partition_key_range is not None
             start, end = downstream_partition_key_range
             return PartitionKeyRange(str(max(1, int(start) - 1)), end)
 
@@ -195,6 +197,7 @@ def test_asset_partitions_time_window_non_identity_partition_mapping():
         ) -> PartitionKeyRange:
             del downstream_partitions_def, upstream_partitions_def
 
+            assert downstream_partition_key_range is not None
             start, end = downstream_partition_key_range
             assert start == "2020-01-02"
             assert end == "2020-01-02"
@@ -257,6 +260,7 @@ def test_multi_asset_non_identity_partition_mapping():
             assert downstream_partitions_def
             assert upstream_partitions_def
 
+            assert downstream_partition_key_range is not None
             start, end = downstream_partition_key_range
             return PartitionKeyRange(str(max(1, int(start) - 1)), end)
 
@@ -346,6 +350,7 @@ def test_from_graph():
             ],  # pylint: disable=unused-argument
             upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
         ) -> PartitionKeyRange:
+            assert downstream_partition_key_range is not None
             self.upstream_calls += 1
             return downstream_partition_key_range
 
