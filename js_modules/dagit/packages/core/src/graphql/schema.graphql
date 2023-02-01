@@ -2794,7 +2794,7 @@ type DagitMutation {
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
   stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
-  evaluateSensor(cursor: String, selectorData: SensorSelector!): EvaluateSensorMutation!
+  sensorDryRun(cursor: String, selectorData: SensorSelector!): SensorDryRunResult!
   terminatePipelineExecution(
     runId: String!
     terminatePolicy: TerminateRunPolicy
@@ -2830,7 +2830,7 @@ enum ReexecutionStrategy {
   ALL_STEPS
 }
 
-union EvaluateSensorMutation = SensorExecutionData | PythonError
+union SensorDryRunResult = SensorExecutionData | PythonError | SensorNotFoundError
 
 type SensorExecutionData {
   cursor: String

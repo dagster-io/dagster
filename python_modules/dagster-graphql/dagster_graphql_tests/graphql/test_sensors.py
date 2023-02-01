@@ -263,9 +263,9 @@ mutation($sensorSelector: SensorSelector!, $cursor: String) {
 }
 """
 
-EVALUATE_SENSOR_MUTATION = """
+SENSOR_DRY_RUN_MUTATION = """
 mutation($selectorData: SensorSelector!, $cursor: String) {
-  evaluateSensor(selectorData: $selectorData, cursor: $cursor) {
+  sensorDryRun(selectorData: $selectorData, cursor: $cursor) {
     __typename
     ... on PythonError {
       message
@@ -277,6 +277,9 @@ mutation($selectorData: SensorSelector!, $cursor: String) {
         runKey
       }
       skipMessage
+    }
+    ... on SensorNotFoundError {
+      sensorName
     }
   }
 }
@@ -544,40 +547,65 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
 
         assert start_result.data["startSensor"]["sensorState"]["status"] == "RUNNING"
 
-    def test_instigate_sensor(self, graphql_context):
+    def test_dry_run(self, graphql_context):
         instigator_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
         result = execute_dagster_graphql(
             graphql_context,
-            EVALUATE_SENSOR_MUTATION,
+            SENSOR_DRY_RUN_MUTATION,
             variables={"selectorData": instigator_selector, "cursor": "blah"},
         )
         assert result.data
-        assert result.data["evaluateSensor"]["__typename"] == "SensorExecutionData"
-        assert result.data["evaluateSensor"]["cursor"] == "blah"
-        assert result.data["evaluateSensor"]["runRequests"] is None
-        assert result.data["evaluateSensor"]["skipMessage"] is None
+        assert result.data["sensorDryRun"]["__typename"] == "SensorExecutionData"
+        assert result.data["sensorDryRun"]["cursor"] == "blah"
+        assert result.data["sensorDryRun"]["runRequests"] is None
+        assert result.data["sensorDryRun"]["skipMessage"] is None
 
-    def test_instigation_failure(self, graphql_context):
+    def test_dry_run_failure(self, graphql_context):
         instigator_selector = infer_sensor_selector(graphql_context, "always_error_sensor")
         result = execute_dagster_graphql(
             graphql_context,
-            EVALUATE_SENSOR_MUTATION,
+            SENSOR_DRY_RUN_MUTATION,
             variables={"selectorData": instigator_selector, "cursor": "blah"},
         )
         assert result.data
-        assert result.data["evaluateSensor"]["__typename"] == "PythonError"
-        assert "Error occurred during the execution of evaluation_fn" in result.data["evaluateSensor"]["message"]
+        assert result.data["sensorDryRun"]["__typename"] == "PythonError"
+        assert (
+            "Error occurred during the execution of evaluation_fn"
+            in result.data["sensorDryRun"]["message"]
+        )
 
-    def test_instigation_non_existent_sensor(self, graphql_context):
+    def test_dry_run_non_existent_sensor(self, graphql_context):
         instigator_selector = infer_sensor_selector(graphql_context, "sensor_doesnt_exist")
         result = execute_dagster_graphql(
             graphql_context,
-            EVALUATE_SENSOR_MUTATION,
+            SENSOR_DRY_RUN_MUTATION,
             variables={"selectorData": instigator_selector, "cursor": "blah"},
         )
         assert result.data
-        assert result.data["evaluateSensor"]["__typename"] == "SensorNotFoundError"
-        assert result.data["evaluateSensor"]["sensorName"] == "sensor_doesnt_exist"
+        assert result.data["sensorDryRun"]["__typename"] == "SensorNotFoundError"
+        assert result.data["sensorDryRun"]["sensorName"] == "sensor_doesnt_exist"
+
+    def test_dry_run_cursor_updates(self, graphql_context):
+        # Ensure that cursor does not update between dry runs
+        selector = infer_sensor_selector(graphql_context, "update_cursor_sensor")
+        result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": selector, "cursor": None},
+        )
+        assert result.data
+        assert result.data["sensorDryRun"]["__typename"] == "SensorExecutionData"
+        assert result.data["sensorDryRun"]["cursor"] == "1"
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSOR_CURSOR_QUERY,
+            variables={"sensorSelector": selector},
+        )
+        assert result.data
+        assert result.data["sensorOrError"]["__typename"] == "Sensor"
+        sensor = result.data["sensorOrError"]
+        cursor = sensor["sensorState"]["typeSpecificData"]["lastCursor"]
+        assert not cursor
 
 
 def test_sensor_next_ticks(graphql_context):

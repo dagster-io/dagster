@@ -1303,6 +1303,15 @@ def define_sensors():
         raise Exception("OOPS")
 
     @sensor(job_name="no_config_pipeline")
+    def update_cursor_sensor(context):
+        if not context.cursor:
+            cursor = 0
+        else:
+            cursor = int(context.cursor)
+        cursor += 1
+        context.update_cursor(str(cursor))
+
+    @sensor(job_name="no_config_pipeline")
     def once_no_config_sensor(_):
         return RunRequest(
             run_key="once",
@@ -1346,6 +1355,7 @@ def define_sensors():
         custom_interval_sensor,
         running_in_code_sensor,
         logging_sensor,
+        update_cursor_sensor,
     ]
 
 
