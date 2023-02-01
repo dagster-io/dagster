@@ -246,10 +246,10 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
     ) -> Generator["RepositoryLocation", None, None]:
         from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
 
-        from .grpc_server_registry import ProcessGrpcServerRegistry
+        from .grpc_server_registry import GrpcServerRegistry
         from .repository_location import GrpcServerRepositoryLocation
 
-        with ProcessGrpcServerRegistry(
+        with GrpcServerRegistry(
             instance=instance,
             reload_interval=0,
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,

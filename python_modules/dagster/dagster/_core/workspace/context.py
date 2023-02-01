@@ -29,7 +29,6 @@ from dagster._core.host_representation import (
 )
 from dagster._core.host_representation.grpc_server_registry import (
     GrpcServerRegistry,
-    ProcessGrpcServerRegistry,
 )
 from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
@@ -472,7 +471,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             )
         else:
             self._grpc_server_registry = self._stack.enter_context(
-                ProcessGrpcServerRegistry(
+                GrpcServerRegistry(
                     instance=self._instance,
                     reload_interval=0,
                     heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
