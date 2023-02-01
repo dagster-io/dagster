@@ -2,11 +2,12 @@ import warnings
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 
 import dagster._check as check
+from dagster._core.definitions.assets_job import build_source_asset_observation_job
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.merger import merge_dicts
 
 from ..instance import DagsterInstance
-from .assets_job import build_source_asset_observation_job
 from .job_definition import default_job_io_manager_with_fs_io_manager_schema
 from .source_asset import SourceAsset
 from .utils import DEFAULT_IO_MANAGER_KEY
@@ -61,11 +62,16 @@ def observe(
             "ignore", category=ExperimentalWarning, message=".*build_source_asset_observation_job.*"
         )
 
-        return build_source_asset_observation_job(
-            "in_process_observation_job",
-            source_assets=source_assets,
-            resource_defs=resource_defs,
-        ).execute_in_process(
+        observation_job = build_source_asset_observation_job(
+            "in_process_observation_job", source_assets
+        )
+        defs = Definitions(
+            assets=source_assets,
+            jobs=[observation_job],
+            resources=resource_defs,
+        )
+
+        return defs.get_job_def("in_process_observation_job").execute_in_process(
             run_config=run_config,
             instance=instance,
             partition_key=partition_key,
