@@ -334,14 +334,18 @@ def python_module_option(allow_multiple):
     )
 
 
+def working_directory_option():
+    return click.option(
+        "--working-directory",
+        "-d",
+        help="Specify working directory to use when loading the repository or job",
+        envvar="DAGSTER_WORKING_DIRECTORY",
+    )
+
+
 def python_target_click_options(allow_multiple_python_targets):
     return [
-        click.option(
-            "--working-directory",
-            "-d",
-            help="Specify working directory to use when loading the repository or job",
-            envvar="DAGSTER_WORKING_DIRECTORY",
-        ),
+        working_directory_option(),
         python_file_option(allow_multiple=allow_multiple_python_targets),
         python_module_option(allow_multiple=allow_multiple_python_targets),
         click.option(
