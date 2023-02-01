@@ -410,7 +410,7 @@ def load_assets_from_airflow_dag(
             start=start_date.strftime("%Y-%m-%d"),
             fmt="%Y-%m-%d",
         )
-        if isinstance(cron_schedule, str)
+        if cron_schedule is not None
         else None,
         resource_defs=job.resource_defs,
         group_name=dag.dag_id,
