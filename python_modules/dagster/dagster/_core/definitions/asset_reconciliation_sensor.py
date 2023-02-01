@@ -225,6 +225,9 @@ def find_parent_materialized_asset_partitions(
     target_parent_asset_keys = target_asset_selection.upstream(depth=1).resolve(asset_graph)
 
     for asset_key in target_parent_asset_keys:
+        if asset_graph.is_source(asset_key):
+            continue
+
         latest_record = instance_queryer.get_latest_materialization_record(
             asset_key, after_cursor=latest_storage_id
         )
