@@ -379,7 +379,7 @@ def load_assets_from_airflow_dag(
         task_ids_by_asset_key = {AssetKey(dag.dag_id): leaf_nodes}
     else:
         # if mappings were provide any unmapped leaf nodes are added to a default asset
-        used_nodes = set()
+        used_nodes: set[str] = set()
         for key in task_ids_by_asset_key:
             used_nodes.update(task_ids_by_asset_key[key])
 
