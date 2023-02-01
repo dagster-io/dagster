@@ -334,7 +334,10 @@ def execute_cli_event_generator(
 
 
 def _decode(raw_line: bytes) -> str:
-    return raw_line.decode("utf-8").rstrip()
+    try:
+        return raw_line.decode("utf-8").rstrip()
+    except:
+        return ""
     try:
         return raw_line.decode("utf-8").strip()
     except:

@@ -238,7 +238,6 @@ def test_basic(
     else:
         assert len(observations) == 0
 
-    assert False
     captured = capsys.readouterr()
 
     # make sure we're not logging the raw json to the console
