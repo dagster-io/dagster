@@ -402,7 +402,6 @@ class AssetsDefinition(ResourceAddable):
         )
 
         transformed_internal_asset_deps = {}
-
         if internal_asset_deps:
             for output_name, asset_keys in internal_asset_deps.items():
                 check.invariant(
