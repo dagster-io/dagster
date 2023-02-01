@@ -42,7 +42,7 @@ def _build_fivetran_assets(
     table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     group_name: Optional[str] = None,
-    materialize_missing_tables: bool = False,
+    infer_missing_tables: bool = False,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
@@ -97,7 +97,7 @@ def _build_fivetran_assets(
                 yield materialization
 
         unmaterialized_asset_keys = set(tracked_asset_keys.values()) - materialized_asset_keys
-        if unmaterialized_asset_keys and materialize_missing_tables:
+        if unmaterialized_asset_keys and infer_missing_tables:
             for asset_key in unmaterialized_asset_keys:
                 yield Output(
                     value=None,
@@ -117,7 +117,7 @@ def build_fivetran_assets(
     asset_key_prefix: Optional[Sequence[str]] = None,
     metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
     group_name: Optional[str] = None,
-    materialize_missing_tables: bool = False,
+    infer_missing_tables: bool = False,
 ) -> Sequence[AssetsDefinition]:
     """
     Build a set of assets for a given Fivetran connector.
@@ -143,7 +143,7 @@ def build_fivetran_assets(
             table name to user-supplied metadata that should be associated with the asset for that table.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
-        materialize_missing_tables (bool): If True, will create asset materializations for tables specified
+        infer_missing_tables (bool): If True, will create asset materializations for tables specified
             in destination_tables even if they are not present in the Fivetran sync output. This is useful
             in cases where Fivetran does not sync any data for a table and therefore does not include it
             in the sync output API response.
@@ -192,7 +192,7 @@ def build_fivetran_assets(
         asset_key_prefix=asset_key_prefix,
         metadata_by_table_name=metadata_by_table_name,
         group_name=group_name,
-        materialize_missing_tables=materialize_missing_tables,
+        infer_missing_tables=infer_missing_tables,
     )
 
 

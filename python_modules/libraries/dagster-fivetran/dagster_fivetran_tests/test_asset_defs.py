@@ -46,7 +46,7 @@ def test_fivetran_group_label(group_name, expected_group_name):
 
 @pytest.mark.parametrize("schema_prefix", ["", "the_prefix"])
 @pytest.mark.parametrize(
-    "tables,materialize_missing_tables,should_error",
+    "tables,infer_missing_tables,should_error",
     [
         ([], False, False),
         (["schema1.tracked"], False, False),
@@ -56,7 +56,7 @@ def test_fivetran_group_label(group_name, expected_group_name):
         (["schema1.tracked", "does.not_exist"], True, False),
     ],
 )
-def test_fivetran_asset_run(tables, materialize_missing_tables, should_error, schema_prefix):
+def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_prefix):
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
     api_prefix = f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION_PATH}{FIVETRAN_CONNECTOR_PATH}{DEFAULT_CONNECTOR_ID}"
@@ -69,7 +69,7 @@ def test_fivetran_asset_run(tables, materialize_missing_tables, should_error, sc
         destination_tables=tables,
         poll_interval=0.1,
         poll_timeout=10,
-        materialize_missing_tables=materialize_missing_tables,
+        infer_missing_tables=infer_missing_tables,
     )
 
     # expect the multi asset to have one asset key and one output for each specified asset key
@@ -130,7 +130,7 @@ def test_fivetran_asset_run(tables, materialize_missing_tables, should_error, sc
                 for event in result.events_for_node(f"fivetran_sync_{DEFAULT_CONNECTOR_ID}")
                 if event.event_type_value == "ASSET_MATERIALIZATION"
             ]
-            assert len(asset_materializations) == 4 if materialize_missing_tables else 3
+            assert len(asset_materializations) == 4 if infer_missing_tables else 3
             found_asset_keys = set(
                 mat.event_specific_data.materialization.asset_key for mat in asset_materializations
             )
@@ -140,13 +140,11 @@ def test_fivetran_asset_run(tables, materialize_missing_tables, should_error, sc
                     AssetKey(["the_prefix_schema1", "untracked"]),
                     AssetKey(["the_prefix_schema2", "tracked"]),
                 } | (
-                    {AssetKey(["the_prefix_does", "not_exist"])}
-                    if materialize_missing_tables
-                    else set()
+                    {AssetKey(["the_prefix_does", "not_exist"])} if infer_missing_tables else set()
                 )
             else:
                 assert found_asset_keys == {
                     AssetKey(["schema1", "tracked"]),
                     AssetKey(["schema1", "untracked"]),
                     AssetKey(["schema2", "tracked"]),
-                } | ({AssetKey(["does", "not_exist"])} if materialize_missing_tables else set())
+                } | ({AssetKey(["does", "not_exist"])} if infer_missing_tables else set())
