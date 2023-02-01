@@ -18,6 +18,7 @@ from .workspace.cli_target import (
     get_workspace_load_target,
     python_file_option,
     python_module_option,
+    working_directory_option,
     workspace_option,
 )
 
@@ -31,6 +32,7 @@ def dev_command_options(f):
         workspace_option(),
         python_file_option(allow_multiple=True),
         python_module_option(allow_multiple=True),
+        working_directory_option(),
     )
 
 
@@ -104,6 +106,9 @@ def dev_command(code_server_log_level, dagit_port, **kwargs):
         if kwargs.get("module_name"):
             for module_name in check.tuple_elem(kwargs, "module_name"):
                 args.extend(["--module-name", module_name])
+
+        if kwargs.get("working_directory"):
+            args.extend(["--working-directory", check.str_elem(kwargs, "working_directory")])
 
         dagit_process = open_ipc_subprocess(
             [sys.executable, "-m", "dagit"] + (["--port", dagit_port] if dagit_port else []) + args
