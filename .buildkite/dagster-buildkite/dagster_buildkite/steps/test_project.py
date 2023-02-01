@@ -56,6 +56,7 @@ def build_test_project_steps() -> List[GroupStep]:
                 "export"
                 " TEST_PROJECT_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project:$${BUILDKITE_BUILD_ID}-"
                 + version,
+                "git config --global --add safe.directory /workdir",
                 "./python_modules/dagster-test/dagster_test/test_project/build.sh "
                 + version
                 + " $${TEST_PROJECT_IMAGE}",
