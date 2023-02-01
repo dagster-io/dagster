@@ -2,10 +2,10 @@ import imp
 
 import pytest
 from airflow import __version__ as airflow_version
+from dagster import AssetKey, asset, materialize
 from dagster_airflow import (
     load_assets_from_airflow_dag,
 )
-from dagster import AssetKey, asset, repository, materialize
 
 from ..airflow_utils import COMPLEX_DAG_FILE_CONTENTS
 

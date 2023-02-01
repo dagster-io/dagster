@@ -1,15 +1,7 @@
-from typing import List, Mapping, Optional, Set, AbstractSet, Tuple
+from typing import AbstractSet, List, Mapping, Optional, Set, Tuple
 
 from airflow.models.connection import Connection
 from airflow.models.dagbag import DagBag
-from dagster_airflow.dagster_pipeline_factory import (
-    DagsterAirflowError,
-    _create_airflow_connections,
-    _make_schedules_and_jobs_from_airflow_dag_bag,
-    make_dagster_pipeline_from_airflow_dag,
-    patch_airflow_example_dag,
-)
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -17,10 +9,18 @@ from dagster import (
     GraphDefinition,
     OutputMapping,
     TimeWindowPartitionsDefinition,
+    _check as check,
 )
-from dagster import _check as check
 from dagster._core.definitions.graph_definition import _create_adjacency_lists
 from dagster._utils.schedules import is_valid_cron_schedule
+
+from dagster_airflow.dagster_pipeline_factory import (
+    DagsterAirflowError,
+    _create_airflow_connections,
+    _make_schedules_and_jobs_from_airflow_dag_bag,
+    make_dagster_pipeline_from_airflow_dag,
+    patch_airflow_example_dag,
+)
 
 
 def make_dagster_job_from_airflow_dag(

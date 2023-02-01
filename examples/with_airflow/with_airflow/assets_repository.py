@@ -1,5 +1,3 @@
-import os
-
 from dagster import AssetKey, asset, repository
 
 # start_repo_marker_0

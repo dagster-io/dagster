@@ -1,6 +1,6 @@
 import os
 
-from dagster import AssetKey, asset, repository
+from dagster import repository
 
 # start_repo_marker_0
 from dagster_airflow import (
