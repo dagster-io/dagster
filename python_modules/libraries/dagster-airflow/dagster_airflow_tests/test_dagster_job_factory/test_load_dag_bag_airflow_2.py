@@ -1,9 +1,9 @@
-import imp
 import os
 import tempfile
 
 import pytest
 from airflow import __version__ as airflow_version
+from airflow.models import DagBag
 from dagster_airflow import (
     make_dagster_definitions_from_airflow_dags_path,
     make_dagster_definitions_from_airflow_example_dags,
@@ -111,18 +111,26 @@ def test_airflow_example_dags(
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 def test_retry_conversion():
-    dag_module = imp.new_module("dag_module")
-    exec(COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2, dag_module.__dict__)
-    job = make_dagster_job_from_airflow_dag(
-        dag=dag_module.complex_dag,
-        use_ephemeral_airflow_db=True,
-    )
-    result = job.execute_in_process()
-    assert result.success
-    for event in result.all_events:
-        assert event.event_type_value != "STEP_FAILURE"
+    with tempfile.TemporaryDirectory(suffix="retries") as tmpdir_path:
+        with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:
+            f.write(bytes(COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2.encode("utf-8")))
 
-    assert job._graph_def.node_dict["airflow_create_entry_group"].RetryPolicy.max_retries == 0
-    assert (
-        job._graph_def.node_dict["airflow_create_entry_group_result"].RetryPolicy.max_retries == 3
-    )
+        dag_bag = DagBag(dag_folder=tmpdir_path)
+        complex_dag = dag_bag.get_dag(dag_id="example_complex")
+
+        job = make_dagster_job_from_airflow_dag(
+            dag=complex_dag,
+            use_ephemeral_airflow_db=True,
+        )
+        result = job.execute_in_process()
+        assert result.success
+        for event in result.all_events:
+            assert event.event_type_value != "STEP_FAILURE"
+
+        assert job._graph_def.node_dict["airflow_create_entry_group"].retry_policy
+        assert job._graph_def.node_dict["airflow_create_entry_group"].retry_policy.max_retries == 0
+        assert job._graph_def.node_dict["airflow_create_entry_group_result"].retry_policy
+        assert (
+            job._graph_def.node_dict["airflow_create_entry_group_result"].retry_policy.max_retries
+            == 3
+        )

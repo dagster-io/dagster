@@ -787,9 +787,7 @@ def make_dagster_solid_from_airflow_task(
         },
         retry_policy=RetryPolicy(
             max_retries=task.retries if task.retries is not None else 0,
-            delay=task.retry_delay
-            if task.retry_delay is not None
-            else datetime.timedelta(seconds=0),
+            delay=task.retry_delay.total_seconds() if task.retry_delay is not None else 0,
         ),
     )
     def _solid(context):  # pylint: disable=unused-argument
