@@ -27,6 +27,7 @@ from .sensor_definition import (
     DefaultSensorStatus,
     SensorDefinition,
     SensorEvaluationContext,
+    SensorType,
     SkipReason,
     has_at_least_one_parameter,
 )
@@ -325,6 +326,10 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
             raise DagsterInvalidDefinitionError(
                 "Freshness policy sensor must accept a context argument."
             )
+
+    @property
+    def sensor_type(self) -> SensorType:
+        return SensorType.FRESHNESS_POLICY
 
 
 @experimental
