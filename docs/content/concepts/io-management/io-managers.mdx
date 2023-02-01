@@ -296,7 +296,7 @@ def op_1():
     return [1, 2, 3]
 
 
-@op(ins=In(input_manager_key="pandas_series"))
+@op(ins={"a": In(input_manager_key="pandas_series")})
 def op_2(a):
     return pd.concat([a, pd.Series([4, 5, 6])])
 

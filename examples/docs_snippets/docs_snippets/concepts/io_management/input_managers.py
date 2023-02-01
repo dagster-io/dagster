@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -40,7 +41,7 @@ def write_dataframe_to_table(*_args, **_kwargs):
     pass
 
 
-pd_series_io_manager = None
+pd_series_io_manager: Any = None
 
 # start_different_input_managers
 
@@ -50,7 +51,7 @@ def op_1():
     return [1, 2, 3]
 
 
-@op(ins=In(input_manager_key="pandas_series"))
+@op(ins={"a": In(input_manager_key="pandas_series")})
 def op_2(a):
     return pd.concat([a, pd.Series([4, 5, 6])])
 
