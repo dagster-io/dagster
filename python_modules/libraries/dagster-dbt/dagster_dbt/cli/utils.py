@@ -317,12 +317,13 @@ def execute_cli_event_generator(
         command_list,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        encoding="utf-8",
     )
     for raw_line in process.stdout or []:
         print("--" * 40)
         print("bytes:", raw_line)
         print("~~" * 40)
-        line = _decode(raw_line)
+        line = raw_line  # _decode(raw_line)
         message, json_line = _process_line(line, log, json_log_format, capture_logs)
         messages.append(message)
         if json_line is not None:
