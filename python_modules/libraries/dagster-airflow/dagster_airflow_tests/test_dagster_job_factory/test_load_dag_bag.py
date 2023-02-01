@@ -7,11 +7,11 @@ from airflow import __version__ as airflow_version
 from dagster_airflow import (
     make_dagster_definitions_from_airflow_dags_path,
     make_dagster_definitions_from_airflow_example_dags,
-    make_dagster_job_from_airflow_dag)
+    make_dagster_job_from_airflow_dag,
+)
 from dagster_airflow_tests.marks import requires_airflow_db
 
-from ..airflow_utils import (COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_1,
-                             test_make_from_dagbag_inputs)
+from ..airflow_utils import COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_1, test_make_from_dagbag_inputs
 
 
 @pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
@@ -126,7 +126,7 @@ def test_airflow_example_dags(
 
 @pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
 def test_retry_conversion():
-    dag_module = imp.new_module('dag_module')
+    dag_module = imp.new_module("dag_module")
     exec(COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_1, dag_module.__dict__)
     job = make_dagster_job_from_airflow_dag(
         dag=dag_module.complex_dag,
@@ -138,4 +138,6 @@ def test_retry_conversion():
         assert event.event_type_value != "STEP_FAILURE"
 
     assert job._graph_def.node_dict["airflow_create_entry_group"].RetryPolicy.max_retries == 0
-    assert job._graph_def.node_dict["airflow_create_entry_group_result"].RetryPolicy.max_retries == 3
+    assert (
+        job._graph_def.node_dict["airflow_create_entry_group_result"].RetryPolicy.max_retries == 3
+    )
