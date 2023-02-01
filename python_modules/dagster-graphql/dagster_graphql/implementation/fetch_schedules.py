@@ -183,4 +183,9 @@ def get_schedule_next_tick(graphene_info: ResolveInfo, schedule_state):
     )
 
     next_timestamp = next(time_iter).timestamp()
-    return GrapheneDryRunInstigationTick(schedule_state, next_timestamp)
+    selector = ScheduleSelector(
+        location_name=repository_origin.repository_location_origin.location_name,
+        repository_name=repository_origin.repository_name,
+        schedule_name=external_schedule.name,
+    )
+    return GrapheneDryRunInstigationTick(selector, next_timestamp)

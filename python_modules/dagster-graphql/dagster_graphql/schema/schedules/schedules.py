@@ -1,5 +1,6 @@
 import dagster._check as check
 import graphene
+from dagster._core.definitions.selector import ScheduleSelector
 from dagster._core.host_representation import ExternalSchedule
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
@@ -122,16 +123,25 @@ class GrapheneSchedule(graphene.ObjectType):
             for _ in range(limit):
                 tick_times.append(next(time_iter).timestamp())
 
+        selector = ScheduleSelector(
+            location_name=self._external_schedule.handle.location_name,
+            repository_name=self._external_schedule.handle.repository_name,
+            schedule_name=self._external_schedule.handle.instigator_name,
+        )
         future_ticks = [
-            GrapheneDryRunInstigationTick(self._schedule_state, tick_time)
-            for tick_time in tick_times
+            GrapheneDryRunInstigationTick(selector, tick_time) for tick_time in tick_times
         ]
 
         new_cursor = tick_times[-1] + 1 if tick_times else cursor
         return GrapheneDryRunInstigationTicks(results=future_ticks, cursor=new_cursor)
 
     def resolve_futureTick(self, _graphene_info, tick_timestamp: int):
-        return GrapheneDryRunInstigationTick(self._schedule_state, float(tick_timestamp))
+        selector = ScheduleSelector(
+            location_name=self._external_schedule.handle.location_name,
+            repository_name=self._external_schedule.handle.repository_name,
+            schedule_name=self._external_schedule.handle.instigator_name,
+        )
+        return GrapheneDryRunInstigationTick(selector, float(tick_timestamp))
 
 
 class GrapheneScheduleOrError(graphene.Union):
