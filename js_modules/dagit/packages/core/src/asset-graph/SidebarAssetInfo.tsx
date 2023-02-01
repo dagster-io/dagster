@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui';
+import {Box, Colors, ConfigTypeSchema, ExternalAnchorButton, Icon, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -56,12 +56,18 @@ export const SidebarAssetInfo: React.FC<{
   const {assetMetadata, assetType} = metadataForAssetNode(asset);
   const hasAssetMetadata = assetType || assetMetadata.length > 0;
   const assetConfigSchema = asset.configField?.configType;
+  const codeOriginInfo = asset.metadataEntries.find((e) => e.label === '__code_origin');
+
+  const codeOrigin =
+    codeOriginInfo &&
+    codeOriginInfo.__typename === 'JsonMetadataEntry' &&
+    JSON.parse(codeOriginInfo.jsonString);
 
   const OpMetadataPlugin = asset.op?.metadata && pluginForMetadata(asset.op.metadata);
 
   return (
     <>
-      <Header assetKey={assetKey} opName={asset.op?.name} />
+      <Header assetKey={assetKey} opName={asset.op?.name} codeOrigin={codeOrigin} />
 
       <AssetDefinedInMultipleReposNotice
         assetKey={assetKey}
@@ -142,27 +148,40 @@ const TypeSidebarSection: React.FC<{
   );
 };
 
-const Header: React.FC<{assetKey: AssetKey; opName?: string}> = ({assetKey, opName}) => {
+const Header: React.FC<{
+  assetKey: AssetKey;
+  opName?: string;
+  codeOrigin?: {file: string; line: number};
+}> = ({assetKey, opName, codeOrigin}) => {
   const displayName = displayNameForAssetKey(assetKey);
-
   return (
     <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
-      <SidebarTitle
-        style={{
-          marginBottom: 0,
-          display: 'flex',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-        }}
-      >
-        <Box>{displayName}</Box>
-        {displayName !== opName ? (
-          <Box style={{opacity: 0.5}} flex={{gap: 6, alignItems: 'center'}}>
-            <Icon name="op" size={16} />
-            {opName}
-          </Box>
-        ) : undefined}
-      </SidebarTitle>
+      <Box flex={{gap: 4, direction: 'row', justifyContent: 'space-between'}}>
+        <SidebarTitle
+          style={{
+            marginBottom: 0,
+            display: 'flex',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+          }}
+        >
+          <Box>{displayName}</Box>
+          {displayName !== opName ? (
+            <Box style={{opacity: 0.5}} flex={{gap: 6, alignItems: 'center'}}>
+              <Icon name="op" size={16} />
+              {opName}
+            </Box>
+          ) : undefined}
+        </SidebarTitle>
+        {codeOrigin && (
+          <ExternalAnchorButton
+            icon={<Icon name="open_in_new" />}
+            href={`vscode://file/${codeOrigin.file}:${codeOrigin.line}`}
+          >
+            Open in editor
+          </ExternalAnchorButton>
+        )}
+      </Box>
       <AssetCatalogLink to={assetDetailsPathForKey(assetKey)}>
         {'View in Asset Catalog '}
         <Icon name="open_in_new" color={Colors.Link} />

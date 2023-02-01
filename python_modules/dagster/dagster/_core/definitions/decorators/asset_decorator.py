@@ -1,3 +1,5 @@
+import inspect
+import os
 import warnings
 from inspect import Parameter
 from typing import (
@@ -19,6 +21,7 @@ from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.resource_output import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -265,6 +268,14 @@ class _Asset:
 
         asset_ins = build_asset_ins(fn, self.ins or {}, self.non_argument_deps)
 
+        cwd = os.getcwd()
+        origin = (os.path.join(cwd, inspect.getsourcefile(fn)), inspect.getsourcelines(fn)[1])
+
+        metadata = {
+            **(self.metadata or {}),
+            "__code_origin": MetadataValue.json({"file": origin[0], "line": origin[1]}),
+        }
+
         out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
@@ -293,7 +304,7 @@ class _Asset:
                 io_manager_key = DEFAULT_IO_MANAGER_KEY
 
             out = Out(
-                metadata=self.metadata or {},
+                metadata=metadata,
                 io_manager_key=io_manager_key,
                 dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
                 description=self.description,
