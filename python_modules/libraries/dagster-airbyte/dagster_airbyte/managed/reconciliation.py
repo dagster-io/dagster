@@ -200,7 +200,7 @@ def reconcile_sources(
 
         if configured_source:
             defn_id = check.not_none(
-                res.get_source_definition_by_name(configured_source.source_type, workspace_id)
+                res.get_source_definition_by_name(configured_source.source_type)
             )
             base_source_defn_dict = {
                 "name": configured_source.name,
@@ -289,7 +289,7 @@ def reconcile_destinations(
 
         if configured_destination:
             defn_id = res.get_destination_definition_by_name(
-                configured_destination.destination_type, workspace_id
+                configured_destination.destination_type
             )
             base_destination_defn_dict = {
                 "name": configured_destination.name,
