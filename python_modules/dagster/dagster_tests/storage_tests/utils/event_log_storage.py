@@ -2102,6 +2102,14 @@ class TestEventLogStorage:
                 assert asset_entry.last_run_id == result.run_id
                 assert asset_entry.asset_details is None
 
+                event_log_record = storage.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                        asset_key=my_asset_key,
+                    )
+                )[0]
+                assert asset_entry.last_materialization_record == event_log_record
+
                 if self.can_wipe():
                     storage.wipe_asset(my_asset_key)
 
