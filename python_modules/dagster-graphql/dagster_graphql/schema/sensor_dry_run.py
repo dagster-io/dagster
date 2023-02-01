@@ -1,21 +1,19 @@
-from typing import TYPE_CHECKING, Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping, Optional
 
 import dagster._check as check
 import graphene
-from dagster._core.definitions.schedule_definition import ScheduleExecutionData
+from dagster._core.definitions.selector import SensorSelector
 from dagster._core.definitions.sensor_definition import SensorExecutionData
-from dagster._core.host_representation.selector import SensorSelector
 
 from dagster_graphql.implementation.utils import capture_error
 
-from ..implementation.evaluate_sensor_utils import evaluate_sensor
-from ..schema.errors import GrapheneSensorNotFoundError
-from .errors import GraphenePythonError
+from ..implementation.sensor_dry_run_utils import sensor_dry_run
+from .errors import GraphenePythonError, GrapheneSensorNotFoundError
 from .inputs import GrapheneSensorSelector
 from .instigation import GrapheneRunRequest
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.util import HasContext
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 class GrapheneSensorExecutionData(graphene.ObjectType):
@@ -32,51 +30,50 @@ class GrapheneSensorExecutionData(graphene.ObjectType):
             execution_data, "execution_data", SensorExecutionData
         )
 
-    def resolve_cursor(self, _graphene_info: "HasContext"):
-        # Not present for schedules
-        if isinstance(self._execution_data, ScheduleExecutionData):
-            raise Exception("Attempted to retrieve cursor from schedule execution.")
+    def resolve_cursor(self, _graphene_info: "ResolveInfo"):
         return self._execution_data.cursor
 
-    def resolve_runRequests(self, _graphene_info: "HasContext"):
+    def resolve_runRequests(self, _graphene_info: "ResolveInfo"):
         run_requests = self._execution_data.run_requests or []
         return [GrapheneRunRequest(run_request) for run_request in run_requests]
 
-    def resolve_skipMessage(self, _graphene_info: "HasContext"):
+    def resolve_skipMessage(self, _graphene_info: "ResolveInfo"):
         return self._execution_data.skip_message
 
 
-class GrapheneEvaluateSensorResult(graphene.Union):
+class GrapheneSensorDryRunResult(graphene.Union):
     class Meta:
         types = (
             GrapheneSensorExecutionData,
             GraphenePythonError,
             GrapheneSensorNotFoundError,
         )
-        name = "EvaluateSensorResult"
+        name = "SensorDryRunResult"
 
 
-class GrapheneEvaluateSensorMutation(graphene.Mutation):
+class GrapheneSensorDryRunMutation(graphene.Mutation):
     """Enable a sensor to launch runs for a job based on external state change."""
 
-    Output = graphene.NonNull(GrapheneEvaluateSensorResult)
+    Output = graphene.NonNull(GrapheneSensorDryRunResult)
 
     class Arguments:
         selector_data = graphene.NonNull(GrapheneSensorSelector)
         cursor = graphene.String()
 
     class Meta:
-        name = "EvaluateSensorMutation"
+        name = "SensorDryRunMutation"
 
     @capture_error
-    def mutate(self, graphene_info: "HasContext", selector_data: Mapping[str, Any], cursor: str):
-        return evaluate_sensor(
+    def mutate(
+        self, graphene_info: "ResolveInfo", selector_data: Mapping[str, Any], cursor: Optional[str]
+    ):
+        return sensor_dry_run(
             graphene_info, SensorSelector.from_graphql_input(selector_data), cursor
         )
 
 
 types = [
-    GrapheneEvaluateSensorMutation,
-    GrapheneEvaluateSensorResult,
+    GrapheneSensorDryRunMutation,
+    GrapheneSensorDryRunResult,
     GrapheneSensorExecutionData,
 ]

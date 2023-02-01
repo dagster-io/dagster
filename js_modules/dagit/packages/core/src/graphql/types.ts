@@ -427,7 +427,6 @@ export type DagitMutation = {
   cancelPartitionBackfill: CancelBackfillResult;
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
-  evaluateSensor: EvaluateSensorMutation;
   launchPartitionBackfill: LaunchBackfillResult;
   launchPipelineExecution: LaunchRunResult;
   launchPipelineReexecution: LaunchRunReexecutionResult;
@@ -437,6 +436,7 @@ export type DagitMutation = {
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   resumePartitionBackfill: ResumeBackfillResult;
+  sensorDryRun: SensorDryRunResult;
   setNuxSeen: Scalars['Boolean'];
   setSensorCursor: SensorOrError;
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
@@ -459,11 +459,6 @@ export type DagitMutationDeletePipelineRunArgs = {
 
 export type DagitMutationDeleteRunArgs = {
   runId: Scalars['String'];
-};
-
-export type DagitMutationEvaluateSensorArgs = {
-  cursor?: InputMaybe<Scalars['String']>;
-  selectorData: SensorSelector;
 };
 
 export type DagitMutationLaunchPartitionBackfillArgs = {
@@ -501,6 +496,11 @@ export type DagitMutationReloadRepositoryLocationArgs = {
 
 export type DagitMutationResumePartitionBackfillArgs = {
   backfillId: Scalars['String'];
+};
+
+export type DagitMutationSensorDryRunArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  selectorData: SensorSelector;
 };
 
 export type DagitMutationSetSensorCursorArgs = {
@@ -1008,8 +1008,6 @@ export enum ErrorSource {
   UNEXPECTED_ERROR = 'UNEXPECTED_ERROR',
   USER_CODE_ERROR = 'USER_CODE_ERROR',
 }
-
-export type EvaluateSensorMutation = PythonError | SensorExecutionData;
 
 export enum EvaluationErrorReason {
   FIELDS_NOT_DEFINED = 'FIELDS_NOT_DEFINED',
@@ -3280,6 +3278,8 @@ export type SensorData = {
   lastRunKey: Maybe<Scalars['String']>;
   lastTickTimestamp: Maybe<Scalars['Float']>;
 };
+
+export type SensorDryRunResult = PythonError | SensorExecutionData | SensorNotFoundError;
 
 export type SensorExecutionData = {
   __typename: 'SensorExecutionData';
