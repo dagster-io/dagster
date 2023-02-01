@@ -733,7 +733,8 @@ def reconcile(
 
     # fetch some data in advance to batch together some queries
     instance_queryer.prefetch_for_keys(
-        list(asset_selection.resolve(asset_graph)), after_cursor=cursor.latest_storage_id
+        list(asset_selection.upstream(depth=1).resolve(asset_graph)),
+        after_cursor=cursor.latest_storage_id,
     )
 
     (
