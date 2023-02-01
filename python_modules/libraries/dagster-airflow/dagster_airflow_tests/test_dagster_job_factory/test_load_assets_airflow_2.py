@@ -1,5 +1,6 @@
-import tempfile
 import os
+import tempfile
+
 import pytest
 from airflow import __version__ as airflow_version
 from airflow.models import DagBag
@@ -7,6 +8,7 @@ from dagster import AssetKey, asset, materialize
 from dagster_airflow import (
     load_assets_from_airflow_dag,
 )
+
 from dagster_airflow_tests.marks import requires_airflow_db
 
 from ..airflow_utils import COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2
