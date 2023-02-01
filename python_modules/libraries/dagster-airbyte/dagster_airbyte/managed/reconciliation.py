@@ -180,7 +180,7 @@ def reconcile_sources(
             continue
 
         diff = diff.join(
-            diff_sources(
+            diff_sources(  # type: ignore
                 configured_source,
                 existing_source.source if existing_source else None,
                 ignore_secrets,
@@ -268,7 +268,7 @@ def reconcile_destinations(
             continue
 
         diff = diff.join(
-            diff_destinations(
+            diff_destinations(  # type: ignore
                 configured_destination,
                 existing_destination.destination if existing_destination else None,
                 ignore_secrets,
@@ -411,7 +411,7 @@ def reconcile_config(
             dry_run,
         )
 
-        return ManagedElementDiff().join(sources_diff).join(dests_diff).join(connections_diff)
+        return ManagedElementDiff().join(sources_diff).join(dests_diff).join(connections_diff)  # type: ignore
 
 
 def reconcile_normalization(
@@ -522,7 +522,7 @@ def reconcile_connections_pre(
             continue
 
         diff = diff.join(
-            diff_connections(config_conn, existing_conn.connection if existing_conn else None)
+            diff_connections(config_conn, existing_conn.connection if existing_conn else None)  # type: ignore
         )
 
         if existing_conn and (
@@ -570,7 +570,7 @@ def reconcile_connections_post(
             # Enable or disable basic normalization based on config
             normalization_operation_id = reconcile_normalization(
                 res,
-                existing_connections.get("name", {}).get("connectionId"),
+                existing_connections.get("name", {}).get("connectionId"),  # type: ignore
                 destination,
                 config_conn.normalize_data,
                 workspace_id,
