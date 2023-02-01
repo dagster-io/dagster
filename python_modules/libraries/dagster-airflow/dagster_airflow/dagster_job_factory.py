@@ -264,33 +264,33 @@ def _build_asset_dependencies(
     graph: GraphDefinition,
     task_ids_by_asset_key: Mapping[AssetKey, AbstractSet[str]],
     upstream_asset_keys_by_task_id: Mapping[str, AbstractSet[AssetKey]],
-) -> Tuple[Set[OutputMapping], Mapping[str, AssetKey], Mapping[str, Set[AssetKey]]]:
+) -> Tuple[AbstractSet[OutputMapping], Mapping[str, AssetKey], Mapping[str, Set[AssetKey]]]:
     """Builds the asset dependency graph for a given set of airflow task mappings and a dagster graph
     """
     output_mappings = set()
     keys_by_output_name = {}
-    internal_asset_deps = {}
+    internal_asset_deps: dict[str, Set[AssetKey]] = {}
 
-    visited_nodes = {}
+    visited_nodes: dict[str, bool] = {}
     upstream_deps = set()
 
     # add new upstream asset dependencies to the internal deps
     for task_id in upstream_asset_keys_by_task_id:
+        output_mappings.add(
+            OutputMapping(
+                graph_output_name=f"result_airflow_{task_id}",
+                mapped_node_name=f"airflow_{task_id}",
+                mapped_node_output_name="airflow_task_complete",  # Default output name
+            )
+        )
         if f"result_airflow_{task_id}" in internal_asset_deps:
             internal_asset_deps[f"result_airflow_{task_id}"].update(
                 upstream_asset_keys_by_task_id[task_id]
             )
         else:
-            output_mappings.add(
-                OutputMapping(
-                    graph_output_name=f"result_airflow_{task_id}",
-                    mapped_node_name=f"airflow_{task_id}",
-                    mapped_node_output_name="airflow_task_complete",  # Default output name
-                )
+            internal_asset_deps[f"result_airflow_{task_id}"] = set(
+                upstream_asset_keys_by_task_id[task_id]
             )
-            internal_asset_deps[f"result_airflow_{task_id}"] = upstream_asset_keys_by_task_id[
-                task_id
-            ]
 
     def find_upstream_dependency(node_name: str) -> None:
         """find_upstream_dependency uses Depth-Firs-Search to find all upstream asset dependencies
@@ -342,8 +342,8 @@ def _build_asset_dependencies(
 
 def load_assets_from_airflow_dag(
     dag,
-    task_ids_by_asset_key: Optional[Mapping[AssetKey, AbstractSet[str]]] = None,
-    upstream_asset_keys_by_task_id: Optional[Mapping[str, AbstractSet[AssetKey]]] = None,
+    task_ids_by_asset_key: Mapping[AssetKey, AbstractSet[str]] = {},
+    upstream_asset_keys_by_task_id: Mapping[str, AbstractSet[AssetKey]] = {},
     connections: Optional[List[Connection]] = None,
 ) -> List[AssetsDefinition]:
     """[Experimental] Construct Dagster Assets for a given Airflow DAG.
@@ -353,7 +353,7 @@ def load_assets_from_airflow_dag(
         task_ids_by_asset_key (Optional[Mapping[AssetKey, AbstractSet[str]]]): A mapping from asset keys to
             task ids. Used break up the Airflow Dag into multiple SDAs
         upstream_asset_keys_by_task_id (Optional[Mapping[str, AbstractSet[AssetKey]]]): A mapping from
-            upstream asset keys to airflow task ids. Used to declare new upstream SDA depenencies
+             upstream asset keys to airflow task ids. Used to declare new upstream SDA depenencies
             for a given airflow task.
         connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
             Airflow DB
@@ -381,6 +381,8 @@ def load_assets_from_airflow_dag(
         if not downstream_nodes
     }
 
+    # mutated_task_ids_by_asset_key: dict[AssetKey, set[str]] = {}
+
     if task_ids_by_asset_key is None or task_ids_by_asset_key == {}:
         # if no mappings are provided the dag becomes a single SDA
         task_ids_by_asset_key = {AssetKey(dag.dag_id): leaf_nodes}
@@ -390,10 +392,13 @@ def load_assets_from_airflow_dag(
         for key in task_ids_by_asset_key:
             used_nodes.update(task_ids_by_asset_key[key])
 
-        if AssetKey(dag.dag_id) not in task_ids_by_asset_key:
-            task_ids_by_asset_key[AssetKey(dag.dag_id)] = leaf_nodes - used_nodes
-        else:
-            task_ids_by_asset_key[AssetKey(dag.dag_id)].update(leaf_nodes - used_nodes)
+        task_ids_by_asset_key[AssetKey(dag.dag_id)] = leaf_nodes - used_nodes
+
+    # for key in task_ids_by_asset_key:
+    #     if key not in mutated_task_ids_by_asset_key:
+    #         mutated_task_ids_by_asset_key[key] = set(task_ids_by_asset_key[key])
+    #     else:
+    #         mutated_task_ids_by_asset_key[key].update(tasdk_ids_by_asset_key[key])
 
     output_mappings, keys_by_output_name, internal_asset_deps = _build_asset_dependencies(
         graph, task_ids_by_asset_key, upstream_asset_keys_by_task_id
