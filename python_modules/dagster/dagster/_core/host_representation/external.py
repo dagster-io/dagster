@@ -631,9 +631,11 @@ class ExternalSchedule:
                 ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
             )
 
-    def execution_time_iterator(self, start_timestamp: float) -> Iterator[datetime]:
+    def execution_time_iterator(
+        self, start_timestamp: float, ascending: bool = True
+    ) -> Iterator[datetime]:
         return schedule_execution_time_iterator(
-            start_timestamp, self.cron_schedule, self.execution_timezone
+            start_timestamp, self.cron_schedule, self.execution_timezone, ascending
         )
 
 

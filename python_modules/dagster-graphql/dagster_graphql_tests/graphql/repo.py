@@ -1044,6 +1044,11 @@ def dynamic_pipeline():
     )
 
 
+@job
+def basic_job():
+    pass
+
+
 def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None):
     selector = infer_pipeline_selector(graphql_context, "retry_multi_output_pipeline")
     return {
@@ -1239,6 +1244,20 @@ def define_schedules():
     def composite_cron_schedule(_context):
         return {}
 
+    @schedule(
+        cron_schedule="* * * * *", job=basic_job, default_status=DefaultScheduleStatus.RUNNING
+    )
+    def past_tick_schedule():
+        return {}
+
+    @schedule(cron_schedule="* * * * *", job=req_config_job)
+    def provide_config_schedule():
+        return {"ops": {"the_op": {"config": {"foo": "bar"}}}}
+
+    @schedule(cron_schedule="* * * * *", job=req_config_job)
+    def always_error():
+        raise Exception("darnit")
+
     return [
         run_config_error_schedule,
         no_config_pipeline_hourly_schedule,
@@ -1260,6 +1279,9 @@ def define_schedules():
         invalid_config_schedule,
         running_in_code_schedule,
         composite_cron_schedule,
+        past_tick_schedule,
+        provide_config_schedule,
+        always_error,
     ]
 
 
@@ -1700,6 +1722,15 @@ def nested_job():
     plus_one(subgraph())
 
 
+@job
+def req_config_job():
+    @op(config_schema={"foo": str})
+    def the_op():
+        pass
+
+    the_op()
+
+
 @asset
 def asset_1():
     yield Output(3)
@@ -1851,6 +1882,7 @@ def empty_repo():
 def define_pipelines():
     return [
         asset_tag_pipeline,
+        basic_job,
         composites_pipeline,
         csv_hello_world_df_input,
         csv_hello_world_two,
@@ -1909,6 +1941,7 @@ def define_pipelines():
         hanging_graph_asset_job,
         named_groups_job,
         memoization_job,
+        req_config_job,
     ]
 
 

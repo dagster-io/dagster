@@ -430,6 +430,7 @@ export type DagitMutation = {
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   resumePartitionBackfill: ResumeBackfillResult;
+  scheduleDryRun: ScheduleDryRunResult;
   sensorDryRun: SensorDryRunResult;
   setNuxSeen: Scalars['Boolean'];
   setSensorCursor: SensorOrError;
@@ -490,6 +491,11 @@ export type DagitMutationReloadRepositoryLocationArgs = {
 
 export type DagitMutationResumePartitionBackfillArgs = {
   backfillId: Scalars['String'];
+};
+
+export type DagitMutationScheduleDryRunArgs = {
+  selectorData: ScheduleSelector;
+  timestamp?: InputMaybe<Scalars['Float']>;
 };
 
 export type DagitMutationSensorDryRunArgs = {
@@ -3111,6 +3117,7 @@ export type Schedule = {
   pipelineName: Scalars['String'];
   scheduleState: InstigationState;
   solidSelection: Maybe<Array<Maybe<Scalars['String']>>>;
+  ticksFromTimestamp: Array<Maybe<Scalars['Float']>>;
 };
 
 export type ScheduleFutureTickArgs = {
@@ -3123,11 +3130,19 @@ export type ScheduleFutureTicksArgs = {
   until?: InputMaybe<Scalars['Float']>;
 };
 
+export type ScheduleTicksFromTimestampArgs = {
+  lowerLimit?: InputMaybe<Scalars['Int']>;
+  startTimestamp?: InputMaybe<Scalars['Float']>;
+  upperLimit?: InputMaybe<Scalars['Int']>;
+};
+
 export type ScheduleData = {
   __typename: 'ScheduleData';
   cronSchedule: Scalars['String'];
   startTimestamp: Maybe<Scalars['Float']>;
 };
+
+export type ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError;
 
 export type ScheduleMutationResult = PythonError | ScheduleStateResult | UnauthorizedError;
 
