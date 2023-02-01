@@ -166,22 +166,28 @@ export const AppTopNavLogo: React.FC = () => {
         </ShortcutHandler>
       ) : null}
       <Box flex={{display: 'inline-flex'}} margin={{left: 8}}>
-        <DaggyTooltip
-          content={
-            <Box flex={{direction: 'row', gap: 4}}>
-              <WebSocketStatus />
-              <VersionNumber />
-            </Box>
-          }
-          placement="bottom"
-          modifiers={{offset: {enabled: true, options: {offset: [0, 18]}}}}
-        >
-          <Link to="/home" style={{outline: 0, display: 'flex'}}>
-            <GhostDaggy />
-          </Link>
-        </DaggyTooltip>
+        <GhostDaggyWithTooltip />
       </Box>
     </LogoContainer>
+  );
+};
+
+export const GhostDaggyWithTooltip = () => {
+  return (
+    <DaggyTooltip
+      content={
+        <Box flex={{direction: 'row', gap: 4}}>
+          <WebSocketStatus />
+          <VersionNumber />
+        </Box>
+      }
+      placement="bottom"
+      modifiers={{offset: {enabled: true, options: {offset: [0, 18]}}}}
+    >
+      <Link to="/home" style={{outline: 0, display: 'flex'}}>
+        <GhostDaggy />
+      </Link>
+    </DaggyTooltip>
   );
 };
 
