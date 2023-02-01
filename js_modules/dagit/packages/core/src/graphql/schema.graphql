@@ -2431,6 +2431,7 @@ type Sensor {
   description: String
   nextTick: DryRunInstigationTick
   metadata: SensorMetadata!
+  sensorType: SensorType!
 }
 
 type Target {
@@ -2441,6 +2442,15 @@ type Target {
 
 type SensorMetadata {
   assetKeys: [AssetKey!]
+}
+
+enum SensorType {
+  STANDARD
+  RUN_STATUS
+  ASSET
+  MULTI_ASSET
+  FRESHNESS_POLICY
+  UNKNOWN
 }
 
 union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError

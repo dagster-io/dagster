@@ -11,6 +11,7 @@ from .sensor_definition import (
     RawSensorEvaluationFunctionReturn,
     SensorDefinition,
     SensorEvaluationContext,
+    SensorType,
 )
 from .target import ExecutableDefinition
 from .utils import check_valid_name
@@ -114,3 +115,7 @@ class AssetSensorDefinition(SensorDefinition):
     @property
     def asset_key(self):
         return self._asset_key
+
+    @property
+    def sensor_type(self) -> SensorType:
+        return SensorType.ASSET

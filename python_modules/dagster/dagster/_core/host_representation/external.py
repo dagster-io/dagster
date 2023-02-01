@@ -29,6 +29,7 @@ from dagster._core.definitions.selector import (
 from dagster._core.definitions.sensor_definition import (
     DEFAULT_SENSOR_DAEMON_INTERVAL,
     DefaultSensorStatus,
+    SensorType,
 )
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.host_representation.origin import (
@@ -721,6 +722,10 @@ class ExternalSensor:
     @property
     def selector_id(self) -> str:
         return create_snapshot_id(self.selector)
+
+    @property
+    def sensor_type(self) -> SensorType:
+        return self._external_sensor_data.sensor_type or SensorType.UNKNOWN
 
     def get_current_instigator_state(
         self, stored_state: Optional["InstigatorState"]

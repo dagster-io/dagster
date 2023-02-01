@@ -122,6 +122,7 @@ query SensorQuery($sensorSelector: SensorSelector!) {
             }
         }
       }
+      sensorType
     }
   }
 }
@@ -491,6 +492,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["sensorOrError"]["__typename"] == "Sensor"
         sensor = result.data["sensorOrError"]
         snapshot.assert_match(sensor)
+        assert sensor["sensorType"] == "STANDARD"
 
 
 class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):

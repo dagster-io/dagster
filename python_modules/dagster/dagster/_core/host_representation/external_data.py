@@ -39,7 +39,11 @@ from dagster._core.definitions.partition_mapping import (
     get_builtin_partition_mapping_types,
 )
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    SensorDefinition,
+    SensorType,
+)
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -418,6 +422,7 @@ class ExternalSensorData(
             ("target_dict", Mapping[str, ExternalTargetData]),
             ("metadata", Optional[ExternalSensorMetadata]),
             ("default_status", Optional[DefaultSensorStatus]),
+            ("sensor_type", Optional[SensorType]),
         ],
     )
 ):
@@ -432,6 +437,7 @@ class ExternalSensorData(
         target_dict: Optional[Mapping[str, ExternalTargetData]] = None,
         metadata: Optional[ExternalSensorMetadata] = None,
         default_status: Optional[DefaultSensorStatus] = None,
+        sensor_type: Optional[SensorType] = None,
     ):
         if pipeline_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
@@ -465,6 +471,7 @@ class ExternalSensorData(
             default_status=DefaultSensorStatus.RUNNING
             if default_status == DefaultSensorStatus.RUNNING
             else None,
+            sensor_type=sensor_type,
         )
 
 
@@ -1345,6 +1352,7 @@ def external_sensor_data_from_def(
         description=sensor_def.description,
         metadata=ExternalSensorMetadata(asset_keys=asset_keys),
         default_status=sensor_def.default_status,
+        sensor_type=sensor_def.sensor_type,
     )
 
 

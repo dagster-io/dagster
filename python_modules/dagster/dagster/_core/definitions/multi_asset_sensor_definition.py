@@ -37,6 +37,7 @@ from .sensor_definition import (
     DefaultSensorStatus,
     SensorDefinition,
     SensorEvaluationContext,
+    SensorType,
     has_at_least_one_parameter,
 )
 from .target import ExecutableDefinition
@@ -1180,3 +1181,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
         context.update_cursor_after_evaluation()
         return result
+
+    @property
+    def sensor_type(self) -> SensorType:
+        return SensorType.MULTI_ASSET

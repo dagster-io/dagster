@@ -50,6 +50,7 @@ from .sensor_definition import (
     RunRequest,
     SensorDefinition,
     SensorEvaluationContext,
+    SensorType,
     SkipReason,
     has_at_least_one_parameter,
 )
@@ -718,6 +719,10 @@ class RunStatusSensorDefinition(SensorDefinition):
                 )
 
             return self._run_status_sensor_fn()
+
+    @property
+    def sensor_type(self) -> SensorType:
+        return SensorType.RUN_STATUS
 
 
 def run_status_sensor(
