@@ -165,7 +165,7 @@ def make_dagster_op_from_airflow_task(
         check.inst_param(execution_date, "execution_date", datetime.datetime)
 
         with replace_airflow_logger_handlers():
-            if airflow_version >= "2.0.0":
+            if str(airflow_version) >= "2.0.0":
                 dag = context.resources.airflow_db["dag"]
                 dagrun = context.resources.airflow_db["dagrun"]
                 ti = dagrun.get_task_instance(task_id=task.task_id)
