@@ -273,6 +273,7 @@ class FromSourceAsset(
             input_manager_key = input_def.input_manager_key
         else:
             input_manager_key = pipeline_def.asset_layer.io_manager_key_for_asset(input_asset_key)
+
         if input_manager_key is None:
             check.failed(
                 f"Must have an io_manager associated with asset {input_asset_key} to load it using"
@@ -461,7 +462,7 @@ class FromStepOutput(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-        io_manager_key: Optional[str] = None
+        io_manager_key: Optional[str] = None,
     ) -> "InputContext":
         if io_manager_key is None:
             io_manager_key = step_context.execution_plan.get_manager_key(
@@ -520,7 +521,9 @@ class FromStepOutput(
                     f'"{manager_key}" is an IOManager.'
                 ),
             )
-        load_input_context = self.get_load_context(step_context, input_def, io_manager_key=manager_key)
+        load_input_context = self.get_load_context(
+            step_context, input_def, io_manager_key=manager_key
+        )
         yield from _load_input_with_input_manager(input_manager, load_input_context)
 
         metadata_entries = load_input_context.consume_metadata_entries()
