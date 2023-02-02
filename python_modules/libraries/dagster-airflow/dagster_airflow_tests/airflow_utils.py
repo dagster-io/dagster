@@ -27,8 +27,9 @@ from airflow.utils.dates import days_ago
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.utils.helpers import chain
+from datetime import timedelta
 
-default_args = {"start_date": days_ago(1)}
+default_args = {"start_date": days_ago(1), "retries": 3, "retry_delay": timedelta(minutes=1)}
 
 with models.DAG(
     dag_id="example_complex", default_args=default_args, schedule_interval='* * * * *', tags=['example'],
@@ -36,7 +37,7 @@ with models.DAG(
 
     # Create
     create_entry_group = BashOperator(
-        task_id="create_entry_group", bash_command="echo create_entry_group"
+        task_id="create_entry_group", bash_command="echo create_entry_group", retries=0, retry_delay=timedelta(seconds=5)
     )
 
     create_entry_group_result = BashOperator(
@@ -379,8 +380,9 @@ from airflow import models
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 from airflow.models.baseoperator import chain
+from datetime import timedelta
 
-default_args = {"start_date": pendulum.today('UTC').add(days=-1)}
+default_args = {"start_date": pendulum.today('UTC').add(days=-1), "retries": 3, "retry_delay": timedelta(minutes=1)}
 
 with models.DAG(
     dag_id="example_complex", default_args=default_args, schedule='* * * * *', tags=['example'],
@@ -388,7 +390,7 @@ with models.DAG(
 
     # Create
     create_entry_group = BashOperator(
-        task_id="create_entry_group", bash_command="echo create_entry_group"
+        task_id="create_entry_group", bash_command="echo create_entry_group", retries=0, retry_delay=timedelta(seconds=5)
     )
 
     create_entry_group_result = BashOperator(

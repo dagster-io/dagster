@@ -30,6 +30,7 @@ from dagster import (
     MultiDependencyDefinition,
     Nothing,
     Out,
+    RetryPolicy,
     ScheduleDefinition,
     _check as check,
     op,
@@ -786,6 +787,10 @@ def make_dagster_solid_from_airflow_task(
             "mock_xcom": Field(bool, default_value=mock_xcom),
             "use_ephemeral_airflow_db": Field(bool, default_value=use_ephemeral_airflow_db),
         },
+        retry_policy=RetryPolicy(
+            max_retries=task.retries if task.retries is not None else 0,
+            delay=task.retry_delay.total_seconds() if task.retry_delay is not None else 0,
+        ),
     )
     def _solid(context):  # pylint: disable=unused-argument
         # reloading forces picking up any config that's been set for execution
