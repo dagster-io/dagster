@@ -3,8 +3,55 @@ import os
 import sys
 from contextlib import contextmanager
 
+from airflow import __version__ as airflow_version
+from airflow.models.connection import Connection
+from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
+from dagster import (
+    _check as check,
+)
 from dagster._core.definitions.utils import VALID_NAME_REGEX
+
+# pylint: disable=no-name-in-module,import-error
+if str(airflow_version) >= "2.0.0":
+    from airflow.utils.session import create_session
+else:
+    from airflow.utils.db import create_session  # type: ignore  # (airflow 1 compat)
+# pylint: enable=no-name-in-module,import-error
+
+
+def contains_duplicate_task_names(dag_bag):
+    check.inst_param(dag_bag, "dag_bag", DagBag)
+    seen_task_names = set()
+
+    # To enforce predictable iteration order
+    sorted_dag_ids = sorted(dag_bag.dag_ids)
+    for dag_id in sorted_dag_ids:
+        dag = dag_bag.dags.get(dag_id)
+        for task in dag.tasks:
+            if task.task_id in seen_task_names:
+                return True
+            else:
+                seen_task_names.add(task.task_id)
+    return False
+
+
+class DagsterAirflowError(Exception):
+    pass
+
+
+def create_airflow_connections(connections):
+    with create_session() as session:
+        for connection in connections:
+            if session.query(Connection).filter(Connection.conn_id == connection.conn_id).first():
+                logging.info(
+                    f"Could not import connection {connection.conn_id}: connection already exists."
+                )
+                continue
+
+            session.add(connection)
+            session.commit()
+            logging.info(f"Imported connection {connection.conn_id}")
 
 
 # Airflow DAG ids and Task ids allow a larger valid character set (alphanumeric characters,
