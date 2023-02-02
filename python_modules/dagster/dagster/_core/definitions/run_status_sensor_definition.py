@@ -55,6 +55,7 @@ from .sensor_definition import (
     has_at_least_one_parameter,
 )
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from .target import ExecutableDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.selector import (
@@ -751,8 +752,8 @@ def run_status_sensor(
     ] = None,
     monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    request_job: Optional[ExecutableDefinition] = None,
+    request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
 ) -> Callable[[RunStatusSensorEvaluationFunction], RunStatusSensorDefinition,]:
     """
     Creates a sensor that reacts to a given status of pipeline execution, where the decorated
@@ -780,9 +781,9 @@ def run_status_sensor(
             any job in the repository matches the requested run_status.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
+        request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job that should be
             executed if a RunRequest is yielded from the sensor.
-        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
 
