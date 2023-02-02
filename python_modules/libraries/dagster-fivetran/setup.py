@@ -39,4 +39,9 @@ setup(
             "dagster-fivetran = dagster_fivetran.cli:main",
         ]
     },
+    extras_require={
+        "managed": [
+            f"dagster-managed-elements{pin}",
+        ],
+    },
 )
