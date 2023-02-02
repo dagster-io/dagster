@@ -5,9 +5,9 @@ import {Line} from 'react-chartjs-2';
 
 import {InstigationTickStatus} from '../graphql/types';
 
-import {NextTickForHistoyFragment, HistoryTickFragment} from './types/TickHistory.types';
+import {NextTickForHistoryFragment, HistoryTickFragment} from './types/TickHistory.types';
 
-type FutureTick = NextTickForHistoyFragment;
+type FutureTick = NextTickForHistoryFragment;
 type InstigationTick = HistoryTickFragment;
 
 const COLOR_MAP = {

@@ -12,8 +12,8 @@ export type ScheduleNextFiveTicksFragment = {
   pipelineName: string;
   scheduleState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
   futureTicks: {
-    __typename: 'FutureInstigationTicks';
-    results: Array<{__typename: 'FutureInstigationTick'; timestamp: number}>;
+    __typename: 'DryRunInstigationTicks';
+    results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
   };
 };
 
@@ -32,8 +32,8 @@ export type RepositoryForNextTicksFragment = {
     pipelineName: string;
     scheduleState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
     futureTicks: {
-      __typename: 'FutureInstigationTicks';
-      results: Array<{__typename: 'FutureInstigationTick'; timestamp: number}>;
+      __typename: 'DryRunInstigationTicks';
+      results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
     };
   }>;
 };
@@ -51,7 +51,7 @@ export type ScheduleTickConfigQuery = {
         __typename: 'Schedule';
         id: string;
         futureTick: {
-          __typename: 'FutureInstigationTick';
+          __typename: 'DryRunInstigationTick';
           evaluationResult: {
             __typename: 'TickEvaluation';
             skipReason: string | null;

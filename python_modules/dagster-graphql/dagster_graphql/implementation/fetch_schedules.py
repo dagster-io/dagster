@@ -156,7 +156,7 @@ def get_schedule_or_error(graphene_info: ResolveInfo, schedule_selector):
 
 
 def get_schedule_next_tick(graphene_info: ResolveInfo, schedule_state):
-    from ..schema.instigation import GrapheneFutureInstigationTick
+    from ..schema.instigation import GrapheneDryRunInstigationTick
 
     if not schedule_state.is_running:
         return None
@@ -183,4 +183,4 @@ def get_schedule_next_tick(graphene_info: ResolveInfo, schedule_state):
     )
 
     next_timestamp = next(time_iter).timestamp()
-    return GrapheneFutureInstigationTick(schedule_state, next_timestamp)
+    return GrapheneDryRunInstigationTick(schedule_state, next_timestamp)
