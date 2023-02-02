@@ -6,7 +6,7 @@ from tutorial_dbt_dagster.assets import (
     all_assets_job,
 )
 from tutorial_dbt_dagster import assets
-from dagster import with_resources, load_assets_from_package_module
+from dagster import with_resources, load_assets_from_package_module, AssetKey
 import os
 
 
@@ -29,3 +29,5 @@ def test_everything():
     resolved_job = all_assets_job.resolve(resolved_assets, [])
 
     result = resolved_job.execute_in_process()
+
+    resolved_job.execute_in_process(asset_selection=[AssetKey("order_count_chart")])
