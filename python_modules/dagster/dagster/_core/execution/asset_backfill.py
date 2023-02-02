@@ -8,6 +8,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Union,
     cast,
 )
 
@@ -35,6 +36,29 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 if TYPE_CHECKING:
     from .backfill import PartitionBackfill
+
+
+class AssetBackfillPreview(NamedTuple):
+    num_asset_partitions: int
+    num_non_partitioned_assets: int
+
+
+def preview_asset_backfill(
+    asset_graph: AssetGraph, asset_keys: Sequence[AssetKey], partition_keys: Sequence[str]
+) -> Union[AssetBackfillPreview, DagsterBackfillFailedError]:
+    try:
+        backfill_data = AssetBackfillData.from_asset_partitions(
+            asset_graph, asset_keys, partition_keys
+        )
+        return AssetBackfillPreview(
+            num_asset_partitions=sum(
+                len(subset)
+                for subset in backfill_data.target_subset.partitions_subsets_by_asset_key.values()
+            ),
+            num_non_partitioned_assets=len(backfill_data.target_subset.non_partitioned_asset_keys),
+        )
+    except DagsterBackfillFailedError as ex:
+        return ex
 
 
 class AssetBackfillData(NamedTuple):
@@ -149,9 +173,9 @@ class AssetBackfillData(NamedTuple):
     def from_asset_partitions(
         cls,
         asset_graph: AssetGraph,
-        partition_names: Sequence[str],
         asset_selection: Sequence[AssetKey],
         dynamic_partitions_store: DynamicPartitionsStore,
+        partition_keys: Sequence[str],
     ) -> "AssetBackfillData":
         partitioned_asset_keys = {
             asset_key
@@ -177,7 +201,7 @@ class AssetBackfillData(NamedTuple):
                 " must be partitioned"
             )
 
-        root_partitions_subset = root_partitions_def.subset_with_partition_keys(partition_names)
+        root_partitions_subset = root_partitions_def.subset_with_partition_keys(partition_keys)
         target_subset = AssetGraphSubset(
             asset_graph, non_partitioned_asset_keys=set(asset_selection) - partitioned_asset_keys
         )
