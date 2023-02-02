@@ -56,7 +56,7 @@ export type SingleSensorQuery = {
             endTime: number | null;
             updateTime: number | null;
           }>;
-          nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number} | null;
+          nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
         };
       }
     | {__typename: 'SensorNotFoundError'}

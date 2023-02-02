@@ -13,7 +13,7 @@ export type ScheduleNextFiveTicksFragment = {
   scheduleState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
   futureTicks: {
     __typename: 'DryRunInstigationTicks';
-    results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
+    results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
   };
 };
 
@@ -33,7 +33,7 @@ export type RepositoryForNextTicksFragment = {
     scheduleState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
     futureTicks: {
       __typename: 'DryRunInstigationTicks';
-      results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
+      results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
     };
   }>;
 };

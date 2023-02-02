@@ -211,7 +211,7 @@ def get_sensor_next_tick(graphene_info: ResolveInfo, sensor_state):
     next_timestamp = latest_tick.timestamp + external_sensor.min_interval_seconds
     if next_timestamp < get_timestamp_from_utc_datetime(get_current_datetime_in_utc()):
         return None
-    return GrapheneDryRunInstigationTick(sensor_state, next_timestamp)
+    return GrapheneDryRunInstigationTick(external_sensor.sensor_selector, next_timestamp)
 
 
 @capture_error
