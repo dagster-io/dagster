@@ -136,4 +136,5 @@ db.Index(
     MutablePartitionsTable.c.partitions_def_name,
     MutablePartitionsTable.c.partition,
     mysql_length={"partitions_def_name": 64, "partition": 64},
+    unique=True,
 )

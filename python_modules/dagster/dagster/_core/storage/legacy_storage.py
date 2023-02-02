@@ -477,8 +477,8 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_keys, after_cursor
         )
 
-    def get_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        return self._storage.event_log_storage.get_partitions(partitions_def_name)
+    def get_mutable_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self._storage.event_log_storage.get_mutable_partitions(partitions_def_name)
 
     def has_mutable_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return self._storage.event_log_storage.has_mutable_partition(

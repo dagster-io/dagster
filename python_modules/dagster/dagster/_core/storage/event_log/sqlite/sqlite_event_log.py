@@ -6,9 +6,10 @@ import threading
 import time
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Optional, Sequence
 
 import sqlalchemy as db
+import sqlalchemy.dialects.sqlite as db_dialects_sqlite
 from sqlalchemy.pool import NullPool
 from tqdm import tqdm
 from watchdog.events import PatternMatchingEventHandler
@@ -37,7 +38,7 @@ from dagster._serdes import (
 )
 from dagster._utils import mkdir_p
 
-from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
+from ..schema import MutablePartitionsTable, SqlEventLogStorageMetadata, SqlEventLogStorageTable
 from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage
 
 INDEX_SHARD_NAME = "index"
@@ -353,6 +354,26 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 break
 
         return event_records[:limit]
+
+    def add_mutable_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        self._check_partitions_table()
+
+        with self.index_connection() as conn:
+            stmt = db_dialects_sqlite.insert(MutablePartitionsTable).values(
+                [
+                    dict(partitions_def_name=partitions_def_name, partition=partition_key)
+                    for partition_key in partition_keys
+                ]
+            )
+            stmt = stmt.on_conflict_do_update(
+                set_={
+                    "partition": stmt.excluded.partition,
+                    "partitions_def_name": stmt.excluded.partitions_def_name,
+                }
+            )
+            conn.execute(stmt)
 
     def supports_event_consumer_queries(self):
         return False

@@ -1687,24 +1687,7 @@ class SqlEventLogStorage(EventLogStorage):
     def add_mutable_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
-        if isinstance(partition_keys, str):
-            # Guard against a single string being passed in `partition_keys`
-            raise DagsterInvalidInvocationError("partition_keys must be a sequence of strings")
-        check.sequence_param(partition_keys, "partition_keys")
-
-        self._check_partitions_table()
-        existing_partitions = set(self.get_mutable_partitions(partitions_def_name))
-
-        new_keys = list(set(partition_keys) - existing_partitions)
-        if new_keys:
-            with self.index_connection() as conn:
-                conn.execute(
-                    MutablePartitionsTable.insert(),
-                    [
-                        dict(partitions_def_name=partitions_def_name, partition=partition_key)
-                        for partition_key in new_keys
-                    ],
-                )
+        raise NotImplementedError()
 
     def delete_mutable_partition(self, partitions_def_name: str, partition_key: str) -> None:
         self._check_partitions_table()
