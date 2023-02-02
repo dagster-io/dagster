@@ -11,11 +11,10 @@ from dagster_airflow import (
 
 from dagster_airflow_tests.marks import requires_airflow_db
 
-
 ASSET_DAG = """
 from airflow import models
 
-from airflow.operators.bash import BashOperator
+from airflow.operators.bash_operator import BashOperator
 import datetime
 
 default_args = {"start_date": datetime.datetime(2023, 2, 1)}
