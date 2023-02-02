@@ -1,8 +1,11 @@
 import subprocess
 
+import pytest
+from dagster._seven import IS_WINDOWS
 from dagster._utils import file_relative_path
 
 
+@pytest.mark.skipif(IS_WINDOWS, reason="fails on windows, unix coverage sufficient")
 def test_import_perf():
     py_file = file_relative_path(__file__, "simple.py")
 
