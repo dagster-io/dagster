@@ -170,23 +170,7 @@ def asset(
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
     """
-    if compute_fn is not None:
-        return _Asset()(compute_fn)
-
-    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        check.invariant(
-            not (io_manager_key and io_manager_def),
-            (
-                "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please"
-                " provide one or the other. "
-            ),
-        )
-        if resource_defs is not None:
-            experimental_arg_warning("resource_defs", "asset")
-
-        if io_manager_def is not None:
-            experimental_arg_warning("io_manager_def", "asset")
-
+    def create_asset():
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
@@ -207,7 +191,26 @@ def asset(
             freshness_policy=freshness_policy,
             retry_policy=retry_policy,
             code_version=code_version,
-        )(fn)
+        )
+
+    if compute_fn is not None:
+        return create_asset()(compute_fn)
+
+    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
+        check.invariant(
+            not (io_manager_key and io_manager_def),
+            (
+                "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please"
+                " provide one or the other. "
+            ),
+        )
+        if resource_defs is not None:
+            experimental_arg_warning("resource_defs", "asset")
+
+        if io_manager_def is not None:
+            experimental_arg_warning("io_manager_def", "asset")
+
+        return create_asset()(fn)
 
     return inner
 
