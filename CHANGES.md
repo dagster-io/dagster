@@ -44,7 +44,7 @@
 
 ### Experimental
 
-- [dagster-airflow] added a new api `load_assets_from_airflow_dag` that creates  graph-backed, partitioned, assets based on the provided airflow DAG.
+- [dagster-airflow] added a new api `load_assets_from_airflow_dag` that creates graph-backed, partitioned, assets based on the provided Airflow DAG.
 
 # 1.1.14 (core) / 0.17.14 (libraries)
 
