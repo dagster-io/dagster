@@ -1,6 +1,7 @@
 # Changelog
 
 # 1.1.15 (core) / 0.17.15 (libraries)
+
 ### New
 
 - Definitions now accepts Executor instances in its executor argument, not just ExecutorDefinitions.
