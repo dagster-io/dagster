@@ -200,7 +200,7 @@ def parse_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> 
         with open(run_results_path, "rb") as file:
             bs = file.read()
             print("FILE BYTES:", bs)
-            return json.load(file)
+            return json.loads(bs)
     except FileNotFoundError:
         raise DagsterDbtCliOutputsNotFoundError(path=run_results_path)
 
