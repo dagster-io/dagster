@@ -31,4 +31,4 @@ def _is_resource_annotated(param: Parameter) -> bool:
 
 T = TypeVar("T")
 Injected = Annotated[T, "resource_output"]
-ResourceOutput = Injected
+Injected = Injected

@@ -3,11 +3,11 @@ import os
 from dagster import job, make_values_resource, op
 
 # start_file_example
-from dagster._core.definitions.resource_output import ResourceOutput
+from dagster._core.definitions.resource_output import Injected
 
 
 @op
-def add_file(context, file_dir: ResourceOutput[str]):
+def add_file(context, file_dir: Injected[str]):
     filename = f"{file_dir}/new_file.txt"
     open(filename, "x", encoding="utf8").close()
 
@@ -15,7 +15,7 @@ def add_file(context, file_dir: ResourceOutput[str]):
 
 
 @op
-def total_num_files(context, file_dir: ResourceOutput[str]):
+def total_num_files(context, file_dir: Injected[str]):
     files_in_dir = os.listdir(file_dir)
 
     context.log.info(f"Total number of files: {len(files_in_dir)}")

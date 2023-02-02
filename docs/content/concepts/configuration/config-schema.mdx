@@ -229,14 +229,14 @@ By providing secrets through environment variables, your secrets won't be visibl
 
 If you want multiple ops to share values, You can use <PyObject module="dagster" object="make_values_resource" /> to pass the values via a resource and reference that resource from any op that needs it.
 
-It defaults to <PyObject module="dagster" object="Any" /> type, meaning Dagster will accept any config value provided for the resource:
+It defaults to <PyObject module="dagster" object="Any" /> type, meaning Dagster will accept any config value provided for the resource. We use `Injected` to indicate that the `file_dir` parameters are injected to our ops by the resource.
 
 ```python file=/concepts/configuration/make_values_resource_any.py startafter=start_file_example endbefore=end_file_example
-from dagster._core.definitions.resource_output import ResourceOutput
+from dagster._core.definitions.resource_output import Injected
 
 
 @op
-def add_file(context, file_dir: ResourceOutput[str]):
+def add_file(context, file_dir: Injected[str]):
     filename = f"{file_dir}/new_file.txt"
     open(filename, "x", encoding="utf8").close()
 
@@ -244,7 +244,7 @@ def add_file(context, file_dir: ResourceOutput[str]):
 
 
 @op
-def total_num_files(context, file_dir: ResourceOutput[str]):
+def total_num_files(context, file_dir: Injected[str]):
     files_in_dir = os.listdir(file_dir)
 
     context.log.info(f"Total number of files: {len(files_in_dir)}")
@@ -264,28 +264,32 @@ result = file_dir_job.execute_in_process(
 )
 ```
 
-Alternatively, if you want to provide different config values for each op within a job, you can also specify the schema of the values like:
+If you want to provide different config values for each op within a job, you can also specify a structured schema using a `Resource` class:
 
 ```python file=/concepts/configuration/make_values_resource_config_schema.py startafter=start_file_example endbefore=end_file_example
-@op(required_resource_keys={"file_dirs"})
-def write_file(context):
-    filename = f"{context.resources.file_dirs['write_file_dir']}/new_file.txt"
+from dagster._core.definitions.resource_output import Injected
+
+
+class FileDirs(Resource):
+    write_file_dir: str
+    count_file_dir: str
+
+
+@op
+def write_file(context, file_dirs: FileDirs):
+    filename = f"{file_dirs.write_file_dir}/new_file.txt"
     open(filename, "x", encoding="utf8").close()
 
     context.log.info(f"Created file: {filename}")
 
 
-@op(required_resource_keys={"file_dirs"})
-def total_num_files(context):
-    files_in_dir = os.listdir(context.resources.file_dirs["count_file_dir"])
+@op
+def total_num_files(context, file_dirs: FileDirs):
+    files_in_dir = os.listdir(file_dirs.count_file_dir)
     context.log.info(f"Total number of files: {len(files_in_dir)}")
 
 
-@job(
-    resource_defs={
-        "file_dirs": make_values_resource(write_file_dir=str, count_file_dir=str)
-    }
-)
+@job(resource_defs={"file_dirs": FileDirs.configure_at_launch()})
 def file_dirs_job():
     write_file()
     total_num_files()
