@@ -34,8 +34,8 @@ setup(
     packages=find_packages(exclude=["dagster_databricks_tests*"]),
     include_package_data=True,
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-pyspark{pin}",
+        "dagster==1.1.15",
+        "dagster-pyspark==0.17.15",
         "databricks_api",
     ],
     zip_safe=False,
