@@ -65,7 +65,7 @@ export type ScheduledRunsListQuery = {
             };
             futureTicks: {
               __typename: 'DryRunInstigationTicks';
-              results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
+              results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
             };
           }>;
         }>;

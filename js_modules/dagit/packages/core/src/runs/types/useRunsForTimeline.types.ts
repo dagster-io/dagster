@@ -94,7 +94,10 @@ export type RunTimelineQuery = {
                     };
                     futureTicks: {
                       __typename: 'DryRunInstigationTicks';
-                      results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
+                      results: Array<{
+                        __typename: 'DryRunInstigationTick';
+                        timestamp: number | null;
+                      }>;
                     };
                   }>;
                 }>;

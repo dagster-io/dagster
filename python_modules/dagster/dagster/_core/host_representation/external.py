@@ -20,7 +20,12 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
+from dagster._core.definitions.selector import (
+    InstigatorSelector,
+    RepositorySelector,
+    ScheduleSelector,
+    SensorSelector,
+)
 from dagster._core.definitions.sensor_definition import (
     DEFAULT_SENSOR_DAEMON_INTERVAL,
     DefaultSensorStatus,
@@ -572,6 +577,14 @@ class ExternalSchedule:
         )
 
     @property
+    def schedule_selector(self) -> ScheduleSelector:
+        return ScheduleSelector(
+            self.handle.location_name,
+            self.handle.repository_name,
+            self._external_schedule_data.name,
+        )
+
+    @property
     def selector_id(self) -> str:
         return create_snapshot_id(self.selector)
 
@@ -692,6 +705,14 @@ class ExternalSensor:
     @property
     def selector(self) -> InstigatorSelector:
         return InstigatorSelector(
+            self.handle.location_name,
+            self.handle.repository_name,
+            self._external_sensor_data.name,
+        )
+
+    @property
+    def sensor_selector(self) -> SensorSelector:
+        return SensorSelector(
             self.handle.location_name,
             self.handle.repository_name,
             self._external_sensor_data.name,

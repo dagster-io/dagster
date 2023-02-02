@@ -122,16 +122,18 @@ class GrapheneSchedule(graphene.ObjectType):
             for _ in range(limit):
                 tick_times.append(next(time_iter).timestamp())
 
+        schedule_selector = self._external_schedule.schedule_selector
         future_ticks = [
-            GrapheneDryRunInstigationTick(self._schedule_state, tick_time)
-            for tick_time in tick_times
+            GrapheneDryRunInstigationTick(schedule_selector, tick_time) for tick_time in tick_times
         ]
 
         new_cursor = tick_times[-1] + 1 if tick_times else cursor
         return GrapheneDryRunInstigationTicks(results=future_ticks, cursor=new_cursor)
 
     def resolve_futureTick(self, _graphene_info, tick_timestamp: int):
-        return GrapheneDryRunInstigationTick(self._schedule_state, float(tick_timestamp))
+        return GrapheneDryRunInstigationTick(
+            self._external_schedule.schedule_selector, float(tick_timestamp)
+        )
 
 
 class GrapheneScheduleOrError(graphene.Union):

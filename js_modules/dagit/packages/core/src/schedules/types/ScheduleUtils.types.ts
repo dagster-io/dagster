@@ -59,7 +59,7 @@ export type ScheduleFragment = {
   };
   futureTicks: {
     __typename: 'DryRunInstigationTicks';
-    results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
+    results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
   };
 };
 
@@ -125,7 +125,7 @@ export type RepositorySchedulesFragment = {
     };
     futureTicks: {
       __typename: 'DryRunInstigationTicks';
-      results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
+      results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
     };
   }>;
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
@@ -211,7 +211,7 @@ export type SchedulesRootQuery = {
           };
           futureTicks: {
             __typename: 'DryRunInstigationTicks';
-            results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
+            results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
           };
         }>;
         displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;

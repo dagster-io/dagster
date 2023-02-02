@@ -918,7 +918,7 @@ export type DisplayableEvent = {
 export type DryRunInstigationTick = {
   __typename: 'DryRunInstigationTick';
   evaluationResult: Maybe<TickEvaluation>;
-  timestamp: Scalars['Float'];
+  timestamp: Maybe<Scalars['Float']>;
 };
 
 export type DryRunInstigationTicks = {
@@ -3532,6 +3532,7 @@ export type TextMetadataEntry = MetadataEntry & {
 
 export type TickEvaluation = {
   __typename: 'TickEvaluation';
+  cursor: Maybe<Scalars['String']>;
   error: Maybe<PythonError>;
   runRequests: Maybe<Array<Maybe<RunRequest>>>;
   skipReason: Maybe<Scalars['String']>;

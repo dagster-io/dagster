@@ -2017,7 +2017,7 @@ type RunLauncher {
 }
 
 type DryRunInstigationTick {
-  timestamp: Float!
+  timestamp: Float
   evaluationResult: TickEvaluation
 }
 
@@ -2025,6 +2025,7 @@ type TickEvaluation {
   runRequests: [RunRequest]
   skipReason: String
   error: PythonError
+  cursor: String
 }
 
 type RunRequest {
