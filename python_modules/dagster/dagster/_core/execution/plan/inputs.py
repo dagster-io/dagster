@@ -462,10 +462,12 @@ class FromStepOutput(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
+        io_manager_key: Optional[str] = None,
     ) -> "InputContext":
-        io_manager_key = step_context.execution_plan.get_manager_key(
-            self.step_output_handle, step_context.pipeline_def
-        )
+        if io_manager_key is None:
+            io_manager_key = step_context.execution_plan.get_manager_key(
+                self.step_output_handle, step_context.pipeline_def
+            )
         resource_config = step_context.resolved_run_config.resources[io_manager_key].config
         resources = build_resources_for_manager(io_manager_key, step_context)
 
@@ -519,7 +521,9 @@ class FromStepOutput(
                     f'"{manager_key}" is an IOManager.'
                 ),
             )
-        load_input_context = self.get_load_context(step_context, input_def)
+        load_input_context = self.get_load_context(
+            step_context, input_def, io_manager_key=manager_key
+        )
         yield from _load_input_with_input_manager(input_manager, load_input_context)
 
         metadata_entries = load_input_context.consume_metadata_entries()
