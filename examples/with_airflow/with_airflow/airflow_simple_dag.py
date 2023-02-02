@@ -11,7 +11,7 @@ args = {
     "start_date": days_ago(2),
 }
 
-simple_dag = models.DAG(dag_id="simple_dag", default_args=args, schedule_interval="* * * * *")
+simple_dag = models.DAG(dag_id="simple_dag", default_args=args, schedule_interval="0 0 * * *")
 
 run_this_last = DummyOperator(
     task_id="sink_task_foo",
