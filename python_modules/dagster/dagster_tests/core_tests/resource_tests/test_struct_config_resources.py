@@ -21,7 +21,7 @@ from dagster._config.structured_config import (
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.resource_output import ResourceOutput
+from dagster._core.definitions.resource_output import Injected
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
@@ -200,7 +200,7 @@ def test_yield_in_resource_function():
 
     @op
     def check_resource_created(
-        resource_with_cleanup_1: ResourceOutput[bool], resource_with_cleanup_2: ResourceOutput[bool]
+        resource_with_cleanup_1: Injected[bool], resource_with_cleanup_2: Injected[bool]
     ):
         assert resource_with_cleanup_1 is True
         assert resource_with_cleanup_2 is True
@@ -240,7 +240,7 @@ def test_wrapping_function_resource():
             return writer_resource
 
     @op
-    def hello_world_op(writer: ResourceOutput[Callable[[str], None]]):
+    def hello_world_op(writer: Injected[Callable[[str], None]]):
         writer("hello, world!")
 
     @job(resource_defs={"writer": WriterResource(prefix="")})
