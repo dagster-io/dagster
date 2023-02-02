@@ -42,7 +42,6 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
 from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
 from .pipeline_definition import PipelineDefinition
 from .sensor_definition import (
     DefaultSensorStatus,
@@ -54,8 +53,8 @@ from .sensor_definition import (
     SkipReason,
     has_at_least_one_parameter,
 )
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .target import ExecutableDefinition
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.selector import (
@@ -275,8 +274,8 @@ def run_failure_sensor(
     ] = None,
     monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    request_job: Optional[ExecutableDefinition] = None,
+    request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
 ) -> Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]:
     ...
 
@@ -311,8 +310,8 @@ def run_failure_sensor(
     ] = None,
     monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    request_job: Optional[ExecutableDefinition] = None,
+    request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
 ) -> Union[SensorDefinition, Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]]:
     """
     Creates a sensor that reacts to job failure events, where the decorated function will be
@@ -339,9 +338,9 @@ def run_failure_sensor(
             when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
+        request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): The job a RunRequest should
             execute if yielded from the sensor.
-        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
 
@@ -430,8 +429,8 @@ class RunStatusSensorDefinition(SensorDefinition):
         ] = None,
         monitor_all_repositories: bool = False,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-        request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        request_job: Optional[ExecutableDefinition] = None,
+        request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     ):
         from dagster._core.definitions.selector import (
             CodeLocationSelector,
