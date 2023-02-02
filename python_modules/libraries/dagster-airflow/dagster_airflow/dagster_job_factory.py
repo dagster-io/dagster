@@ -407,8 +407,8 @@ def load_assets_from_airflow_dag(
         partitions_def=TimeWindowPartitionsDefinition(
             cron_schedule=cron_schedule,
             timezone=dag.timezone.name,
-            start=start_date.strftime("%Y-%m-%d"),
-            fmt="%Y-%m-%d",
+            start=start_date.strftime("%Y-%m-%dT%H:%M:%S"),
+            fmt="%Y-%m-%dT%H:%M:%S",
         )
         if cron_schedule is not None
         else None,
