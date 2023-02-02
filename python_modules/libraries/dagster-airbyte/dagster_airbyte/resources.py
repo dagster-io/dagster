@@ -174,7 +174,7 @@ class AirbyteResource:
     def get_source_definition_by_name(self, name: str) -> Optional[str]:
         name_lower = name.lower()
         definitions = self.make_request_cached(
-            endpoint="/source_definitions/list"
+            endpoint="/source_definitions/list", data={}
         )
 
         return next(
@@ -192,7 +192,7 @@ class AirbyteResource:
             Dict[str, List[Dict[str, str]]],
             check.not_none(
                 self.make_request_cached(
-                    endpoint="/destination_definitions/list"
+                    endpoint="/destination_definitions/list", data={}
                 )
             ),
         )
