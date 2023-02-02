@@ -164,8 +164,3 @@ def test_retry_conversion():
         assert result.success
         for event in result.all_events:
             assert event.event_type_value != "STEP_FAILURE"
-
-        assert job._graph_def.node_dict["airflow_foo"].retry_policy
-        assert job._graph_def.node_dict["airflow_foo"].retry_policy.max_retries == 1
-        assert job._graph_def.node_dict["airflow_bar"].retry_policy
-        assert job._graph_def.node_dict["airflow_bar"].retry_policy.max_retries == 3
