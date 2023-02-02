@@ -29,20 +29,20 @@ def upgrade():
                 autoincrement=True,
             ),
             db.Column("partitions_def_name", db.Text, nullable=False),
-            db.Column("partition_key", db.Text, nullable=False),
+            db.Column("partition", db.Text, nullable=False),
             db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
         )
         op.create_index(
-            "idx_mutable_partition_keys",
+            "idx_mutable_partitions",
             "mutable_partitions",
-            ["partitions_def_name", "partition_key"],
-            mysql_length={"partitions_def_name": 64, "partition_key": 64},
+            ["partitions_def_name", "partition"],
+            mysql_length={"partitions_def_name": 64, "partition": 64},
             unique=True,
         )
 
 
 def downgrade():
-    if has_index("mutable_partitions", "idx_mutable_partition_keys"):
+    if has_index("mutable_partitions", "idx_mutable_partitions"):
         op.drop_index("idx_mutable_partition_keys", "mutable_partitions")
 
     if has_table("mutable_partitions"):

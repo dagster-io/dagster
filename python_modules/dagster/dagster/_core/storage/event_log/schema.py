@@ -76,7 +76,7 @@ MutablePartitionsTable = db.Table(
     SqlEventLogStorageMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
     db.Column("partitions_def_name", db.Text, nullable=False),
-    db.Column("partition_key", db.Text, nullable=False),
+    db.Column("partition", db.Text, nullable=False),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
@@ -132,8 +132,8 @@ db.Index(
     mysql_length={"asset_key": 64, "dagster_event_type": 64, "partition": 64},
 )
 db.Index(
-    "idx_mutable_partition_keys",
+    "idx_mutable_partitions",
     MutablePartitionsTable.c.partitions_def_name,
-    MutablePartitionsTable.c.partition_key,
-    mysql_length={"partitions_def_name": 64, "partition_key": 64},
+    MutablePartitionsTable.c.partition,
+    mysql_length={"partitions_def_name": 64, "partition": 64},
 )

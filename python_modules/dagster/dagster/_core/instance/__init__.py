@@ -437,7 +437,7 @@ class DagsterInstance:
                 " file which can configure storing metadata in an external database.\nYou can"
                 " resolve this error by exporting the environment variable. For example, you can"
                 " run the following command in your shell or include it in your shell configuration"
-                ' file:\n\texport DAGSTER_HOME=~"/dagster_home"\nor PowerShell\n$env:DAGSTER_HOME'
+                " file:\n\texport DAGSTER_HOME=~\"/dagster_home\"\nor PowerShell\n$env:DAGSTER_HOME"
                 " = ($home + '\\dagster_home')or batchset"
                 " DAGSTER_HOME=%UserProfile%/dagster_homeAlternatively, DagsterInstance.ephemeral()"
                 " can be used for a transient instance.\n"
@@ -449,7 +449,7 @@ class DagsterInstance:
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" must be an absolute path. Dagster requires this '
-                    "environment variable to be set to an existing directory in your filesystem."
+                    'environment variable to be set to an existing directory in your filesystem.'
                 ).format(dagster_home_path)
             )
 
@@ -457,7 +457,7 @@ class DagsterInstance:
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this'
-                    " environment variable to be set to an existing directory in your filesystem"
+                    ' environment variable to be set to an existing directory in your filesystem'
                 ).format(dagster_home_path)
             )
 
@@ -1095,8 +1095,8 @@ class DagsterInstance:
             execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id,
             (
                 "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
-                '"{ep_pipeline_snapshot_id}" and snapshot_id created in memory is '
-                '"{pipeline_snapshot_id}"'
+                "\"{ep_pipeline_snapshot_id}\" and snapshot_id created in memory is "
+                "\"{pipeline_snapshot_id}\""
             ).format(
                 ep_pipeline_snapshot_id=execution_plan_snapshot.pipeline_snapshot_id,
                 pipeline_snapshot_id=pipeline_snapshot_id,
@@ -1686,7 +1686,7 @@ class DagsterInstance:
     @traced
     def get_mutable_partitions(self, partitions_def_name: str) -> Sequence[str]:
         check.str_param(partitions_def_name, "partitions_def_name")
-        return self._event_storage.get_partitions(partitions_def_name)
+        return self._event_storage.get_mutable_partitions(partitions_def_name)
 
     @traced
     def add_mutable_partitions(
@@ -1694,19 +1694,19 @@ class DagsterInstance:
     ) -> None:
         check.str_param(partitions_def_name, "partitions_def_name")
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
-        return self._event_storage.add_partitions(partitions_def_name, partition_keys)
+        return self._event_storage.add_mutable_partitions(partitions_def_name, partition_keys)
 
     @traced
     def delete_mutable_partition(self, partitions_def_name: str, partition_key: str) -> None:
         check.str_param(partitions_def_name, "partitions_def_name")
         check.sequence_param(partition_key, "partition_key", of_type=str)
-        self._event_storage.delete_partition(partitions_def_name, partition_key)
+        self._event_storage.delete_mutable_partition(partitions_def_name, partition_key)
 
     @traced
     def has_mutable_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         check.str_param(partitions_def_name, "partitions_def_name")
         check.str_param(partition_key, "partition_key")
-        return self._event_storage.has_partition(partitions_def_name, partition_key)
+        return self._event_storage.has_mutable_partition(partitions_def_name, partition_key)
 
     # event subscriptions
 

@@ -2896,35 +2896,35 @@ class TestEventLogStorage:
     def test_add_mutable_partitions(self, storage):
         assert storage
 
-        storage.add_partitions(partitions_def_name="foo", partition_keys=["foo", "bar", "baz"])
-        assert set(storage.get_partitions("foo")) == {"foo", "bar", "baz"}
+        storage.add_mutable_partitions(partitions_def_name="foo", partition_keys=["foo", "bar", "baz"])
+        assert set(storage.get_mutable_partitions("foo")) == {"foo", "bar", "baz"}
 
         # Test for idempotency
-        storage.add_partitions(partitions_def_name="foo", partition_keys=["foo"])
-        assert set(storage.get_partitions("foo")) == {"foo", "bar", "baz"}
+        storage.add_mutable_partitions(partitions_def_name="foo", partition_keys=["foo"])
+        assert set(storage.get_mutable_partitions("foo")) == {"foo", "bar", "baz"}
 
-        assert set(storage.get_partitions("baz")) == set()
+        assert set(storage.get_mutable_partitions("baz")) == set()
 
     def test_delete_mutable_partitions(self, storage):
         assert storage
 
-        storage.add_partitions(partitions_def_name="foo", partition_keys=["foo", "bar", "baz"])
-        assert set(storage.get_partitions("foo")) == {"foo", "bar", "baz"}
+        storage.add_mutable_partitions(partitions_def_name="foo", partition_keys=["foo", "bar", "baz"])
+        assert set(storage.get_mutable_partitions("foo")) == {"foo", "bar", "baz"}
 
-        storage.delete_partition(partitions_def_name="foo", partition_key="foo")
-        assert set(storage.get_partitions("foo")) == {"bar", "baz"}
+        storage.delete_mutable_partition(partitions_def_name="foo", partition_key="foo")
+        assert set(storage.get_mutable_partitions("foo")) == {"bar", "baz"}
 
         # Test for idempotency
-        storage.delete_partition(partitions_def_name="foo", partition_key="foo")
-        assert set(storage.get_partitions("foo")) == {"bar", "baz"}
+        storage.delete_mutable_partition(partitions_def_name="foo", partition_key="foo")
+        assert set(storage.get_mutable_partitions("foo")) == {"bar", "baz"}
 
-        storage.delete_partition(partitions_def_name="bar", partition_key="foo")
-        assert set(storage.get_partitions("baz")) == set()
+        storage.delete_mutable_partition(partitions_def_name="bar", partition_key="foo")
+        assert set(storage.get_mutable_partitions("baz")) == set()
 
     def test_has_mutable_partition(self, storage):
         assert storage
 
-        storage.add_partitions(partitions_def_name="foo", partition_keys=["foo", "bar", "baz"])
-        assert storage.has_partition(partitions_def_name="foo", partition_key="foo")
-        assert not storage.has_partition(partitions_def_name="foo", partition_key="qux")
-        assert not storage.has_partition(partitions_def_name="bar", partition_key="foo")
+        storage.add_mutable_partitions(partitions_def_name="foo", partition_keys=["foo", "bar", "baz"])
+        assert storage.has_mutable_partition(partitions_def_name="foo", partition_key="foo")
+        assert not storage.has_mutable_partition(partitions_def_name="foo", partition_key="qux")
+        assert not storage.has_mutable_partition(partitions_def_name="bar", partition_key="foo")

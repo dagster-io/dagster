@@ -1665,7 +1665,7 @@ class SqlEventLogStorage(EventLogStorage):
     def _fetch_partition_keys_for_partition_def(self, partitions_def_name: str) -> Sequence[str]:
         columns = [
             MutablePartitionsTable.c.partitions_def_name,
-            MutablePartitionsTable.c.partition_key,
+            MutablePartitionsTable.c.partition,
         ]
         query = db.select(columns).where(
             MutablePartitionsTable.c.partitions_def_name == partitions_def_name
@@ -1675,23 +1675,25 @@ class SqlEventLogStorage(EventLogStorage):
 
         return [row[1] for row in rows]
 
-    def get_partitions(self, partitions_def_name: str) -> Sequence[str]:
+    def get_mutable_partitions(self, partitions_def_name: str) -> Sequence[str]:
         """Get the list of partition keys for a partition definition."""
         self._check_partitions_table()
         return self._fetch_partition_keys_for_partition_def(partitions_def_name)
 
-    def has_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+    def has_mutable_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         self._check_partitions_table()
         return partition_key in self._fetch_partition_keys_for_partition_def(partitions_def_name)
 
-    def add_partitions(self, partitions_def_name: str, partition_keys: Sequence[str]) -> None:
+    def add_mutable_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
         if isinstance(partition_keys, str):
             # Guard against a single string being passed in `partition_keys`
             raise DagsterInvalidInvocationError("partition_keys must be a sequence of strings")
         check.sequence_param(partition_keys, "partition_keys")
 
         self._check_partitions_table()
-        existing_partitions = set(self.get_partitions(partitions_def_name))
+        existing_partitions = set(self.get_mutable_partitions(partitions_def_name))
 
         new_keys = list(set(partition_keys) - existing_partitions)
         if new_keys:
@@ -1699,19 +1701,19 @@ class SqlEventLogStorage(EventLogStorage):
                 conn.execute(
                     MutablePartitionsTable.insert(),
                     [
-                        dict(partitions_def_name=partitions_def_name, partition_key=partition_key)
+                        dict(partitions_def_name=partitions_def_name, partition=partition_key)
                         for partition_key in new_keys
                     ],
                 )
 
-    def delete_partition(self, partitions_def_name: str, partition_key: str) -> None:
+    def delete_mutable_partition(self, partitions_def_name: str, partition_key: str) -> None:
         self._check_partitions_table()
         with self.index_connection() as conn:
             conn.execute(
                 MutablePartitionsTable.delete().where(
                     db.and_(
                         MutablePartitionsTable.c.partitions_def_name == partitions_def_name,
-                        MutablePartitionsTable.c.partition_key == partition_key,
+                        MutablePartitionsTable.c.partition == partition_key,
                     )
                 )
             )

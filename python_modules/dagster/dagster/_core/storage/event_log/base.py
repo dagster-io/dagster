@@ -368,23 +368,25 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
-    def get_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        """Get the list of partition keys for a partition definition."""
+    def get_mutable_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        """Get the list of partition keys for a mutable partition definition."""
         raise NotImplementedError()
 
     @abstractmethod
-    def has_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        """Check if a partition exists."""
+    def has_mutable_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        """Check if a mutable partition exists."""
         raise NotImplementedError()
 
     @abstractmethod
-    def add_partitions(self, partitions_def_name: str, partition_keys: Sequence[str]) -> None:
-        """Add a partition for the specified partition definition."""
+    def add_mutable_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        """Add a partition for the specified mutable partition definition."""
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_partition(self, partitions_def_name: str, partition_key: str) -> None:
-        """Delete a partition for the specified partition definition."""
+    def delete_mutable_partition(self, partitions_def_name: str, partition_key: str) -> None:
+        """Delete a partition for the specified mutable partition definition."""
         raise NotImplementedError()
 
     def alembic_version(self):
