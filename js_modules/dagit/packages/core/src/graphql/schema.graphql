@@ -2872,13 +2872,7 @@ enum ReexecutionStrategy {
   ALL_STEPS
 }
 
-union SensorDryRunResult = SensorExecutionData | PythonError | SensorNotFoundError
-
-type SensorExecutionData {
-  cursor: String
-  runRequests: [RunRequest]
-  skipMessage: String
-}
+union SensorDryRunResult = PythonError | SensorNotFoundError | DryRunInstigationTick
 
 union AssetWipeMutationResult =
     AssetNotFoundError
