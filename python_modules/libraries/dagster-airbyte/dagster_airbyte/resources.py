@@ -171,10 +171,10 @@ class AirbyteResource:
         )
         return workspaces[0]["workspaceId"]
 
-    def get_source_definition_by_name(self, name: str, workspace_id: str) -> Optional[str]:
+    def get_source_definition_by_name(self, name: str) -> Optional[str]:
         name_lower = name.lower()
         definitions = self.make_request_cached(
-            endpoint="/source_definitions/list_for_workspace", data={"workspaceId": workspace_id}
+            endpoint="/source_definitions/list", data={}
         )
 
         return next(
@@ -186,14 +186,13 @@ class AirbyteResource:
             None,
         )
 
-    def get_destination_definition_by_name(self, name: str, workspace_id: str):
+    def get_destination_definition_by_name(self, name: str):
         name_lower = name.lower()
         definitions = cast(
             Dict[str, List[Dict[str, str]]],
             check.not_none(
                 self.make_request_cached(
-                    endpoint="/destination_definitions/list_for_workspace",
-                    data={"workspaceId": workspace_id},
+                    endpoint="/destination_definitions/list", data={}
                 )
             ),
         )
