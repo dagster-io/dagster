@@ -20,7 +20,7 @@ from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWindowPartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import DagsterInstance, MutablePartitionsStore
 
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition
@@ -380,7 +380,9 @@ class InputContext:
                 "Tried to access asset_partition_key_range, but the asset is not partitioned.",
             )
 
-        partition_key_ranges = subset.get_partition_key_ranges(instance=self.instance)
+        partition_key_ranges = subset.get_partition_key_ranges(
+            mutable_partitions_store=self.instance
+        )
         if len(partition_key_ranges) != 1:
             check.failed(
                 (
@@ -623,7 +625,7 @@ def build_input_context(
     )
     if asset_partitions_def and asset_partition_key_range:
         asset_partitions_subset = asset_partitions_def.empty_subset().with_partition_key_range(
-            asset_partition_key_range, instance=instance
+            asset_partition_key_range, mutable_partitions_store=instance
         )
     elif asset_partition_key_range:
         asset_partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(asset_partition_key_range)
@@ -657,7 +659,9 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         self._key_range = key_range
 
     def get_partition_keys_not_in_subset(
-        self, current_time: Optional[datetime] = None, instance: Optional[DagsterInstance] = None
+        self,
+        current_time: Optional[datetime] = None,
+        mutable_partitions_store: Optional[MutablePartitionsStore] = None,
     ) -> Iterable[str]:
         raise NotImplementedError()
 
@@ -668,7 +672,9 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
             raise NotImplementedError()
 
     def get_partition_key_ranges(
-        self, current_time: Optional[datetime] = None, instance: Optional[DagsterInstance] = None
+        self,
+        current_time: Optional[datetime] = None,
+        mutable_partitions_store: Optional[MutablePartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
         return [self._key_range]
 
@@ -676,7 +682,9 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     def with_partition_key_range(
-        self, partition_key_range: PartitionKeyRange, instance: Optional[DagsterInstance] = None
+        self,
+        partition_key_range: PartitionKeyRange,
+        mutable_partitions_store: Optional[MutablePartitionsStore] = None,
     ) -> "PartitionsSubset":
         raise NotImplementedError()
 

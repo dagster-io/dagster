@@ -22,6 +22,7 @@ from dagster._core.execution.asset_backfill import (
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
 from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._utils import Counter, traced_counter
 
 from dagster_tests.definitions_tests.test_asset_reconciliation_sensor import (
     RunSpec,
@@ -137,7 +138,7 @@ def make_backfill_data(
     some_or_all: str, asset_graph: ExternalAssetGraph, instance: DagsterInstance
 ) -> AssetBackfillData:
     if some_or_all == "all":
-        target_subset = AssetGraphSubset.all(asset_graph, instance=instance)
+        target_subset = AssetGraphSubset.all(asset_graph, mutable_partitions_store=instance)
     elif some_or_all == "some":
         # all partitions downstream of half of the partitions in each partitioned root asset
         root_asset_partitions: Set[AssetKeyPartitionKey] = set()
@@ -145,7 +146,9 @@ def make_backfill_data(
             partitions_def = asset_graph.get_partitions_def(root_asset_key)
 
             if partitions_def is not None:
-                partition_keys = list(partitions_def.get_partition_keys(instance=instance))
+                partition_keys = list(
+                    partitions_def.get_partition_keys(mutable_partitions_store=instance)
+                )
                 start_index = len(partition_keys) // 2
                 chosen_partition_keys = partition_keys[start_index:]
                 root_asset_partitions.update(
@@ -191,6 +194,7 @@ def execute_asset_backfill_iteration_consume_generator(
     asset_graph: ExternalAssetGraph,
     instance: DagsterInstance,
 ) -> AssetBackfillIterationResult:
+    traced_counter.set(Counter())
     for result in execute_asset_backfill_iteration_inner(
         backfill_id=backfill_id,
         asset_backfill_data=asset_backfill_data,
@@ -198,6 +202,8 @@ def execute_asset_backfill_iteration_consume_generator(
         asset_graph=asset_graph,
     ):
         if isinstance(result, AssetBackfillIterationResult):
+            counts = traced_counter.get().counts()
+            assert counts.get("DagsterInstance.get_mutable_partitions", 0) <= 1
             return result
 
     assert False

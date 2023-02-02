@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import DagsterInstance, MutablePartitionsStore
 
 from .partition import (
     Partition,
@@ -41,14 +41,21 @@ class MutablePartitionsDefinition(PartitionsDefinition):
         return f"Mutable partitions definition {self._name}"
 
     def get_partitions(
-        self, current_time: Optional[datetime] = None, instance: Optional[DagsterInstance] = None
+        self,
+        current_time: Optional[datetime] = None,
+        mutable_partitions_store: Optional[MutablePartitionsStore] = None,
     ) -> Sequence[Partition[str]]:
-        check.opt_inst_param(instance, "instance", DagsterInstance)
+        check.opt_inst_param(
+            mutable_partitions_store, "mutable_partitions_store", MutablePartitionsStore
+        )
 
-        if instance is None:
-            check.failed("Must provide a dagster instance to fetch mutable partitions")
+        if mutable_partitions_store is None:
+            check.failed(
+                "Must provide a dagster instance object or mutable partitions store to fetch"
+                " mutable partitions"
+            )
 
-        keys = instance.get_mutable_partitions(self._name)
+        keys = mutable_partitions_store.get_mutable_partitions(self._name)
         return [Partition(key) for key in keys]
 
     def add_partitions(self, partition_keys: Sequence[str], instance: DagsterInstance) -> None:

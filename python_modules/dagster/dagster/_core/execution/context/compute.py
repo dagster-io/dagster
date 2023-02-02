@@ -439,7 +439,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """Returns a list of the partition keys for the given output."""
         return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
             self._step_execution_context.asset_partition_key_range_for_output(output_name),
-            instance=self.instance,
+            mutable_partitions_store=self.instance,
         )
 
     @public
@@ -449,7 +449,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self.asset_partitions_def_for_input(input_name).get_partition_keys_in_range(
             self._step_execution_context.asset_partition_key_range_for_input(input_name),
-            instance=self.instance,
+            mutable_partitions_store=self.instance,
         )
 
     @public

@@ -16,11 +16,14 @@ def test_mutable_partitions_def_methods():
     foo = MutablePartitionsDefinition("foo")
     with instance_for_test() as instance:
         foo.add_partitions(["a", "b"], instance=instance)
-        assert set([p.name for p in foo.get_partitions(instance=instance)]) == {"a", "b"}
+        assert set([p.name for p in foo.get_partitions(mutable_partitions_store=instance)]) == {
+            "a",
+            "b",
+        }
         assert foo.has_partition("a", instance=instance)
 
         foo.delete_partition("a", instance=instance)
-        assert set([p.name for p in foo.get_partitions(instance=instance)]) == {"b"}
+        assert set([p.name for p in foo.get_partitions(mutable_partitions_store=instance)]) == {"b"}
         assert foo.has_partition("a", instance=instance) is False
 
 
@@ -36,7 +39,7 @@ def test_mutable_partitioned_run():
             materialize([my_asset], instance=instance, partition_key="a")
 
         partitions_def.add_partitions(["a"], instance)
-        assert partitions_def.get_partition_keys(instance=instance) == ["a"]
+        assert partitions_def.get_partition_keys(mutable_partitions_store=instance) == ["a"]
         assert materialize([my_asset], instance=instance, partition_key="a").success
         materialization = instance.get_latest_materialization_event(AssetKey("my_asset"))
         assert materialization

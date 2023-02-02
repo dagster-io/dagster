@@ -23,12 +23,14 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Protocol,
     Sequence,
     Set,
     Tuple,
     TypeVar,
     Union,
     cast,
+    runtime_checkable,
 )
 
 import yaml
@@ -236,7 +238,13 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
         self._instance_weakref = weakref.ref(instance)
 
 
-class DagsterInstance:
+@runtime_checkable
+class MutablePartitionsStore(Protocol):
+    def get_mutable_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self.get_mutable_partitions(partitions_def_name)
+
+
+class DagsterInstance(MutablePartitionsStore):
     """Core abstraction for managing Dagster's access to storage and other resources.
 
     Use DagsterInstance.get() to grab the current DagsterInstance which will load based on

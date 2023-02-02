@@ -4,7 +4,7 @@ from typing import AbstractSet, Any, Dict, Iterable, Mapping, Optional, Set, Uni
 from dagster import _check as check
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import MutablePartitionsStore
 
 from .asset_graph import AssetGraph
 from .events import AssetKey, AssetKeyPartitionKey
@@ -177,7 +177,9 @@ class AssetGraphSubset:
         )
 
     @classmethod
-    def all(cls, asset_graph: AssetGraph, instance: DagsterInstance) -> "AssetGraphSubset":
+    def all(
+        cls, asset_graph: AssetGraph, mutable_partitions_store: MutablePartitionsStore
+    ) -> "AssetGraphSubset":
         partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
         non_partitioned_asset_keys: Set[AssetKey] = set()
 
@@ -187,7 +189,9 @@ class AssetGraphSubset:
                 partitions_subsets_by_asset_key[
                     asset_key
                 ] = partitions_def.empty_subset().with_partition_keys(
-                    partitions_def.get_partition_keys(instance=instance)
+                    partitions_def.get_partition_keys(
+                        mutable_partitions_store=mutable_partitions_store
+                    )
                 )
             else:
                 non_partitioned_asset_keys.add(asset_key)
