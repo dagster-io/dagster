@@ -1,7 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
 import {
+  Alert,
   Box,
+  ButtonLink,
   Colors,
+  Group,
   Heading,
   Page,
   PageHeader,
@@ -14,6 +17,7 @@ import * as React from 'react';
 import {useParams} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -57,24 +61,43 @@ export const ResourceRoot: React.FC<Props> = (props) => {
     variables: {
       resourceSelector,
     },
-    fetchPolicy: 'cache-and-network',
-    partialRefetch: true,
-    notifyOnNetworkStatusChange: true,
   });
 
   return (
-    <Page>
-      <PageHeader
-        title={
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-            <Heading>{resourceName}</Heading>
-          </Box>
-        }
-      />
+    <Page style={{height: '100%', overflow: 'hidden'}}>
+      <PageHeader title={<Heading>{resourceName}</Heading>} />
       <Loading queryResult={queryResult} allowStaleData={true}>
         {({topLevelResourceOrError}) => {
           if (topLevelResourceOrError.__typename !== 'TopLevelResource') {
-            return null;
+            let message: string | null = null;
+            if (topLevelResourceOrError.__typename === 'PythonError') {
+              message = topLevelResourceOrError.message;
+            }
+
+            return (
+              <Alert
+                intent="warning"
+                title={
+                  <Group direction="row" spacing={4}>
+                    <div>Could not load resource.</div>
+                    {message && (
+                      <ButtonLink
+                        color={Colors.Link}
+                        underline="always"
+                        onClick={() => {
+                          showCustomAlert({
+                            title: 'Python error',
+                            body: message,
+                          });
+                        }}
+                      >
+                        View error
+                      </ButtonLink>
+                    )}
+                  </Group>
+                }
+              />
+            );
           }
 
           const configuredValues = Object.fromEntries(
@@ -82,81 +105,88 @@ export const ResourceRoot: React.FC<Props> = (props) => {
           );
 
           return (
-            <SplitPanelContainer
-              identifier="explorer"
-              firstInitialPercent={70}
-              firstMinSize={400}
-              height="calc(100% - 60px)"
-              first={
-                <Table>
-                  <thead>
-                    <tr>
-                      <th style={{width: 120}}>Key</th>
-                      <th style={{width: 90}}>Type</th>
-                      <th style={{width: 90}}>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topLevelResourceOrError.configFields.map((field) => {
-                      const defaultValue = field.defaultValueAsJson;
-                      const actualValue = configuredValues[field.name];
+            <div style={{height: '100%', display: 'flex'}}>
+              <SplitPanelContainer
+                identifier="explorer"
+                firstInitialPercent={70}
+                firstMinSize={400}
+                first={
+                  <Table $monospaceFont={false}>
+                    <thead>
+                      <tr>
+                        <th style={{width: 120}}>Key</th>
+                        <th style={{width: 90}}>Type</th>
+                        <th style={{width: 90}}>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topLevelResourceOrError.configFields.map((field) => {
+                        const defaultValue = field.defaultValueAsJson;
+                        const actualValue =
+                          field.name in configuredValues
+                            ? configuredValues[field.name]
+                            : defaultValue;
 
-                      const isDefault = defaultValue === actualValue;
+                        const isDefault = defaultValue === actualValue;
 
-                      return (
-                        <tr key={field.name}>
-                          <td>
-                            <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
-                              <strong>{field.name}</strong>
-                              <div style={{fontSize: 12, color: Colors.Gray700}}>
-                                {field.description}
-                              </div>
-                            </Box>
-                          </td>
-                          <td>{remapName(field.configTypeKey)}</td>
-                          <td>
-                            <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-                              <Tooltip content={<>Default: {defaultValue}</>} canShow={!isDefault}>
-                                {actualValue}
-                              </Tooltip>
-                              {isDefault && <Tag>Default</Tag>}
-                            </Box>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </Table>
-              }
-              second={
-                <RightInfoPanel>
-                  <RightInfoPanelContent>
-                    <Box
-                      flex={{gap: 4, direction: 'column'}}
-                      margin={{left: 24, right: 12, vertical: 16}}
-                    >
-                      <Heading>{resourceName}</Heading>
-                    </Box>
-
-                    <SidebarSection title="Definition">
-                      <Box padding={{vertical: 16, horizontal: 24}}>
-                        <Tag icon="resource">
-                          Resource in{' '}
-                          <RepositoryLink repoAddress={repoAddress} showRefresh={false} />
-                        </Tag>
+                        return (
+                          <tr key={field.name}>
+                            <td>
+                              <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
+                                <strong>{field.name}</strong>
+                                <div style={{fontSize: 12, color: Colors.Gray700}}>
+                                  {field.description}
+                                </div>
+                              </Box>
+                            </td>
+                            <td>{remapName(field.configTypeKey)}</td>
+                            <td>
+                              <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                                <Tooltip
+                                  content={<>Default: {defaultValue}</>}
+                                  canShow={!isDefault}
+                                >
+                                  {actualValue}
+                                </Tooltip>
+                                {isDefault && <Tag>Default</Tag>}
+                              </Box>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
+                }
+                second={
+                  <RightInfoPanel>
+                    <RightInfoPanelContent>
+                      <Box
+                        flex={{gap: 4, direction: 'column'}}
+                        margin={{left: 24, right: 12, vertical: 16}}
+                      >
+                        <Heading>{resourceName}</Heading>
                       </Box>
-                    </SidebarSection>
-                    {topLevelResourceOrError.description ? (
-                      <SidebarSection title="Description">
+
+                      <SidebarSection title="Definition">
                         <Box padding={{vertical: 16, horizontal: 24}}>
-                          {topLevelResourceOrError.description}
+                          <Tag icon="resource">
+                            Resource in{' '}
+                            <RepositoryLink repoAddress={repoAddress} showRefresh={false} />
+                          </Tag>
                         </Box>
                       </SidebarSection>
-                    ) : null}
-                  </RightInfoPanelContent>
-                </RightInfoPanel>
-              }
-            />
+                      {topLevelResourceOrError.description ? (
+                        <SidebarSection title="Description">
+                          <Box padding={{vertical: 16, horizontal: 24}}>
+                            {topLevelResourceOrError.description}
+                          </Box>
+                        </SidebarSection>
+                      ) : null}
+                    </RightInfoPanelContent>
+                  </RightInfoPanel>
+                }
+              />
+            </div>
           );
         }}
       </Loading>
@@ -165,9 +195,6 @@ export const ResourceRoot: React.FC<Props> = (props) => {
 };
 
 export const RightInfoPanel = styled.div`
-  // Fixes major perofmance hit. To reproduce, add enough content to
-  // the sidebar that it scrolls (via overflow-y below) and then try
-  // to pan the DAG.
   position: relative;
 
   height: 100%;
