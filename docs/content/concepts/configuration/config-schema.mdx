@@ -186,27 +186,28 @@ A common use case for configuration is passing secrets to connect to external se
 
 ```python file=/concepts/configuration/env_vars_config.py startafter=start_database_example endbefore=end_database_example
 from dagster import StringSource, job, op, resource
+from dagster._config.field_utils import EnvVar
+from dagster._config.structured_config import Resource
 
 
-@resource(config_schema={"username": StringSource, "password": StringSource})
-def database_client(context):
-    username = context.resource_config["username"]
-    password = context.resource_config["password"]
-    ...
+class DatabaseClient(Resource):
+    username: str
+    password: str
+
+    def execute_query(self, query):
+        ...
 
 
-@op(required_resource_keys={"database"})
-def get_one(context):
-    context.resources.database.execute_query("SELECT 1")
+@op
+def get_one(database: DatabaseClient):
+    database.execute_query("SELECT 1")
 
 
 @job(
     resource_defs={
-        "database": database_client.configured(
-            {
-                "username": {"env": "SYSTEM_USER"},
-                "password": {"env": "SYSTEM_PASSWORD"},
-            }
+        "database": DatabaseClient(
+            username=EnvVar("DATABASE_USERNAME"),
+            password=EnvVar("DATABASE_PASSWORD"),
         )
     }
 )
@@ -231,17 +232,21 @@ If you want multiple ops to share values, You can use <PyObject module="dagster"
 It defaults to <PyObject module="dagster" object="Any" /> type, meaning Dagster will accept any config value provided for the resource:
 
 ```python file=/concepts/configuration/make_values_resource_any.py startafter=start_file_example endbefore=end_file_example
-@op(required_resource_keys={"file_dir"})
-def add_file(context):
-    filename = f"{context.resources.file_dir}/new_file.txt"
+from dagster._core.definitions.resource_output import ResourceOutput
+
+
+@op
+def add_file(context, file_dir: ResourceOutput[str]):
+    filename = f"{file_dir}/new_file.txt"
     open(filename, "x", encoding="utf8").close()
 
     context.log.info(f"Created file: {filename}")
 
 
-@op(required_resource_keys={"file_dir"})
-def total_num_files(context):
-    files_in_dir = os.listdir(context.resources.file_dir)
+@op
+def total_num_files(context, file_dir: ResourceOutput[str]):
+    files_in_dir = os.listdir(file_dir)
+
     context.log.info(f"Total number of files: {len(files_in_dir)}")
 
 
