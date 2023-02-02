@@ -6,13 +6,13 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     EventRecordsFilter,
+    IOManager,
     MultiPartitionKey,
     StaticPartitionsDefinition,
     asset,
     define_asset_job,
-    repository,
     materialize,
-    IOManager,
+    repository,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
