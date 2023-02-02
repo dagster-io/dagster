@@ -3,7 +3,7 @@
 import datetime
 import subprocess
 import time
-import urllib
+from urllib.parse import urlunparse
 
 import requests
 
@@ -29,7 +29,7 @@ for library in libraries:
 
     if library:
         res_json = requests.get(
-            urllib.parse.urlunparse(
+            urlunparse(
                 (
                     "https",
                     "pypi.org",
