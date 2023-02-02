@@ -1,7 +1,8 @@
 import pandas as pd
 import plotly.express as px
 from dagster import AssetIn, MetadataValue, asset, file_relative_path, define_asset_job
-from dagster_dbt import load_assets_from_dbt_project
+from dagster_dbt import load_assets_from_dbt_project, load_assets_from_dbt_manifest
+import json
 
 
 @asset(key_prefix=["jaffle_shop"], group_name="staging", io_manager_key="duckdb")
@@ -20,10 +21,11 @@ DBT_PROJECT_PATH = file_relative_path(__file__, "../../jaffle_shop")
 DBT_PROFILES = file_relative_path(__file__, "../../jaffle_shop/config")
 
 # if larger project use load_assets_from_dbt_manifest
-# dbt_assets = load_assets_from_dbt_manifest(json.load(DBT_PROJECT_PATH + "manifest.json", encoding="utf8"))
-dbt_assets = load_assets_from_dbt_project(
-    project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
-)
+with open(DBT_PROJECT_PATH + "/target/manifest.json") as f:
+    dbt_assets = load_assets_from_dbt_manifest(json.load(f), key_prefix=["jaffle_shop"])
+# dbt_assets = load_assets_from_dbt_project(
+#     project_dir=DBT_PROJECT_PATH, profiles_dir=DBT_PROFILES, key_prefix=["jaffle_shop"]
+# )
 
 
 @asset(ins={"customers": AssetIn(key_prefix=["jaffle_shop"], input_manager_key="duckdb")}, group_name="staging", io_manager_key="duckdb")
