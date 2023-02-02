@@ -3224,14 +3224,7 @@ export type SensorData = {
   lastTickTimestamp: Maybe<Scalars['Float']>;
 };
 
-export type SensorDryRunResult = PythonError | SensorExecutionData | SensorNotFoundError;
-
-export type SensorExecutionData = {
-  __typename: 'SensorExecutionData';
-  cursor: Maybe<Scalars['String']>;
-  runRequests: Maybe<Array<Maybe<RunRequest>>>;
-  skipMessage: Maybe<Scalars['String']>;
-};
+export type SensorDryRunResult = DryRunInstigationTick | PythonError | SensorNotFoundError;
 
 export type SensorMetadata = {
   __typename: 'SensorMetadata';
