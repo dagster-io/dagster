@@ -9,7 +9,9 @@ from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
 
 from dagster import Definitions
 
-snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()])
+snowflake_io_manager = build_snowflake_io_manager(
+    [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
+)
 
 defs = Definitions(
     assets=[iris_dataset, rose_dataset],

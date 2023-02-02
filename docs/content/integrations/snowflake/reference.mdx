@@ -11,8 +11,8 @@ This reference page provides information for working with [`dagster-snowflake`](
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas)
 - [Using the Snowflake I/O manager with other I/O managers](#using-the-snowflake-io-manager-with-other-io-managers)
-- [Storing and loading PySpark DataFrames in Snowflake]()
-- [Using both Pandas and PySpark DataFrames with Snowflake]()
+- [Storing and loading PySpark DataFrames in Snowflake](#storing-and-loading-pyspark-dataframes-in-snowflake)
+- [Using both Pandas and PySpark DataFrames with Snowflake](#using-both-pandas-and-pyspark-dataframes-with-snowflake)
 - [Executing custom SQL commands with the Snowflake resource](#executing-custom-sql-commands-with-the-snowflake-resource)
 
 ---
@@ -216,8 +216,27 @@ pip install dagster-snowflake-pyspark
 
 Then you can use the `snowflake_pyspark_io_manager` in your `Definitions` as in [Step 1: Configure the Snowflake I/O manager](/integrations/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-io-manager) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
-```python file=/integrations/snowflake/pyspark.py startafter=start_configuration endbefore=end_configuration
-ENOENT: no such file or directory, open '/Users/jamie/dev/dagster/examples/docs_snippets/docs_snippets/integrations/snowflake/pyspark.py'
+```python file=/integrations/snowflake/pyspark_configuration.py startafter=start_configuration endbefore=end_configuration
+from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
+
+from dagster import Definitions
+
+defs = Definitions(
+    assets=[iris_dataset],
+    resources={
+        "io_manager": snowflake_pyspark_io_manager.configured(
+            {
+                "account": "abc1234.us-east-1",  # required
+                "user": {"env": "SNOWFLAKE_USER"},  # required
+                "password": {"env": "SNOWFLAKE_PASSWORD"},  # required
+                "database": "FLOWERS",  # required
+                "warehouse": "PLANTS",  # required for pyspark
+                "role": "writer",  # optional, defaults to the default role for the account
+                "schema": "IRIS,",  # optional, defaults to PUBLIC
+            }
+        )
+    },
+)
 ```
 
 <Note>
@@ -227,7 +246,8 @@ ENOENT: no such file or directory, open '/Users/jamie/dev/dagster/examples/docs_
 
 The `pyspark_io_manager` requires that a `SparkSession` be active and configured with the [Snowflake connector for Spark](https://docs.snowflake.com/en/user-guide/spark-connector.html). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
 
-With the `spark_resource`:
+<TabGroup>
+<TabItem name="With the spark_resource">
 
 ```python file=/integrations/snowflake/pyspark_with_spark_resource.py
 from dagster_pyspark import pyspark_resource
@@ -280,7 +300,8 @@ defs = Definitions(
 )
 ```
 
-With your own `SparkSession`:
+</TabItem>
+<TabItem name="With your own SparkSession">
 
 ```python file=/integrations/snowflake/pyspark_with_spark_session.py
 from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
@@ -332,6 +353,9 @@ defs = Definitions(
 )
 ```
 
+</TabItem>
+</TabGroup>
+
 ---
 
 ## Using both Pandas and PySpark DataFrames with Snowflake
@@ -339,9 +363,9 @@ defs = Definitions(
 If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in Snowflake, you can construct a Snowflake I/O manager using <PyObject module="dagster_snowflake" object="build_snowflake_io_manager" />:
 
 ```python file=/integrations/snowflake/pandas_and_pyspark.py startafter=start_example endbefore=end_example
+from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
-from dagster_snowflake import build_snowflake_io_manager
 
 from dagster import Definitions
 
