@@ -1,8 +1,6 @@
 import datetime
 import importlib
-import logging
 import os
-import sys
 import tempfile
 from contextlib import contextmanager, nullcontext
 from unittest.mock import patch
@@ -18,7 +16,6 @@ from airflow.models.baseoperator import BaseOperator
 from airflow.models.connection import Connection
 from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
-from airflow.settings import LOG_FORMAT
 from airflow.utils import db
 from dagster import (
     Array,
@@ -38,91 +35,28 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
+from dagster._core.definitions.utils import validate_tags
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
 from dagster._legacy import ModeDefinition, PipelineDefinition
 from dagster._utils.schedules import is_valid_cron_schedule
 
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
+from dagster_airflow.utils import (
+    DagsterAirflowError,
+    contains_duplicate_task_names,
+    create_airflow_connections,
+    normalized_name,
+    replace_airflow_logger_handlers,
+    serialize_connections,
+)
 
 # pylint: disable=no-name-in-module,import-error
 if str(airflow_version) >= "2.0.0":
-    from airflow.utils.session import create_session
     from airflow.utils.state import DagRunState
     from airflow.utils.types import DagRunType
 else:
-    from airflow.utils.db import create_session  # type: ignore  # (airflow 1 compat)
     from airflow.utils.state import State
 # pylint: enable=no-name-in-module,import-error
-
-
-class DagsterAirflowError(Exception):
-    pass
-
-
-if os.name == "nt":
-    import msvcrt  # pylint: disable=import-error
-
-    def portable_lock(fp):
-        fp.seek(0)
-        msvcrt.locking(fp.fileno(), msvcrt.LK_LOCK, 1)
-
-    def portable_unlock(fp):
-        fp.seek(0)
-        msvcrt.locking(fp.fileno(), msvcrt.LK_UNLCK, 1)
-
-else:
-    import fcntl
-
-    def portable_lock(fp):
-        fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
-
-    def portable_unlock(fp):
-        fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
-
-
-class Locker:
-    def __init__(self, lock_file_path="."):
-        self.lock_file_path = lock_file_path
-        self.fp = None
-
-    def __enter__(self):
-        self.fp = open(f"{self.lock_file_path}/lockfile.lck", "w+", encoding="utf-8")
-        portable_lock(self.fp)
-
-    def __exit__(self, _type, value, tb):
-        portable_unlock(self.fp)
-        self.fp.close()
-
-
-def _create_airflow_connections(connections):
-    with create_session() as session:
-        for connection in connections:
-            if session.query(Connection).filter(Connection.conn_id == connection.conn_id).first():
-                logging.info(
-                    f"Could not import connection {connection.conn_id}: connection already exists."
-                )
-                continue
-
-            session.add(connection)
-            session.commit()
-            logging.info(f"Imported connection {connection.conn_id}")
-
-
-def _contains_duplicate_task_names(dag_bag):
-    check.inst_param(dag_bag, "dag_bag", DagBag)
-    seen_task_names = set()
-
-    # To enforce predictable iteration order
-    sorted_dag_ids = sorted(dag_bag.dag_ids)
-    for dag_id in sorted_dag_ids:
-        dag = dag_bag.dags.get(dag_id)
-        for task in dag.tasks:
-            if task.task_id in seen_task_names:
-                return True
-            else:
-                seen_task_names.add(task.task_id)
-    return False
 
 
 def _make_schedules_and_jobs_from_airflow_dag_bag(
@@ -159,7 +93,7 @@ def _make_schedules_and_jobs_from_airflow_dag_bag(
     )
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
 
-    use_unique_id = _contains_duplicate_task_names(dag_bag)
+    use_unique_id = contains_duplicate_task_names(dag_bag)
 
     job_defs = []
     schedule_defs = []
@@ -390,7 +324,7 @@ def make_dagster_repo_from_airflow_dags_path(
     )
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
     # add connections to airflow so that dag evaluation works
-    _create_airflow_connections(connections)
+    create_airflow_connections(connections)
     try:
         dag_bag = DagBag(
             dag_folder=dag_path,
@@ -502,27 +436,7 @@ def make_dagster_pipeline_from_airflow_dag(
         use_ephemeral_airflow_db=use_ephemeral_airflow_db,
     )
 
-    serialized_connections = []
-    for c in connections:
-        serialized_connection = {
-            "conn_id": c.conn_id,
-            "conn_type": c.conn_type,
-        }
-        if hasattr(c, "login") and c.login:
-            serialized_connection["login"] = c.login
-        if hasattr(c, "password") and c.password:
-            serialized_connection["password"] = c.password
-        if hasattr(c, "host") and c.host:
-            serialized_connection["host"] = c.host
-        if hasattr(c, "schema") and c.schema:
-            serialized_connection["schema"] = c.schema
-        if hasattr(c, "port") and c.port:
-            serialized_connection["port"] = c.port
-        if hasattr(c, "extra") and c.extra:
-            serialized_connection["extra"] = c.extra
-        if hasattr(c, "description") and c.description:
-            serialized_connection["description"] = c.description
-        serialized_connections.append(serialized_connection)
+    serialized_connections = serialize_connections(connections)
 
     @resource(
         config_schema={
@@ -550,7 +464,7 @@ def make_dagster_pipeline_from_airflow_dag(
                 importlib.reload(airflow)
             if not airflow_initialized:
                 db.initdb()
-                _create_airflow_connections(
+                create_airflow_connections(
                     [Connection(**c) for c in context.resource_config["connections"]]
                 )
 
@@ -622,17 +536,6 @@ def make_dagster_pipeline_from_airflow_dag(
         tags=tags,
     )
     return pipeline_def
-
-
-# Airflow DAG ids and Task ids allow a larger valid character set (alphanumeric characters,
-# dashes, dots and underscores) than Dagster's naming conventions (alphanumeric characters,
-# underscores), so Dagster will strip invalid characters and replace with '_'
-def normalized_name(name, unique_id=None):
-    base_name = "airflow_" + "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in name)
-    if not unique_id:
-        return base_name
-    else:
-        return base_name + "_" + str(unique_id)
 
 
 def _get_pipeline_definition_args(
@@ -735,21 +638,6 @@ def _traverse_airflow_dag(
                 mock_xcom=mock_xcom,
                 use_ephemeral_airflow_db=use_ephemeral_airflow_db,
             )
-
-
-@contextmanager
-def replace_airflow_logger_handlers():
-    prev_airflow_handlers = logging.getLogger("airflow.task").handlers
-    try:
-        # Redirect airflow handlers to stdout / compute logs
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(logging.Formatter(LOG_FORMAT))
-        root = logging.getLogger("airflow.task")
-        root.handlers = [handler]
-        yield
-    finally:
-        # Restore previous log handlers
-        logging.getLogger("airflow.task").handlers = prev_airflow_handlers
 
 
 @contextmanager
