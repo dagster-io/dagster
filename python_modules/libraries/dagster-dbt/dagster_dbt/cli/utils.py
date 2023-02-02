@@ -197,10 +197,9 @@ def parse_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> 
     """Parses the `target/run_results.json` artifact that is produced by a dbt process."""
     run_results_path = os.path.join(path, target_path, "run_results.json")
     try:
-        with open(run_results_path) as file:
-            print("=" * 80)
-            print(file)
-            print("=" * 80)
+        with open(run_results_path, "rb") as file:
+            bs = file.read()
+            print("FILE BYTES:", bs)
             return json.load(file)
     except FileNotFoundError:
         raise DagsterDbtCliOutputsNotFoundError(path=run_results_path)
