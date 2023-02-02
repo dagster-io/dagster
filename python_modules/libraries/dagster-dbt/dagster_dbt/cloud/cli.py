@@ -67,7 +67,7 @@ def cache_compile_references(
             job_id=job_id,
             cause="Generating software-defined assets for Dagster.",
             steps_override=[dbt_compile_command],
-            generate_docs_override=True,
+            generate_docs_override=dbt_cloud_job.get("generate_docs", False),
         )
 
         # Cache the compile run as a reference in the dbt Cloud job's env var
