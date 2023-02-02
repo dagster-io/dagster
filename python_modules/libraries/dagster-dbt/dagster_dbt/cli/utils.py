@@ -321,7 +321,7 @@ def execute_cli_event_generator(
     for raw_line in process.stdout or []:
         print("--" * 40)
         print("bytes:", raw_line)
-        print("~~" * 40)
+        print(".." * 40)
         line = _decode(raw_line)
         message, json_line = _process_line(line, log, json_log_format, capture_logs)
         messages.append(message)
@@ -334,6 +334,9 @@ def execute_cli_event_generator(
 
 
 def _decode(raw_line: bytes) -> str:
+    s = raw_line.decode("utf-8")
+    print("string:", s)
+    print("~~" * 40)
     return raw_line.decode("utf-8").rstrip()
     try:
         return raw_line.decode("utf-8").strip()
