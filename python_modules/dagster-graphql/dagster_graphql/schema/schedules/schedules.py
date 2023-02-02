@@ -1,6 +1,9 @@
+from typing import Dict, Optional, cast
+
 import dagster._check as check
 import graphene
 from dagster._core.host_representation import ExternalSchedule
+from dagster._core.scheduler.instigation import InstigatorState
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
@@ -42,7 +45,12 @@ class GrapheneSchedule(graphene.ObjectType):
     class Meta:
         name = "Schedule"
 
-    def __init__(self, external_schedule, schedule_state, batch_loader=None):
+    def __init__(
+        self,
+        external_schedule: ExternalSchedule,
+        schedule_state: InstigatorState,
+        batch_loader: Optional[RepositoryScopedBatchLoader] = None,
+    ):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
@@ -71,7 +79,7 @@ class GrapheneSchedule(graphene.ObjectType):
             description=external_schedule.description,
         )
 
-    def resolve_id(self, _graphene_info):
+    def resolve_id(self, _graphene_info: ResolveInfo):
         return self._external_schedule.get_external_origin_id()
 
     def resolve_scheduleState(self, _graphene_info: ResolveInfo):
@@ -96,19 +104,20 @@ class GrapheneSchedule(graphene.ObjectType):
             external_partition_set=external_partition_set,
         )
 
-    def resolve_futureTicks(self, _graphene_info, **kwargs):
-        cursor = kwargs.get(
-            "cursor", get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+    def resolve_futureTicks(self, _graphene_info: ResolveInfo, **kwargs: Dict[str, object]):
+        cursor = cast(
+            float,
+            kwargs.get("cursor", get_timestamp_from_utc_datetime(get_current_datetime_in_utc())),
         )
         tick_times = []
         time_iter = self._external_schedule.execution_time_iterator(cursor)
 
-        until = float(kwargs.get("until")) if kwargs.get("until") else None
+        until = float(cast(str, kwargs.get("until"))) if kwargs.get("until") else None
 
         if until:
             currentTime = None
             while (not currentTime or currentTime < until) and (
-                not kwargs.get("limit") or len(tick_times) < kwargs.get("limit")
+                not kwargs.get("limit") or len(tick_times) < cast(int, kwargs.get("limit"))
             ):
                 try:
                     currentTime = next(time_iter).timestamp()
@@ -117,7 +126,7 @@ class GrapheneSchedule(graphene.ObjectType):
                 except StopIteration:
                     break
         else:
-            limit = kwargs.get("limit", 10)
+            limit = cast(int, kwargs.get("limit", 10))
 
             for _ in range(limit):
                 tick_times.append(next(time_iter).timestamp())
@@ -130,7 +139,7 @@ class GrapheneSchedule(graphene.ObjectType):
         new_cursor = tick_times[-1] + 1 if tick_times else cursor
         return GrapheneDryRunInstigationTicks(results=future_ticks, cursor=new_cursor)
 
-    def resolve_futureTick(self, _graphene_info, tick_timestamp: int):
+    def resolve_futureTick(self, _graphene_info: ResolveInfo, tick_timestamp: int):
         return GrapheneDryRunInstigationTick(
             self._external_schedule.schedule_selector, float(tick_timestamp)
         )
