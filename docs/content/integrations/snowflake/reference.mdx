@@ -232,7 +232,7 @@ defs = Definitions(
                 "database": "FLOWERS",  # required
                 "warehouse": "PLANTS",  # required for pyspark
                 "role": "writer",  # optional, defaults to the default role for the account
-                "schema": "IRIS,",  # optional, defaults to PUBLIC
+                "schema": "IRIS",  # optional, defaults to PUBLIC
             }
         )
     },
@@ -252,13 +252,22 @@ The `pyspark_io_manager` requires that a `SparkSession` be active and configured
 ```python file=/integrations/snowflake/pyspark_with_spark_resource.py
 from dagster_pyspark import pyspark_resource
 from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
-from pyspark.sql import DataFrame, DoubleType, SparkSession, StringType, StructType
+from pyspark.sql import (
+    DataFrame,
+    SparkSession,
+)
+from pyspark import SparkFiles
+
+from pyspark.sql.types import (
+    DoubleType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 from dagster import Definitions, asset
 
-SNOWFLAKE_JARS = (
-    "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
-)
+SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
 
 @asset(required_resource_keys={"pyspark"})
@@ -275,9 +284,10 @@ def iris_dataset(context) -> DataFrame:
         ]
     )
 
-    return spark.read.schema(schema).csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
-    )
+    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+    spark.sparkContext.addFile(url)
+
+    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.data"))
 
 
 defs = Definitions(
@@ -290,7 +300,7 @@ defs = Definitions(
                 "password": {"env": "SNOWFLAKE_PASSWORD"},
                 "database": "FLOWERS",
                 "warehouse": "PLANTS",
-                "schema": "IRIS,",
+                "schema": "IRIS",
             }
         ),
         "pyspark": pyspark_resource.configured(
@@ -305,13 +315,22 @@ defs = Definitions(
 
 ```python file=/integrations/snowflake/pyspark_with_spark_session.py
 from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
-from pyspark.sql import DataFrame, DoubleType, SparkSession, StringType, StructType
+from pyspark.sql import (
+    DataFrame,
+    SparkSession,
+)
+from pyspark import SparkFiles
+
+from pyspark.sql.types import (
+    DoubleType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 from dagster import Definitions, asset
 
-SNOWFLAKE_JARS = (
-    "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
-)
+SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 
 
 @asset
@@ -331,9 +350,10 @@ def iris_dataset() -> DataFrame:
         ]
     )
 
-    return spark.read.schema(schema).csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
-    )
+    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+    spark.sparkContext.addFile(url)
+
+    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.data"))
 
 
 defs = Definitions(
@@ -346,7 +366,7 @@ defs = Definitions(
                 "password": {"env": "SNOWFLAKE_PASSWORD"},
                 "database": "FLOWERS",
                 "warehouse": "PLANTS",
-                "schema": "IRIS,",
+                "schema": "IRIS",
             }
         )
     },
@@ -369,7 +389,9 @@ from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
 
 from dagster import Definitions
 
-snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()])
+snowflake_io_manager = build_snowflake_io_manager(
+    [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
+)
 
 defs = Definitions(
     assets=[iris_dataset, rose_dataset],
@@ -381,6 +403,7 @@ defs = Definitions(
                 "password": {"env": "SNOWFLAKE_PASSWORD"},
                 "database": "FLOWERS",
                 "warehouse": "PLANTS",
+                "schema": "IRIS",
             }
         )
     },

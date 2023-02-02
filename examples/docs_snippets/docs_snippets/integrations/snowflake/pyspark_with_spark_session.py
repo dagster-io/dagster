@@ -1,8 +1,11 @@
 from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
+from pyspark import SparkFiles
 from pyspark.sql import (
     DataFrame,
-    DoubleType,
     SparkSession,
+)
+from pyspark.sql.types import (
+    DoubleType,
     StringType,
     StructField,
     StructType,
@@ -30,9 +33,10 @@ def iris_dataset() -> DataFrame:
         ]
     )
 
-    return spark.read.schema(schema).csv(
-        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
-    )
+    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+    spark.sparkContext.addFile(url)
+
+    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.data"))
 
 
 defs = Definitions(
@@ -45,7 +49,7 @@ defs = Definitions(
                 "password": {"env": "SNOWFLAKE_PASSWORD"},
                 "database": "FLOWERS",
                 "warehouse": "PLANTS",
-                "schema": "IRIS,",
+                "schema": "IRIS",
             }
         )
     },

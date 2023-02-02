@@ -23,6 +23,7 @@ defs = Definitions(
                 "password": {"env": "SNOWFLAKE_PASSWORD"},
                 "database": "FLOWERS",
                 "warehouse": "PLANTS",
+                "schema": "IRIS",
             }
         )
     },

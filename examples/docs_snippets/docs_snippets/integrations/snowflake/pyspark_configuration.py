@@ -17,7 +17,7 @@ defs = Definitions(
                 "database": "FLOWERS",  # required
                 "warehouse": "PLANTS",  # required for pyspark
                 "role": "writer",  # optional, defaults to the default role for the account
-                "schema": "IRIS,",  # optional, defaults to PUBLIC
+                "schema": "IRIS",  # optional, defaults to PUBLIC
             }
         )
     },
