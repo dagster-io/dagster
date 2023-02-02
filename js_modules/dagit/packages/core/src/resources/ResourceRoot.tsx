@@ -62,8 +62,6 @@ export const ResourceRoot: React.FC<Props> = (props) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  console.log(queryResult);
-
   return (
     <Page>
       <PageHeader
