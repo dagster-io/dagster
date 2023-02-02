@@ -451,6 +451,43 @@ def test_input_manager_with_assets_no_default_io_manager():
     )
 
 
+def test_input_manager_with_assets_and_config():
+    """Tests that the correct config is passed to the io manager when using input_manager_key.
+    Fixes a bug when the config for the default io manager was passed to the input_manager_key io manager
+    """
+
+    @asset
+    def upstream() -> int:
+        return 1
+
+    @asset(
+        ins={"upstream": AssetIn(input_manager_key="special_io_manager")},
+        io_manager_key="special_io_manager",
+    )
+    def downstream(upstream) -> int:
+        return upstream + 1
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            assert context.resource_config["foo"] == "bar"
+            assert context.upstream_output is not None
+            assert context.upstream_output.asset_key == AssetKey(["upstream"])
+
+            return 2
+
+        def handle_output(self, context, obj):
+            return None
+
+    @io_manager(config_schema={"foo": str})
+    def my_io_manager():
+        return MyIOManager()
+
+    materialize(
+        [upstream, downstream],
+        resources={"special_io_manager": my_io_manager.configured({"foo": "bar"})},
+    )
+
+
 ##################################################
 # root input manager tests (deprecate in 1.0.0) #
 ##################################################
