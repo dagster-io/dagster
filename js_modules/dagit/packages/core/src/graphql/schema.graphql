@@ -755,7 +755,7 @@ enum PartitionDefinitionType {
   TIME_WINDOW
   STATIC
   MULTIPARTITIONED
-  RUNTIME
+  MUTABLE
 }
 
 type DimensionDefinitionType {
