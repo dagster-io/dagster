@@ -46,6 +46,7 @@ def main(
         "-e python_modules/dagster-test",
         "-e python_modules/dagit",
         "-e python_modules/automation",
+        "-e python_modules/libraries/dagster-managed-elements",
         "-e python_modules/libraries/dagster-airbyte",
         "-e python_modules/libraries/dagster-airflow",
         "-e python_modules/libraries/dagster-aws[test]",
