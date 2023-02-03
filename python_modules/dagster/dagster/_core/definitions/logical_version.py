@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from hashlib import sha256
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Callable, Mapping, NamedTuple, Optional, Union
 
 from typing_extensions import Final
 
@@ -211,16 +211,27 @@ class CachingStaleStatusResolver:
     single "request" (e.g. GQL request, RunRequest resolution).
     """
 
+    _instance: "DagsterInstance"
+    _asset_graph: Optional["ExternalAssetGraph"]
+    _asset_graph_load_fn: Optional[Callable[[], "ExternalAssetGraph"]]
+
     def __init__(
         self,
         instance: "DagsterInstance",
-        asset_graph: "ExternalAssetGraph",
+        asset_graph: Union["ExternalAssetGraph", Callable[[], "ExternalAssetGraph"]],
     ):
+        from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+
         self._instance = instance
-        self._asset_graph = asset_graph
+        if isinstance(asset_graph, ExternalAssetGraph):
+            self._asset_graph = asset_graph
+            self._asset_graph_load_fn = None
+        else:
+            self._asset_graph = None
+            self._asset_graph_load_fn = asset_graph
 
     def get_status(self, key: AssetKey) -> StaleStatus:
-        if self._asset_graph.get_partitions_def(key):
+        if self.asset_graph.get_partitions_def(key):
             return StaleStatus.UNKNOWN
         current_version = self._get_current_logical_version(key=key)
         projected_version = self._get_projected_logical_version(key=key)
@@ -237,9 +248,15 @@ class CachingStaleStatusResolver:
     def get_projected_logical_version(self, key: AssetKey) -> LogicalVersion:
         return self._get_projected_logical_version(key=key)
 
+    @property
+    def asset_graph(self) -> ExternalAssetGraph:
+        if self._asset_graph is None:
+            self._asset_graph = check.not_none(self._asset_graph_load_fn)()
+        return self._asset_graph
+
     @cached_method
     def _get_current_logical_version(self, *, key: AssetKey) -> LogicalVersion:
-        is_source = self._asset_graph.is_source(key)
+        is_source = self.asset_graph.is_source(key)
         event = self._instance.get_latest_logical_version_record(
             key,
             is_source,
@@ -254,7 +271,7 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_projected_logical_version(self, *, key: AssetKey) -> LogicalVersion:
-        if self._asset_graph.is_source(key):
+        if self.asset_graph.is_source(key):
             event = self._instance.get_latest_logical_version_record(key, True)
             if event:
                 version = (
@@ -263,7 +280,7 @@ class CachingStaleStatusResolver:
                 )
             else:
                 version = DEFAULT_LOGICAL_VERSION
-        elif self._asset_graph.get_code_version(key) is not None:
+        elif self.asset_graph.get_code_version(key) is not None:
             version = self._compute_projected_new_materialization_logical_version(key)
         else:
             materialization = self._instance.get_latest_materialization_event(key)
@@ -297,15 +314,15 @@ class CachingStaleStatusResolver:
     def _has_updated_dependencies(
         self, key: AssetKey, provenance: LogicalVersionProvenance
     ) -> bool:
-        curr_dep_keys = self._asset_graph.get_parents(key)
+        curr_dep_keys = self.asset_graph.get_parents(key)
         old_dep_keys = set(provenance.input_logical_versions.keys())
         return curr_dep_keys != old_dep_keys
 
     def _compute_projected_new_materialization_logical_version(
         self, key: AssetKey
     ) -> LogicalVersion:
-        dep_keys = self._asset_graph.get_parents(key)
+        dep_keys = self.asset_graph.get_parents(key)
         return compute_logical_version(
-            self._asset_graph.get_code_version(key) or UNKNOWN_VALUE,
+            self.asset_graph.get_code_version(key) or UNKNOWN_VALUE,
             {dep_key: self._get_projected_logical_version(key=dep_key) for dep_key in dep_keys},
         )

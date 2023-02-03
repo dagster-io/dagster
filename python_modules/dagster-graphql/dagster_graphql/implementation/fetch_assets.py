@@ -169,7 +169,7 @@ def get_asset_nodes_by_asset_key(
 
     stale_status_loader = StaleStatusLoader(
         instance=graphene_info.context.instance,
-        asset_graph=ExternalAssetGraph.from_workspace(graphene_info.context),
+        asset_graph=lambda: ExternalAssetGraph.from_workspace(graphene_info.context),
     )
 
     asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
