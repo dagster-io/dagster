@@ -2,11 +2,9 @@ from typing import Sequence
 
 import dagster._check as check
 import sqlalchemy as db
-import sqlalchemy.dialects.mysql as db_dialects_mysql
 from dagster._core.storage.config import mysql_config
 from dagster._core.storage.event_log import (
     AssetKeyTable,
-    MutablePartitionsTable,
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlPollingEventWatcher,
@@ -166,26 +164,6 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     )
                 except db.exc.IntegrityError:
                     pass
-
-    def add_mutable_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
-    ) -> None:
-        self._check_partitions_table()
-
-        with self.index_connection() as conn:
-            stmt = db_dialects_mysql.insert(MutablePartitionsTable).values(
-                [
-                    dict(partitions_def_name=partitions_def_name, partition=partition_key)
-                    for partition_key in partition_keys
-                ]
-            )
-            stmt = stmt.on_duplicate_key_update(
-                {
-                    "partition": stmt.inserted.partition,
-                    "partitions_def_name": stmt.inserted.partitions_def_name,
-                }
-            )
-            conn.execute(stmt)
 
     def _connect(self):
         return create_mysql_connection(self._engine, __file__, "event log")

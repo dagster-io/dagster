@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Optional
 
 import dagster._check as check
 import sqlalchemy as db
@@ -9,7 +9,6 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.event_log import (
     AssetKeyTable,
-    MutablePartitionsTable,
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
@@ -238,20 +237,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             else:
                 query = query.on_conflict_do_nothing()
             conn.execute(query)
-
-    def add_mutable_partitions(
-        self, partitions_def_name: str, partition_keys: Sequence[str]
-    ) -> None:
-        self._check_partitions_table()
-
-        with self.index_connection() as conn:
-            conn.execute(
-                db_dialects_postgresql.insert(MutablePartitionsTable).on_conflict_do_nothing(),
-                [
-                    dict(partitions_def_name=partitions_def_name, partition=partition_key)
-                    for partition_key in partition_keys
-                ],
-            )
 
     def _connect(self):
         return create_pg_connection(self._engine)

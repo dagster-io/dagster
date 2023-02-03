@@ -1687,7 +1687,26 @@ class SqlEventLogStorage(EventLogStorage):
     def add_mutable_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
-        raise NotImplementedError()
+        self._check_partitions_table()
+        with self.index_connection() as conn:
+            existing_rows = conn.execute(
+                db.select([MutablePartitionsTable.c.partition]).where(
+                    db.and_(
+                        MutablePartitionsTable.c.partition.in_(partition_keys),
+                        MutablePartitionsTable.c.partitions_def_name == partitions_def_name,
+                    )
+                )
+            ).fetchall()
+            new_keys = set(partition_keys) - set([row[0] for row in existing_rows])
+
+            if new_keys:
+                conn.execute(
+                    MutablePartitionsTable.insert(),
+                    [
+                        dict(partitions_def_name=partitions_def_name, partition=partition_key)
+                        for partition_key in new_keys
+                    ],
+                )
 
     def delete_mutable_partition(self, partitions_def_name: str, partition_key: str) -> None:
         self._check_partitions_table()
