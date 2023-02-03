@@ -161,6 +161,10 @@ def execute_cli(
     messages: List[str] = []
     json_lines: List[Mapping[str, Any]] = []
 
+    import sys
+
+    sys.stdout = os.fdopen(sys.stdout.fileno(), "w", 0)
+    os.environ["PYTHONUNBUFFERED"] = "1"
     process = subprocess.Popen(
         command_list,
         stdout=subprocess.PIPE,
@@ -316,6 +320,10 @@ def execute_cli_event_generator(
     )
 
     messages: List[str] = []
+    import sys
+
+    sys.stdout = os.fdopen(sys.stdout.fileno(), "w", 0)
+    os.environ["PYTHONUNBUFFERED"] = "1"
     process = subprocess.Popen(
         command_list,
         stdout=subprocess.PIPE,
