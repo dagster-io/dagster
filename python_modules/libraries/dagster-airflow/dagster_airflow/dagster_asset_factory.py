@@ -1,5 +1,6 @@
 from typing import AbstractSet, List, Mapping, Optional, Set, Tuple
 
+from airflow import __version__ as airflow_version
 from airflow.models.connection import Connection
 from dagster import (
     AssetKey,
@@ -15,6 +16,12 @@ from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_da
 from dagster_airflow.utils import (
     DagsterAirflowError,
 )
+
+# pylint: disable=no-name-in-module,import-error
+if str(airflow_version) >= "2.0.0":
+    pass
+else:
+    pass
 
 
 # pylint: enable=no-name-in-module,import-error
