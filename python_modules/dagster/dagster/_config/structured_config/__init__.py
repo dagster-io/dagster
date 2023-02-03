@@ -43,8 +43,6 @@ from dagster._config.field_utils import (
 from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
-Self = TypeVar("Self", bound="Resource")
-
 
 def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
     """Version of issubclass that returns False if cls is not a Type."""

@@ -1,7 +1,11 @@
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
+from typing_extensions import TypeVar
+
 if TYPE_CHECKING:
-    from dagster._config.structured_config import PartialResource, Self
+    from dagster._config.structured_config import PartialResource
+
+Self = TypeVar("Self", bound="AllowPartialResourceInitParams")
 
 
 class AllowPartialResourceInitParams:
