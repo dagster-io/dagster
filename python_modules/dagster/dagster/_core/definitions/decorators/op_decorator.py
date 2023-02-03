@@ -1,6 +1,6 @@
-from functools import update_wrapper
 import inspect
 import os
+from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Set, Union, overload
 
 import dagster._check as check
