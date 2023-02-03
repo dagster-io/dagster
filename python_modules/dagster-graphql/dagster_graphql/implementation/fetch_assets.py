@@ -38,7 +38,9 @@ from dagster._core.events import ASSET_EVENTS
 from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.instance import MutablePartitionsStore
 from dagster._core.storage.partition_status_cache import (
+    CACHEABLE_PARTITION_TYPES,
     get_and_update_asset_status_cache_values,
     get_materialized_multipartitions,
     get_validated_partition_keys,
@@ -47,6 +49,7 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_graphql.implementation.loader import (
     CrossRepoAssetDependedByLoader,
+    MutablePartitionsLoader,
     StaleStatusLoader,
 )
 
@@ -172,6 +175,8 @@ def get_asset_nodes_by_asset_key(
         asset_graph=lambda: ExternalAssetGraph.from_workspace(graphene_info.context),
     )
 
+    mutable_partitions_loader = MutablePartitionsLoader(graphene_info.context.instance)
+
     asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
     for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
         preexisting_node = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
@@ -182,6 +187,7 @@ def get_asset_nodes_by_asset_key(
                 external_asset_node,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
+                mutable_partitions_loader=mutable_partitions_loader,
             )
 
     return asset_nodes_by_asset_key
@@ -315,6 +321,7 @@ def get_materialized_partitions_subset(
     instance: DagsterInstance,
     asset_key: AssetKey,
     asset_graph: ExternalAssetGraph,
+    mutable_partitions_loader: MutablePartitionsStore,
 ) -> Optional[PartitionsSubset]:
     """
     Returns the materialization status for each partition key. The materialization status
@@ -325,7 +332,7 @@ def get_materialized_partitions_subset(
     if not partitions_def:
         return None
 
-    if instance.can_cache_asset_status_data():
+    if instance.can_cache_asset_status_data() and partitions_def in CACHEABLE_PARTITION_TYPES:
         # When the "cached_status_data" column exists in storage, update the column to contain
         # the latest partition status values
         updated_cache_value = get_and_update_asset_status_cache_values(
@@ -354,7 +361,9 @@ def get_materialized_partitions_subset(
                 if count > 0
             ]
 
-        validated_keys = get_validated_partition_keys(partitions_def, set(materialized_keys))
+        validated_keys = get_validated_partition_keys(
+            mutable_partitions_loader, partitions_def, set(materialized_keys)
+        )
 
         return (
             partitions_def.empty_subset().with_partition_keys(validated_keys)
@@ -364,6 +373,7 @@ def get_materialized_partitions_subset(
 
 
 def build_materialized_partitions(
+    mutable_partitions_store: MutablePartitionsStore,
     materialized_partitions_subset: Optional[PartitionsSubset],
 ) -> Union["GrapheneTimePartitions", "GrapheneDefaultPartitions", "GrapheneMultiPartitions",]:
     from ..schema.pipelines.pipeline import (
@@ -393,17 +403,22 @@ def build_materialized_partitions(
             ]
         )
     elif isinstance(materialized_partitions_subset, MultiPartitionsSubset):  # Multidimensional
-        return get_2d_run_length_encoded_materialized_partitions(materialized_partitions_subset)
+        return get_2d_run_length_encoded_materialized_partitions(
+            mutable_partitions_store, materialized_partitions_subset
+        )
     elif isinstance(materialized_partitions_subset, DefaultPartitionsSubset):
         return GrapheneDefaultPartitions(
             materializedPartitions=materialized_partitions_subset.get_partition_keys(),
-            unmaterializedPartitions=materialized_partitions_subset.get_partition_keys_not_in_subset(),
+            unmaterializedPartitions=materialized_partitions_subset.get_partition_keys_not_in_subset(
+                mutable_partitions_store=mutable_partitions_store
+            ),
         )
     else:
         check.failed("Should not reach this point")
 
 
 def get_2d_run_length_encoded_materialized_partitions(
+    mutable_partitions_store: MutablePartitionsStore,
     partitions_subset: PartitionsSubset,
 ) -> "GrapheneMultiPartitions":
     from ..schema.pipelines.pipeline import (
@@ -465,7 +480,8 @@ def get_2d_run_length_encoded_materialized_partitions(
                         primaryDimStartTime=start_time,
                         primaryDimEndTime=end_time,
                         secondaryDim=build_materialized_partitions(
-                            dim2_partition_subset_by_dim1[start_key]
+                            mutable_partitions_store,
+                            dim2_partition_subset_by_dim1[start_key],
                         ),
                     )
                 )

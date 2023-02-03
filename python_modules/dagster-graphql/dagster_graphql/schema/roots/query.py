@@ -62,6 +62,7 @@ from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.loader import (
     BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
+    MutablePartitionsLoader,
     StaleStatusLoader,
 )
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
@@ -627,6 +628,8 @@ class GrapheneDagitQuery(graphene.ObjectType):
         )
 
         repo = None
+
+        mutable_partitions_loader = MutablePartitionsLoader(graphene_info.context.instance)
         if "group" in kwargs:
             group_name = kwargs["group"].get("groupName")
             repo_sel = RepositorySelector.from_graphql_input(kwargs.get("group"))
@@ -635,7 +638,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
             external_asset_nodes = repo.get_external_asset_nodes()
             results = (
                 [
-                    GrapheneAssetNode(repo_loc, repo, asset_node)
+                    GrapheneAssetNode(
+                        repo_loc,
+                        repo,
+                        asset_node,
+                        mutable_partitions_loader=mutable_partitions_loader,
+                    )
                     for asset_node in external_asset_nodes
                     if asset_node.group_name == group_name
                 ]
@@ -650,7 +658,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
             external_asset_nodes = repo.get_external_asset_nodes(pipeline_name)
             results = (
                 [
-                    GrapheneAssetNode(repo_loc, repo, asset_node)
+                    GrapheneAssetNode(
+                        repo_loc,
+                        repo,
+                        asset_node,
+                        mutable_partitions_loader=mutable_partitions_loader,
+                    )
                     for asset_node in external_asset_nodes
                 ]
                 if external_asset_nodes
@@ -690,6 +703,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 materialization_loader=materialization_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
+                mutable_partitions_loader=mutable_partitions_loader,
             )
             for node in results
         ]

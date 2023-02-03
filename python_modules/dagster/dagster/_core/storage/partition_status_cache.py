@@ -12,12 +12,14 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
+from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
 from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.instance import MutablePartitionsStore
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_dimension_from_partition_tag,
@@ -121,12 +123,25 @@ def get_materialized_multipartitions(
     return materialized_keys
 
 
-def get_validated_partition_keys(partitions_def: PartitionsDefinition, partition_keys: Set[str]):
-    if isinstance(partitions_def, StaticPartitionsDefinition):
-        validated_partitions = set(partitions_def.get_partition_keys()) & partition_keys
+def get_validated_partition_keys(
+    mutable_partitions_store: MutablePartitionsStore,
+    partitions_def: PartitionsDefinition,
+    partition_keys: Set[str],
+):
+    if isinstance(partitions_def, StaticPartitionsDefinition) or isinstance(
+        partitions_def, MutablePartitionsDefinition
+    ):
+        validated_partitions = (
+            set(
+                partitions_def.get_partition_keys(mutable_partitions_store=mutable_partitions_store)
+            )
+            & partition_keys
+        )
     elif isinstance(partitions_def, MultiPartitionsDefinition):
         partition_keys_by_dimension = {
-            dim.name: dim.partitions_def.get_partition_keys()
+            dim.name: dim.partitions_def.get_partition_keys(
+                mutable_partitions_store=mutable_partitions_store
+            )
             for dim in partitions_def.partitions_defs
         }
         validated_partitions = set()
@@ -140,6 +155,8 @@ def get_validated_partition_keys(partitions_def: PartitionsDefinition, partition
             ):
                 validated_partitions.add(partition_key)
     else:
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            check.failed("Unexpected partitions definition type {partitions_def}")
         # Time window partition subset construction will validate the partition keys
         validated_partitions = partition_keys
     return validated_partitions
@@ -176,7 +193,7 @@ def _build_status_cache(
 
     serialized_materialized_partition_subset = (
         serialized_materialized_partition_subset.with_partition_keys(
-            get_validated_partition_keys(partitions_def, set(materialized_keys))
+            get_validated_partition_keys(instance, partitions_def, set(materialized_keys))
         )
     )
 
@@ -240,7 +257,7 @@ def _get_updated_status_cache(
             )
 
     materialized_subset = materialized_subset.with_partition_keys(
-        get_validated_partition_keys(partitions_def, newly_materialized_partitions)
+        get_validated_partition_keys(instance, partitions_def, newly_materialized_partitions)
     )
     return AssetStatusCacheValue(
         latest_storage_id=latest_storage_id,

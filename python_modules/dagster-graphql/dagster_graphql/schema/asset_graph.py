@@ -9,6 +9,7 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.logical_version import (
     NULL_LOGICAL_VERSION,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.host_representation import ExternalRepository, RepositoryLocation
@@ -16,8 +17,8 @@ from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalMultiPartitionsDefinitionData,
-    ExternalPartitionsDefinitionData,
     ExternalMutablePartitionsDefinitionData,
+    ExternalPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
@@ -49,6 +50,7 @@ from ..implementation.fetch_assets import (
 from ..implementation.loader import (
     BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
+    MutablePartitionsLoader,
     StaleStatusLoader,
 )
 from . import external
@@ -230,6 +232,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
         stale_status_loader: Optional[StaleStatusLoader] = None,
+        mutable_partitions_loader: Optional[MutablePartitionsLoader] = None,
     ):
         from ..implementation.fetch_assets import get_unique_asset_id
 
@@ -254,6 +257,9 @@ class GrapheneAssetNode(graphene.ObjectType):
             stale_status_loader,
             "stale_status_loader",
             StaleStatusLoader,
+        )
+        self._mutable_partitions_loader = check.opt_inst_param(
+            mutable_partitions_loader, "mutable_partitions_loader", MutablePartitionsLoader
         )
         self._external_pipeline = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
@@ -328,6 +334,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         check.opt_int_param(start_idx, "start_idx")
         check.opt_int_param(end_idx, "end_idx")
+
+        if not self._mutable_partitions_loader:
+            check.failed("mutable_partitions_loader must be provided to get partition keys")
+
         partitions_def_data = (
             self._external_asset_node.partitions_def_data
             if not partitions_def_data
@@ -353,8 +363,18 @@ class GrapheneAssetNode(graphene.ObjectType):
                 else:
                     return [
                         partition.name
-                        for partition in partitions_def_data.get_partitions_definition().get_partitions()
+                        for partition in partitions_def_data.get_partitions_definition().get_partitions(
+                            mutable_partitions_store=self._mutable_partitions_loader
+                        )
                     ]
+            elif isinstance(partitions_def_data, ExternalMutablePartitionsDefinitionData):
+                return self._mutable_partitions_loader.get_mutable_partitions(
+                    partitions_def_data.name
+                )
+            else:
+                raise DagsterInvariantViolationError(
+                    f"Unsupported partition definition type {partitions_def_data}"
+                )
         return []
 
     def is_multipartitioned(self) -> bool:
@@ -700,19 +720,33 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Union[GrapheneDefaultPartitions, GrapheneTimePartitions, GrapheneMultiPartitions]:
         asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
         asset_key = self._external_asset_node.asset_key
+
+        if not self._mutable_partitions_loader:
+            check.failed("mutable_partitions_loader must be provided to get partition keys")
+
         materialized_partition_subset = get_materialized_partitions_subset(
-            graphene_info.context.instance, asset_key, asset_graph
+            graphene_info.context.instance, asset_key, asset_graph, self._mutable_partitions_loader
         )
 
-        return build_materialized_partitions(materialized_partition_subset)
+        return build_materialized_partitions(
+            self._mutable_partitions_loader,
+            materialized_partition_subset,
+        )
 
     def resolve_partitionStats(self, graphene_info) -> Optional[GraphenePartitionStats]:
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
             asset_key = self._external_asset_node.asset_key
             asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
+
+            if not self._mutable_partitions_loader:
+                check.failed("mutable_partitions_loader must be provided to get partition keys")
+
             materialized_partition_subset = get_materialized_partitions_subset(
-                graphene_info.context.instance, asset_key, asset_graph
+                graphene_info.context.instance,
+                asset_key,
+                asset_graph,
+                self._mutable_partitions_loader,
             )
 
             if materialized_partition_subset is None:
@@ -767,7 +801,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                 GrapheneDimensionPartitionKeys(
                     name=dimension.name,
                     partition_keys=self.get_partition_keys(
-                        dimension.external_partitions_def_data, start_idx, end_idx
+                        dimension.external_partitions_def_data,
+                        start_idx,
+                        end_idx,
                     ),
                 )
                 for dimension in cast(
