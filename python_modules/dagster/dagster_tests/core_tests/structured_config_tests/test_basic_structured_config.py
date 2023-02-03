@@ -658,6 +658,31 @@ def test_structured_run_config_ops():
     assert executed["yes"]
 
 
+def test_structured_run_config_multi_asset():
+    class AMultiAssetConfig(Config):
+        a_string: str
+        an_int: int
+
+    executed = {}
+
+    @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
+    def two_assets(config: AMultiAssetConfig):
+        assert config.a_string == "foo"
+        assert config.an_int == 2
+        executed["yes"] = True
+        return 1, 2
+
+    assert (
+        build_assets_job(
+            "blah",
+            [two_assets],
+            config=RunConfig(ops={"two_assets": AMultiAssetConfig(a_string="foo", an_int=2)}),
+        )
+        .execute_in_process()
+        .success
+    )
+
+
 def test_structured_run_config_assets():
     class AnAssetConfig(Config):
         a_string: str
@@ -677,7 +702,7 @@ def test_structured_run_config_assets():
             "blah",
             [my_asset],
             config=RunConfig(
-                assets={
+                ops={
                     "my_asset": AnAssetConfig(a_string="foo", an_int=2),
                 }
             ),
@@ -693,7 +718,7 @@ def test_structured_run_config_assets():
         "my_asset_job",
         selection="my_asset",
         config=RunConfig(
-            assets={
+            ops={
                 "my_asset": AnAssetConfig(a_string="foo", an_int=2),
             }
         ),
@@ -710,7 +735,7 @@ def test_structured_run_config_assets():
     asset_result = materialize(
         [my_asset],
         run_config=RunConfig(
-            assets={
+            ops={
                 "my_asset": AnAssetConfig(a_string="foo", an_int=2),
             }
         ),

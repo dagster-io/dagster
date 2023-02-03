@@ -692,23 +692,16 @@ class RunConfig:
         loggers: Optional[Dict[str, Any]] = None,
         resources: Optional[Dict[str, Any]] = None,
         ops: Optional[Dict[str, Any]] = None,
-        assets: Optional[Dict[str, Any]] = None,
     ):
         self.loggers = check.opt_dict_param(loggers, "loggers")
         self.resources = check.opt_dict_param(resources, "resources")
-
-        check.invariant(
-            ops is None or assets is None, "Cannot specify both ops and assets config in RunConfig"
-        )
-        self.op_or_asset_config = (
-            check.opt_dict_param(ops, "ops") if ops else check.opt_dict_param(assets, "assets")
-        )
+        self.ops = check.opt_dict_param(ops, "ops")
 
     def to_config_dict(self):
         return {
             "loggers": self.loggers,
             "resources": _convert_config_classes(self.resources),
-            "ops": _convert_config_classes(self.op_or_asset_config),
+            "ops": _convert_config_classes(self.ops),
         }
 
 
