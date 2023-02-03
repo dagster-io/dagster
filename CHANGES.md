@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.1.16 (core) / 0.17.16 (libraries)
+
+### Bugfixes
+
+- [dagit] Fixes some performance regressions while viewing asset graphs in dagit.
+
 # 1.1.15 (core) / 0.17.15 (libraries)
 
 ### New
