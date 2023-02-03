@@ -676,6 +676,10 @@ class DagsterInstance:
         return {}
 
     @property
+    def code_links_enabled(self) -> bool:
+        return os.getenv("DAGSTER_ENABLE_CODE_LINKS", "false").lower() == "true"
+
+    @property
     def telemetry_enabled(self) -> bool:
         if self.is_ephemeral:
             return False
