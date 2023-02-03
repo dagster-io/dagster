@@ -143,7 +143,6 @@ def test_retry_conversion():
 
         job = make_dagster_job_from_airflow_dag(
             dag=retry_dag,
-            use_ephemeral_airflow_db=True,
         )
         result = job.execute_in_process()
         assert result.success

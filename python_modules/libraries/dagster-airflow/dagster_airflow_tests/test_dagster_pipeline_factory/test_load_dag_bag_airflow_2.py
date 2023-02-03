@@ -3,9 +3,9 @@ import tempfile
 
 import pytest
 from airflow import __version__ as airflow_version
-from dagster_airflow.dagster_pipeline_factory import (
-    make_dagster_repo_from_airflow_dags_path,
-    make_dagster_repo_from_airflow_example_dags,
+from dagster_airflow.dagster_job_factory import (
+    make_dagster_definitions_from_airflow_dags_path,
+    make_dagster_definitions_from_airflow_example_dags,
 )
 
 from dagster_airflow_tests.marks import requires_airflow_db
@@ -30,18 +30,16 @@ def test_make_repo(
                 f.write(bytes(content.encode("utf-8")))
 
         repo = (
-            make_dagster_repo_from_airflow_dags_path(
+            make_dagster_definitions_from_airflow_dags_path(
                 tmpdir_path,
-                repo_name,
             )
             if fn_arg_path is None
-            else make_dagster_repo_from_airflow_dags_path(
-                os.path.join(tmpdir_path, fn_arg_path), repo_name
+            else make_dagster_definitions_from_airflow_dags_path(
+                os.path.join(tmpdir_path, fn_arg_path)
             )
-        )
+        ).get_repository_def()
 
         for job_name in expected_job_names:
-            assert repo.name == repo_name
             assert repo.has_job(job_name)
 
             job = repo.get_job(job_name)
@@ -55,12 +53,11 @@ def test_make_repo(
 
 @pytest.fixture(scope="module")
 def airflow_examples_repo():
-    return make_dagster_repo_from_airflow_example_dags()
+    return make_dagster_definitions_from_airflow_example_dags().get_repository_def()
 
 
 def get_examples_airflow_repo_params():
-    repo = make_dagster_repo_from_airflow_example_dags()
-    assert repo.name == "airflow_example_dags_repo"
+    repo = make_dagster_definitions_from_airflow_example_dags().get_repository_def()
     params = []
     no_job_run_dags = [
         # requires k8s environment to work

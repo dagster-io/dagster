@@ -11,7 +11,7 @@ from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline
 from dagster._seven import get_current_datetime_in_utc
-from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
+from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 
 default_args = {
     "owner": "dagster",
@@ -90,15 +90,14 @@ def test_pipeline_tags():
         manager = instance.compute_log_manager
 
         # When mode is default and tags are set, run with tags
-        result = execute_pipeline(
-            pipeline=make_dagster_pipeline_from_airflow_dag(
-                dag=dag,
-                tags={AIRFLOW_EXECUTION_DATE_STR: EXECUTION_DATE_MINUS_WEEK_FMT},
-            ),
-            instance=instance,
+        job_def = make_dagster_job_from_airflow_dag(
+            dag=dag,
+            tags={AIRFLOW_EXECUTION_DATE_STR: EXECUTION_DATE_MINUS_WEEK_FMT},
         )
+        result = job_def.execute_in_process(instance=instance)
+
         assert result.success
-        for event in result.step_event_list:
+        for event in result.all_events:
             assert event.event_type_value != "STEP_FAILURE"
         check_captured_logs(manager, result, EXECUTION_DATE_MINUS_WEEK.strftime("%Y-%m-%d"))
 
@@ -112,17 +111,17 @@ def test_pipeline_auto_tag():
         pre_execute_time = get_current_datetime_in_utc()
 
         # When tags are not set, run with current time
-        result = execute_pipeline(
-            pipeline=make_dagster_pipeline_from_airflow_dag(dag=dag),
-            instance=instance,
+        job_def = make_dagster_job_from_airflow_dag(
+            dag=dag,
         )
+        result = job_def.execute_in_process(instance=instance)
         assert result.success
-        for event in result.step_event_list:
+        for event in result.all_events:
             assert event.event_type_value != "STEP_FAILURE"
 
         capture_events = [
             event
-            for event in result.event_list
+            for event in result._event_list
             if event.event_type == DagsterEventType.LOGS_CAPTURED
         ]
         event = capture_events[0]
