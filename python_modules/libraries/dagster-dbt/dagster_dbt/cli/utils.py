@@ -165,6 +165,7 @@ def execute_cli(
         command_list,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        bufsize=0,
     )
     for raw_line in process.stdout or []:
         line = _decode(raw_line)
@@ -319,6 +320,7 @@ def execute_cli_event_generator(
         command_list,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        bufsize=0,
     )
     for raw_line in process.stdout or []:
         print("--" * 40)
