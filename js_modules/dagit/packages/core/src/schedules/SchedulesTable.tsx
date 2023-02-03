@@ -176,7 +176,7 @@ const ScheduleRow: React.FC<{
       <td>
         {futureTicks.results.length && status === InstigationStatus.RUNNING ? (
           <TimestampDisplay
-            timestamp={futureTicks.results[0].timestamp}
+            timestamp={futureTicks.results[0].timestamp!}
             timezone={executionTimezone}
             timeFormat={{showSeconds: false, showTimezone: true}}
           />
