@@ -1658,7 +1658,8 @@ class SqlEventLogStorage(EventLogStorage):
         # partitions storage. Should be updated when the partitions storage schema changes.
         if not self.has_table("mutable_partitions"):
             raise DagsterInvalidInvocationError(
-                "Cannot add partitions to non-existent table. Add this table by running `dagster"
+                "Using mutable partitions definitions requires the mutable partitions table, which"
+                " currently does not exist. Add this table by running `dagster"
                 " instance migrate`."
             )
 

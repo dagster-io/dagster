@@ -797,7 +797,7 @@ def test_add_mutable_partitions_table(hostname, conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             assert "mutable_partitions" not in get_tables(instance)
 
-            with pytest.raises(DagsterInvalidInvocationError, match="non-existent table"):
+            with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
                 instance.get_mutable_partitions("foo")
 
             instance.upgrade()

@@ -1,4 +1,4 @@
-"""add runtime partitions table
+"""add mutable partitions table
 
 Revision ID: e62c379ac8f4
 Revises: 6df03f4b1efb

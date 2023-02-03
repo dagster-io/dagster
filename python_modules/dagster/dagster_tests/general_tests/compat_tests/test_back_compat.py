@@ -1095,7 +1095,7 @@ def test_add_mutable_partitions_table():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             assert "mutable_partitions" not in get_sqlite3_tables(db_path)
 
-            with pytest.raises(DagsterInvalidInvocationError, match="non-existent table"):
+            with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
                 instance.get_mutable_partitions("foo")
 
             instance.upgrade()
