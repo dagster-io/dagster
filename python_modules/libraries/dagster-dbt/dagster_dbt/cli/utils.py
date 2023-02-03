@@ -1,8 +1,7 @@
 import json
-from logging import Logger
 import os
 import subprocess
-from typing import Any, Iterator, List, Mapping, NamedTuple, Optional, Sequence, Tuple
+from typing import Any, Iterator, List, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level
@@ -22,7 +21,7 @@ class DbtCliEvent(NamedTuple):
     line: Optional[str] = None
     message: Optional[str] = None
     parsed_json_line: Optional[Mapping[str, Any]] = None
-    log_level: Optional[str] = "info"
+    log_level: Optional[int] = None
     return_code: Optional[int] = None
 
 
@@ -102,7 +101,10 @@ def _parse_line(line: str, json_log_format: bool) -> DbtCliEvent:
             log_level = "warn"
 
     return DbtCliEvent(
-        line=line, message=message, parsed_json_line=parsed_json_line, log_level=log_level
+        line=line,
+        message=message,
+        parsed_json_line=parsed_json_line,
+        log_level=coerce_valid_log_level(log_level),
     )
 
 
@@ -168,7 +170,6 @@ def execute_cli(
     capture_logs: bool = True,
 ) -> DbtCliOutput:
     """Executes a command on the dbt CLI in a subprocess."""
-
     check.str_param(executable, "executable")
     check.str_param(command, "command")
     check.mapping_param(flags_dict, "flags_dict", key_type=str)
