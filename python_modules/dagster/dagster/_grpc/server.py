@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import uuid
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing.synchronize import Event as MPEvent
 from subprocess import Popen
@@ -1192,6 +1193,7 @@ class GrpcServerProcess:
         cwd: Optional[str] = None,
         log_level: str = "INFO",
         env: Optional[Dict[str, str]] = None,
+        wait_on_exit=False,
     ):
         self.port = None
         self.socket = None
@@ -1254,17 +1256,54 @@ class GrpcServerProcess:
         else:
             self.server_process = server_process
 
+        self._wait_on_exit = wait_on_exit
+
+        self._waited = False
+        self._shutdown = False
+
     @property
     def pid(self):
         return self.server_process.pid
 
     def wait(self, timeout=30):
+        self._waited = True
         if self.server_process.poll() is None:
             seven.wait_for_process(self.server_process, timeout=timeout)
 
-    def create_ephemeral_client(self):
-        from dagster._grpc.client import EphemeralDagsterGrpcClient
+    def __enter__(self):
+        return self
 
-        return EphemeralDagsterGrpcClient(
-            port=self.port, socket=self.socket, server_process=self.server_process
-        )
+    def __exit__(self, _exception_type, _exception_value, _traceback):
+        self.shutdown_server()
+
+        if self._wait_on_exit:
+            self.wait()
+
+    def shutdown_server(self):
+        if not self._shutdown:
+            self._shutdown = True
+            if self.server_process.poll() is None:
+                try:
+                    self.create_client().shutdown_server()
+                except DagsterUserCodeUnreachableError:
+                    pass
+
+    def __del__(self):
+        if not self._shutdown:
+            warnings.warn(
+                "GrpcServerProcess is being destroyed without signalling to server that "
+                "it should shut down. This may result in server processes living longer than "
+                "they need to. To fix this, wrap the GrpcServerProcess in a contextmanager or "
+                "call shutdown_server on it."
+            )
+
+        if not self._waited and os.getenv("STRICT_GRPC_SERVER_PROCESS_WAIT"):
+            warnings.warn(
+                "GrpcServerProcess is being destroyed without waiting for the process to "
+                + "fully terminate. This can cause test instability."
+            )
+
+    def create_client(self):
+        from dagster._grpc.client import DagsterGrpcClient
+
+        return DagsterGrpcClient(port=self.port, socket=self.socket)

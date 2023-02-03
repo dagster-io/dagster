@@ -321,15 +321,16 @@ def args_with_default_cli_test_instance(*args):
 
 @contextmanager
 def grpc_server_bar_kwargs(instance, pipeline_name=None):
-    server_process = GrpcServerProcess(
+    with GrpcServerProcess(
         instance_ref=instance.get_ref(),
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             python_file=file_relative_path(__file__, "test_cli_commands.py"),
             attribute="bar",
         ),
-    )
-    with server_process.create_ephemeral_client() as client:
+        wait_on_exit=True,
+    ) as server_process:
+        client = server_process.create_client()
         args = {"grpc_host": client.host}
         if pipeline_name:
             args["job_name"] = "foo"
@@ -338,7 +339,6 @@ def grpc_server_bar_kwargs(instance, pipeline_name=None):
         if client.socket:
             args["grpc_socket"] = client.socket
         yield args
-    server_process.wait()
 
 
 @contextmanager
@@ -357,15 +357,16 @@ def python_bar_cli_args(job_name=None):
 
 @contextmanager
 def grpc_server_bar_cli_args(instance, job_name=None):
-    server_process = GrpcServerProcess(
+    with GrpcServerProcess(
         instance.get_ref(),
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
             python_file=file_relative_path(__file__, "test_cli_commands.py"),
             attribute="bar",
         ),
-    )
-    with server_process.create_ephemeral_client() as client:
+        wait_on_exit=True,
+    ) as server_process:
+        client = server_process.create_client()
         args = ["--grpc-host", client.host]
         if client.port:
             args.append("--grpc-port")
@@ -378,7 +379,6 @@ def grpc_server_bar_cli_args(instance, job_name=None):
             args.append(job_name)
 
         yield args
-    server_process.wait()
 
 
 @contextmanager

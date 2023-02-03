@@ -77,16 +77,17 @@ def test_list_command_grpc_socket():
     with instance_for_test() as instance:
         runner = CliRunner()
 
-        server_process = GrpcServerProcess(
+        with GrpcServerProcess(
             instance_ref=instance.get_ref(),
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
                 python_file=file_relative_path(__file__, "test_cli_commands.py"),
                 attribute="bar",
             ),
-        )
+            wait_on_exit=True,
+        ) as server_process:
+            api_client = server_process.create_client()
 
-        with server_process.create_ephemeral_client() as api_client:
             execute_list_command(
                 {"grpc_socket": api_client.socket},
                 no_print,
@@ -105,14 +106,12 @@ def test_list_command_grpc_socket():
             )
             assert_correct_bar_repository_output(result)
 
-        server_process.wait()
-
 
 def test_list_command_deployed_grpc():
     with instance_for_test() as instance:
         runner = CliRunner()
 
-        server_process = GrpcServerProcess(
+        with GrpcServerProcess(
             instance_ref=instance.get_ref(),
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
@@ -120,9 +119,10 @@ def test_list_command_deployed_grpc():
                 attribute="bar",
             ),
             force_port=True,
-        )
+            wait_on_exit=True,
+        ) as server_process:
+            api_client = server_process.create_client()
 
-        with server_process.create_ephemeral_client() as api_client:
             result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])
             assert_correct_bar_repository_output(result)
 
@@ -152,8 +152,6 @@ def test_list_command_deployed_grpc():
                     {"grpc_port": api_client.port, "grpc_socket": "foonamedsocket"},
                     no_print,
                 )
-
-        server_process.wait()
 
 
 def test_list_command_cli():
