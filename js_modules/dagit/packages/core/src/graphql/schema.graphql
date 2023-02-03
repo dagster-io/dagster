@@ -1828,7 +1828,7 @@ type Repository {
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
-  topLevelResources: [ResourceDetails!]!
+  allTopLevelResourceDetails: [ResourceDetails!]!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -2665,8 +2665,8 @@ type DagitQuery {
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
   schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
-  topLevelResourceOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
-  topLevelResourcesOrError(repositorySelector: RepositorySelector!): ResourcesOrError!
+  topLevelResourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
+  allTopLevelResourceDetailsOrError(repositorySelector: RepositorySelector!): ResourcesOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
   instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
@@ -2764,9 +2764,9 @@ input GraphSelector {
 
 union ResourceDetailsOrError = ResourceDetails | ResourceNotFoundError | PythonError
 
-union ResourcesOrError = ResourcesDetails | RepositoryNotFoundError | PythonError
+union ResourcesOrError = ResourceDetailsList | RepositoryNotFoundError | PythonError
 
-type ResourcesDetails {
+type ResourceDetailsList {
   results: [ResourceDetails!]!
 }
 

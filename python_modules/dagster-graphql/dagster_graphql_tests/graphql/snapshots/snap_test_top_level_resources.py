@@ -8,7 +8,7 @@ from snapshottest import Snapshot
 snapshots = Snapshot()
 
 snapshots["test_fetch_top_level_resource 1"] = {
-    "topLevelResourceOrError": {
+    "topLevelResourceDetailsOrError": {
         "__typename": "ResourceDetails",
         "configFields": [
             {"configType": {"key": "BoolSourceType"}, "description": None, "name": "a_bool"},
@@ -29,8 +29,8 @@ snapshots["test_fetch_top_level_resource 1"] = {
 }
 
 snapshots["test_fetch_top_level_resources 1"] = {
-    "topLevelResourcesOrError": {
-        "__typename": "ResourcesDetails",
+    "allTopLevelResourceDetailsOrError": {
+        "__typename": "ResourceDetailsList",
         "results": [
             {"configFields": [], "configuredValues": [], "description": None, "name": "foo"},
             {

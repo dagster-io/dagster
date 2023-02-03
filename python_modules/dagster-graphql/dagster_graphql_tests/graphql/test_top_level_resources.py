@@ -5,10 +5,10 @@ from dagster_graphql.test.utils import (
 )
 
 TOP_LEVEL_RESOURCES_QUERY = """
-query ResourcesDetailsQuery($selector: RepositorySelector!) {
-  topLevelResourcesOrError(repositorySelector: $selector) {
+query ResourceDetailsListQuery($selector: RepositorySelector!) {
+  allTopLevelResourceDetailsOrError(repositorySelector: $selector) {
     __typename
-    ... on ResourcesDetails {
+    ... on ResourceDetailsList {
       results {
         name
         description
@@ -39,7 +39,7 @@ query ResourcesDetailsQuery($selector: RepositorySelector!) {
 
 TOP_LEVEL_RESOURCE_QUERY = """
 query ResourceDetailsQuery($selector: ResourceSelector!) {
-  topLevelResourceOrError(resourceSelector: $selector) {
+  topLevelResourceDetailsOrError(resourceSelector: $selector) {
     __typename
     ... on ResourceDetails {
         name
@@ -79,10 +79,10 @@ def test_fetch_top_level_resources(definitions_graphql_context, snapshot):
 
     assert not result.errors
     assert result.data
-    assert result.data["topLevelResourcesOrError"]
-    assert result.data["topLevelResourcesOrError"]["results"]
+    assert result.data["allTopLevelResourceDetailsOrError"]
+    assert result.data["allTopLevelResourceDetailsOrError"]["results"]
 
-    assert len(result.data["topLevelResourcesOrError"]["results"]) == 2
+    assert len(result.data["allTopLevelResourceDetailsOrError"]["results"]) == 2
 
     snapshot.assert_match(result.data)
 
@@ -97,8 +97,8 @@ def test_fetch_top_level_resource(definitions_graphql_context, snapshot):
 
     assert not result.errors
     assert result.data
-    assert result.data["topLevelResourceOrError"]
-    my_resource = result.data["topLevelResourceOrError"]
+    assert result.data["topLevelResourceDetailsOrError"]
+    my_resource = result.data["topLevelResourceDetailsOrError"]
 
     assert my_resource["description"] == "my description"
     assert len(my_resource["configFields"]) == 3

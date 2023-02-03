@@ -540,6 +540,7 @@ export type DagitMutationWipeAssetsArgs = {
 
 export type DagitQuery = {
   __typename: 'DagitQuery';
+  allTopLevelResourceDetailsOrError: ResourcesOrError;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
@@ -578,11 +579,14 @@ export type DagitQuery = {
   sensorOrError: SensorOrError;
   sensorsOrError: SensorsOrError;
   shouldShowNux: Scalars['Boolean'];
-  topLevelResourceOrError: ResourceDetailsOrError;
-  topLevelResourcesOrError: ResourcesOrError;
+  topLevelResourceDetailsOrError: ResourceDetailsOrError;
   unloadableInstigationStatesOrError: InstigationStatesOrError;
   version: Scalars['String'];
   workspaceOrError: WorkspaceOrError;
+};
+
+export type DagitQueryAllTopLevelResourceDetailsOrErrorArgs = {
+  repositorySelector: RepositorySelector;
 };
 
 export type DagitQueryAssetNodeDefinitionCollisionsArgs = {
@@ -738,12 +742,8 @@ export type DagitQuerySensorsOrErrorArgs = {
   repositorySelector: RepositorySelector;
 };
 
-export type DagitQueryTopLevelResourceOrErrorArgs = {
+export type DagitQueryTopLevelResourceDetailsOrErrorArgs = {
   resourceSelector: ResourceSelector;
-};
-
-export type DagitQueryTopLevelResourcesOrErrorArgs = {
-  repositorySelector: RepositorySelector;
 };
 
 export type DagitQueryUnloadableInstigationStatesOrErrorArgs = {
@@ -2634,6 +2634,7 @@ export type RepositoriesOrError = PythonError | RepositoryConnection;
 
 export type Repository = {
   __typename: 'Repository';
+  allTopLevelResourceDetails: Array<ResourceDetails>;
   assetGroups: Array<AssetGroup>;
   assetNodes: Array<AssetNode>;
   displayMetadata: Array<RepositoryMetadata>;
@@ -2646,7 +2647,6 @@ export type Repository = {
   pipelines: Array<Pipeline>;
   schedules: Array<Schedule>;
   sensors: Array<Sensor>;
-  topLevelResources: Array<ResourceDetails>;
   usedSolid: Maybe<UsedSolid>;
   usedSolids: Array<UsedSolid>;
 };
@@ -2723,6 +2723,11 @@ export type ResourceDetails = {
   configuredValues: Array<ConfiguredValue>;
   description: Maybe<Scalars['String']>;
   name: Scalars['String'];
+};
+
+export type ResourceDetailsList = {
+  __typename: 'ResourceDetailsList';
+  results: Array<ResourceDetails>;
 };
 
 export type ResourceDetailsOrError = PythonError | ResourceDetails | ResourceNotFoundError;
@@ -2803,12 +2808,7 @@ export type ResourceSelector = {
   resourceName: Scalars['String'];
 };
 
-export type ResourcesDetails = {
-  __typename: 'ResourcesDetails';
-  results: Array<ResourceDetails>;
-};
-
-export type ResourcesOrError = PythonError | RepositoryNotFoundError | ResourcesDetails;
+export type ResourcesOrError = PythonError | RepositoryNotFoundError | ResourceDetailsList;
 
 export type ResumeBackfillResult = PythonError | ResumeBackfillSuccess | UnauthorizedError;
 

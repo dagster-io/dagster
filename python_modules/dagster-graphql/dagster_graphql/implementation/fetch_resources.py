@@ -8,7 +8,7 @@ from .utils import UserFacingGraphQLError, capture_error
 
 @capture_error
 def get_resources_or_error(graphene_info, repository_selector):
-    from ..schema.resources import GrapheneResourceDetails, GrapheneResourcesDetails
+    from ..schema.resources import GrapheneResourceDetails, GrapheneResourceDetailsList
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
@@ -23,7 +23,7 @@ def get_resources_or_error(graphene_info, repository_selector):
         GrapheneResourceDetails(external_resource) for external_resource in external_resources
     ]
 
-    return GrapheneResourcesDetails(results=results)
+    return GrapheneResourceDetailsList(results=results)
 
 
 @capture_error

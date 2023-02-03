@@ -214,7 +214,7 @@ class GrapheneRepository(graphene.ObjectType):
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     assetGroups = non_null_list(GrapheneAssetGroup)
-    topLevelResources = non_null_list(GrapheneResourceDetails)
+    allTopLevelResourceDetails = non_null_list(GrapheneResourceDetails)
 
     class Meta:
         name = "Repository"
@@ -336,7 +336,7 @@ class GrapheneRepository(graphene.ObjectType):
             for group_name, external_nodes in groups.items()
         ]
 
-    def resolve_topLevelResources(self, _graphene_info):
+    def resolve_allTopLevelResourceDetails(self, _graphene_info):
         return [
             GrapheneResourceDetails(resource)
             for resource in sorted(

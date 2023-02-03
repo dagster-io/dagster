@@ -178,5 +178,5 @@ def infer_instigation_selector(graphql_context, name):
 
 def infer_resource_selector(graphql_context, name):
     selector = infer_repository_selector(graphql_context)
-    selector.update({"resourceName": name})
+    selector = {**selector, **{"resourceName": name}}
     return selector

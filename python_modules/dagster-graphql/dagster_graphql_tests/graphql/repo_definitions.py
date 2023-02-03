@@ -7,7 +7,6 @@ from dagster import (
     asset,
 )
 from dagster._config.structured_config import Resource
-from dagster._core.definitions.repository_definition import SINGLETON_REPOSITORY_NAME
 from dagster_graphql.test.utils import define_out_of_process_context
 
 
@@ -24,7 +23,7 @@ class MyResource(Resource):
     an_unset_string: str = "defaulted"
 
 
-__repository__ = Definitions(
+defs = Definitions(
     assets=[my_asset],
     resources={
         "foo": "a_string",
@@ -39,5 +38,5 @@ __repository__ = Definitions(
 @contextmanager
 def define_definitions_test_out_of_process_context(instance):
     check.inst_param(instance, "instance", DagsterInstance)
-    with define_out_of_process_context(__file__, SINGLETON_REPOSITORY_NAME, instance) as context:
+    with define_out_of_process_context(__file__, "defs", instance) as context:
         yield context

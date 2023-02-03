@@ -112,7 +112,7 @@ from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
 from ..pipelines.pipeline import GrapheneEventConnectionOrError, GrapheneRunOrError
 from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
-from ..resources import GrapheneResourceDetailsOrError, GrapheneResourcesDetailsOrError
+from ..resources import GrapheneResourceDetailsListOrError, GrapheneResourceDetailsOrError
 from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
     GrapheneRunConfigData,
@@ -202,7 +202,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         description="Retrieve all the schedules.",
     )
 
-    topLevelResourceOrError = graphene.Field(
+    topLevelResourceDetailsOrError = graphene.Field(
         graphene.NonNull(GrapheneResourceDetailsOrError),
         resourceSelector=graphene.NonNull(GrapheneResourceSelector),
         description=(
@@ -211,8 +211,8 @@ class GrapheneDagitQuery(graphene.ObjectType):
         ),
     )
 
-    topLevelResourcesOrError = graphene.Field(
-        graphene.NonNull(GrapheneResourcesDetailsOrError),
+    allTopLevelResourceDetailsOrError = graphene.Field(
+        graphene.NonNull(GrapheneResourceDetailsListOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         description="Retrieve all the top level resources.",
     )
@@ -499,12 +499,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
-    def resolve_topLevelResourceOrError(self, graphene_info: ResolveInfo, resourceSelector):
+    def resolve_topLevelResourceDetailsOrError(self, graphene_info: ResolveInfo, resourceSelector):
         return get_resource_or_error(
             graphene_info, ResourceSelector.from_graphql_input(resourceSelector)
         )
 
-    def resolve_topLevelResourcesOrError(self, graphene_info: ResolveInfo, **kwargs):
+    def resolve_allTopLevelResourceDetailsOrError(self, graphene_info: ResolveInfo, **kwargs):
         return get_resources_or_error(
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
