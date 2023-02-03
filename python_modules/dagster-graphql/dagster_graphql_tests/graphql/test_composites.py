@@ -30,6 +30,10 @@ from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 # this only needs non_launchable variants since they never execute anything
 class TestComposites(NonLaunchableGraphQLContextTestMatrix):
     def test_composites(self, graphql_context, snapshot):
+        import ctypes
+
+        ctypes.string_at(0)
+
         selector = infer_pipeline_selector(graphql_context, "composites_pipeline")
         result = execute_dagster_graphql(graphql_context, COMPOSITES_QUERY, {"selector": selector})
         handle_map = {}

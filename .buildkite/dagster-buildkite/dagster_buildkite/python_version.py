@@ -24,7 +24,7 @@ class AvailablePythonVersion(str, Enum):
     def get_pytest_defaults(cls) -> List["AvailablePythonVersion"]:
         branch_name = safe_getenv("BUILDKITE_BRANCH")
         commit_message = safe_getenv("BUILDKITE_MESSAGE")
-        if branch_name == "master" or is_release_branch(branch_name):
+        if branch_name == "master" or is_release_branch(branch_name) or True:
             return cls.get_all()
         else:
             # environment variable-specified defaults
