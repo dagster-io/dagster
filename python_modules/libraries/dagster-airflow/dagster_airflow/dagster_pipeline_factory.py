@@ -23,12 +23,10 @@ from dagster import (
     DependencyDefinition,
     Field,
     In,
-    JobDefinition,
     MultiDependencyDefinition,
     Nothing,
     Out,
     RetryPolicy,
-    ScheduleDefinition,
     _check as check,
     op,
     repository,
@@ -38,8 +36,8 @@ from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
 from dagster._legacy import ModeDefinition, PipelineDefinition
-from dagster._utils.schedules import is_valid_cron_schedule
 
+from dagster_airflow.dagster_schedule_factory import make_dagster_schedule_from_airflow_dag
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 from dagster_airflow.utils import (
     DagsterAirflowError,
@@ -204,31 +202,6 @@ def make_dagster_repo_from_airflow_dag_bag(
         return [jobs, schedules]
 
     return _repo
-
-
-def make_dagster_schedule_from_airflow_dag(dag, job_def):
-    """Construct a Dagster schedule corresponding to an Airflow DAG.
-
-    Args:
-        dag (DAG): Airflow DAG
-        job_def (JobDefinition): Dagster pipeline corresponding to Airflow DAG
-
-    Returns:
-        ScheduleDefinition
-    """
-    check.inst_param(dag, "dag", DAG)
-    check.inst_param(job_def, "job_def", JobDefinition)
-
-    cron_schedule = dag.normalized_schedule_interval
-    schedule_description = dag.description
-
-    if isinstance(dag.normalized_schedule_interval, str) and is_valid_cron_schedule(cron_schedule):
-        return ScheduleDefinition(
-            job=job_def,
-            cron_schedule=cron_schedule,
-            description=schedule_description,
-            execution_timezone=dag.timezone.name,
-        )
 
 
 def make_dagster_repo_from_airflow_example_dags(
