@@ -55,7 +55,10 @@ export type TickHistoryQuery = {
       };
 };
 
-export type NextTickForHistoryFragment = {__typename: 'DryRunInstigationTick'; timestamp: number};
+export type NextTickForHistoryFragment = {
+  __typename: 'DryRunInstigationTick';
+  timestamp: number | null;
+};
 
 export type HistoryTickFragment = {
   __typename: 'InstigationTick';
