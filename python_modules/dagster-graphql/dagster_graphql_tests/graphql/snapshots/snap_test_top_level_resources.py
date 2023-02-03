@@ -7,96 +7,57 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_fetch_top_level_resource 1'] = {
-    'topLevelResourceOrError': {
-        '__typename': 'TopLevelResource',
-        'configFields': [
+snapshots["test_fetch_top_level_resource 1"] = {
+    "topLevelResourceOrError": {
+        "__typename": "ResourceDetails",
+        "configFields": [
+            {"configType": {"key": "BoolSourceType"}, "description": None, "name": "a_bool"},
+            {"configType": {"key": "StringSourceType"}, "description": None, "name": "a_string"},
             {
-                'configType': {
-                    'key': 'BoolSourceType'
-                },
-                'description': None,
-                'name': 'a_bool'
+                "configType": {"key": "StringSourceType"},
+                "description": None,
+                "name": "an_unset_string",
             },
-            {
-                'configType': {
-                    'key': 'StringSourceType'
-                },
-                'description': None,
-                'name': 'a_string'
-            },
-            {
-                'configType': {
-                    'key': 'StringSourceType'
-                },
-                'description': None,
-                'name': 'an_unset_string'
-            }
         ],
-        'configuredValues': [
-            {
-                'key': 'a_bool',
-                'value': 'true'
-            },
-            {
-                'key': 'a_string',
-                'value': '"foo"'
-            }
+        "configuredValues": [
+            {"key": "a_bool", "value": "true"},
+            {"key": "a_string", "value": '"foo"'},
         ],
-        'description': 'my description',
-        'name': 'my_resource'
+        "description": "my description",
+        "name": "my_resource",
     }
 }
 
-snapshots['test_fetch_top_level_resources 1'] = {
-    'topLevelResourcesOrError': {
-        '__typename': 'TopLevelResources',
-        'results': [
+snapshots["test_fetch_top_level_resources 1"] = {
+    "topLevelResourcesOrError": {
+        "__typename": "ResourcesDetails",
+        "results": [
+            {"configFields": [], "configuredValues": [], "description": None, "name": "foo"},
             {
-                'configFields': [
+                "configFields": [
+                    {
+                        "configType": {"key": "BoolSourceType"},
+                        "description": None,
+                        "name": "a_bool",
+                    },
+                    {
+                        "configType": {"key": "StringSourceType"},
+                        "description": None,
+                        "name": "a_string",
+                    },
+                    {
+                        "configType": {"key": "StringSourceType"},
+                        "description": None,
+                        "name": "an_unset_string",
+                    },
                 ],
-                'configuredValues': [
+                "configuredValues": [
+                    {"key": "a_bool", "value": "true"},
+                    {"key": "a_string", "value": '"foo"'},
                 ],
-                'description': None,
-                'name': 'foo'
+                "description": "my description",
+                "name": "my_resource",
             },
-            {
-                'configFields': [
-                    {
-                        'configType': {
-                            'key': 'BoolSourceType'
-                        },
-                        'description': None,
-                        'name': 'a_bool'
-                    },
-                    {
-                        'configType': {
-                            'key': 'StringSourceType'
-                        },
-                        'description': None,
-                        'name': 'a_string'
-                    },
-                    {
-                        'configType': {
-                            'key': 'StringSourceType'
-                        },
-                        'description': None,
-                        'name': 'an_unset_string'
-                    }
-                ],
-                'configuredValues': [
-                    {
-                        'key': 'a_bool',
-                        'value': 'true'
-                    },
-                    {
-                        'key': 'a_string',
-                        'value': '"foo"'
-                    }
-                ],
-                'description': 'my description',
-                'name': 'my_resource'
-            }
-        ]
+        ],
     }
 }

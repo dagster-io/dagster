@@ -8,7 +8,7 @@ from .utils import UserFacingGraphQLError, capture_error
 
 @capture_error
 def get_resources_or_error(graphene_info, repository_selector):
-    from ..schema.resources import GrapheneTopLevelResource, GrapheneTopLevelResources
+    from ..schema.resources import GrapheneResourceDetails, GrapheneResourcesDetails
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
@@ -20,16 +20,16 @@ def get_resources_or_error(graphene_info, repository_selector):
     external_resources = repository.get_external_resources()
 
     results = [
-        GrapheneTopLevelResource(external_resource) for external_resource in external_resources
+        GrapheneResourceDetails(external_resource) for external_resource in external_resources
     ]
 
-    return GrapheneTopLevelResources(results=results)
+    return GrapheneResourcesDetails(results=results)
 
 
 @capture_error
 def get_resource_or_error(graphene_info, resource_selector: ResourceSelector):
     from ..schema.errors import GrapheneResourceNotFoundError
-    from ..schema.resources import GrapheneTopLevelResource
+    from ..schema.resources import GrapheneResourceDetails
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(resource_selector, "resource_selector", ResourceSelector)
@@ -45,4 +45,4 @@ def get_resource_or_error(graphene_info, resource_selector: ResourceSelector):
 
     external_resource = repository.get_external_resource(resource_selector.resource_name)
 
-    return GrapheneTopLevelResource(external_resource)
+    return GrapheneResourceDetails(external_resource)

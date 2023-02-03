@@ -112,7 +112,7 @@ from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
 from ..pipelines.pipeline import GrapheneEventConnectionOrError, GrapheneRunOrError
 from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
-from ..resources import GrapheneTopLevelResourceOrError, GrapheneTopLevelResourcesOrError
+from ..resources import GrapheneResourceDetailsOrError, GrapheneResourcesDetailsOrError
 from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
     GrapheneRunConfigData,
@@ -203,7 +203,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     )
 
     topLevelResourceOrError = graphene.Field(
-        graphene.NonNull(GrapheneTopLevelResourceOrError),
+        graphene.NonNull(GrapheneResourceDetailsOrError),
         resourceSelector=graphene.NonNull(GrapheneResourceSelector),
         description=(
             "Retrieve a top level resource by its location name, repository name, and resource"
@@ -212,7 +212,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     )
 
     topLevelResourcesOrError = graphene.Field(
-        graphene.NonNull(GrapheneTopLevelResourcesOrError),
+        graphene.NonNull(GrapheneResourcesDetailsOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         description="Retrieve all the top level resources.",
     )

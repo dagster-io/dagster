@@ -20,7 +20,7 @@ class GrapheneConfiguredValue(graphene.ObjectType):
         name = "ConfiguredValue"
 
 
-class GrapheneTopLevelResource(graphene.ObjectType):
+class GrapheneResourceDetails(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     configFields = graphene.Field(
@@ -36,7 +36,7 @@ class GrapheneTopLevelResource(graphene.ObjectType):
     )
 
     class Meta:
-        name = "TopLevelResource"
+        name = "ResourceDetails"
 
     def __init__(self, external_resource: ExternalResource):
         super().__init__()
@@ -66,20 +66,20 @@ class GrapheneTopLevelResource(graphene.ObjectType):
         ]
 
 
-class GrapheneTopLevelResourceOrError(graphene.Union):
+class GrapheneResourceDetailsOrError(graphene.Union):
     class Meta:
-        types = (GrapheneTopLevelResource, GrapheneResourceNotFoundError, GraphenePythonError)
-        name = "TopLevelResourceOrError"
+        types = (GrapheneResourceDetails, GrapheneResourceNotFoundError, GraphenePythonError)
+        name = "ResourceDetailsOrError"
 
 
-class GrapheneTopLevelResources(graphene.ObjectType):
-    results = non_null_list(GrapheneTopLevelResource)
+class GrapheneResourcesDetails(graphene.ObjectType):
+    results = non_null_list(GrapheneResourceDetails)
 
     class Meta:
-        name = "TopLevelResources"
+        name = "ResourcesDetails"
 
 
-class GrapheneTopLevelResourcesOrError(graphene.Union):
+class GrapheneResourcesDetailsOrError(graphene.Union):
     class Meta:
-        types = (GrapheneTopLevelResources, GrapheneRepositoryNotFoundError, GraphenePythonError)
+        types = (GrapheneResourcesDetails, GrapheneRepositoryNotFoundError, GraphenePythonError)
         name = "ResourcesOrError"

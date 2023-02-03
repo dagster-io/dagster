@@ -5,10 +5,10 @@ from dagster_graphql.test.utils import (
 )
 
 TOP_LEVEL_RESOURCES_QUERY = """
-query TopLevelResourcesQuery($selector: RepositorySelector!) {
+query ResourcesDetailsQuery($selector: RepositorySelector!) {
   topLevelResourcesOrError(repositorySelector: $selector) {
     __typename
-    ... on TopLevelResources {
+    ... on ResourcesDetails {
       results {
         name
         description
@@ -38,10 +38,10 @@ query TopLevelResourcesQuery($selector: RepositorySelector!) {
 """
 
 TOP_LEVEL_RESOURCE_QUERY = """
-query TopLevelResourceQuery($selector: ResourceSelector!) {
+query ResourceDetailsQuery($selector: ResourceSelector!) {
   topLevelResourceOrError(resourceSelector: $selector) {
     __typename
-    ... on TopLevelResource {
+    ... on ResourceDetails {
         name
         description
         configFields {

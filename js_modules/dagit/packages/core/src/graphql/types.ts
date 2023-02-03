@@ -578,7 +578,7 @@ export type DagitQuery = {
   sensorOrError: SensorOrError;
   sensorsOrError: SensorsOrError;
   shouldShowNux: Scalars['Boolean'];
-  topLevelResourceOrError: TopLevelResourceOrError;
+  topLevelResourceOrError: ResourceDetailsOrError;
   topLevelResourcesOrError: ResourcesOrError;
   unloadableInstigationStatesOrError: InstigationStatesOrError;
   version: Scalars['String'];
@@ -2646,7 +2646,7 @@ export type Repository = {
   pipelines: Array<Pipeline>;
   schedules: Array<Schedule>;
   sensors: Array<Sensor>;
-  topLevelResources: Array<TopLevelResource>;
+  topLevelResources: Array<ResourceDetails>;
   usedSolid: Maybe<UsedSolid>;
   usedSolids: Array<UsedSolid>;
 };
@@ -2716,6 +2716,16 @@ export type Resource = {
   description: Maybe<Scalars['String']>;
   name: Scalars['String'];
 };
+
+export type ResourceDetails = {
+  __typename: 'ResourceDetails';
+  configFields: Array<ConfigTypeField>;
+  configuredValues: Array<ConfiguredValue>;
+  description: Maybe<Scalars['String']>;
+  name: Scalars['String'];
+};
+
+export type ResourceDetailsOrError = PythonError | ResourceDetails | ResourceNotFoundError;
 
 export type ResourceInitFailureEvent = DisplayableEvent &
   ErrorEvent &
@@ -2793,7 +2803,12 @@ export type ResourceSelector = {
   resourceName: Scalars['String'];
 };
 
-export type ResourcesOrError = PythonError | RepositoryNotFoundError | TopLevelResources;
+export type ResourcesDetails = {
+  __typename: 'ResourcesDetails';
+  results: Array<ResourceDetails>;
+};
+
+export type ResourcesOrError = PythonError | RepositoryNotFoundError | ResourcesDetails;
 
 export type ResumeBackfillResult = PythonError | ResumeBackfillSuccess | UnauthorizedError;
 
@@ -3587,21 +3602,6 @@ export type TimePartitionsDefinitionMetadata = {
   endTime: Scalars['Float'];
   startKey: Scalars['String'];
   startTime: Scalars['Float'];
-};
-
-export type TopLevelResource = {
-  __typename: 'TopLevelResource';
-  configFields: Array<ConfigTypeField>;
-  configuredValues: Array<ConfiguredValue>;
-  description: Maybe<Scalars['String']>;
-  name: Scalars['String'];
-};
-
-export type TopLevelResourceOrError = PythonError | ResourceNotFoundError | TopLevelResource;
-
-export type TopLevelResources = {
-  __typename: 'TopLevelResources';
-  results: Array<TopLevelResource>;
 };
 
 export type TypeCheck = DisplayableEvent & {

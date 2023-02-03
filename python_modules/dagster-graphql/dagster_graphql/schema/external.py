@@ -39,7 +39,7 @@ from .partition_sets import GraphenePartitionSet
 from .permissions import GraphenePermission
 from .pipelines.pipeline import GrapheneJob, GraphenePipeline
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
-from .resources import GrapheneTopLevelResource
+from .resources import GrapheneResourceDetails
 from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
 from .used_solid import GrapheneUsedSolid
@@ -214,7 +214,7 @@ class GrapheneRepository(graphene.ObjectType):
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     assetGroups = non_null_list(GrapheneAssetGroup)
-    topLevelResources = non_null_list(GrapheneTopLevelResource)
+    topLevelResources = non_null_list(GrapheneResourceDetails)
 
     class Meta:
         name = "Repository"
@@ -338,7 +338,7 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_topLevelResources(self, _graphene_info):
         return [
-            GrapheneTopLevelResource(resource)
+            GrapheneResourceDetails(resource)
             for resource in sorted(
                 self._repository.get_external_resources(), key=lambda resource: resource.name
             )
