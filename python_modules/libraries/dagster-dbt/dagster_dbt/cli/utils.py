@@ -98,13 +98,18 @@ def execute_cli(
     # json dictionaries for each line (if applicable)
     json_lines = []
 
+    # run dbt with unbuffered output
+    passenv = os.environ.copy()
+    passenv["PYTHONUNBUFFERED"] = "1"
+
     process = subprocess.Popen(
         command_list,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        env=passenv,
     )
     for raw_line in process.stdout or []:
-        line = raw_line.decode(errors="replace").strip()
+        line = raw_line.decode().strip()
 
         log_level = "info"
         message = line
