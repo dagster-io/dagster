@@ -122,7 +122,6 @@ def execute_cli_stream(
         ) from e
 
     # Execute the dbt CLI command in a subprocess.
-    full_command = " ".join(command_list)
     messages: List[str] = []
 
     # run dbt with unbuffered output
