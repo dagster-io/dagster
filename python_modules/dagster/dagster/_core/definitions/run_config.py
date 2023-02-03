@@ -532,6 +532,25 @@ def define_solid_dictionary_cls(
     asset_layer: AssetLayer,
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
+    """
+    Examples of what this method is used to generate the schema for:
+      1.
+          inputs: ...
+          ops:
+        >    op1: ...
+        >    op2: ...
+
+      2.
+          inputs:
+          ops:
+            graph1: ...
+              inputs: ...
+              ops:
+        >       op1: ...
+        >       inner_graph: ...
+
+
+    """
     ignored_solids = check.opt_sequence_param(ignored_solids, "ignored_solids", of_type=Node)
 
     fields = {}
