@@ -4,7 +4,6 @@ from dagster._core.utils import check_dagster_package_version
 from .dagster_asset_factory import (
     load_assets_from_airflow_dag as load_assets_from_airflow_dag,
 )
-
 from .dagster_job_factory import (
     make_dagster_definitions_from_airflow_dag_bag as make_dagster_definitions_from_airflow_dag_bag,
     make_dagster_definitions_from_airflow_dags_path as make_dagster_definitions_from_airflow_dags_path,
