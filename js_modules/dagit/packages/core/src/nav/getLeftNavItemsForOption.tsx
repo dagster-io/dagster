@@ -38,13 +38,13 @@ export const getAssetGroupItemsForOption = (option: DagsterRepoOption) => {
   return items.sort((a, b) => a.name.localeCompare(b.name));
 };
 
-export const getTopLevelResourceItemsForOption = (option: DagsterRepoOption) => {
+export const gettopLevelResourceDetailsItemsForOption = (option: DagsterRepoOption) => {
   const items: LeftNavItemType[] = [];
 
   const {repository, repositoryLocation} = option;
   const address = buildRepoAddress(repository.name, repositoryLocation.name);
 
-  for (const resource of repository.topLevelResources) {
+  for (const resource of repository.allTopLevelResourceDetails) {
     items.push({
       name: resource.name,
       leftIcon: 'resource',

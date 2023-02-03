@@ -94,7 +94,7 @@ export type RootWorkspaceQuery = {
                     pipelineName: string;
                   }>;
                   assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-                  topLevelResources: Array<{__typename: 'TopLevelResource'; name: string}>;
+                  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
                   location: {__typename: 'RepositoryLocation'; id: string; name: string};
                   displayMetadata: Array<{
                     __typename: 'RepositoryMetadata';
@@ -179,7 +179,7 @@ export type WorkspaceLocationNodeFragment = {
             pipelineName: string;
           }>;
           assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-          topLevelResources: Array<{__typename: 'TopLevelResource'; name: string}>;
+          allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
           displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
         }>;
@@ -246,7 +246,7 @@ export type WorkspaceLocationFragment = {
       pipelineName: string;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-    topLevelResources: Array<{__typename: 'TopLevelResource'; name: string}>;
+    allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
     displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
   }>;
@@ -299,7 +299,7 @@ export type WorkspaceRepositoryFragment = {
     pipelineName: string;
   }>;
   assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
-  topLevelResources: Array<{__typename: 'TopLevelResource'; name: string}>;
+  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
   location: {__typename: 'RepositoryLocation'; id: string; name: string};
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };

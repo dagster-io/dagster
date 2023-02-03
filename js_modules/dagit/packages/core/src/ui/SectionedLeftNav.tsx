@@ -12,7 +12,7 @@ import {LeftNavItemType} from '../nav/LeftNavItemType';
 import {
   getAssetGroupItemsForOption,
   getJobItemsForOption,
-  getTopLevelResourceItemsForOption,
+  gettopLevelResourceDetailsItemsForOption,
 } from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
@@ -147,7 +147,7 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
 
   const {flagSidebarResources} = useFeatureFlags();
   const resourceItems = React.useMemo(
-    () => (flagSidebarResources ? getTopLevelResourceItemsForOption(option) : []),
+    () => (flagSidebarResources ? gettopLevelResourceDetailsItemsForOption(option) : []),
     [option, flagSidebarResources],
   );
 

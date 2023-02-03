@@ -8,7 +8,7 @@ export type ResourceRootQueryVariables = Types.Exact<{
 
 export type ResourceRootQuery = {
   __typename: 'DagitQuery';
-  topLevelResourceOrError:
+  topLevelResourceDetailsOrError:
     | {
         __typename: 'PythonError';
         message: string;
@@ -19,9 +19,8 @@ export type ResourceRootQuery = {
           error: {__typename: 'PythonError'; message: string; stack: Array<string>};
         }>;
       }
-    | {__typename: 'ResourceNotFoundError'}
     | {
-        __typename: 'TopLevelResource';
+        __typename: 'ResourceDetails';
         name: string;
         description: string | null;
         configFields: Array<{
@@ -33,5 +32,6 @@ export type ResourceRootQuery = {
           defaultValueAsJson: string | null;
         }>;
         configuredValues: Array<{__typename: 'ConfiguredValue'; key: string; value: string}>;
-      };
+      }
+    | {__typename: 'ResourceNotFoundError'};
 };
