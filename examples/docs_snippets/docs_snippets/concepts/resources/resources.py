@@ -1,23 +1,24 @@
 # isort: skip_file
 # pylint: disable=unused-argument,reimported,unnecessary-ellipsis
-from dagster import ResourceDefinition, graph, job
+from dagster import ResourceDefinition, graph, job, Definitions
 
 
 # start_resource_example
-from dagster import resource
+from dagster._config.structured_config import Resource
 
 
-class ExternalCerealFetcher:
+class ExternalCerealFetcher(Resource):
     def fetch_new_cereals(self, start_ts, end_ts):
         pass
 
 
-@resource
-def cereal_fetcher(init_context):
-    return ExternalCerealFetcher()
-
-
 # end_resource_example
+
+
+class DatabaseResource(Resource):
+    def execute_query(self, query):
+        pass
+
 
 # start_op_with_resources_example
 from dagster import op
@@ -25,42 +26,45 @@ from dagster import op
 CREATE_TABLE_1_QUERY = "create table_1 as select * from table_0"
 
 
-@op(required_resource_keys={"database"})
-def op_requires_resources(context):
-    context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
+@op
+def op_requires_resources(database: DatabaseResource):
+    database.execute_query(CREATE_TABLE_1_QUERY)
 
 
 # end_op_with_resources_example
 
 # start_resource_testing
-from dagster import resource
+from dagster._config.structured_config import Resource
 
 
-@resource
-def my_resource(_):
-    return "foo"
+class MyResource(Resource):
+    def get_value(self) -> str:
+        return "foo"
 
 
 def test_my_resource():
-    assert my_resource(None) == "foo"
+    assert MyResource().get_value() == "foo"
 
 
 # end_resource_testing
 
 # start_resource_testing_with_context
-from dagster import build_init_resource_context, resource
+from dagster._config.structured_config import Resource
 
 
-@resource(required_resource_keys={"foo"}, config_schema={"bar": str})
-def my_resource_requires_context(init_context):
-    return init_context.resources.foo, init_context.resource_config["bar"]
+class StringHolderResource(Resource):
+    value: str
+
+
+class MyResourceRequiresAnother(Resource):
+    foo: StringHolderResource
+    bar: str
 
 
 def test_my_resource_with_context():
-    init_context = build_init_resource_context(
-        resources={"foo": "foo_str"}, config={"bar": "bar_str"}
-    )
-    assert my_resource_requires_context(init_context) == ("foo_str", "bar_str")
+    resource = MyResourceRequiresAnother(foo=StringHolderResource("foo"), bar="bar")
+    assert resource.foo.value == "foo"
+    assert resource.bar == "bar"
 
 
 # end_resource_testing_with_context
@@ -108,12 +112,8 @@ def do_database_stuff():
     op_requires_resources()
 
 
-do_database_stuff_prod = do_database_stuff.to_job(
-    resource_defs={"database": database_resource_a}
-)
-do_database_stuff_dev = do_database_stuff.to_job(
-    resource_defs={"database": database_resource_b}
-)
+do_database_stuff_prod = do_database_stuff.to_job(resource_defs={"database": database_resource_a})
+do_database_stuff_dev = do_database_stuff.to_job(resource_defs={"database": database_resource_b})
 
 
 # end_graph_example
@@ -125,18 +125,19 @@ class Client:
 
 
 # start_resource_dep_example
-from dagster import resource
+from dagster._config.structured_config import Resource
 
 
-@resource
-def credentials():
-    return ("bad_username", "easy_password")
+class Credentials(Resource):
+    username: str
+    password: str
 
 
-@resource(required_resource_keys={"credentials"})
-def client(init_context):
-    username, password = init_context.resources.credentials
-    return Client(username, password)
+class Client(Resource):
+    credentials: Credentials
+
+    def request(self, endpoint: str):
+        ...
 
 
 # end_resource_dep_example
@@ -145,33 +146,57 @@ def client(init_context):
 from dagster import graph, op
 
 
-@op(required_resource_keys={"client"})
-def get_client(context):
-    return context.resources.client
+@op
+def get_newest_stories(client: Client):
+    return client.request("/stories/new")
 
 
 # end_resource_dep_op
 
 
 # start_resource_dep_job
-@job(resource_defs={"credentials": credentials, "client": client})
-def connect():
-    get_client()
+credentials = Credentials(username="foo", password="bar")
 
+
+@job
+def connect():
+    get_newest_stories()
+
+
+defs = Definitions(
+    jobs=[connect],
+    resources={
+        "client": Client(credentials=credentials),
+    },
+)
 
 # end_resource_dep_job
 
+# start_resource_dep_job_runtime
+credentials = Credentials.configure_at_launch()
+
+
+@job
+def connect():
+    get_newest_stories()
+
+
+defs = Definitions(
+    jobs=[connect],
+    resources={
+        "credentials": credentials,
+        "client": Client(credentials=credentials),
+    },
+)
+
+# end_resource_dep_job_runtime
 
 # start_resource_config
-class DatabaseConnection:
-    def __init__(self, connection: str):
-        self.connection = connection
+from dagster._config.structured_config import Resource
 
 
-@resource(config_schema={"connection": str})
-def db_resource(init_context):
-    connection = init_context.resource_config["connection"]
-    return DatabaseConnection(connection)
+class DatabaseConnection(Resource):
+    connection: str
 
 
 # end_resource_config
@@ -252,13 +277,17 @@ def do_something_with_resource(_):
     pass
 
 
+class FooResource(Resource):
+    pass
+
+
 # start_asset_use_resource
 from dagster import asset
 
 
-@asset(required_resource_keys={"foo"})
-def asset_requires_resource(context):
-    do_something_with_resource(context.resources.foo)
+@asset
+def asset_requires_resource(foo: FooResource):
+    do_something_with_resource(foo)
 
 
 # end_asset_use_resource
