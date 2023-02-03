@@ -43,6 +43,7 @@ from dagster._utils.schedules import is_valid_cron_schedule
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 from dagster_airflow.utils import (
     DagsterAirflowError,
+    Locker,
     contains_duplicate_task_names,
     create_airflow_connections,
     normalized_name,
