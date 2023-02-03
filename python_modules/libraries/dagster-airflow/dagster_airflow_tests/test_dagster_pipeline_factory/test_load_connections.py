@@ -53,7 +53,6 @@ class TestConnectionsAirflow2(unittest.TestCase):
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.launch_run", return_value="run_id")
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.wait_for_run")
     def test_ingest_airflow_dags_with_connections(self, launch_run, wait_for_run):
-        repo_name = "my_repo_name"
         connections = [
             Connection(
                 conn_id="dagster_connection_test",
@@ -117,7 +116,6 @@ class TestConnectionsAirflow1(unittest.TestCase):
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.launch_run", return_value="run_id")
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.wait_for_run")
     def test_ingest_airflow_dags_with_connections(self, launch_run, wait_for_run):
-        repo_name = "my_repo_name"
         connections = [
             Connection(
                 conn_id="dagster_connection_test",

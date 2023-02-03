@@ -23,7 +23,6 @@ def test_make_repo(
     fn_arg_path,
     expected_job_names,
 ):
-    repo_name = "my_repo_name"
     with tempfile.TemporaryDirectory() as tmpdir_path:
         for path, content in path_and_content_tuples:
             with open(os.path.join(tmpdir_path, path), "wb") as f:
