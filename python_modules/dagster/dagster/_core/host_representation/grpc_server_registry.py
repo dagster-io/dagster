@@ -270,6 +270,8 @@ class GrpcServerRegistry(AbstractContextManager):
         for process in self._all_processes:
             process.create_ephemeral_client().cleanup_server()
 
+        self.wait_for_processes()
+
     def wait_for_processes(self) -> None:
         # Wait for any processes created by this registry. Generally not needed outside
         # of tests, since the processes have heartbeats and will end on their own once

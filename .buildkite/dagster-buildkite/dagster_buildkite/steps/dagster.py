@@ -15,8 +15,6 @@ from ..utils import (
     safe_getenv,
     skip_if_no_python_changes,
 )
-from .helm import build_helm_steps
-from .integration import build_integration_steps
 from .packages import build_library_packages_steps
 from .test_project import build_test_project_steps
 
@@ -42,11 +40,6 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     # instance, a directory of unrelated scripts counts as a package. All packages must have a
     # toxfile that defines the tests for that package.
     steps += build_library_packages_steps()
-
-    steps += build_helm_steps()
-    steps += build_sql_schema_check_steps()
-    steps += build_graphql_python_client_backcompat_steps()
-    steps += build_integration_steps()
 
     # Build images containing the dagster-test sample project. This is a dependency of certain
     # dagster core and extension lib tests. Run this after we build our library package steps

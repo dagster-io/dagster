@@ -335,16 +335,18 @@ def grpc_server_bar_kwargs(instance, pipeline_name=None):
             attribute="bar",
         ),
     )
-    with server_process.create_ephemeral_client() as client:
-        args = {"grpc_host": client.host}
-        if pipeline_name:
-            args["job_name"] = "foo"
-        if client.port:
-            args["grpc_port"] = client.port
-        if client.socket:
-            args["grpc_socket"] = client.socket
-        yield args
-    server_process.wait()
+    try:
+        with server_process.create_ephemeral_client() as client:
+            args = {"grpc_host": client.host}
+            if pipeline_name:
+                args["job_name"] = "foo"
+            if client.port:
+                args["grpc_port"] = client.port
+            if client.socket:
+                args["grpc_socket"] = client.socket
+            yield args
+    finally:
+        server_process.wait()
 
 
 @contextmanager
@@ -371,20 +373,22 @@ def grpc_server_bar_cli_args(instance, job_name=None):
             attribute="bar",
         ),
     )
-    with server_process.create_ephemeral_client() as client:
-        args = ["--grpc-host", client.host]
-        if client.port:
-            args.append("--grpc-port")
-            args.append(client.port)
-        if client.socket:
-            args.append("--grpc-socket")
-            args.append(client.socket)
-        if job_name:
-            args.append("--job")
-            args.append(job_name)
+    try:
+        with server_process.create_ephemeral_client() as client:
+            args = ["--grpc-host", client.host]
+            if client.port:
+                args.append("--grpc-port")
+                args.append(client.port)
+            if client.socket:
+                args.append("--grpc-socket")
+                args.append(client.socket)
+            if job_name:
+                args.append("--job")
+                args.append(job_name)
 
-        yield args
-    server_process.wait()
+            yield args
+    finally:
+        server_process.wait()
 
 
 @contextmanager

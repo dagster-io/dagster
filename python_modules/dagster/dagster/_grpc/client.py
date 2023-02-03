@@ -540,11 +540,16 @@ def ephemeral_grpc_api_client(
     from dagster._core.test_utils import instance_for_test
 
     with instance_for_test() as instance:
-        with GrpcServerProcess(
+        server_process = GrpcServerProcess(
             instance_ref=instance.get_ref(),
             loadable_target_origin=loadable_target_origin,
             force_port=force_port,
             max_retries=max_retries,
             max_workers=max_workers,
-        ).create_ephemeral_client() as client:
-            yield client
+        )
+
+        try:
+            with server_process.create_ephemeral_client() as client:
+                yield client
+        finally:
+            server_process.wait()

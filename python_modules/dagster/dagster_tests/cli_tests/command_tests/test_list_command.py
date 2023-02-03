@@ -86,26 +86,27 @@ def test_list_command_grpc_socket():
             ),
         )
 
-        with server_process.create_ephemeral_client() as api_client:
-            execute_list_command(
-                {"grpc_socket": api_client.socket},
-                no_print,
-            )
-            execute_list_command(
-                {"grpc_socket": api_client.socket, "grpc_host": api_client.host},
-                no_print,
-            )
+        try:
+            with server_process.create_ephemeral_client() as api_client:
+                execute_list_command(
+                    {"grpc_socket": api_client.socket},
+                    no_print,
+                )
+                execute_list_command(
+                    {"grpc_socket": api_client.socket, "grpc_host": api_client.host},
+                    no_print,
+                )
 
-            result = runner.invoke(job_list_command, ["--grpc-socket", api_client.socket])
-            assert_correct_bar_repository_output(result)
+                result = runner.invoke(job_list_command, ["--grpc-socket", api_client.socket])
+                assert_correct_bar_repository_output(result)
 
-            result = runner.invoke(
-                job_list_command,
-                ["--grpc-socket", api_client.socket, "--grpc-host", api_client.host],
-            )
-            assert_correct_bar_repository_output(result)
-
-        server_process.wait()
+                result = runner.invoke(
+                    job_list_command,
+                    ["--grpc-socket", api_client.socket, "--grpc-host", api_client.host],
+                )
+                assert_correct_bar_repository_output(result)
+        finally:
+            server_process.wait()
 
 
 def test_list_command_deployed_grpc():
@@ -122,38 +123,40 @@ def test_list_command_deployed_grpc():
             force_port=True,
         )
 
-        with server_process.create_ephemeral_client() as api_client:
-            result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])
-            assert_correct_bar_repository_output(result)
+        try:
+            with server_process.create_ephemeral_client() as api_client:
+                result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])
+                assert_correct_bar_repository_output(result)
 
-            result = runner.invoke(
-                job_list_command,
-                ["--grpc-port", api_client.port, "--grpc-host", api_client.host],
-            )
-            assert_correct_bar_repository_output(result)
+                result = runner.invoke(
+                    job_list_command,
+                    ["--grpc-port", api_client.port, "--grpc-host", api_client.host],
+                )
+                assert_correct_bar_repository_output(result)
 
-            result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])
-            assert_correct_bar_repository_output(result)
+                result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])
+                assert_correct_bar_repository_output(result)
 
-            result = runner.invoke(
-                job_list_command,
-                ["--grpc-port", api_client.port, "--grpc-socket", "foonamedsocket"],
-            )
-            assert result.exit_code != 0
+                result = runner.invoke(
+                    job_list_command,
+                    ["--grpc-port", api_client.port, "--grpc-socket", "foonamedsocket"],
+                )
+                assert result.exit_code != 0
 
-            execute_list_command(
-                {"grpc_port": api_client.port},
-                no_print,
-            )
-
-            # Can't supply both port and socket
-            with pytest.raises(UsageError):
                 execute_list_command(
-                    {"grpc_port": api_client.port, "grpc_socket": "foonamedsocket"},
+                    {"grpc_port": api_client.port},
                     no_print,
                 )
 
-        server_process.wait()
+                # Can't supply both port and socket
+                with pytest.raises(UsageError):
+                    execute_list_command(
+                        {"grpc_port": api_client.port, "grpc_socket": "foonamedsocket"},
+                        no_print,
+                    )
+
+        finally:
+            server_process.wait()
 
 
 def test_list_command_cli():
