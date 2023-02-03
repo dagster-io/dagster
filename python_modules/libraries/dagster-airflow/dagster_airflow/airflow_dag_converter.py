@@ -25,11 +25,9 @@ from dagster_airflow.utils import normalized_name, replace_airflow_logger_handle
 
 def get_graph_definition_args(
     dag,
-    use_airflow_template_context,
     unique_id=None,
 ):
     check.inst_param(dag, "dag", DAG)
-    check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
 
     dependencies = {}
