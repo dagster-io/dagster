@@ -259,7 +259,7 @@ const RowGrid = styled(Box)<{$showRepoColumn: boolean}>`
   height: 100%;
 `;
 
-const SINGLE_ASSET_QUERY = gql`
+export const SINGLE_ASSET_QUERY = gql`
   query SingleAssetQuery($input: AssetKeyInput!) {
     assetOrError(assetKey: $input) {
       ... on Asset {
