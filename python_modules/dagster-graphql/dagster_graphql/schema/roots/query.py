@@ -641,14 +641,15 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
-        if repo is not None:
-            asset_graph = ExternalAssetGraph.from_external_repository(repo)
-        else:
-            asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+        def load_asset_graph() -> ExternalAssetGraph:
+            if repo is not None:
+                return ExternalAssetGraph.from_external_repository(repo)
+            else:
+                return ExternalAssetGraph.from_workspace(graphene_info.context)
 
         stale_status_loader = StaleStatusLoader(
             instance=graphene_info.context.instance,
-            asset_graph=asset_graph,
+            asset_graph=load_asset_graph,
         )
 
         return [
