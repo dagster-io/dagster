@@ -231,7 +231,7 @@ class GrapheneRepository(graphene.ObjectType):
         self._batch_loader = RepositoryScopedBatchLoader(instance, repository)
         self._stale_status_loader = StaleStatusLoader(
             instance=instance,
-            asset_graph=ExternalAssetGraph.from_external_repository(repository),
+            asset_graph=lambda: ExternalAssetGraph.from_external_repository(repository),
         )
         super().__init__(name=repository.name)
 
