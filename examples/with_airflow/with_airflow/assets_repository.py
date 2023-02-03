@@ -16,7 +16,7 @@ def new_upstream_asset_2():
     return 2
 
 
-simple_asset = load_assets_from_airflow_dag(
+simple_assets = load_assets_from_airflow_dag(
     simple_dag,
     task_ids_by_asset_key={
         AssetKey("task_instances_0"): {
@@ -42,4 +42,4 @@ simple_asset = load_assets_from_airflow_dag(
 
 @repository
 def sda_examples():
-    return [simple_asset, new_upstream_asset_1, new_upstream_asset_2]
+    return [*simple_assets, new_upstream_asset_1, new_upstream_asset_2]

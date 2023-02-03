@@ -7,7 +7,7 @@ from unittest import mock
 import pytest
 from airflow import __version__ as airflow_version
 from airflow.models import Connection
-from dagster_airflow.dagster_pipeline_factory import make_dagster_repo_from_airflow_dags_path
+from dagster_airflow.dagster_job_factory import make_dagster_definitions_from_airflow_dags_path
 
 from dagster_airflow_tests.marks import requires_airflow_db
 
@@ -53,7 +53,6 @@ class TestConnectionsAirflow2(unittest.TestCase):
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.launch_run", return_value="run_id")
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.wait_for_run")
     def test_ingest_airflow_dags_with_connections(self, launch_run, wait_for_run):
-        repo_name = "my_repo_name"
         connections = [
             Connection(
                 conn_id="dagster_connection_test",
@@ -70,10 +69,10 @@ class TestConnectionsAirflow2(unittest.TestCase):
             with open(os.path.join(tmpdir_path, "test_connection_dag.py"), "wb") as f:
                 f.write(bytes(LOAD_CONNECTION_DAG_FILE_AIRFLOW_2_CONTENTS.encode("utf-8")))
 
-            repo = make_dagster_repo_from_airflow_dags_path(
-                tmpdir_path, repo_name, connections=connections
+            definitions = make_dagster_definitions_from_airflow_dags_path(
+                tmpdir_path, connections=connections
             )
-            assert repo.name == repo_name
+            repo = definitions.get_repository_def()
             assert repo.has_job("airflow_example_connections")
 
             job = repo.get_job("airflow_example_connections")
@@ -117,7 +116,6 @@ class TestConnectionsAirflow1(unittest.TestCase):
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.launch_run", return_value="run_id")
     @mock.patch("dagster_airflow.hooks.dagster_hook.DagsterHook.wait_for_run")
     def test_ingest_airflow_dags_with_connections(self, launch_run, wait_for_run):
-        repo_name = "my_repo_name"
         connections = [
             Connection(
                 conn_id="dagster_connection_test",
@@ -133,10 +131,10 @@ class TestConnectionsAirflow1(unittest.TestCase):
             with open(os.path.join(tmpdir_path, "test_connection_dag.py"), "wb") as f:
                 f.write(bytes(LOAD_CONNECTION_DAG_AIRFLOW_1_FILE_CONTENTS.encode("utf-8")))
 
-            repo = make_dagster_repo_from_airflow_dags_path(
-                tmpdir_path, repo_name, connections=connections
+            definitions = make_dagster_definitions_from_airflow_dags_path(
+                tmpdir_path, connections=connections
             )
-            assert repo.name == repo_name
+            repo = definitions.get_repository_def()
             assert repo.has_job("airflow_example_connections")
 
             job = repo.get_job("airflow_example_connections")
