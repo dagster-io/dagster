@@ -1,23 +1,25 @@
 # isort: skip_file
 # pylint: disable=unused-argument,reimported,unnecessary-ellipsis
-from dagster import ResourceDefinition, graph, job
-
+from dagster import ResourceDefinition, graph, job, Definitions
+import requests
+from requests import Response
 
 # start_resource_example
-from dagster import resource
+from dagster._config.structured_config import ConfigurableResource
 
 
-class ExternalCerealFetcher:
+class ExternalCerealFetcher(ConfigurableResource):
     def fetch_new_cereals(self, start_ts, end_ts):
         pass
 
 
-@resource
-def cereal_fetcher(init_context):
-    return ExternalCerealFetcher()
-
-
 # end_resource_example
+
+
+class DatabaseResource(ConfigurableResource):
+    def execute_query(self, query):
+        pass
+
 
 # start_op_with_resources_example
 from dagster import op
@@ -25,42 +27,45 @@ from dagster import op
 CREATE_TABLE_1_QUERY = "create table_1 as select * from table_0"
 
 
-@op(required_resource_keys={"database"})
-def op_requires_resources(context):
-    context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
+@op
+def op_requires_resources(database: DatabaseResource):
+    database.execute_query(CREATE_TABLE_1_QUERY)
 
 
 # end_op_with_resources_example
 
 # start_resource_testing
-from dagster import resource
+from dagster._config.structured_config import ConfigurableResource
 
 
-@resource
-def my_resource(_):
-    return "foo"
+class MyResource(ConfigurableResource):
+    def get_value(self) -> str:
+        return "foo"
 
 
 def test_my_resource():
-    assert my_resource(None) == "foo"
+    assert MyResource().get_value() == "foo"
 
 
 # end_resource_testing
 
 # start_resource_testing_with_context
-from dagster import build_init_resource_context, resource
+from dagster._config.structured_config import ConfigurableResource
 
 
-@resource(required_resource_keys={"foo"}, config_schema={"bar": str})
-def my_resource_requires_context(init_context):
-    return init_context.resources.foo, init_context.resource_config["bar"]
+class StringHolderResource(ConfigurableResource):
+    value: str
+
+
+class MyResourceRequiresAnother(ConfigurableResource):
+    foo: StringHolderResource
+    bar: str
 
 
 def test_my_resource_with_context():
-    init_context = build_init_resource_context(
-        resources={"foo": "foo_str"}, config={"bar": "bar_str"}
-    )
-    assert my_resource_requires_context(init_context) == ("foo_str", "bar_str")
+    resource = MyResourceRequiresAnother(foo=StringHolderResource("foo"), bar="bar")
+    assert resource.foo.value == "foo"
+    assert resource.bar == "bar"
 
 
 # end_resource_testing_with_context
@@ -108,12 +113,8 @@ def do_database_stuff():
     op_requires_resources()
 
 
-do_database_stuff_prod = do_database_stuff.to_job(
-    resource_defs={"database": database_resource_a}
-)
-do_database_stuff_dev = do_database_stuff.to_job(
-    resource_defs={"database": database_resource_b}
-)
+do_database_stuff_prod = do_database_stuff.to_job(resource_defs={"database": database_resource_a})
+do_database_stuff_dev = do_database_stuff.to_job(resource_defs={"database": database_resource_b})
 
 
 # end_graph_example
@@ -125,18 +126,19 @@ class Client:
 
 
 # start_resource_dep_example
-from dagster import resource
+from dagster._config.structured_config import ConfigurableResource
 
 
-@resource
-def credentials():
-    return ("bad_username", "easy_password")
+class Credentials(ConfigurableResource):
+    username: str
+    password: str
 
 
-@resource(required_resource_keys={"credentials"})
-def client(init_context):
-    username, password = init_context.resources.credentials
-    return Client(username, password)
+class Client(ConfigurableResource):
+    credentials: Credentials
+
+    def request(self, endpoint: str):
+        ...
 
 
 # end_resource_dep_example
@@ -145,33 +147,38 @@ def client(init_context):
 from dagster import graph, op
 
 
-@op(required_resource_keys={"client"})
-def get_client(context):
-    return context.resources.client
+@op
+def get_newest_stories(client: Client):
+    return client.request("/stories/new")
 
 
 # end_resource_dep_op
 
 
 # start_resource_dep_job
-@job(resource_defs={"credentials": credentials, "client": client})
-def connect():
-    get_client()
+credentials = Credentials(username="foo", password="bar")
 
+
+@job
+def connect():
+    get_newest_stories()
+
+
+defs = Definitions(
+    jobs=[connect],
+    resources={
+        "client": Client(credentials=credentials),
+    },
+)
 
 # end_resource_dep_job
 
-
 # start_resource_config
-class DatabaseConnection:
-    def __init__(self, connection: str):
-        self.connection = connection
+from dagster._config.structured_config import ConfigurableResource
 
 
-@resource(config_schema={"connection": str})
-def db_resource(init_context):
-    connection = init_context.resource_config["connection"]
-    return DatabaseConnection(connection)
+class DatabaseConnection(ConfigurableResource):
+    connection: str
 
 
 # end_resource_config
@@ -252,13 +259,17 @@ def do_something_with_resource(_):
     pass
 
 
+class FooResource(ConfigurableResource):
+    pass
+
+
 # start_asset_use_resource
 from dagster import asset
 
 
-@asset(required_resource_keys={"foo"})
-def asset_requires_resource(context):
-    do_something_with_resource(context.resources.foo)
+@asset
+def asset_requires_resource(foo: FooResource):
+    do_something_with_resource(foo)
 
 
 # end_asset_use_resource
@@ -297,3 +308,181 @@ def repo():
 
 
 # end_asset_provide_resource_using_repository
+
+
+from typing import Dict, Any
+
+# start_new_resources_assets_defs
+
+from dagster import asset, Definitions
+from dagster._core.definitions.resource_annotation import Resource
+
+
+@asset
+def data_from_url(url: Resource[str]) -> Dict[str, Any]:
+    return requests.get(url).json()
+
+
+defs = Definitions(
+    assets=[data_from_url],
+    resources={"url": "https://dagster.io"},
+)
+
+
+# end_new_resources_assets_defs
+
+
+# start_new_resources_ops_defs
+
+from dagster import op, Definitions, job
+from dagster._core.definitions.resource_annotation import Resource
+
+
+@op
+def print_url_from_resource(url: Resource[str]):
+    print(f"Visit {url}")
+
+
+@job
+def print_url_job():
+    print_url_from_resource()
+
+
+defs = Definitions(
+    jobs=[print_url_job],
+    resources={"url": "https://dagster.io"},
+)
+
+
+# end_new_resources_ops_defs
+
+# start_new_resources_configurable_defs
+
+
+from dagster import asset, Definitions
+from dagster._config.structured_config import ConfigurableResource
+
+
+class MyConnectionResource(ConfigurableResource):
+    username: str
+    password: str
+
+    def request(self, endpoint: str) -> Response:
+        return requests.get(
+            f"https://my-api.com/{endpoint}",
+            auth=(self.username, self.password),
+        )
+
+
+# Since MyConnectionResource is a ConfigurableResource, we don't
+# need to wrap it in a Resource[] annotation.
+@asset
+def data_from_service(my_conn: MyConnectionResource) -> Dict[str, Any]:
+    return my_conn.request("/fetch_data").json()
+
+
+defs = Definitions(
+    assets=[data_from_service],
+    resources={
+        "my_conn": MyConnectionResource(username="my_user", password="my_password"),
+    },
+)
+
+# end_new_resources_configurable_defs
+
+
+# start_new_resources_configurable_defs_ops
+
+
+from dagster import Definitions, job, op
+from dagster._config.structured_config import ConfigurableResource
+
+
+class MyConnectionResource(ConfigurableResource):
+    username: str
+    password: str
+
+    def request(self, endpoint: str) -> Response:
+        return requests.get(
+            f"https://my-api.com/{endpoint}",
+            auth=(self.username, self.password),
+        )
+
+
+# Since MyConnectionResource is a ConfigurableResource, we don't
+# need to wrap it in a Resource[] annotation.
+@op
+def update_service(my_conn: MyConnectionResource):
+    my_conn.request("/update")
+
+
+@job
+def update_service_job():
+    update_service()
+
+
+defs = Definitions(
+    jobs=[update_service_job],
+    resources={
+        "my_conn": MyConnectionResource(username="my_user", password="my_password"),
+    },
+)
+
+# end_new_resources_configurable_defs_ops
+
+
+def get_filestore_client(*args, **kwargs):
+    pass
+
+
+# start_new_resources_nesting
+from dagster import Definitions
+from dagster._config.structured_config import ConfigurableResource
+
+
+class CredentialsResource(ConfigurableResource):
+    username: str
+    password: str
+
+
+class FileStoreBucket(ConfigurableResource):
+    credentials: CredentialsResource
+    region: str
+
+    def write(self, data: str):
+        get_filestore_client(
+            username=self.credentials.username,
+            password=self.credentials.password,
+            region=self.region,
+        ).write(data)
+
+
+credentials = CredentialsResource(username="my_user", password="my_password")
+defs = Definitions(
+    assets=[...],
+    resources={
+        "bucket": FileStoreBucket(
+            credentials=credentials,
+            region="us-east-1",
+        ),
+    },
+)
+# end_new_resources_nesting
+
+
+# start_resource_dep_job_runtime
+credentials = CredentialsResource.configure_at_launch()
+
+
+defs = Definitions(
+    assets=[...],
+    resources={
+        "credentials": credentials,
+        "bucket": FileStoreBucket(
+            credentials=credentials,
+            region="us-east-1",
+        ),
+    },
+)
+
+# end_resource_dep_job_runtime
