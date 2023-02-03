@@ -21,6 +21,7 @@ from .workspace.cli_target import (
     working_directory_option,
     workspace_option,
 )
+from dagster._core.instance_for_test import environ
 
 _SUBPROCESS_WAIT_TIMEOUT = 60
 _CHECK_SUBPROCESS_INTERVAL = 5
@@ -54,7 +55,15 @@ def dev_command_options(f):
     ),
 )
 @click.option("--dagit-port", help="Port to use for the Dagit UI.", required=False)
-def dev_command(code_server_log_level, dagit_port, **kwargs):
+@click.option(
+    "--enable-code-links",
+    help=(
+        "Enable code backlinks in Dagit for local dev. May slightly increase code location load"
+        " times."
+    ),
+    is_flag=True,
+)
+def dev_command(code_server_log_level, dagit_port, enable_code_links, **kwargs):
     # check if dagit installed, crash if not
     try:
         import dagit  #  # noqa: F401
@@ -85,70 +94,96 @@ def dev_command(code_server_log_level, dagit_port, **kwargs):
                 " unless it is placed in the same folder as DAGSTER_HOME."
             )
 
-    with get_instance_for_service("dagster dev", logger_fn=logger.info) as instance:
-        logger.info("Launching Dagster services...")
+    with environ({"DAGSTER_ENABLE_CODE_LINKS": "true" if enable_code_links else "false"}):
+        with get_instance_for_service("dagster dev", logger_fn=logger.info) as instance:
+            logger.info("Launching Dagster services...")
 
-        args = [
-            "--instance-ref",
-            serialize_dagster_namedtuple(instance.get_ref()),
-            "--code-server-log-level",
-            code_server_log_level,
-        ]
+            args = [
+                "--instance-ref",
+                serialize_dagster_namedtuple(instance.get_ref()),
+                "--code-server-log-level",
+                code_server_log_level,
+            ]
 
-        if kwargs.get("workspace"):
-            for workspace in check.tuple_elem(kwargs, "workspace"):
-                args.extend(["--workspace", workspace])
+            if kwargs.get("workspace"):
+                for workspace in check.tuple_elem(kwargs, "workspace"):
+                    args.extend(["--workspace", workspace])
 
-        if kwargs.get("python_file"):
-            for python_file in check.tuple_elem(kwargs, "python_file"):
-                args.extend(["--python-file", python_file])
+            if kwargs.get("python_file"):
+                for python_file in check.tuple_elem(kwargs, "python_file"):
+                    args.extend(["--python-file", python_file])
 
-        if kwargs.get("module_name"):
-            for module_name in check.tuple_elem(kwargs, "module_name"):
-                args.extend(["--module-name", module_name])
+            if kwargs.get("module_name"):
+                for module_name in check.tuple_elem(kwargs, "module_name"):
+                    args.extend(["--module-name", module_name])
 
-        if kwargs.get("working_directory"):
-            args.extend(["--working-directory", check.str_elem(kwargs, "working_directory")])
+            if kwargs.get("working_directory"):
+                args.extend(["--working-directory", check.str_elem(kwargs, "working_directory")])
 
-        dagit_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagit"] + (["--port", dagit_port] if dagit_port else []) + args
-        )
-        daemon_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagster._daemon", "run"] + args
-        )
-        try:
-            while True:
-                time.sleep(_CHECK_SUBPROCESS_INTERVAL)
-
-                if dagit_process.poll() is not None:
-                    raise Exception(
-                        "Dagit process shut down unexpectedly with return code"
-                        f" {dagit_process.returncode}"
-                    )
-
-                if daemon_process.poll() is not None:
-                    raise Exception(
-                        "dagster-daemon process shut down unexpectedly with return code"
-                        f" {daemon_process.returncode}"
-                    )
-
-        except:
-            logger.info("Shutting down Dagster services...")
-            interrupt_ipc_subprocess(daemon_process)
-            interrupt_ipc_subprocess(dagit_process)
-
+            dagit_process = open_ipc_subprocess(
+                [sys.executable, "-m", "dagit"]
+                + (["--port", dagit_port] if dagit_port else [])
+                + args
+            )
+            daemon_process = open_ipc_subprocess(
+                [sys.executable, "-m", "dagster._daemon", "run"] + args
+            )
             try:
-                dagit_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
-            except subprocess.TimeoutExpired:
-                logger.warning("dagit process did not terminate cleanly, killing the process")
-                dagit_process.kill()
+                while True:
+                    time.sleep(_CHECK_SUBPROCESS_INTERVAL)
 
-            try:
-                daemon_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
-            except subprocess.TimeoutExpired:
-                logger.warning(
-                    "dagster-daemon process did not terminate cleanly, killing the process"
-                )
-                daemon_process.kill()
+                    if dagit_process.poll() is not None:
+                        raise Exception(
+                            "Dagit process shut down unexpectedly with return code"
+                            f" {dagit_process.returncode}"
+                        )
 
-            logger.info("Dagster services shut down.")
+                    if daemon_process.poll() is not None:
+                        raise Exception(
+                            "dagster-daemon process shut down unexpectedly with return code"
+                            f" {daemon_process.returncode}"
+                        )
+
+            except:
+                logger.info("Shutting down Dagster services...")
+                interrupt_ipc_subprocess(daemon_process)
+                interrupt_ipc_subprocess(dagit_process)
+
+                try:
+                    while True:
+                        time.sleep(_CHECK_SUBPROCESS_INTERVAL)
+
+                        if dagit_process.poll() is not None:
+                            raise Exception(
+                                "Dagit process shut down unexpectedly with return code"
+                                f" {dagit_process.returncode}"
+                            )
+
+                        if daemon_process.poll() is not None:
+                            raise Exception(
+                                "dagster-daemon process shut down unexpectedly with return code"
+                                f" {daemon_process.returncode}"
+                            )
+
+                except:
+                    logger.info("Shutting down Dagster services...")
+                    interrupt_ipc_subprocess(daemon_process)
+                    interrupt_ipc_subprocess(dagit_process)
+
+                    try:
+                        dagit_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
+                    except subprocess.TimeoutExpired:
+                        logger.warning(
+                            "dagit process did not terminate cleanly, killing the process"
+                        )
+                        dagit_process.kill()
+
+                    try:
+                        daemon_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
+                    except subprocess.TimeoutExpired:
+                        logger.warning(
+                            "dagster-daemon process did not terminate cleanly, killing the process"
+                        )
+                        daemon_process.kill()
+
+                    logger.info("Dagster services shut down.")
