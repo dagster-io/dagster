@@ -377,7 +377,7 @@ def _batch_event_iterator(
     """Yields events for a dbt cli invocation. Waits until the entire command has completed before
     emitting outputs.
     """
-    dbt_output = None
+    dbt_output: Optional[DbtOutput] = None
     try:
         if use_build_command:
             dbt_output = dbt_resource.build(**kwargs)
@@ -393,11 +393,10 @@ def _batch_event_iterator(
 
         dbt_output = check.not_none(dbt_output)
         for result in dbt_output.result["results"]:
+            extra_metadata: Optional[Mapping[str, RawMetadataValue]] = None
             if runtime_metadata_fn:
                 node_info = manifest_json["nodes"][result["unique_id"]]
                 extra_metadata = runtime_metadata_fn(context, node_info)
-            else:
-                extra_metadata = None
             yield from result_to_events(
                 result=result,
                 docs_url=dbt_output.docs_url,
