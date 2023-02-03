@@ -40,6 +40,7 @@ from .dependency import (
     Node,
     NodeHandle,
     NodeInput,
+    NodeInputHandle,
     NodeInvocation,
 )
 from .hook_definition import HookDefinition
@@ -62,6 +63,7 @@ if TYPE_CHECKING:
     from .job_definition import JobDefinition
     from .op_definition import OpDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
+    from .source_asset import SourceAsset
 
 T = TypeVar("T")
 
@@ -183,6 +185,12 @@ class GraphDefinition(NodeDefinition):
     _config_mapping: Optional[ConfigMapping]
     _nodes_in_topological_order: Sequence[Node]
 
+    # (node name within the graph -> (input name -> SourceAsset to load that input from))
+    # Does NOT include keys for:
+    # - Inputs to the graph itself
+    # - Inputs to nodes within sub-graphs of the graph
+    _node_input_source_assets: Mapping[str, Mapping[str, "SourceAsset"]]
+
     def __init__(
         self,
         name: str,
@@ -196,6 +204,7 @@ class GraphDefinition(NodeDefinition):
         output_mappings: Optional[Sequence[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
         tags: Optional[Mapping[str, str]] = None,
+        node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
         **kwargs: object,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
@@ -237,6 +246,9 @@ class GraphDefinition(NodeDefinition):
         # eager computation to detect cycles
         self._nodes_in_topological_order = self._get_nodes_in_topological_order()
         self._dagster_type_dict = construct_dagster_type_dictionary([self])
+        self._node_input_source_assets = check.opt_mapping_param(
+            node_input_source_assets, "node_input_source_assets", key_type=str, value_type=dict
+        )
 
     def _get_nodes_in_topological_order(self) -> Sequence[Node]:
         _forward_edges, backward_edges = _create_adjacency_lists(
@@ -302,6 +314,10 @@ class GraphDefinition(NodeDefinition):
     @property
     def solids_in_topological_order(self) -> Sequence[Node]:
         return self._nodes_in_topological_order
+
+    @property
+    def node_input_source_assets(self) -> Mapping[str, Mapping[str, "SourceAsset"]]:
+        return self._node_input_source_assets
 
     def has_solid_named(self, name: str) -> bool:
         check.str_param(name, "name")
@@ -738,6 +754,25 @@ class GraphDefinition(NodeDefinition):
     @public
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
         return super(GraphDefinition, self).with_retry_policy(retry_policy)
+
+    def resolve_input_to_destinations(
+        self, input_handle: NodeInputHandle
+    ) -> Sequence[NodeInputHandle]:
+        all_destinations: List[NodeInputHandle] = []
+        for mapping in self.input_mappings:
+            if mapping.graph_input_name != input_handle.input_name:
+                continue
+            # recurse into graph structure
+            all_destinations += self.solid_named(
+                mapping.maps_to.solid_name
+            ).definition.resolve_input_to_destinations(
+                NodeInputHandle(
+                    NodeHandle(mapping.maps_to.solid_name, parent=input_handle.node_handle),
+                    mapping.maps_to.input_name,
+                ),
+            )
+
+        return all_destinations
 
 
 class SubselectedGraphDefinition(GraphDefinition):
