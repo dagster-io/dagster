@@ -1,7 +1,7 @@
 from dagster import GraphDefinition, NodeInvocation, op
 
 
-def test_op_instance_tags():
+def test_op_instance_tags(ignore_code_origin):
     called = {}
 
     @op(tags={"foo": "bar", "baz": "quux"})

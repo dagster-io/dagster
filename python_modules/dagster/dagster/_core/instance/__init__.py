@@ -817,6 +817,11 @@ class DagsterInstance(DynamicPartitionsStore):
         return self.get_settings("sensors")
 
     @property
+    def code_links_enabled(self) -> bool:
+        code_links_settings = cast(Dict[str, Any], self.get_settings("code_links"))
+        return code_links_settings.get("enabled", False) is True
+
+    @property
     def telemetry_enabled(self) -> bool:
         if self.is_ephemeral:
             return False

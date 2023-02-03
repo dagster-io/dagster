@@ -39,11 +39,11 @@ def get_noop_pipeline():
     return noop_job
 
 
-def test_empty_job_snap_snapshot(snapshot):
+def test_empty_job_snap_snapshot(snapshot, ignore_code_origin):
     snapshot.assert_match(serialize_pp(JobSnapshot.from_job_def(get_noop_pipeline())))
 
 
-def test_empty_job_snap_props(snapshot):
+def test_empty_job_snap_props(snapshot, ignore_code_origin):
     job_snapshot = JobSnapshot.from_job_def(get_noop_pipeline())
 
     assert job_snapshot.name == "noop_job"
@@ -56,7 +56,7 @@ def test_empty_job_snap_props(snapshot):
     snapshot.assert_match(create_job_snapshot_id(job_snapshot))
 
 
-def test_job_snap_all_props(snapshot):
+def test_job_snap_all_props(snapshot, ignore_code_origin):
     @op
     def noop_op(_):
         pass
@@ -91,7 +91,7 @@ def test_noop_deps_snap():
     assert isinstance(invocations[0], NodeInvocationSnap)
 
 
-def test_two_invocations_deps_snap(snapshot):
+def test_two_invocations_deps_snap(snapshot, ignore_code_origin):
     @op
     def noop_op(_):
         pass
@@ -138,7 +138,7 @@ def test_basic_dep():
     assert outputs[0].output_name == "result"
 
 
-def test_basic_dep_fan_out(snapshot):
+def test_basic_dep_fan_out(snapshot, ignore_code_origin):
     @op
     def return_one(_):
         return 1
@@ -182,7 +182,7 @@ def test_basic_dep_fan_out(snapshot):
     snapshot.assert_match(create_job_snapshot_id(job_snapshot))
 
 
-def test_basic_fan_in(snapshot):
+def test_basic_fan_in(snapshot, ignore_code_origin):
     @op(out=Out(Nothing))
     def return_nothing(_):
         return None
@@ -437,7 +437,7 @@ def test_deserialize_node_def_snaps_noneable():
     assert isinstance(recevied_config_type.inner_type, String)
 
 
-def test_deserialize_node_def_snaps_multi_type_config(snapshot):
+def test_deserialize_node_def_snaps_multi_type_config(snapshot, ignore_code_origin):
     @op(
         config_schema=Field(
             Permissive(
@@ -502,7 +502,7 @@ def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
     )
 
 
-def test_multi_type_config_array_map(snapshot):
+def test_multi_type_config_array_map(snapshot, ignore_code_origin):
     @op(config_schema=Array(Map(str, int)))
     def fancy_op(_):
         pass

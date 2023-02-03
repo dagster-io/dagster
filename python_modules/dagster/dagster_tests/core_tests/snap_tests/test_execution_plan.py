@@ -4,7 +4,7 @@ from dagster._core.snap import create_job_snapshot_id, snapshot_from_execution_p
 from dagster._serdes import serialize_pp
 
 
-def test_create_noop_execution_plan(snapshot):
+def test_create_noop_execution_plan(snapshot, ignore_code_origin):
     @op
     def noop_op(_):
         pass
@@ -25,7 +25,7 @@ def test_create_noop_execution_plan(snapshot):
     )
 
 
-def test_create_execution_plan_with_dep(snapshot):
+def test_create_execution_plan_with_dep(snapshot, ignore_code_origin):
     @op
     def op_one(_):
         return 1
@@ -50,7 +50,7 @@ def test_create_execution_plan_with_dep(snapshot):
     )
 
 
-def test_create_with_graph(snapshot):
+def test_create_with_graph(snapshot, ignore_code_origin):
     @op(out={"out_num": Out(dagster_type=int)})
     def return_one(_):
         return 1
@@ -90,7 +90,7 @@ def test_create_with_graph(snapshot):
     )
 
 
-def test_create_noop_execution_plan_with_tags(snapshot):
+def test_create_noop_execution_plan_with_tags(snapshot, ignore_code_origin):
     @op(tags={"foo": "bar", "bar": "baaz"})
     def noop_op(_):
         pass

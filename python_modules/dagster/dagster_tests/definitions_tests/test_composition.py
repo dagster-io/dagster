@@ -1,3 +1,5 @@
+import inspect
+import os
 import warnings
 
 import pytest
@@ -18,9 +20,16 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook, success_hook
+from dagster._core.definitions.decorators.op_decorator import CODE_ORIGIN_TAG_NAME
 from dagster._core.definitions.events import DynamicOutput, HookExecutionResult
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
+from dagster._utils import file_relative_path
+
+
+def _code_origin_tag(line_no: int) -> str:
+    dagster_module_path = os.path.normpath(file_relative_path(__file__, "../../")) + "/"
+    return f"{dagster_module_path}:dagster_tests/definitions_tests/test_composition.py:{line_no}"
 
 
 def builder(graph):
@@ -808,6 +817,8 @@ def test_alias_on_invoked_op_fails():
 
 
 def test_tags():
+    expected_line = inspect.currentframe().f_lineno + 2
+
     @op(tags={"def": "1"})
     def emit(_):
         return 1
@@ -818,7 +829,11 @@ def test_tags():
 
     plan = create_execution_plan(tag)
     step = next(iter(plan.step_dict.values()))
-    assert step.tags == {"def": "1", "invoke": "2"}
+    assert step.tags == {
+        "def": "1",
+        "invoke": "2",
+        CODE_ORIGIN_TAG_NAME: _code_origin_tag(expected_line),
+    }
 
 
 def test_bad_alias():
@@ -834,6 +849,8 @@ def test_tag_subset():
     def empty(_):
         pass
 
+    expected_line = inspect.currentframe().f_lineno + 2
+
     @op(tags={"def": "1"})
     def emit(_):
         return 1
@@ -845,7 +862,11 @@ def test_tag_subset():
 
     plan = create_execution_plan(tag.get_subset(op_selection=["emit"]))
     step = next(iter(plan.step_dict.values()))
-    assert step.tags == {"def": "1", "invoke": "2"}
+    assert step.tags == {
+        "def": "1",
+        "invoke": "2",
+        CODE_ORIGIN_TAG_NAME: _code_origin_tag(expected_line),
+    }
 
 
 def test_composition_order():
@@ -853,7 +874,9 @@ def test_composition_order():
 
     @success_hook
     def test_hook(context):
-        solid_to_tags[context.op.name] = context.op.tags
+        solid_to_tags[context.op.name] = {
+            k: v for k, v in context.op.tags.items() if k != CODE_ORIGIN_TAG_NAME
+        }
 
     @op
     def a_op(_):

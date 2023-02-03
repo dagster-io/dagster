@@ -21,12 +21,18 @@ import dagster._check as check
 from dagster._annotations import deprecated_param, experimental_param
 from dagster._builtins import Nothing
 from dagster._config import UserConfigSchema
-from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
+from dagster._core.decorator_utils import (
+    get_function_params,
+    get_valid_name_permutations,
+)
 from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataUserInput
+from dagster._core.definitions.metadata import (
+    ArbitraryMetadataMapping,
+    MetadataUserInput,
+)
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,

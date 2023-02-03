@@ -12,84 +12,77 @@ from dagster import (
     op,
     reconstructable,
 )
+from dagster._core.definitions.decorators.op_decorator import do_not_attach_code_origin
 from dagster._core.errors import DagsterExecutionStepNotFoundError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.test_utils import instance_for_test
 from dagster._utils.merger import merge_dicts
 
+with do_not_attach_code_origin():
 
-@op(tags={"third": "3"})
-def multiply_by_two(context, y):
-    context.log.info("multiply_by_two is returning " + str(y * 2))
-    return y * 2
+    @op(tags={"third": "3"})
+    def multiply_by_two(context, y):
+        context.log.info("multiply_by_two is returning " + str(y * 2))
+        return y * 2
 
+    @op(tags={"second": "2"})
+    def multiply_inputs(context, y, ten):
+        context.log.info("multiply_inputs is returning " + str(y * ten))
+        return y * ten
 
-@op(tags={"second": "2"})
-def multiply_inputs(context, y, ten):
-    context.log.info("multiply_inputs is returning " + str(y * ten))
-    return y * ten
+    @op
+    def emit_ten(_):
+        return 10
 
+    @op
+    def echo(_, x: int) -> int:
+        return x
 
-@op
-def emit_ten(_):
-    return 10
+    @op(
+        config_schema={
+            "range": Field(int, is_required=False, default_value=3),
+        }
+    )
+    def num_range(context) -> int:
+        return context.op_config["range"]
 
+    @op(
+        out=DynamicOut(),
+        config_schema={
+            "fail": Field(bool, is_required=False, default_value=False),
+        },
+        tags={"first": "1"},
+    )
+    def emit(context, num: int = 3):
+        if context.op_config["fail"]:
+            raise Exception("FAILURE")
 
-@op
-def echo(_, x: int) -> int:
-    return x
+        for i in range(num):
+            yield DynamicOutput(value=i, mapping_key=str(i))
 
+    @op
+    def sum_numbers(_, nums):
+        return sum(nums)
 
-@op(
-    config_schema={
-        "range": Field(int, is_required=False, default_value=3),
-    }
-)
-def num_range(context) -> int:
-    return context.op_config["range"]
+    @op(out=DynamicOut())
+    def dynamic_echo(_, nums):
+        for x in nums:
+            yield DynamicOutput(value=x, mapping_key=str(x))
 
+    @job
+    def dynamic_job():
+        numbers = emit(num_range())
+        dynamic = numbers.map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
+        n = multiply_by_two.alias("double_total")(sum_numbers(dynamic.collect()))
+        echo(n)  # test transitive downstream of collect
 
-@op(
-    out=DynamicOut(),
-    config_schema={
-        "fail": Field(bool, is_required=False, default_value=False),
-    },
-    tags={"first": "1"},
-)
-def emit(context, num: int = 3):
-    if context.op_config["fail"]:
-        raise Exception("FAILURE")
-
-    for i in range(num):
-        yield DynamicOutput(value=i, mapping_key=str(i))
-
-
-@op
-def sum_numbers(_, nums):
-    return sum(nums)
-
-
-@op(out=DynamicOut())
-def dynamic_echo(_, nums):
-    for x in nums:
-        yield DynamicOutput(value=x, mapping_key=str(x))
-
-
-@job
-def dynamic_job():
-    numbers = emit(num_range())
-    dynamic = numbers.map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
-    n = multiply_by_two.alias("double_total")(sum_numbers(dynamic.collect()))
-    echo(n)  # test transitive downstream of collect
-
-
-@job
-def fan_repeat():
-    one = emit(num_range()).map(multiply_by_two)
-    two = dynamic_echo(one.collect()).map(multiply_by_two).map(echo)
-    three = dynamic_echo(two.collect()).map(multiply_by_two)
-    sum_numbers(three.collect())
+    @job
+    def fan_repeat():
+        one = emit(num_range()).map(multiply_by_two)
+        two = dynamic_echo(one.collect()).map(multiply_by_two).map(echo)
+        three = dynamic_echo(two.collect()).map(multiply_by_two)
+        sum_numbers(three.collect())
 
 
 def _step_keys_from_result(result):

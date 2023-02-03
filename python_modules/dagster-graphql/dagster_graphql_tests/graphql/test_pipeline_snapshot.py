@@ -62,7 +62,7 @@ def pretty_dump(data) -> str:
 
 
 def test_fetch_snapshot_or_error_by_snapshot_id_success(
-    graphql_context: WorkspaceRequestContext, snapshot
+    graphql_context: WorkspaceRequestContext, snapshot, ignore_code_origin
 ):
     instance = graphql_context.instance
     result = noop_job.execute_in_process(instance=instance)
@@ -84,7 +84,7 @@ def test_fetch_snapshot_or_error_by_snapshot_id_success(
 
 
 def test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found(
-    graphql_context: WorkspaceRequestContext, snapshot
+    graphql_context: WorkspaceRequestContext, snapshot, ignore_code_origin
 ):
     result = execute_dagster_graphql(
         graphql_context,
@@ -100,7 +100,7 @@ def test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found(
 
 
 def test_fetch_snapshot_or_error_by_active_pipeline_name_success(
-    graphql_context: WorkspaceRequestContext, snapshot
+    graphql_context: WorkspaceRequestContext, snapshot, ignore_code_origin
 ):
     result = execute_dagster_graphql(
         graphql_context,
@@ -123,7 +123,7 @@ def test_fetch_snapshot_or_error_by_active_pipeline_name_success(
 
 
 def test_fetch_snapshot_or_error_by_active_pipeline_name_not_found(
-    graphql_context: WorkspaceRequestContext, snapshot
+    graphql_context: WorkspaceRequestContext, snapshot, ignore_code_origin
 ):
     result = execute_dagster_graphql(
         graphql_context,

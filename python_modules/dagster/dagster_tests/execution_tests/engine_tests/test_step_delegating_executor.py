@@ -16,6 +16,7 @@ from dagster import (
 )
 from dagster._config import Permissive
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.decorators.op_decorator import CODE_ORIGIN_TAG_NAME
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
@@ -59,7 +60,11 @@ class TestStepHandler(StepHandler):
             TestStepHandler.verify_step_count += 1
         if step_handler_context.execute_step_args.step_keys_to_execute[0] == "baz_op":
             TestStepHandler.saw_baz_op = True
-            assert step_handler_context.step_tags["baz_op"] == {"foo": "bar"}
+            assert {
+                k: v
+                for k, v in step_handler_context.step_tags["baz_op"].items()
+                if k != CODE_ORIGIN_TAG_NAME
+            } == {"foo": "bar"}
 
         TestStepHandler.launch_step_count += 1
         print("TestStepHandler Launching Step!")  # noqa: T201
