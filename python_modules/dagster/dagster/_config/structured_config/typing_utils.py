@@ -1,6 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
-
-from typing_extensions import TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast
 
 if TYPE_CHECKING:
     from dagster._config.structured_config import PartialResource
@@ -42,8 +40,6 @@ class AllowPartialResourceInitParams:
 
     def __get__(self: "Self", obj: Any, __owner: Any) -> "Self":
         # no-op implementation (only used to affect type signature)
-        from dagster._config.structured_config import Self
-
         return cast(Self, getattr(obj, self._assigned_name))
 
     def __set__(
