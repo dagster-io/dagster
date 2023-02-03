@@ -74,11 +74,9 @@ setup(
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0",
         "croniter>=0.3.34",
-        # grpcio 1.44.0 is the min version compatible with both protobuf 3 and 4
-        # Also pinned <1.48.0 until the resolution of https://github.com/grpc/grpc/issues/31885
-        # (except on python 3.11, where newer versions are required just to install the grpcio package)
-        "grpcio>=1.44.0,<1.48.0; python_version<'3.11'",
-        "grpcio>=1.44.0; python_version>='3.11'",
+        # grpcio>=1.48.1 has hanging/crashing issues: https://github.com/grpc/grpc/issues/30843 and https://github.com/grpc/grpc/issues/31885
+        # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
+        "grpcio>=1.44.0",
         "grpcio-health-checking>=1.44.0",
         "packaging>=20.9",
         "pendulum",
