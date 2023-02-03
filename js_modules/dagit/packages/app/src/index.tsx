@@ -17,7 +17,7 @@ import {CommunityNux} from './NUX/CommunityNux';
 import {extractInitializationData} from './extractInitializationData';
 import {telemetryLink} from './telemetryLink';
 
-const {pathPrefix, telemetryEnabled} = extractInitializationData();
+const {pathPrefix, telemetryEnabled, codeLinksEnabled} = extractInitializationData();
 
 const apolloLinks = [logLink, errorLink, timeStartLink];
 
@@ -31,6 +31,7 @@ const config = {
   origin: process.env.REACT_APP_BACKEND_ORIGIN || document.location.origin,
   staticPathRoot: `${pathPrefix}/`,
   telemetryEnabled,
+  codeLinksEnabled,
   statusPolling: new Set<DeploymentStatusType>(['code-locations', 'daemons']),
 };
 

@@ -13,6 +13,7 @@ export type AppContextValue = {
   // WebWorkers to import other files.
   staticPathRoot?: string;
   telemetryEnabled: boolean;
+  codeLinksEnabled: boolean;
   statusPolling?: Set<DeploymentStatusType>;
 };
 
@@ -21,4 +22,5 @@ export const AppContext = React.createContext<AppContextValue>({
   rootServerURI: '',
   staticPathRoot: '/',
   telemetryEnabled: false,
+  codeLinksEnabled: false,
 });

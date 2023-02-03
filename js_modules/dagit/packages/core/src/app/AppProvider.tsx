@@ -1,6 +1,6 @@
 import {
-  ApolloLink,
   ApolloClient,
+  ApolloLink,
   ApolloProvider,
   HttpLink,
   InMemoryCache,
@@ -10,15 +10,15 @@ import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
 import {
   Colors,
+  CustomTooltipProvider,
+  FontFamily,
   GlobalDialogStyle,
+  GlobalInconsolata,
+  GlobalInter,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
-  FontFamily,
-  CustomTooltipProvider,
-  GlobalInter,
-  GlobalInconsolata,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -31,6 +31,7 @@ import {InstancePageContext} from '../instance/InstancePageContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {AppContext} from './AppContext';
+import {CodeLinkProtocolProvider} from './CodeLinkProtocol';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 import {LayoutProvider} from './LayoutProvider';
@@ -39,7 +40,6 @@ import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {AnalyticsContext, dummyAnalytics} from './analytics';
 import {TimezoneProvider} from './time/TimezoneContext';
-
 import './blueprint.css';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
@@ -103,6 +103,7 @@ export interface AppProviderProps {
     origin: string;
     staticPathRoot?: string;
     telemetryEnabled?: boolean;
+    codeLinksEnabled?: boolean;
     statusPolling?: Set<DeploymentStatusType>;
   };
 }
@@ -116,6 +117,7 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     origin,
     staticPathRoot = '/',
     telemetryEnabled = false,
+    codeLinksEnabled = false,
     statusPolling,
   } = config;
 
@@ -164,8 +166,9 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
       rootServerURI,
       staticPathRoot,
       telemetryEnabled,
+      codeLinksEnabled,
     }),
-    [basePath, rootServerURI, staticPathRoot, telemetryEnabled],
+    [basePath, rootServerURI, staticPathRoot, telemetryEnabled, codeLinksEnabled],
   );
 
   const analytics = React.useMemo(() => dummyAnalytics(), []);
@@ -199,19 +202,21 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
             <BrowserRouter basename={basePath || ''}>
               <CompatRouter>
                 <TimezoneProvider>
-                  <WorkspaceProvider>
-                    <DeploymentStatusProvider include={deploymentStatuses}>
-                      <CustomConfirmationProvider>
-                        <AnalyticsContext.Provider value={analytics}>
-                          <InstancePageContext.Provider value={instancePageValue}>
-                            <LayoutProvider>{props.children}</LayoutProvider>
-                          </InstancePageContext.Provider>
-                        </AnalyticsContext.Provider>
-                      </CustomConfirmationProvider>
-                      <CustomTooltipProvider />
-                      <CustomAlertProvider />
-                    </DeploymentStatusProvider>
-                  </WorkspaceProvider>
+                  <CodeLinkProtocolProvider>
+                    <WorkspaceProvider>
+                      <DeploymentStatusProvider include={deploymentStatuses}>
+                        <CustomConfirmationProvider>
+                          <AnalyticsContext.Provider value={analytics}>
+                            <InstancePageContext.Provider value={instancePageValue}>
+                              <LayoutProvider>{props.children}</LayoutProvider>
+                            </InstancePageContext.Provider>
+                          </AnalyticsContext.Provider>
+                        </CustomConfirmationProvider>
+                        <CustomTooltipProvider />
+                        <CustomAlertProvider />
+                      </DeploymentStatusProvider>
+                    </WorkspaceProvider>
+                  </CodeLinkProtocolProvider>
                 </TimezoneProvider>
               </CompatRouter>
             </BrowserRouter>

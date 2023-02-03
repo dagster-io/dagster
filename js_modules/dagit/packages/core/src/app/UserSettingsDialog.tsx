@@ -7,13 +7,18 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
+  Icon,
   MetadataTable,
+  MetadataTableRow,
   Subheading,
+  Tooltip,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
+import {AppContext} from './AppContext';
+import {CodeLinkProtocolSelect} from './CodeLinkProtocol';
 import {FeatureFlagType, getFeatureFlags, setFeatureFlags} from './Flags';
 import {SHORTCUTS_STORAGE_KEY} from './ShortcutHandler';
 import {TimezoneSelect} from './time/TimezoneSelect';
@@ -98,6 +103,50 @@ export const UserSettingsDialogContent: React.FC<DialogContentProps> = ({
     }
   };
 
+  let experimentalRows: MetadataTableRow[] = visibleFlags.map(({key, flagType}) => ({
+    key,
+    value: (
+      <Checkbox
+        format="switch"
+        checked={flags.includes(flagType)}
+        onChange={() => toggleFlag(flagType)}
+      />
+    ),
+  }));
+
+  const {codeLinksEnabled, telemetryEnabled} = React.useContext(AppContext);
+
+  if (codeLinksEnabled) {
+    experimentalRows = experimentalRows.concat([
+      {
+        key: 'Code link protocol',
+        label: (
+          <Box margin={{top: 8}} flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+            Code link protocol
+            <Tooltip
+              content={
+                <>
+                  URL protocol to use when linking to definitions in code
+                  <br /> <br />
+                  {'{'}FILE{'}'} and {'{'}LINE{'}'} replaced by filepath and line
+                  <br />
+                  number, respectively
+                </>
+              }
+            >
+              <Icon name="info" color={Colors.Gray600} />
+            </Tooltip>
+          </Box>
+        ),
+        value: (
+          <Box margin={{bottom: 4}}>
+            <CodeLinkProtocolSelect />
+          </Box>
+        ),
+      },
+    ]);
+  }
+
   return (
     <>
       <DialogBody>
@@ -132,18 +181,7 @@ export const UserSettingsDialogContent: React.FC<DialogContentProps> = ({
           <Box padding={{bottom: 8}}>
             <Subheading>Experimental features</Subheading>
           </Box>
-          <MetadataTable
-            rows={visibleFlags.map(({key, flagType}) => ({
-              key,
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(flagType)}
-                  onChange={() => toggleFlag(flagType)}
-                />
-              ),
-            }))}
-          />
+          <MetadataTable rows={experimentalRows} />
         </Box>
       </DialogBody>
       <DialogFooter topBorder>
