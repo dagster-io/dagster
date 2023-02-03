@@ -187,19 +187,10 @@ class ScheduleSelector(
         )
 
 
-class ResourceSelector(
-    NamedTuple(
-        "_ResourceSelector",
-        [("location_name", str), ("repository_name", str), ("resource_name", str)],
-    )
-):
-    def __new__(cls, location_name: str, repository_name: str, resource_name: str):
-        return super(ResourceSelector, cls).__new__(
-            cls,
-            location_name=check.str_param(location_name, "location_name"),
-            repository_name=check.str_param(repository_name, "repository_name"),
-            resource_name=check.str_param(resource_name, "resource_name"),
-        )
+class ResourceSelector(NamedTuple):
+    location_name: str
+    repository_name: str
+    resource_name: str
 
     def to_graphql_input(self):
         return {

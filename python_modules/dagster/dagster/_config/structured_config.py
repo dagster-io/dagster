@@ -127,19 +127,6 @@ def copy_with_default(old_field: Field, new_config_value: Any) -> Field:
 
 def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSchema:
     """Return a new config schema configured with the passed in data"""
-    # # We don't do anything with this resource definition, other than
-    # # use it to construct configured schema
-    # inner_resource_def = ResourceDefinition(lambda _: None, schema_field)
-    # configured_resource_def = inner_resource_def.configured(
-    #     config_dictionary_from_values(
-    #         data,
-    #         schema_field,
-    #     ),
-    # )
-    # # this cast required to make mypy happy, which does not support Self
-    # configured_resource_def = cast(ResourceDefinition, configured_resource_def)
-    # return configured_resource_def.config_schema
-
     return DefinitionConfigSchema(_apply_defaults_to_schema_field(schema_field, data))
 
 
