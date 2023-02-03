@@ -31,6 +31,5 @@ export const extractInitializationData = (): {
       }
     }
   }
-  value.codeLinksEnabled = true;
   return value;
 };
