@@ -1,11 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, ConfigTypeSchema, ExternalAnchorButton, Icon, Spinner} from '@dagster-io/ui';
+import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {AppContext} from '../app/AppContext';
-import {CodeLinkProtocolContext} from '../app/CodeLinkProtocol';
+import {CodeLink} from '../app/CodeLink';
 import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from '../assets/AssetDefinedInMultipleReposNotice';
 import {
@@ -157,16 +156,6 @@ const Header: React.FC<{
 }> = ({assetKey, opName, codeOrigin}) => {
   const displayName = displayNameForAssetKey(assetKey);
 
-  const {codeLinksEnabled} = React.useContext(AppContext);
-  const [codeLinkProtocol, _] = React.useContext(CodeLinkProtocolContext);
-
-  let codeLink = null;
-  if (codeLinksEnabled && codeOrigin) {
-    codeLink = codeLinkProtocol.protocol
-      .replace('{FILE}', codeOrigin.file)
-      .replace('{LINE}', codeOrigin.line.toString());
-  }
-
   return (
     <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
       <Box flex={{gap: 4, direction: 'row', justifyContent: 'space-between'}}>
@@ -186,11 +175,7 @@ const Header: React.FC<{
             </Box>
           ) : undefined}
         </SidebarTitle>
-        {codeLink && (
-          <ExternalAnchorButton icon={<Icon name="open_in_new" />} href={codeLink}>
-            Open in editor
-          </ExternalAnchorButton>
-        )}
+        {codeOrigin && <CodeLink file={codeOrigin.file} lineNumber={codeOrigin.line} />}
       </Box>
       <AssetCatalogLink to={assetDetailsPathForKey(assetKey)}>
         {'View in Asset Catalog '}

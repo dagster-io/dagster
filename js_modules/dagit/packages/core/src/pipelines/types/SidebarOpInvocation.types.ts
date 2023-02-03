@@ -71,4 +71,13 @@ export type SidebarOpInvocationFragment = {
       solid: {__typename: 'Solid'; name: string};
     }>;
   }>;
+  definition:
+    | {
+        __typename: 'CompositeSolidDefinition';
+        metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
+      }
+    | {
+        __typename: 'SolidDefinition';
+        metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
+      };
 };
