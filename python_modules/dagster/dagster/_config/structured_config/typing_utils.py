@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Generic, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, Optional, Type, Union, cast, TypeVar
 
 import pydantic
 from typing_extensions import dataclass_transform, get_origin
@@ -7,8 +7,6 @@ from .utils import safe_is_subclass
 
 if TYPE_CHECKING:
     from dagster._config.structured_config import PartialResource
-
-Self = TypeVar("Self", bound="TypecheckAllowPartialResourceInitParams")
 
 
 # Since a metaclass is invoked by Resource before Resource or PartialResource is defined, we need to
@@ -74,6 +72,9 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
 
         namespaces["__annotations__"] = annotations
         return super().__new__(self, name, bases, namespaces, **kwargs)
+
+
+Self = TypeVar("Self", bound="TypecheckAllowPartialResourceInitParams")
 
 
 class TypecheckAllowPartialResourceInitParams:
