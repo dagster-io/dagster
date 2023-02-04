@@ -1,6 +1,6 @@
 import inspect
 
-from dagster._config.config_type import ConfigType
+from dagster._config.config_type import Array, ConfigType
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 
@@ -13,10 +13,10 @@ except ImportError:
 
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Type, cast
+from typing import Any, Callable, Dict, Optional, Type, cast
 
 from pydantic import BaseModel, Extra
-from pydantic.fields import SHAPE_SINGLETON, ModelField
+from pydantic.fields import SHAPE_LIST, SHAPE_SINGLETON, ModelField
 
 import dagster._check as check
 from dagster import Field, Shape
@@ -216,20 +216,32 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
         return self
 
 
+WRAPPER_TYPES: Dict[int, Callable[[ConfigType], ConfigType]] = {
+    SHAPE_SINGLETON: lambda x: x,
+    SHAPE_LIST: Array,
+}
+
+
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     """
     Transforms a Pydantic field into a corresponding Dagster config field.
     """
-    if _safe_is_subclass(pydantic_field.type_, Config):
-        return infer_schema_from_config_class(
-            pydantic_field.type_, description=pydantic_field.field_info.description
-        )
-
-    if pydantic_field.shape != SHAPE_SINGLETON:
+    if pydantic_field.shape not in WRAPPER_TYPES:
         raise NotImplementedError(f"Pydantic shape {pydantic_field.shape} not supported")
 
+    wrap_config_type_fn = WRAPPER_TYPES[pydantic_field.shape]
+
+    if _safe_is_subclass(pydantic_field.type_, Config):
+        return infer_schema_from_config_class(
+            pydantic_field.type_,
+            description=pydantic_field.field_info.description,
+            wrap_config_type_fn=wrap_config_type_fn,
+        )
+
+    config_type = _config_type_for_pydantic_field(pydantic_field)
+    wrapped_config_type = wrap_config_type_fn(config_type)
     return Field(
-        config=_config_type_for_pydantic_field(pydantic_field),
+        config=wrapped_config_type,
         description=pydantic_field.field_info.description,
         is_required=_is_pydantic_field_required(pydantic_field),
         default_value=pydantic_field.default
@@ -319,7 +331,9 @@ def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
 
 
 def infer_schema_from_config_class(
-    model_cls: Type[Config], description: Optional[str] = None
+    model_cls: Type[Config],
+    description: Optional[str] = None,
+    wrap_config_type_fn: Optional[Callable[[ConfigType], ConfigType]] = None,
 ) -> Field:
     """
     Parses a structured config class and returns a corresponding Dagster config Field.
@@ -336,4 +350,8 @@ def infer_schema_from_config_class(
     shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
-    return Field(config=shape_cls(fields), description=description or docstring)
+
+    config_type = shape_cls(fields)
+    wrapped_config_type = wrap_config_type_fn(config_type) if wrap_config_type_fn else config_type
+
+    return Field(wrapped_config_type, description=description or docstring)
