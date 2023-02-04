@@ -1,8 +1,11 @@
 import inspect
 
+from dagster import String
 from dagster._config.config_type import Array, ConfigType
 from dagster._config.source import BoolSource, IntSource, StringSource
+from dagster import Float
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster._core.errors import DagsterInvalidConfigError
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -18,11 +21,19 @@ from typing import Any, Optional, Type, cast
 from pydantic import BaseModel, Extra
 from pydantic.fields import SHAPE_LIST, SHAPE_SINGLETON, ModelField
 from typing_extensions import TypeAlias
+from pydantic.fields import (
+    SHAPE_DICT,
+    SHAPE_LIST,
+    SHAPE_MAPPING,
+    SHAPE_SINGLETON,
+    ModelField,
+)
 
 import dagster._check as check
 from dagster import Field, Shape
 from dagster._config.field_utils import (
     FIELD_NO_DEFAULT_PROVIDED,
+    Map,
     Permissive,
     config_dictionary_from_values,
     convert_potential_field,
@@ -219,8 +230,13 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
 
 PydanticShapeType: TypeAlias = int
 
+MAPPING_TYPES = {SHAPE_MAPPING, SHAPE_DICT}
+VALID_MAPPING_KEY_TYPES = {StringSource, IntSource, BoolSource, Float}
 
-def _wrap_config_type(shape_type: PydanticShapeType, config_type: ConfigType) -> ConfigType:
+
+def _wrap_config_type(
+    shape_type: PydanticShapeType, key_type: Optional[ConfigType], config_type: ConfigType
+) -> ConfigType:
     """
     Based on a Pydantic shape type, wraps a config type in the appropriate Dagster config wrapper.
     For example, if the shape type is a Pydantic list, the config type will be wrapped in an Array.
@@ -229,6 +245,18 @@ def _wrap_config_type(shape_type: PydanticShapeType, config_type: ConfigType) ->
         return config_type
     elif shape_type == SHAPE_LIST:
         return Array(config_type)
+    elif shape_type in MAPPING_TYPES:
+        if not key_type:
+            raise DagsterInvalidConfigError(
+                "Pydantic shape type is a mapping, but no key type was provided."
+            )
+        if key_type not in VALID_MAPPING_KEY_TYPES:
+            raise DagsterInvalidConfigError(
+                f"Pydantic shape type is a mapping, but key type {key_type} is not a valid "
+                "Map key type. Valid Map key types are: "
+                f"{', '.join([str(t) for t in VALID_MAPPING_KEY_TYPES])}."
+            )
+        return Map(key_type, config_type)
     else:
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
 
@@ -237,17 +265,28 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     """
     Transforms a Pydantic field into a corresponding Dagster config field.
     """
+    key_type = (
+        _config_type_for_pydantic_field(pydantic_field.key_field)
+        if pydantic_field.key_field
+        else None
+    )
     if _safe_is_subclass(pydantic_field.type_, Config):
         inferred_field = infer_schema_from_config_class(
             pydantic_field.type_,
             description=pydantic_field.field_info.description,
         )
-        wrapped_config_type = _wrap_config_type(pydantic_field.shape, inferred_field.config_type)
+        wrapped_config_type = _wrap_config_type(
+            shape_type=pydantic_field.shape,
+            config_type=inferred_field.config_type,
+            key_type=key_type,
+        )
 
         return Field(config=wrapped_config_type, description=inferred_field.description)
     else:
         config_type = _config_type_for_pydantic_field(pydantic_field)
-        wrapped_config_type = _wrap_config_type(pydantic_field.shape, config_type)
+        wrapped_config_type = _wrap_config_type(
+            shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
+        )
         return Field(
             config=wrapped_config_type,
             description=pydantic_field.field_info.description,

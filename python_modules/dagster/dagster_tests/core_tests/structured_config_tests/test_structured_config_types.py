@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Mapping, Optional
 
 import pytest
 from dagster import job, op
@@ -128,10 +128,10 @@ def test_struct_config_array():
         )
 
 
-@pytest.mark.skip(reason="not yet supported")
-def test_struct_config_map():
+@pytest.mark.parametrize("DictType", [Dict, Mapping])
+def test_struct_config_map(DictType):
     class AnOpConfig(Config):
-        a_string_to_int_dict: Dict[str, int]
+        a_string_to_int_dict: DictType[str, int]
 
     executed = {}
 
@@ -220,7 +220,6 @@ def test_struct_config_nested_in_list():
     assert executed["yes"]
 
 
-@pytest.mark.skip(reason="not yet supported")
 def test_struct_config_nested_in_dict():
     class ANestedConfig(Config):
         a_str: str
