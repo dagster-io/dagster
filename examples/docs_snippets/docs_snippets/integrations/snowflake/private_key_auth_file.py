@@ -7,7 +7,7 @@ from dagster_snowflake_pandas import snowflake_pandas_io_manager
 from dagster import Definitions
 
 defs = Definitions(
-    assets=[iris_dataset],
+    assets=[iris_dataset],  # type: ignore  # (didactic)
     resources={
         "io_manager": snowflake_pandas_io_manager.configured(
             {

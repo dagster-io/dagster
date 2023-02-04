@@ -246,7 +246,7 @@ def _derive_state_of_past_run(
             if record.dagster_event_type == DagsterEventType.STEP_OUTPUT:
                 output_data = record.get_dagster_event().step_output_data
                 if output_data.mapping_key:
-                    observed_dynamic_outputs[record.step_key][output_data.output_name].append(
+                    observed_dynamic_outputs[record.step_key][output_data.output_name].append(  # type: ignore
                         output_data.mapping_key
                     )
                 output_set.add(output_data.step_output_handle)

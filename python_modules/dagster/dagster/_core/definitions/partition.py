@@ -862,7 +862,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
                 )
             date = check.opt_inst_param(kwargs[date_param_name], date_param_name, datetime)
 
-        return self._decorated_fn(date)
+        return self._decorated_fn(date)  # type: ignore
 
     def get_partition_set(self) -> PartitionSetDefinition:
         return self._partition_set

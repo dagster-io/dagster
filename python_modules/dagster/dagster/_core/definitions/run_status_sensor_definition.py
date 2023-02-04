@@ -622,7 +622,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     ):
                         # one user code invocation maps to one failure event
                         sensor_return = run_status_sensor_fn(  # type: ignore  # fmt: skip
-                            RunStatusSensorContext(
+                            RunStatusSensorContext(  # type: ignore
                                 sensor_name=name,
                                 dagster_run=pipeline_run,
                                 dagster_event=event_log_entry.dagster_event,

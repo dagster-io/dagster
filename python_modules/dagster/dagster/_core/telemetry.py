@@ -571,11 +571,11 @@ def log_dagster_event(event: DagsterEvent, pipeline_context: PlanOrchestrationCo
 
     if event.is_step_start:
         action = STEP_START_EVENT
-    if event.is_step_success:
+    elif event.is_step_success:
         action = STEP_SUCCESS_EVENT
         if isinstance(event.event_specific_data, StepSuccessData):  # make mypy happy
             metadata["duration_ms"] = event.event_specific_data.duration_ms
-    if event.is_step_failure:
+    else:  # event.is_step_failure
         action = STEP_FAILURE_EVENT
 
     log_action(
