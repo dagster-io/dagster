@@ -829,7 +829,6 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> F
     })
     """
     sub_fields_mapping = pydantic_field.sub_fields_mapping
-
     if not sub_fields_mapping or not all(
         issubclass(pydantic_field.type_, Config) for pydantic_field in sub_fields_mapping.values()
     ):
