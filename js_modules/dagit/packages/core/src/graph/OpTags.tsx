@@ -17,6 +17,7 @@ import slack from './optag-images/slack.svg';
 import snowflake from './optag-images/snowflake.svg';
 import sql from './optag-images/sql.svg';
 import tensorflow from './optag-images/tensorflow.svg';
+import databricks from './optag-images/databricks.svg';
 
 export interface IOpTag {
   label: string;
@@ -110,6 +111,11 @@ const KNOWN_TAGS = {
     color: '#B821FF',
     icon: sql,
     content: 'SQL',
+  },
+  databricks: {
+    color: '#FD3820',
+    icon: databricks,
+    content: 'Databricks',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
