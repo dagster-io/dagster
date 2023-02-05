@@ -14,3 +14,16 @@ repos:
       entry: bash -c "cd docs && make mdx-format"
       pass_filenames: false
       files: ^docs/content
+
+    # We do not use pyright's provided pre-commit hook because we need the environment management
+    # supplied by `scripts/run-pyright.py`.
+    - id: pyright
+      name: pyright
+      description: "`scripts/run-pyright.py --diff` to run pyright against changed files."
+      entry: scripts/run-pyright.py
+      stages: [pre-push]
+      language: python
+      pass_filenames: false
+      types_or: [python, pyi]
+      require_serial: true
+      additional_dependencies: ['tomli', 'typing-extensions', 'pyright==1.1.349']
