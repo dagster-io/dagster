@@ -159,8 +159,8 @@ class JobDefinition(IHasInternalInit):
         self._loggers = check.opt_nullable_mapping_param(
             logger_defs,
             "logger_defs",
-            key_type=str,  # type: ignore
-            value_type=LoggerDefinition,  # type: ignore
+            key_type=str,
+            value_type=LoggerDefinition,
         )
 
         config = check.opt_inst_param(

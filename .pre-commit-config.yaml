@@ -19,11 +19,10 @@ repos:
     # supplied by `scripts/run-pyright.py`.
     - id: pyright
       name: pyright
-      description: "`scripts/run-pyright.py --diff` to run pyright against changed files."
-      entry: scripts/run-pyright.py
+      entry: make quick_pyright
       stages: [pre-push]
-      language: python
+      # This means pre-commit will not try to install a new environment for this hook. It relies on
+      # having a pre-existing `make` installed (and scripts/run-pyright.py).
+      language: system
       pass_filenames: false
-      types_or: [python, pyi]
-      require_serial: true
-      additional_dependencies: ['tomli', 'typing-extensions', 'pyright==1.1.349']
+      types: [python]

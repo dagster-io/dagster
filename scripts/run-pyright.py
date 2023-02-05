@@ -220,7 +220,7 @@ def get_params(args: argparse.Namespace) -> Params:
             sys.exit(0)
     else:
         mode = "path"
-        targets = args.pathsBUILDKIT
+        targets = args.paths
 
     venv_python = (
         subprocess.run(["which", "python"], check=True, capture_output=True).stdout.decode().strip()
@@ -524,7 +524,9 @@ if __name__ == "__main__":
         normalize_env(env, params["rebuild"], params["update_pins"], params["venv_python"])
     if params["skip_typecheck"]:
         print("Successfully built environments. Skipping typecheck.")
-    if not params["skip_typecheck"]:
+    elif len(env_path_map) == 0:
+        print("No paths to analyze. Skipping typecheck.")
+    elif not params["skip_typecheck"]:
         run_results = [
             run_pyright(
                 env,
