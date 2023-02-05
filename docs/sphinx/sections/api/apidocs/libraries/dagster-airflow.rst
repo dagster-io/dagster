@@ -20,18 +20,6 @@ Run Airflow on Dagster
 
 .. autofunction:: make_dagster_repo_from_airflow_dag_bag
 
-.. autofunction:: airflow_operator_to_op
-
-
-Run Dagster on Airflow
-======================
-
-.. autofunction:: make_airflow_dag
-
-.. autofunction:: make_airflow_dag_for_operator
-
-.. autofunction:: make_airflow_dag_containerized
-
 
 Orchestrate Dagster from Airflow
 ================================
