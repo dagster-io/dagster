@@ -2,6 +2,7 @@ import importlib
 import os
 import tempfile
 
+from typing import AbstractSet, List, Mapping, Optional, Set, Tuple
 import airflow
 import dateutil
 import pytz
@@ -341,8 +342,8 @@ def make_dagster_definitions_from_airflow_example_dags():
 
 
 def make_schedules_and_jobs_from_airflow_dag_bag(
-    dag_bag,
-    connections=None,
+    dag_bag: DagBag,
+    connections: Optional[List[Connection]] = None,
 ):
     """Construct Dagster Schedules and Jobs corresponding to Airflow DagBag.
 
