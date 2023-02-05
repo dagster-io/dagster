@@ -1,8 +1,8 @@
 import importlib
 import os
 import tempfile
+from typing import List, Optional
 
-from typing import AbstractSet, List, Mapping, Optional, Set, Tuple
 import airflow
 import dateutil
 import pytz
