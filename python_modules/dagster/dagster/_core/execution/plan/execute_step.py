@@ -31,6 +31,7 @@ from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
     DEFAULT_LOGICAL_VERSION,
+    INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX,
     LOGICAL_VERSION_TAG_KEY,
     LogicalVersion,
     compute_logical_version,
@@ -40,6 +41,7 @@ from dagster._core.definitions.logical_version import (
 )
 from dagster._core.definitions.metadata import (
     MetadataEntry,
+    MetadataValue,
     PartitionMetadataEntry,
     normalize_metadata,
 )
@@ -504,6 +506,14 @@ def _get_output_asset_materializations(
     ):
         tags = _build_logical_version_tags(asset_key, step_context)
         logical_version = LogicalVersion(tags[LOGICAL_VERSION_TAG_KEY])
+        all_metadata.append(MetadataEntry(label="logical_version", value=MetadataValue.text(logical_version.value)))
+        all_metadata.append(MetadataEntry(label="code_version", value=MetadataValue.text(tags[CODE_VERSION_TAG_KEY])))
+
+        for key, value in tags.items():
+            if key.startswith(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX):
+                all_metadata.append(MetadataEntry(label=key, value=MetadataValue.text(value)))
+
+
         step_context.record_logical_version(asset_key, logical_version)
     else:
         tags = {}
