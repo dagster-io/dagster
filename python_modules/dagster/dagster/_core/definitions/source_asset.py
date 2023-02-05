@@ -14,6 +14,7 @@ from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataMapping,
     MetadataUserInput,
+    MetadataValue,
     PartitionMetadataEntry,
     normalize_metadata,
 )
@@ -196,6 +197,12 @@ class SourceAsset(ResourceAddable):
                 AssetObservation(
                     asset_key=self.key,
                     tags=tags,
+                    metadata_entries=[
+                        MetadataEntry(
+                            label="logical_version",
+                            value=MetadataValue.text(logical_version.value),
+                        )
+                    ],
                 )
             )
 
