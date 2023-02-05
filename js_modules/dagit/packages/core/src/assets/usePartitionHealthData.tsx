@@ -278,7 +278,7 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
   }, [assetKeyJSON, result]);
 }
 
-const PARTITION_HEALTH_QUERY = gql`
+export const PARTITION_HEALTH_QUERY = gql`
   query PartitionHealthQuery($assetKey: AssetKeyInput!) {
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
