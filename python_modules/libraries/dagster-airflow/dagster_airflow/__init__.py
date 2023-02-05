@@ -13,14 +13,8 @@ from .dagster_pipeline_factory import (
     make_dagster_repo_from_airflow_dags_path as make_dagster_repo_from_airflow_dags_path,
     make_dagster_repo_from_airflow_example_dags as make_dagster_repo_from_airflow_example_dags,
 )
-from .factory import (
-    make_airflow_dag as make_airflow_dag,
-    make_airflow_dag_containerized as make_airflow_dag_containerized,
-    make_airflow_dag_for_operator as make_airflow_dag_for_operator,
-)
 from .hooks.dagster_hook import DagsterHook as DagsterHook
 from .links.dagster_link import DagsterLink as DagsterLink
-from .operators.airflow_operator_to_op import airflow_operator_to_op as airflow_operator_to_op
 from .operators.dagster_operator import (
     DagsterCloudOperator as DagsterCloudOperator,
     DagsterOperator as DagsterOperator,
@@ -30,9 +24,6 @@ from .version import __version__ as __version__
 check_dagster_package_version("dagster-airflow", __version__)
 
 __all__ = [
-    "make_airflow_dag",
-    "make_airflow_dag_for_operator",
-    "make_airflow_dag_containerized",
     "make_dagster_repo_from_airflow_dags_path",
     "make_dagster_definitions_from_airflow_dags_path",
     "make_dagster_definitions_from_airflow_dag_bag",
@@ -43,7 +34,6 @@ __all__ = [
     "DagsterLink",
     "DagsterOperator",
     "DagsterCloudOperator",
-    "airflow_operator_to_op",
 ]
 
 
