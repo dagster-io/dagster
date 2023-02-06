@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 from airflow.models import DagBag
 from dagster import repository
@@ -56,6 +57,6 @@ def airflow_examples_repo():
 # start_repo_marker_1
 
 airflow_simple_dag_with_execution_date = make_dagster_job_from_airflow_dag(
-    dag=simple_dag, tags={"airflow_execution_date": "2021-11-01 00:00:00+00:00"}
+    dag=simple_dag, tags={"airflow_execution_date": datetime.now().isoformat()}
 )
 # end_repo_marker_1
