@@ -253,5 +253,6 @@ def make_dagster_job_from_airflow_dag(
         metadata={},
         op_retry_policy=None,
         version_strategy=None,
+        config={"execution": {"config": {"in_process": None}}},
     )
     return job_def
