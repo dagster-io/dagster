@@ -26,8 +26,8 @@ from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler, snowflake_pyspark_io_manager
 from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.functions import to_date
 from pyspark.sql.types import (
-    DateType,
     LongType,
     StringType,
     StructField,
@@ -212,7 +212,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
             schema = StructType(
                 [
-                    StructField("TIME", DateType()),
+                    StructField("RAW_TIME", StringType()),
                     StructField("A", StringType()),
                     StructField("B", LongType()),
                 ]
@@ -228,6 +228,7 @@ def test_time_window_partitioned_asset(tmp_path):
                 (partition, value, 6),
             ]
             df = spark.createDataFrame(data, schema=schema)
+            df = df.withColumn("TIME", to_date(df.raw_time))
 
             return df
 
