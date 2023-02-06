@@ -35,7 +35,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "duckdb",
-        "dagster==1.1.16rc0",
+        "dagster==1.1.17rc0",
     ],
     extras_require={
         "pandas": ["pandas"],

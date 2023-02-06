@@ -32,6 +32,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_prometheus_tests*"]),
-    install_requires=["dagster==1.1.16rc0", "prometheus_client"],
+    install_requires=["dagster==1.1.17rc0", "prometheus_client"],
     zip_safe=False,
 )
