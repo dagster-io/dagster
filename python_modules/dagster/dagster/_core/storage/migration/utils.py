@@ -431,6 +431,17 @@ def add_run_job_index():
             unique=False,
             postgresql_concurrently=True,
             mysql_length={
-                "pipeline_name": 255,
+                "pipeline_name": 512,
             },
+        )
+
+def drop_run_job_index():
+    if not has_table("runs"):
+        return
+
+    if has_index("runs", "idx_runs_by_job"):
+        op.drop_index(
+            "idx_runs_by_job",
+            "runs",
+            postgresql_concurrently=True,
         )
