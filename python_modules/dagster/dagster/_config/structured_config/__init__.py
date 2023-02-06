@@ -12,7 +12,7 @@ from dagster._core.definitions.definition_config_schema import (
     IDefinitionConfigSchema,
 )
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._config.structured_config.typing_utils import AllowPartialResourceInitParams
+from dagster._config.structured_config.typing_utils import TypecheckAllowPartialResourceInitParams
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.execution.context.init import InitResourceContext
 
@@ -158,7 +158,7 @@ class Resource(
     Generic[ResValue],
     ResourceDefinition,
     Config,
-    AllowPartialResourceInitParams,
+    TypecheckAllowPartialResourceInitParams,
 ):
     """
     Base class for Dagster resources that utilize structured config.

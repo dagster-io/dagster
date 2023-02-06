@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast
 if TYPE_CHECKING:
     from dagster._config.structured_config import PartialResource
 
-Self = TypeVar("Self", bound="AllowPartialResourceInitParams")
+Self = TypeVar("Self", bound="TypecheckAllowPartialResourceInitParams")
 
 
-class AllowPartialResourceInitParams:
+class TypecheckAllowPartialResourceInitParams:
     """
     Implementation of the Python descriptor protocol (https://docs.python.org/3/howto/descriptor.html)
     to adjust the types of resource inputs and outputs, e.g. resource dependencies can be passed in
@@ -29,7 +29,11 @@ class AllowPartialResourceInitParams:
         # bar parameter takes BarResource | PartialResource[BarResource]
         foo = FooResource(bar=partial_bar)
 
-        # bar attribute is BarResource
+        # initialization of FooResource succeeds,
+        # populating the bar attribute with a full BarResource
+
+        # bar attribute is typed as BarResource, since
+        # it is fully initialized when a user accesses it
         print(foo.bar)
 
     Very similar to https://github.com/pydantic/pydantic/discussions/4262.
