@@ -138,7 +138,7 @@ class DbIOManager(IOManager):
 
         schema: str
         table: str
-        partition_value: Union[TimeWindow, str]
+        partition_value: Optional[Union[TimeWindow, str]] = None
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
