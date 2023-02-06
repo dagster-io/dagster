@@ -435,6 +435,7 @@ def add_run_job_index():
             },
         )
 
+
 def drop_run_job_index():
     if not has_table("runs"):
         return
