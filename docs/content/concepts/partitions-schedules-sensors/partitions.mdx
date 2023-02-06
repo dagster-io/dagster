@@ -94,6 +94,9 @@ If you're using the default I/O manager, materializing partition `2022-07-23` of
 <Note>
   This feature is <strong>experimental</strong>.
 </Note>
+<Note>
+  If your Dagster instance is older than 1.1.1, you will need to migrate Dagster's internal database schema with `dagster instance migrate` to enable enable multi-dimensional asset partitions. Otherwise, loading the asset will fail with a GraphQL error.
+</Note>
 
 The <PyObject object="MultiPartitionsDefinition" /> class accepts a mapping of dimension name to partitions definition, creating a partition for each unique combination of dimension partitions. For example, the asset below would contain a partition for each combination of color and date: `red|2022-01-01`, `yellow|2022-01-01`, `blue|2022-01-01`, `red|2022-01-02` and so on.
 
