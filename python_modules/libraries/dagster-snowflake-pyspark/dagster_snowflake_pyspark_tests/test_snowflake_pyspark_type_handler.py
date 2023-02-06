@@ -217,11 +217,6 @@ def test_time_window_partitioned_asset(tmp_path):
                     StructField("B", LongType()),
                 ]
             )
-            # data = [
-            #     (to_date(partition), value, 4),
-            #     (to_date(partition), value, 5),
-            #     (to_date(partition), value, 6),
-            # ]
             data = [
                 (partition, value, 4),
                 (partition, value, 5),
