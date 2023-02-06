@@ -5,7 +5,6 @@ from typing import List, Mapping, Optional
 
 import airflow
 import pytz
-from airflow import __version__ as airflow_version
 from airflow.models.connection import Connection
 from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
@@ -33,12 +32,13 @@ from dagster_airflow.utils import (
     Locker,
     contains_duplicate_task_names,
     create_airflow_connections,
+    is_airflow_2,
     normalized_name,
     serialize_connections,
 )
 
 # pylint: disable=no-name-in-module,import-error
-if str(airflow_version) >= "2.0.0":
+if is_airflow_2():
     from airflow.utils.state import DagRunState
     from airflow.utils.types import DagRunType
 else:
@@ -119,7 +119,7 @@ def make_dagster_job_from_airflow_dag(
         with Locker(airflow_home_path):
             airflow_initialized = os.path.exists(f"{airflow_home_path}/airflow.db")
             # because AIRFLOW_HOME has been overriden airflow needs to be reloaded
-            if airflow_version >= "2.0.0":
+            if is_airflow_2():
                 importlib.reload(airflow.configuration)
                 importlib.reload(airflow.settings)
                 importlib.reload(airflow)
@@ -175,7 +175,7 @@ def make_dagster_job_from_airflow_dag(
 
             dagrun = dag.get_dagrun(execution_date=execution_date)
             if not dagrun:
-                if airflow_version >= "2.0.0":
+                if is_airflow_2():
                     dagrun = dag.create_dagrun(
                         state=DagRunState.RUNNING,
                         execution_date=execution_date,

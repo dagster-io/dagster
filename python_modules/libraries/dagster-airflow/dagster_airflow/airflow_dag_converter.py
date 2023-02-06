@@ -1,7 +1,6 @@
 import importlib
 
 import airflow
-from airflow import __version__ as airflow_version
 from airflow.models.baseoperator import BaseOperator
 from airflow.models.dag import DAG
 from dagster import (
@@ -17,7 +16,7 @@ from dagster import (
 )
 from dagster._core.definitions.node_definition import NodeDefinition
 
-from dagster_airflow.utils import normalized_name, replace_airflow_logger_handlers
+from dagster_airflow.utils import is_airflow_2, normalized_name, replace_airflow_logger_handlers
 
 
 def get_graph_definition_args(
@@ -120,7 +119,7 @@ def make_dagster_op_from_airflow_task(
     )
     def _op(context: OpExecutionContext):  # pylint: disable=unused-argument
         # reloading forces picking up any config that's been set for execution
-        if airflow_version >= "2.0.0":
+        if is_airflow_2():
             importlib.reload(airflow.configuration)
             importlib.reload(airflow.settings)
             importlib.reload(airflow)
