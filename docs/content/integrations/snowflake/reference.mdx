@@ -252,12 +252,11 @@ The `pyspark_io_manager` requires that a `SparkSession` be active and configured
 ```python file=/integrations/snowflake/pyspark_with_spark_resource.py
 from dagster_pyspark import pyspark_resource
 from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
+from pyspark import SparkFiles
 from pyspark.sql import (
     DataFrame,
     SparkSession,
 )
-from pyspark import SparkFiles
-
 from pyspark.sql.types import (
     DoubleType,
     StringType,
@@ -315,12 +314,11 @@ defs = Definitions(
 
 ```python file=/integrations/snowflake/pyspark_with_spark_session.py
 from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
+from pyspark import SparkFiles
 from pyspark.sql import (
     DataFrame,
     SparkSession,
 )
-from pyspark import SparkFiles
-
 from pyspark.sql.types import (
     DoubleType,
     StringType,
