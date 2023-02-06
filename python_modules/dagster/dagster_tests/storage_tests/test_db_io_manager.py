@@ -154,7 +154,7 @@ def test_asset_out_partitioned():
         schema="schema1",
         table="table1",
         partition=TablePartition(
-            time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)), partition_expr="abc"
+            partition=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)), partition_expr="abc"
         ),
     )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
