@@ -48,8 +48,8 @@ from dagster._core.storage.partition_status_cache import (
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_graphql.implementation.loader import (
+    CachingMutablePartitionsLoader,
     CrossRepoAssetDependedByLoader,
-    MutablePartitionsLoader,
     StaleStatusLoader,
 )
 
@@ -175,7 +175,7 @@ def get_asset_nodes_by_asset_key(
         asset_graph=lambda: ExternalAssetGraph.from_workspace(graphene_info.context),
     )
 
-    mutable_partitions_loader = MutablePartitionsLoader(graphene_info.context.instance)
+    mutable_partitions_loader = CachingMutablePartitionsLoader(graphene_info.context.instance)
 
     asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
     for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):

@@ -49,8 +49,8 @@ from ..implementation.fetch_assets import (
 )
 from ..implementation.loader import (
     BatchMaterializationLoader,
+    CachingMutablePartitionsLoader,
     CrossRepoAssetDependedByLoader,
-    MutablePartitionsLoader,
     StaleStatusLoader,
 )
 from . import external
@@ -232,7 +232,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
         stale_status_loader: Optional[StaleStatusLoader] = None,
-        mutable_partitions_loader: Optional[MutablePartitionsLoader] = None,
+        mutable_partitions_loader: Optional[CachingMutablePartitionsLoader] = None,
     ):
         from ..implementation.fetch_assets import get_unique_asset_id
 
@@ -259,7 +259,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             StaleStatusLoader,
         )
         self._mutable_partitions_loader = check.opt_inst_param(
-            mutable_partitions_loader, "mutable_partitions_loader", MutablePartitionsLoader
+            mutable_partitions_loader, "mutable_partitions_loader", CachingMutablePartitionsLoader
         )
         self._external_pipeline = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
@@ -369,7 +369,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     ]
             elif isinstance(partitions_def_data, ExternalMutablePartitionsDefinitionData):
                 return self._mutable_partitions_loader.get_mutable_partitions(
-                    partitions_def_data.name
+                    partitions_def_name=partitions_def_data.name
                 )
             else:
                 raise DagsterInvariantViolationError(

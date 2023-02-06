@@ -21,6 +21,7 @@ from dagster._core.scheduler.instigation import InstigatorType
 from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._utils.cached_method import cached_method
 
 
 class RepositoryDataType(Enum):
@@ -330,25 +331,18 @@ class BatchMaterializationLoader:
         }
 
 
-class MutablePartitionsLoader(MutablePartitionsStore):
+class CachingMutablePartitionsLoader(MutablePartitionsStore):
     """
-    A batch loader that fetches partitions for a partition set.  This loader is expected to be
-    instantiated with a partition set name.
+    A batch loader that caches the partition keys for a given mutable partitions definition,
+    to avoid repeated calls to the database for the same partitions definition.
     """
 
     def __init__(self, instance: DagsterInstance):
         self._instance = instance
 
-        self._partition_keys_by_mutable_partitions_def: Dict[str, Sequence[str]] = {}
-
+    @cached_method
     def get_mutable_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        if partitions_def_name in self._partition_keys_by_mutable_partitions_def:
-            return self._partition_keys_by_mutable_partitions_def[partitions_def_name]
-
-        self._partition_keys_by_mutable_partitions_def[partitions_def_name] = list(
-            self._instance.get_mutable_partitions(partitions_def_name)
-        )
-        return self._partition_keys_by_mutable_partitions_def[partitions_def_name]
+        return self._instance.get_mutable_partitions(partitions_def_name)
 
 
 class CrossRepoAssetDependedByLoader:

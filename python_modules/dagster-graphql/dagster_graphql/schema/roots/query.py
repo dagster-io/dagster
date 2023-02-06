@@ -61,8 +61,8 @@ from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_
 from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.loader import (
     BatchMaterializationLoader,
+    CachingMutablePartitionsLoader,
     CrossRepoAssetDependedByLoader,
-    MutablePartitionsLoader,
     StaleStatusLoader,
 )
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
@@ -629,7 +629,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         repo = None
 
-        mutable_partitions_loader = MutablePartitionsLoader(graphene_info.context.instance)
+        mutable_partitions_loader = CachingMutablePartitionsLoader(graphene_info.context.instance)
         if "group" in kwargs:
             group_name = kwargs["group"].get("groupName")
             repo_sel = RepositorySelector.from_graphql_input(kwargs.get("group"))

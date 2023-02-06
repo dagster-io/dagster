@@ -128,9 +128,7 @@ def get_validated_partition_keys(
     partitions_def: PartitionsDefinition,
     partition_keys: Set[str],
 ):
-    if isinstance(partitions_def, StaticPartitionsDefinition) or isinstance(
-        partitions_def, MutablePartitionsDefinition
-    ):
+    if isinstance(partitions_def, (MutablePartitionsDefinition, StaticPartitionsDefinition)):
         validated_partitions = (
             set(
                 partitions_def.get_partition_keys(mutable_partitions_store=mutable_partitions_store)

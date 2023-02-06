@@ -29,7 +29,7 @@ from dagster._core.workspace.workspace import (
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import (
-    MutablePartitionsLoader,
+    CachingMutablePartitionsLoader,
     RepositoryScopedBatchLoader,
     StaleStatusLoader,
 )
@@ -236,7 +236,7 @@ class GrapheneRepository(graphene.ObjectType):
             instance=instance,
             asset_graph=lambda: ExternalAssetGraph.from_external_repository(repository),
         )
-        self._mutable_partitions_loader = MutablePartitionsLoader(instance)
+        self._mutable_partitions_loader = CachingMutablePartitionsLoader(instance)
         super().__init__(name=repository.name)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
