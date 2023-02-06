@@ -184,7 +184,7 @@ def test_time_window_partitioned_asset(tmp_path):
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="a string, time TIMESTAMP_NTZ(9), b int",
+        column_str="A string, TIME TIMESTAMP_NTZ(9), B int",
     ) as table_name:
 
         @asset(
@@ -203,7 +203,7 @@ def test_time_window_partitioned_asset(tmp_path):
                 value=SNOWFLAKE_JARS,
             ).getOrCreate()
 
-            columns = ["time", "a", "b"]
+            columns = ["TIME", "A", "A"]
             data = [(partition, value, 4), (partition, value, 5), (partition, value, 6)]
             df = spark.createDataFrame(data).toDF(*columns)
 
@@ -233,7 +233,7 @@ def test_time_window_partitioned_asset(tmp_path):
         out_df = snowflake_conn.execute_query(
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
-        assert out_df["a"].tolist() == ["1", "1", "1"]
+        assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
             [daily_partitioned],
@@ -245,7 +245,7 @@ def test_time_window_partitioned_asset(tmp_path):
         out_df = snowflake_conn.execute_query(
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
-        assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
             [daily_partitioned],
@@ -257,7 +257,7 @@ def test_time_window_partitioned_asset(tmp_path):
         out_df = snowflake_conn.execute_query(
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
-        assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+        assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
@@ -265,7 +265,7 @@ def test_static_partitioned_asset(tmp_path):
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="a string, color string, b int",
+        column_str="A string, COLOR string, A int",
     ) as table_name:
 
         @asset(
@@ -284,7 +284,7 @@ def test_static_partitioned_asset(tmp_path):
                 value=SNOWFLAKE_JARS,
             ).getOrCreate()
 
-            columns = ["color", "a", "b"]
+            columns = ["COLOR", "A", "B"]
             data = [(partition, value, 4), (partition, value, 5), (partition, value, 6)]
             df = spark.createDataFrame(data).toDF(*columns)
             return df
@@ -312,7 +312,7 @@ def test_static_partitioned_asset(tmp_path):
         out_df = snowflake_conn.execute_query(
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
-        assert out_df["a"].tolist() == ["1", "1", "1"]
+        assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
             [static_partitioned],
@@ -324,7 +324,7 @@ def test_static_partitioned_asset(tmp_path):
         out_df = snowflake_conn.execute_query(
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
-        assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
             [static_partitioned],
@@ -336,4 +336,4 @@ def test_static_partitioned_asset(tmp_path):
         out_df = snowflake_conn.execute_query(
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
-        assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+        assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]

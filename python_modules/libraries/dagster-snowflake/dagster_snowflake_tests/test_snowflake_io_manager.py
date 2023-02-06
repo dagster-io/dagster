@@ -104,5 +104,5 @@ def test_get_cleanup_statement_static_partitioned():
                 ),
             )
         )
-        == "DELETE FROM database_abc.schema1.table1\nWHERE my_fruit_col >= 'apple'"
+        == "DELETE FROM database_abc.schema1.table1\nWHERE my_fruit_col == 'apple'"
     )
