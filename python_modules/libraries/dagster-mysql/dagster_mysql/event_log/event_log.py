@@ -1,4 +1,3 @@
-
 import dagster._check as check
 import sqlalchemy as db
 from dagster._core.storage.config import mysql_config

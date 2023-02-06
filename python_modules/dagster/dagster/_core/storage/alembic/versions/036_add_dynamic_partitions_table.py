@@ -1,7 +1,7 @@
 """add dynamic partitions table
 
 Revision ID: e62c379ac8f4
-Revises: 6df03f4b1efb
+Revises: 16689497301f
 Create Date: 2023-01-19 11:41:41.062228
 
 """
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import sqlite
 
 # revision identifiers, used by Alembic.
 revision = "e62c379ac8f4"
-down_revision = "6df03f4b1efb"
+down_revision = "16689497301f"
 branch_labels = None
 depends_on = None
 
