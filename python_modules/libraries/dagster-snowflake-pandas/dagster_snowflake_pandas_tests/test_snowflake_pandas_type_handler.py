@@ -276,6 +276,10 @@ def test_time_window_partitioned_asset(tmp_path):
             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
             "database": "TEST_SNOWFLAKE_IO_MANAGER",
         }
+        snowflake_conn = SnowflakeConnection(
+            snowflake_config, logging.getLogger("temporary_snowflake_table")
+        )
+
         snowflake_io_manager = snowflake_pandas_io_manager.configured(snowflake_config)
         resource_defs = {"io_manager": snowflake_io_manager}
 
@@ -286,13 +290,10 @@ def test_time_window_partitioned_asset(tmp_path):
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
 
-        with SnowflakeConnection(
-            snowflake_config, logging.getLogger("temporary_snowflake_table")
-        ).get_connection() as conn:
-            out_df = conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
-            )
-            assert out_df["a"].tolist() == ["1", "1", "1"]
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert out_df["a"].tolist() == ["1", "1", "1"]
 
         materialize(
             [daily_partitioned],
@@ -301,13 +302,10 @@ def test_time_window_partitioned_asset(tmp_path):
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
         )
 
-        with SnowflakeConnection(
-            snowflake_config, logging.getLogger("temporary_snowflake_table")
-        ).get_connection() as conn:
-            out_df = conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
-            )
-            assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
             [daily_partitioned],
@@ -316,13 +314,10 @@ def test_time_window_partitioned_asset(tmp_path):
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
         )
 
-        with SnowflakeConnection(
-            snowflake_config, logging.getLogger("temporary_snowflake_table")
-        ).get_connection() as conn:
-            out_df = conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
-            )
-            assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
@@ -358,6 +353,10 @@ def test_static_partitioned_asset(tmp_path):
             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
             "database": "TEST_SNOWFLAKE_IO_MANAGER",
         }
+        snowflake_conn = SnowflakeConnection(
+            snowflake_config, logging.getLogger("temporary_snowflake_table")
+        )
+
         snowflake_io_manager = snowflake_pandas_io_manager.configured(snowflake_config)
         resource_defs = {"io_manager": snowflake_io_manager}
         materialize(
@@ -367,13 +366,10 @@ def test_static_partitioned_asset(tmp_path):
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
         )
 
-        with SnowflakeConnection(
-            snowflake_config, logging.getLogger("temporary_snowflake_table")
-        ).get_connection() as conn:
-            out_df = conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
-            )
-            assert out_df["a"].tolist() == ["1", "1", "1"]
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert out_df["a"].tolist() == ["1", "1", "1"]
 
         materialize(
             [static_partitioned],
@@ -382,13 +378,10 @@ def test_static_partitioned_asset(tmp_path):
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
         )
 
-        with SnowflakeConnection(
-            snowflake_config, logging.getLogger("temporary_snowflake_table")
-        ).get_connection() as conn:
-            out_df = conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
-            )
-            assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
             [static_partitioned],
@@ -397,10 +390,7 @@ def test_static_partitioned_asset(tmp_path):
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
         )
 
-        with SnowflakeConnection(
-            snowflake_config, logging.getLogger("temporary_snowflake_table")
-        ).get_connection() as conn:
-            out_df = conn.execute_query(
-                f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
-            )
-            assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
