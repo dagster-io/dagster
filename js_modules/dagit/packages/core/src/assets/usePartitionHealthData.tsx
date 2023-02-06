@@ -109,6 +109,9 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
     dimensionKey: string,
     otherDimensionSelectedKeys?: string[], // using this feature is slow
   ) => {
+    if (dimensions.length === 0) {
+      return PartitionState.MISSING;
+    }
     if (dimensionIdx === 0 && dimensions.length === 1) {
       return stateForKeyWithRangeOrdering([dimensionKey]);
     }
@@ -139,11 +142,15 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       const d0RangesContainingSubrangeWithD1Idx = ranges.filter((r) =>
         r.subranges?.some((sr) => sr.start.idx <= d1Idx && sr.end.idx >= d1Idx),
       );
-      return ranges.length && d0RangesContainingSubrangeWithD1Idx.length === ranges.length
+      if (d0RangesContainingSubrangeWithD1Idx.length === 0) {
+        return PartitionState.MISSING;
+      }
+      if (d0RangesContainingSubrangeWithD1Idx.length < ranges.length) {
+        return PartitionState.SUCCESS_MISSING;
+      }
+      return rangesCoverAll(d0RangesContainingSubrangeWithD1Idx, d0.partitionKeys.length)
         ? PartitionState.SUCCESS
-        : d0RangesContainingSubrangeWithD1Idx.length > 0
-        ? PartitionState.SUCCESS_MISSING
-        : PartitionState.MISSING;
+        : PartitionState.SUCCESS_MISSING;
     }
 
     throw new Error('stateForSingleDimension asked for third dimension');
@@ -174,7 +181,9 @@ function addKeyIndexesToMaterializedRanges(
   materializedPartitions: PartitionHealthMaterializedPartitions,
 ) {
   const result: Range[] = [];
-
+  if (dimensions.length === 0) {
+    return result;
+  }
   if (materializedPartitions.__typename === 'DefaultPartitions') {
     const dim = dimensions[0];
     const count = dim.partitionKeys.length;
@@ -208,10 +217,7 @@ function addKeyIndexesToMaterializedRanges(
       }
       const [dim0, dim1] = dimensions;
       const subranges: Range[] = addKeyIndexesToMaterializedRanges([dim1], range.secondaryDim);
-      const subrangeIsAll =
-        subranges.length === 1 &&
-        subranges[0].start.idx === 0 &&
-        subranges[0].end.idx === dim1.partitionKeys.length - 1;
+      const subrangeIsAll = rangesCoverAll(subranges, dim1.partitionKeys.length);
 
       result.push({
         value: subrangeIsAll ? PartitionState.SUCCESS : PartitionState.SUCCESS_MISSING,
@@ -233,6 +239,16 @@ function addKeyIndexesToMaterializedRanges(
   return result;
 }
 
+function rangesCoverAll(ranges: Range[], keyCount: number) {
+  let last = 0;
+  for (const range of ranges) {
+    if (range.start.idx !== last) {
+      return false;
+    }
+    last = range.end.idx + 1;
+  }
+  return last === keyCount;
+}
 // Note: assetLastMaterializedAt is used as a "hint" - if the input value changes, it's
 // a sign that we should invalidate and reload previously loaded health stats. We don't
 // clear them immediately to avoid an empty state.

@@ -16,6 +16,19 @@ const DIMENSION_ONE_KEYS = [
 
 const DIMENSION_TWO_KEYS = ['TN', 'CA', 'VA', 'NY', 'MN'];
 
+const NO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
+  __typename: 'DagitQuery',
+  assetNodeOrError: {
+    __typename: 'AssetNode',
+    id: '1234',
+    partitionKeysByDimension: [],
+    materializedPartitions: {
+      __typename: 'DefaultPartitions',
+      materializedPartitions: [],
+    },
+  },
+};
+
 const ONE_DIMENSIONAL_ASSET: PartitionHealthQuery = {
   __typename: 'DagitQuery',
   assetNodeOrError: {
@@ -66,17 +79,6 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
       ranges: [
         {
           __typename: 'MaterializedPartitionRange2D',
-          primaryDimStartKey: '2022-01-04',
-          primaryDimStartTime: new Date('2022-01-04').getTime(),
-          primaryDimEndKey: '2022-01-04',
-          primaryDimEndTime: new Date('2022-01-04').getTime(),
-          secondaryDim: {
-            __typename: 'DefaultPartitions',
-            materializedPartitions: ['TN', 'CA', 'VA', 'NY', 'MN'],
-          },
-        },
-        {
-          __typename: 'MaterializedPartitionRange2D',
           primaryDimStartKey: '2022-01-01',
           primaryDimStartTime: new Date('2022-01-01').getTime(),
           primaryDimEndKey: '2022-01-01',
@@ -99,6 +101,17 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
         },
         {
           __typename: 'MaterializedPartitionRange2D',
+          primaryDimStartKey: '2022-01-04',
+          primaryDimStartTime: new Date('2022-01-04').getTime(),
+          primaryDimEndKey: '2022-01-04',
+          primaryDimEndTime: new Date('2022-01-04').getTime(),
+          secondaryDim: {
+            __typename: 'DefaultPartitions',
+            materializedPartitions: ['TN', 'CA', 'VA', 'NY', 'MN'],
+          },
+        },
+        {
+          __typename: 'MaterializedPartitionRange2D',
           primaryDimStartKey: '2022-01-05',
           primaryDimStartTime: new Date('2022-01-05').getTime(),
           primaryDimEndKey: '2022-01-06',
@@ -106,6 +119,54 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['MN'],
+          },
+        },
+      ],
+    },
+  },
+};
+
+const TWO_DIMENSIONAL_ASSET_BOTH_STATIC: PartitionHealthQuery = {
+  __typename: 'DagitQuery',
+  assetNodeOrError: {
+    __typename: 'AssetNode',
+    id: '1234',
+    partitionKeysByDimension: [
+      {
+        __typename: 'DimensionPartitionKeys',
+        name: 'state1',
+        partitionKeys: DIMENSION_TWO_KEYS,
+      },
+      {
+        __typename: 'DimensionPartitionKeys',
+        name: 'state2',
+        partitionKeys: DIMENSION_TWO_KEYS,
+      },
+    ],
+    materializedPartitions: {
+      __typename: 'MultiPartitions',
+      primaryDimensionName: 'state1',
+      ranges: [
+        {
+          __typename: 'MaterializedPartitionRange2D',
+          primaryDimStartKey: 'TN',
+          primaryDimEndKey: 'CA',
+          primaryDimEndTime: null,
+          primaryDimStartTime: null,
+          secondaryDim: {
+            __typename: 'DefaultPartitions',
+            materializedPartitions: ['TN', 'CA', 'VA'],
+          },
+        },
+        {
+          __typename: 'MaterializedPartitionRange2D',
+          primaryDimStartKey: 'VA',
+          primaryDimEndKey: 'MN',
+          primaryDimEndTime: null,
+          primaryDimStartTime: null,
+          secondaryDim: {
+            __typename: 'DefaultPartitions',
+            materializedPartitions: ['CA', 'MN'],
           },
         },
       ],
@@ -194,6 +255,31 @@ describe('usePartitionHealthData', () => {
       expect(assetHealth.stateForKey(['2022-01-04', 'NY'])).toEqual(MISSING);
       expect(assetHealth.stateForSingleDimension(0, '2022-01-03')).toEqual(MISSING);
       expect(assetHealth.stateForSingleDimension(1, 'TN')).toEqual(MISSING);
+    });
+
+    it('should return an object with accessors for 2D partition data where both are static', async () => {
+      const assetHealth = buildPartitionHealthData(TWO_DIMENSIONAL_ASSET_BOTH_STATIC, {
+        path: ['asset'],
+      });
+      expect(assetHealth.assetKey).toEqual({path: ['asset']});
+      expect(assetHealth.stateForKey(['TN', 'TN'])).toEqual(SUCCESS);
+      expect(assetHealth.stateForKey(['CA', 'NY'])).toEqual(MISSING);
+      expect(assetHealth.stateForSingleDimension(0, 'CA')).toEqual(SUCCESS_MISSING);
+      expect(assetHealth.stateForSingleDimension(0, 'CA', ['TN', 'CA'])).toEqual(SUCCESS);
+      expect(assetHealth.stateForSingleDimension(0, 'CA', ['NY', 'MN'])).toEqual(MISSING);
+      expect(assetHealth.stateForSingleDimension(1, 'TN')).toEqual(SUCCESS_MISSING);
+      expect(assetHealth.stateForSingleDimension(1, 'TN', ['TN', 'CA'])).toEqual(SUCCESS);
+      expect(assetHealth.stateForSingleDimension(1, 'CA')).toEqual(SUCCESS);
+    });
+
+    it('should return correct (empty) data if the asset is not partitioned at all', async () => {
+      const assetHealth = buildPartitionHealthData(NO_DIMENSIONAL_ASSET, {path: ['asset']});
+      expect(assetHealth.assetKey).toEqual({path: ['asset']});
+      expect(assetHealth.dimensions).toEqual([]);
+
+      // These should safely no-op
+      expect(assetHealth.stateForKey(['2022-01-01'])).toEqual(MISSING);
+      expect(assetHealth.stateForSingleDimension(0, '2022-01-01')).toEqual(MISSING);
     });
   });
 });
