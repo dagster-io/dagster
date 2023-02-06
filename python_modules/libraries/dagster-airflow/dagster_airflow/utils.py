@@ -20,7 +20,7 @@ else:
 # pylint: enable=no-name-in-module,import-error
 
 
-def contains_duplicate_task_names(dag_bag):
+def contains_duplicate_task_names(dag_bag: DagBag):
     check.inst_param(dag_bag, "dag_bag", DagBag)
     seen_task_names = set()
 
@@ -28,6 +28,8 @@ def contains_duplicate_task_names(dag_bag):
     sorted_dag_ids = sorted(dag_bag.dag_ids)
     for dag_id in sorted_dag_ids:
         dag = dag_bag.dags.get(dag_id)
+        if not dag:
+            continue
         for task in dag.tasks:
             if task.task_id in seen_task_names:
                 return True
@@ -137,4 +139,4 @@ class Locker:
 
     def __exit__(self, _type, value, tb):
         portable_unlock(self.fp)
-        self.fp.close()
+        self.fp.close() if self.fp else None

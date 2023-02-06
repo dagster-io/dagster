@@ -14,7 +14,7 @@ from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_da
 
 default_args = {
     "owner": "dagster",
-    "start_date": days_ago(1),
+    "start_date": days_ago(10),
 }
 
 EXECUTION_DATE = get_current_datetime_in_utc()
@@ -32,7 +32,7 @@ def check_captured_logs(manager, result, execution_date_fmt):
     assert result.success
 
     capture_events = [
-        event for event in result.event_list if event.event_type == DagsterEventType.LOGS_CAPTURED
+        event for event in result.all_events if event.event_type == DagsterEventType.LOGS_CAPTURED
     ]
     assert len(capture_events) == 1
     event = capture_events[0]
@@ -44,6 +44,7 @@ def check_captured_logs(manager, result, execution_date_fmt):
     file_contents = normalize_file_content(stdout_file.read())
     stdout_file.close()
 
+    # assert 1 == 0
     assert file_contents.count("Running command:") == 1
     assert (
         file_contents.count(
@@ -57,13 +58,13 @@ def check_captured_logs(manager, result, execution_date_fmt):
 def get_dag():
     if airflow_version >= "2.0.0":
         dag = DAG(
-            dag_id="dag",
+            dag_id="test_tags_dag",
             default_args=default_args,
             schedule=None,
         )
     else:
         dag = DAG(
-            dag_id="dag",
+            dag_id="test_tags_dag",
             default_args=default_args,
             schedule_interval=None,
         )
@@ -98,6 +99,7 @@ def test_pipeline_tags():
         assert result.success
         for event in result.all_events:
             assert event.event_type_value != "STEP_FAILURE"
+
         check_captured_logs(manager, result, EXECUTION_DATE_MINUS_WEEK.strftime("%Y-%m-%d"))
 
 
@@ -120,7 +122,7 @@ def test_pipeline_auto_tag():
 
         capture_events = [
             event
-            for event in result._event_list
+            for event in result.all_events
             if event.event_type == DagsterEventType.LOGS_CAPTURED
         ]
         event = capture_events[0]

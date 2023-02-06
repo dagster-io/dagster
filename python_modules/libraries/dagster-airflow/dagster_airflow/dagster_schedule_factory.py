@@ -8,7 +8,7 @@ from dagster._utils.schedules import is_valid_cron_schedule
 
 
 # pylint: enable=no-name-in-module,import-error
-def make_dagster_schedule_from_airflow_dag(dag, job_def):
+def make_dagster_schedule_from_airflow_dag(dag: DAG, job_def: JobDefinition):
     """Construct a Dagster schedule corresponding to an Airflow DAG.
 
     Args:
@@ -23,10 +23,12 @@ def make_dagster_schedule_from_airflow_dag(dag, job_def):
     cron_schedule = dag.normalized_schedule_interval
     schedule_description = dag.description
 
-    if isinstance(dag.normalized_schedule_interval, str) and is_valid_cron_schedule(cron_schedule):
+    if isinstance(dag.normalized_schedule_interval, str) and is_valid_cron_schedule(
+        str(cron_schedule)
+    ):
         return ScheduleDefinition(
             job=job_def,
-            cron_schedule=cron_schedule,
+            cron_schedule=str(cron_schedule),
             description=schedule_description,
             execution_timezone=dag.timezone.name,
         )
