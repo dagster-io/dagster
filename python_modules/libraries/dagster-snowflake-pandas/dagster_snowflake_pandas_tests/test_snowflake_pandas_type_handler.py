@@ -253,7 +253,7 @@ def test_time_window_partitioned_asset(tmp_path):
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="A string, TIME TIMESTAMP_NTZ(9), B int",
+        column_str="TIME TIMESTAMP_NTZ(9), A string, B int",
     ) as table_name:
 
         @asset(
@@ -331,7 +331,7 @@ def test_static_partitioned_asset(tmp_path):
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="A string, COLOR string, B int",
+        column_str=" COLOR string, A string, B int",
     ) as table_name:
         #  with temporary_snowflake_table(
         #     schema_name="JAMIE",
