@@ -1,5 +1,29 @@
 # Changelog
 
+# 1.1.17 (core) / 0.17.17 (libraries)
+
+### New
+
+- [dagster-airflow] has been moved to 1.x.x to denote the stability of its api's going forward.
+- [dagster-airflow] `make_schedules_and_jobs_from_airflow_dag_bag` has been added to allow for more fine grained composition of your transformed airflow DAGs into Dagster.
+- [dagster-airflow] airflow dag task `retries` and `retry_delay` configuration are now converted to op RetryPolicies with all `make_dagster_*` apis.
+
+### Bugfixes
+
+### Breaking Changes
+
+- [dagster-airflow] the `use_airflow_template_context`, `mock_xcom` and `use_ephemeral_airflow_db` params have been dropped, by default all `make_dagster_*` apis now use run-scoped airflow db, similiar to how `use_ephemeral_airflow_db` worked.
+- [dagster-airflow] `make_airflow_dag` has been removed.
+- [dagster-airflow] `make_airflow_dag_for_operator` has been removed.
+- [dagster-airflow] `make_airflow_dag_containerized` has been removed.
+- [dagster-airflow] `airflow_operator_to_op` has been removed.
+- [dagster-airflow] the naming convention for ops generated from airflow tasks has been changed to `${dag_id}__${task_id}`.
+- [dagster-airflow] the naming convention for jobs generated from airflow dags has been changed to `${dag_id}`.
+
+### Community Contributions
+
+### Experimental
+
 # 1.1.15 (core) / 0.17.15 (libraries)
 
 ### New
@@ -57,6 +81,7 @@
 - Added a pin of the `jupyter-client` package to `<8.0` due to an issue with the most recent release causing hangs while running dagstermill ops.
 
 ### Bugfixes
+
 - Fixed an issue where the Backfills page in Dagit didn't show partition status for some backfills.
 - [dagster-aws] Fixed an issue where the `EcsRunLauncher` sometimes waited much longer than intended before retrying after a failure launching a run.
 - [dagster-mysql] Fixed an issue where some implementations of MySQL storage were raising invalid version errors.
