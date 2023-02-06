@@ -181,7 +181,7 @@ export function buildAssetNodeStatusRow({
       content: (
         <>
           <Caption color={late ? Colors.Red700 : numMissing ? Colors.Yellow700 : Colors.Green700}>
-            {`${numPartitions.toLocaleString()} Partitions`}
+            {`${numPartitions.toLocaleString()} partitions`}
           </Caption>
           <Caption>
             <Link

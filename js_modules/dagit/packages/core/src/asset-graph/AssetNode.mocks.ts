@@ -476,3 +476,183 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
     numPartitions: 1500,
   },
 };
+
+export const AssetNodeScenariosBase = [
+  {
+    title: 'No Live Data',
+    liveData: undefined,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Loading'],
+  },
+
+  {
+    title: 'Run Started - Not Materializing Yet',
+    liveData: LiveDataForNodeRunStartedNotMaterializing,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Materializing...', 'ABCDEF'],
+  },
+  {
+    title: 'Run Started - Materializing',
+    liveData: LiveDataForNodeRunStartedMaterializing,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Materializing...', 'ABCDEF'],
+  },
+
+  {
+    title: 'Run Failed to Materialize',
+    liveData: LiveDataForNodeRunFailed,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Failed', 'Jan'],
+  },
+
+  {
+    title: 'Never Materialized',
+    liveData: LiveDataForNodeNeverMaterialized,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Never materialized'],
+  },
+
+  {
+    title: 'Materialized',
+    liveData: LiveDataForNodeMaterialized,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Materialized', 'Feb'],
+  },
+
+  {
+    title: 'Materialized and Stale',
+    liveData: LiveDataForNodeMaterializedAndStale,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Stale', 'Feb'],
+  },
+
+  {
+    title: 'Materialized and Stale and Late',
+    liveData: LiveDataForNodeMaterializedAndStaleAndLate,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['12 minutes late', 'Feb'],
+  },
+
+  {
+    title: 'Materialized and Stale and Fresh',
+    liveData: LiveDataForNodeMaterializedAndStaleAndFresh,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Materialized'],
+  },
+
+  {
+    title: 'Materialized and Fresh',
+    liveData: LiveDataForNodeMaterializedAndFresh,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['Materialized'],
+  },
+
+  {
+    title: 'Materialized and Late',
+    liveData: LiveDataForNodeMaterializedAndLate,
+    definition: AssetNodeFragmentBasic,
+    expectedText: ['12 minutes late'],
+  },
+];
+
+export const AssetNodeScenariosSource = [
+  {
+    title: 'Source Asset - No Live Data',
+    liveData: undefined,
+    definition: AssetNodeFragmentSource,
+    expectedText: ['Observed', '–'],
+  },
+
+  {
+    title: 'Source Asset - Not Observable',
+    liveData: undefined,
+    definition: {...AssetNodeFragmentSource, isObservable: false},
+    expectedText: [],
+  },
+
+  {
+    title: 'Source Asset - Not Observable, No Description',
+    liveData: undefined,
+    definition: {...AssetNodeFragmentSource, isObservable: false, description: null},
+    expectedText: [],
+  },
+
+  {
+    title: 'Source Asset - Never Observed',
+    liveData: LiveDataForNodeSourceNeverObserved,
+    definition: AssetNodeFragmentSource,
+    expectedText: ['Observed', '–'],
+  },
+
+  {
+    title: 'Source Asset - Observation Running',
+    liveData: LiveDataForNodeSourceObservationRunning,
+    definition: AssetNodeFragmentSource,
+    expectedText: ['Observed', '–'],
+  },
+
+  {
+    title: 'Source Asset - Observed, Stale',
+    liveData: LiveDataForNodeSourceObservedStale,
+    definition: AssetNodeFragmentSource,
+    expectedText: ['Observed', 'Feb'],
+  },
+
+  {
+    title: 'Source Asset - Observed, Up To Date',
+    liveData: LiveDataForNodeSourceObservedUpToDate,
+    definition: AssetNodeFragmentSource,
+    expectedText: ['Observed', 'Feb'],
+  },
+];
+
+export const AssetNodeScenariosPartitioned = [
+  {
+    title: 'Partitioned Asset - Some Missing',
+    liveData: LiveDataForNodePartitionedSomeMissing,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['1,500 partitions', '1,495 missing'],
+  },
+
+  {
+    title: 'Partitioned Asset - None Missing',
+    liveData: LiveDataForNodePartitionedNoneMissing,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['1,500 partitions', '0 missing'],
+  },
+
+  {
+    title: 'Never Materialized',
+    liveData: LiveDataForNodePartitionedNeverMaterialized,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['1,500 partitions', '1,500 missing'],
+  },
+
+  {
+    title: 'Partitioned Asset - Stale',
+    liveData: LiveDataForNodePartitionedStale,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['1,500 partitions', '0 missing'],
+  },
+
+  {
+    title: 'Partitioned Asset - Stale and Late',
+    liveData: LiveDataForNodePartitionedStaleAndLate,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['1,500 partitions', '12 minutes late'],
+  },
+
+  {
+    title: 'Partitioned Asset - Stale and Fresh',
+    liveData: LiveDataForNodePartitionedStaleAndFresh,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['1,500 partitions', '0 missing'],
+  },
+
+  {
+    title: 'Partitioned Asset - Last Run Failed',
+    liveData: LiveDataForNodePartitionedLatestRunFailed,
+    definition: AssetNodeFragmentPartitioned,
+    expectedText: ['1,500 partitions', '0 missing'],
+  },
+];
