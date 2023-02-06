@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Type
 
 import pytest
 from dagster import job, op
@@ -257,9 +257,9 @@ def test_struct_config_nested_in_dict():
     "key_type, keys",
     [(str, ["foo", "bar"]), (int, [1, 2]), (float, [1.0, 2.0]), (bool, [True, False])],
 )
-def test_struct_config_map_different_key_type(key_type, keys: List[Any]):
+def test_struct_config_map_different_key_type(key_type: Type, keys: List[Any]):
     class AnOpConfig(Config):
-        my_dict: Dict[key_type, int]
+        my_dict: Dict[key_type, int]  # type: ignore
 
     executed = {}
 
