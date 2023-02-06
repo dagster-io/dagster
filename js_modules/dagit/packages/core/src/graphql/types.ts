@@ -3170,9 +3170,9 @@ export type Schedule = {
   name: Scalars['String'];
   partitionSet: Maybe<PartitionSet>;
   pipelineName: Scalars['String'];
+  potentialTickTimestamps: Array<Maybe<Scalars['Float']>>;
   scheduleState: InstigationState;
   solidSelection: Maybe<Array<Maybe<Scalars['String']>>>;
-  potentialTickTimestamps: Array<Maybe<Scalars['Float']>>;
 };
 
 export type ScheduleFutureTickArgs = {
@@ -3185,7 +3185,7 @@ export type ScheduleFutureTicksArgs = {
   until?: InputMaybe<Scalars['Float']>;
 };
 
-export type ScheduleTicksFromTimestampArgs = {
+export type SchedulePotentialTickTimestampsArgs = {
   lowerLimit?: InputMaybe<Scalars['Int']>;
   startTimestamp?: InputMaybe<Scalars['Float']>;
   upperLimit?: InputMaybe<Scalars['Int']>;
