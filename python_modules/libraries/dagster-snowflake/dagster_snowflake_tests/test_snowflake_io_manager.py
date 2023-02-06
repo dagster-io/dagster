@@ -35,9 +35,8 @@ def test_get_select_statement_time_partitioned():
                 schema="schema1",
                 table="table1",
                 partition=TablePartition(
-                    time_window=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
+                    partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
                     partition_expr="my_timestamp_col",
-                    static_value=None,
                 ),
                 columns=["apple", "banana"],
             )
@@ -54,9 +53,7 @@ def test_get_select_statement_static_partitioned():
                 database="database_abc",
                 schema="schema1",
                 table="table1",
-                partition=TablePartition(
-                    time_window=None, partition_expr="my_fruit_col", static_value="apple"
-                ),
+                partition=TablePartition(partition_expr="my_fruit_col", partition="apple"),
                 columns=["apple", "banana"],
             )
         )
@@ -81,9 +78,8 @@ def test_get_cleanup_statement_time_partitioned():
                 schema="schema1",
                 table="table1",
                 partition=TablePartition(
-                    time_window=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
+                    partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
                     partition_expr="my_timestamp_col",
-                    static_value=None,
                 ),
             )
         )
@@ -99,9 +95,7 @@ def test_get_cleanup_statement_static_partitioned():
                 database="database_abc",
                 schema="schema1",
                 table="table1",
-                partition=TablePartition(
-                    time_window=None, partition_expr="my_fruit_col", static_value="apple"
-                ),
+                partition=TablePartition(partition_expr="my_fruit_col", partition="apple"),
             )
         )
         == "DELETE FROM database_abc.schema1.table1\nWHERE my_fruit_col == 'apple'"

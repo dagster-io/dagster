@@ -159,9 +159,9 @@ class SnowflakeDbClient(DbClient):
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
         if table_slice.partition:
             partition_where = (
-                _time_window_where_clause(table_slice.partition)
-                if table_slice.partition.time_window is not None
-                else _static_where_clause(table_slice.partition)
+                _static_where_clause(table_slice.partition)
+                if isinstance(table_slice.partition.partition, str)
+                else _time_window_where_clause(table_slice.partition)
             )
             return (
                 f"SELECT {col_str} FROM"
@@ -179,9 +179,9 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """
     if table_slice.partition:
         partition_where = (
-            _time_window_where_clause(table_slice.partition)
-            if table_slice.partition.time_window is not None
-            else _static_where_clause(table_slice.partition)
+            _static_where_clause(table_slice.partition)
+            if isinstance(table_slice.partition.partition, str)
+            else _time_window_where_clause(table_slice.partition)
         )
         return (
             f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
@@ -192,7 +192,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
 
 
 def _time_window_where_clause(table_partition: TablePartition) -> str:
-    start_dt, end_dt = table_partition.time_window
+    start_dt, end_dt = table_partition.partition
     start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     # Snowflake BETWEEN is inclusive; start <= partition expr <= end. We don't want to remove the next partition so we instead
@@ -201,4 +201,4 @@ def _time_window_where_clause(table_partition: TablePartition) -> str:
 
 
 def _static_where_clause(table_partition: TablePartition) -> str:
-    return f"""WHERE {table_partition.partition_expr} == '{table_partition.static_value}'"""
+    return f"""WHERE {table_partition.partition_expr} == '{table_partition.partition}'"""

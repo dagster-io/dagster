@@ -28,8 +28,7 @@ T = TypeVar("T")
 
 class TablePartition(NamedTuple):
     partition_expr: str
-    time_window: Optional[TimeWindow]
-    static_value: Optional[str]
+    partition: Union[TimeWindow, str]
 
 
 class TableSlice(NamedTuple):
@@ -139,8 +138,7 @@ class DbIOManager(IOManager):
 
         schema: str
         table: str
-        time_window: Optional[TimeWindow] = None
-        static_value: Optional[str] = None
+        partition_value: Union[TimeWindow, str]
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
@@ -159,13 +157,9 @@ class DbIOManager(IOManager):
                 schema = "public"
             if context.has_asset_partitions:
                 if isinstance(context.asset_partitions_def, StaticPartitionsDefinition):
-                    static_value = context.asset_partition_key
+                    partition_value = context.asset_partition_key
                 else:
-                    time_window = (
-                        context.asset_partitions_time_window
-                        if context.has_asset_partitions
-                        else None
-                    )
+                    partition_value = context.asset_partitions_time_window
         else:
             table = output_context.name
             if output_context_metadata.get("schema") and self._schema:
@@ -182,7 +176,7 @@ class DbIOManager(IOManager):
             else:
                 schema = "public"
 
-        if time_window is not None or static_value is not None:
+        if partition_value is not None:
             partition_expr = cast(str, output_context_metadata.get("partition_expr"))
             if partition_expr is None:
                 raise ValueError(
@@ -190,9 +184,7 @@ class DbIOManager(IOManager):
                     " value, so we don't know what column to filter it on. Specify which column of"
                     " the  database contains partitioned data as the 'partition_expr' metadata."
                 )
-            partition = TablePartition(
-                partition_expr=partition_expr, time_window=time_window, static_value=static_value
-            )
+            partition = TablePartition(partition_expr=partition_expr, partition=partition_value)
         else:
             partition = None
 
