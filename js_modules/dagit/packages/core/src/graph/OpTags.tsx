@@ -3,6 +3,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import airbyte from './optag-images/airbyte.svg';
+import databricks from './optag-images/databricks.svg';
 import dbt from './optag-images/dbt.svg';
 import duckdb from './optag-images/duckdb.svg';
 import fivetran from './optag-images/fivetran.svg';
@@ -17,7 +18,6 @@ import slack from './optag-images/slack.svg';
 import snowflake from './optag-images/snowflake.svg';
 import sql from './optag-images/sql.svg';
 import tensorflow from './optag-images/tensorflow.svg';
-import databricks from './optag-images/databricks.svg';
 
 export interface IOpTag {
   label: string;
