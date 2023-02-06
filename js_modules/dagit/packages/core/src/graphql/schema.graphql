@@ -2054,7 +2054,7 @@ type DryRunInstigationTick {
 }
 
 type TickEvaluation {
-  runRequests: [RunRequest]
+  runRequests: [RunRequest!]
   skipReason: String
   error: PythonError
   cursor: String

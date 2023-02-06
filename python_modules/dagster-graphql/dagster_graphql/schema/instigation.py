@@ -266,7 +266,7 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
 
 
 class GrapheneTickEvaluation(graphene.ObjectType):
-    runRequests = graphene.List(lambda: GrapheneRunRequest)
+    runRequests = graphene.List(lambda: graphene.NonNull(GrapheneRunRequest))
     skipReason = graphene.String()
     error = graphene.Field(GraphenePythonError)
     cursor = graphene.String()

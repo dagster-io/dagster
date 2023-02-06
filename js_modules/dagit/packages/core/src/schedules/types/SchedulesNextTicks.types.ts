@@ -60,7 +60,7 @@ export type ScheduleTickConfigQuery = {
               runKey: string | null;
               runConfigYaml: string;
               tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-            } | null> | null;
+            }> | null;
             error: {
               __typename: 'PythonError';
               message: string;
@@ -85,7 +85,7 @@ export type ScheduleFutureTickEvaluationResultFragment = {
     runKey: string | null;
     runConfigYaml: string;
     tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-  } | null> | null;
+  }> | null;
   error: {
     __typename: 'PythonError';
     message: string;
