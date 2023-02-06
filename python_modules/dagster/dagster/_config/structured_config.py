@@ -13,7 +13,7 @@ except ImportError:
 
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional, Type, cast
+from typing import Any, Optional, Type, cast
 
 from pydantic import BaseModel, Extra
 from pydantic.fields import SHAPE_LIST, SHAPE_SINGLETON, ModelField
@@ -219,28 +219,24 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
 
 PydanticShapeType: TypeAlias = int
 
-PYDANTIC_SHAPE_TO_WRAPPER_MAPPING: Dict[PydanticShapeType, Callable[[ConfigType], ConfigType]] = {
-    SHAPE_SINGLETON: lambda x: x,
-    SHAPE_LIST: Array,
-}
-
 
 def _wrap_config_type(shape_type: PydanticShapeType, config_type: ConfigType) -> ConfigType:
     """
     Based on a Pydantic shape type, wraps a config type in the appropriate Dagster config wrapper.
     For example, if the shape type is a Pydantic list, the config type will be wrapped in an Array.
     """
-    if shape_type not in PYDANTIC_SHAPE_TO_WRAPPER_MAPPING:
+    if shape_type == SHAPE_SINGLETON:
+        return config_type
+    elif shape_type == SHAPE_LIST:
+        return Array(config_type)
+    else:
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
-
-    return PYDANTIC_SHAPE_TO_WRAPPER_MAPPING[shape_type](config_type)
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     """
     Transforms a Pydantic field into a corresponding Dagster config field.
     """
-
     if _safe_is_subclass(pydantic_field.type_, Config):
         inferred_field = infer_schema_from_config_class(
             pydantic_field.type_,
