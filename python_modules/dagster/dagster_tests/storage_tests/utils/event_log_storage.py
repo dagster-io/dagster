@@ -1998,7 +1998,7 @@ class TestEventLogStorage:
                         _fetch_counts(storage, after_cursor=cursor_run1)
                         == materialization_count_by_partition
                     )
-                    assert _fetch_counts(storage, after_cursor=9999999) == {c: {}, d: {}}
+                    assert _fetch_counts(storage, after_cursor=9999999999) == {c: {}, d: {}}
 
     def test_get_observation(self, storage, test_run_id):
         a = AssetKey(["key_a"])
