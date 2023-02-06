@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, Mapping, NamedTuple
 
 import dagster._check as check
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.host_representation.origin import (
     ExternalRepositoryOrigin,
     RepositoryLocationOrigin,
 )
-from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.origin import RepositoryPythonOrigin
 
 if TYPE_CHECKING:

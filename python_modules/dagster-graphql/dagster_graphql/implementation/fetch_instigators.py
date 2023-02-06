@@ -4,18 +4,18 @@ from typing import TYPE_CHECKING
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.host_representation import InstigatorSelector
+from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.log_manager import DAGSTER_META_KEY
 from dagster._core.scheduler.instigation import InstigatorStatus
 
 from .utils import capture_error
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.util import HasContext
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 @capture_error
-def get_unloadable_instigator_states_or_error(graphene_info: "HasContext", instigator_type=None):
+def get_unloadable_instigator_states_or_error(graphene_info: "ResolveInfo", instigator_type=None):
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
     check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)

@@ -117,6 +117,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
+    from dagster._core.storage.runs.base import RunGroupInfo
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.workspace.workspace import IWorkspace
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
@@ -691,6 +692,22 @@ class DagsterInstance:
         else:
             return dagster_telemetry_enabled_default
 
+    @property
+    def nux_enabled(self) -> bool:
+        if self.is_ephemeral:
+            return False
+
+        nux_enabled_by_default = True
+
+        nux_settings = self.get_settings("nux")
+        if not nux_settings:
+            return nux_enabled_by_default
+
+        if "enabled" in nux_settings:
+            return nux_settings["enabled"]
+        else:
+            return nux_enabled_by_default
+
     # run monitoring
 
     @property
@@ -803,9 +820,19 @@ class DagsterInstance:
 
     # run storage
     @public
-    @traced
     def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
-        return cast(DagsterRun, self._run_storage.get_run_by_id(run_id))
+        record = self.get_run_record_by_id(run_id)
+        if record is None:
+            return None
+        return record.dagster_run
+
+    @public
+    @traced
+    def get_run_record_by_id(self, run_id: str) -> Optional[RunRecord]:
+        records = self._run_storage.get_run_records(RunsFilter(run_ids=[run_id]))
+        if not records:
+            return None
+        return records[0]
 
     @traced
     def get_pipeline_snapshot(self, snapshot_id: str) -> "PipelineSnapshot":
@@ -1274,8 +1301,8 @@ class DagsterInstance:
     ) -> DagsterRun:
         from dagster._core.execution.plan.resume_retry import (
             ReexecutionStrategy,
-            get_retry_steps_from_parent_run,
         )
+        from dagster._core.execution.plan.state import KnownExecutionState
         from dagster._core.host_representation import ExternalPipeline, RepositoryLocation
 
         check.inst_param(parent_run, "parent_run", DagsterRun)
@@ -1311,7 +1338,10 @@ class DagsterInstance:
                 "Cannot reexecute from failure a run that is not failed",
             )
 
-            step_keys_to_execute, known_state = get_retry_steps_from_parent_run(
+            (
+                step_keys_to_execute,
+                known_state,
+            ) = KnownExecutionState.build_resume_retry_reexecution(
                 self,
                 parent_run=parent_run,
             )
@@ -1460,8 +1490,8 @@ class DagsterInstance:
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Mapping[str, Mapping[str, Union[Iterable[DagsterRun], int]]]:
-        return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
+    ) -> Mapping[str, "RunGroupInfo"]:
+        return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)  # type: ignore  # fmt: skip
 
     @public
     @traced
@@ -1649,9 +1679,9 @@ class DagsterInstance:
 
     @traced
     def get_materialization_count_by_partition(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
-        return self._event_storage.get_materialization_count_by_partition(asset_keys)
+        return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
 
     # event subscriptions
 
@@ -1769,7 +1799,7 @@ class DagsterInstance:
         log_level: Union[str, int] = logging.INFO,
     ):
         """
-        Takes a DagsterEvent and stores it in persistent storage for the corresponding PipelineRun
+        Takes a DagsterEvent and stores it in persistent storage for the corresponding PipelineRun.
         """
         from dagster._core.events.log import EventLogEntry
 
@@ -2205,11 +2235,11 @@ class DagsterInstance:
 
     # dagster daemon
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat"):
-        """Called on a regular interval by the daemon"""
+        """Called on a regular interval by the daemon."""
         self._run_storage.add_daemon_heartbeat(daemon_heartbeat)
 
     def get_daemon_heartbeats(self) -> Mapping[str, "DaemonHeartbeat"]:
-        """Latest heartbeats of all daemon types"""
+        """Latest heartbeats of all daemon types."""
         return self._run_storage.get_daemon_heartbeats()
 
     def wipe_daemon_heartbeats(self):

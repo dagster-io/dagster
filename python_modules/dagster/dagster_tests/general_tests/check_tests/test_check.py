@@ -1327,6 +1327,42 @@ def test_is_tuple():
         check.is_tuple((str,), of_type=int)
 
 
+def test_tuple_elem():
+    tuple_value = ("blah", "blahblah")
+    ddict = {"tuplekey": tuple_value, "stringkey": "A", "nonekey": None}
+
+    assert check.tuple_elem(ddict, "tuplekey") == tuple_value
+    assert check.tuple_elem(ddict, "tuplekey", of_type=str) == tuple_value
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "nonekey")
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "nonexistantkey")
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "stringkey")
+
+    with pytest.raises(CheckError):
+        check.tuple_elem(ddict, "tuplekey", of_type=int)
+
+
+def test_opt_tuple_elem():
+    tuple_value = ("blah", "blahblah")
+    ddict = {"tuplekey": tuple_value, "stringkey": "A", "nonekey": None}
+
+    assert check.opt_tuple_elem(ddict, "tuplekey") == tuple_value
+    assert check.opt_tuple_elem(ddict, "tuplekey", of_type=str) == tuple_value
+    assert check.opt_tuple_elem(ddict, "nonekey") == tuple()
+    assert check.opt_tuple_elem(ddict, "nonexistantkey") == tuple()
+
+    with pytest.raises(CheckError):
+        check.opt_tuple_elem(ddict, "stringkey")
+
+    with pytest.raises(CheckError):
+        check.opt_tuple_elem(ddict, "tuplekey", of_type=int)
+
+
 def test_typed_is_tuple():
     class Foo:
         pass
@@ -1423,3 +1459,58 @@ def test_not_implemented():
 
     with pytest.raises(CheckError, match="desc argument must be a string"):
         check.not_implemented(None)  # type: ignore
+
+
+def test_iterable():
+    assert check.iterable_param([], "thisisfine") == []
+    assert check.iterable_param([1], "thisisfine") == [1]
+    assert check.iterable_param([1], "thisisfine", of_type=int) == [1]
+    assert check.iterable_param((i for i in [1, 2]), "thisisfine")
+    # assert that it does not coerce generator to list
+    assert check.iterable_param((i for i in [1, 2]), "thisisfine") != [1, 2]
+    assert list(check.iterable_param((i for i in [1, 2]), "thisisfine")) == [1, 2]
+
+    check.iterable_param("lkjsdkf", "stringisiterable")
+
+    with pytest.raises(CheckError, match="Iterable.*None"):
+        check.iterable_param(None, "nonenotallowed")  # type: ignore
+
+    with pytest.raises(CheckError, match="Iterable.*int"):
+        check.iterable_param(1, "intnotallowed")  # type: ignore
+
+    with pytest.raises(CheckError, match="Member of iterable mismatches type"):
+        check.iterable_param([1], "typemismatch", of_type=str)
+
+    with pytest.raises(CheckError, match="Member of iterable mismatches type"):
+        check.iterable_param(["atr", 2], "typemismatchmixed", of_type=str)
+
+    with pytest.raises(CheckError, match="Member of iterable mismatches type"):
+        check.iterable_param(["atr", None], "nonedoesntcount", of_type=str)
+
+
+def test_opt_iterable():
+    assert check.opt_iterable_param([], "thisisfine") == []
+    assert check.opt_iterable_param([1], "thisisfine") == [1]
+    assert check.opt_iterable_param((i for i in [1, 2]), "thisisfine")
+    # assert that it does not coerce generator to list
+    assert check.opt_iterable_param((i for i in [1, 2]), "thisisfine") != [1, 2]
+    # not_none coerces to Iterable[T] so
+    assert list(check.not_none(check.opt_iterable_param((i for i in [1, 2]), "thisisfine"))) == [
+        1,
+        2,
+    ]
+
+    check.opt_iterable_param("lkjsdkf", "stringisiterable")
+    check.opt_iterable_param(None, "noneisallowed")
+
+    with pytest.raises(CheckError, match="Iterable.*int"):
+        check.opt_iterable_param(1, "intnotallowed")  # type: ignore
+
+    with pytest.raises(CheckError, match="Member of iterable mismatches type"):
+        check.opt_iterable_param([1], "typemismatch", of_type=str)
+
+    with pytest.raises(CheckError, match="Member of iterable mismatches type"):
+        check.opt_iterable_param(["atr", 2], "typemismatchmixed", of_type=str)
+
+    with pytest.raises(CheckError, match="Member of iterable mismatches type"):
+        check.opt_iterable_param(["atr", None], "nonedoesntcount", of_type=str)

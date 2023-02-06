@@ -1,7 +1,6 @@
-import {Box, Colors, Tabs} from '@dagster-io/ui';
+import {Box, Colors, Tabs, ErrorBoundary} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {SidebarRootContainerFragmentFragment} from '../graphql/graphql';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from '../typeexplorer/TypeListContainer';
@@ -12,6 +11,7 @@ import {RightInfoPanelContent} from './GraphExplorer';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarContainerOverview} from './SidebarContainerOverview';
 import {SidebarOp} from './SidebarOp';
+import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
 
 type TabKey = 'types' | 'info';
 
@@ -24,7 +24,7 @@ interface TabDefinition {
 interface SidebarRootProps {
   tab?: TabKey;
   typeName?: string;
-  container: SidebarRootContainerFragmentFragment;
+  container: SidebarRootContainerFragment;
   explorerPath: ExplorerPath;
   opHandleID?: string;
   parentOpHandleID?: string;
@@ -111,7 +111,9 @@ export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
         </Tabs>
       </Box>
       <RightInfoPanelContent>
-        {TabDefinitions.find((t) => t.key === activeTab)?.content()}
+        <ErrorBoundary region="tab" resetErrorOnChange={[activeTab, explorerPath]}>
+          {TabDefinitions.find((t) => t.key === activeTab)?.content()}
+        </ErrorBoundary>
       </RightInfoPanelContent>
     </>
   );

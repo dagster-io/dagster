@@ -6,7 +6,7 @@ import dagster._seven as seven
 
 def format_duration(milliseconds):
     """Given milliseconds, return human readable duration string such as:
-    533ms, 2.1s, 4m52s, 34m12s, 1h4m
+    533ms, 2.1s, 4m52s, 34m12s, 1h4m.
     """
     # under 1 ms
     # ex: 0.83ms

@@ -8,6 +8,8 @@ from dagster import (
     ScheduleDefinition,
     SourceAsset,
     asset,
+    build_schedule_from_partitioned_job,
+    create_repository_using_definitions_args,
     define_asset_job,
     materialize,
     op,
@@ -21,7 +23,6 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
@@ -35,6 +36,7 @@ from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
@@ -213,7 +215,7 @@ def test_pending_repo():
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "foobar"
 
-    assert isinstance(defs.get_job_def("__ASSET_JOB"), JobDefinition)
+    assert isinstance(defs.get_implicit_global_asset_job_def(), JobDefinition)
 
 
 def test_asset_loading():
@@ -243,7 +245,7 @@ def test_io_manager_coercion():
 
     defs = Definitions(assets=[one], resources={"mem_io_manager": InMemoryIOManager()})
 
-    asset_job = defs.get_job_def("__ASSET_JOB")
+    asset_job = defs.get_implicit_global_asset_job_def()
     assert isinstance(asset_job.resource_defs["mem_io_manager"], IOManagerDefinition)
     result = asset_job.execute_in_process()
     assert result.output_for_node("one") == 1
@@ -265,7 +267,7 @@ def test_custom_executor_in_definitions():
         return 1
 
     defs = Definitions(assets=[one], executor=an_executor)
-    asset_job = defs.get_job_def("__ASSET_JOB")
+    asset_job = defs.get_implicit_global_asset_job_def()
     assert asset_job.executor_def is an_executor
 
 
@@ -280,7 +282,7 @@ def test_custom_loggers_in_definitions():
 
     defs = Definitions(assets=[one], loggers={"custom_logger": a_logger})
 
-    asset_job = defs.get_job_def("__ASSET_JOB")
+    asset_job = defs.get_implicit_global_asset_job_def()
     loggers = asset_job.loggers
     assert len(loggers) == 1
     assert "custom_logger" in loggers
@@ -361,9 +363,9 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     assert isinstance(repo.get_job("a_job"), JobDefinition)
     assert repo.get_job("a_job").executor_def is an_executor
     assert repo.get_job("a_job").loggers == {"logger_key": a_logger}
-    assert isinstance(repo.get_job("__ASSET_JOB"), JobDefinition)
-    assert repo.get_job("__ASSET_JOB").executor_def is an_executor
-    assert repo.get_job("__ASSET_JOB").loggers == {"logger_key": a_logger}
+    assert isinstance(repo.get_implicit_global_asset_job_def(), JobDefinition)
+    assert repo.get_implicit_global_asset_job_def().executor_def is an_executor
+    assert repo.get_implicit_global_asset_job_def().loggers == {"logger_key": a_logger}
     assert isinstance(repo.get_job("another_asset_job"), JobDefinition)
     assert repo.get_job("another_asset_job").executor_def is an_executor
     assert repo.get_job("another_asset_job").loggers == {"logger_key": a_logger}
@@ -391,9 +393,9 @@ def test_kitchen_sink_on_create_helper_and_definitions():
     assert isinstance(defs.get_job_def("a_job"), JobDefinition)
     assert defs.get_job_def("a_job").executor_def is an_executor
     assert defs.get_job_def("a_job").loggers == {"logger_key": a_logger}
-    assert isinstance(defs.get_job_def("__ASSET_JOB"), JobDefinition)
-    assert defs.get_job_def("__ASSET_JOB").executor_def is an_executor
-    assert defs.get_job_def("__ASSET_JOB").loggers == {"logger_key": a_logger}
+    assert isinstance(defs.get_implicit_global_asset_job_def(), JobDefinition)
+    assert defs.get_implicit_global_asset_job_def().executor_def is an_executor
+    assert defs.get_implicit_global_asset_job_def().loggers == {"logger_key": a_logger}
     assert isinstance(defs.get_job_def("another_asset_job"), JobDefinition)
     assert defs.get_job_def("another_asset_job").executor_def is an_executor
     assert defs.get_job_def("another_asset_job").loggers == {"logger_key": a_logger}
@@ -511,3 +513,49 @@ def test_implicit_job_with_source_assets():
     assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
     assert defs.has_implicit_global_asset_job_def()
     assert defs.get_implicit_global_asset_job_def()
+
+
+def test_unresolved_partitioned_asset_schedule():
+    partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        ...
+
+    job1 = define_asset_job("job1")
+    schedule1 = build_schedule_from_partitioned_job(job1)
+
+    defs_with_explicit_job = Definitions(jobs=[job1], schedules=[schedule1], assets=[asset1])
+    assert defs_with_explicit_job.get_job_def("job1").name == "job1"
+    assert defs_with_explicit_job.get_job_def("job1").partitions_def == partitions_def
+    assert defs_with_explicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
+
+    defs_with_implicit_job = Definitions(schedules=[schedule1], assets=[asset1])
+    defs_with_implicit_job = Definitions(jobs=[job1], schedules=[schedule1], assets=[asset1])
+    assert defs_with_implicit_job.get_job_def("job1").name == "job1"
+    assert defs_with_implicit_job.get_job_def("job1").partitions_def == partitions_def
+    assert defs_with_implicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
+
+
+def test_bare_executor():
+    @asset
+    def an_asset():
+        ...
+
+    class DummyExecutor(Executor):
+        def execute(self, plan_context, execution_plan):
+            ...
+
+        @property
+        def retries(self):
+            ...
+
+    executor_inst = DummyExecutor()
+
+    defs = Definitions(assets=[an_asset], executor=executor_inst)
+
+    job = defs.get_implicit_global_asset_job_def()
+    assert isinstance(job, JobDefinition)
+
+    # ignore typecheck because we know our implementation doesn't use the context
+    assert job.executor_def.executor_creation_fn(None) is executor_inst  # type: ignore

@@ -77,11 +77,11 @@ def test_solid_input_arguments():
         pass
 
     @solid(input_defs=[InputDefinition("_x")])
-    def _context_partial_inputs(context, _x):
+    def _context_partial_inputs_1(context, _x):
         pass
 
     @solid(input_defs=[InputDefinition("x")])
-    def _context_partial_inputs(x, y):
+    def _context_partial_inputs_2(x, y):
         pass
 
     @solid

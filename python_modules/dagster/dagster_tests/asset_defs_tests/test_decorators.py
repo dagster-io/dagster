@@ -67,6 +67,29 @@ def test_asset_with_inputs():
     assert AssetKey("arg1") in my_asset.keys_by_input_name.values()
 
 
+def test_asset_no_decorator_args_direct_call():
+    def func():
+        return 1
+
+    my_asset = asset(func)
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 0
+
+
+def test_asset_with_inputs_direct_call():
+    def func(arg1):
+        return arg1
+
+    my_asset = asset(func)
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 1
+    assert AssetKey("arg1") in my_asset.keys_by_input_name.values()
+
+
 def test_asset_with_config_schema():
     @asset(config_schema={"foo": int})
     def my_asset(context):
@@ -277,6 +300,16 @@ def test_asset_with_code_version():
     @asset(code_version="foo")
     def my_asset(arg1):
         return arg1
+
+    assert my_asset.op.version == "foo"
+    assert my_asset.op.output_def_named("result").code_version == "foo"
+
+
+def test_asset_with_code_version_direct_call():
+    def func(arg1):
+        return arg1
+
+    my_asset = asset(func, code_version="foo")
 
     assert my_asset.op.version == "foo"
     assert my_asset.op.output_def_named("result").code_version == "foo"

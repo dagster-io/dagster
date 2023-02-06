@@ -19,10 +19,10 @@ from dagster._api.snapshot_partition import (
 from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
-from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -61,8 +61,6 @@ from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils.merger import merge_dicts
-
-from .selector import PipelineSelector
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
@@ -451,7 +449,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time,
+        scheduled_execution_time: datetime.datetime,  # actually a pendulum datetime
     ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -465,7 +463,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             scheduled_execution_timestamp=scheduled_execution_time.timestamp()
             if scheduled_execution_time
             else None,
-            scheduled_execution_timezone=scheduled_execution_time.timezone.name
+            scheduled_execution_timezone=scheduled_execution_time.timezone.name  # type: ignore
             if scheduled_execution_time
             else None,
         )
@@ -820,6 +818,8 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         last_run_key: Optional[str],
         cursor: Optional[str],
     ) -> "SensorExecutionData":
+        from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
+
         return sync_get_external_sensor_execution_data_grpc(
             self.client,
             instance,

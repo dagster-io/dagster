@@ -2,7 +2,7 @@ import {Colors, Popover, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import styled, {css, keyframes} from 'styled-components/macro';
 
-import {RunStatus} from '../graphql/graphql';
+import {RunStatus} from '../graphql/types';
 
 import {RunStats} from './RunStats';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';

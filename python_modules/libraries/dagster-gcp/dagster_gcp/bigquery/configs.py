@@ -119,6 +119,7 @@ def _define_shared_fields():
 
 def define_bigquery_query_config():
     """See:
+
     https://googleapis.github.io/google-cloud-python/latest/bigquery/generated/google.cloud.bigquery.job.QueryJobConfig.html
     """
     sf = _define_shared_fields()

@@ -30,7 +30,7 @@ def check_output(*args, **kwargs):
 
 
 def which_(exe):
-    """Uses distutils to look for an executable, mimicking unix which"""
+    """Uses distutils to look for an executable, mimicking unix which."""
     from distutils import spawn  # pylint: disable=deprecated-module
 
     # https://github.com/PyCQA/pylint/issues/73

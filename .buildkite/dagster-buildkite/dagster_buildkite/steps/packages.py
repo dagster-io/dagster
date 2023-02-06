@@ -367,10 +367,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_extra_cmds=dbt_extra_cmds,
-        # dbt-core no longer supports does not yet support python 3.10
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_10,
-        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airbyte",
@@ -459,6 +455,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec("python_modules/libraries/dagster-mysql", pytest_extra_cmds=mysql_extra_cmds),
     PackageSpec(
         "python_modules/libraries/dagster-snowflake-pandas",
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+    ),
+    PackageSpec(
+        "python_modules/libraries/dagster-snowflake-pyspark",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
     ),
     PackageSpec("python_modules/libraries/dagster-postgres", pytest_extra_cmds=postgres_extra_cmds),

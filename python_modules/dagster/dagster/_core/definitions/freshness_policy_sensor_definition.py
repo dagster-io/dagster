@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Mapping, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Callable, Dict, Mapping, NamedTuple, Optional, cast
 
 import pendulum
 
@@ -21,7 +21,6 @@ from dagster._serdes import (
 )
 from dagster._serdes.errors import DeserializationError
 from dagster._seven import JSONDecodeError
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from ..decorator_utils import get_function_params
 from .sensor_definition import (
@@ -29,8 +28,11 @@ from .sensor_definition import (
     SensorDefinition,
     SensorEvaluationContext,
     SkipReason,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
+
+if TYPE_CHECKING:
+    pass
 
 
 @whitelist_for_serdes
@@ -209,6 +211,10 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         )
 
         def _wrapped_fn(context: SensorEvaluationContext):
+            from dagster._utils.caching_instance_queryer import (
+                CachingInstanceQueryer,  # expensive import
+            )
+
             if context.repository_def is None:
                 raise DagsterInvalidInvocationError(
                     "The `repository_def` property on the `SensorEvaluationContext` passed into a "
@@ -278,7 +284,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         )
 
     def __call__(self, *args, **kwargs):
-        if is_context_provided(self._freshness_policy_sensor_fn):
+        if has_at_least_one_parameter(self._freshness_policy_sensor_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Freshness policy sensor function expected context argument, but no context"

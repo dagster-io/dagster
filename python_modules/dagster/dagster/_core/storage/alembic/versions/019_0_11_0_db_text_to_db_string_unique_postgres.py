@@ -1,4 +1,4 @@
-"""0.11.0 db.Text to MySQLCompatabilityTypes.UniqueText for MySQL Support
+"""0.11.0 db.Text to MySQLCompatabilityTypes.UniqueText for MySQL Support.
 
 Revision ID: 3778078a3582
 Revises: 6e1f65d78b92

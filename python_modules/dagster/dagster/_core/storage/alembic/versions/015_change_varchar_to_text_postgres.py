@@ -1,4 +1,4 @@
-"""change varchar to text
+"""change varchar to text.
 
 Revision ID: 4ea2b1f6f67b
 Revises: 8ccbed5060b8

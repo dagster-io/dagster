@@ -1,15 +1,13 @@
+import {gql} from '@apollo/client';
 import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {setHighlightedGanttChartTime} from '../gantt/GanttChart';
-import {graphql} from '../graphql';
-import {
-  LogLevel,
-  LogsRowStructuredFragmentFragment,
-  LogsRowUnstructuredFragmentFragment,
-} from '../graphql/graphql';
+import {LogLevel} from '../graphql/types';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 
 import {CellTruncationProvider} from './CellTruncationProvider';
 import {
@@ -21,9 +19,10 @@ import {
 } from './LogsRowComponents';
 import {LogsRowStructuredContent} from './LogsRowStructuredContent';
 import {IRunMetadataDict} from './RunMetadataProvider';
+import {LogsRowStructuredFragment, LogsRowUnstructuredFragment} from './types/LogsRow.types';
 
 interface StructuredProps {
-  node: LogsRowStructuredFragmentFragment;
+  node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
   style: React.CSSProperties;
   highlighted: boolean;
@@ -88,7 +87,7 @@ export class Structured extends React.Component<StructuredProps, StructuredState
   }
 }
 
-export const LOGS_ROW_STRUCTURED_FRAGMENT = graphql(`
+export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
   fragment LogsRowStructuredFragment on DagsterRunEvent {
     __typename
     ... on MessageEvent {
@@ -188,10 +187,13 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = graphql(`
       externalUrl
     }
   }
-`);
+
+  ${METADATA_ENTRY_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;
 
 const StructuredMemoizedContent: React.FC<{
-  node: LogsRowStructuredFragmentFragment;
+  node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
   highlighted: boolean;
 }> = React.memo(({node, metadata, highlighted}) => {
@@ -222,7 +224,7 @@ const StructuredMemoizedContent: React.FC<{
 StructuredMemoizedContent.displayName = 'StructuredMemoizedContent';
 
 interface UnstructuredProps {
-  node: LogsRowUnstructuredFragmentFragment;
+  node: LogsRowUnstructuredFragment;
   style: React.CSSProperties;
   highlighted: boolean;
   metadata: IRunMetadataDict;
@@ -249,7 +251,7 @@ export class Unstructured extends React.Component<UnstructuredProps> {
   }
 }
 
-export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = graphql(`
+export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
   fragment LogsRowUnstructuredFragment on DagsterRunEvent {
     __typename
     ... on MessageEvent {
@@ -259,10 +261,10 @@ export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = graphql(`
       stepKey
     }
   }
-`);
+`;
 
 const UnstructuredMemoizedContent: React.FC<{
-  node: LogsRowUnstructuredFragmentFragment;
+  node: LogsRowUnstructuredFragment;
   metadata: IRunMetadataDict;
   highlighted: boolean;
 }> = React.memo(({node, highlighted, metadata}) => {

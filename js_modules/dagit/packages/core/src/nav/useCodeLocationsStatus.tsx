@@ -1,4 +1,4 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonLink, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -6,10 +6,11 @@ import styled from 'styled-components/macro';
 
 import {SharedToaster} from '../app/DomUtils';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {graphql} from '../graphql';
-import {CodeLocationStatusQueryQuery, RepositoryLocationLoadStatus} from '../graphql/graphql';
+import {RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
+
+import {CodeLocationStatusQuery} from './types/useCodeLocationsStatus.types';
 
 type LocationStatusEntry = {
   loadStatus: RepositoryLocationLoadStatus;
@@ -80,7 +81,9 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     }
   }, [onClickViewButton, refetch]);
 
-  const onLocationUpdate = (data: CodeLocationStatusQueryQuery) => {
+  const onLocationUpdate = (data: CodeLocationStatusQuery) => {
+    const isFreshPageload = previousEntriesById === null;
+
     // Given the previous and current code locations, determine whether to show a) a loading spinner
     // and/or b) a toast indicating that a code location is being reloaded.
     const entries =
@@ -106,29 +109,33 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
           }
         : previousEntry;
     });
-    const currentEntries = Object.values(currEntriesById || {});
-    const previousEntries = Object.values(previousEntriesById || {});
-    if (hasUpdatedEntries) {
-      setPreviousEntriesById(currEntriesById);
-    }
 
-    // At least one code location has been removed. Reload, but don't make a big deal about it
-    // since this was probably done manually.
-    if (previousEntries.length > currentEntries.length && !hasUpdatedEntries) {
-      reloadWorkspaceQuietly();
-      return;
-    }
+    const currentEntries = Object.values(currEntriesById);
 
     const currentlyLoading = currentEntries.filter(
       ({loadStatus}: LocationStatusEntry) => loadStatus === RepositoryLocationLoadStatus.LOADING,
     );
     const anyCurrentlyLoading = currentlyLoading.length > 0;
 
-    // If this is a fresh pageload and any locations are loading, show the spinner but not the toaster.
-    if (!previousEntriesById) {
+    if (hasUpdatedEntries) {
+      setPreviousEntriesById(currEntriesById);
+    }
+
+    // If this is a fresh pageload and anything is currently loading, show the spinner, but we
+    // don't need to reload the workspace because subsequent polls should see that the location
+    // has finished loading and therefore trigger a reload.
+    if (isFreshPageload) {
       if (anyCurrentlyLoading) {
         setShowSpinner(true);
       }
+      return;
+    }
+
+    const previousEntries = Object.values(previousEntriesById || {});
+    // At least one code location has been removed. Reload, but don't make a big deal about it
+    // since this was probably done manually.
+    if (previousEntries.length > currentEntries.length) {
+      reloadWorkspaceQuietly();
       return;
     }
 
@@ -213,7 +220,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     }
   };
 
-  const queryData = useQuery(CODE_LOCATION_STATUS_QUERY, {
+  const queryData = useQuery<CodeLocationStatusQuery>(CODE_LOCATION_STATUS_QUERY, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
     skip,
@@ -261,7 +268,7 @@ const ViewButton = styled(ButtonLink)`
   white-space: nowrap;
 `;
 
-const CODE_LOCATION_STATUS_QUERY = graphql(`
+const CODE_LOCATION_STATUS_QUERY = gql`
   query CodeLocationStatusQuery {
     locationStatusesOrError {
       __typename
@@ -275,4 +282,4 @@ const CODE_LOCATION_STATUS_QUERY = graphql(`
       }
     }
   }
-`);
+`;

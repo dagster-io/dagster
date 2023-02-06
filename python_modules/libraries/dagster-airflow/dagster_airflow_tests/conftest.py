@@ -19,7 +19,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 @pytest.fixture(scope="module")
 def airflow_home():
-    """Check that AIRFLOW_HOME is set, and return it"""
+    """Check that AIRFLOW_HOME is set, and return it."""
     airflow_home_dir = os.getenv("AIRFLOW_HOME")
     assert airflow_home_dir, "No AIRFLOW_HOME set -- is airflow installed?"
     airflow_home_dir = os.path.abspath(os.path.expanduser(airflow_home_dir))

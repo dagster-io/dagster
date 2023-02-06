@@ -45,11 +45,13 @@ setup(
     extras_require={
         "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
         "test_airflow_2": [
-            "apache-airflow>=2.0.0,<3.0.0",
+            "apache-airflow>=2.0.0,<2.5.1",
             "boto3>=1.26.7",
             "kubernetes>=10.0.1",
             "apache-airflow-providers-docker>=3.2.0,<4",
             "apache-airflow-providers-apache-spark>=3.0.0,<4",
+            # Logging messages are set to debug starting 4.1.1
+            "apache-airflow-providers-http<4.1.1",
         ],
         "test_airflow_1": [
             "apache-airflow>=1.0.0,<2.0.0",

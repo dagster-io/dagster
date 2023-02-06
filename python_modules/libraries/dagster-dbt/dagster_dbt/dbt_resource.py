@@ -8,13 +8,13 @@ from .types import DbtOutput
 
 
 class DbtResource:
-    """Base class for a resource allowing users to interface with dbt"""
+    """Base class for a resource allowing users to interface with dbt."""
 
     def __init__(
         self,
         logger: Optional[logging.Logger] = None,
     ):
-        """Constructor
+        """Constructor.
 
         Args:
             logger (Optional[Any]): A property for injecting a logger dependency.

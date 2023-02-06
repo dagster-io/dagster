@@ -2,7 +2,7 @@ import {Box, PageHeader, Tabs, Tag, Heading, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
-import {PermissionsMap, PermissionResult, usePermissions} from '../app/Permissions';
+import {PermissionsMap, PermissionResult, usePermissionsForLocation} from '../app/Permissions';
 import {
   explorerPathFromString,
   explorerPathToString,
@@ -76,7 +76,7 @@ interface Props {
 
 export const PipelineNav: React.FC<Props> = (props) => {
   const {repoAddress} = props;
-  const permissions = usePermissions();
+  const permissions = usePermissionsForLocation(repoAddress.location);
 
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/locations/:repoPath/pipelines/:selector/:tab?',

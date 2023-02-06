@@ -28,7 +28,7 @@ class ComputeLogFileData(
         ],
     )
 ):
-    """Representation of a chunk of compute execution log data"""
+    """Representation of a chunk of compute execution log data."""
 
     def __new__(
         cls, path: str, data: Optional[str], cursor: int, size: int, download_url: Optional[str]
@@ -82,7 +82,8 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
             step_key (Optional[String]): The step_key for a compute step
         """
 
-    def get_local_path(self, run_id, key, io_type):
+    @abstractmethod
+    def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
         """Get the local path of the logfile for a given execution step.  This determines the
         location on the local filesystem to which stdout/stderr will be rerouted.
 
@@ -95,6 +96,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         Returns:
             str
         """
+        ...
 
     @abstractmethod
     def is_watch_completed(self, run_id, key):
@@ -169,7 +171,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def on_subscribe(self, subscription):
-        """Hook for managing streaming subscriptions for log data from `dagit`
+        """Hook for managing streaming subscriptions for log data from `dagit`.
 
         Args:
             subscription (ComputeLogSubscription): subscription object which manages when to send
@@ -212,7 +214,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
 
 class ComputeLogSubscription:
     """Observable object that generates ComputeLogFileData objects as compute step execution logs
-    are written
+    are written.
     """
 
     def __init__(

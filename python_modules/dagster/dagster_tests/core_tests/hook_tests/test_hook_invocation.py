@@ -125,14 +125,14 @@ def test_success_hook_with_resources(hook_decorator, is_event_list_hook):
     decorator = hook_decorator(required_resource_keys={"foo", "bar"})
     if is_event_list_hook:
 
-        def my_hook_reqs_resources(context, _):
+        def my_hook_reqs_resources(context, _):  # type: ignore  # (test rename)
             assert context.resources.foo == "foo"
             assert context.resources.bar == "bar"
 
         hook = decorator(my_hook_reqs_resources)
     else:
 
-        def my_hook_reqs_resources(context):  # type: ignore[misc]
+        def my_hook_reqs_resources(context):  # type: ignore  # (test rename)
             assert context.resources.foo == "foo"
             assert context.resources.bar == "bar"
 
@@ -175,18 +175,18 @@ def test_success_hook_cm_resource(hook_decorator, is_event_list_hook):
     decorator = hook_decorator(required_resource_keys={"cm"})
     if is_event_list_hook:
 
-        def my_hook_cm_resource(context, _):
+        def my_hook_cm_resource_1(context, _):
             assert context.resources.cm == "foo"
             assert entered == ["try"]
 
-        hook = decorator(my_hook_cm_resource)
+        hook = decorator(my_hook_cm_resource_1)
     else:
 
-        def my_hook_cm_resource(context):  # type: ignore[misc]
+        def my_hook_cm_resource_2(context):
             assert context.resources.cm == "foo"
             assert entered == ["try"]
 
-        hook = decorator(my_hook_cm_resource)
+        hook = decorator(my_hook_cm_resource_2)
 
     with build_hook_context(resources={"cm": cm_resource}) as context:
         if is_event_list_hook:

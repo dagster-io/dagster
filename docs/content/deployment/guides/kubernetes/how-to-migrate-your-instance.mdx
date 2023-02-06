@@ -44,6 +44,14 @@ kubectl scale deploy $DAEMON_DEPLOYMENT_NAME --replicas=0
 # Run `helm list` and save your Dagster Helm release name
 export HELM_DAGSTER_RELEASE_NAME=<DAGSTER_RELEASE_NAME>
 
+# The `helm template` command must be run from the directory containing the
+# `values.yaml` file you used to install the Dagster Helm chart.
+#
+# If needed, you can retrieve the currently applied `values.yaml` file
+# from the cluster by running:
+#
+# `helm get values $HELM_DAGSTER_RELEASE_NAME > values.yaml`
+#
 helm template $HELM_DAGSTER_RELEASE_NAME dagster/dagster \
     --set "migrate.enabled=true" \
     --show-only templates/job-instance-migrate.yaml \

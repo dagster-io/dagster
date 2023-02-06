@@ -41,7 +41,7 @@ def add_one(num):
 def foo_job():
     """
     return_one ---> add_nums --> multiply_two --> add_one
-    return_two --|
+    return_two --|.
     """
     add_one(multiply_two(add_nums(return_one(), return_two())))
 

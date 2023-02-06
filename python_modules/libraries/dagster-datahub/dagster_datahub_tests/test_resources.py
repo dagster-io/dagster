@@ -45,7 +45,7 @@ def test_datahub_rest_emitter_resource():
 
 def test_datahub_emitter_resource_failure():
     """Assert creating the resource without the mocked response fails to construct.
-    DatahubRestEmitter.test_connection will fail due to the lack of a mock
+    DatahubRestEmitter.test_connection will fail due to the lack of a mock.
     """
     with pytest.raises(DagsterResourceFunctionError):
 

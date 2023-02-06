@@ -3,9 +3,11 @@ import tempfile
 
 import pytest
 from airflow import __version__ as airflow_version
+from airflow.models import DagBag
 from dagster_airflow import (
     make_dagster_definitions_from_airflow_dags_path,
     make_dagster_definitions_from_airflow_example_dags,
+    make_dagster_job_from_airflow_dag,
 )
 
 from dagster_airflow_tests.marks import requires_airflow_db
@@ -121,3 +123,44 @@ def test_airflow_example_dags(
                 assert event.event_type_value != "STEP_FAILURE"
 
     assert set(repo.job_names) == set(expected_job_names)
+
+
+RETRY_DAG = """
+from airflow import models
+
+from airflow.operators.bash_operator import BashOperator
+import datetime
+
+default_args = {"start_date": datetime.datetime(2023, 2, 1), "retries": 3}
+
+with models.DAG(
+    dag_id="retry_dag", default_args=default_args, schedule_interval='0 0 * * *', tags=['example'],
+) as retry_dag:
+    foo = BashOperator(
+        task_id="foo", bash_command="echo foo", retries=1
+    )
+
+    bar = BashOperator(
+        task_id="bar", bash_command="echo bar"
+    )
+"""
+
+
+@pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
+@requires_airflow_db
+def test_retry_conversion():
+    with tempfile.TemporaryDirectory(suffix="retries") as tmpdir_path:
+        with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:
+            f.write(bytes(RETRY_DAG.encode("utf-8")))
+
+        dag_bag = DagBag(dag_folder=tmpdir_path)
+        retry_dag = dag_bag.get_dag(dag_id="retry_dag")
+
+        job = make_dagster_job_from_airflow_dag(
+            dag=retry_dag,
+            use_ephemeral_airflow_db=True,
+        )
+        result = job.execute_in_process()
+        assert result.success
+        for event in result.all_events:
+            assert event.event_type_value != "STEP_FAILURE"

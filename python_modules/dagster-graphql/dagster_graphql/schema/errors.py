@@ -1,9 +1,11 @@
+from typing import List
+
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._utils.error import SerializableErrorInfo
 
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneError(graphene.Interface):
@@ -112,8 +114,8 @@ class GraphenePythonError(graphene.ObjectType):
         )
         return self._className
 
-    def resolve_causes(self, _graphene_info):
-        causes = []
+    def resolve_causes(self, _graphene_info: ResolveInfo):
+        causes: List[GraphenePythonError] = []
         current_error = self._cause
         while current_error and len(causes) < 10:  # Sanity check the depth of the causes
             causes.append(GraphenePythonError(current_error))

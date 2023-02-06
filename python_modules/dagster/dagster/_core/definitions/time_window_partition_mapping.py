@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import NamedTuple, Optional, Sequence, cast
+from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -54,6 +54,28 @@ class TimeWindowPartitionMapping(
             and end_offset=1, then the downstream partition "2022-07-04" would map to the upstream
             partitions "2022-07-04" and "2022-07-05". Only permitted to be non-zero when the
             upstream and downstream PartitionsDefinitions are the same. Defaults to 0.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import DailyPartitionsDefinition, TimeWindowPartitionMapping, AssetIn, asset
+
+            partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+            @asset(partitions_def=partitions_def)
+            def asset1():
+                ...
+
+            @asset(
+                partitions_def=partitions_def,
+                ins={
+                    "asset1": AssetIn(
+                        partition_mapping=TimeWindowPartitionMapping(start_offset=-1)
+                    )
+                }
+            )
+            def asset2(asset1):
+                ...
     """
 
     def __new__(cls, start_offset: int = 0, end_offset: int = 0):
@@ -82,7 +104,7 @@ class TimeWindowPartitionMapping(
         return self._map_partitions(
             downstream_partitions_subset.partitions_def,
             upstream_partitions_def,
-            downstream_partitions_subset.included_time_windows,
+            downstream_partitions_subset,
             self.start_offset,
             self.end_offset,
         )
@@ -109,7 +131,7 @@ class TimeWindowPartitionMapping(
         return self._map_partitions(
             upstream_partitions_subset.partitions_def,
             downstream_partitions_def,
-            upstream_partitions_subset.included_time_windows,
+            upstream_partitions_subset,
             -self.start_offset,
             -self.end_offset,
         )
@@ -118,7 +140,7 @@ class TimeWindowPartitionMapping(
         self,
         from_partitions_def: PartitionsDefinition,
         to_partitions_def: PartitionsDefinition,
-        from_partition_time_windows: Sequence[TimeWindow],
+        from_partitions_subset: TimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
     ) -> PartitionsSubset:
@@ -139,8 +161,12 @@ class TimeWindowPartitionMapping(
         if to_partitions_def.timezone != from_partitions_def.timezone:
             raise DagsterInvalidDefinitionError("Timezones don't match")
 
+        # skip fancy mapping logic in the simple case
+        if to_partitions_def == from_partitions_def and start_offset == 0 and end_offset == 0:
+            return from_partitions_subset
+
         time_windows = []
-        for from_partition_time_window in from_partition_time_windows:
+        for from_partition_time_window in from_partitions_subset.included_time_windows:
             from_start_dt, from_end_dt = from_partition_time_window
             offsetted_start_dt = _offsetted_datetime(
                 from_partitions_def, from_start_dt, start_offset
@@ -178,11 +204,11 @@ class TimeWindowPartitionMapping(
 
         return TimeWindowPartitionsSubset(
             to_partitions_def,
-            time_windows,
             num_partitions=sum(
                 len(to_partitions_def.get_partition_keys_in_time_window(time_window))
                 for time_window in time_windows
             ),
+            included_time_windows=time_windows,
         )
 
 

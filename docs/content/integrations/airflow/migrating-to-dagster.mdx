@@ -39,7 +39,7 @@ import os
 from dagster_airflow import make_dagster_repo_from_airflow_dags_path
 
 migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
-    os.path.join(os.getenv("AIRFLOW_HOME"), "dags"),
+    os.path.join(os.environ["AIRFLOW_HOME"], "dags"),
     "migrated_airflow_repo",
 )
 ```
@@ -59,7 +59,7 @@ from airflow.models import Connection
 from dagster_airflow import make_dagster_repo_from_airflow_dags_path
 
 migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
-    os.path.join(os.getenv("AIRFLOW_HOME"), "dags"),
+    os.path.join(os.environ["AIRFLOW_HOME"], "dags"),
     "migrated_airflow_repo",
     connections=[
         Connection(conn_id="http_default", conn_type="uri", host="https://google.com")
@@ -76,7 +76,7 @@ If you're running on Dagster Cloud and any of your connection fields are sensiti
 Once you've defined the repository, you can launch Dagit, Dagster's web UI. This allows you to view your newly migrated jobs and launch runs.
 
 ```bash
-dagit -f <your migrated dags>.py
+dagster dev -f <your migrated dags>.py
 ```
 
 If your local shell has the correct permissions, you can also test out running the migrated DAGs end-to-end.

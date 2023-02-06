@@ -142,7 +142,7 @@ class CensusResource:
         poll_timeout: Optional[float] = None,
     ) -> Mapping[str, Any]:
         """
-        Given a Census sync run, poll until the run is complete
+        Given a Census sync run, poll until the run is complete.
 
         Args:
             sync_id (int): The Census Sync Run ID.
@@ -214,7 +214,7 @@ class CensusResource:
         poll_timeout: Optional[float] = None,
     ) -> CensusOutput:
         """
-        Trigger a run for a specific sync and poll until it has completed
+        Trigger a run for a specific sync and poll until it has completed.
 
         Args:
             sync_id (int): The Census Sync Run ID.

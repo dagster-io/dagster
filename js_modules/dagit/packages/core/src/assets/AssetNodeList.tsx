@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 
 import {AssetNode} from '../asset-graph/AssetNode';
 import {LiveData, toGraphId} from '../asset-graph/Utils';
-import {AssetNodeForGraphQueryFragment} from '../graphql/graphql';
+import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
@@ -53,6 +53,6 @@ const Container = styled(Box)`
 
 const AssetNodeWrapper = styled.div`
   cursor: pointer;
-  width: 240px;
+  width: 260px;
   flex-shrink: 0;
 `;

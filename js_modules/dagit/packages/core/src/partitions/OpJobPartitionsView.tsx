@@ -1,11 +1,10 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useViewport} from '../gantt/useViewport';
-import {graphql} from '../graphql';
-import {OpJobPartitionSetFragment, OpJobPartitionStatusFragment} from '../graphql/graphql';
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -17,6 +16,12 @@ import {PartitionGraph} from './PartitionGraph';
 import {PartitionState, PartitionStatus, runStatusToPartitionState} from './PartitionStatus';
 import {getVisibleItemCount, PartitionPerOpStatus} from './PartitionStepStatus';
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
+import {
+  OpJobPartitionSetFragment,
+  OpJobPartitionStatusFragment,
+  PartitionsStatusQuery,
+  PartitionsStatusQueryVariables,
+} from './types/OpJobPartitionsView.types';
 import {PartitionRuns} from './useMatrixData';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
 
@@ -27,9 +32,12 @@ export const OpJobPartitionsView: React.FC<{
   repoAddress: RepoAddress;
 }> = ({partitionSetName, repoAddress}) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
-  const queryResult = useQuery(PARTITIONS_STATUS_QUERY, {
-    variables: {partitionSetName, repositorySelector},
-  });
+  const queryResult = useQuery<PartitionsStatusQuery, PartitionsStatusQueryVariables>(
+    PARTITIONS_STATUS_QUERY,
+    {
+      variables: {partitionSetName, repositorySelector},
+    },
+  );
 
   return (
     <Loading queryResult={queryResult}>
@@ -86,7 +94,7 @@ const OpJobPartitionsViewContent: React.FC<{
   partitionSet: OpJobPartitionSetFragment;
   repoAddress: RepoAddress;
 }> = ({partitionSet, partitionNames, repoAddress}) => {
-  const {canLaunchPartitionBackfill} = usePermissions();
+  const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
   const {viewport, containerProps} = useViewport();
 
   const [pageSize, setPageSize] = React.useState(60);
@@ -313,7 +321,7 @@ export const CountBox: React.FC<{
   </Box>
 );
 
-const PARTITIONS_STATUS_QUERY = graphql(`
+const PARTITIONS_STATUS_QUERY = gql`
   query PartitionsStatusQuery(
     $partitionSetName: String!
     $repositorySelector: RepositorySelector!
@@ -358,4 +366,6 @@ const PARTITIONS_STATUS_QUERY = graphql(`
     runStatus
     runDuration
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;

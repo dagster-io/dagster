@@ -128,7 +128,7 @@ def fs_io_manager(init_context):
 class PickledObjectFilesystemIOManager(UPathIOManager):
     """Built-in filesystem IO manager that stores and retrieves values using pickling.
     Is compatible with local and remote filesystems via `universal-pathlib` and `fsspec`.
-    Learn more about how to use remote filesystems here: https://github.com/fsspec/universal_pathlib
+    Learn more about how to use remote filesystems here: https://github.com/fsspec/universal_pathlib.
 
     Args:
         base_dir (Optional[str]): base directory where all the step outputs which use this object

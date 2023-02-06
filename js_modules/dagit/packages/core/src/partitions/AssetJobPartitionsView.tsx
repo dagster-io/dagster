@@ -5,12 +5,12 @@ import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {
   mergedAssetHealth,
-  explodePartitionKeysInRanges,
+  explodePartitionKeysInSelection,
   isTimeseriesDimension,
 } from '../assets/MultipartitioningSupport';
 import {usePartitionHealthData} from '../assets/usePartitionHealthData';
 import {useViewport} from '../gantt/useViewport';
-import {RepositorySelector} from '../graphql/graphql';
+import {RepositorySelector} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -21,6 +21,7 @@ import {PartitionGraph} from './PartitionGraph';
 import {PartitionState, PartitionStatus} from './PartitionStatus';
 import {getVisibleItemCount, PartitionPerAssetStatus} from './PartitionStepStatus';
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
+import {allPartitionsRange} from './SpanRepresentation';
 import {usePartitionStepQuery} from './usePartitionStepQuery';
 
 export const AssetJobPartitionsView: React.FC<{
@@ -43,8 +44,12 @@ export const AssetJobPartitionsView: React.FC<{
 
   const {total, missing, merged} = React.useMemo(() => {
     const merged = mergedAssetHealth(assetHealth.filter((h) => h.dimensions.length > 0));
-    const ranges = merged.dimensions.map((d) => ({selected: d.partitionKeys, dimension: d}));
-    const allKeys = explodePartitionKeysInRanges(ranges, merged.stateForKey);
+    const selection = merged.dimensions.map((d) => ({
+      selectedKeys: d.partitionKeys,
+      selectedRanges: [allPartitionsRange(d)],
+      dimension: d,
+    }));
+    const allKeys = explodePartitionKeysInSelection(selection, merged.stateForKey);
 
     return {
       merged,

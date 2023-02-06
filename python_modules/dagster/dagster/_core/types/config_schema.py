@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator, Optional, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.system import (
         DagsterTypeLoaderContext,
         DagsterTypeMaterializerContext,
-        StepExecutionContext,
     )
 
 
@@ -185,7 +184,7 @@ def _create_type_loader_for_decorator(
     )
 
 
-DagsterTypeLoaderFn: TypeAlias = Callable[["StepExecutionContext", object], object]
+DagsterTypeLoaderFn: TypeAlias = Callable[["DagsterTypeLoaderContext", Any], Any]
 
 
 def dagster_type_loader(

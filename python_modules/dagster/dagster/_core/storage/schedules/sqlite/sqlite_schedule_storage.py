@@ -25,7 +25,7 @@ MINIMUM_SQLITE_BATCH_VERSION = "3.25.0"
 
 
 class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
-    """Local SQLite backed schedule storage"""
+    """Local SQLite backed schedule storage."""
 
     def __init__(self, conn_string, inst_data=None):
         check.str_param(conn_string, "conn_string")

@@ -32,7 +32,7 @@ def test_merge_desc():
     @op(ins={"arg_b": In(metadata={"explicit": True})})
     def merged(_context, arg_a, arg_b, arg_c):
         """
-        Testing
+        Testing.
 
         Args:
             arg_b: described
@@ -72,7 +72,7 @@ def test_precedence():
     )
     def precedence(_context, arg_a: int, arg_b: int, arg_c: int):
         """
-        Testing
+        Testing.
 
         Args:
             arg_b: boo
@@ -125,11 +125,11 @@ def test_dynamic():
     def dyn_desc(_) -> Iterator[DynamicOutput]:
         """
         Returns:
-            numbers
+            numbers.
         """
         yield DynamicOutput(4, "4")
 
-    assert dyn_desc.output_defs[0].description == "numbers"
+    assert dyn_desc.output_defs[0].description == "numbers."
     assert dyn_desc.output_defs[0].is_dynamic
 
 

@@ -18,6 +18,8 @@ from typing import (
 
 import pendulum
 import sqlalchemy as db
+import sqlalchemy.exc as db_exc
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -63,6 +65,11 @@ if TYPE_CHECKING:
 
 MIN_ASSET_ROWS = 25
 
+# We are using third-party library objects for DB connections-- at this time, these libraries are
+# untyped. When/if we upgrade to typed variants, the `Any` here can be replaced or the alias as a
+# whole can be dropped.
+SqlDbConnection: TypeAlias = Any
+
 
 class SqlEventLogStorage(EventLogStorage):
     """Base class for SQL backed event log storages.
@@ -72,7 +79,7 @@ class SqlEventLogStorage(EventLogStorage):
     """
 
     @abstractmethod
-    def run_connection(self, run_id):
+    def run_connection(self, run_id: Optional[str]) -> SqlDbConnection:
         """Context manager yielding a connection to access the event logs for a specific run.
 
         Args:
@@ -81,16 +88,11 @@ class SqlEventLogStorage(EventLogStorage):
         """
 
     @abstractmethod
-    def index_connection(self):
-        """Context manager yielding a connection to access cross-run indexed tables.
-
-        Args:
-            run_id (Optional[str]): Enables those storages which shard based on run_id, e.g.,
-                SqliteEventLogStorage, to connect appropriately.
-        """
+    def index_connection(self) -> SqlDbConnection:
+        """Context manager yielding a connection to access cross-run indexed tables."""
 
     @abstractmethod
-    def upgrade(self):
+    def upgrade(self) -> None:
         """This method should perform any schema migrations necessary to bring an
         out-of-date instance of the storage up to date.
         """
@@ -140,8 +142,9 @@ class SqlEventLogStorage(EventLogStorage):
     def has_asset_key_index_cols(self):
         return self.has_asset_key_col("last_materialization_timestamp")
 
-    def store_asset_event(self, event: EventLogEntry):
+    def store_asset_event(self, event: EventLogEntry, event_id: int):
         check.inst_param(event, "event", EventLogEntry)
+
         if not (event.dagster_event and event.dagster_event.asset_key):
             return
 
@@ -157,7 +160,7 @@ class SqlEventLogStorage(EventLogStorage):
         #
         # https://github.com/dagster-io/dagster/issues/3945
 
-        values = self._get_asset_entry_values(event, self.has_asset_key_index_cols())
+        values = self._get_asset_entry_values(event, event_id, self.has_asset_key_index_cols())
         insert_statement = AssetKeyTable.insert().values(
             asset_key=event.dagster_event.asset_key.to_string(), **values
         )
@@ -172,10 +175,12 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             try:
                 conn.execute(insert_statement)
-            except db.exc.IntegrityError:
+            except db_exc.IntegrityError:
                 conn.execute(update_statement)
 
-    def _get_asset_entry_values(self, event: EventLogEntry, has_asset_key_index_cols: bool):
+    def _get_asset_entry_values(
+        self, event: EventLogEntry, event_id: int, has_asset_key_index_cols: bool
+    ):
         # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
         # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
         # This column is used nowhere else, and as of AssetObservation/AssetMaterializationPlanned
@@ -193,7 +198,12 @@ class SqlEventLogStorage(EventLogStorage):
         if dagster_event.is_step_materialization:
             entry_values.update(
                 {
-                    "last_materialization": serialize_dagster_namedtuple(event),
+                    "last_materialization": serialize_dagster_namedtuple(
+                        EventLogRecord(
+                            storage_id=event_id,
+                            event_log_entry=event,
+                        )
+                    ),
                     "last_run_id": event.run_id,
                 }
             )
@@ -360,7 +370,7 @@ class SqlEventLogStorage(EventLogStorage):
             and event.dagster_event_type in ASSET_EVENTS
             and event.dagster_event.asset_key
         ):
-            self.store_asset_event(event)
+            self.store_asset_event(event, event_id)
 
             if event_id is None:
                 raise DagsterInvariantViolationError(
@@ -582,12 +592,12 @@ class SqlEventLogStorage(EventLogStorage):
             print_fn(f"Finished data migration: {migration_name}")
 
     def reindex_events(self, print_fn=None, force=False):
-        """Call this method to run any data migrations across the event_log table"""
+        """Call this method to run any data migrations across the event_log table."""
         for migration_name, migration_fn in EVENT_LOG_DATA_MIGRATIONS.items():
             self._apply_migration(migration_name, migration_fn, print_fn, force)
 
     def reindex_assets(self, print_fn=None, force=False):
-        """Call this method to run any data migrations across the asset_keys table"""
+        """Call this method to run any data migrations across the asset_keys table."""
         for migration_name, migration_fn in ASSET_DATA_MIGRATIONS.items():
             self._apply_migration(migration_name, migration_fn, print_fn, force)
 
@@ -687,7 +697,7 @@ class SqlEventLogStorage(EventLogStorage):
         """Utility method to test representation of the record in the SQL table.  Returns all of
         the columns stored in the event log storage (as opposed to the deserialized `EventLogEntry`).
         This allows checking that certain fields are extracted to support performant lookups (e.g.
-        extracting `step_key` for fast filtering)
+        extracting `step_key` for fast filtering).
         """
         with self.run_connection(run_id=run_id) as conn:
             query = (
@@ -725,7 +735,7 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn:
             try:
                 conn.execute(query)
-            except db.exc.IntegrityError:
+            except db_exc.IntegrityError:
                 conn.execute(
                     SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
                     .where(SecondaryIndexMigrationTable.c.name == name)
@@ -969,6 +979,7 @@ class SqlEventLogStorage(EventLogStorage):
             results = conn.execute(query).fetchall()
 
         events = {}
+        record_id = None
         try:
             for (
                 record_id,
@@ -985,7 +996,12 @@ class SqlEventLogStorage(EventLogStorage):
             result = conn.execute(db.select([db.func.max(SqlEventLogStorageTable.c.id)])).fetchone()
             return result[0]
 
-    def _construct_asset_record_from_row(self, row, last_materialization: Optional[EventLogEntry]):
+    def _construct_asset_record_from_row(
+        self,
+        row,
+        last_materialization_record: Optional[EventLogRecord],
+        can_cache_asset_status_data: bool,
+    ) -> AssetRecord:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
         asset_key = AssetKey.from_db_string(row[1])
@@ -994,23 +1010,25 @@ class SqlEventLogStorage(EventLogStorage):
                 storage_id=row[0],
                 asset_entry=AssetEntry(
                     asset_key=asset_key,
-                    last_materialization=last_materialization,
+                    last_materialization_record=last_materialization_record,
                     last_run_id=row[3],
                     asset_details=AssetDetails.from_db_string(row[4]),
                     cached_status=AssetStatusCacheValue.from_db_string(row[5])
-                    if self.has_asset_key_col("cached_status_data")
+                    if can_cache_asset_status_data
                     else None,
                 ),
             )
+        else:
+            check.failed("Row did not contain asset key.")
 
-    def _get_latest_materializations(
+    def _get_latest_materialization_records(
         self, raw_asset_rows
-    ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
+    ) -> Mapping[AssetKey, Optional[EventLogRecord]]:
         # Given a list of raw asset rows, returns a mapping of asset key to latest asset materialization
         # event log entry. Fetches backcompat EventLogEntry records when the last_materialization
         # in the raw asset row is an AssetMaterialization.
         to_backcompat_fetch = set()
-        results: Dict[AssetKey, Optional[EventLogEntry]] = {}
+        results: Dict[AssetKey, Optional[EventLogRecord]] = {}
         for row in raw_asset_rows:
             asset_key = AssetKey.from_db_string(row[1])
             if not asset_key:
@@ -1018,7 +1036,7 @@ class SqlEventLogStorage(EventLogStorage):
             event_or_materialization = (
                 deserialize_json_to_dagster_namedtuple(row[2]) if row[2] else None
             )
-            if isinstance(event_or_materialization, EventLogEntry):
+            if isinstance(event_or_materialization, EventLogRecord):
                 results[asset_key] = event_or_materialization
             else:
                 to_backcompat_fetch.add(asset_key)
@@ -1027,7 +1045,7 @@ class SqlEventLogStorage(EventLogStorage):
             db.select(
                 [
                     SqlEventLogStorageTable.c.asset_key,
-                    db.func.max(SqlEventLogStorageTable.c.timestamp).label("timestamp"),
+                    db.func.max(SqlEventLogStorageTable.c.id).label("id"),
                 ]
             )
             .where(
@@ -1043,13 +1061,17 @@ class SqlEventLogStorage(EventLogStorage):
             .alias("latest_materializations")
         )
         backcompat_query = db.select(
-            [SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.event]
+            [
+                SqlEventLogStorageTable.c.asset_key,
+                SqlEventLogStorageTable.c.id,
+                SqlEventLogStorageTable.c.event,
+            ]
         ).select_from(
             latest_event_subquery.join(
                 SqlEventLogStorageTable,
                 db.and_(
                     SqlEventLogStorageTable.c.asset_key == latest_event_subquery.c.asset_key,
-                    SqlEventLogStorageTable.c.timestamp == latest_event_subquery.c.timestamp,
+                    SqlEventLogStorageTable.c.id == latest_event_subquery.c.id,
                 ),
             )
         )
@@ -1059,8 +1081,11 @@ class SqlEventLogStorage(EventLogStorage):
         for row in event_rows:
             asset_key = AssetKey.from_db_string(row[0])
             if asset_key:
-                results[asset_key] = cast(
-                    EventLogEntry, deserialize_json_to_dagster_namedtuple(row[1])
+                results[asset_key] = EventLogRecord(
+                    storage_id=row[1],
+                    event_log_entry=cast(
+                        EventLogEntry, deserialize_json_to_dagster_namedtuple(row[2])
+                    ),
                 )
         return results
 
@@ -1071,7 +1096,8 @@ class SqlEventLogStorage(EventLogStorage):
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Iterable[AssetRecord]:
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
-        latest_materializations = self._get_latest_materializations(rows)
+        latest_materialization_records = self._get_latest_materialization_records(rows)
+        can_cache_asset_status_data = self.can_cache_asset_status_data()
 
         asset_records: List[AssetRecord] = []
         for row in rows:
@@ -1079,7 +1105,9 @@ class SqlEventLogStorage(EventLogStorage):
             if asset_key:
                 asset_records.append(
                     self._construct_asset_record_from_row(
-                        row, latest_materializations.get(asset_key)
+                        row,
+                        latest_materialization_records.get(asset_key),
+                        can_cache_asset_status_data,
                     )
                 )
 
@@ -1110,7 +1138,12 @@ class SqlEventLogStorage(EventLogStorage):
     ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
         check.sequence_param(asset_keys, "asset_keys", AssetKey)
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
-        return self._get_latest_materializations(rows)
+        return {
+            asset_key: event_log_record.event_log_entry if event_log_record is not None else None
+            for asset_key, event_log_record in self._get_latest_materialization_records(
+                rows
+            ).items()
+        }
 
     def _fetch_asset_rows(self, asset_keys=None, prefix=None, limit=None, cursor=None):
         # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
@@ -1200,11 +1233,16 @@ class SqlEventLogStorage(EventLogStorage):
             if not asset_details or not asset_details.last_wipe_timestamp:
                 row_by_asset_key[asset_key] = row
                 continue
-            materialization_or_event = (
+            materialization_or_event_or_record = (
                 deserialize_json_to_dagster_namedtuple(row[2]) if row[2] else None
             )
-            if isinstance(materialization_or_event, EventLogEntry):
-                if asset_details.last_wipe_timestamp > materialization_or_event.timestamp:
+            if isinstance(materialization_or_event_or_record, (EventLogRecord, EventLogEntry)):
+                if isinstance(materialization_or_event_or_record, EventLogRecord):
+                    event_timestamp = materialization_or_event_or_record.event_log_entry.timestamp
+                else:
+                    event_timestamp = materialization_or_event_or_record.timestamp
+
+                if asset_details.last_wipe_timestamp > event_timestamp:
                     # this asset has not been materialized since being wiped, skip
                     continue
                 else:
@@ -1234,7 +1272,7 @@ class SqlEventLogStorage(EventLogStorage):
     def update_asset_cached_status_data(
         self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
     ) -> None:
-        if self.has_asset_key_col("cached_status_data"):
+        if self.can_cache_asset_status_data():
             with self.index_connection() as conn:
                 conn.execute(
                     AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
@@ -1544,7 +1582,7 @@ class SqlEventLogStorage(EventLogStorage):
                     wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp),
                 )
             )
-        if self.has_asset_key_col("cached_status_data"):
+        if self.can_cache_asset_status_data():
             values.update(dict(cached_status_data=None))
         return values
 
@@ -1565,7 +1603,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     def get_materialization_count_by_partition(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         check.sequence_param(asset_keys, "asset_keys", AssetKey)
 
@@ -1597,6 +1635,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         assets_details = self._get_assets_details(asset_keys)
         query = self._add_assets_wipe_filter_to_query(query, assets_details, asset_keys)
+
+        if after_cursor:
+            query = query.where(SqlEventLogStorageTable.c.id > after_cursor)
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()

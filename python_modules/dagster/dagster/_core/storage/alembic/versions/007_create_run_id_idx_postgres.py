@@ -1,4 +1,4 @@
-"""create run_id idx
+"""create run_id idx.
 
 Revision ID: 07f83cc13695
 Revises: 5c18fd3c2957

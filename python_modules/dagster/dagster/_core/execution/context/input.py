@@ -322,7 +322,7 @@ class InputContext:
     @public  # type: ignore
     @property
     def has_partition_key(self) -> bool:
-        """Whether the current run is a partitioned run"""
+        """Whether the current run is a partitioned run."""
         return self._partition_key is not None
 
     @public  # type: ignore
@@ -691,4 +691,10 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     def __contains__(self, value) -> bool:
+        raise NotImplementedError()
+
+    @classmethod
+    def from_serialized(
+        cls, partitions_def: "PartitionsDefinition", serialized: str
+    ) -> "PartitionsSubset":
         raise NotImplementedError()

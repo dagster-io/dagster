@@ -414,6 +414,43 @@ def test_input_manager_with_assets():
     )
 
 
+def test_input_manager_with_assets_no_default_io_manager():
+    """Tests loading an upstream asset with an input manager when the downstream asset also uses a
+    custom io manager. Fixes a bug where dagster expected the io_manager key to be provided
+    """
+
+    @asset
+    def upstream() -> int:
+        return 1
+
+    @asset(
+        ins={"upstream": AssetIn(input_manager_key="special_io_manager")},
+        io_manager_key="special_io_manager",
+    )
+    def downstream(upstream) -> int:
+        return upstream + 1
+
+    class MyIOManager(IOManager):
+        def load_input(self, context):
+            assert context.upstream_output is not None
+            assert context.upstream_output.asset_key == AssetKey(["upstream"])
+
+            return 2
+
+        def handle_output(self, context, obj):
+            return None
+
+    materialize(
+        [upstream, downstream],
+        resources={"special_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+
+    materialize(
+        [*upstream.to_source_assets(), downstream],
+        resources={"special_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+
+
 ##################################################
 # root input manager tests (deprecate in 1.0.0) #
 ##################################################

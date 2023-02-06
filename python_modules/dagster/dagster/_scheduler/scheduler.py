@@ -14,9 +14,10 @@ import pendulum
 import dagster._check as check
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation import ExternalSchedule, PipelineSelector
+from dagster._core.host_representation import ExternalSchedule
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DagsterInstance
@@ -34,6 +35,7 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, Run
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._scheduler.stale import resolve_stale_or_unknown_assets
 from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
@@ -112,6 +114,7 @@ def execute_scheduler_iteration_loop(
     logger: logging.Logger,
     max_catchup_runs: int,
     max_tick_retries: int,
+    shutdown_event: threading.Event,
 ):
     schedule_state_lock = threading.Lock()
     scheduler_run_futures: Dict[str, Future] = {}
@@ -159,7 +162,7 @@ def execute_scheduler_iteration_loop(
             if next_minute_time > end_time:
                 # Sleep until the beginning of the next minute, plus a small epsilon to
                 # be sure that we're past the start of the minute
-                time.sleep(next_minute_time - end_time + 0.001)
+                shutdown_event.wait(next_minute_time - end_time + 0.001)
                 yield
 
 
@@ -196,6 +199,7 @@ def launch_scheduled_runs(
 
     schedules: Dict[str, ExternalSchedule] = {}
     error_locations = set()
+
     for location_entry in workspace_snapshot.values():
         repo_location = location_entry.repository_location
         if repo_location:
@@ -354,10 +358,7 @@ def launch_scheduled_runs(
                 )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(
-                f"Scheduler caught an error for schedule {external_schedule.name} :"
-                f" {error_info.to_string()}"
-            )
+            logger.exception(f"Scheduler caught an error for schedule {external_schedule.name}")
         yield error_info
 
 
@@ -526,6 +527,11 @@ def launch_scheduled_runs_for_schedule_iterator(
                     except:
                         error_data = serializable_error_info_from_exc_info(sys.exc_info())
 
+                        logger.exception(
+                            "Scheduler daemon caught an error for schedule "
+                            f"{external_schedule.name}"
+                        )
+
                         tick_context.update_state(
                             TickStatus.FAILURE,
                             error=error_data,
@@ -603,6 +609,16 @@ def _schedule_runs_at_time(
         return
 
     for run_request in schedule_execution_data.run_requests:
+        if run_request.stale_assets_only:
+            stale_assets = resolve_stale_or_unknown_assets(workspace_process_context, run_request, external_schedule)  # type: ignore
+            # asset selection is empty set after filtering for stale
+            if len(stale_assets) == 0:
+                continue
+            else:
+                run_request = run_request.with_replaced_attrs(
+                    asset_selection=stale_assets, stale_assets_only=False
+                )
+
         pipeline_selector = PipelineSelector(
             location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,
@@ -649,10 +665,7 @@ def _schedule_runs_at_time(
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                logger.error(
-                    f"Run {run.run_id} created successfully but failed to launch:"
-                    f" {str(serializable_error_info_from_exc_info(sys.exc_info()))}"
-                )
+                logger.exception(f"Run {run.run_id} created successfully but failed to launch")
                 yield error_info
 
         _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
@@ -669,7 +682,7 @@ def _get_existing_run_for_request(
     external_schedule: ExternalSchedule,
     schedule_time,
     run_request: RunRequest,
-):
+) -> Optional[DagsterRun]:
     tags = merge_dicts(
         DagsterRun.tags_for_schedule(external_schedule),
         {
@@ -707,7 +720,7 @@ def _create_scheduler_run(
     external_schedule: ExternalSchedule,
     external_pipeline: ExternalPipeline,
     run_request: RunRequest,
-):
+) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     run_config = run_request.run_config

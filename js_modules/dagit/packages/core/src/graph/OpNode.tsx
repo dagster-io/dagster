@@ -1,3 +1,4 @@
+import {gql} from '@apollo/client';
 import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -5,21 +6,17 @@ import styled from 'styled-components/macro';
 import {withMiddleTruncation} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
-import {graphql} from '../graphql';
-import {
-  OpNodeDefinitionFragmentFragment,
-  OpNodeInvocationFragmentFragment,
-} from '../graphql/graphql';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
 import {OpLayout} from './asyncGraphLayout';
 import {Edge, position} from './common';
+import {OpNodeInvocationFragment, OpNodeDefinitionFragment} from './types/OpNode.types';
 
 interface IOpNodeProps {
   layout: OpLayout;
-  invocation?: OpNodeInvocationFragmentFragment;
-  definition: OpNodeDefinitionFragmentFragment;
+  invocation?: OpNodeInvocationFragment;
+  definition: OpNodeDefinitionFragment;
   highlightedEdges: Edge[];
   minified: boolean;
   selected: boolean;
@@ -167,13 +164,12 @@ export class OpNode extends React.Component<IOpNodeProps> {
 
         {tags.length > 0 && (
           <OpTags
+            tags={tags}
             style={{
               left: layout.op.x + layout.op.width,
               top: layout.op.y + layout.op.height,
               transform: 'translate(-100%, 3px)',
             }}
-            minified={minified}
-            tags={tags}
           />
         )}
 
@@ -205,7 +201,7 @@ const OpNodeAssociatedAssets: React.FC<{nodes: {assetKey: AssetKey}[]}> = ({node
   );
 };
 
-export const OP_NODE_INVOCATION_FRAGMENT = graphql(`
+export const OP_NODE_INVOCATION_FRAGMENT = gql`
   fragment OpNodeInvocationFragment on Solid {
     name
     isDynamicMapped
@@ -243,9 +239,9 @@ export const OP_NODE_INVOCATION_FRAGMENT = graphql(`
       }
     }
   }
-`);
+`;
 
-export const OP_NODE_DEFINITION_FRAGMENT = graphql(`
+export const OP_NODE_DEFINITION_FRAGMENT = gql`
   fragment OpNodeDefinitionFragment on ISolidDefinition {
     __typename
     name
@@ -319,7 +315,7 @@ export const OP_NODE_DEFINITION_FRAGMENT = graphql(`
       displayName
     }
   }
-`);
+`;
 
 export const NodeHighlightColors = {
   Border: Colors.Blue500,

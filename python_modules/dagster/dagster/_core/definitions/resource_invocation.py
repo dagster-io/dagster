@@ -18,7 +18,7 @@ def resource_invocation_result(
     resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> Any:
     from ..execution.context.init import UnboundInitResourceContext
-    from .resource_definition import ResourceDefinition, is_context_provided
+    from .resource_definition import ResourceDefinition, has_at_least_one_parameter
 
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
     check.opt_inst_param(init_context, "init_context", UnboundInitResourceContext)
@@ -29,9 +29,9 @@ def resource_invocation_result(
 
     resource_fn = resource_def.resource_fn
     val_or_gen = (
-        resource_fn(_init_context)
-        if is_context_provided(resource_fn)
-        else resource_fn()  # type: ignore
+        resource_fn(_init_context)  # type: ignore  # fmt: skip
+        if has_at_least_one_parameter(resource_fn)  # type: ignore  # fmt: skip
+        else resource_fn()  # type: ignore  # (strict type guard)
     )
     if inspect.isgenerator(val_or_gen):
 
@@ -51,13 +51,13 @@ def resource_invocation_result(
 def _check_invocation_requirements(
     resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> "InitResourceContext":
-    from dagster._core.definitions.resource_definition import is_context_provided
+    from dagster._core.definitions.resource_definition import has_at_least_one_parameter
     from dagster._core.execution.context.init import (
         InitResourceContext,
         build_init_resource_context,
     )
 
-    context_provided = is_context_provided(resource_def.resource_fn)
+    context_provided = has_at_least_one_parameter(resource_def.resource_fn)  # type: ignore  # fmt: skip
     if context_provided and resource_def.required_resource_keys and init_context is None:
         raise DagsterInvalidInvocationError(
             "Resource has required resources, but no context was provided. Use the "
@@ -84,14 +84,14 @@ def _check_invocation_requirements(
 
     # Construct a context if None was provided. This will initialize an ephemeral instance, and
     # console log manager.
-    init_context = init_context or build_init_resource_context()
+    _init_context = init_context or build_init_resource_context()
 
     return InitResourceContext(
         resource_config=resource_config,
-        resources=init_context.resources,
+        resources=_init_context.resources,
         resource_def=resource_def,
-        instance=init_context.instance,
-        log_manager=init_context.log,
+        instance=_init_context.instance,
+        log_manager=_init_context.log,
     )
 
 

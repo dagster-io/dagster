@@ -63,7 +63,7 @@ class SchemaType(ABC):
     @abstractmethod
     def get_check(self, name: str, scope: Optional[str] = None):
         """
-        Returns the dagster._check check for this type, e.g. check.str_param(name, 'name')
+        Returns the dagster._check check for this type, e.g. check.str_param(name, 'name').
         """
 
     @abstractmethod
@@ -71,13 +71,13 @@ class SchemaType(ABC):
         self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
     ):
         """
-        Returns the Python type annotation for this type, e.g. str or Union[str, int]
+        Returns the Python type annotation for this type, e.g. str or Union[str, int].
         """
 
     @property
     def const_value(self):
         """
-        If this is a constant field, returns the constant value, otherwise returns None
+        If this is a constant field, returns the constant value, otherwise returns None.
         """
         return None
 
@@ -420,7 +420,7 @@ def load_from_spec_file(
     injected_props: Dict[str, Any],
 ):
     """
-    Loads a connector spec file and generates a python class definition for it
+    Loads a connector spec file and generates a python class definition for it.
     """
     with open(filepath, encoding="utf8") as f:
         if filepath.endswith(".json"):

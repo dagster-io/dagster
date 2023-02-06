@@ -349,7 +349,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             # allow for retry if we get malformed data
             return backoff(
                 fn=_get_step_records,
-                retry_on=(pickle.UnpicklingError, gzip.BadGzipFile, zlib.error, EOFError),
+                retry_on=(pickle.UnpicklingError, OSError, zlib.error, EOFError),
                 max_retries=4,
             )
         # if you poll before the Databricks process has had a chance to create the file,

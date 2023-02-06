@@ -524,7 +524,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
     def test_retry_failure_all_steps_with_reexecution_params(self, graphql_context):
         """
-        Test with providng reexecutionParams rather than executionParams
+        Test with providng reexecutionParams rather than executionParams.
         """
         selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
 
@@ -570,7 +570,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
     def test_retry_hard_failure_with_reexecution_params_run_config_changed(self, graphql_context):
         """
-        Test that reexecution fails if the run config changes
+        Test that reexecution fails if the run config changes.
         """
         selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
 
@@ -614,7 +614,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
     def test_retry_failure_with_reexecution_params(self, graphql_context):
         """
-        Test with providng reexecutionParams rather than executionParams
+        Test with providng reexecutionParams rather than executionParams.
         """
         selector = infer_pipeline_selector(graphql_context, "chained_failure_pipeline")
 
@@ -657,7 +657,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
 
 def test_graphene_reexecution_strategy():
-    """Check that graphene enum has corresponding values in the ReexecutionStrategy enum"""
+    """Check that graphene enum has corresponding values in the ReexecutionStrategy enum."""
     for strategy in GrapheneReexecutionStrategy.__enum__:
         assert ReexecutionStrategy[strategy.value]
 

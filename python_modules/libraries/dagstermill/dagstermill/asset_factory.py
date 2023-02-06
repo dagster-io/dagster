@@ -221,7 +221,6 @@ def define_dagstermill_asset(
                     "iris": AssetIn(key=AssetKey("iris_dataset"))
                 }
             )
-
     """
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")

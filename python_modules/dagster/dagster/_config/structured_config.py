@@ -5,7 +5,7 @@ from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 
 try:
-    from functools import cached_property
+    from functools import cached_property  # type: ignore  # (py37 compat)
 except ImportError:
 
     class cached_property:  # type: ignore[no-redef]

@@ -6,15 +6,15 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     EventRecordsFilter,
+    IOManager,
+    MultiPartitionKey,
     StaticPartitionsDefinition,
     asset,
     define_asset_job,
+    materialize,
     repository,
 )
-from dagster._core.definitions.multi_dimensional_partitions import (
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-)
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
@@ -167,3 +167,186 @@ def test_tags_multi_dimensional_partitions():
             )
         )
         assert len(materializations) == 1
+
+
+multipartitions_def = MultiPartitionsDefinition(
+    {
+        "date": DailyPartitionsDefinition(start_date="2015-01-01"),
+        "static": StaticPartitionsDefinition(["a", "b", "c", "d"]),
+    }
+)
+
+
+def test_multipartitions_backcompat_subset_serialization():
+    partitions1 = StaticPartitionsDefinition(["a", "b", "c"])
+    partitions2 = StaticPartitionsDefinition(["x", "y", "z"])
+    composite = MultiPartitionsDefinition({"abc": partitions1, "xyz": partitions2})
+
+    partition_keys = [
+        MultiPartitionKey({"abc": "a", "xyz": "x"}),
+        MultiPartitionKey({"abc": "c", "xyz": "z"}),
+    ]
+    serialization = '["a|x", "c|z"]'
+    assert composite.deserialize_subset(serialization).get_partition_keys() == set(partition_keys)
+
+    version_1_serialization = '{"version": 1, "subset": ["a|x", "c|z"]}'
+    assert composite.deserialize_subset(version_1_serialization).get_partition_keys() == set(
+        partition_keys
+    )
+
+
+def test_multipartitions_subset_serialization():
+    partitions1 = StaticPartitionsDefinition(["a", "b", "c"])
+    partitions2 = StaticPartitionsDefinition(["x", "y", "z"])
+    composite = MultiPartitionsDefinition({"abc": partitions1, "xyz": partitions2})
+
+    partition_keys = [
+        MultiPartitionKey({"abc": "a", "xyz": "x"}),
+        MultiPartitionKey({"abc": "c", "xyz": "z"}),
+    ]
+    assert composite.deserialize_subset(
+        composite.empty_subset().with_partition_keys(partition_keys).serialize()
+    ).get_partition_keys() == set(partition_keys)
+
+
+def test_multipartitions_subset_equality():
+    assert multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "a", "date": "2015-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    ) == multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "a", "date": "2015-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    )
+
+    assert multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "c", "date": "2015-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    ) != multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "a", "date": "2015-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    )
+
+    assert multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "a", "date": "2015-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    ) != multipartitions_def.empty_subset().with_partition_keys(
+        [
+            MultiPartitionKey({"static": "a", "date": "2016-01-01"}),
+            MultiPartitionKey({"static": "b", "date": "2015-01-05"}),
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    "initial, added",
+    [
+        (["------", "+-----", "------", "------"], ["+-----", "+-----", "------", "------"]),
+        (
+            ["+--+--", "------", "------", "------"],
+            ["+-----", "------", "------", "------"],
+        ),
+        (
+            ["+------", "-+-----", "-++--+-", "+-+++++"],
+            ["-+-----", "-+-----", "+-+-+-+", "+++----"],
+        ),
+        (
+            ["+-----+", "------+", "-+++---", "-------"],
+            ["+++++++", "-+-+-+-", "-++----", "----+++"],
+        ),
+    ],
+)
+def test_multipartitions_subset_addition(initial, added):
+    assert len(initial) == len(added)
+
+    static_keys = ["a", "b", "c", "d"]
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    multipartitions_def = MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "static": StaticPartitionsDefinition(static_keys),
+        }
+    )
+    full_date_set_keys = daily_partitions_def.get_partition_keys(
+        current_time=datetime(year=2015, month=1, day=30)
+    )[: max(len(keys) for keys in initial)]
+    current_day = datetime.strptime(
+        daily_partitions_def.get_partition_keys(current_time=datetime(year=2015, month=1, day=30))[
+            : max(len(keys) for keys in initial) + 1
+        ][-1],
+        daily_partitions_def.fmt,
+    )
+
+    initial_subset_keys = []
+    added_subset_keys = []
+    expected_keys_not_in_updated_subset = []
+    for i in range(len(initial)):
+        for j in range(len(initial[i])):
+            if initial[i][j] == "+":
+                initial_subset_keys.append(
+                    MultiPartitionKey({"date": full_date_set_keys[j], "static": static_keys[i]})
+                )
+
+            if added[i][j] == "+":
+                added_subset_keys.append(
+                    MultiPartitionKey({"date": full_date_set_keys[j], "static": static_keys[i]})
+                )
+
+            if initial[i][j] != "+" and added[i][j] != "+":
+                expected_keys_not_in_updated_subset.append(
+                    MultiPartitionKey({"date": full_date_set_keys[j], "static": static_keys[i]})
+                )
+
+    initial_subset = multipartitions_def.empty_subset().with_partition_keys(initial_subset_keys)
+    added_subset = initial_subset.with_partition_keys(added_subset_keys)
+
+    assert initial_subset.get_partition_keys(current_time=current_day) == set(initial_subset_keys)
+    assert added_subset.get_partition_keys(current_time=current_day) == set(
+        added_subset_keys + initial_subset_keys
+    )
+    assert added_subset.get_partition_keys_not_in_subset(current_time=current_day) == set(
+        expected_keys_not_in_updated_subset
+    )
+
+
+def test_asset_partition_key_is_multipartition_key():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert isinstance(context.asset_partition_key, MultiPartitionKey)
+
+        def load_input(self, context):
+            assert isinstance(context.asset_partition_key, MultiPartitionKey)
+            return 1
+
+    partitions_def = MultiPartitionsDefinition(
+        {"a": StaticPartitionsDefinition(["a"]), "b": StaticPartitionsDefinition(["b"])}
+    )
+
+    @asset(
+        partitions_def=partitions_def,
+        io_manager_key="my_io_manager",
+    )
+    def my_asset(context):
+        return 1
+
+    @asset(
+        partitions_def=partitions_def,
+        io_manager_key="my_io_manager",
+    )
+    def asset2(context, my_asset):
+        return 2
+
+    materialize(
+        [my_asset, asset2],
+        resources={"my_io_manager": MyIOManager()},
+        partition_key="a|b",
+    )

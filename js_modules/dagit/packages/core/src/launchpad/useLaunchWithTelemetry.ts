@@ -2,20 +2,26 @@ import {useMutation} from '@apollo/client';
 import * as React from 'react';
 import {useHistory} from 'react-router';
 
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
-import {LaunchPipelineExecutionMutationVariables} from '../graphql/graphql';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
   handleLaunchResult,
   LaunchBehavior,
 } from '../runs/RunUtils';
+import {
+  LaunchPipelineExecutionMutation,
+  LaunchPipelineExecutionMutationVariables,
+} from '../runs/types/RunUtils.types';
 
 import {showLaunchError} from './showLaunchError';
 
 export function useLaunchWithTelemetry() {
-  const {canLaunchPipelineExecution} = usePermissions();
-  const [launchPipelineExecution] = useMutation(LAUNCH_PIPELINE_EXECUTION_MUTATION);
+  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
+  const [launchPipelineExecution] = useMutation<
+    LaunchPipelineExecutionMutation,
+    LaunchPipelineExecutionMutationVariables
+  >(LAUNCH_PIPELINE_EXECUTION_MUTATION);
   const logTelemetry = useTelemetryAction();
   const history = useHistory();
 

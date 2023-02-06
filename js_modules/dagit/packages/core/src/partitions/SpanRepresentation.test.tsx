@@ -3,7 +3,7 @@ import {
   assembleIntoSpans,
   partitionsToText,
   stringForSpan,
-  textToPartitions,
+  spanTextToSelections,
 } from './SpanRepresentation';
 
 const MOCK_PARTITION_STATES = {
@@ -56,29 +56,50 @@ describe('SpanRepresentation', () => {
 
   describe('textToPartitions', () => {
     it('should parse a single value', () => {
-      expect(textToPartitions('2022-01-01', MOCK_PARTITIONS)).toEqual(['2022-01-01']);
+      const result = spanTextToSelections(MOCK_PARTITIONS, '2022-01-01');
+      expect(result.selectedKeys).toEqual(['2022-01-01']);
+      expect(result.selectedRanges).toEqual([
+        [
+          {idx: 0, key: '2022-01-01'},
+          {idx: 0, key: '2022-01-01'},
+        ],
+      ]);
     });
     it('should parse comma-separated values', () => {
-      expect(textToPartitions('2022-01-01, 2022-01-02,2022-01-03', MOCK_PARTITIONS)).toEqual([
-        '2022-01-01',
-        '2022-01-02',
-        '2022-01-03',
+      const result = spanTextToSelections(MOCK_PARTITIONS, '2022-01-01, 2022-01-02,2022-01-03');
+
+      expect(result.selectedKeys).toEqual(['2022-01-01', '2022-01-02', '2022-01-03']);
+      expect(result.selectedRanges).toEqual([
+        [
+          {idx: 0, key: '2022-01-01'},
+          {idx: 0, key: '2022-01-01'},
+        ],
+        [
+          {idx: 1, key: '2022-01-02'},
+          {idx: 1, key: '2022-01-02'},
+        ],
+        [
+          {idx: 2, key: '2022-01-03'},
+          {idx: 2, key: '2022-01-03'},
+        ],
       ]);
     });
     it('should parse spans using the [...] syntax', () => {
-      expect(textToPartitions('[2022-01-01...2022-01-03]', MOCK_PARTITIONS)).toEqual([
-        '2022-01-01',
-        '2022-01-02',
-        '2022-01-03',
+      const result = spanTextToSelections(MOCK_PARTITIONS, '[2022-01-01...2022-01-03]');
+      expect(result.selectedKeys).toEqual(['2022-01-01', '2022-01-02', '2022-01-03']);
+      expect(result.selectedRanges).toEqual([
+        [
+          {idx: 0, key: '2022-01-01'},
+          {idx: 2, key: '2022-01-03'},
+        ],
       ]);
     });
     it('should parse a multi-span string', () => {
-      expect(
-        textToPartitions(
-          '[2022-01-01...2022-01-03],2022-01-05,[2022-01-06...2022-01-07]',
-          MOCK_PARTITIONS,
-        ),
-      ).toEqual([
+      const result = spanTextToSelections(
+        MOCK_PARTITIONS,
+        '[2022-01-01...2022-01-03],2022-01-05,[2022-01-06...2022-01-07]',
+      );
+      expect(result.selectedKeys).toEqual([
         '2022-01-01',
         '2022-01-02',
         '2022-01-03',
@@ -86,9 +107,23 @@ describe('SpanRepresentation', () => {
         '2022-01-06',
         '2022-01-07',
       ]);
+      expect(result.selectedRanges).toEqual([
+        [
+          {idx: 0, key: '2022-01-01'},
+          {idx: 2, key: '2022-01-03'},
+        ],
+        [
+          {idx: 4, key: '2022-01-05'},
+          {idx: 4, key: '2022-01-05'},
+        ],
+        [
+          {idx: 5, key: '2022-01-06'},
+          {idx: 6, key: '2022-01-07'},
+        ],
+      ]);
     });
     it('should throw an exception if the string is invalid', () => {
-      expect(() => textToPartitions('[1980-01-01]', MOCK_PARTITIONS)).toThrow();
+      expect(() => spanTextToSelections(MOCK_PARTITIONS, '[1980-01-01]')).toThrow();
     });
   });
 

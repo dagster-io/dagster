@@ -25,6 +25,7 @@ from dagster._cli.workspace.cli_target import (
     python_job_target_argument,
 )
 from dagster._core.definitions.pipeline_base import IPipeline
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
@@ -37,7 +38,6 @@ from dagster._core.host_representation import (
     RepositoryLocation,
 )
 from dagster._core.host_representation.external_data import ExternalPartitionSetExecutionParamData
-from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG

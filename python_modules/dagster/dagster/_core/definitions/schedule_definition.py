@@ -18,7 +18,7 @@ from typing import (
 )
 
 import pendulum
-from typing_extensions import TypeAlias, TypeGuard
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -28,7 +28,7 @@ from dagster._utils import ensure_gen
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import is_valid_cron_schedule
 
-from ..decorator_utils import get_function_params
+from ..decorator_utils import get_function_params, has_at_least_one_parameter
 from ..errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -206,18 +206,12 @@ class ScheduleEvaluationContext:
 
 class DecoratedScheduleFunction(NamedTuple):
     """Wrapper around the decorated schedule function.  Keeps track of both to better support the
-    optimal return value for direct invocation of the evaluation function
+    optimal return value for direct invocation of the evaluation function.
     """
 
     decorated_fn: RawScheduleEvaluationFunction
     wrapped_fn: Callable[[ScheduleEvaluationContext], RunRequestIterator]
     has_context_arg: bool
-
-
-def is_context_provided(
-    fn: Union[Callable[[ScheduleEvaluationContext], T], Callable[[], T]]
-) -> TypeGuard[Callable[[ScheduleEvaluationContext], T]]:
-    return len(get_function_params(fn)) == 1
 
 
 def build_schedule_context(
@@ -282,7 +276,7 @@ class ScheduleExecutionData(
 
 
 class ScheduleDefinition:
-    """Define a schedule that targets a job
+    """Define a schedule that targets a job.
 
     Args:
         name (Optional[str]): The name of the schedule to create. Defaults to the job name plus
@@ -445,9 +439,9 @@ class ScheduleDefinition:
                 ):
                     _run_config_fn = check.not_none(self._run_config_fn)
                     evaluated_run_config = copy.deepcopy(
-                        _run_config_fn(context)
-                        if is_context_provided(_run_config_fn)  # type: ignore
-                        else run_config_fn()  # type: ignore
+                        _run_config_fn(context)  # type: ignore  # fmt: skip
+                        if has_at_least_one_parameter(_run_config_fn)  # type: ignore  # fmt: skip
+                        else _run_config_fn()  # type: ignore  # (strict type guard)
                     )
 
                 with user_code_error_boundary(
@@ -467,7 +461,7 @@ class ScheduleDefinition:
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
-                pendulum.tz.timezone(self._execution_timezone)
+                pendulum.tz.timezone(self._execution_timezone)  # type: ignore
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
                     f"Invalid execution timezone {self._execution_timezone} for {name}"
@@ -617,11 +611,8 @@ class ScheduleDefinition:
 
         # clone all the run requests with the required schedule tags
         run_requests_with_schedule_tags = [
-            RunRequest(
-                run_key=request.run_key,
-                run_config=request.run_config,
-                tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self)),
-                asset_selection=request.asset_selection,
+            request.with_replaced_attrs(
+                tags=merge_dicts(request.tags, DagsterRun.tags_for_schedule(self))
             )
             for request in run_requests
         ]
@@ -653,7 +644,3 @@ class ScheduleDefinition:
     @property
     def default_status(self) -> DefaultScheduleStatus:
         return self._default_status
-
-
-# Preserve ScheduleExecutionContext for backcompat so type annotations don't break.
-ScheduleExecutionContext = ScheduleEvaluationContext

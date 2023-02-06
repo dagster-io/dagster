@@ -482,6 +482,16 @@ def non_existant_python_origin_target_args():
     return {
         "workspace": None,
         "job_name": "foo",
+        "python_file": file_relative_path(__file__, "made_up_file.py"),
+        "module_name": None,
+        "attribute": "bar",
+    }
+
+
+def non_existant_python_file_workspace_args():
+    return {
+        "workspace": None,
+        "job_name": "foo",
         "python_file": (file_relative_path(__file__, "made_up_file.py"),),
         "module_name": None,
         "attribute": "bar",
@@ -496,14 +506,14 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": job_name,
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": None,
             "attribute": "bar",
         },
         {
             "workspace": None,
             "job_name": job_name,
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": None,
             "attribute": "bar",
             "working_directory": os.path.dirname(__file__),
@@ -512,14 +522,14 @@ def valid_job_python_origin_target_args():
             "workspace": None,
             "job_name": job_name,
             "python_file": None,
-            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": "bar",
         },
         {
             "workspace": None,
             "job_name": job_name,
             "python_file": None,
-            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": "bar",
             "working_directory": os.path.dirname(__file__),
         },
@@ -542,7 +552,7 @@ def valid_job_python_origin_target_args():
             "workspace": None,
             "job_name": None,
             "python_file": None,
-            "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": job_fn_name,
         },
         {
@@ -555,14 +565,14 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": None,
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": None,
             "attribute": job_def_name,
         },
         {
             "workspace": None,
             "job_name": None,
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": None,
             "attribute": job_def_name,
             "working_directory": os.path.dirname(__file__),
@@ -570,10 +580,25 @@ def valid_job_python_origin_target_args():
         {
             "workspace": None,
             "job_name": None,
-            "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
             "module_name": None,
             "attribute": job_fn_name,
         },
+    ]
+
+
+def job_python_args_to_workspace_args(args):
+    # Turn args expecting non-multiple files/modules into args allowing multiple
+    return [
+        {
+            "workspace": a.get("workspace"),
+            "job_name": a.get("job_name"),
+            "python_file": (a["python_file"],) if a.get("python_file") else None,
+            "module_name": (a["module_name"],) if a.get("module_name") else None,
+            "attribute": a["attribute"],
+            "package_name": a.get("package_name"),
+        }
+        for a in args
     ]
 
 
@@ -593,7 +618,7 @@ def valid_external_pipeline_target_args():
             "module_name": None,
             "attribute": None,
         },
-    ] + [args for args in valid_job_python_origin_target_args()]
+    ] + job_python_args_to_workspace_args(valid_job_python_origin_target_args())
 
 
 def valid_pipeline_python_origin_target_cli_args():

@@ -1,30 +1,36 @@
 import asyncio
+from typing import Dict, List
 
 import graphene
 from dagster import (
     DagsterInstance,
     _check as check,
 )
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
+from dagster._core.host_representation.external_data import ExternalAssetNode
 from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
+    LocationStateChangeEventType,
     LocationStateSubscriber,
 )
 from dagster._core.workspace.context import (
+    WorkspaceProcessContext,
+)
+from dagster._core.workspace.workspace import (
     WorkspaceLocationEntry,
     WorkspaceLocationLoadStatus,
-    WorkspaceProcessContext,
 )
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import (
-    ProjectedLogicalVersionLoader,
     RepositoryScopedBatchLoader,
+    StaleStatusLoader,
 )
 
 from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
@@ -36,17 +42,9 @@ from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOri
 from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
 from .used_solid import GrapheneUsedSolid
-from .util import HasContext, non_null_list
+from .util import ResolveInfo, non_null_list
 
-
-class GrapheneLocationStateChangeEventType(graphene.Enum):
-    LOCATION_UPDATED = "LOCATION_UPDATED"
-    LOCATION_DISCONNECTED = "LOCATION_DISCONNECTED"
-    LOCATION_RECONNECTED = "LOCATION_RECONNECTED"
-    LOCATION_ERROR = "LOCATION_ERROR"
-
-    class Meta:
-        name = "LocationStateChangeEventType"
+GrapheneLocationStateChangeEventType = graphene.Enum.from_enum(LocationStateChangeEventType)
 
 
 class GrapheneRepositoryLocationLoadStatus(graphene.Enum):
@@ -102,7 +100,7 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
     def resolve_id(self, _):
         return self.name
 
-    def resolve_repositories(self, graphene_info):
+    def resolve_repositories(self, graphene_info: ResolveInfo):
         return [
             GrapheneRepository(graphene_info.context.instance, repository, self._location)
             for repository in self._location.get_repositories().values()
@@ -231,24 +229,23 @@ class GrapheneRepository(graphene.ObjectType):
         )
         check.inst_param(instance, "instance", DagsterInstance)
         self._batch_loader = RepositoryScopedBatchLoader(instance, repository)
-        self._projected_logical_version_loader = ProjectedLogicalVersionLoader(
+        self._stale_status_loader = StaleStatusLoader(
             instance=instance,
-            key_to_node_map={},
-            repositories=[repository],
+            asset_graph=lambda: ExternalAssetGraph.from_external_repository(repository),
         )
         super().__init__(name=repository.name)
 
-    def resolve_id(self, _graphene_info):
+    def resolve_id(self, _graphene_info: ResolveInfo):
         return self._repository.get_external_origin_id()
 
-    def resolve_origin(self, _graphene_info):
+    def resolve_origin(self, _graphene_info: ResolveInfo):
         origin = self._repository.get_external_origin()
         return GrapheneRepositoryOrigin(origin)
 
-    def resolve_location(self, _graphene_info):
+    def resolve_location(self, _graphene_info: ResolveInfo):
         return GrapheneRepositoryLocation(self._repository_location)
 
-    def resolve_schedules(self, _graphene_info):
+    def resolve_schedules(self, _graphene_info: ResolveInfo):
         return sorted(
             [
                 GrapheneSchedule(
@@ -261,7 +258,7 @@ class GrapheneRepository(graphene.ObjectType):
             key=lambda schedule: schedule.name,
         )
 
-    def resolve_sensors(self, _graphene_info):
+    def resolve_sensors(self, _graphene_info: ResolveInfo):
         return sorted(
             [
                 GrapheneSensor(
@@ -274,7 +271,7 @@ class GrapheneRepository(graphene.ObjectType):
             key=lambda sensor: sensor.name,
         )
 
-    def resolve_pipelines(self, _graphene_info):
+    def resolve_pipelines(self, _graphene_info: ResolveInfo):
         return [
             GraphenePipeline(pipeline, self._batch_loader)
             for pipeline in sorted(
@@ -282,7 +279,7 @@ class GrapheneRepository(graphene.ObjectType):
             )
         ]
 
-    def resolve_jobs(self, _graphene_info):
+    def resolve_jobs(self, _graphene_info: ResolveInfo):
         return [
             GrapheneJob(pipeline, self._batch_loader)
             for pipeline in sorted(
@@ -291,19 +288,19 @@ class GrapheneRepository(graphene.ObjectType):
             if pipeline.is_job
         ]
 
-    def resolve_usedSolid(self, _graphene_info, name):
+    def resolve_usedSolid(self, _graphene_info: ResolveInfo, name):
         return get_solid(self._repository, name)
 
-    def resolve_usedSolids(self, _graphene_info):
+    def resolve_usedSolids(self, _graphene_info: ResolveInfo):
         return get_solids(self._repository)
 
-    def resolve_partitionSets(self, _graphene_info):
+    def resolve_partitionSets(self, _graphene_info: ResolveInfo):
         return (
             GraphenePartitionSet(self._repository.handle, partition_set)
             for partition_set in self._repository.get_external_partition_sets()
         )
 
-    def resolve_displayMetadata(self, _graphene_info):
+    def resolve_displayMetadata(self, _graphene_info: ResolveInfo):
         metadata = self._repository.get_display_metadata()
         return [
             GrapheneRepositoryMetadata(key=key, value=value)
@@ -311,19 +308,19 @@ class GrapheneRepository(graphene.ObjectType):
             if value is not None
         ]
 
-    def resolve_assetNodes(self, _graphene_info):
+    def resolve_assetNodes(self, _graphene_info: ResolveInfo):
         return [
             GrapheneAssetNode(
                 self._repository_location,
                 self._repository,
                 external_asset_node,
-                projected_logical_version_loader=self._projected_logical_version_loader,
+                stale_status_loader=self._stale_status_loader,
             )
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]
 
-    def resolve_assetGroups(self, _graphene_info):
-        groups = {}
+    def resolve_assetGroups(self, _graphene_info: ResolveInfo):
+        groups: Dict[str, List[ExternalAssetNode]] = {}
         for external_asset_node in self._repository.get_external_asset_nodes():
             if not external_asset_node.group_name:
                 continue
@@ -369,7 +366,7 @@ class GrapheneLocationStateChangeSubscription(graphene.ObjectType):
         name = "LocationStateChangeSubscription"
 
 
-async def gen_location_state_changes(graphene_info: HasContext):
+async def gen_location_state_changes(graphene_info: ResolveInfo):
     # This lives on the process context and is never modified/destroyed, so we can
     # access it directly
     context = graphene_info.context.process_context

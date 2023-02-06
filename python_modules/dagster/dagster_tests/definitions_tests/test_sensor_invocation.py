@@ -20,7 +20,6 @@ from dagster import (
     PartitionMapping,
     PartitionsDefinition,
     RunRequest,
-    SensorEvaluationContext,
     SkipReason,
     StaticPartitionsDefinition,
     asset,
@@ -40,16 +39,8 @@ from dagster import (
     run_status_sensor,
     sensor,
 )
-from dagster._check import CheckError
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import SensorExecutionContext
-
-
-def test_sensor_context_backcompat():
-    # If an instance of SensorEvaluationContext is a SensorExecutionContext, then annotating as
-    # SensorExecutionContext and passing in a SensorEvaluationContext should pass mypy
-    assert isinstance(SensorEvaluationContext(None, None, None, None, None), SensorExecutionContext)
 
 
 def test_sensor_invocation_args():
@@ -337,7 +328,7 @@ def test_multi_asset_sensor():
     def asset_b():
         return 1
 
-    @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+    @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
     def a_and_b_sensor(context):
         asset_events = context.latest_materialization_records_by_key()
         if all(asset_events.values()):
@@ -351,7 +342,7 @@ def test_multi_asset_sensor():
     with instance_for_test() as instance:
         materialize([asset_a, asset_b], instance=instance)
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+            monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
             instance=instance,
             repository_def=my_repo,
         )
@@ -363,7 +354,7 @@ def test_multi_asset_sensor_selection():
     def two_assets():
         return 1, 2
 
-    @multi_asset_sensor(asset_keys=[AssetKey("asset_a")])
+    @multi_asset_sensor(monitored_assets=[AssetKey("asset_a")])
     def passing_sensor(context):  # pylint: disable=unused-argument
         pass
 
@@ -377,7 +368,7 @@ def test_multi_asset_sensor_has_assets():
     def two_assets():
         return 1, 2
 
-    @multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")])
+    @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
         assert (
             context.assets_defs_by_key[  # pylint: disable=comparison-with-callable
@@ -397,10 +388,9 @@ def test_multi_asset_sensor_has_assets():
     def my_repo():
         return [two_assets, passing_sensor]
 
-    assert passing_sensor.monitored_asset_keys == [AssetKey("asset_a"), AssetKey("asset_b")]
     with instance_for_test() as instance:
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+            monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
             instance=instance,
             repository_def=my_repo,
         )
@@ -424,7 +414,9 @@ def test_multi_asset_sensor_invalid_partitions():
 
     with instance_for_test() as instance:
         with build_multi_asset_sensor_context(
-            asset_keys=[static_partitions_asset.key], instance=instance, repository_def=my_repo
+            monitored_assets=[static_partitions_asset.key],
+            instance=instance,
+            repository_def=my_repo,
         ) as context:
             with pytest.raises(DagsterInvalidInvocationError):
                 context.get_downstream_partition_keys(
@@ -453,7 +445,7 @@ def test_partitions_multi_asset_sensor_context():
         "yay", selection="daily_partitions_asset", partitions_def=daily_partitions_def
     )
 
-    @multi_asset_sensor(asset_keys=[daily_partitions_asset.key, daily_partitions_asset_2.key])
+    @multi_asset_sensor(monitored_assets=[daily_partitions_asset.key, daily_partitions_asset_2.key])
     def two_asset_sensor(context):
         partition_1 = next(
             iter(
@@ -481,7 +473,7 @@ def test_partitions_multi_asset_sensor_context():
             instance=instance,
         )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[daily_partitions_asset.key, daily_partitions_asset_2.key],
+            monitored_assets=[daily_partitions_asset.key, daily_partitions_asset_2.key],
             instance=instance,
             repository_def=my_repo,
         )
@@ -510,7 +502,7 @@ def my_repo():
 
 
 def test_multi_asset_sensor_after_cursor_partition_flag():
-    @multi_asset_sensor(asset_keys=[july_asset.key])
+    @multi_asset_sensor(monitored_assets=[july_asset.key])
     def after_cursor_partitions_asset_sensor(context):
         events = context.latest_materialization_records_by_key([july_asset.key])
 
@@ -546,7 +538,7 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
             instance=instance,
         )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         after_cursor_partitions_asset_sensor(ctx)
         materialize([july_asset], partition_key="2022-07-05", instance=instance)
@@ -554,7 +546,7 @@ def test_multi_asset_sensor_after_cursor_partition_flag():
 
 
 def test_multi_asset_sensor_all_partitions_materialized():
-    @multi_asset_sensor(asset_keys=[july_asset.key])
+    @multi_asset_sensor(monitored_assets=[july_asset.key])
     def asset_sensor(context):
         assert context.all_partitions_materialized(july_asset.key) is False
         assert (
@@ -574,7 +566,7 @@ def test_multi_asset_sensor_all_partitions_materialized():
             instance=instance,
         )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         asset_sensor(ctx)
 
@@ -622,7 +614,7 @@ def test_multi_asset_sensor_custom_partition_mapping():
     def my_repo():
         return [july_daily_partitions, downstream_daily_partitions]
 
-    @multi_asset_sensor(asset_keys=[july_daily_partitions.key])
+    @multi_asset_sensor(monitored_assets=[july_daily_partitions.key])
     def asset_sensor(context):
         for partition_key, _ in context.latest_materialization_records_by_partition(
             july_daily_partitions.key
@@ -641,7 +633,9 @@ def test_multi_asset_sensor_custom_partition_mapping():
             instance=instance,
         )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_daily_partitions.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_daily_partitions.key],
+            instance=instance,
+            repository_def=my_repo,
         )
         asset_sensor(ctx)
 
@@ -649,7 +643,7 @@ def test_multi_asset_sensor_custom_partition_mapping():
 def test_multi_asset_sensor_retains_ordering_and_fetches_latest_per_partition():
     partition_ordering = ["2022-07-15", "2022-07-14", "2022-07-13", "2022-07-12", "2022-07-15"]
 
-    @multi_asset_sensor(asset_keys=[july_asset.key])
+    @multi_asset_sensor(monitored_assets=[july_asset.key])
     def asset_sensor(context):
         assert (
             list(context.latest_materialization_records_by_partition(july_asset.key).keys())
@@ -666,13 +660,13 @@ def test_multi_asset_sensor_retains_ordering_and_fetches_latest_per_partition():
                 instance=instance,
             )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         asset_sensor(ctx)
 
 
 def test_multi_asset_sensor_update_cursor_no_overwrite():
-    @multi_asset_sensor(asset_keys=[july_asset.key, august_asset.key])
+    @multi_asset_sensor(monitored_assets=[july_asset.key, august_asset.key])
     def after_cursor_partitions_asset_sensor(context):
         events = context.latest_materialization_records_by_key()
 
@@ -700,7 +694,9 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
             instance=instance,
         )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key, august_asset.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_asset.key, august_asset.key],
+            instance=instance,
+            repository_def=my_repo,
         )
         after_cursor_partitions_asset_sensor(ctx)
         materialize([august_asset], partition_key="2022-08-05", instance=instance)
@@ -708,7 +704,7 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
 
 
 def test_multi_asset_sensor_latest_materialization_records_by_partition_and_asset():
-    @multi_asset_sensor(asset_keys=[july_asset.key, july_asset_2.key])
+    @multi_asset_sensor(monitored_assets=[july_asset.key, july_asset_2.key])
     def my_sensor(context):
         events = context.latest_materialization_records_by_partition_and_asset()
         for partition_key, materialization_by_asset in events.items():
@@ -725,17 +721,11 @@ def test_multi_asset_sensor_latest_materialization_records_by_partition_and_asse
         )
         materialize([july_asset], partition_key="2022-08-04", instance=instance)
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key, july_asset_2.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_asset.key, july_asset_2.key],
+            instance=instance,
+            repository_def=my_repo,
         )
         my_sensor(ctx)
-
-
-def test_asset_keys_or_selection_mandatory():
-    with pytest.raises(CheckError, match="Must provide asset_keys or asset_selection"):
-
-        @multi_asset_sensor()
-        def asset_selection_sensor(context):  # pylint: disable=unused-argument
-            pass
 
 
 def test_build_multi_asset_sensor_context_asset_selection():
@@ -750,7 +740,7 @@ def test_build_multi_asset_sensor_context_asset_selection():
     )
 
     @multi_asset_sensor(
-        asset_selection=AssetSelection.groups("ladies").upstream(depth=1, include_self=False)
+        monitored_assets=AssetSelection.groups("ladies").upstream(depth=1, include_self=False)
     )
     def asset_selection_sensor(context):
         assert context.asset_keys == [danny.key]
@@ -761,30 +751,17 @@ def test_build_multi_asset_sensor_context_asset_selection():
 
     with instance_for_test() as instance:
         ctx = build_multi_asset_sensor_context(
-            asset_selection=AssetSelection.groups("ladies").upstream(depth=1, include_self=False),
+            monitored_assets=AssetSelection.groups("ladies").upstream(depth=1, include_self=False),
             instance=instance,
             repository_def=my_repo,
         )
         asset_selection_sensor(ctx)
 
 
-def test_asset_selection_or_asset_keys_mandatory_on_context():
-    @repository
-    def my_repo():
-        return []
-
-    with instance_for_test() as instance:
-        with pytest.raises(CheckError, match="Must provide asset_keys or asset_selection"):
-            build_multi_asset_sensor_context(
-                instance=instance,
-                repository_def=my_repo,
-            )
-
-
 def test_multi_asset_sensor_unconsumed_events():
     invocation_num = 0
 
-    @multi_asset_sensor(asset_keys=[july_asset.key])
+    @multi_asset_sensor(monitored_assets=[july_asset.key])
     def test_unconsumed_events_sensor(context):
         if invocation_num == 0:
             events = context.latest_materialization_records_by_partition(july_asset.key)
@@ -822,7 +799,7 @@ def test_multi_asset_sensor_unconsumed_events():
         assert first_2022_07_10_mat < event_records[2].storage_id
 
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
@@ -850,7 +827,7 @@ def test_multi_asset_sensor_unconsumed_events():
 def test_advance_all_cursors_clears_unconsumed_events():
     invocation_num = 0
 
-    @multi_asset_sensor(asset_keys=[july_asset.key])
+    @multi_asset_sensor(monitored_assets=[july_asset.key])
     def test_unconsumed_events_sensor(context):
         if invocation_num == 0:
             events = context.latest_materialization_records_by_partition(july_asset.key)
@@ -879,7 +856,7 @@ def test_advance_all_cursors_clears_unconsumed_events():
         materialize([july_asset], partition_key="2022-07-10", instance=instance)
 
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
@@ -905,7 +882,7 @@ def test_advance_all_cursors_clears_unconsumed_events():
 
 
 def test_error_when_max_num_unconsumed_events():
-    @multi_asset_sensor(asset_keys=[july_asset.key])
+    @multi_asset_sensor(monitored_assets=[july_asset.key])
     def test_unconsumed_events_sensor(context):
         latest_record = context.materialization_records_for_key(july_asset.key, limit=25)
         context.advance_cursor({july_asset.key: latest_record[-1]})
@@ -922,7 +899,7 @@ def test_error_when_max_num_unconsumed_events():
                 instance=instance,
             )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
@@ -946,7 +923,7 @@ def test_error_when_max_num_unconsumed_events():
 def test_latest_materialization_records_by_partition_fetches_unconsumed_events():
     invocation_num = 0
 
-    @multi_asset_sensor(asset_keys=[july_asset.key])
+    @multi_asset_sensor(monitored_assets=[july_asset.key])
     def test_unconsumed_events_sensor(context):
         if invocation_num == 0:
             context.advance_cursor(
@@ -981,7 +958,7 @@ def test_latest_materialization_records_by_partition_fetches_unconsumed_events()
                 instance=instance,
             )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
         first_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
@@ -1008,7 +985,7 @@ def test_latest_materialization_records_by_partition_fetches_unconsumed_events()
 
 
 def test_unfetched_partitioned_events_are_unconsumed():
-    @multi_asset_sensor(asset_keys=[july_asset.key])
+    @multi_asset_sensor(monitored_assets=[july_asset.key])
     def test_unconsumed_events_sensor(context):
         context.advance_cursor(
             {
@@ -1031,7 +1008,7 @@ def test_unfetched_partitioned_events_are_unconsumed():
                 instance=instance,
             )
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
         first_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
@@ -1063,7 +1040,7 @@ def test_unfetched_partitioned_events_are_unconsumed():
         )
 
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key], instance=instance, repository_def=my_repo
+            monitored_assets=[july_asset.key], instance=instance, repository_def=my_repo
         )
         test_unconsumed_events_sensor(ctx)
         second_july_cursor = ctx._get_cursor(july_asset.key)  # pylint: disable=protected-access
@@ -1082,7 +1059,7 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
     def my_asset():
         pass
 
-    @multi_asset_sensor(asset_keys=[my_asset.key])
+    @multi_asset_sensor(monitored_assets=[my_asset.key])
     def my_sensor(context):
         my_asset_cursor = context._get_cursor(my_asset.key)  # pylint: disable=protected-access
         assert my_asset_cursor.latest_consumed_event_id is not None
@@ -1099,7 +1076,7 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
         assert records.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(
-            asset_selection=AssetSelection.groups("default"),
+            monitored_assets=AssetSelection.groups("default"),
             instance=instance,
             cursor_from_latest_materializations=True,
             repository_def=my_repo,
@@ -1120,7 +1097,7 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
     def my_asset():
         return Output(1, metadata={"evaluated": evaluated})
 
-    @multi_asset_sensor(asset_keys=[my_asset.key])
+    @multi_asset_sensor(monitored_assets=[my_asset.key])
     def my_sensor(context):
         if not evaluated:
             assert context.latest_materialization_records_by_key()[my_asset.key] is None
@@ -1146,7 +1123,7 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
         assert records.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[my_asset.key],
+            monitored_assets=[my_asset.key],
             instance=instance,
             cursor_from_latest_materializations=True,
             repository_def=my_repo,
@@ -1195,7 +1172,7 @@ def test_build_multi_asset_context_set_after_multiple_materializations():
         my_asset_2_cursor = records[1].storage_id
 
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[my_asset.key, my_asset_2.key],
+            monitored_assets=[my_asset.key, my_asset_2.key],
             instance=instance,
             cursor_from_latest_materializations=True,
             repository_def=my_repo,
@@ -1227,7 +1204,7 @@ def test_error_exec_in_process_to_build_multi_asset_sensor_context():
         with instance_for_test() as instance:
             materialize([my_asset], instance=instance)
             build_multi_asset_sensor_context(
-                asset_keys=[my_asset.key],
+                monitored_assets=[my_asset.key],
                 repository_def=my_repo,
                 cursor_from_latest_materializations=True,
             )
@@ -1239,7 +1216,7 @@ def test_error_exec_in_process_to_build_multi_asset_sensor_context():
         with instance_for_test() as instance:
             materialize([my_asset], instance=instance)
             build_multi_asset_sensor_context(
-                asset_keys=[my_asset.key],
+                monitored_assets=[my_asset.key],
                 repository_def=my_repo,
                 cursor_from_latest_materializations=True,
                 cursor="alskdjalsjk",
@@ -1247,13 +1224,13 @@ def test_error_exec_in_process_to_build_multi_asset_sensor_context():
 
 
 def test_error_not_thrown_for_skip_reason():
-    @multi_asset_sensor(asset_keys=[july_asset.key])
+    @multi_asset_sensor(monitored_assets=[july_asset.key])
     def test_unconsumed_events_sensor(_):
         return SkipReason("I am skipping")
 
     with instance_for_test() as instance:
         ctx = build_multi_asset_sensor_context(
-            asset_keys=[july_asset.key],
+            monitored_assets=[july_asset.key],
             repository_def=my_repo,
             instance=instance,
         )

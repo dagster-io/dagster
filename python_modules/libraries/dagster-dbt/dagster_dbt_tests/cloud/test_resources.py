@@ -9,13 +9,18 @@ from dagster_dbt import dbt_cloud_resource
 from .utils import (
     SAMPLE_ACCOUNT_ID,
     SAMPLE_API_PREFIX,
+    SAMPLE_API_V3_PREFIX,
     SAMPLE_JOB_ID,
+    SAMPLE_PROJECT_ID,
     SAMPLE_RUN_ID,
+    sample_get_environment_variables,
     sample_job_details,
     sample_list_artifacts,
+    sample_list_job_details,
     sample_run_details,
     sample_run_results,
     sample_runs_details,
+    sample_set_environment_variable,
 )
 
 
@@ -25,6 +30,14 @@ def get_dbt_cloud_resource(**kwargs):
             config={"auth_token": "some_auth_token", "account_id": SAMPLE_ACCOUNT_ID, **kwargs}
         )
     )
+
+
+@responses.activate
+def test_list_jobs():
+    dc_resource = get_dbt_cloud_resource()
+
+    responses.add(responses.GET, f"{SAMPLE_API_PREFIX}/jobs", json=sample_list_job_details())
+    assert dc_resource.list_jobs(SAMPLE_PROJECT_ID) == sample_list_job_details()["data"]
 
 
 def test_get_job():
@@ -160,6 +173,30 @@ def test_no_disable_schedule():
         # endpoint for disabling the schedule has not been set up, so will fail if attempted
         dc_resource.run_job_and_poll(SAMPLE_JOB_ID)
 
+    # If the schedule was already disabled, no need to re-disable it.
+    dc_resource = get_dbt_cloud_resource()
+    with responses.RequestsMock() as rsps:
+        # endpoint for launching run
+        rsps.add(
+            rsps.POST,
+            f"{SAMPLE_API_PREFIX}/jobs/{SAMPLE_JOB_ID}/run/",
+            json=sample_run_details(job={"triggers": {"schedule": False}}),
+        )
+        # run will immediately succeed
+        rsps.add(
+            rsps.GET,
+            f"{SAMPLE_API_PREFIX}/runs/{SAMPLE_RUN_ID}/",
+            json=sample_run_details(status_humanized="Success"),
+        )
+        # endpoint for run_results.json
+        rsps.add(
+            rsps.GET,
+            f"{SAMPLE_API_PREFIX}/runs/{SAMPLE_RUN_ID}/artifacts/run_results.json",
+            json=sample_run_results(),
+        )
+        # endpoint for disabling the schedule has not been set up, so will fail if attempted
+        dc_resource.run_job_and_poll(SAMPLE_JOB_ID)
+
 
 @pytest.mark.parametrize(
     "final_status,expected_behavior",
@@ -264,3 +301,46 @@ def test_no_run_results_job():
 
         assert dbt_cloud_output.result == {}  # run_result.json not available
         assert dbt_cloud_output.run_details == sample_run_details()["data"]
+
+
+@responses.activate
+def test_get_environment_variables():
+    dc_resource = get_dbt_cloud_resource()
+
+    responses.add(
+        responses.GET,
+        f"{SAMPLE_API_V3_PREFIX}/projects/{SAMPLE_PROJECT_ID}/environment-variables/job",
+        json=sample_get_environment_variables(
+            environment_variable_id=3,
+            name="DBT_DAGSTER_ENV_VAR",
+            value="-1",
+        ),
+    )
+
+    assert dc_resource.get_job_environment_variables(
+        project_id=SAMPLE_PROJECT_ID, job_id=SAMPLE_JOB_ID
+    )
+
+
+@responses.activate
+def test_set_environment_variable():
+    dc_resource = get_dbt_cloud_resource()
+    environment_variable_id = 1
+    name = "DBT_DAGSTER_ENV_VAR"
+    value = "2000"
+
+    responses.add(
+        responses.POST,
+        f"{SAMPLE_API_V3_PREFIX}/projects/{SAMPLE_PROJECT_ID}/environment-variables/{environment_variable_id}",
+        json=sample_set_environment_variable(
+            environment_variable_id=environment_variable_id, name=name, value=value
+        ),
+    )
+
+    assert dc_resource.set_job_environment_variable(
+        project_id=SAMPLE_PROJECT_ID,
+        job_id=SAMPLE_JOB_ID,
+        environment_variable_id=environment_variable_id,
+        name=name,
+        value=value,
+    )

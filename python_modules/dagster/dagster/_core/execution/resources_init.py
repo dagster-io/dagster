@@ -20,7 +20,7 @@ from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ScopedResourcesBuilder,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
 from dagster._core.errors import (
     DagsterInvariantViolationError,
@@ -74,7 +74,7 @@ def resource_initialization_manager(
 def resolve_resource_dependencies(
     resource_defs: Mapping[str, ResourceDefinition]
 ) -> Mapping[str, AbstractSet[str]]:
-    """Generates a dictionary that maps resource key to resource keys it requires for initialization
+    """Generates a dictionary that maps resource key to resource keys it requires for initialization.
     """
     resource_dependencies = {
         key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
@@ -325,8 +325,8 @@ def single_resource_event_generator(
             try:
                 with time_execution_scope() as timer_result:
                     resource_or_gen = (
-                        resource_def.resource_fn(context)
-                        if is_context_provided(resource_def.resource_fn)
+                        resource_def.resource_fn(context)  # type: ignore  # fmt: skip
+                        if has_at_least_one_parameter(resource_def.resource_fn)  # type: ignore  # fmt: skip
                         else resource_def.resource_fn()  # type: ignore[call-arg]
                     )
 

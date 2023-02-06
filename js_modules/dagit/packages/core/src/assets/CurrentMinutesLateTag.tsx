@@ -5,7 +5,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {AssetNodeLiveFreshnessPolicyFragment} from '../graphql/graphql';
+import {AssetNodeLiveFreshnessPolicyFragment} from '../asset-graph/types/AssetNode.types';
 import {humanCronString} from '../schedules/humanCronString';
 
 const STALE_OVERDUE_MSG = `A materialization incorporating more recent upstream data is overdue.`;

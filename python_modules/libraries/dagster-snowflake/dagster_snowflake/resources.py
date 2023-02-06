@@ -1,11 +1,14 @@
 import sys
 import warnings
 from contextlib import closing, contextmanager
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Iterator, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 from dagster import resource
 from dagster._annotations import public
+from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 
 from .configs import define_snowflake_config
 
@@ -24,9 +27,9 @@ except ImportError:
 
 
 class SnowflakeConnection:
-    """A connection to Snowflake that can execute queries. In
-    general this class should not be directly instantiated, but rather used as a resource in an op
-    or asset via the :py:func:`snowflake_resource`.
+    """A connection to Snowflake that can execute queries. In general this class should not be
+    directly instantiated, but rather used as a resource in an op or asset via the
+    :py:func:`snowflake_resource`.
     """
 
     def __init__(self, config: Mapping[str, str], log):  # pylint: disable=too-many-locals
@@ -34,9 +37,35 @@ class SnowflakeConnection:
         # snowflake.connector.connect() because they will override the default values set within the
         # connector; remove them from the conn_args dict.
         self.connector = config.get("connector", None)
+        self.sqlalchemy_engine_args = {}
+
+        # there are three different ways to authenticate with snowflake, we need to ensure that only
+        # one method is provided
+        auths_set = 0
+        auths_set += 1 if config.get("password", None) is not None else 0
+        auths_set += 1 if config.get("private_key", None) is not None else 0
+        auths_set += 1 if config.get("private_key_path", None) is not None else 0
+
+        # ensure at least 1 method is provided
+        check.invariant(
+            auths_set > 0,
+            (
+                "Missing config: Password or private key authentication required for Snowflake"
+                " resource."
+            ),
+        )
+
+        # ensure that only 1 method is provided
+        check.invariant(
+            auths_set == 1,
+            (
+                "Incorrect config: Cannot provide both password and private key authentication to"
+                " Snowflake Resource."
+            ),
+        )
 
         if self.connector == "sqlalchemy":
-            self.conn_args = {
+            self.conn_args: Dict[str, Any] = {
                 k: config.get(k)
                 for k in (
                     "account",
@@ -51,6 +80,13 @@ class SnowflakeConnection:
                 )
                 if config.get(k) is not None
             }
+
+            if (
+                config.get("private_key", None) is not None
+                or config.get("private_key_path", None) is not None
+            ):
+                # sqlalchemy passes private key args separately, so store them in a new dict
+                self.sqlalchemy_engine_args["private_key"] = self.__snowflake_private_key(config)
 
         else:
             self.conn_args = {
@@ -76,13 +112,42 @@ class SnowflakeConnection:
                 )
                 if config.get(k) is not None
             }
+            if (
+                config.get("private_key", None) is not None
+                or config.get("private_key_path", None) is not None
+            ):
+                self.conn_args["private_key"] = self.__snowflake_private_key(config)
 
         self.autocommit = self.conn_args.get("autocommit", False)
         self.log = log
 
+    def __snowflake_private_key(self, config) -> bytes:
+        private_key = config.get("private_key", None)
+        # If the user has defined a path to a private key, we will use that.
+        if config.get("private_key_path", None) is not None:
+            # read the file from the path.
+            with open(config.get("private_key_path"), "rb") as key:
+                private_key = key.read()
+
+        kwargs = {}
+        if config.get("private_key_password", None) is not None:
+            kwargs["password"] = config["private_key_password"].encode()
+
+        p_key = serialization.load_pem_private_key(private_key, backend=default_backend(), **kwargs)
+
+        pkb = p_key.private_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+
+        return pkb
+
     @public
     @contextmanager
-    def get_connection(self, raw_conn: bool = True):
+    def get_connection(
+        self, raw_conn: bool = True
+    ) -> Iterator[Union[SqlDbConnection, snowflake.connector.SnowflakeConnection]]:
         """Gets a connection to Snowflake as a context manager.
 
         If using the execute_query, execute_queries, or load_table_from_local_parquet methods,
@@ -108,7 +173,7 @@ class SnowflakeConnection:
             from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
             from sqlalchemy import create_engine
 
-            engine = create_engine(URL(**self.conn_args))
+            engine = create_engine(URL(**self.conn_args), connect_args=self.sqlalchemy_engine_args)
             conn = engine.raw_connection() if raw_conn else engine.connect()
 
             yield conn
@@ -162,9 +227,10 @@ class SnowflakeConnection:
                     sql = sql.encode("utf-8")
 
                 self.log.info("Executing query: " + sql)
-                cursor.execute(sql, parameters)  # pylint: disable=E1101
+                parameters = dict(parameters) if isinstance(parameters, Mapping) else parameters
+                cursor.execute(sql, parameters)
                 if fetch_results:
-                    return cursor.fetchall()  # pylint: disable=E1101
+                    return cursor.fetchall()
                 if use_pandas_result:
                     return cursor.fetch_pandas_all()
 
@@ -217,12 +283,13 @@ class SnowflakeConnection:
                     if sys.version_info[0] < 3:
                         sql = sql.encode("utf-8")
                     self.log.info("Executing query: " + sql)
-                    cursor.execute(sql, parameters)  # pylint: disable=E1101
+                    parameters = dict(parameters) if isinstance(parameters, Mapping) else parameters
+                    cursor.execute(sql, parameters)
                     if fetch_results:
                         if use_pandas_result:
-                            results = results.append(cursor.fetch_pandas_all())
+                            results = results.append(cursor.fetch_pandas_all())  # type: ignore
                         else:
-                            results.append(cursor.fetchall())  # pylint: disable=E1101
+                            results.append(cursor.fetchall())  # type: ignore
 
         return results if fetch_results else None
 
@@ -312,5 +379,5 @@ def snowflake_resource(context):
 
 
 def _filter_password(args):
-    """Remove password from connection args for logging"""
+    """Remove password from connection args for logging."""
     return {k: v for k, v in args.items() if k != "password"}

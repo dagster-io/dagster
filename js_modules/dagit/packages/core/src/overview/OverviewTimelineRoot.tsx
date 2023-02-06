@@ -1,4 +1,13 @@
-import {Page, PageHeader, Heading, Box, TextInput, Button, ButtonGroup} from '@dagster-io/ui';
+import {
+  Page,
+  PageHeader,
+  Heading,
+  Box,
+  TextInput,
+  Button,
+  ButtonGroup,
+  ErrorBoundary,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -32,7 +41,7 @@ const hourWindowToOffset = (hourWindow: HourWindow) => {
 
 export const OverviewTimelineRoot = () => {
   useTrackPageView();
-  useDocumentTitle('Runs');
+  useDocumentTitle('Overview | Timeline');
 
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
 
@@ -129,7 +138,9 @@ export const OverviewTimelineRoot = () => {
           </Box>
         </Box>
       </Box>
-      <RunTimeline loading={initialLoading} range={range} jobs={visibleJobs} />
+      <ErrorBoundary region="timeline">
+        <RunTimeline loading={initialLoading} range={range} jobs={visibleJobs} />
+      </ErrorBoundary>
     </Page>
   );
 };

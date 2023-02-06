@@ -120,6 +120,7 @@ class DatabricksJobRunner:
         self, host, token, poll_interval_sec=5, max_wait_time_sec=DEFAULT_RUN_MAX_WAIT_TIME_SEC
     ):
         """Args:
+
         host (str): Databricks host, e.g. https://uksouth.azuredatabricks.net
         token (str): Databricks token
         """

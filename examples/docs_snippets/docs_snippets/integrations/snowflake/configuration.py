@@ -1,4 +1,10 @@
-iris_dataset = None
+from dagster import asset
+
+
+@asset
+def iris_dataset():
+    return None
+
 
 # start_example
 
@@ -13,7 +19,9 @@ defs = Definitions(
             {
                 "account": "abc1234.us-east-1",  # required
                 "user": {"env": "SNOWFLAKE_USER"},  # required
-                "password": {"env": "SNOWFLAKE_PASSWORD"},  # required
+                "password": {
+                    "env": "SNOWFLAKE_PASSWORD"
+                },  # password or private key required
                 "database": "FLOWERS",  # required
                 "role": "writer",  # optional, defaults to the default role for the account
                 "warehouse": "PLANTS",  # optional, defaults to default warehouse for the account

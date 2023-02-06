@@ -13,15 +13,25 @@ You can inspect op, job, and graph definitions, launch runs, view launched runs,
 
 ## Launching Dagit
 
-To launch the Dagit web server, run:
+The easiest way to launch Dagit from the command line during local development is to run:
+
+```shell
+dagster dev
+```
+
+This command launches both Dagit and the [Dagster daemon](/deployment/dagster-daemon), allowing you to start a full local deployment of Dagster from the command line.
+
+The command will print out the URL you can access the interface from in the browser, usually on port 3000.
+
+When invoked, Dagit will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/concepts/code-locations/workspace-files). Refer to the [Code location documentation](/concepts/code-locations) for more info.
+
+You can also launch Dagit by itself from the command line by running:
 
 ```shell
 dagit
 ```
 
-The command will print out the URL you can access the interface from in the browser, usually on port 3000.
-
-When invoked, Dagit will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/concepts/code-locations/workspace-files). Refer to the [Code location documentation](/concepts/code-locations) for more info.
+Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running in order to function.
 
 ---
 

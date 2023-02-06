@@ -68,7 +68,7 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
                         )
                     )
 
-                if not key_type.kind == ConfigTypeKind.SCALAR:
+                if not key_type.kind == ConfigTypeKind.SCALAR:  # type: ignore
                     raise DagsterInvalidDefinitionError(
                         "Non-scalar key in map specification: {key} in map {collection}".format(
                             key=repr(key), collection=obj
@@ -361,7 +361,7 @@ class Field:
     @public  # type: ignore
     @property
     def default_provided(self) -> bool:
-        """Was a default value provided
+        """Was a default value provided.
 
         Returns:
             bool: Yes or no

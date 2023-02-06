@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequ
 
 import dagster._check as check
 import kubernetes
+import kubernetes.client
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError

@@ -133,7 +133,10 @@ from dagster._core.definitions.decorators.sensor_decorator import (
 from dagster._core.definitions.decorators.source_asset_decorator import (
     observable_source_asset as observable_source_asset,
 )
-from dagster._core.definitions.definitions_class import Definitions as Definitions
+from dagster._core.definitions.definitions_class import (
+    Definitions as Definitions,
+    create_repository_using_definitions_args as create_repository_using_definitions_args,
+)
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
     MultiDependencyDefinition as MultiDependencyDefinition,
@@ -248,6 +251,7 @@ from dagster._core.definitions.partition_mapping import (
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
     PartitionMapping as PartitionMapping,
+    StaticPartitionMapping as StaticPartitionMapping,
 )
 from dagster._core.definitions.partitioned_schedule import (
     build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
@@ -287,6 +291,11 @@ from dagster._core.definitions.schedule_definition import (
     ScheduleDefinition as ScheduleDefinition,
     ScheduleEvaluationContext as ScheduleEvaluationContext,
     build_schedule_context as build_schedule_context,
+)
+from dagster._core.definitions.selector import (
+    CodeLocationSelector as CodeLocationSelector,
+    JobSelector as JobSelector,
+    RepositorySelector as RepositorySelector,
 )
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus as DefaultSensorStatus,
@@ -406,12 +415,8 @@ from dagster._core.execution.validate_run_config import validate_run_config as v
 from dagster._core.execution.with_resources import with_resources as with_resources
 from dagster._core.executor.base import Executor as Executor
 from dagster._core.executor.init import InitExecutorContext as InitExecutorContext
-from dagster._core.host_representation.selector import (
-    CodeLocationSelector as CodeLocationSelector,
-    JobSelector as JobSelector,
-    RepositorySelector as RepositorySelector,
-)
 from dagster._core.instance import DagsterInstance as DagsterInstance
+from dagster._core.instance_for_test import instance_for_test as instance_for_test
 from dagster._core.launcher.default_run_launcher import DefaultRunLauncher as DefaultRunLauncher
 from dagster._core.log_manager import DagsterLogManager as DagsterLogManager
 from dagster._core.storage.asset_value_loader import AssetValueLoader as AssetValueLoader
@@ -451,7 +456,6 @@ from dagster._core.storage.root_input_manager import (
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG as MEMOIZED_RUN_TAG
 from dagster._core.storage.upath_io_manager import UPathIOManager as UPathIOManager
-from dagster._core.test_utils import instance_for_test as instance_for_test
 from dagster._core.types.config_schema import (
     DagsterTypeLoader as DagsterTypeLoader,
     dagster_type_loader as dagster_type_loader,

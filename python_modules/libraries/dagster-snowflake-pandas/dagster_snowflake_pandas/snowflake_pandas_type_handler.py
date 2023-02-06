@@ -1,7 +1,14 @@
 from typing import Mapping, Union, cast
 
 import pandas as pd
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+import pandas.core.dtypes.common as pd_core_dtypes_common
+from dagster import (
+    InputContext,
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableSchema,
+)
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
@@ -29,9 +36,9 @@ def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice:
 def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
     """
     Converts columns of data of type pd.Timestamp to string so that it can be stored in
-    snowflake
+    snowflake.
     """
-    if pd.core.dtypes.common.is_datetime_or_timedelta_dtype(s):
+    if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
         return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
     else:
         return s
@@ -40,14 +47,14 @@ def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
 def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
     """
     Converts columns of strings in Timestamp format to pd.Timestamp to undo the conversion in
-    _convert_timestamp_to_string
+    _convert_timestamp_to_string.
 
     This will not convert non-timestamp strings into timestamps (pd.to_datetime will raise an
     exception if the string cannot be converted)
     """
     if isinstance(s[0], str):
         try:
-            return pd.to_datetime(s.values)
+            return pd.to_datetime(s.values)  # type: ignore  # (bad stubs)
         except ValueError:
             return s
     else:
@@ -84,10 +91,10 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             )
             with_uppercase_cols.to_sql(
                 table_slice.table,
-                con=con.engine,
+                con=con.engine,  # type: ignore  # (bad stubs)
                 if_exists="append",
                 index=False,
-                method=pd_writer,
+                method=pd_writer,  # pyright: ignore (bad stubs)
             )
 
         return {
@@ -106,7 +113,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         with _connect_snowflake(context, table_slice) as con:
             result = pd.read_sql(sql=SnowflakeDbClient.get_select_statement(table_slice), con=con)
             result = result.apply(_convert_string_to_timestamp, axis="index")
-            result.columns = map(str.lower, result.columns)
+            result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
             return result
 
     @property
@@ -126,6 +133,7 @@ Examples:
     .. code-block:: python
 
         from dagster_snowflake_pandas import snowflake_pandas_io_manager
+        from dagster import asset, Definitions
 
         @asset(
             key_prefix=["my_schema"]  # will be used as the schema in snowflake
@@ -133,16 +141,16 @@ Examples:
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
 
-        @repository
-        def my_repo():
-            return with_resources(
-                [my_table],
-                {"io_manager": snowflake_pandas_io_manager.configured({
+        defs = Definitions(
+            assets=[my_table],
+            resources={
+                "io_manager": snowflake_pandas_io_manager.configured({
                     "database": "my_database",
                     "account" : {"env": "SNOWFLAKE_ACCOUNT"}
                     ...
-                })}
-            )
+                })
+            }
+        )
 
     If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
     the IO Manager. For assets, the schema will be determined from the asset key.

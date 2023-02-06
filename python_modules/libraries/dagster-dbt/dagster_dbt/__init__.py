@@ -12,6 +12,7 @@ from .cli import (
 )
 from .cloud import (
     DbtCloudOutput as DbtCloudOutput,
+    DbtCloudResource as DbtCloudResource,
     DbtCloudResourceV2 as DbtCloudResourceV2,
     dbt_cloud_resource as dbt_cloud_resource,
     dbt_cloud_run_op as dbt_cloud_run_op,

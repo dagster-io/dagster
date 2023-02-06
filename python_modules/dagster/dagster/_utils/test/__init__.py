@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Mapping, Optional, Union, overload
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Mapping, Optional, Union, cast, overload
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -424,8 +424,11 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
         return {"base_dir": str}
 
     @staticmethod
-    def from_config_value(inst_data: object, config_value):
-        return FilesystemTestScheduler(artifacts_dir=config_value["base_dir"], inst_data=inst_data)
+    def from_config_value(
+        inst_data: object, config_value: Mapping[str, object]
+    ) -> "FilesystemTestScheduler":
+        artifacts_dir = cast(str, config_value["base_dir"])
+        return FilesystemTestScheduler(artifacts_dir=artifacts_dir, inst_data=inst_data)
 
     def debug_info(self) -> str:
         return ""

@@ -4,6 +4,7 @@ import pkgutil
 
 import dagster
 import sqlalchemy as db
+from sqlalchemy.sql import elements as db_sql_elements
 from sqlalchemy.sql.schema import Column
 
 
@@ -23,10 +24,11 @@ def check_schema_compat(schema):
 
 
 def validate_column(column: Column):
-    """This function is used to validate individual DB columns in a a schema for cross-DBAPI compatibility
+    """This function is used to validate individual DB columns in a a schema for cross-DBAPI compatibility.
+
     i.e.:
         1. plain db.String not allowed (MySQL compatability)
-        2. db.Text + unique=True not allowed (MySQL compatability)
+        2. db.Text + unique=True not allowed (MySQL compatability).
     """
     if (
         isinstance(column.type, db.String)
@@ -47,13 +49,13 @@ def validate_column(column: Column):
         )
     elif (
         column.server_default
-        and isinstance(column.server_default.arg, db.sql.elements.TextClause)
+        and isinstance(column.server_default.arg, db_sql_elements.TextClause)
         and str(column.server_default.arg) == "CURRENT_TIMESTAMP"
     ):
         raise Exception(
-            f"Column {column} has a server default of CURRENT_TIMESTAMP without precision specified. "
-            "To allow schema compatibility between MySQL, Postgres, and SQLite, "
-            "use dagster._core.storage.sql.py::get_current_timestamp() instead."
+            f"Column {column} has a server default of CURRENT_TIMESTAMP without precision"
+            " specified. To allow schema compatibility between MySQL, Postgres, and SQLite, use"
+            " dagster._core.storage.sql.py::get_current_timestamp() instead."
         )
 
 

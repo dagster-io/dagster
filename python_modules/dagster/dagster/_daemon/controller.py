@@ -9,7 +9,7 @@ from typing import Callable, Iterator, Sequence
 import pendulum
 
 import dagster._check as check
-from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
@@ -59,12 +59,13 @@ def create_daemons_from_instance(instance):
     ]
 
 
-def create_daemon_grpc_server_registry(instance):
-    return ProcessGrpcServerRegistry(
+def create_daemon_grpc_server_registry(instance, code_server_log_level="INFO"):
+    return GrpcServerRegistry(
         instance=instance,
         reload_interval=DAEMON_GRPC_SERVER_RELOAD_INTERVAL,
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
         startup_timeout=instance.code_server_process_startup_timeout,
+        log_level=code_server_log_level,
     )
 
 
@@ -79,13 +80,16 @@ def daemon_controller_from_instance(
         [DagsterInstance], Iterator[DagsterDaemon]
     ] = create_daemons_from_instance,
     error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
+    code_server_log_level: str = "info",
 ):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
     grpc_server_registry = None
     try:
         with ExitStack() as stack:
-            grpc_server_registry = stack.enter_context(create_daemon_grpc_server_registry(instance))
+            grpc_server_registry = stack.enter_context(
+                create_daemon_grpc_server_registry(instance, code_server_log_level)
+            )
             daemons = [stack.enter_context(daemon) for daemon in gen_daemons(instance)]
             workspace_process_context = stack.enter_context(
                 WorkspaceProcessContext(
@@ -270,7 +274,14 @@ class DagsterDaemonController(AbstractContextManager):
                 last_heartbeat_check_time = time.time()
 
     def __exit__(self, exception_type, exception_value, traceback):
-        self._logger.info("Shutting down daemon threads...")
+        if isinstance(exception_value, KeyboardInterrupt):
+            self._logger.info("Received interrupt, shutting down daemon threads...")
+        elif exception_type:
+            self._logger.warning(
+                f"Shutting down daemon threads due to {exception_type.__name__}..."
+            )
+        else:
+            self._logger.info("Shutting down daemon threads...")
         self._daemon_shutdown_event.set()
         for daemon_type, thread in self._daemon_threads.items():
             if thread.is_alive():
@@ -317,7 +328,7 @@ def all_daemons_healthy(
     heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ):
     """
-    True if all required daemons have had a recent heartbeat with no errors
+    True if all required daemons have had a recent heartbeat with no errors.
     """
     statuses_by_type = get_daemon_statuses(
         instance,

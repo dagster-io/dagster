@@ -1,14 +1,13 @@
+import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {graphql} from '../graphql';
-import {
-  RunFragmentFragment,
-  RunMetadataProviderMessageFragmentFragment,
-  StepEventStatus,
-} from '../graphql/graphql';
+import {StepEventStatus} from '../graphql/types';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 
 import {LogsProviderLogs} from './LogsProvider';
 import {RunContext} from './RunContext';
+import {RunFragment} from './types/RunFragments.types';
+import {RunMetadataProviderMessageFragment} from './types/RunMetadataProvider.types';
 
 export enum IStepState {
   PREPARING = 'preparing',
@@ -101,7 +100,7 @@ export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
 };
 
 const fromTimestamp = (ts: number | null) => (ts ? Math.floor(ts * 1000) : undefined);
-function extractMetadataFromRun(run?: RunFragmentFragment): IRunMetadataDict {
+function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
     firstLogAt: 0,
     mostRecentLogAt: 0,
@@ -170,7 +169,7 @@ const stepStatusToStepState = (status: StepEventStatus | null) => {
   }
 };
 
-const refineMarkerEvent = (log: RunMetadataProviderMessageFragmentFragment) => {
+const refineMarkerEvent = (log: RunMetadataProviderMessageFragment) => {
   if (
     log.__typename === 'EngineEvent' ||
     log.__typename === 'ResourceInitFailureEvent' ||
@@ -185,7 +184,7 @@ const refineMarkerEvent = (log: RunMetadataProviderMessageFragmentFragment) => {
 };
 
 export function extractMetadataFromLogs(
-  logs: RunMetadataProviderMessageFragmentFragment[],
+  logs: RunMetadataProviderMessageFragment[],
 ): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
     firstLogAt: 0,
@@ -358,7 +357,7 @@ export const RunMetadataProvider: React.FC<IRunMetadataProviderProps> = ({logs, 
   return <>{children(metadata)}</>;
 };
 
-export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = graphql(`
+export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
   fragment RunMetadataProviderMessageFragment on DagsterRunEvent {
     __typename
     ... on MessageEvent {
@@ -385,4 +384,6 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = graphql(`
       externalUrl
     }
   }
-`);
+
+  ${METADATA_ENTRY_FRAGMENT}
+`;

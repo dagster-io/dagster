@@ -16,68 +16,21 @@ Several Dagster features, like [schedules](/concepts/partitions-schedules-sensor
 
 ### Running locally
 
-The Dagster daemon can be started locally in a few ways, which are outlined in the following tabs. Once started, the process should be kept running.
-
-<TabGroup>
-<TabItem name="From a file">
-
-The Dagster daemon can load a file directly as a code location. In the following example, we used the `-f` argument to supply the name of the file to `dagster-daemon`:
+The easiest way to run the Dagster daemon locally is to run the `dagster dev` command:
 
 ```shell
-dagster-daemon run -f my_file.py
+dagster dev
 ```
 
-This command loads the definitions in `my_file.py` as a code location in the same Python environment where the daemon resides.
+This command launches both [Dagit](/concepts/dagit/dagit) and the Dagster daemon, allowing you to start a full local deployment of Dagster from the command line. See the [Running Dagster Locally guide](/deployment/guides/running-locally) for more information about `dagster dev`.
 
-You can also include multiple files at a time:
-
-```shell
-dagster-daemon run -f my_file.py -f my_second_file.py
-```
-
----
-
-</TabItem>
-<TabItem name="From a module">
-
-The Dagster daemon can also load Python modules as code locations. When this approach is used, Dagster loads the definitions defined at the top-level of the module, in a variable containing the <PyObject object="Definitions" /> object of its root `__init__.py` file. As this style of development eliminates an entire class of Python import errors, we strongly recommend it for Dagster projects deployed to production.
-
-In the following example, we used the `-m` argument to supply the name of the module to the daemon process:
-
-```shell
-dagster-daemon run -m your_module_name
-```
-
-This command loads the definitions in the variable containing the <PyObject object="Definitions" /> object in the named module - defined as the root `__init__.py` file - in the same virtual environment as the daemon.
-
----
-
-</TabItem>
-<TabItem name="Without command line arguments">
-
-To load definitions without supplying command line arguments, you can use the `pyproject.toml` file. This file, included in all Dagster example projects, contains a `tool.dagster` section with a `module_name` variable:
-
-```shell
-[tool.dagster]
-module_name = "your_module_name"  ## name of project's Python module
-```
-
-When defined, you can run this in the same directory as the `pyproject.toml` file:
+You can also run the Dagster daemon by itself by running:
 
 ```shell
 dagster-daemon run
 ```
 
-Instead of this:
-
-```shell
-dagster-daemon run -m your_module_name
-```
-
----
-
-</TabItem>
-</TabGroup>
+This command takes all the same arguments as `dagster dev` for specifing where to find your code.
 
 ### Deploying the daemon
 

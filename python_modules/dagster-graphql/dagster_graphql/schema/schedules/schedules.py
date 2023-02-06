@@ -15,7 +15,7 @@ from ..instigation import (
     GrapheneFutureInstigationTicks,
     GrapheneInstigationState,
 )
-from ..util import non_null_list
+from ..util import ResolveInfo, non_null_list
 
 
 class GrapheneSchedule(graphene.ObjectType):
@@ -71,14 +71,14 @@ class GrapheneSchedule(graphene.ObjectType):
             description=external_schedule.description,
         )
 
-    def resolve_id(self, _):
+    def resolve_id(self, _graphene_info):
         return self._external_schedule.get_external_origin_id()
 
-    def resolve_scheduleState(self, _graphene_info):
+    def resolve_scheduleState(self, _graphene_info: ResolveInfo):
         # forward the batch run loader to the instigation state, which provides the schedule runs
         return GrapheneInstigationState(self._schedule_state, self._batch_loader)
 
-    def resolve_partition_set(self, graphene_info):
+    def resolve_partition_set(self, graphene_info: ResolveInfo):
         from ..partition_sets import GraphenePartitionSet
 
         if self._external_schedule.partition_set_name is None:
@@ -130,7 +130,7 @@ class GrapheneSchedule(graphene.ObjectType):
         new_cursor = tick_times[-1] + 1 if tick_times else cursor
         return GrapheneFutureInstigationTicks(results=future_ticks, cursor=new_cursor)
 
-    def resolve_futureTick(self, _graphene_info, tick_timestamp):
+    def resolve_futureTick(self, _graphene_info, tick_timestamp: int):
         return GrapheneFutureInstigationTick(self._schedule_state, float(tick_timestamp))
 
 

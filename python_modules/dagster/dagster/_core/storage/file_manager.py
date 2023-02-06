@@ -18,7 +18,7 @@ from .temp_file_manager import TempfileManager
 
 # pylint: disable=no-init
 class FileHandle(ABC):
-    """A reference to a file as manipulated by a FileManager
+    """A reference to a file as manipulated by a FileManager.
 
     Subclasses may handle files that are resident on the local file system, in an object store, or
     in any arbitrary place where a file can be stored.
@@ -207,7 +207,7 @@ def local_file_manager(init_context):
             def files_pipeline():
                 read_files(write_files())
 
-    Or to specify the file directory:
+        Or to specify the file directory:
 
         .. code-block:: python
 

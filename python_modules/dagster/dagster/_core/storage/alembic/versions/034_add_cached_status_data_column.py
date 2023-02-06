@@ -1,4 +1,4 @@
-"""add cached status data column
+"""add cached status data column.
 
 Revision ID: 6df03f4b1efb
 Revises: 958a9495162d

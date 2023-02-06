@@ -1,16 +1,18 @@
 import kubernetes
 import pytest
-from dagster import job, op
+from dagster import RetryRequested, job, op
 from dagster_k8s import execute_k8s_job, k8s_job_op
 from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 
 
-def _get_pod_logs(cluster_provider, job_name, namespace):
+def _get_pod_logs(cluster_provider, job_name, namespace, container_name=None):
     kubernetes.config.load_kube_config(cluster_provider.kubeconfig_file)
     api_client = DagsterKubernetesClient.production_client()
     pod_names = api_client.get_pod_names_in_job(job_name, namespace=namespace)
-    return api_client.retrieve_pod_logs(pod_names[0], namespace=namespace)
+    return api_client.retrieve_pod_logs(
+        pod_names[0], namespace=namespace, container_name=container_name
+    )
 
 
 @pytest.mark.default
@@ -190,3 +192,99 @@ def test_k8s_job_op_with_container_config(namespace, cluster_provider):
     job_name = get_k8s_job_name(run_id, with_container_config.name)
 
     assert "SHELL_FROM_CONTAINER_CONFIG" in _get_pod_logs(cluster_provider, job_name, namespace)
+
+
+@pytest.mark.default
+def test_k8s_job_op_with_container_config_and_command(namespace, cluster_provider):
+    with_container_config = k8s_job_op.configured(
+        {
+            "image": "busybox",
+            "container_config": {"command": ["echo", "SHELL_FROM_CONTAINER_CONFIG"]},
+            "namespace": namespace,
+            "load_incluster_config": False,
+            "kubeconfig_file": cluster_provider.kubeconfig_file,
+            "command": ["echo", "OVERRIDES_CONTAINER_CONFIG"],
+        },
+        name="with_container_config",
+    )
+
+    @job
+    def with_config_job():
+        with_container_config()
+
+    execute_result = with_config_job.execute_in_process()
+    run_id = execute_result.dagster_run.run_id
+    job_name = get_k8s_job_name(run_id, with_container_config.name)
+
+    assert "OVERRIDES_CONTAINER_CONFIG" in _get_pod_logs(cluster_provider, job_name, namespace)
+
+
+@pytest.mark.default
+def test_k8s_job_op_with_multiple_containers(namespace, cluster_provider):
+    with_multiple_containers = k8s_job_op.configured(
+        {
+            "image": "busybox",
+            "container_config": {
+                "name": "first-container",
+            },
+            "command": ["/bin/sh", "-c"],
+            "args": ["echo MAIN_CONTAINER"],
+            "namespace": namespace,
+            "load_incluster_config": False,
+            "kubeconfig_file": cluster_provider.kubeconfig_file,
+            "pod_spec_config": {
+                "containers": [
+                    {
+                        "name": "other-container",
+                        "image": "busybox",
+                        "command": ["/bin/sh", "-c"],
+                        "args": ["echo OTHER_CONTAINER"],
+                    }
+                ]
+            },
+        },
+        name="with_multiple_containers",
+    )
+
+    @job
+    def with_multiple_containers_job():
+        with_multiple_containers()
+
+    execute_result = with_multiple_containers_job.execute_in_process()
+    run_id = execute_result.dagster_run.run_id
+    job_name = get_k8s_job_name(run_id, with_multiple_containers.name)
+
+    assert "MAIN_CONTAINER" in _get_pod_logs(
+        cluster_provider, job_name, namespace, container_name="first-container"
+    )
+    assert "OTHER_CONTAINER" in _get_pod_logs(
+        cluster_provider, job_name, namespace, container_name="other-container"
+    )
+
+
+@pytest.mark.default
+def test_k8s_job_op_retries(namespace, cluster_provider):
+    @op
+    def fails_sometimes(context):
+        execute_k8s_job(
+            context,
+            image="busybox",
+            command=["/bin/sh", "-c"],
+            args=[f"echo HERE IS RETRY NUMBER {context.retry_number}"],
+            namespace=namespace,
+            load_incluster_config=False,
+            kubeconfig_file=cluster_provider.kubeconfig_file,
+        )
+        if context.retry_number == 0:
+            raise RetryRequested(max_retries=1, seconds_to_wait=1)
+
+    @job
+    def fails_sometimes_job():
+        fails_sometimes()
+
+    execute_result = fails_sometimes_job.execute_in_process()
+    run_id = execute_result.dagster_run.run_id
+    job_name = get_k8s_job_name(run_id, fails_sometimes.name)
+
+    assert "HERE IS RETRY NUMBER 0" in _get_pod_logs(cluster_provider, job_name, namespace)
+    assert "HERE IS RETRY NUMBER 1" in _get_pod_logs(cluster_provider, job_name + "-1", namespace)

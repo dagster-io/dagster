@@ -1,4 +1,5 @@
 import {
+  gql,
   OnSubscriptionDataOptions,
   useApolloClient,
   useQuery,
@@ -9,19 +10,21 @@ import throttle from 'lodash/throttle';
 import * as React from 'react';
 
 import {WebSocketContext} from '../app/WebSocketProvider';
-import {graphql} from '../graphql';
-import {
-  PipelineRunLogsSubscriptionStatusFragmentFragment,
-  PipelineRunLogsSubscriptionSubscription,
-  RunDagsterRunEventFragmentFragment,
-  RunLogsQueryQuery,
-  RunLogsSubscriptionSuccessFragment,
-  RunStatus,
-} from '../graphql/graphql';
+import {RunStatus} from '../graphql/types';
 
 import {LogLevelCounts} from './LogsToolbar';
+import {RUN_DAGSTER_RUN_EVENT_FRAGMENT} from './RunFragments';
 import {logNodeLevel} from './logNodeLevel';
 import {LogNode} from './types';
+import {
+  RunLogsSubscriptionSuccessFragment,
+  PipelineRunLogsSubscriptionStatusFragment,
+  RunLogsQuery,
+  PipelineRunLogsSubscription,
+  RunLogsQueryVariables,
+  PipelineRunLogsSubscriptionVariables,
+} from './types/LogsProvider.types';
+import {RunDagsterRunEventFragment} from './types/RunFragments.types';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';
@@ -41,7 +44,7 @@ export interface LogsProviderLogs {
   loading: boolean;
 }
 
-const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragmentFragment[]) => {
+const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragment[]) => {
   const reversed = [...messages].reverse();
   for (const message of reversed) {
     const {__typename} = message;
@@ -76,7 +79,7 @@ type State = {
 };
 
 type Action =
-  | {type: 'append'; queued: RunDagsterRunEventFragmentFragment[]; hasMore: boolean; cursor: string}
+  | {type: 'append'; queued: RunDagsterRunEventFragment[]; hasMore: boolean; cursor: string}
   | {type: 'set-cursor'; cursor: string}
   | {type: 'reset'};
 
@@ -127,7 +130,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
 
   const syncPipelineStatusToApolloCache = React.useCallback(
     (status: RunStatus) => {
-      const local = client.readFragment<PipelineRunLogsSubscriptionStatusFragmentFragment>({
+      const local = client.readFragment<PipelineRunLogsSubscriptionStatusFragment>({
         fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
         fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
         id: `Run:${runId}`,
@@ -249,15 +252,16 @@ const SubscriptionComponent = ({
     runId: string;
     cursor: string | null;
   };
-  onSubscriptionData: (
-    options: OnSubscriptionDataOptions<PipelineRunLogsSubscriptionSubscription>,
-  ) => void;
+  onSubscriptionData: (options: OnSubscriptionDataOptions<PipelineRunLogsSubscription>) => void;
 }) => {
-  useSubscription(PIPELINE_RUN_LOGS_SUBSCRIPTION, {
-    fetchPolicy: 'no-cache',
-    variables,
-    onSubscriptionData,
-  });
+  useSubscription<PipelineRunLogsSubscription, PipelineRunLogsSubscriptionVariables>(
+    PIPELINE_RUN_LOGS_SUBSCRIPTION,
+    {
+      fetchPolicy: 'no-cache',
+      variables,
+      onSubscriptionData,
+    },
+  );
   return null;
 };
 
@@ -288,39 +292,42 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {counts, cursor, nodes} = state;
 
-  const {stopPolling, startPolling} = useQuery(RUN_LOGS_QUERY, {
-    notifyOnNetworkStatusChange: true,
-    variables: {runId, cursor, limit: QUERY_LOG_LIMIT},
-    pollInterval: POLL_INTERVAL,
-    onCompleted: (data: RunLogsQueryQuery) => {
-      // We have to stop polling in order to update the `after` value.
-      stopPolling();
+  const {stopPolling, startPolling} = useQuery<RunLogsQuery, RunLogsQueryVariables>(
+    RUN_LOGS_QUERY,
+    {
+      notifyOnNetworkStatusChange: true,
+      variables: {runId, cursor, limit: QUERY_LOG_LIMIT},
+      pollInterval: POLL_INTERVAL,
+      onCompleted: (data: RunLogsQuery) => {
+        // We have to stop polling in order to update the `after` value.
+        stopPolling();
 
-      if (
-        data?.pipelineRunOrError.__typename !== 'Run' ||
-        data?.logsForRun.__typename !== 'EventConnection'
-      ) {
-        return;
-      }
+        if (
+          data?.pipelineRunOrError.__typename !== 'Run' ||
+          data?.logsForRun.__typename !== 'EventConnection'
+        ) {
+          return;
+        }
 
-      const run = data.pipelineRunOrError;
-      const queued = data.logsForRun.events;
-      const status = run.status;
-      const cursor = data.logsForRun.cursor;
+        const run = data.pipelineRunOrError;
+        const queued = data.logsForRun.events;
+        const status = run.status;
+        const cursor = data.logsForRun.cursor;
 
-      const hasMore =
-        !!status &&
-        status !== RunStatus.FAILURE &&
-        status !== RunStatus.SUCCESS &&
-        status !== RunStatus.CANCELED;
+        const hasMore =
+          !!status &&
+          status !== RunStatus.FAILURE &&
+          status !== RunStatus.SUCCESS &&
+          status !== RunStatus.CANCELED;
 
-      dispatch({type: 'append', queued, hasMore, cursor});
+        dispatch({type: 'append', queued, hasMore, cursor});
 
-      if (hasMore) {
-        startPolling(POLL_INTERVAL);
-      }
+        if (hasMore) {
+          startPolling(POLL_INTERVAL);
+        }
+      },
     },
-  });
+  );
 
   return (
     <>
@@ -349,15 +356,15 @@ export const LogsProvider: React.FC<LogsProviderProps> = (props) => {
   return <LogsProviderWithSubscription runId={runId}>{children}</LogsProviderWithSubscription>;
 };
 
-const PIPELINE_RUN_LOGS_SUBSCRIPTION = graphql(`
+const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription PipelineRunLogsSubscription($runId: ID!, $cursor: String) {
     pipelineRunLogs(runId: $runId, cursor: $cursor) {
       __typename
-      ...RunLogsSubscriptionSuccess
       ... on PipelineRunLogsSubscriptionFailure {
         missingRunId
         message
       }
+      ...RunLogsSubscriptionSuccess
     }
   }
 
@@ -371,18 +378,20 @@ const PIPELINE_RUN_LOGS_SUBSCRIPTION = graphql(`
     hasMorePastEvents
     cursor
   }
-`);
 
-const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = graphql(`
+  ${RUN_DAGSTER_RUN_EVENT_FRAGMENT}
+`;
+
+const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
   fragment PipelineRunLogsSubscriptionStatusFragment on Run {
     id
     runId
     status
     canTerminate
   }
-`);
+`;
 
-const RUN_LOGS_QUERY = graphql(`
+const RUN_LOGS_QUERY = gql`
   query RunLogsQuery($runId: ID!, $cursor: String, $limit: Int) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
@@ -409,4 +418,6 @@ const RUN_LOGS_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${RUN_DAGSTER_RUN_EVENT_FRAGMENT}
+`;

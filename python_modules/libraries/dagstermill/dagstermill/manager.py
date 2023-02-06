@@ -1,7 +1,7 @@
 import os
 import pickle
 import uuid
-from typing import Any, Mapping, Optional
+from typing import AbstractSet, Any, Mapping, Optional, cast
 
 from dagster import (
     AssetMaterialization,
@@ -10,11 +10,13 @@ from dagster import (
     Failure,
     LoggerDefinition,
     ResourceDefinition,
+    StepExecutionContext,
     TypeCheck,
     _check as check,
 )
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
+from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
@@ -24,13 +26,15 @@ from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import scoped_pipeline_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.resources_init import (
     get_required_resource_keys_to_init,
     resource_initialization_event_generator,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
-from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import Materialization, ModeDefinition, PipelineDefinition
 from dagster._loggers import colored_console_logger
@@ -46,7 +50,7 @@ from .serialize import PICKLE_PROTOCOL
 class DagstermillResourceEventGenerationManager(EventGenerationManager):
     """Utility class to explicitly manage setup/teardown of resource events. Overrides the default
     `generate_teardown_events` method so that teardown is deferred until explicitly called by the
-    dagstermill Manager
+    dagstermill Manager.
     """
 
     def generate_teardown_events(self):
@@ -64,27 +68,27 @@ class DagstermillResourceEventGenerationManager(EventGenerationManager):
 class Manager:
     def __init__(self):
         self.pipeline = None
-        self.solid_def = None
-        self.in_pipeline = False
-        self.marshal_dir = None
+        self.solid_def: Optional[NodeDefinition] = None
+        self.in_pipeline: bool = False
+        self.marshal_dir: Optional[str] = None
         self.context = None
         self.resource_manager = None
 
     def _setup_resources(
         self,
-        resource_defs,
-        resource_configs,
-        log_manager,
-        execution_plan,
-        pipeline_run,
-        resource_keys_to_init,
-        instance,
-        emit_persistent_events,
+        resource_defs: Mapping[str, ResourceDefinition],
+        resource_configs: Mapping[str, ResourceConfig],
+        log_manager: DagsterLogManager,
+        execution_plan: Optional[ExecutionPlan],
+        pipeline_run: Optional[DagsterRun],
+        resource_keys_to_init: Optional[AbstractSet[str]],
+        instance: Optional[DagsterInstance],
+        emit_persistent_events: Optional[bool],
     ):
         """
         Drop-in replacement for
         `dagster._core.execution.resources_init.resource_initialization_manager`.  It uses a
-        `DagstermillResourceEventGenerationManager` and explicitly calls `teardown` on it
+        `DagstermillResourceEventGenerationManager` and explicitly calls `teardown` on it.
         """
         generator = resource_initialization_event_generator(
             resource_defs=resource_defs,
@@ -103,14 +107,14 @@ class Manager:
 
     def reconstitute_pipeline_context(
         self,
-        output_log_path=None,
-        marshal_dir=None,
-        run_config=None,
-        executable_dict=None,
-        pipeline_run_dict=None,
-        solid_handle_kwargs=None,
-        instance_ref_dict=None,
-        step_key=None,
+        executable_dict: Mapping[str, Any],
+        pipeline_run_dict: Mapping[str, DagsterRun],
+        solid_handle_kwargs: Mapping[str, Any],
+        instance_ref_dict: Mapping[str, Any],
+        step_key: str,
+        output_log_path: Optional[str] = None,
+        marshal_dir: Optional[str] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
     ):
         """Reconstitutes a context for dagstermill-managed execution.
 
@@ -125,11 +129,11 @@ class Manager:
         """
         check.opt_str_param(output_log_path, "output_log_path")
         check.opt_str_param(marshal_dir, "marshal_dir")
-        run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
-        check.dict_param(pipeline_run_dict, "pipeline_run_dict")
-        check.dict_param(executable_dict, "executable_dict")
-        check.dict_param(solid_handle_kwargs, "solid_handle_kwargs")
-        check.dict_param(instance_ref_dict, "instance_ref_dict")
+        run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
+        check.mapping_param(pipeline_run_dict, "pipeline_run_dict")
+        check.mapping_param(executable_dict, "executable_dict")
+        check.mapping_param(solid_handle_kwargs, "solid_handle_kwargs")
+        check.mapping_param(instance_ref_dict, "instance_ref_dict")
         check.str_param(step_key, "step_key")
 
         pipeline = ReconstructablePipeline.from_dict(executable_dict)
@@ -185,7 +189,12 @@ class Manager:
                 ),
                 solid_name=solid.name,
                 solid_handle=solid_handle,
-                step_context=pipeline_context.for_step(execution_plan.get_step_by_key(step_key)),
+                step_context=cast(
+                    StepExecutionContext,
+                    pipeline_context.for_step(
+                        cast(ExecutionStep, execution_plan.get_step_by_key(step_key))
+                    ),
+                ),
             )
 
         return self.context
@@ -400,7 +409,10 @@ class Manager:
 
     def load_input_parameter(self, input_name: str):
         # load input from source
-        step_context = self.context._step_context  # pylint: disable=protected-access
+        dm_context = check.not_none(self.context)  # type: ignore  # fmt: skip
+        if not isinstance(dm_context, DagstermillRuntimeExecutionContext):
+            check.failed("Expected DagstermillRuntimeExecutionContext")
+        step_context = dm_context.step_context  # pylint: disable=protected-access
         step_input = step_context.step.step_input_named(input_name)
         input_def = step_context.solid_def.input_def_named(input_name)
         for event_or_input_value in ensure_gen(

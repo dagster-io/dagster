@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         PartitionSetDefinition,
         SourceAsset,
     )
+    from dagster._core.definitions.asset_graph import InternalAssetGraph
 
 
 class UnresolvedAssetJobDefinition(
@@ -132,6 +133,7 @@ class UnresolvedAssetJobDefinition(
         )
 
         return RunRequest(
+            job_name=self.name,
             run_key=run_key,
             run_config=run_config
             if run_config is not None
@@ -142,13 +144,35 @@ class UnresolvedAssetJobDefinition(
 
     def resolve(
         self,
-        assets: Sequence["AssetsDefinition"],
-        source_assets: Sequence["SourceAsset"],
+        assets: Optional[Sequence["AssetsDefinition"]] = None,
+        source_assets: Optional[Sequence["SourceAsset"]] = None,
         default_executor_def: Optional["ExecutorDefinition"] = None,
+        asset_graph: Optional["InternalAssetGraph"] = None,
     ) -> "JobDefinition":
         """
         Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
+
+        The assets and source_assets arguments are deprecated. Although they were never technically
+        public, a lot of users use them, so going to wait until a minor release to get rid of them.
         """
+        from dagster._core.definitions.asset_graph import AssetGraph
+
+        if asset_graph is not None:
+            if assets is not None or source_assets is not None:
+                check.failed(
+                    "If providing asset_graph, can't also provide assets and source_assets, and"
+                    " vice-versa."
+                )
+            assets = asset_graph.assets
+            source_assets = asset_graph.source_assets
+        else:
+            if assets is None or source_assets is None:
+                check.failed(
+                    "If asset_graph is not provided, must provide both assets and source_assets"
+                )
+
+            asset_graph = AssetGraph.from_assets([*assets, *source_assets])
+
         return build_asset_selection_job(
             name=self.name,
             assets=assets,
@@ -156,7 +180,7 @@ class UnresolvedAssetJobDefinition(
             source_assets=source_assets,
             description=self.description,
             tags=self.tags,
-            asset_selection=self.selection.resolve([*assets, *source_assets]),
+            asset_selection=self.selection.resolve(asset_graph),
             partitions_def=self.partitions_def,
             executor_def=self.executor_def or default_executor_def,
         )

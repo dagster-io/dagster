@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union, cast, overload
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -13,7 +13,7 @@ from dagster._core.definitions.definition_config_schema import (
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ResourceFunction,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
 from dagster._core.storage.input_manager import IInputManagerDefinition, InputLoadFn, InputManager
 from dagster._utils.backcompat import deprecation_warning
@@ -91,9 +91,27 @@ class RootInputManager(InputManager):
         """
 
 
+@overload
+def root_input_manager(
+    config_schema: InputLoadFn,
+) -> RootInputManagerDefinition:
+    ...
+
+
+@overload
+def root_input_manager(
+    config_schema: Optional[CoercableToConfigSchema] = ...,
+    description: Optional[str] = ...,
+    input_config_schema: Optional[CoercableToConfigSchema] = ...,
+    required_resource_keys: Optional[AbstractSet[str]] = ...,
+    version: Optional[str] = ...,
+) -> Callable[[InputLoadFn], RootInputManagerDefinition]:
+    ...
+
+
 @experimental
 def root_input_manager(
-    config_schema: Optional[Union[Callable, CoercableToConfigSchema]] = None,
+    config_schema: Optional[Union[InputLoadFn, CoercableToConfigSchema]] = None,
     description: Optional[str] = None,
     input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
@@ -172,7 +190,7 @@ class RootInputManagerWrapper(RootInputManager):
 
     def load_input(self, context: "InputContext") -> object:
         # type-ignore because function being used as attribute
-        return self._load_fn(context) if is_context_provided(self._load_fn) else self._load_fn()  # type: ignore
+        return self._load_fn(context) if has_at_least_one_parameter(self._load_fn) else self._load_fn()  # type: ignore
 
 
 class _InputManagerDecoratorCallable:

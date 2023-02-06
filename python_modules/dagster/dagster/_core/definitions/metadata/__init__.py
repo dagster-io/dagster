@@ -138,7 +138,7 @@ def normalize_metadata(
     ]
 
 
-def normalize_metadata_value(raw_value: RawMetadataValue):
+def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue":
     from dagster._core.definitions.events import AssetKey
 
     if isinstance(raw_value, MetadataValue):

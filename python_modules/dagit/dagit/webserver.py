@@ -44,6 +44,7 @@ ROOT_ADDRESS_STATIC_RESOURCES = [
     "/favicon-run-success.svg",
     "/asset-manifest.json",
     "/robots.txt",
+    "/Dagster_world.mp4",
 ]
 
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
@@ -210,7 +211,9 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     rendered_template.replace('href="/', f'href="{self._app_path_prefix}/')
                     .replace('src="/', f'src="{self._app_path_prefix}/')
                     .replace("__PATH_PREFIX__", self._app_path_prefix)
-                    .replace("__TELEMETRY_ENABLED__", str(context.instance.telemetry_enabled))
+                    .replace(
+                        '"__TELEMETRY_ENABLED__"', str(context.instance.telemetry_enabled).lower()
+                    )
                     .replace("NONCE-PLACEHOLDER", nonce),
                     headers=headers,
                 )

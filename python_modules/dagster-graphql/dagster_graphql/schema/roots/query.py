@@ -1,15 +1,17 @@
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Mapping, Sequence, cast
 
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
-from dagster._core.execution.backfill import BulkActionStatus
-from dagster._core.host_representation import (
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+from dagster._core.definitions.selector import (
     InstigatorSelector,
     RepositorySelector,
     ScheduleSelector,
     SensorSelector,
 )
+from dagster._core.execution.backfill import BulkActionStatus
+from dagster._core.nux import get_has_seen_nux
 from dagster._core.scheduler.instigation import InstigatorType
 
 from dagster_graphql.implementation.fetch_logs import get_captured_log_metadata
@@ -27,7 +29,6 @@ from ...implementation.fetch_assets import (
     get_asset_node_definition_collisions,
     get_asset_nodes,
     get_assets,
-    unique_repos,
 )
 from ...implementation.fetch_backfills import get_backfill, get_backfills
 from ...implementation.fetch_instigators import (
@@ -59,7 +60,7 @@ from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.loader import (
     BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
-    ProjectedLogicalVersionLoader,
+    StaleStatusLoader,
 )
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
@@ -120,7 +121,7 @@ from ..runs import (
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
 from ..tags import GraphenePipelineTagAndValues
-from ..util import HasContext, non_null_list
+from ..util import ResolveInfo, get_compute_log_manager, non_null_list
 from .assets import GrapheneAssetOrError, GrapheneAssetsOrError
 from .execution_plan import GrapheneExecutionPlanOrError
 from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
@@ -409,7 +410,12 @@ class GrapheneDagitQuery(graphene.ObjectType):
         description="Captured logs are the stdout/stderr logs for a given log key",
     )
 
-    def resolve_repositoriesOrError(self, graphene_info, **kwargs):
+    shouldShowNux = graphene.Field(
+        graphene.NonNull(graphene.Boolean),
+        description="Whether or not the NUX should be shown to the user",
+    )
+
+    def resolve_repositoriesOrError(self, graphene_info: ResolveInfo, **kwargs):
         if kwargs.get("repositorySelector"):
             return GrapheneRepositoryConnection(
                 nodes=[
@@ -421,19 +427,19 @@ class GrapheneDagitQuery(graphene.ObjectType):
             )
         return fetch_repositories(graphene_info)
 
-    def resolve_repositoryOrError(self, graphene_info, **kwargs):
+    def resolve_repositoryOrError(self, graphene_info: ResolveInfo, **kwargs):
         return fetch_repository(
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
-    def resolve_workspaceOrError(self, graphene_info):
+    def resolve_workspaceOrError(self, graphene_info: ResolveInfo):
         return fetch_workspace(graphene_info.context)
 
-    def resolve_locationStatusesOrError(self, graphene_info):
+    def resolve_locationStatusesOrError(self, graphene_info: ResolveInfo):
         return fetch_location_statuses(graphene_info.context)
 
-    def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
+    def resolve_pipelineSnapshotOrError(self, graphene_info: ResolveInfo, **kwargs):
         snapshot_id_arg = kwargs.get("snapshotId")
         pipeline_selector_arg = kwargs.get("activePipelineSelector")
         check.invariant(
@@ -453,28 +459,28 @@ class GrapheneDagitQuery(graphene.ObjectType):
         else:
             return get_pipeline_snapshot_or_error_from_snapshot_id(graphene_info, snapshot_id_arg)
 
-    def resolve_graphOrError(self, graphene_info, **kwargs):
+    def resolve_graphOrError(self, graphene_info: ResolveInfo, **kwargs):
         graph_selector = graph_selector_from_graphql(kwargs["selector"])
         return get_graph_or_error(graphene_info, graph_selector)
 
-    def resolve_version(self, graphene_info):
+    def resolve_version(self, graphene_info: ResolveInfo):
         return graphene_info.context.version
 
-    def resolve_scheduler(self, graphene_info):
+    def resolve_scheduler(self, graphene_info: ResolveInfo):
         return get_scheduler_or_error(graphene_info)
 
-    def resolve_scheduleOrError(self, graphene_info, schedule_selector):
+    def resolve_scheduleOrError(self, graphene_info: ResolveInfo, schedule_selector):
         return get_schedule_or_error(
             graphene_info, ScheduleSelector.from_graphql_input(schedule_selector)
         )
 
-    def resolve_schedulesOrError(self, graphene_info, **kwargs):
+    def resolve_schedulesOrError(self, graphene_info: ResolveInfo, **kwargs):
         return get_schedules_or_error(
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
-    def resolve_sensorOrError(self, graphene_info, sensorSelector):
+    def resolve_sensorOrError(self, graphene_info: ResolveInfo, sensorSelector):
         return get_sensor_or_error(graphene_info, SensorSelector.from_graphql_input(sensorSelector))
 
     def resolve_sensorsOrError(self, graphene_info, **kwargs):
@@ -483,24 +489,24 @@ class GrapheneDagitQuery(graphene.ObjectType):
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
-    def resolve_instigationStateOrError(self, graphene_info, instigationSelector):
+    def resolve_instigationStateOrError(self, graphene_info: ResolveInfo, instigationSelector):
         return get_instigator_state_or_error(
             graphene_info, InstigatorSelector.from_graphql_input(instigationSelector)
         )
 
-    def resolve_unloadableInstigationStatesOrError(self, graphene_info, **kwargs):
+    def resolve_unloadableInstigationStatesOrError(self, graphene_info: ResolveInfo, **kwargs):
         instigation_type = (
             InstigatorType(kwargs["instigationType"]) if "instigationType" in kwargs else None
         )
         return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
 
-    def resolve_pipelineOrError(self, graphene_info, **kwargs):
+    def resolve_pipelineOrError(self, graphene_info: ResolveInfo, **kwargs):
         return get_pipeline_or_error(
             graphene_info,
             pipeline_selector_from_graphql(kwargs["params"]),
         )
 
-    def resolve_pipelineRunsOrError(self, _graphene_info, **kwargs):
+    def resolve_pipelineRunsOrError(self, _graphene_info: ResolveInfo, **kwargs):
         filters = kwargs.get("filter")
         if filters is not None:
             filters = filters.to_selector()
@@ -511,10 +517,10 @@ class GrapheneDagitQuery(graphene.ObjectType):
             limit=kwargs.get("limit"),
         )
 
-    def resolve_pipelineRunOrError(self, graphene_info, runId):
+    def resolve_pipelineRunOrError(self, graphene_info: ResolveInfo, runId):
         return get_run_by_id(graphene_info, runId)
 
-    def resolve_runsOrError(self, _graphene_info, **kwargs):
+    def resolve_runsOrError(self, _graphene_info: ResolveInfo, **kwargs):
         filters = kwargs.get("filter")
         if filters is not None:
             filters = filters.to_selector()
@@ -525,10 +531,10 @@ class GrapheneDagitQuery(graphene.ObjectType):
             limit=kwargs.get("limit"),
         )
 
-    def resolve_runOrError(self, graphene_info, runId):
+    def resolve_runOrError(self, graphene_info: ResolveInfo, runId):
         return get_run_by_id(graphene_info, runId)
 
-    def resolve_runGroupsOrError(self, graphene_info, **kwargs):
+    def resolve_runGroupsOrError(self, graphene_info: ResolveInfo, **kwargs):
         filters = kwargs.get("filter")
         if filters is not None:
             filters = filters.to_selector()
@@ -539,27 +545,27 @@ class GrapheneDagitQuery(graphene.ObjectType):
             )
         )
 
-    def resolve_partitionSetsOrError(self, graphene_info, **kwargs):
+    def resolve_partitionSetsOrError(self, graphene_info: ResolveInfo, **kwargs):
         return get_partition_sets_or_error(
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
-            kwargs.get("pipelineName"),
+            kwargs["pipelineName"],
         )
 
-    def resolve_partitionSetOrError(self, graphene_info, **kwargs):
+    def resolve_partitionSetOrError(self, graphene_info: ResolveInfo, **kwargs):
         return get_partition_set(
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
-            kwargs.get("partitionSetName"),
+            kwargs.get("partitionSetName"),  # type: ignore  # (partitionSetName should prob be required)
         )
 
-    def resolve_pipelineRunTags(self, graphene_info):
+    def resolve_pipelineRunTags(self, graphene_info: ResolveInfo):
         return get_run_tags(graphene_info)
 
-    def resolve_runGroupOrError(self, graphene_info, runId):
+    def resolve_runGroupOrError(self, graphene_info: ResolveInfo, runId):
         return get_run_group(graphene_info, runId)
 
-    def resolve_isPipelineConfigValid(self, graphene_info, pipeline, **kwargs):
+    def resolve_isPipelineConfigValid(self, graphene_info: ResolveInfo, pipeline, **kwargs):
         return validate_pipeline_config(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
@@ -567,32 +573,32 @@ class GrapheneDagitQuery(graphene.ObjectType):
             kwargs.get("mode"),
         )
 
-    def resolve_executionPlanOrError(self, graphene_info, pipeline, **kwargs):
+    def resolve_executionPlanOrError(self, graphene_info: ResolveInfo, pipeline, **kwargs):
         return get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=True),
+            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=True),  # type: ignore
             kwargs.get("mode"),
         )
 
-    def resolve_runConfigSchemaOrError(self, graphene_info, **kwargs):
+    def resolve_runConfigSchemaOrError(self, graphene_info: ResolveInfo, **kwargs):
         return resolve_run_config_schema_or_error(
             graphene_info,
             pipeline_selector_from_graphql(kwargs["selector"]),
             kwargs.get("mode"),
         )
 
-    def resolve_instance(self, graphene_info):
+    def resolve_instance(self, graphene_info: ResolveInfo):
         return GrapheneInstance(graphene_info.context.instance)
 
-    def resolve_assetNodes(self, graphene_info, **kwargs):
+    def resolve_assetNodes(self, graphene_info: ResolveInfo, **kwargs):
         asset_keys = set(
             AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
         )
 
         repo = None
         if "group" in kwargs:
-            group_name = kwargs.get("group").get("groupName")
+            group_name = kwargs["group"].get("groupName")
             repo_sel = RepositorySelector.from_graphql_input(kwargs.get("group"))
             repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
@@ -607,7 +613,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 else []
             )
         elif "pipeline" in kwargs:
-            pipeline_name = kwargs.get("pipeline").get("pipelineName")
+            pipeline_name = kwargs["pipeline"].get("pipelineName")
             repo_sel = RepositorySelector.from_graphql_input(kwargs.get("pipeline"))
             repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
             repo = repo_loc.get_repository(repo_sel.repository_name)
@@ -635,15 +641,15 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
-        if repo is not None:
-            repos = [repo]
-        else:
-            repos = unique_repos(result.external_repository for result in results)
+        def load_asset_graph() -> ExternalAssetGraph:
+            if repo is not None:
+                return ExternalAssetGraph.from_external_repository(repo)
+            else:
+                return ExternalAssetGraph.from_workspace(graphene_info.context)
 
-        projected_logical_version_loader = ProjectedLogicalVersionLoader(
+        stale_status_loader = StaleStatusLoader(
             instance=graphene_info.context.instance,
-            key_to_node_map={node.assetKey: node.external_asset_node for node in results},
-            repositories=repos,
+            asset_graph=load_asset_graph,
         )
 
         return [
@@ -653,15 +659,16 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 node.external_asset_node,
                 materialization_loader=materialization_loader,
                 depended_by_loader=depended_by_loader,
-                projected_logical_version_loader=projected_logical_version_loader,
+                stale_status_loader=stale_status_loader,
             )
             for node in results
         ]
 
-    def resolve_assetNodeOrError(self, graphene_info, **kwargs):
-        return get_asset_node(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
+    def resolve_assetNodeOrError(self, graphene_info: ResolveInfo, **kwargs):
+        asset_key_input = cast(Mapping[str, Sequence[str]], kwargs.get("assetKey"))
+        return get_asset_node(graphene_info, AssetKey.from_graphql_input(asset_key_input))
 
-    def resolve_assetsOrError(self, graphene_info, **kwargs):
+    def resolve_assetsOrError(self, graphene_info: ResolveInfo, **kwargs):
         return get_assets(
             graphene_info,
             prefix=kwargs.get("prefix"),
@@ -669,19 +676,18 @@ class GrapheneDagitQuery(graphene.ObjectType):
             limit=kwargs.get("limit"),
         )
 
-    def resolve_assetOrError(self, graphene_info, **kwargs):
+    def resolve_assetOrError(self, graphene_info: ResolveInfo, **kwargs):
         return get_asset(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))
 
-    def resolve_assetNodeDefinitionCollisions(self, graphene_info, **kwargs):
-        asset_keys = set(
-            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
-        )
+    def resolve_assetNodeDefinitionCollisions(self, graphene_info: ResolveInfo, **kwargs):
+        raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], kwargs.get("assetKeys"))
+        asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
         return get_asset_node_definition_collisions(graphene_info, asset_keys)
 
-    def resolve_partitionBackfillOrError(self, graphene_info, backfillId):
+    def resolve_partitionBackfillOrError(self, graphene_info: ResolveInfo, backfillId):
         return get_backfill(graphene_info, backfillId)
 
-    def resolve_partitionBackfillsOrError(self, graphene_info, **kwargs):
+    def resolve_partitionBackfillsOrError(self, graphene_info: ResolveInfo, **kwargs):
         status = kwargs.get("status")
         return get_backfills(
             graphene_info,
@@ -690,15 +696,13 @@ class GrapheneDagitQuery(graphene.ObjectType):
             limit=kwargs.get("limit"),
         )
 
-    def resolve_permissions(self, graphene_info):
+    def resolve_permissions(self, graphene_info: ResolveInfo):
         permissions = graphene_info.context.permissions
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
-    def resolve_assetsLatestInfo(self, graphene_info: HasContext, **kwargs: Any):
-        asset_keys = set(
-            AssetKey.from_graphql_input(asset_key)
-            for asset_key in check.not_none(kwargs.get("assetKeys"))  # type: ignore
-        )
+    def resolve_assetsLatestInfo(self, graphene_info: ResolveInfo, **kwargs: Any):
+        raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], kwargs["assetKeys"])
+        asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
 
         results = get_asset_nodes(graphene_info)
 
@@ -712,14 +716,18 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         return get_assets_latest_info(graphene_info, step_keys_by_asset)
 
-    def resolve_logsForRun(self, graphene_info, runId, afterCursor=None, limit=None):
+    def resolve_logsForRun(self, graphene_info: ResolveInfo, runId, afterCursor=None, limit=None):
         return get_logs_for_run(graphene_info, runId, afterCursor, limit)
 
-    def resolve_capturedLogsMetadata(self, graphene_info, logKey):
+    def resolve_capturedLogsMetadata(
+        self, graphene_info: ResolveInfo, logKey: Sequence[str]
+    ) -> GrapheneCapturedLogsMetadata:
         return get_captured_log_metadata(graphene_info, logKey)
 
-    def resolve_capturedLogs(self, graphene_info, logKey, cursor=None, limit=None):
-        log_data = graphene_info.context.instance.compute_log_manager.get_log_data(
-            logKey, cursor=cursor, max_bytes=limit
-        )
+    def resolve_capturedLogs(self, graphene_info: ResolveInfo, logKey, cursor=None, limit=None):
+        compute_log_manager = get_compute_log_manager(graphene_info)
+        log_data = compute_log_manager.get_log_data(logKey, cursor=cursor, max_bytes=limit)
         return from_captured_log_data(log_data)
+
+    def resolve_shouldShowNux(self, graphene_info):
+        return graphene_info.context.instance.nux_enabled and not get_has_seen_nux()

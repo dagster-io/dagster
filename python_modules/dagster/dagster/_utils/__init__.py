@@ -26,11 +26,13 @@ from typing import (
     Dict,
     Generator,
     Generic,
+    Iterable,
     Iterator,
     List,
     Mapping,
     Optional,
     Sequence,
+    Sized,
     Tuple,
     Type,
     TypeVar,
@@ -69,9 +71,21 @@ DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
 # version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
 def library_version_from_core_version(core_version: str) -> str:
-    release = parse_package_version(core_version).release
+    parsed_version = parse_package_version(core_version)
+
+    release = parsed_version.release
     if release[0] >= 1:
-        return ".".join(["0", str(16 + release[1]), str(release[2])])
+        library_version = ".".join(["0", str(16 + release[1]), str(release[2])])
+
+        if parsed_version.is_prerelease:
+            library_version = library_version + "".join(
+                [str(pre) for pre in check.not_none(parsed_version.pre)]
+            )
+
+        if parsed_version.is_postrelease:
+            library_version = library_version + "post" + str(parsed_version.post)
+
+        return library_version
     else:
         return core_version
 
@@ -125,7 +139,7 @@ def script_relative_path(file_path: str) -> str:
     Useful for testing with local files. Use a path relative to where the
     test resides and this function will return the absolute path
     of that file. Otherwise it will be relative to script that
-    ran the test
+    ran the test.
 
     Note: this is function is very, very expensive (on the order of 1
     millisecond per invocation) so this should only be used in performance
@@ -482,10 +496,10 @@ class frozentags(frozendict, Mapping[str, str]):
         return frozentags(updated)
 
 
-GeneratedContext = TypeVar("GeneratedContext")
+T_GeneratedContext = TypeVar("T_GeneratedContext")
 
 
-class EventGenerationManager(Generic[GeneratedContext]):
+class EventGenerationManager(Generic[T_GeneratedContext]):
     """Utility class that wraps an event generator function, that also yields a single instance of
     a typed object.  All events yielded before the typed object are yielded through the method
     `generate_setup_events` and all events yielded after the typed object are yielded through the
@@ -501,14 +515,14 @@ class EventGenerationManager(Generic[GeneratedContext]):
 
     def __init__(
         self,
-        generator: Generator[Union["DagsterEvent", GeneratedContext], None, None],
-        object_cls: Type[GeneratedContext],
+        generator: Generator[Union["DagsterEvent", T_GeneratedContext], None, None],
+        object_cls: Type[T_GeneratedContext],
         require_object: Optional[bool] = True,
     ):
         self.generator = check.generator(generator)
-        self.object_cls: Type[GeneratedContext] = check.class_param(object_cls, "object_cls")
+        self.object_cls: Type[T_GeneratedContext] = check.class_param(object_cls, "object_cls")
         self.require_object = check.bool_param(require_object, "require_object")
-        self.object: Optional[GeneratedContext] = None
+        self.object: Optional[T_GeneratedContext] = None
         self.did_setup = False
         self.did_teardown = False
 
@@ -530,10 +544,10 @@ class EventGenerationManager(Generic[GeneratedContext]):
                     "generator never yielded object of type {}".format(self.object_cls.__name__),
                 )
 
-    def get_object(self) -> GeneratedContext:
+    def get_object(self) -> T_GeneratedContext:
         if not self.did_setup:
             check.failed("Called `get_object` before `generate_setup_events`")
-        return cast(GeneratedContext, self.object)
+        return cast(T_GeneratedContext, self.object)
 
     def generate_teardown_events(self) -> Iterator["DagsterEvent"]:
         self.did_teardown = True
@@ -574,6 +588,20 @@ def find_free_port() -> int:
         s.bind(("", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+
+
+def is_port_in_use(host, port) -> bool:
+    # Similar to the socket options that uvicorn uses to bind ports:
+    # https://github.com/encode/uvicorn/blob/62f19c1c39929c84968712c371c9b7b96a041dec/uvicorn/config.py#L565-L566
+    sock = socket.socket(family=socket.AF_INET)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        sock.bind((host, port))
+        return False
+    except socket.error as e:
+        return e.errno == errno.EADDRINUSE
+    finally:
+        sock.close()
 
 
 @contextlib.contextmanager
@@ -669,6 +697,12 @@ def traced(func: T_Callable) -> T_Callable:
     return cast(T_Callable, inner)
 
 
+def get_terminate_signal():
+    if sys.platform == "win32":
+        return signal.SIGTERM
+    return signal.SIGKILL
+
+
 def get_run_crash_explanation(prefix: str, exit_code: int):
     # As per https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess.returncode
     # negative exit code means a posix signal
@@ -676,7 +710,7 @@ def get_run_crash_explanation(prefix: str, exit_code: int):
         posix_signal = -exit_code
         signal_str = Signals(posix_signal).name
         exit_clause = f"was terminated by signal {posix_signal} ({signal_str})."
-        if posix_signal == Signals.SIGKILL:
+        if posix_signal == get_terminate_signal():
             exit_clause = (
                 exit_clause
                 + " This usually indicates that the process was"
@@ -690,3 +724,15 @@ def get_run_crash_explanation(prefix: str, exit_code: int):
         exit_clause = f"unexpectedly exited with code {exit_code}."
 
     return prefix + " " + exit_clause
+
+
+def len_iter(iterable: Iterable[object]) -> int:
+    if isinstance(iterable, Sized):
+        return len(iterable)
+    return sum(1 for _ in iterable)
+
+
+def iter_to_list(iterable: Iterable[T]) -> List[T]:
+    if isinstance(iterable, List):
+        return iterable
+    return list(iterable)

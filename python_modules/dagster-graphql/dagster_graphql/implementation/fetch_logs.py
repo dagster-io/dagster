@@ -1,10 +1,11 @@
-from typing import List
+from typing import Sequence
 
 from dagster._core.storage.captured_log_manager import CapturedLogManager
-from graphene import ResolveInfo
+
+from dagster_graphql.schema.util import ResolveInfo
 
 
-def get_captured_log_metadata(graphene_info: ResolveInfo, log_key: List[str]):
+def get_captured_log_metadata(graphene_info: ResolveInfo, log_key: Sequence[str]):
     from ..schema.logs.compute_logs import GrapheneCapturedLogsMetadata
 
     if not isinstance(graphene_info.context.instance.compute_log_manager, CapturedLogManager):

@@ -4,6 +4,7 @@ from enum import Enum as PythonEnum
 from functools import partial
 from typing import (
     AbstractSet as TypingAbstractSet,
+    AnyStr,
     Iterator as TypingIterator,
     Mapping,
     Optional as TypingOptional,
@@ -40,7 +41,7 @@ if t.TYPE_CHECKING:
     from dagster._core.definitions.node_definition import NodeDefinition
     from dagster._core.execution.context.system import DagsterTypeLoaderContext, TypeCheckContext
 
-TypeCheckFn = t.Callable[["TypeCheckContext", object], t.Union[TypeCheck, bool]]
+TypeCheckFn = t.Callable[["TypeCheckContext", AnyStr], t.Union[TypeCheck, bool]]
 
 
 @whitelist_for_serdes
@@ -206,13 +207,13 @@ class DagsterType(RequiresResources):
     @public  # type: ignore
     @property
     def display_name(self) -> str:
-        """Either the name or key (if name is `None`) of the type, overridden in many subclasses"""
+        """Either the name or key (if name is `None`) of the type, overridden in many subclasses."""
         return cast(str, self._name or self.key)
 
     @public  # type: ignore
     @property
     def unique_name(self) -> t.Optional[str]:
-        """The unique name of this type. Can be None if the type is not unique, such as container types
+        """The unique name of this type. Can be None if the type is not unique, such as container types.
         """
         # TODO: docstring and body inconsistent-- can this be None or not?
         check.invariant(

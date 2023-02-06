@@ -108,7 +108,6 @@ def execute_cli(
 
         log_level = "info"
         message = line
-
         raw_output.append(line)
 
         if json_log_format:
@@ -122,6 +121,12 @@ def execute_cli(
                 if isinstance(json_line, dict):
                     message = json_line.get("message", json_line.get("msg", message))
                     log_level = json_line.get("levelname", json_line.get("level", "debug"))
+        elif "Done." not in line:
+            # attempt to parse a log level out of the line
+            if "ERROR" in line:
+                log_level = "error"
+            elif "WARN" in line:
+                log_level = "warn"
 
         messages.append(message)
         if capture_logs:

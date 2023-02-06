@@ -247,7 +247,7 @@ def assert_runs_and_exists(client: DagsterGraphQLClient, name, subset_selection=
 
 
 def is_0_release(release):
-    """Returns true if 0.x.x release of dagster, false otherwise"""
+    """Returns true if 0.x.x release of dagster, false otherwise."""
     if release == "current_branch":
         return False
     return release.split(".")[0] == "0"

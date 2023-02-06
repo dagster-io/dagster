@@ -1,9 +1,20 @@
 import logging
 import warnings
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterator,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+    overload,
+)
 
 import pendulum
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -31,7 +42,6 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
 from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
 from .pipeline_definition import PipelineDefinition
 from .sensor_definition import (
     DefaultSensorStatus,
@@ -41,16 +51,26 @@ from .sensor_definition import (
     SensorDefinition,
     SensorEvaluationContext,
     SkipReason,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
+from .target import ExecutableDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.selector import (
+    from dagster._core.definitions.selector import (
         CodeLocationSelector,
         JobSelector,
         RepositorySelector,
     )
+
+RunStatusSensorEvaluationFunction: TypeAlias = Union[
+    Callable[[], RawSensorEvaluationFunctionReturn],
+    Callable[["RunStatusSensorContext"], RawSensorEvaluationFunctionReturn],
+]
+RunFailureSensorEvaluationFn: TypeAlias = Union[
+    Callable[[], RawSensorEvaluationFunctionReturn],
+    Callable[["RunFailureSensorContext"], RawSensorEvaluationFunctionReturn],
+]
 
 
 @whitelist_for_serdes
@@ -216,8 +236,16 @@ def build_run_status_sensor_context(
     )
 
 
+@overload
 def run_failure_sensor(
-    name: Optional[Union[Callable[..., Any], str]] = None,
+    name: RunFailureSensorEvaluationFn,
+) -> SensorDefinition:
+    ...
+
+
+@overload
+def run_failure_sensor(
+    name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
@@ -246,12 +274,45 @@ def run_failure_sensor(
     ] = None,
     monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
-) -> Callable[
-    [Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
-    SensorDefinition,
-]:
+    request_job: Optional[ExecutableDefinition] = None,
+    request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
+) -> Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]:
+    ...
+
+
+def run_failure_sensor(
+    name: Optional[Union[RunFailureSensorEvaluationFn, str]] = None,
+    minimum_interval_seconds: Optional[int] = None,
+    description: Optional[str] = None,
+    monitored_jobs: Optional[
+        Sequence[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+                "CodeLocationSelector",
+            ]
+        ]
+    ] = None,
+    job_selection: Optional[
+        Sequence[
+            Union[
+                PipelineDefinition,
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+                "RepositorySelector",
+                "JobSelector",
+                "CodeLocationSelector",
+            ]
+        ]
+    ] = None,
+    monitor_all_repositories: bool = False,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    request_job: Optional[ExecutableDefinition] = None,
+    request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
+) -> Union[SensorDefinition, Callable[[RunFailureSensorEvaluationFn], SensorDefinition,]]:
     """
     Creates a sensor that reacts to job failure events, where the decorated function will be
     run when a run fails.
@@ -277,14 +338,14 @@ def run_failure_sensor(
             when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
+        request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): The job a RunRequest should
             execute if yielded from the sensor.
-        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
 
     def inner(
-        fn: Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]
+        fn: RunFailureSensorEvaluationFn,
     ) -> SensorDefinition:
         check.callable_param(fn, "fn")
         if name is None or callable(name):
@@ -308,7 +369,7 @@ def run_failure_sensor(
             request_jobs=request_jobs,
         )
         def _run_failure_sensor(context: RunStatusSensorContext):
-            return fn(context.for_run_failure())
+            return fn(context.for_run_failure())  # type: ignore  # fmt: skip
 
         return _run_failure_sensor
 
@@ -351,7 +412,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         self,
         name: str,
         run_status: DagsterRunStatus,
-        run_status_sensor_fn: Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn],
+        run_status_sensor_fn: RunStatusSensorEvaluationFunction,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         monitored_jobs: Optional[
@@ -368,15 +429,15 @@ class RunStatusSensorDefinition(SensorDefinition):
         ] = None,
         monitor_all_repositories: bool = False,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-        request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        request_job: Optional[ExecutableDefinition] = None,
+        request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
     ):
-        from dagster._core.event_api import RunShardedEventsCursor
-        from dagster._core.host_representation.selector import (
+        from dagster._core.definitions.selector import (
             CodeLocationSelector,
             JobSelector,
             RepositorySelector,
         )
+        from dagster._core.event_api import RunShardedEventsCursor
         from dagster._core.storage.event_log.base import EventRecordsFilter
 
         check.str_param(name, "name")
@@ -426,7 +487,9 @@ class RunStatusSensorDefinition(SensorDefinition):
             else []
         )
 
-        def _wrapped_fn(context: SensorEvaluationContext):
+        def _wrapped_fn(
+            context: SensorEvaluationContext,
+        ) -> Iterator[Union[RunRequest, SkipReason, PipelineRunReaction]]:
             # initiate the cursor to (most recent event id, current timestamp) when:
             # * it's the first time starting the sensor
             # * or, the cursor isn't in valid format (backcompt)
@@ -558,8 +621,8 @@ class RunStatusSensorDefinition(SensorDefinition):
                         lambda: f'Error occurred during the execution sensor "{name}".',
                     ):
                         # one user code invocation maps to one failure event
-                        sensor_return = run_status_sensor_fn(
-                            RunStatusSensorContext(
+                        sensor_return = run_status_sensor_fn(  # type: ignore  # fmt: skip
+                            RunStatusSensorContext(  # type: ignore
                                 sensor_name=name,
                                 dagster_run=pipeline_run,
                                 dagster_event=event_log_entry.dagster_event,
@@ -615,7 +678,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         )
 
     def __call__(self, *args, **kwargs):
-        if is_context_provided(self._run_status_sensor_fn):
+        if has_at_least_one_parameter(self._run_status_sensor_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Run status sensor function expected context argument, but no context argument "
@@ -688,12 +751,9 @@ def run_status_sensor(
     ] = None,
     monitor_all_repositories: bool = False,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
-) -> Callable[
-    [Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn]],
-    RunStatusSensorDefinition,
-]:
+    request_job: Optional[ExecutableDefinition] = None,
+    request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
+) -> Callable[[RunStatusSensorEvaluationFunction], RunStatusSensorDefinition,]:
     """
     Creates a sensor that reacts to a given status of pipeline execution, where the decorated
     function will be run when a pipeline is at the given status.
@@ -720,14 +780,14 @@ def run_status_sensor(
             any job in the repository matches the requested run_status.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
+        request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job that should be
             executed if a RunRequest is yielded from the sensor.
-        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
 
     def inner(
-        fn: Callable[["RunStatusSensorContext"], RawSensorEvaluationFunctionReturn]
+        fn: RunStatusSensorEvaluationFunction,
     ) -> RunStatusSensorDefinition:
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__

@@ -19,7 +19,7 @@ RUN apt-get update -yqq \
         git \
         make
 
-RUN git clone https://github.com/dagster-io/dagster.git \
+RUN git clone --depth 1 https://github.com/dagster-io/dagster.git \
     && cd dagster \
     && pip install \
         -e python_modules/dagster \

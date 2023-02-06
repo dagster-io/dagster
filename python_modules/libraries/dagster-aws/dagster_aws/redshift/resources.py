@@ -207,7 +207,7 @@ class FakeRedshiftResource(_BaseRedshiftResource):
     QUERY_RESULT = [(1,)]
 
     def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
-        """Fake for execute_query; returns [self.QUERY_RESULT]
+        """Fake for execute_query; returns [self.QUERY_RESULT].
 
         Args:
             query (str): The query to execute.
@@ -240,7 +240,7 @@ class FakeRedshiftResource(_BaseRedshiftResource):
     def execute_queries(
         self, queries, fetch_results=False, cursor_factory=None, error_callback=None
     ):
-        """Fake for execute_queries; returns [self.QUERY_RESULT] * 3
+        """Fake for execute_queries; returns [self.QUERY_RESULT] * 3.
 
         Args:
             queries (List[str]): The queries to execute.

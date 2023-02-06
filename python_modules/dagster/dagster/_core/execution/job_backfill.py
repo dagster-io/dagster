@@ -4,13 +4,13 @@ import time
 from typing import Iterable, Mapping, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
     ExternalPartitionSet,
     ExternalPipeline,
-    PipelineSelector,
     RepositoryLocation,
 )
 from dagster._core.host_representation.external_data import (
@@ -280,7 +280,7 @@ def create_backfill_run(
             use_parent_run_tags=False,  # don't inherit tags from the previous run
         )
 
-    elif backfill_job.reexecution_steps:
+    else:  # backfill_job.reexecution_steps
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
         parent_run_id = last_run.run_id if last_run else None
         root_run_id = (last_run.root_run_id or last_run.run_id) if last_run else None

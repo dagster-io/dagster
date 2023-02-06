@@ -1,28 +1,39 @@
-import {useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {graphql} from '../graphql';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
+import {
+  WorkspaceSchedulesQuery,
+  WorkspaceSchedulesQueryVariables,
+} from './types/WorkspaceSchedulesRoot.types';
 
 export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
 
+  const repoName = repoAddressAsHumanString(repoAddress);
+  useDocumentTitle(`Schedules: ${repoName}`);
+
   const [searchValue, setSearchValue] = React.useState('');
   const selector = repoAddressToSelector(repoAddress);
 
-  const queryResultOverview = useQuery(WORKSPACE_SCHEDULES_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-    variables: {selector},
-  });
+  const queryResultOverview = useQuery<WorkspaceSchedulesQuery, WorkspaceSchedulesQueryVariables>(
+    WORKSPACE_SCHEDULES_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+      variables: {selector},
+    },
+  );
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -52,8 +63,6 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
         </Box>
       );
     }
-
-    const repoName = repoAddressAsHumanString(repoAddress);
 
     if (!filteredBySearch.length) {
       if (anySearch) {
@@ -114,7 +123,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   );
 };
 
-const WORKSPACE_SCHEDULES_QUERY = graphql(`
+const WORKSPACE_SCHEDULES_QUERY = gql`
   query WorkspaceSchedulesQuery($selector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $selector) {
       ... on Repository {
@@ -129,4 +138,6 @@ const WORKSPACE_SCHEDULES_QUERY = graphql(`
       ...PythonErrorFragment
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;

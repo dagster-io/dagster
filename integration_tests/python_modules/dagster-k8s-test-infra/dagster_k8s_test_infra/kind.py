@@ -72,7 +72,7 @@ def create_kind_cluster(cluster_name, should_cleanup=True):
 @contextmanager
 def kind_kubeconfig(cluster_name, use_internal_address=True):
     """For kind clusters, we need to write our own kubeconfig file to leave the user's existing
-    kubeconfig alone
+    kubeconfig alone.
     """
     check.str_param(cluster_name, "cluster_name")
     check.bool_param(use_internal_address, "use_internal_address")

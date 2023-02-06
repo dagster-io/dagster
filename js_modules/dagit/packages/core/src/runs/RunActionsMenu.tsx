@@ -1,4 +1,4 @@
-import {useLazyQuery, useMutation} from '@apollo/client';
+import {gql, useLazyQuery, useMutation} from '@apollo/client';
 import {
   Button,
   Icon,
@@ -17,10 +17,9 @@ import {useHistory} from 'react-router-dom';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
-import {graphql} from '../graphql';
-import {ReexecutionStrategy, RunTableRunFragmentFragment} from '../graphql/graphql';
+import {ReexecutionStrategy} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -28,6 +27,7 @@ import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
+import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
 import {doneStatuses, failedStatuses} from './RunStatuses';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -36,9 +36,18 @@ import {
   handleLaunchResult,
 } from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
+import {
+  PipelineEnvironmentYamlQuery,
+  PipelineEnvironmentYamlQueryVariables,
+} from './types/RunActionsMenu.types';
+import {RunTableRunFragment} from './types/RunTable.types';
+import {
+  LaunchPipelineReexecutionMutation,
+  LaunchPipelineReexecutionMutationVariables,
+} from './types/RunUtils.types';
 
 export const RunActionsMenu: React.FC<{
-  run: RunTableRunFragmentFragment;
+  run: RunTableRunFragment;
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
@@ -50,16 +59,22 @@ export const RunActionsMenu: React.FC<{
     canTerminatePipelineExecution,
     canDeletePipelineRun,
     canLaunchPipelineReexecution,
-  } = usePermissions();
+  } = usePermissionsDEPRECATED();
   const history = useHistory();
 
   const copyConfig = useCopyToClipboard();
 
-  const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
+  const [reexecute] = useMutation<
+    LaunchPipelineReexecutionMutation,
+    LaunchPipelineReexecutionMutationVariables
+  >(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
     onCompleted: refetch,
   });
 
-  const [loadEnv, {called, loading, data}] = useLazyQuery(PIPELINE_ENVIRONMENT_YAML_QUERY, {
+  const [loadEnv, {called, loading, data}] = useLazyQuery<
+    PipelineEnvironmentYamlQuery,
+    PipelineEnvironmentYamlQueryVariables
+  >(PIPELINE_ENVIRONMENT_YAML_QUERY, {
     variables: {runId: run.runId},
   });
 
@@ -238,7 +253,7 @@ export const RunActionsMenu: React.FC<{
 });
 
 export const RunBulkActionsMenu: React.FC<{
-  selected: RunTableRunFragmentFragment[];
+  selected: RunTableRunFragment[];
   clearSelection: () => void;
 }> = React.memo(({selected, clearSelection}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
@@ -246,7 +261,7 @@ export const RunBulkActionsMenu: React.FC<{
     canTerminatePipelineExecution,
     canDeletePipelineRun,
     canLaunchPipelineReexecution,
-  } = usePermissions();
+  } = usePermissionsDEPRECATED();
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'reexecute-from-failure' | 'reexecute'
   >('none');
@@ -378,7 +393,7 @@ const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
 // Avoid fetching envYaml on load in Runs page. It is slow.
-const PIPELINE_ENVIRONMENT_YAML_QUERY = graphql(`
+const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
   query PipelineEnvironmentYamlQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on Run {
@@ -390,4 +405,6 @@ const PIPELINE_ENVIRONMENT_YAML_QUERY = graphql(`
       }
     }
   }
-`);
+
+  ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
+`;

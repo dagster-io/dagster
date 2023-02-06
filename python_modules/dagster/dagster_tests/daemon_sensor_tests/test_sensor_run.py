@@ -1,9 +1,11 @@
+import os
 import random
 import string
 import sys
 import tempfile
 import time
 from contextlib import ExitStack, contextmanager
+from unittest import mock
 
 import pendulum
 import pytest
@@ -234,7 +236,7 @@ def asset_c(asset_b):  # pylint: disable=unused-argument
     return 3
 
 
-@multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
 def asset_a_and_b_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
@@ -242,7 +244,7 @@ def asset_a_and_b_sensor(context):
         return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@multi_asset_sensor(asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
 def doesnt_update_cursor_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if any(asset_events.values()):
@@ -250,7 +252,7 @@ def doesnt_update_cursor_sensor(context):
         return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@multi_asset_sensor(asset_keys=[AssetKey("asset_a")], job=the_job)
+@multi_asset_sensor(monitored_assets=[AssetKey("asset_a")], job=the_job)
 def backlog_sensor(context):
     asset_events = context.materialization_records_for_key(asset_key=AssetKey("asset_a"), limit=2)
     if len(asset_events) == 2:
@@ -258,7 +260,7 @@ def backlog_sensor(context):
         return RunRequest(run_key=f"{context.cursor}", run_config={})
 
 
-@multi_asset_sensor(asset_selection=AssetSelection.keys("asset_c").upstream(include_self=False))
+@multi_asset_sensor(monitored_assets=AssetSelection.keys("asset_c").upstream(include_self=False))
 def asset_selection_sensor(context):
     assert context.asset_keys == [AssetKey("asset_b")]
     assert context.latest_materialization_records_by_key().keys() == {AssetKey("asset_b")}
@@ -267,6 +269,16 @@ def asset_selection_sensor(context):
 @sensor(asset_selection=AssetSelection.keys("asset_a", "asset_b"))
 def targets_asset_selection_sensor():
     return [RunRequest(), RunRequest(asset_selection=[AssetKey("asset_b")])]
+
+
+@multi_asset_sensor(
+    monitored_assets=AssetSelection.keys("asset_b"), request_assets=AssetSelection.keys("asset_c")
+)
+def multi_asset_sensor_targets_asset_selection(context):
+    asset_events = context.latest_materialization_records_by_key()
+    if all(asset_events.values()):
+        context.advance_all_cursors()
+        return RunRequest()
 
 
 hourly_partitions_def_2022 = HourlyPartitionsDefinition(start_date="2022-08-01-00:00")
@@ -307,7 +319,7 @@ weekly_asset_job = define_asset_job(
 )
 
 
-@multi_asset_sensor(asset_keys=[hourly_asset.key], job=weekly_asset_job)
+@multi_asset_sensor(monitored_assets=[hourly_asset.key], job=weekly_asset_job)
 def multi_asset_sensor_hourly_to_weekly(context):
     for partition, materialization in context.latest_materialization_records_by_partition(
         hourly_asset.key
@@ -321,7 +333,7 @@ def multi_asset_sensor_hourly_to_weekly(context):
         context.advance_cursor({hourly_asset.key: materialization})
 
 
-@multi_asset_sensor(asset_keys=[hourly_asset.key], job=hourly_asset_job)
+@multi_asset_sensor(monitored_assets=[hourly_asset.key], job=hourly_asset_job)
 def multi_asset_sensor_hourly_to_hourly(context):
     materialization_by_partition = context.latest_materialization_records_by_partition(
         hourly_asset.key
@@ -369,6 +381,11 @@ def large_sensor(_context):
 @sensor(job=asset_job)
 def run_request_asset_selection_sensor(_context):
     yield RunRequest(run_key=None, asset_selection=[AssetKey("a"), AssetKey("b")])
+
+
+@sensor(job=asset_job)
+def run_request_stale_asset_sensor(_context):
+    yield RunRequest(run_key=None, stale_assets_only=True)
 
 
 @sensor(job=hourly_asset_job)
@@ -542,12 +559,14 @@ def the_repo():
         instance_sensor,
         load_assets_from_current_module(),
         run_request_asset_selection_sensor,
+        run_request_stale_asset_sensor,
         weekly_asset_job,
         multi_asset_sensor_hourly_to_weekly,
         multi_asset_sensor_hourly_to_hourly,
         partitioned_asset_selection_sensor,
         asset_selection_sensor,
         targets_asset_selection_sensor,
+        multi_asset_sensor_targets_asset_selection,
         logging_sensor,
         logging_status_sensor,
     ]
@@ -662,7 +681,7 @@ def with_source_asset_repo():
     return [a_source_asset]
 
 
-@multi_asset_sensor(asset_keys=[AssetKey("a_source_asset")], job=the_job)
+@multi_asset_sensor(monitored_assets=[AssetKey("a_source_asset")], job=the_job)
 def monitor_source_asset_sensor(context):
     asset_events = context.latest_materialization_records_by_key()
     if all(asset_events.values()):
@@ -757,15 +776,20 @@ def asset_sensor_repo():
 
 
 def get_sensor_executors():
+    is_buildkite = os.getenv("BUILDKITE") is not None
     return [
         pytest.param(
             None,
-            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="timeouts"),
+            marks=pytest.mark.skipif(
+                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
+            ),
             id="synchronous",
         ),
         pytest.param(
             SingleThreadPoolExecutor(),
-            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="timeouts"),
+            marks=pytest.mark.skipif(
+                is_buildkite and sys.version_info.minor != 9, reason="timeouts"
+            ),
             id="threadpool",
         ),
     ]
@@ -1493,6 +1517,9 @@ def test_custom_interval_sensor_with_offset(
 
     monkeypatch.setattr(time, "sleep", fake_sleep)
 
+    shutdown_event = mock.MagicMock()
+    shutdown_event.wait.side_effect = fake_sleep
+
     with pendulum.test(freeze_datetime):
         # 60 second custom interval
         external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
@@ -1526,6 +1553,7 @@ def test_custom_interval_sensor_with_offset(
             execute_sensor_iteration_loop(
                 workspace_context,
                 get_default_daemon_logger("dagster.daemon.SensorDaemon"),
+                shutdown_event=shutdown_event,
                 until=freeze_datetime.add(seconds=65).timestamp(),
             )
         )
@@ -1716,6 +1744,63 @@ def test_run_request_asset_selection_sensor(executor, instance, workspace_contex
             )
         }
         assert planned_asset_keys == {AssetKey("a"), AssetKey("b")}
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_run_request_stale_asset_selection_sensor_never_materialized(
+    executor, instance, workspace_context, external_repo
+):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+
+    with pendulum.test(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
+        instance.start_sensor(external_sensor)
+        evaluate_sensors(workspace_context, executor)
+        sensor_run = next((r for r in instance.get_runs() if r.pipeline_name == "abc"), None)
+        assert sensor_run is not None
+        assert sensor_run.asset_selection == {AssetKey("a"), AssetKey("b"), AssetKey("c")}
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_run_request_stale_asset_selection_sensor_empty(
+    executor, instance, workspace_context, external_repo
+):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+
+    materialize([a, b, c], instance=instance)
+
+    with pendulum.test(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
+        instance.start_sensor(external_sensor)
+        evaluate_sensors(workspace_context, executor)
+        sensor_run = next((r for r in instance.get_runs() if r.pipeline_name == "abc"), None)
+        assert sensor_run is None
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_run_request_stale_asset_selection_sensor_subset(
+    executor, instance, workspace_context, external_repo
+):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+
+    materialize([a], instance=instance)
+
+    with pendulum.test(freeze_datetime):
+        external_sensor = external_repo.get_external_sensor("run_request_stale_asset_sensor")
+        instance.start_sensor(external_sensor)
+        evaluate_sensors(workspace_context, executor)
+        sensor_run = next((r for r in instance.get_runs() if r.pipeline_name == "abc"), None)
+        assert sensor_run is not None
+        assert sensor_run.asset_selection == {AssetKey("b"), AssetKey("c")}
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
@@ -2027,6 +2112,80 @@ def test_asset_selection_sensor(executor, instance, workspace_context, external_
             freeze_datetime,
             TickStatus.SKIPPED,
         )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_multi_asset_sensor_targets_asset_selection(
+    executor, instance, workspace_context, external_repo
+):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        multi_asset_sensor_targets_asset_selection = external_repo.get_external_sensor(
+            "multi_asset_sensor_targets_asset_selection"
+        )
+        instance.start_sensor(multi_asset_sensor_targets_asset_selection)
+
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(
+            multi_asset_sensor_targets_asset_selection.get_external_origin_id(),
+            multi_asset_sensor_targets_asset_selection.selector_id,
+        )
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            multi_asset_sensor_targets_asset_selection,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
+
+        freeze_datetime = freeze_datetime.add(seconds=60)
+    with pendulum.test(freeze_datetime):
+        # should generate asset_a
+        materialize([asset_a], instance=instance)
+
+        evaluate_sensors(workspace_context, executor)
+
+        # sensor should not fire
+        ticks = instance.get_ticks(
+            multi_asset_sensor_targets_asset_selection.get_external_origin_id(),
+            multi_asset_sensor_targets_asset_selection.selector_id,
+        )
+        assert len(ticks) == 2
+        validate_tick(
+            ticks[0],
+            multi_asset_sensor_targets_asset_selection,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+        )
+
+        freeze_datetime = freeze_datetime.add(seconds=60)
+
+    with pendulum.test(freeze_datetime):
+        # should generate asset_b
+        materialize([asset_b], instance=instance)
+
+        # should fire the asset sensor
+        evaluate_sensors(workspace_context, executor)
+        ticks = instance.get_ticks(
+            multi_asset_sensor_targets_asset_selection.get_external_origin_id(),
+            multi_asset_sensor_targets_asset_selection.selector_id,
+        )
+        assert len(ticks) == 3
+        validate_tick(
+            ticks[0],
+            multi_asset_sensor_targets_asset_selection,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+        )
+        run = instance.get_runs()[0]
+        assert run.run_config == {}
+        assert run.tags
+        assert run.tags.get("dagster/sensor_name") == "multi_asset_sensor_targets_asset_selection"
+        assert run.asset_selection == {AssetKey(["asset_c"])}
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())

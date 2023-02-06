@@ -3,9 +3,13 @@ from inspect import Parameter
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
-from dagster._core.definitions.run_request import InstigatorType
+
+# re-export
+from dagster._core.definitions.run_request import (
+    InstigatorType as InstigatorType,
+)
+from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.host_representation.origin import ExternalInstigatorOrigin
-from dagster._core.host_representation.selector import InstigatorSelector, RepositorySelector
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
@@ -402,6 +406,22 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     @property
     def log_key(self) -> Optional[List[str]]:
         return self.tick_data.log_key
+
+    @property
+    def is_completed(self) -> bool:
+        return (
+            self.tick_data.status == TickStatus.SUCCESS
+            or self.tick_data.status == TickStatus.FAILURE
+            or self.tick_data.status == TickStatus.SKIPPED
+        )
+
+    @property
+    def is_failure(self) -> bool:
+        return self.tick_data.status == TickStatus.FAILURE
+
+    @property
+    def is_success(self) -> bool:
+        return self.tick_data.status == TickStatus.SUCCESS
 
 
 register_serdes_tuple_fallbacks({"JobTick": InstigatorTick})

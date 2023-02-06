@@ -154,7 +154,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     def delete_run(self, run_id):
         """Override the default sql delete run implementation until we can get full
-        support on cascading deletes
+        support on cascading deletes.
         """
         check.str_param(run_id, "run_id")
         remove_tags = db.delete(RunTagsTable).where(RunTagsTable.c.run_id == run_id)

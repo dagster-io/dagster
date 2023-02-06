@@ -1,5 +1,17 @@
 from functools import update_wrapper
-from typing import Any, Callable, List, Mapping, Optional, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
@@ -9,6 +21,7 @@ from ..executor_definition import ExecutorDefinition
 from ..graph_definition import GraphDefinition
 from ..logger_definition import LoggerDefinition
 from ..partition import PartitionSetDefinition
+from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from ..pipeline_definition import PipelineDefinition
 from ..repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
@@ -21,8 +34,10 @@ from ..schedule_definition import ScheduleDefinition
 from ..sensor_definition import SensorDefinition
 from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
+T = TypeVar("T")
 
-def _flatten(items):
+
+def _flatten(items: Iterable[Union[T, List[T]]]) -> Iterator[T]:
     for x in items:
         if isinstance(x, List):
             # switch to `yield from _flatten(x)` to support multiple layers of nesting
@@ -49,7 +64,7 @@ class _Repository:
         )
 
     def __call__(
-        self, fn: Callable[[], Any]
+        self, fn: Callable[[], Sequence[Any]]
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
         from dagster._core.definitions import AssetGroup, AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
@@ -75,6 +90,7 @@ class _Repository:
                         PipelineDefinition,
                         PartitionSetDefinition,
                         ScheduleDefinition,
+                        UnresolvedPartitionedAssetScheduleDefinition,
                         SensorDefinition,
                         GraphDefinition,
                         AssetGroup,
@@ -157,7 +173,7 @@ class _Repository:
 
 
 @overload
-def repository(definitions_fn: Callable[..., Any]) -> RepositoryDefinition:
+def repository(definitions_fn: Callable[..., Sequence[Any]]) -> RepositoryDefinition:
     ...
 
 
@@ -173,7 +189,7 @@ def repository(
 
 
 def repository(
-    definitions_fn: Optional[Callable[..., Any]] = None,
+    definitions_fn: Optional[Callable[..., Sequence[Any]]] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -301,7 +317,6 @@ def repository(
             @repository
             def complex_repository():
                 return ComplexRepositoryData('some_directory')
-
     """
     if definitions_fn is not None:
         check.invariant(description is None)

@@ -1,4 +1,4 @@
-from typing import List, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import List, Mapping, NamedTuple, Optional, Sequence, Set, cast
 
 from dagster import (
     AssetKey,
@@ -96,7 +96,7 @@ class AssetStatusCacheValue(
 
 def get_materialized_multipartitions(
     instance: DagsterInstance, asset_key: AssetKey, partitions_def: MultiPartitionsDefinition
-) -> Sequence[MultiPartitionKey]:
+) -> Sequence[str]:
     dimension_names = partitions_def.partition_dimension_names
     materialized_keys: List[MultiPartitionKey] = []
     for event_tags in instance.get_event_tags_for_asset(asset_key):
@@ -121,6 +121,30 @@ def get_materialized_multipartitions(
     return materialized_keys
 
 
+def get_validated_partition_keys(partitions_def: PartitionsDefinition, partition_keys: Set[str]):
+    if isinstance(partitions_def, StaticPartitionsDefinition):
+        validated_partitions = set(partitions_def.get_partition_keys()) & partition_keys
+    elif isinstance(partitions_def, MultiPartitionsDefinition):
+        partition_keys_by_dimension = {
+            dim.name: dim.partitions_def.get_partition_keys()
+            for dim in partitions_def.partitions_defs
+        }
+        validated_partitions = set()
+        for partition_key in partition_keys:
+            multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
+            if all(
+                key in partition_keys_by_dimension.get(dim, [])
+                for dim, key in cast(
+                    MultiPartitionKey, multipartition_key
+                ).keys_by_dimension.items()
+            ):
+                validated_partitions.add(partition_key)
+    else:
+        # Time window partition subset construction will validate the partition keys
+        validated_partitions = partition_keys
+    return validated_partitions
+
+
 def _build_status_cache(
     instance: DagsterInstance,
     asset_key: AssetKey,
@@ -136,7 +160,7 @@ def _build_status_cache(
     ):
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
-    materialized_keys: Sequence[Union[str, MultiPartitionKey]]
+    materialized_keys: Sequence[str]
     if isinstance(partitions_def, MultiPartitionsDefinition):
         materialized_keys = get_materialized_multipartitions(instance, asset_key, partitions_def)
     else:
@@ -149,11 +173,10 @@ def _build_status_cache(
         ]
 
     serialized_materialized_partition_subset = partitions_def.empty_subset()
-    partition_keys = partitions_def.get_partition_keys()
 
     serialized_materialized_partition_subset = (
         serialized_materialized_partition_subset.with_partition_keys(
-            set(materialized_keys) & set(partition_keys)
+            get_validated_partition_keys(partitions_def, set(materialized_keys))
         )
     )
 
@@ -178,9 +201,7 @@ def _get_updated_status_cache(
         event_records_filter=EventRecordsFilter(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
             asset_key=asset_key,
-            after_cursor=current_status_cache_value.latest_storage_id
-            if current_status_cache_value
-            else None,
+            after_cursor=current_status_cache_value.latest_storage_id,
         )
     )
 
@@ -217,7 +238,10 @@ def _get_updated_status_cache(
             newly_materialized_partitions.add(
                 unevaluated_materializations.event_log_entry.dagster_event.partition
             )
-    materialized_subset = materialized_subset.with_partition_keys(newly_materialized_partitions)
+
+    materialized_subset = materialized_subset.with_partition_keys(
+        get_validated_partition_keys(partitions_def, newly_materialized_partitions)
+    )
     return AssetStatusCacheValue(
         latest_storage_id=latest_storage_id,
         partitions_def_id=current_status_cache_value.partitions_def_id,

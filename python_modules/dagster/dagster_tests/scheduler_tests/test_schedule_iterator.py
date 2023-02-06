@@ -126,3 +126,15 @@ def test_empty_cron_string_union():
 
     with pytest.raises(CheckError):
         next(schedule_execution_time_iterator(start_time.timestamp(), [], "US/Pacific"))
+
+
+def test_first_monday():
+    # start sunday 1/1/2023
+    start_time = create_pendulum_time(year=2023, month=1, day=1, tz="US/Pacific")
+    iter = schedule_execution_time_iterator(start_time.timestamp(), "0 0 * * mon#1", "US/Pacific")
+    # monday 1/2
+    assert next(iter) == create_pendulum_time(year=2023, month=1, day=2, tz="US/Pacific")
+    # monday 2/6
+    assert next(iter) == create_pendulum_time(year=2023, month=2, day=6, tz="US/Pacific")
+    # monday 3/6
+    assert next(iter) == create_pendulum_time(year=2023, month=3, day=6, tz="US/Pacific")

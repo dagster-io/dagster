@@ -1,7 +1,7 @@
 """
 This subpackage contains all classes that host processes (e.g. dagit)
 use to manipulate and represent definitions that are resident
-in user processes and containers.  e.g. ExternalPipeline
+in user processes and containers.  e.g. ExternalPipeline.
 
 It also contains classes that represent historical representations
 that have been persisted. e.g. HistoricalPipeline
@@ -58,12 +58,3 @@ from .repository_location import (
     RepositoryLocation as RepositoryLocation,
 )
 from .represented import RepresentedPipeline as RepresentedPipeline
-from .selector import (
-    GraphSelector as GraphSelector,
-    InstigatorSelector as InstigatorSelector,
-    JobSelector as JobSelector,
-    PipelineSelector as PipelineSelector,
-    RepositorySelector as RepositorySelector,
-    ScheduleSelector as ScheduleSelector,
-    SensorSelector as SensorSelector,
-)

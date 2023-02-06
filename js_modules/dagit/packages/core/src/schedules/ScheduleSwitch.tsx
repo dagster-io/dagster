@@ -1,10 +1,9 @@
-import {useMutation} from '@apollo/client';
+import {gql, useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {usePermissions} from '../app/Permissions';
-import {graphql} from '../graphql';
-import {InstigationStatus, ScheduleSwitchFragmentFragment} from '../graphql/graphql';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {InstigationStatus} from '../graphql/types';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -13,10 +12,17 @@ import {
   START_SCHEDULE_MUTATION,
   STOP_SCHEDULE_MUTATION,
 } from './ScheduleMutations';
+import {
+  StartThisScheduleMutation,
+  StartThisScheduleMutationVariables,
+  StopScheduleMutation,
+  StopScheduleMutationVariables,
+} from './types/ScheduleMutations.types';
+import {ScheduleSwitchFragment} from './types/ScheduleSwitch.types';
 
 interface Props {
   repoAddress: RepoAddress;
-  schedule: ScheduleSwitchFragmentFragment;
+  schedule: ScheduleSwitchFragment;
   size?: 'small' | 'large';
 }
 
@@ -25,12 +31,20 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   const {name, scheduleState} = schedule;
   const {status, id, selectorId} = scheduleState;
 
-  const {canStartSchedule, canStopRunningSchedule} = usePermissions();
+  const {canStartSchedule, canStopRunningSchedule} = usePermissionsForLocation(
+    repoAddress.location,
+  );
 
-  const [startSchedule, {loading: toggleOnInFlight}] = useMutation(START_SCHEDULE_MUTATION, {
+  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<
+    StartThisScheduleMutation,
+    StartThisScheduleMutationVariables
+  >(START_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
   });
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation(STOP_SCHEDULE_MUTATION, {
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
+    StopScheduleMutation,
+    StopScheduleMutationVariables
+  >(STOP_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
   });
 
@@ -94,7 +108,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   );
 };
 
-export const SCHEDULE_SWITCH_FRAGMENT = graphql(`
+export const SCHEDULE_SWITCH_FRAGMENT = gql`
   fragment ScheduleSwitchFragment on Schedule {
     id
     name
@@ -106,4 +120,4 @@ export const SCHEDULE_SWITCH_FRAGMENT = graphql(`
       status
     }
   }
-`);
+`;

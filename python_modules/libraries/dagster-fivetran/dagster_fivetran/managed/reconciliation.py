@@ -104,7 +104,7 @@ def reconcile_connectors(
             continue
 
         diff = diff.join(
-            diff_connectors(
+            diff_connectors(  # type: ignore
                 configured_connector,
                 existing_connector.connector if existing_connector else None,
                 ignore_secrets,
@@ -185,7 +185,7 @@ def reconcile_destinations(
             continue
 
         diff = diff.join(
-            diff_destinations(
+            diff_destinations(  # type: ignore
                 configured_destination,
                 existing_destination.destination if existing_destination else None,
                 ignore_secrets,
@@ -334,7 +334,7 @@ def reconcile_config(
         ignore_secrets,
     )
 
-    return ManagedElementDiff().join(dests_diff).join(connectors_diff)
+    return ManagedElementDiff().join(dests_diff).join(connectors_diff)  # type: ignore
 
 
 @experimental

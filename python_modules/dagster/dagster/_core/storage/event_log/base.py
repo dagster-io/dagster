@@ -44,7 +44,7 @@ class EventLogCursorType(Enum):
 
 
 class EventLogCursor(NamedTuple):
-    """Representation of an event record cursor, keeping track of the log query state"""
+    """Representation of an event record cursor, keeping track of the log query state."""
 
     cursor_type: EventLogCursorType
     value: int
@@ -89,7 +89,7 @@ class AssetEntry(
         "_AssetEntry",
         [
             ("asset_key", AssetKey),
-            ("last_materialization", Optional[EventLogEntry]),
+            ("last_materialization_record", Optional[EventLogRecord]),
             ("last_run_id", Optional[str]),
             ("asset_details", Optional[AssetDetails]),
             ("cached_status", Optional["AssetStatusCacheValue"]),
@@ -99,7 +99,7 @@ class AssetEntry(
     def __new__(
         cls,
         asset_key: AssetKey,
-        last_materialization: Optional[EventLogEntry] = None,
+        last_materialization_record: Optional[EventLogRecord] = None,
         last_run_id: Optional[str] = None,
         asset_details: Optional[AssetDetails] = None,
         cached_status: Optional["AssetStatusCacheValue"] = None,
@@ -109,8 +109,8 @@ class AssetEntry(
         return super(AssetEntry, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            last_materialization=check.opt_inst_param(
-                last_materialization, "last_materialization", EventLogEntry
+            last_materialization_record=check.opt_inst_param(
+                last_materialization_record, "last_materialization_record", EventLogRecord
             ),
             last_run_id=check.opt_str_param(last_run_id, "last_run_id"),
             asset_details=check.opt_inst_param(asset_details, "asset_details", AssetDetails),
@@ -118,6 +118,12 @@ class AssetEntry(
                 cached_status, "cached_status", AssetStatusCacheValue
             ),
         )
+
+    @property
+    def last_materialization(self) -> Optional[EventLogEntry]:
+        if self.last_materialization_record is None:
+            return None
+        return self.last_materialization_record.event_log_entry
 
 
 class AssetRecord(NamedTuple):
@@ -208,7 +214,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def delete_events(self, run_id: str):
-        """Remove events for a given run id"""
+        """Remove events for a given run id."""
 
     @abstractmethod
     def upgrade(self):
@@ -245,7 +251,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """Explicit lifecycle management."""
 
     def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
-        """Allows for optimizing database connection / use in the context of a long lived dagit process
+        """Allows for optimizing database connection / use in the context of a long lived dagit process.
         """
 
     @abstractmethod
@@ -266,11 +272,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         dagster_event_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
     ) -> Mapping[int, EventLogEntry]:
-        """Get event records across all runs. Only supported for non sharded sql storage"""
+        """Get event records across all runs. Only supported for non sharded sql storage."""
         raise NotImplementedError()
 
     def get_maximum_record_id(self) -> Optional[int]:
-        """Get the current greatest record id in the event log. Only supported for non sharded sql storage
+        """Get the current greatest record id in the event log. Only supported for non sharded sql storage.
         """
         raise NotImplementedError()
 
@@ -353,11 +359,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def wipe_asset(self, asset_key: AssetKey):
-        """Remove asset index history from event log for given asset_key"""
+        """Remove asset index history from event log for given asset_key."""
 
     @abstractmethod
     def get_materialization_count_by_partition(
-        self, asset_keys: Sequence[AssetKey]
+        self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         pass
 
@@ -366,5 +372,5 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
 
     @property
     def is_run_sharded(self):
-        """Indicates that the EventLogStoarge is sharded"""
+        """Indicates that the EventLogStoarge is sharded."""
         return False

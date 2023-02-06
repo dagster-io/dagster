@@ -43,7 +43,7 @@ VALID_NAME_REGEX = re.compile(VALID_NAME_REGEX_STR)
 
 
 class NoValueSentinel:
-    """Sentinel value to distinguish unset from None"""
+    """Sentinel value to distinguish unset from None."""
 
 
 def has_valid_name_chars(name: str) -> bool:

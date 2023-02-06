@@ -20,7 +20,7 @@ import styled from 'styled-components/macro';
 
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
-import {GraphExplorerSolidFragment} from '../graphql/graphql';
+import {GraphExplorerSolidFragment} from '../pipelines/types/GraphExplorer.types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 interface GraphQueryInputProps {

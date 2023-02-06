@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from enum import Enum
 from hashlib import sha256
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Callable, Mapping, NamedTuple, Optional, Union
 
 from typing_extensions import Final
 
 from dagster import _check as check
+from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import (
@@ -14,7 +16,9 @@ if TYPE_CHECKING:
         AssetObservation,
         Materialization,
     )
+    from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
     from dagster._core.events.log import EventLogEntry
+    from dagster._core.instance import DagsterInstance
 
 
 class UnknownValue:
@@ -46,8 +50,9 @@ class LogicalVersion(
         )
 
 
-UNKNOWN_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("UNKNOWN")
 DEFAULT_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("INITIAL")
+NULL_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("NULL")
+UNKNOWN_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("UNKNOWN")
 
 
 class LogicalVersionProvenance(
@@ -186,3 +191,138 @@ def _extract_event_data_from_entry(
 
     assert isinstance(event_data, (AssetMaterialization, AssetObservation))
     return event_data
+
+
+# ########################
+# ##### CACHING STALE STATUS RESOLVER
+# ########################
+
+
+class StaleStatus(Enum):
+    STALE = "STALE"
+    FRESH = "FRESH"
+    UNKNOWN = "UNKNOWN"
+
+
+class CachingStaleStatusResolver:
+    """
+    Used to resolve logical version information. Avoids redundant database
+    calls that would otherwise occur. Intended for use within the scope of a
+    single "request" (e.g. GQL request, RunRequest resolution).
+    """
+
+    _instance: "DagsterInstance"
+    _asset_graph: Optional["ExternalAssetGraph"]
+    _asset_graph_load_fn: Optional[Callable[[], "ExternalAssetGraph"]]
+
+    def __init__(
+        self,
+        instance: "DagsterInstance",
+        asset_graph: Union["ExternalAssetGraph", Callable[[], "ExternalAssetGraph"]],
+    ):
+        from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
+
+        self._instance = instance
+        if isinstance(asset_graph, ExternalAssetGraph):
+            self._asset_graph = asset_graph
+            self._asset_graph_load_fn = None
+        else:
+            self._asset_graph = None
+            self._asset_graph_load_fn = asset_graph
+
+    def get_status(self, key: AssetKey) -> StaleStatus:
+        if self.asset_graph.get_partitions_def(key):
+            return StaleStatus.UNKNOWN
+        current_version = self._get_current_logical_version(key=key)
+        projected_version = self._get_projected_logical_version(key=key)
+        if projected_version == UNKNOWN_LOGICAL_VERSION:
+            return StaleStatus.UNKNOWN
+        elif projected_version == current_version:
+            return StaleStatus.FRESH
+        else:
+            return StaleStatus.STALE
+
+    def get_current_logical_version(self, key: AssetKey) -> LogicalVersion:
+        return self._get_current_logical_version(key=key)
+
+    def get_projected_logical_version(self, key: AssetKey) -> LogicalVersion:
+        return self._get_projected_logical_version(key=key)
+
+    @property
+    def asset_graph(self) -> ExternalAssetGraph:
+        if self._asset_graph is None:
+            self._asset_graph = check.not_none(self._asset_graph_load_fn)()
+        return self._asset_graph
+
+    @cached_method
+    def _get_current_logical_version(self, *, key: AssetKey) -> LogicalVersion:
+        is_source = self.asset_graph.is_source(key)
+        event = self._instance.get_latest_logical_version_record(
+            key,
+            is_source,
+        )
+        if event is None and is_source:
+            return DEFAULT_LOGICAL_VERSION
+        elif event is None:
+            return NULL_LOGICAL_VERSION
+        else:
+            logical_version = extract_logical_version_from_entry(event.event_log_entry)
+            return logical_version or DEFAULT_LOGICAL_VERSION
+
+    @cached_method
+    def _get_projected_logical_version(self, *, key: AssetKey) -> LogicalVersion:
+        if self.asset_graph.is_source(key):
+            event = self._instance.get_latest_logical_version_record(key, True)
+            if event:
+                version = (
+                    extract_logical_version_from_entry(event.event_log_entry)
+                    or DEFAULT_LOGICAL_VERSION
+                )
+            else:
+                version = DEFAULT_LOGICAL_VERSION
+        elif self.asset_graph.get_code_version(key) is not None:
+            version = self._compute_projected_new_materialization_logical_version(key)
+        else:
+            materialization = self._instance.get_latest_materialization_event(key)
+            if materialization is None:  # never been materialized
+                version = self._compute_projected_new_materialization_logical_version(key)
+            else:
+                logical_version = extract_logical_version_from_entry(materialization)
+                provenance = extract_logical_version_provenance_from_entry(materialization)
+                if (
+                    logical_version is None  # old materialization event before logical versions
+                    or provenance is None  # should never happen
+                    or self._is_provenance_stale(key, provenance)
+                ):
+                    version = self._compute_projected_new_materialization_logical_version(key)
+                else:
+                    version = logical_version
+        return version
+
+    # Returns true if the current logical version of at least one input asset differs from the
+    # recorded logical version for that asset in the provenance. This indicates that a new
+    # materialization with up-to-date data would produce a different logical verson.
+    def _is_provenance_stale(self, key: AssetKey, provenance: LogicalVersionProvenance) -> bool:
+        if self._has_updated_dependencies(key, provenance):
+            return True
+        else:
+            for k, v in provenance.input_logical_versions.items():
+                if self._get_projected_logical_version(key=k) != v:
+                    return True
+            return False
+
+    def _has_updated_dependencies(
+        self, key: AssetKey, provenance: LogicalVersionProvenance
+    ) -> bool:
+        curr_dep_keys = self.asset_graph.get_parents(key)
+        old_dep_keys = set(provenance.input_logical_versions.keys())
+        return curr_dep_keys != old_dep_keys
+
+    def _compute_projected_new_materialization_logical_version(
+        self, key: AssetKey
+    ) -> LogicalVersion:
+        dep_keys = self.asset_graph.get_parents(key)
+        return compute_logical_version(
+            self.asset_graph.get_code_version(key) or UNKNOWN_VALUE,
+            {dep_key: self._get_projected_logical_version(key=dep_key) for dep_key in dep_keys},
+        )

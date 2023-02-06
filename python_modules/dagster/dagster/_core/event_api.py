@@ -13,13 +13,14 @@ from dagster._serdes import whitelist_for_serdes
 class RunShardedEventsCursor(NamedTuple):
     """Pairs an id-based event log cursor with a timestamp-based run cursor, for improved
     performance on run-sharded event log storages (e.g. the default SqliteEventLogStorage). For
-    run-sharded storages, the id field is ignored, since they may not be unique across shards
+    run-sharded storages, the id field is ignored, since they may not be unique across shards.
     """
 
     id: int
     run_updated_after: datetime
 
 
+@whitelist_for_serdes
 class EventLogRecord(NamedTuple):
     """Internal representation of an event record, as stored in a
     :py:class:`~dagster._core.storage.event_log.EventLogStorage`.

@@ -1,4 +1,4 @@
-"""Spark Configuration
+"""Spark Configuration.
 
 In this file we define the key configuration parameters for submitting Spark jobs. Spark can be run
 in a variety of deployment contexts. See the Spark documentation at

@@ -4,7 +4,10 @@ from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG
 
-from ..implementation.fetch_partition_sets import partition_statuses_from_run_partition_data
+from ..implementation.fetch_partition_sets import (
+    partition_status_counts_from_run_partition_data,
+    partition_statuses_from_run_partition_data,
+)
 from .asset_key import GrapheneAssetKey
 from .errors import (
     GrapheneInvalidOutputError,
@@ -18,7 +21,7 @@ from .errors import (
     create_execution_params_error_types,
 )
 from .pipelines.config import GrapheneRunConfigValidationInvalid
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 pipeline_execution_error_types = (
     GrapheneInvalidStepError,
@@ -112,6 +115,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     partitionStatuses = graphene.NonNull(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatuses"
     )
+    partitionStatusCounts = non_null_list(
+        "dagster_graphql.schema.partition_sets.GraphenePartitionStatusCounts"
+    )
 
     def __init__(self, backfill_job):
         self._backfill_job = check.opt_inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -129,7 +135,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             assetSelection=backfill_job.asset_selection,
         )
 
-    def _get_partition_set(self, graphene_info):
+    def _get_partition_set(self, graphene_info: ResolveInfo):
         if self._backfill_job.partition_set_origin is None:
             return None
 
@@ -154,7 +160,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         return external_partition_sets[0]
 
-    def _get_records(self, graphene_info):
+    def _get_records(self, graphene_info: ResolveInfo):
         if self._records is None:
             filters = RunsFilter.for_backfill(self._backfill_job.backfill_id)
             self._records = graphene_info.context.instance.get_run_records(
@@ -162,7 +168,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
         return self._records
 
-    def _get_partition_run_data(self, graphene_info):
+    def _get_partition_run_data(self, graphene_info: ResolveInfo):
         if self._partition_run_data is None:
             self._partition_run_data = (
                 graphene_info.context.instance.run_storage.get_run_partition_data(
@@ -175,28 +181,28 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
         return self._partition_run_data
 
-    def resolve_unfinishedRuns(self, graphene_info):
+    def resolve_unfinishedRuns(self, graphene_info: ResolveInfo):
         from .pipelines.pipeline import GrapheneRun
 
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records if not record.pipeline_run.is_finished]
 
-    def resolve_runs(self, graphene_info):
+    def resolve_runs(self, graphene_info: ResolveInfo):
         from .pipelines.pipeline import GrapheneRun
 
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records]
 
-    def resolve_partitionNames(self, _graphene_info):
+    def resolve_partitionNames(self, _graphene_info: ResolveInfo):
         return self._backfill_job.get_partition_names(_graphene_info.context)
 
-    def resolve_numPartitions(self, _graphene_info):
+    def resolve_numPartitions(self, _graphene_info: ResolveInfo):
         return self._backfill_job.get_num_partitions(_graphene_info.context)
 
-    def resolve_numCancelable(self, _graphene_info):
+    def resolve_numCancelable(self, _graphene_info: ResolveInfo):
         return self._backfill_job.get_num_cancelable()
 
-    def resolve_partitionSet(self, graphene_info):
+    def resolve_partitionSet(self, graphene_info: ResolveInfo):
         from ..schema.partition_sets import GraphenePartitionSet
 
         partition_set = self._get_partition_set(graphene_info)
@@ -209,7 +215,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             external_partition_set=partition_set,
         )
 
-    def resolve_partitionStatuses(self, graphene_info):
+    def resolve_partitionStatuses(self, graphene_info: ResolveInfo):
         partition_set_origin = self._backfill_job.partition_set_origin
         partition_set_name = (
             partition_set_origin.partition_set_name if partition_set_origin else None
@@ -220,6 +226,12 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             partition_run_data,
             self._backfill_job.get_partition_names(graphene_info.context),
             backfill_id=self._backfill_job.backfill_id,
+        )
+
+    def resolve_partitionStatusCounts(self, graphene_info):
+        partition_run_data = self._get_partition_run_data(graphene_info)
+        return partition_status_counts_from_run_partition_data(
+            partition_run_data, self._backfill_job.get_partition_names(graphene_info.context)
         )
 
     def resolve_error(self, _):

@@ -7,58 +7,9 @@ description: Contributions are welcome and are greatly appreciated. Here's the c
 
 We love to see our community members get involved! If you are planning to contribute to Dagster, you will first need to set up a local development environment.
 
-## Environment Setup
+## Environment setup
 
-### Apple M1-specific setup
-
-If you have a Mac with an M1 chip, you will need to set up a separate environment to emulate an x86 architecture before following the remaining setup instructions. To find out if your Mac has an M1 chip, follow the instructions [here](https://www.howtogeek.com/706226/how-to-check-if-your-mac-is-using-an-intel-or-apple-silicon-processor/).
-
-If you don't have a Mac with an M1 chip, skip ahead to the next section - [Dagster development setup](#dagster-development-setup).
-
-1. Install rosetta. [About rosetta](https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment).
-
-   ```bash
-   softwareupdate --install-rosetta --agree-to-license
-   ```
-
-2. Create a duplicate terminal that will default to running the rosetta x86 emulator. [Source stack overflow post](https://apple.stackexchange.com/questions/428768/on-apple-m1-with-rosetta-how-to-open-entire-terminal-iterm-in-x86-64-architec).
-
-   - Go to `Finder` > `Applications` and find your terminal app.
-   - Right click the app and duplicate it.
-   - Right click the new terminal > `Get Info` > `Enable Open using Rosetta`.
-   - Click to open the terminal, type `arch` to verify it says `i386` now.
-
-3. In your rosetta terminal, install `homebrew`.
-
-   ```bash
-   arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   ```
-
-4. To ensure that the correct installation of `homebrew` is automatically used in your rosetta terminal, add the following snippet to your `~/.bashrc`, `~/.zshrc` or profile manager of choice.
-
-   ```bash
-   arch_name="$(uname -m)"
-
-   if [ "${arch_name}" = "x86_64" ]; then
-      echo "Running in x86 mode"
-      eval $(/usr/local/bin/brew shellenv)
-   elif [ "${arch_name}" = "arm64" ]; then
-      echo "Running in Arm mode"
-      eval $(/opt/homebrew/bin/brew shellenv)
-   else
-      echo "Unexpected uname -m result ${arch_name}"
-   fi
-
-   # brew libraries
-   export LDFLAGS="-L $(brew --prefix openssl)/lib"
-   export CFLAGS="-I $(brew --prefix openssl)/include"
-   ```
-
-After sourcing this file, you can ensure that the correct version of `homebrew` is being used by confirming the output of `which brew` is `/usr/local/bin/brew`.
-
-### Dagster development setup
-
-1. Install Python. Python 3.6 or above recommended, but our CI/CD pipeline currently tests against up-to-date patch versions of Python 3.6, 3.7 and 3.8.
+1. Install Python 3.7 or above.
 
 2. Create and activate a virtualenv, using the tool of your choice. On macOS you can install `pyenv` with Homebrew:
 
@@ -76,9 +27,9 @@ After sourcing this file, you can ensure that the correct version of `homebrew` 
    and finally create and activate the virtualenev:
 
    ```bash
-   pyenv install 3.7.4
-   pyenv virtualenv 3.7.4 dagster37
-   pyenv activate dagster37
+   pyenv install 3.9.16
+   pyenv virtualenv 3.9.16 dagster39
+   pyenv activate dagster39
    ```
 
 3. Ensure that you have node installed by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS, you can install yarn with Homebrew:
@@ -98,6 +49,8 @@ After sourcing this file, you can ensure that the correct version of `homebrew` 
    ```bash
    make dev_install
    ```
+
+   **Note for Macs with an M1 or M2 chip**: Some users have reported installation problems due to missing wheels for arm64 Macs when installing the `grpcio` package. To install the `dagster` development environment using our pre-built wheel of the `grpcio` package for M1 and M2 machines, run `make dev_install_m1_grpcio_wheel` instead of `make dev_install`.
 
 6. Run some tests manually to make sure things are working:
 

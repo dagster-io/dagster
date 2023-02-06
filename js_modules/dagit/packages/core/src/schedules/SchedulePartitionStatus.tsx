@@ -1,21 +1,23 @@
-import {useLazyQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import {ButtonLink, Colors, Group, Caption} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {assertUnreachable} from '../app/Util';
-import {graphql} from '../graphql';
-import {
-  ScheduleFragmentFragment,
-  SchedulePartitionStatusFragmentFragment,
-  SchedulePartitionStatusResultFragment,
-  RunStatus,
-} from '../graphql/graphql';
+import {RunStatus} from '../graphql/types';
 import {StatusTable} from '../instigation/InstigationUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+import {
+  SchedulePartitionStatusFragment,
+  SchedulePartitionStatusQuery,
+  SchedulePartitionStatusQueryVariables,
+  SchedulePartitionStatusResultFragment,
+} from './types/SchedulePartitionStatus.types';
+import {ScheduleFragment} from './types/ScheduleUtils.types';
 
 const RUN_STATUSES = ['Succeeded', 'Failed', 'Missing', 'Pending'];
 
@@ -42,7 +44,7 @@ const calculateDisplayStatus = (partition: SchedulePartitionStatusResultFragment
 
 export const SchedulePartitionStatus: React.FC<{
   repoAddress: RepoAddress;
-  schedule: ScheduleFragmentFragment;
+  schedule: ScheduleFragment;
 }> = React.memo(({repoAddress, schedule}) => {
   const repo = useRepository(repoAddress);
   const {name: scheduleName, partitionSet, pipelineName} = schedule;
@@ -64,7 +66,10 @@ export const SchedulePartitionStatus: React.FC<{
 
   const partitionURL = workspacePathFromAddress(repoAddress, partitionPath);
 
-  const [retrievePartitionStatus, {data, loading}] = useLazyQuery(SCHEDULE_PARTITION_STATUS_QUERY, {
+  const [retrievePartitionStatus, {data, loading}] = useLazyQuery<
+    SchedulePartitionStatusQuery,
+    SchedulePartitionStatusQueryVariables
+  >(SCHEDULE_PARTITION_STATUS_QUERY, {
     variables: {
       scheduleSelector: {
         scheduleName,
@@ -111,7 +116,7 @@ export const SchedulePartitionStatus: React.FC<{
 });
 
 const RetrievedSchedulePartitionStatus: React.FC<{
-  schedule: SchedulePartitionStatusFragmentFragment;
+  schedule: SchedulePartitionStatusFragment;
   partitionURL: string;
 }> = ({schedule, partitionURL}) => {
   const {partitionSet} = schedule;
@@ -157,7 +162,7 @@ const RetrievedSchedulePartitionStatus: React.FC<{
   );
 };
 
-const SCHEDULE_PARTITION_STATUS_QUERY = graphql(`
+const SCHEDULE_PARTITION_STATUS_QUERY = gql`
   query SchedulePartitionStatusQuery($scheduleSelector: ScheduleSelector!) {
     scheduleOrError(scheduleSelector: $scheduleSelector) {
       ... on Schedule {
@@ -190,4 +195,4 @@ const SCHEDULE_PARTITION_STATUS_QUERY = graphql(`
     partitionName
     runStatus
   }
-`);
+`;

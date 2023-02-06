@@ -67,14 +67,14 @@ from dagster import FreshnessPolicySensorContext, freshness_policy_sensor
 
 @freshness_policy_sensor(asset_selection=AssetSelection.all())
 def my_freshness_alerting_sensor(context: FreshnessPolicySensorContext):
-    if context.current_minutes_late is None or context.previous_minutes_late is None:
+    if context.minutes_late is None or context.previous_minutes_late is None:
         return
 
-    if context.current_minutes_late >= 10 and context.previous_minutes_late < 10:
+    if context.minutes_late >= 10 and context.previous_minutes_late < 10:
         send_alert(
             f"Asset with key {context.asset_key} is now more than 10 minutes late."
         )
-    elif context.current_minutes_late == 0 and context.previous_minutes_late >= 10:
+    elif context.minutes_late == 0 and context.previous_minutes_late >= 10:
         send_alert(f"Asset with key {context.asset_key} is now on time.")
 ```
 
@@ -99,7 +99,7 @@ In the body of the sensor, you have access to the materialization event records 
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+    monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
     job=my_job,
 )
 def asset_a_and_b_sensor(context):
@@ -115,7 +115,7 @@ You can also return a <PyObject object="SkipReason" /> to document why the senso
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_multi_asset_sensor_w_skip_reason endbefore=end_multi_asset_sensor_w_skip_reason
 @multi_asset_sensor(
-    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+    monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")],
     job=my_job,
 )
 def asset_a_and_b_sensor_with_skip_reason(context):
@@ -156,7 +156,10 @@ The example below monitors two assets with the same daily partitions definition.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_multi_asset_sensor_AND endbefore=end_multi_asset_sensor_AND
 @multi_asset_sensor(
-    asset_keys=[AssetKey("upstream_daily_1"), AssetKey("upstream_daily_2")],
+    monitored_assets=[
+        AssetKey("upstream_daily_1"),
+        AssetKey("upstream_daily_2"),
+    ],
     job=downstream_daily_job,
 )
 def trigger_daily_asset_if_both_upstream_partitions_materialized(context):
@@ -189,7 +192,10 @@ The following example monitors two upstream daily-partitioned assets, kicking of
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_multi_asset_sensor_OR endbefore=end_multi_asset_sensor_OR
 @multi_asset_sensor(
-    asset_keys=[AssetKey("upstream_daily_1"), AssetKey("upstream_daily_2")],
+    monitored_assets=[
+        AssetKey("upstream_daily_1"),
+        AssetKey("upstream_daily_2"),
+    ],
     job=downstream_daily_job,
 )
 def trigger_daily_asset_when_any_upstream_partitions_have_new_materializations(context):
@@ -308,7 +314,9 @@ If the <PyObject object="PartitionsDefinition"/> of the monitored assets differs
 If a partition mapping is not defined, Dagster will use the default partition mapping, which is the <PyObject object="TimeWindowPartitionMapping"/> for time window partitions definitions and the <PyObject object="IdentityPartitionMapping"/> for other partitions definitions. The <PyObject object="TimeWindowPartitionMapping"/> will map an upstream partition to the downstream partitions that overlap with it.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/asset_sensors.py startafter=start_daily_asset_to_weekly_asset endbefore=end_daily_asset_to_weekly_asset
-@multi_asset_sensor(asset_keys=[AssetKey("upstream_daily_1")], job=weekly_asset_job)
+@multi_asset_sensor(
+    monitored_assets=[AssetKey("upstream_daily_1")], job=weekly_asset_job
+)
 def trigger_weekly_asset_from_daily_asset(context):
     run_requests_by_partition = {}
     materializations_by_partition = context.latest_materialization_records_by_partition(

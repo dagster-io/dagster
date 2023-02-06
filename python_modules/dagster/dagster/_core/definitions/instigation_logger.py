@@ -28,7 +28,7 @@ class DispatchingLogHandler(logging.Handler):
         return self._should_capture
 
     def emit(self, record: logging.LogRecord):
-        """For any received record, add metadata, and have handlers handle it"""
+        """For any received record, add metadata, and have handlers handle it."""
         try:
             self._should_capture = False
             for logger in self._downstream_loggers:
@@ -39,7 +39,7 @@ class DispatchingLogHandler(logging.Handler):
 
 class CapturedLogHandler(logging.Handler):
     """
-    Persist logging records to an IO stream controlled by the CapturedLogManager
+    Persist logging records to an IO stream controlled by the CapturedLogManager.
     """
 
     def __init__(self, write_stream: IO):

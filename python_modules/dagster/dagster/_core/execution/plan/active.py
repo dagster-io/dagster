@@ -25,7 +25,7 @@ def _default_sort_key(step: ExecutionStep) -> float:
 
 
 class ActiveExecution:
-    """State machine used to track progress through execution of an ExecutionPlan"""
+    """State machine used to track progress through execution of an ExecutionPlan."""
 
     def __init__(
         self,
@@ -153,7 +153,7 @@ class ActiveExecution:
 
     def _update(self) -> None:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
-        as a function of what has been _completed
+        as a function of what has been _completed.
         """
         new_steps_to_execute = []
         new_steps_to_skip = []
@@ -332,7 +332,7 @@ class ActiveExecution:
         return sorted(steps, key=self._sort_key_fn)
 
     def plan_events_iterator(self, pipeline_context) -> Iterator[DagsterEvent]:
-        """Process all steps that can be skipped and abandoned"""
+        """Process all steps that can be skipped and abandoned."""
         steps_to_skip = self.get_steps_to_skip()
         while steps_to_skip:
             for step in steps_to_skip:
@@ -469,7 +469,7 @@ class ActiveExecution:
                 ).append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
     def verify_complete(self, pipeline_context: PlanOrchestrationContext, step_key: str) -> None:
-        """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure
+        """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure.
         """
         if step_key in self._in_flight:
             pipeline_context.log.error(

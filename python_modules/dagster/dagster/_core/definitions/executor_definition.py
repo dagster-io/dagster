@@ -2,7 +2,7 @@ from enum import Enum as PyEnum
 from functools import update_wrapper
 from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Sequence, Union, overload
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -107,7 +107,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     @public  # type: ignore
     @property
     def name(self) -> str:
-        """Name of the executor"""
+        """Name of the executor."""
         return self._name
 
     @public  # type: ignore
@@ -133,10 +133,19 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     def copy_for_configured(self, name, description, config_schema) -> "ExecutorDefinition":
         return ExecutorDefinition(
             name=name,
-            config_schema=config_schema,
+            config_schema=config_schema,  # type: ignore
             executor_creation_fn=self.executor_creation_fn,
             description=description or self.description,
             requirements=self._requirements_fn,
+        )
+
+    @staticmethod
+    def hardcoded_executor(executor: "Executor"):
+        return ExecutorDefinition(
+            # Executor name was only relevant in the pipeline/solid/mode world, so we
+            # can put a dummy value
+            name="__executor__",
+            executor_creation_fn=lambda _init_context: executor,
         )
 
     # Backcompat: Overrides configured method to provide name as a keyword argument.
@@ -146,9 +155,9 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         self,
         config_or_config_fn: Any,
         name: Optional[str] = None,
-        config_schema: Optional[Mapping[str, Any]] = None,
+        config_schema: Optional[UserConfigSchema] = None,
         description: Optional[str] = None,
-    ):
+    ) -> Self:  # type: ignore  # fmt: skip
         """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.

@@ -21,7 +21,7 @@ from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter, ObjectMembers
 
 
 def type_repr(config_type: ConfigType) -> str:
-    """Generate a human-readable name for a given dagster ConfigType"""
+    """Generate a human-readable name for a given dagster ConfigType."""
     # Use given name if possible
     if config_type.given_name:
         return config_type.given_name
@@ -65,7 +65,7 @@ def type_repr(config_type: ConfigType) -> str:
 
 
 def config_field_to_lines(field, name=None) -> List[str]:
-    """Given a config field, turn it into a list of lines to add to the documentation"""
+    """Given a config field, turn it into a list of lines to add to the documentation."""
     lines = [""]
 
     # The only unnamed field will be the top level config schema wrapper

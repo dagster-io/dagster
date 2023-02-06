@@ -15,7 +15,6 @@ from typing import (
 )
 
 import pendulum
-from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
@@ -30,7 +29,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
 
-from ..decorator_utils import get_function_params
+from ..decorator_utils import get_function_params, has_at_least_one_parameter
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
@@ -215,11 +214,8 @@ class SensorEvaluationContext:
         return self._log_key
 
 
-# Preserve SensorExecutionContext for backcompat so type annotations don't break.
-SensorExecutionContext = SensorEvaluationContext
-
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest]],
+    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
     Sequence[RunRequest],
     SkipReason,
     RunRequest,
@@ -234,14 +230,8 @@ SensorEvaluationFunction = Callable[
 ]
 
 
-def is_context_provided(
-    fn: "RawSensorEvaluationFunction",
-) -> TypeGuard[Callable[[SensorEvaluationContext], "RawSensorEvaluationFunctionReturn"]]:
-    return len(get_function_params(fn)) == 1
-
-
 class SensorDefinition:
-    """Define a sensor that initiates a set of runs based on some external state
+    """Define a sensor that initiates a set of runs based on some external state.
 
     Args:
         evaluation_fn (Callable[[SensorEvaluationContext]]): The core evaluation function for the
@@ -254,8 +244,8 @@ class SensorDefinition:
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[GraphDefinition, JobDefinition]): The job to execute when this sensor fires.
-        jobs (Optional[Sequence[GraphDefinition, JobDefinition]]): (experimental) A list of jobs to execute when this sensor fires.
+        job (Optional[GraphDefinition, JobDefinition, UnresolvedAssetJob]): The job to execute when this sensor fires.
+        jobs (Optional[Sequence[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): (experimental) A list of jobs to execute when this sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
@@ -340,7 +330,7 @@ class SensorDefinition:
         )
 
     def __call__(self, *args, **kwargs):
-        if is_context_provided(self._raw_fn):
+        if has_at_least_one_parameter(self._raw_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Sensor evaluation function expected context argument, but no context argument "
@@ -376,7 +366,7 @@ class SensorDefinition:
                     "invocation."
                 )
 
-            return self._raw_fn()  # type: ignore [TypeGuard limitation]
+            return self._raw_fn()
 
     @public  # type: ignore
     @property
@@ -585,8 +575,8 @@ def wrap_sensor_evaluation(
     fn: RawSensorEvaluationFunction,
 ) -> SensorEvaluationFunction:
     def _wrapped_fn(context: SensorEvaluationContext):
-        if is_context_provided(fn):
-            result = fn(context)
+        if has_at_least_one_parameter(fn):  # type: ignore  # fmt: skip
+            result = fn(context)  # type: ignore  # fmt: skip
         else:
             result = fn()  # type: ignore
 
@@ -673,7 +663,7 @@ def _run_requests_with_base_asset_jobs(
         else:
             asset_keys = outer_asset_selection.resolve(asset_graph)
 
-        base_job = context.repository_def.get_base_job_for_assets(asset_keys)
+        base_job = context.repository_def.get_implicit_job_def_for_assets(asset_keys)
         result.append(
             run_request.with_replaced_attrs(
                 job_name=base_job.name, asset_selection=list(asset_keys)

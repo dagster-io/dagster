@@ -1,4 +1,4 @@
-"""add instigators table
+"""add instigators table.
 
 Revision ID: c892b3fe0a9f
 Revises: 16e3115a602a

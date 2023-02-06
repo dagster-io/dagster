@@ -1,5 +1,5 @@
 ---
-title: "Dagster instnace | Dagster Docs"
+title: "Dagster instance | Dagster Docs"
 description: "Define configuration options for your Dagster instance."
 ---
 
@@ -10,7 +10,7 @@ description: "Define configuration options for your Dagster instance."
   Cloud, refer to the <a href="/dagster-cloud">Dagster Cloud documentation</a>.
 </Note>
 
-The <PyObject module="dagster" object="DagsterInstance" displayText="DagsterInstance" /> defines the configuration that Dagster needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from op compute functions, and how to launch new runs.
+The Dagster instance defines the configuration that Dagster needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from op compute functions, and how to launch new runs.
 
 All of the processes and services that make up your Dagster deployment should share a single instance config file, named `dagster.yaml`, so that they can effectively share information.
 
@@ -30,7 +30,9 @@ All of the processes and services that make up your Dagster deployment should sh
 
 When a Dagster process like Dagit or Dagster CLI commands are launched, Dagster tries to load your instance. If the environment variable `DAGSTER_HOME` is set, Dagster looks for an instance config file at `$DAGSTER_HOME/dagster.yaml`. This file contains the configuration settings that make up the instance.
 
-By default - if `dagster.yaml` isn't present or the file exists but is empty - Dagster will store this information on the local filesystem, structured like the following:
+If `DAGSTER_HOME` isn't set, Dagster tools will use a temporary directory for storage that is cleaned up when the process exits. This can be useful when using Dagster for temporary local development or testing, when you don't care about the results being persisted.
+
+If `DAGSTER_HOME` is set but `dagster.yaml` isn't present or is empty, Dagster will persist data on the local filesystem, structured like the following:
 
     $DAGSTER_HOME
     ├── dagster.yaml
@@ -82,8 +84,6 @@ Here's a breakdown of the files and directories that are generated:
     </tr>
   </tbody>
 </table>
-
-If `DAGSTER_HOME` isn't set, Dagster tools will use an ephemeral instance for execution. In this case, the run and event log storages will be in-memory rather than persisted to disk. Additionally, filesystem storage will use a temporary directory that's cleaned up when the process exits. This is useful for tests and is the default when invoking Python APIs such as <PyObject module="dagster" object="JobDefinition" method="execute_in_process" /> directly.
 
 ---
 

@@ -1,19 +1,20 @@
-import {useMutation} from '@apollo/client';
+import {gql, useMutation} from '@apollo/client';
 import {Group, Table} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {graphql} from '../graphql';
-import {BackfillTableFragmentFragment} from '../graphql/graphql';
 
 import {BackfillPartitionsRequestedDialog} from './BackfillPartitionsRequestedDialog';
 import {BackfillRow} from './BackfillRow';
 import {BackfillStepStatusDialog} from './BackfillStepStatusDialog';
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
 import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
+import {BackfillTableFragment} from './types/BackfillTable.types';
+import {ResumeBackfillMutation, ResumeBackfillMutationVariables} from './types/BackfillUtils.types';
 
 export const BackfillTable = ({
   showBackfillTarget = true,
@@ -22,24 +23,20 @@ export const BackfillTable = ({
   refetch,
 }: {
   allPartitions?: string[];
-  backfills: BackfillTableFragmentFragment[];
+  backfills: BackfillTableFragment[];
   refetch: () => void;
   showBackfillTarget?: boolean;
 }) => {
-  const [
-    terminationBackfill,
-    setTerminationBackfill,
-  ] = React.useState<BackfillTableFragmentFragment>();
-  const [
-    stepStatusBackfill,
-    setStepStatusBackfill,
-  ] = React.useState<BackfillTableFragmentFragment>();
+  const [terminationBackfill, setTerminationBackfill] = React.useState<BackfillTableFragment>();
+  const [stepStatusBackfill, setStepStatusBackfill] = React.useState<BackfillTableFragment>();
   const [
     partitionsRequestedBackfill,
     setPartitionsRequestedBackfill,
-  ] = React.useState<BackfillTableFragmentFragment>();
-  const [resumeBackfill] = useMutation(RESUME_BACKFILL_MUTATION);
-  const {canCancelPartitionBackfill} = usePermissions();
+  ] = React.useState<BackfillTableFragment>();
+  const [resumeBackfill] = useMutation<ResumeBackfillMutation, ResumeBackfillMutationVariables>(
+    RESUME_BACKFILL_MUTATION,
+  );
+  const {canCancelPartitionBackfill} = usePermissionsDEPRECATED();
 
   const candidateId = terminationBackfill?.backfillId;
 
@@ -50,7 +47,7 @@ export const BackfillTable = ({
     }
   }, [backfills, candidateId, canCancelPartitionBackfill]);
 
-  const resume = async (backfill: BackfillTableFragmentFragment) => {
+  const resume = async (backfill: BackfillTableFragment) => {
     const {data} = await resumeBackfill({variables: {backfillId: backfill.backfillId}});
     if (data && data.resumePartitionBackfill.__typename === 'ResumeBackfillSuccess') {
       refetch();
@@ -88,11 +85,11 @@ export const BackfillTable = ({
       <Table $monospaceFont={false}>
         <thead>
           <tr>
-            <th style={{width: 120}}>Backfill ID</th>
-            <th style={{width: 200}}>Created</th>
+            <th>Backfill ID</th>
+            <th>Created</th>
             {showBackfillTarget ? <th>Backfill target</th> : null}
-            {allPartitions ? <th>Requested</th> : null}
-            <th style={{width: 140}}>Backfill status</th>
+            <th>Requested</th>
+            <th>Backfill status</th>
             <th>Run status</th>
             <th style={{width: 80}} />
           </tr>
@@ -129,7 +126,7 @@ export const BackfillTable = ({
   );
 };
 
-export const BACKFILL_TABLE_FRAGMENT = graphql(`
+export const BACKFILL_TABLE_FRAGMENT = gql`
   fragment BackfillTableFragment on PartitionBackfill {
     backfillId
     status
@@ -161,4 +158,6 @@ export const BACKFILL_TABLE_FRAGMENT = graphql(`
       repositoryLocationName
     }
   }
-`);
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;

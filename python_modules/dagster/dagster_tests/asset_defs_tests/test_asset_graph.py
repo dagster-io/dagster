@@ -25,6 +25,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.host_representation.external_data import external_asset_graph_from_defs
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -43,7 +44,7 @@ def to_external_asset_graph(assets) -> AssetGraph:
 
 
 def test_basics():
-    @asset
+    @asset(code_version="1")
     def asset0():
         ...
 
@@ -73,6 +74,8 @@ def test_basics():
         assert asset_graph.get_parents(asset3.key) == {asset1.key, asset2.key}
         for asset_def in assets:
             assert asset_graph.get_required_multi_asset_keys(asset_def.key) == set()
+        assert asset_graph.get_code_version(asset0.key) == "1"
+        assert asset_graph.get_code_version(asset1.key) is None
 
     assert_stuff(internal_asset_graph)
     assert_stuff(external_asset_graph)
@@ -196,6 +199,7 @@ def test_custom_unsupported_partition_mapping():
             assert downstream_partitions_def
             assert upstream_partitions_def
 
+            assert downstream_partition_key_range is not None
             start, end = downstream_partition_key_range
             return PartitionKeyRange(str(max(1, int(start) - 1)), end)
 
@@ -306,3 +310,36 @@ def test_required_multi_asset_sets_same_op_in_different_assets():
     for asset_graph in [AssetGraph.from_assets(assets), to_external_asset_graph(assets)]:
         for asset_def in assets:
             assert asset_graph.get_required_multi_asset_keys(asset_def.key) == set()
+
+
+def test_get_non_source_roots_missing_source():
+    @asset
+    def foo():
+        pass
+
+    @asset(non_argument_deps={"this_source_is_fake", "source_asset"})
+    def bar(foo):
+        pass
+
+    source_asset = SourceAsset("source_asset")
+
+    asset_graph = AssetGraph.from_assets([foo, bar, source_asset])
+    assert asset_graph.get_non_source_roots(AssetKey("bar")) == {AssetKey("foo")}
+
+
+def test_partitioned_source_asset():
+    partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+
+    partitioned_source = SourceAsset(
+        "partitioned_source",
+        partitions_def=partitions_def,
+    )
+
+    @asset(partitions_def=partitions_def, non_argument_deps={"partitioned_source"})
+    def downstream_of_partitioned_source():
+        pass
+
+    asset_graph = AssetGraph.from_assets([partitioned_source, downstream_of_partitioned_source])
+
+    assert asset_graph.is_partitioned(AssetKey("partitioned_source"))
+    assert asset_graph.is_partitioned(AssetKey("downstream_of_partitioned_source"))

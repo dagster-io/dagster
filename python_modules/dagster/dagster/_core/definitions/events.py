@@ -112,7 +112,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
 
     def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
         """
-        E.g. '["first_component", "second_component"]'
+        E.g. '["first_component", "second_component"]'.
         """
         if not self.path:
             return None
@@ -122,7 +122,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
 
     def to_user_string(self) -> str:
         """
-        E.g. "first_component/second_component"
+        E.g. "first_component/second_component".
         """
         return ASSET_KEY_DELIMITER.join(self.path)
 
@@ -163,10 +163,8 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod
-    def from_graphql_input(asset_key: Mapping[str, Sequence[str]]) -> Optional["AssetKey"]:
-        if asset_key and asset_key.get("path"):
-            return AssetKey(asset_key["path"])
-        return None
+    def from_graphql_input(graphql_input_asset_key: Mapping[str, Sequence[str]]) -> "AssetKey":
+        return AssetKey(graphql_input_asset_key["path"])
 
     def to_graphql_input(self) -> Mapping[str, Sequence[str]]:
         return {"path": self.path}

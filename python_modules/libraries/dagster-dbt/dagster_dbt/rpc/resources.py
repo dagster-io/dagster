@@ -8,6 +8,7 @@ from base64 import standard_b64encode as b64
 from typing import Any, Dict, Mapping, Optional, Sequence, cast
 
 import requests
+import requests.utils
 from dagster import (
     Failure,
     Field,
@@ -40,7 +41,7 @@ class DbtRpcResource(DbtResource):
         logger: Optional[Any] = None,
         **_,
     ):
-        """Constructor
+        """Constructor.
 
         Args:
             host (str): The IP address of the host of the dbt RPC server. Default is ``"0.0.0.0"``.
@@ -347,9 +348,9 @@ class DbtRpcResource(DbtResource):
         """
         explicit_params = dict(models=models, exclude=exclude, data=data, schema=schema)
         params = self._format_params({**explicit_params, **kwargs})
-        data = self._default_request(method="test", params=params)
+        request_data = self._default_request(method="test", params=params)
 
-        return self._get_result(data=json.dumps(data))
+        return self._get_result(data=json.dumps(request_data))
 
     def seed(
         self,
@@ -372,10 +373,11 @@ class DbtRpcResource(DbtResource):
             Response: the HTTP response from the dbt RPC server.
         """
         data = self._default_request(method="seed")
-        data["params"] = {"show": show}
+        params: Dict[str, Any] = {"show": show}
 
         if kwargs is not None:
-            data["params"]["task_tags"] = kwargs
+            params["task_tags"] = kwargs
+        data["params"] = params
 
         return self._get_result(data=json.dumps(data))
 
@@ -517,7 +519,7 @@ class DbtRpcSyncResource(DbtRpcResource):
         poll_interval: int = 1,
         **_,
     ):
-        """Constructor
+        """Constructor.
 
         Args:
             host (str): The IP address of the host of the dbt RPC server. Default is ``"0.0.0.0"``.

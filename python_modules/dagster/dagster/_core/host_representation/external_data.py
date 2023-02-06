@@ -614,10 +614,17 @@ class ExternalStaticPartitionsDefinitionData(
 class ExternalPartitionDimensionDefinition(
     NamedTuple(
         "_ExternalPartitionDimensionDefinition",
-        [("name", str), ("external_partitions_def_data", ExternalPartitionsDefinitionData)],
+        [
+            ("name", str),
+            ("external_partitions_def_data", ExternalPartitionsDefinitionData),
+        ],
     )
 ):
-    def __new__(cls, name: str, external_partitions_def_data: ExternalPartitionsDefinitionData):
+    def __new__(
+        cls,
+        name: str,
+        external_partitions_def_data: ExternalPartitionsDefinitionData,
+    ):
         return super(ExternalPartitionDimensionDefinition, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -1084,6 +1091,11 @@ def external_asset_graph_from_defs(
                     group_name=source_asset.group_name,
                     is_source=True,
                     is_observable=source_asset.is_observable,
+                    partitions_def_data=external_partitions_definition_from_def(
+                        source_asset.partitions_def
+                    )
+                    if source_asset.partitions_def
+                    else None,
                 )
             )
 
@@ -1265,7 +1277,8 @@ def external_multi_partitions_definition_from_def(
     return ExternalMultiPartitionsDefinitionData(
         external_partition_dimension_definitions=[
             ExternalPartitionDimensionDefinition(
-                dimension.name, external_partitions_definition_from_def(dimension.partitions_def)
+                dimension.name,
+                external_partitions_definition_from_def(dimension.partitions_def),
             )
             for dimension in partitions_def.partitions_defs
         ]
@@ -1310,7 +1323,7 @@ def external_sensor_data_from_def(
             base_asset_job_name: ExternalTargetData(
                 pipeline_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, solid_selection=None
             )
-            for base_asset_job_name in repository_def.get_base_asset_job_names()
+            for base_asset_job_name in repository_def.get_implicit_asset_job_names()
         }
     else:
         target_dict = {

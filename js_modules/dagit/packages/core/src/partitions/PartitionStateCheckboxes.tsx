@@ -8,7 +8,8 @@ export const PartitionStateCheckboxes: React.FC<{
   value: PartitionState[];
   allowed: PartitionState[];
   onChange: (selected: PartitionState[]) => void;
-}> = ({partitionKeysForCounts, value, onChange, allowed}) => {
+  disabled?: boolean;
+}> = ({partitionKeysForCounts, value, onChange, allowed, disabled}) => {
   const byState = React.useMemo(() => {
     const result: {[state: string]: number} = {
       [PartitionState.SUCCESS]: 0,
@@ -29,8 +30,9 @@ export const PartitionStateCheckboxes: React.FC<{
       {allowed.map((state) => (
         <Checkbox
           key={state}
+          disabled={disabled}
           style={{marginBottom: 0, marginLeft: 10, minWidth: 200}}
-          checked={value.includes(state)}
+          checked={value.includes(state) && !disabled}
           label={`${partitionStatusToText(state)} (${byState[state]})`}
           onChange={() =>
             onChange(value.includes(state) ? value.filter((v) => v !== state) : [...value, state])

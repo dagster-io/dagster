@@ -4,23 +4,52 @@ const config: CodegenConfig = {
   schema: './src/graphql/schema.graphql',
   documents: ['src/**/*.tsx'],
   ignoreNoDocuments: true, // for better experience with the watcher
+  hooks: {
+    afterAllFileWrite: ['prettier --write'],
+  },
   generates: {
-    './src/graphql/': {
-      preset: 'client',
+    './src/graphql/types.ts': {
       config: {
+        nonOptionalTypename: true,
         avoidOptionals: {
           field: true,
         },
         dedupeFragments: true,
-        nonOptionalTypename: true,
         namingConvention: {
           enumValues: 'keep',
         },
       },
+      plugins: [
+        'typescript',
+        {
+          add: {
+            content: `// Generated GraphQL types, do not edit manually.\n`,
+          },
+        },
+      ],
+    },
+    './src/': {
+      preset: 'near-operation-file',
       presetConfig: {
-        fragmentMasking: false,
+        extension: '.types.ts',
+        folder: 'types',
+        baseTypesPath: './graphql/types.ts',
       },
-      plugins: [],
+      config: {
+        dedupeOperationSuffix: true,
+        nonOptionalTypename: true,
+        avoidOptionals: {
+          field: true,
+        },
+      },
+      plugins: [
+        'typescript-operations',
+        {
+          add: {
+            content: `// Generated GraphQL types, do not edit manually.\n`,
+          },
+        },
+      ],
     },
   },
 };

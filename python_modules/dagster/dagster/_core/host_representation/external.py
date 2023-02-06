@@ -20,6 +20,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import (
     DEFAULT_SENSOR_DAEMON_INTERVAL,
     DefaultSensorStatus,
@@ -36,6 +37,7 @@ from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
+from dagster._utils import iter_to_list
 from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
@@ -54,7 +56,6 @@ from .external_data import (
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
-from .selector import InstigatorSelector, RepositorySelector
 
 if TYPE_CHECKING:
     from dagster._core.scheduler.instigation import InstigatorState
@@ -129,7 +130,7 @@ class ExternalRepository:
         return self._external_schedules[schedule_name]
 
     def get_external_schedules(self) -> Sequence[ExternalSchedule]:
-        return self._external_schedules.values()
+        return iter_to_list(self._external_schedules.values())
 
     @property
     @cached_method
@@ -146,7 +147,7 @@ class ExternalRepository:
         return self._external_sensors[sensor_name]
 
     def get_external_sensors(self) -> Sequence[ExternalSensor]:
-        return self._external_sensors.values()
+        return iter_to_list(self._external_sensors.values())
 
     @property
     @cached_method
@@ -165,7 +166,7 @@ class ExternalRepository:
         return self._external_partition_sets[partition_set_name]
 
     def get_external_partition_sets(self) -> Sequence[ExternalPartitionSet]:
-        return self._external_partition_sets.values()
+        return iter_to_list(self._external_partition_sets.values())
 
     def has_external_job(self, job_name: str) -> bool:
         return job_name in self._job_map

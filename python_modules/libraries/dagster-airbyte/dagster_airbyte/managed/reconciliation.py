@@ -120,6 +120,7 @@ def conn_dict(conn: Optional[AirbyteConnection]) -> Mapping[str, Any]:
         "destination namespace": conn.destination_namespace.name
         if isinstance(conn.destination_namespace, AirbyteDestinationNamespace)
         else conn.destination_namespace,
+        "prefix": conn.prefix,
     }
 
 
@@ -179,7 +180,7 @@ def reconcile_sources(
             continue
 
         diff = diff.join(
-            diff_sources(
+            diff_sources(  # type: ignore
                 configured_source,
                 existing_source.source if existing_source else None,
                 ignore_secrets,
@@ -199,7 +200,7 @@ def reconcile_sources(
 
         if configured_source:
             defn_id = check.not_none(
-                res.get_source_definition_by_name(configured_source.source_type, workspace_id)
+                res.get_source_definition_by_name(configured_source.source_type)
             )
             base_source_defn_dict = {
                 "name": configured_source.name,
@@ -267,7 +268,7 @@ def reconcile_destinations(
             continue
 
         diff = diff.join(
-            diff_destinations(
+            diff_destinations(  # type: ignore
                 configured_destination,
                 existing_destination.destination if existing_destination else None,
                 ignore_secrets,
@@ -288,7 +289,7 @@ def reconcile_destinations(
 
         if configured_destination:
             defn_id = res.get_destination_definition_by_name(
-                configured_destination.destination_type, workspace_id
+                configured_destination.destination_type
             )
             base_destination_defn_dict = {
                 "name": configured_destination.name,
@@ -410,7 +411,7 @@ def reconcile_config(
             dry_run,
         )
 
-        return ManagedElementDiff().join(sources_diff).join(dests_diff).join(connections_diff)
+        return ManagedElementDiff().join(sources_diff).join(dests_diff).join(connections_diff)  # type: ignore
 
 
 def reconcile_normalization(
@@ -521,7 +522,7 @@ def reconcile_connections_pre(
             continue
 
         diff = diff.join(
-            diff_connections(config_conn, existing_conn.connection if existing_conn else None)
+            diff_connections(config_conn, existing_conn.connection if existing_conn else None)  # type: ignore
         )
 
         if existing_conn and (
@@ -569,7 +570,7 @@ def reconcile_connections_post(
             # Enable or disable basic normalization based on config
             normalization_operation_id = reconcile_normalization(
                 res,
-                existing_connections.get("name", {}).get("connectionId"),
+                existing_connections.get("name", {}).get("connectionId"),  # type: ignore
                 destination,
                 config_conn.normalize_data,
                 workspace_id,
@@ -603,6 +604,9 @@ def reconcile_connections_post(
         else:
             connection_base_json["namespaceDefinition"] = "customformat"
             connection_base_json["namespaceFormat"] = cast(str, config_conn.destination_namespace)
+
+        if config_conn.prefix:
+            connection_base_json["prefix"] = config_conn.prefix
 
         if existing_conn:
             if not dry_run:

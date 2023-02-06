@@ -36,6 +36,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     reconcile,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -70,7 +71,7 @@ class AssetReconciliationScenario(NamedTuple):
                 run_requests, cursor = self.cursor_from.do_scenario(instance)
                 for run_request in run_requests:
                     instance.create_run_for_pipeline(
-                        repo.get_base_job_for_assets(run_request.asset_selection),
+                        repo.get_implicit_job_def_for_assets(run_request.asset_selection),
                         asset_selection=set(run_request.asset_selection),
                         tags=run_request.tags,
                     )
@@ -124,7 +125,7 @@ class AssetReconciliationScenario(NamedTuple):
             )
 
         for run_request in run_requests:
-            base_job = repo.get_base_job_for_assets(run_request.asset_selection)
+            base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)
             assert base_job is not None
 
         return run_requests, cursor
@@ -321,6 +322,7 @@ class FanOutPartitionMapping(PartitionMapping):
 
 
 daily_partitions_def = DailyPartitionsDefinition("2013-01-05")
+hourly_partitions_def = HourlyPartitionsDefinition("2013-01-05-00:00")
 one_partition_partitions_def = StaticPartitionsDefinition(["a"])
 two_partitions_partitions_def = StaticPartitionsDefinition(["a", "b"])
 fanned_out_partitions_def = StaticPartitionsDefinition(["a_1", "a_2", "a_3"])
@@ -381,6 +383,9 @@ multi_asset_in_middle_subsettable = (
 )
 
 # freshness policy
+nothing_dep_freshness = [
+    asset_def("asset1", ["some_undefined_source"], freshness_policy=freshness_30m)
+]
 many_to_one_freshness = [
     asset_def("asset1"),
     asset_def("asset2"),
@@ -478,6 +483,15 @@ two_assets_in_sequence_fan_out_partitions = [
 ]
 one_asset_daily_partitions = [asset_def("asset1", partitions_def=daily_partitions_def)]
 
+hourly_to_daily_partitions = [
+    asset_def("hourly", partitions_def=hourly_partitions_def),
+    asset_def(
+        "daily",
+        ["hourly"],
+        partitions_def=daily_partitions_def,
+    ),
+]
+
 partitioned_after_non_partitioned = [
     asset_def("asset1"),
     asset_def(
@@ -493,6 +507,14 @@ one_asset_self_dependency = [
     asset_def(
         "asset1",
         partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
+    )
+]
+
+one_asset_self_dependency_hourly = [
+    asset_def(
+        "asset1",
+        partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"),
         deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
     )
 ]
@@ -723,7 +745,6 @@ scenarios = {
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
         expected_run_requests=[
-            run_request(asset_keys=["asset1"], partition_key="2013-01-05"),
             run_request(asset_keys=["asset1"], partition_key="2013-01-06"),
         ],
     ),
@@ -732,9 +753,34 @@ scenarios = {
         unevaluated_runs=[],
         current_time=create_pendulum_time(year=2015, month=1, day=7, hour=4),
         expected_run_requests=[
-            run_request(asset_keys=["asset1"], partition_key=partition_key)
-            for partition_key in daily_partitions_def.get_partition_keys(
-                current_time=create_pendulum_time(year=2015, month=1, day=7, hour=4)
+            run_request(asset_keys=["asset1"], partition_key="2015-01-06"),
+        ],
+    ),
+    "hourly_to_daily_partitions_never_materialized": AssetReconciliationScenario(
+        assets=hourly_to_daily_partitions,
+        unevaluated_runs=[],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[
+            run_request(asset_keys=["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-06-04:00", end="2013-01-07-03:00")
+            )
+        ],
+    ),
+    "hourly_to_daily_partitions_never_materialized2": AssetReconciliationScenario(
+        assets=hourly_to_daily_partitions,
+        unevaluated_runs=[
+            run(["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-06-00:00", end="2013-01-06-23:00")
+            )
+        ],
+        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        expected_run_requests=[run_request(asset_keys=["daily"], partition_key="2013-01-06")]
+        + [
+            run_request(asset_keys=["hourly"], partition_key=partition_key)
+            for partition_key in hourly_partitions_def.get_partition_keys_in_range(
+                PartitionKeyRange(start="2013-01-07-00:00", end="2013-01-07-03:00")
             )
         ],
     ),
@@ -844,7 +890,15 @@ scenarios = {
         assets=one_asset_self_dependency,
         unevaluated_runs=[],
         expected_run_requests=[run_request(asset_keys=["asset1"], partition_key="2020-01-01")],
-        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=4),
+        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=4),
+    ),
+    "self_dependency_never_materialized_recent": AssetReconciliationScenario(
+        assets=one_asset_self_dependency_hourly,
+        unevaluated_runs=[],
+        expected_run_requests=[
+            run_request(asset_keys=["asset1"], partition_key="2020-01-01-00:00")
+        ],
+        current_time=create_pendulum_time(year=2020, month=1, day=1, hour=4),
     ),
     "self_dependency_prior_partition_requested": AssetReconciliationScenario(
         assets=one_asset_self_dependency,
@@ -903,6 +957,11 @@ scenarios = {
         assets=diamond_freshness,
         unevaluated_runs=[run(["asset1", "asset2"])],
         expected_run_requests=[run_request(asset_keys=["asset3", "asset4"])],
+    ),
+    "freshness_nothing_dep": AssetReconciliationScenario(
+        assets=nothing_dep_freshness,
+        unevaluated_runs=[],
+        expected_run_requests=[run_request(asset_keys=["asset1"])],
     ),
     "freshness_many_to_one_some_updated": AssetReconciliationScenario(
         assets=many_to_one_freshness,

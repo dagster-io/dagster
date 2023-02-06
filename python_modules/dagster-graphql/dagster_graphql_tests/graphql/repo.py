@@ -20,6 +20,7 @@ from dagster import (
     AssetSelection,
     Bool,
     DagsterInstance,
+    DailyPartitionsDefinition,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOutput,
@@ -1528,8 +1529,8 @@ def asset_one():
 
 
 @asset
-def asset_two(asset_one):  # pylint: disable=redefined-outer-name,unused-argument
-    return first_asset + 1
+def asset_two(asset_one):  # pylint: disable=redefined-outer-name
+    return asset_one + 1
 
 
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
@@ -1599,7 +1600,6 @@ time_partitioned_assets_job = build_assets_job(
 
 @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
 def yield_partition_materialization():
-    yield AssetMaterialization(asset_key=AssetKey("yield_partition_materialization"), partition="c")
     yield Output(5)
 
 
@@ -1774,8 +1774,8 @@ def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
 
 multipartitions_def = MultiPartitionsDefinition(
     {
-        "12": StaticPartitionsDefinition(["1", "2"]),
-        "ab": StaticPartitionsDefinition(["a", "b"]),
+        "date": DailyPartitionsDefinition(start_date="2022-01-01"),
+        "ab": StaticPartitionsDefinition(["a", "b", "c"]),
     }
 )
 

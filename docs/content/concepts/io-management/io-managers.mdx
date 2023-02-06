@@ -296,7 +296,7 @@ def op_1():
     return [1, 2, 3]
 
 
-@op(ins=In(input_manager_key="pandas_series"))
+@op(ins={"a": In(input_manager_key="pandas_series")})
 def op_2(a):
     return pd.concat([a, pd.Series([4, 5, 6])])
 
@@ -361,7 +361,7 @@ class MyPartitionedIOManager(IOManager):
 
 If you're working with time window partitions, you can also use the `asset_partitions_time_window` property, which will return a <PyObject object="TimeWindow" /> object.
 
-#### Handling partition mappings <Experimental />
+#### Handling partition mappings
 
 A single partition of one asset might depend on a range of partitions of an upstream asset.
 

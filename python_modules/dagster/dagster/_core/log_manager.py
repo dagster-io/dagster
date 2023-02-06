@@ -27,7 +27,7 @@ class DagsterMessageProps(
         ],
     )
 ):
-    """Internal class used to represent specific attributes about a logged message"""
+    """Internal class used to represent specific attributes about a logged message."""
 
     def __new__(
         cls,
@@ -98,7 +98,7 @@ class DagsterLoggingMetadata(
     )
 ):
     """Internal class used to represent the context in which a given message was logged (i.e. the
-    step, pipeline run, resource, etc.)
+    step, pipeline run, resource, etc.).
     """
 
     def __new__(
@@ -252,7 +252,7 @@ class DagsterLogHandler(logging.Handler):
         )
 
     def emit(self, record: logging.LogRecord):
-        """For any received record, add Dagster metadata, and have handlers handle it"""
+        """For any received record, add Dagster metadata, and have handlers handle it."""
         try:
             # to prevent the potential for infinite loops in which a handler produces log messages
             # which are then captured and then handled by that same handler (etc.), do not capture
@@ -326,7 +326,7 @@ class DagsterLogManager(logging.Logger):
         python_log_level = logging.NOTSET
 
         if instance:
-            handlers += instance.get_handlers()
+            handlers = [*handlers, *instance.get_handlers()]
             managed_loggers += [
                 logging.getLogger(lname) if lname != "root" else logging.getLogger()
                 for lname in instance.managed_python_loggers

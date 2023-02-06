@@ -41,6 +41,9 @@ install_dev_python_modules:
 install_dev_python_modules_verbose:
 	python scripts/install_dev_python_modules.py
 
+install_dev_python_modules_verbose_m1:
+	python scripts/install_dev_python_modules.py -qqq --include-prebuilt-grpcio-wheel
+
 graphql:
 	cd js_modules/dagit/; make generate-graphql; make generate-perms
 
@@ -54,6 +57,8 @@ rebuild_dagit: sanity_check
 
 rebuild_dagit_with_profiling: sanity_check
 	cd js_modules/dagit/; yarn install && yarn build-with-profiling
+
+dev_install_m1_grpcio_wheel: install_dev_python_modules_verbose_m1 rebuild_dagit
 
 dev_install: install_dev_python_modules_verbose rebuild_dagit
 

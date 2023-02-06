@@ -7,12 +7,14 @@ import pytest
 from dagster import (
     AssetIn,
     AssetKey,
+    DailyPartitionsDefinition,
     FreshnessPolicy,
     IOManager,
     MetadataEntry,
     ResourceDefinition,
     asset,
     io_manager,
+    materialize_to_memory,
     repository,
 )
 from dagster._core.definitions import build_assets_job
@@ -268,8 +270,6 @@ def test_custom_freshness_policy():
 def test_partitions(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
-    from dagster import DailyPartitionsDefinition, materialize_to_memory
-
     def _partition_key_to_vars(partition_key: str):
         if partition_key == "2022-01-02":
             return {"fail_test": True}
@@ -540,6 +540,50 @@ def test_subsetting(
         .execute_in_process()
     )
 
+    assert result.success
+    all_keys = {
+        event.event_specific_data.materialization.asset_key
+        for event in result.all_events
+        if event.event_type_value == "ASSET_MATERIALIZATION"
+    }
+    expected_keys = {AssetKey(name.split("/")) for name in expected_asset_names.split(",")}
+    assert all_keys == expected_keys
+
+
+@pytest.mark.parametrize(
+    "config,expected_asset_names",
+    [
+        ({"exclude": "tag:not_a_tag"}, "ALL"),
+        (
+            {"select": "sort_by_calories"},
+            "sort_by_calories",
+        ),
+        ({"full_refresh": True}, "ALL"),
+        ({"vars": {"my_var": "my_value", "another_var": 3, "a_third_var": True}}, "ALL"),
+    ],
+)
+def test_op_config(
+    config, expected_asset_names, dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):
+    if expected_asset_names == "ALL":
+        expected_asset_names = (
+            "sort_by_calories,cold_schema/sort_cold_cereals_by_calories,"
+            "sort_hot_cereals_by_calories,subdir_schema/least_caloric"
+        )
+    manifest_path = file_relative_path(__file__, "sample_manifest.json")
+    with open(manifest_path, "r", encoding="utf8") as f:
+        manifest_json = json.load(f)
+
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json)
+    result = materialize_to_memory(
+        assets=dbt_assets,
+        run_config={"ops": {"run_dbt_5ad73": {"config": config}}},
+        resources={
+            "dbt": dbt_cli_resource.configured(
+                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            )
+        },
+    )
     assert result.success
     all_keys = {
         event.event_specific_data.materialization.asset_key

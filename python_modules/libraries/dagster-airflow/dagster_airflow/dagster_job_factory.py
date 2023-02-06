@@ -6,11 +6,13 @@ from dagster import (
 )
 
 from dagster_airflow.dagster_pipeline_factory import (
-    DagsterAirflowError,
-    _create_airflow_connections,
     _make_schedules_and_jobs_from_airflow_dag_bag,
     make_dagster_pipeline_from_airflow_dag,
     patch_airflow_example_dag,
+)
+from dagster_airflow.utils import (
+    DagsterAirflowError,
+    create_airflow_connections,
 )
 
 
@@ -197,7 +199,7 @@ def make_dagster_definitions_from_airflow_dags_path(
     )
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
     # add connections to airflow so that dag evaluation works
-    _create_airflow_connections(connections)
+    create_airflow_connections(connections)
     try:
         dag_bag = DagBag(
             dag_folder=dag_path,

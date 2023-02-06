@@ -313,7 +313,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
 def _validate_resource_requirements(
     resource_defs: Mapping[str, ResourceDefinition], op_def: OpDefinition
 ) -> None:
-    """Validate correctness of resources against required resource keys"""
+    """Validate correctness of resources against required resource keys."""
     if cast(DecoratedOpFunction, op_def.compute_fn).has_context_arg():
         for requirement in op_def.get_resource_requirements():
             if not requirement.is_io_manager_requirement:

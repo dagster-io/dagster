@@ -17,7 +17,7 @@ def filter_runs_to_should_retry(
     runs: Sequence[DagsterRun], instance: DagsterInstance, default_max_retries: int
 ) -> Iterator[Tuple[DagsterRun, int]]:
     """
-    Return only runs that should retry along with their retry number (1st retry, 2nd, etc.)
+    Return only runs that should retry along with their retry number (1st retry, 2nd, etc.).
     """
 
     def get_retry_number(run: DagsterRun) -> Optional[int]:
@@ -85,7 +85,7 @@ def retry_run(
     workspace_context: IWorkspaceProcessContext,
 ) -> None:
     """
-    Submit a retry as a re-execute from failure
+    Submit a retry as a re-execute from failure.
     """
     instance = workspace_context.instance
     tags = {RETRY_NUMBER_TAG: str(retry_number)}

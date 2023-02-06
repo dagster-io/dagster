@@ -167,13 +167,15 @@ def is_callable(obj: object, additional_message: Optional[str] = None) -> Callab
 # ##### CLASS
 # ########################
 
+T_Type = TypeVar("T_Type", bound=type)
+
 
 def class_param(
-    obj: object,
+    obj: T_Type,
     param_name: str,
     superclass: Optional[type] = None,
     additional_message: Optional[str] = None,
-) -> type:
+) -> T_Type:
     if not isinstance(obj, type):
         raise _param_class_mismatch_exception(
             obj, param_name, superclass, False, additional_message
@@ -1066,8 +1068,8 @@ def two_dim_mapping_param(
 def not_none_param(
     obj: Optional[T], param_name: str, additional_message: Optional[str] = None
 ) -> T:
-    additional_message = " " + additional_message if additional_message else ""
     if obj is None:
+        additional_message = " " + additional_message if additional_message else ""
         raise _param_invariant_exception(
             param_name, f"Param {param_name} cannot be none.{additional_message}"
         )
@@ -1265,6 +1267,18 @@ def iterable_param(
         return obj
 
     return _check_iterable_items(obj, of_type, "iterable")
+
+
+def opt_iterable_param(
+    obj: Optional[Iterable[T]],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Optional[Iterable[T]]:
+    if obj is None:
+        return None
+
+    return iterable_param(obj, param_name, of_type, additional_message)
 
 
 # ########################
@@ -1607,6 +1621,51 @@ def _check_tuple_items(
         _check_iterable_items(obj_tuple, of_type, "tuple")
 
     return obj_tuple
+
+
+def tuple_elem(
+    ddict: Mapping,
+    key: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Tuple:
+    dict_param(ddict, "ddict")
+    str_param(key, "key")
+    opt_class_param(of_type, "of_type")
+
+    value = ddict.get(key)
+
+    if isinstance(value, tuple):
+        if not of_type:
+            return value
+
+        return _check_iterable_items(value, of_type, "tuple")
+
+    raise _element_check_error(key, value, ddict, tuple, additional_message)
+
+
+def opt_tuple_elem(
+    ddict: Mapping,
+    key: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Tuple:
+    dict_param(ddict, "ddict")
+    str_param(key, "key")
+    opt_class_param(of_type, "of_type")
+
+    value = ddict.get(key)
+
+    if value is None:
+        return tuple()
+
+    if isinstance(value, tuple):
+        if not of_type:
+            return value
+
+        return _check_iterable_items(value, of_type, "tuple")
+
+    raise _element_check_error(key, value, ddict, tuple, additional_message)
 
 
 # ###################################################################################################

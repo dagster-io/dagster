@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {InstigationStatus} from '../graphql/graphql';
+import {InstigationStatus} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 

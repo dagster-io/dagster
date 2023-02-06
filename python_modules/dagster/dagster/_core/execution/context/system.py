@@ -2,7 +2,7 @@
 This module contains the execution context objects that are internal to the system.
 Not every property on these should be exposed to random Jane or Joe dagster user
 so we have a different layer of objects that encode the explicit public API
-in the user_context module
+in the user_context module.
 """
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -346,16 +346,18 @@ class PlanExecutionContext(IPlanContext):
 
         tags = self._plan_data.pipeline_run.tags
 
+        is_multipartitioned = any(
+            [tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]
+        )
         check.invariant(
-            PARTITION_NAME_TAG in tags
-            or any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]),
+            PARTITION_NAME_TAG in tags or is_multipartitioned,
             "Tried to access partition_key for a non-partitioned run",
         )
 
-        if PARTITION_NAME_TAG in tags:
-            return tags[PARTITION_NAME_TAG]
+        if is_multipartitioned:
+            return get_multipartition_key_from_tags(tags)
 
-        return get_multipartition_key_from_tags(tags)
+        return tags[PARTITION_NAME_TAG]
 
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
@@ -364,12 +366,12 @@ class PlanExecutionContext(IPlanContext):
         )
 
         tags = self._plan_data.pipeline_run.tags
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            multipartition_key = get_multipartition_key_from_tags(tags)
+            return PartitionKeyRange(multipartition_key, multipartition_key)
+
         partition_key = tags.get(PARTITION_NAME_TAG)
         if partition_key is not None:
-            return PartitionKeyRange(partition_key, partition_key)
-
-        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
-            partition_key = get_multipartition_key_from_tags(tags)
             return PartitionKeyRange(partition_key, partition_key)
 
         partition_key_range_start = tags.get(ASSET_PARTITION_RANGE_START_TAG)
@@ -403,12 +405,7 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def has_partition_key(self) -> bool:
-        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags or any(
-            [
-                tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
-                for tag in self._plan_data.pipeline_run.tags.keys()
-            ]
-        )
+        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags
 
     @property
     def has_partition_key_range(self) -> bool:
