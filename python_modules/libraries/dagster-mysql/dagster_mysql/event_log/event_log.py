@@ -1,4 +1,3 @@
-from typing import Sequence
 
 import dagster._check as check
 import sqlalchemy as db

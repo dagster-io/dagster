@@ -56,7 +56,7 @@ from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DA
 from .schema import (
     AssetEventTagsTable,
     AssetKeyTable,
-    MutablePartitionsTable,
+    DynamicPartitionsTable,
     SecondaryIndexMigrationTable,
     SqlEventLogStorageTable,
 )
@@ -615,9 +615,9 @@ class SqlEventLogStorage(EventLogStorage):
             if self.has_table("asset_event_tags"):
                 conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
 
-            if self.has_table("mutable_partitions"):
+            if self.has_table("dynamic_partitions"):
                 conn.execute(
-                    MutablePartitionsTable.delete()
+                    DynamicPartitionsTable.delete()
                 )  # pylint: disable=no-value-for-parameter
 
         with self.index_connection() as conn:
@@ -627,9 +627,9 @@ class SqlEventLogStorage(EventLogStorage):
             if self.has_table("asset_event_tags"):
                 conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
 
-            if self.has_table("mutable_partitions"):
+            if self.has_table("dynamic_partitions"):
                 conn.execute(
-                    MutablePartitionsTable.delete()
+                    DynamicPartitionsTable.delete()
                 )  # pylint: disable=no-value-for-parameter
 
     def delete_events(self, run_id):
@@ -1672,7 +1672,7 @@ class SqlEventLogStorage(EventLogStorage):
     def _check_partitions_table(self):
         # Guards against cases where the user is not running the latest migration for
         # partitions storage. Should be updated when the partitions storage schema changes.
-        if not self.has_table("mutable_partitions"):
+        if not self.has_table("dynamic_partitions"):
             raise DagsterInvalidInvocationError(
                 "Using mutable partitions definitions requires the mutable partitions table, which"
                 " currently does not exist. Add this table by running `dagster"
@@ -1681,36 +1681,36 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _fetch_partition_keys_for_partition_def(self, partitions_def_name: str) -> Sequence[str]:
         columns = [
-            MutablePartitionsTable.c.partitions_def_name,
-            MutablePartitionsTable.c.partition,
+            DynamicPartitionsTable.c.partitions_def_name,
+            DynamicPartitionsTable.c.partition,
         ]
         query = db.select(columns).where(
-            MutablePartitionsTable.c.partitions_def_name == partitions_def_name
+            DynamicPartitionsTable.c.partitions_def_name == partitions_def_name
         )
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()
 
         return [row[1] for row in rows]
 
-    def get_mutable_partitions(self, partitions_def_name: str) -> Sequence[str]:
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         """Get the list of partition keys for a partition definition."""
         self._check_partitions_table()
         return self._fetch_partition_keys_for_partition_def(partitions_def_name)
 
-    def has_mutable_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         self._check_partitions_table()
         return partition_key in self._fetch_partition_keys_for_partition_def(partitions_def_name)
 
-    def add_mutable_partitions(
+    def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
         self._check_partitions_table()
         with self.index_connection() as conn:
             existing_rows = conn.execute(
-                db.select([MutablePartitionsTable.c.partition]).where(
+                db.select([DynamicPartitionsTable.c.partition]).where(
                     db.and_(
-                        MutablePartitionsTable.c.partition.in_(partition_keys),
-                        MutablePartitionsTable.c.partitions_def_name == partitions_def_name,
+                        DynamicPartitionsTable.c.partition.in_(partition_keys),
+                        DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
                     )
                 )
             ).fetchall()
@@ -1718,21 +1718,21 @@ class SqlEventLogStorage(EventLogStorage):
 
             if new_keys:
                 conn.execute(
-                    MutablePartitionsTable.insert(),
+                    DynamicPartitionsTable.insert(),
                     [
                         dict(partitions_def_name=partitions_def_name, partition=partition_key)
                         for partition_key in new_keys
                     ],
                 )
 
-    def delete_mutable_partition(self, partitions_def_name: str, partition_key: str) -> None:
+    def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
         self._check_partitions_table()
         with self.index_connection() as conn:
             conn.execute(
-                MutablePartitionsTable.delete().where(
+                DynamicPartitionsTable.delete().where(
                     db.and_(
-                        MutablePartitionsTable.c.partitions_def_name == partitions_def_name,
-                        MutablePartitionsTable.c.partition == partition_key,
+                        DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                        DynamicPartitionsTable.c.partition == partition_key,
                     )
                 )
             )

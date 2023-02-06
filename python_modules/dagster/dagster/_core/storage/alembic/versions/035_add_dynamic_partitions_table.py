@@ -19,9 +19,9 @@ depends_on = None
 
 
 def upgrade():
-    if not has_table("mutable_partitions"):
+    if not has_table("dynamic_partitions"):
         op.create_table(
-            "mutable_partitions",
+            "dynamic_partitions",
             db.Column(
                 "id",
                 db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
@@ -33,8 +33,8 @@ def upgrade():
             db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
         )
         op.create_index(
-            "idx_mutable_partitions",
-            "mutable_partitions",
+            "idx_dynamic_partitions",
+            "dynamic_partitions",
             ["partitions_def_name", "partition"],
             mysql_length={"partitions_def_name": 64, "partition": 64},
             unique=True,
@@ -42,8 +42,8 @@ def upgrade():
 
 
 def downgrade():
-    if has_index("mutable_partitions", "idx_mutable_partitions"):
-        op.drop_index("idx_mutable_partition_keys", "mutable_partitions")
+    if has_index("dynamic_partitions", "idx_dynamic_partitions"):
+        op.drop_index("idx_dynamic_partition_keys", "dynamic_partitions")
 
-    if has_table("mutable_partitions"):
-        op.drop_table("mutable_partitions")
+    if has_table("dynamic_partitions"):
+        op.drop_table("dynamic_partitions")

@@ -776,7 +776,7 @@ def test_add_cached_status_data_column(hostname, conn_string):
             assert {"cached_status_data"} <= get_columns(instance, "asset_keys")
 
 
-def test_add_mutable_partitions_table(hostname, conn_string):
+def test_add_dynamic_partitions_table(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
         conn_string,
@@ -795,13 +795,13 @@ def test_add_mutable_partitions_table(hostname, conn_string):
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
-            assert "mutable_partitions" not in get_tables(instance)
+            assert "dynamic_partitions" not in get_tables(instance)
 
             instance.wipe()
 
             with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
-                instance.get_mutable_partitions("foo")
+                instance.get_dynamic_partitions("foo")
 
             instance.upgrade()
-            assert "mutable_partitions" in get_tables(instance)
-            assert instance.get_mutable_partitions("foo") == []
+            assert "dynamic_partitions" in get_tables(instance)
+            assert instance.get_dynamic_partitions("foo") == []

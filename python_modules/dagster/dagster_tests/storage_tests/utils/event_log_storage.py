@@ -2896,62 +2896,62 @@ class TestEventLogStorage:
 
                 assert _get_cached_status_for_asset(storage, asset_key) is None
 
-    def test_add_mutable_partitions_and_wipe(self, storage):
+    def test_add_dynamic_partitions_and_wipe(self, storage):
         assert storage
 
-        assert storage.get_mutable_partitions("foo") == []
+        assert storage.get_dynamic_partitions("foo") == []
 
-        storage.add_mutable_partitions(
+        storage.add_dynamic_partitions(
             partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
         )
-        partitions = storage.get_mutable_partitions("foo")
+        partitions = storage.get_dynamic_partitions("foo")
         assert len(partitions) == 3
         assert set(partitions) == {"foo", "bar", "baz"}
 
         # Test for idempotency
-        storage.add_mutable_partitions(partitions_def_name="foo", partition_keys=["foo"])
-        partitions = storage.get_mutable_partitions("foo")
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo"])
+        partitions = storage.get_dynamic_partitions("foo")
         assert len(partitions) == 3
         assert set(partitions) == {"foo", "bar", "baz"}
 
-        storage.add_mutable_partitions(partitions_def_name="foo", partition_keys=["foo", "qux"])
-        partitions = storage.get_mutable_partitions("foo")
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo", "qux"])
+        partitions = storage.get_dynamic_partitions("foo")
         assert len(partitions) == 4
         assert set(partitions) == {"foo", "bar", "baz", "qux"}
 
-        assert set(storage.get_mutable_partitions("baz")) == set()
+        assert set(storage.get_dynamic_partitions("baz")) == set()
 
         storage.wipe()
-        assert storage.get_mutable_partitions("foo") == []
+        assert storage.get_dynamic_partitions("foo") == []
 
-    def test_delete_mutable_partitions(self, storage):
+    def test_delete_dynamic_partitions(self, storage):
         assert storage
 
-        assert storage.get_mutable_partitions("foo") == []
+        assert storage.get_dynamic_partitions("foo") == []
 
-        storage.add_mutable_partitions(
+        storage.add_dynamic_partitions(
             partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
         )
-        assert set(storage.get_mutable_partitions("foo")) == {"foo", "bar", "baz"}
+        assert set(storage.get_dynamic_partitions("foo")) == {"foo", "bar", "baz"}
 
-        storage.delete_mutable_partition(partitions_def_name="foo", partition_key="foo")
-        assert set(storage.get_mutable_partitions("foo")) == {"bar", "baz"}
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="foo")
+        assert set(storage.get_dynamic_partitions("foo")) == {"bar", "baz"}
 
         # Test for idempotency
-        storage.delete_mutable_partition(partitions_def_name="foo", partition_key="foo")
-        assert set(storage.get_mutable_partitions("foo")) == {"bar", "baz"}
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="foo")
+        assert set(storage.get_dynamic_partitions("foo")) == {"bar", "baz"}
 
-        storage.delete_mutable_partition(partitions_def_name="bar", partition_key="foo")
-        assert set(storage.get_mutable_partitions("baz")) == set()
+        storage.delete_dynamic_partition(partitions_def_name="bar", partition_key="foo")
+        assert set(storage.get_dynamic_partitions("baz")) == set()
 
-    def test_has_mutable_partition(self, storage):
+    def test_has_dynamic_partition(self, storage):
         assert storage
 
-        assert storage.get_mutable_partitions("foo") == []
+        assert storage.get_dynamic_partitions("foo") == []
 
-        storage.add_mutable_partitions(
+        storage.add_dynamic_partitions(
             partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
         )
-        assert storage.has_mutable_partition(partitions_def_name="foo", partition_key="foo")
-        assert not storage.has_mutable_partition(partitions_def_name="foo", partition_key="qux")
-        assert not storage.has_mutable_partition(partitions_def_name="bar", partition_key="foo")
+        assert storage.has_dynamic_partition(partitions_def_name="foo", partition_key="foo")
+        assert not storage.has_dynamic_partition(partitions_def_name="foo", partition_key="qux")
+        assert not storage.has_dynamic_partition(partitions_def_name="bar", partition_key="foo")

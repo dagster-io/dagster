@@ -7,7 +7,7 @@ from .in_memory import InMemoryEventLogStorage as InMemoryEventLogStorage
 from .polling_event_watcher import SqlPollingEventWatcher as SqlPollingEventWatcher
 from .schema import (
     AssetKeyTable as AssetKeyTable,
-    MutablePartitionsTable as MutablePartitionsTable,
+    DynamicPartitionsTable as DynamicPartitionsTable,
     SqlEventLogStorageMetadata as SqlEventLogStorageMetadata,
     SqlEventLogStorageTable as SqlEventLogStorageTable,
 )

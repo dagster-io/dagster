@@ -1083,7 +1083,7 @@ def test_1_0_17_add_cached_status_data_column():
             assert "cached_status_data" in set(get_sqlite3_columns(db_path, "asset_keys"))
 
 
-def test_add_mutable_partitions_table():
+def test_add_dynamic_partitions_table():
     src_dir = file_relative_path(
         __file__, "snapshot_1_0_17_pre_add_cached_status_data_column/sqlite"
     )
@@ -1093,13 +1093,13 @@ def test_add_mutable_partitions_table():
         assert get_current_alembic_version(db_path) == "958a9495162d"
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-            assert "mutable_partitions" not in get_sqlite3_tables(db_path)
+            assert "dynamic_partitions" not in get_sqlite3_tables(db_path)
 
             instance.wipe()
 
             with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
-                instance.get_mutable_partitions("foo")
+                instance.get_dynamic_partitions("foo")
 
             instance.upgrade()
-            assert "mutable_partitions" in get_sqlite3_tables(db_path)
-            assert instance.get_mutable_partitions("foo") == []
+            assert "dynamic_partitions" in get_sqlite3_tables(db_path)
+            assert instance.get_dynamic_partitions("foo") == []
