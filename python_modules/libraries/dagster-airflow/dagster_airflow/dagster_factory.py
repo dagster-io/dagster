@@ -92,14 +92,11 @@ def make_dagster_definitions_from_airflow_dags_path(
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
     # add connections to airflow so that dag evaluation works
     create_airflow_connections(connections)
-    try:
-        dag_bag = DagBag(
-            dag_folder=dag_path,
-            include_examples=False,  # Exclude Airflow example dags
-            safe_mode=safe_mode,
-        )
-    except Exception:
-        raise DagsterAirflowError("Error initializing airflow.models.dagbag object with arguments")
+    dag_bag = DagBag(
+        dag_folder=dag_path,
+        include_examples=False,  # Exclude Airflow example dags
+        safe_mode=safe_mode,
+    )
 
     return make_dagster_definitions_from_airflow_dag_bag(
         dag_bag=dag_bag,
