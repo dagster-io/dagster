@@ -1,6 +1,7 @@
-from typing import Sequence
+from typing import Sequence, cast
 
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -149,9 +150,12 @@ class SnowflakeDbClient(DbClient):
             dict(schema=table_slice.schema, **no_schema_config), context.log
         ).get_connection() as con:
             try:
+                print("DELETING DATA")
                 con.execute_string(_get_cleanup_statement(table_slice))
-            except ProgrammingError:
+            except ProgrammingError as e:
                 # table doesn't exist yet, so ignore the error
+                print("ERROR ENCOUNTERED, SKIPPING")
+                print(e)
                 pass
 
     @staticmethod
@@ -192,7 +196,8 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
 
 
 def _time_window_where_clause(table_partition: TablePartition) -> str:
-    start_dt, end_dt = table_partition.partition
+    partition = cast(TimeWindow, table_partition.partition)
+    start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     # Snowflake BETWEEN is inclusive; start <= partition expr <= end. We don't want to remove the next partition so we instead
@@ -201,4 +206,4 @@ def _time_window_where_clause(table_partition: TablePartition) -> str:
 
 
 def _static_where_clause(table_partition: TablePartition) -> str:
-    return f"""WHERE {table_partition.partition_expr} == '{table_partition.partition}'"""
+    return f"""WHERE {table_partition.partition_expr} = '{table_partition.partition}'"""

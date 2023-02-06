@@ -52,7 +52,7 @@ def test_get_select_statement_static_partitioned():
                 columns=["apple", "banana"],
             )
         )
-        == "SELECT apple, banana FROM schema1.table1\nWHERE my_fruit_col == 'apple'"
+        == "SELECT apple, banana FROM schema1.table1\nWHERE my_fruit_col = 'apple'"
     )
 
 
@@ -89,5 +89,5 @@ def test_get_cleanup_statement_static_partitioned():
                 partition=TablePartition(partition_expr="my_fruit_col", partition="apple"),
             )
         )
-        == "DELETE FROM schema1.table1\nWHERE my_fruit_col == 'apple'"
+        == "DELETE FROM schema1.table1\nWHERE my_fruit_col = 'apple'"
     )

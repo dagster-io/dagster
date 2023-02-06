@@ -1,7 +1,8 @@
-from typing import Sequence
+from typing import Sequence, cast
 
 import duckdb
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
@@ -154,11 +155,12 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
 
 
 def _time_window_where_clause(table_partition: TablePartition) -> str:
-    start_dt, end_dt = table_partition.partition
+    partition = cast(TimeWindow, table_partition.partition)
+    start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(DUCKDB_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(DUCKDB_DATETIME_FORMAT)
     return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
 
 
 def _static_where_clause(table_partition: TablePartition) -> str:
-    return f"""WHERE {table_partition.partition_expr} == '{table_partition.partition}'"""
+    return f"""WHERE {table_partition.partition_expr} = '{table_partition.partition}'"""

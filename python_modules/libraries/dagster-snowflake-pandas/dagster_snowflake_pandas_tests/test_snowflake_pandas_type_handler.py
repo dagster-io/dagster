@@ -49,6 +49,12 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
     "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
 }
 
+# SHARED_BUILDKITE_SNOWFLAKE_CONF = {
+#     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
+#     "user": "jamie@elementl.com",
+#     "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
+# }
+
 
 @contextmanager
 def temporary_snowflake_table(schema_name: str, db_name: str, column_str: str) -> Iterator[str]:
@@ -327,10 +333,16 @@ def test_static_partitioned_asset(tmp_path):
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str="A string, COLOR string, B int",
     ) as table_name:
+        #  with temporary_snowflake_table(
+        #     schema_name="JAMIE",
+        #     db_name="SANDBOX",
+        #     column_str="A string, COLOR string, B int",
+        # ) as table_name:
 
         @asset(
             partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),
             key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
+            # key_prefix=["JAMIE"],
             metadata={"partition_expr": "color"},
             config_schema={"value": str},
             name=table_name,
@@ -349,10 +361,17 @@ def test_static_partitioned_asset(tmp_path):
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
 
+        # asset_full_name = f"JAMIE__{table_name}"
+        # snowflake_table_path = f"JAMIE.{table_name}"
+
         snowflake_config = {
             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
             "database": "TEST_SNOWFLAKE_IO_MANAGER",
         }
+        # snowflake_config = {
+        #     **SHARED_BUILDKITE_SNOWFLAKE_CONF,
+        #     "database": "SANDBOX",
+        # }
         snowflake_conn = SnowflakeConnection(
             snowflake_config, logging.getLogger("temporary_snowflake_table")
         )
