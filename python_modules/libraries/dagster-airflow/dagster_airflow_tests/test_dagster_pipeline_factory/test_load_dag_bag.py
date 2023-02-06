@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 from airflow import __version__ as airflow_version
-from dagster_airflow.dagster_job_factory import (
+from dagster_airflow import (
     make_dagster_definitions_from_airflow_dags_path,
     make_dagster_definitions_from_airflow_example_dags,
 )
