@@ -152,10 +152,8 @@ class SnowflakeDbClient(DbClient):
             try:
                 print("DELETING DATA")
                 con.execute_string(_get_cleanup_statement(table_slice))
-            except ProgrammingError as e:
+            except ProgrammingError:
                 # table doesn't exist yet, so ignore the error
-                print("ERROR ENCOUNTERED, SKIPPING")
-                print(e)
                 pass
 
     @staticmethod
