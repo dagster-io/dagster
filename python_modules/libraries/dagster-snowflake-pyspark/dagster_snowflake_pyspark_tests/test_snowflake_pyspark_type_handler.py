@@ -26,7 +26,14 @@ from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler, snowflake_pyspark_io_manager
 from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.functions import to_timestamp
+from pyspark.sql.functions import to_date
+from pyspark.sql.types import (
+    DateType,
+    LongType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 resource_config = {
     "database": "database_abc",
@@ -204,13 +211,19 @@ def test_time_window_partitioned_asset(tmp_path):
                 value=SNOWFLAKE_JARS,
             ).getOrCreate()
 
-            columns = ["TIME", "A", "B"]
+            schema = StructType(
+                [
+                    StructField("TIME", DateType()),
+                    StructField("A", StringType()),
+                    StructField("B", LongType()),
+                ]
+            )
             data = [
-                (to_timestamp(partition), value, 4),
-                (to_timestamp(partition), value, 5),
-                (to_timestamp(partition), value, 6),
+                (to_date(partition), value, 4),
+                (to_date(partition), value, 5),
+                (to_date(partition), value, 6),
             ]
-            df = spark.createDataFrame(data).toDF(*columns)
+            df = spark.createDataFrame(data, schema=schema)
 
             return df
 
@@ -289,9 +302,15 @@ def test_static_partitioned_asset(tmp_path):
                 value=SNOWFLAKE_JARS,
             ).getOrCreate()
 
-            columns = ["COLOR", "A", "B"]
+            schema = StructType(
+                [
+                    StructField("COLOR", StringType()),
+                    StructField("A", StringType()),
+                    StructField("B", LongType()),
+                ]
+            )
             data = [(partition, value, 4), (partition, value, 5), (partition, value, 6)]
-            df = spark.createDataFrame(data).toDF(*columns)
+            df = spark.createDataFrame(data, schema=schema)
             return df
 
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
