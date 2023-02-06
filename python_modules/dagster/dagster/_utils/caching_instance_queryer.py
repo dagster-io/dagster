@@ -298,9 +298,9 @@ class CachingInstanceQueryer:
             )
         )
 
-    def get_materialized_partitions(
+    def get_materialized_partition_counts(
         self, asset_key: AssetKey, after_cursor: Optional[int] = None
-    ) -> Iterable[str]:
+    ) -> Mapping[str, int]:
         if (
             after_cursor not in self._asset_partition_count_cache
             or asset_key not in self._asset_partition_count_cache[after_cursor]
@@ -312,11 +312,16 @@ class CachingInstanceQueryer:
             )[
                 asset_key
             ]
+        return self._asset_partition_count_cache[after_cursor][asset_key]
+
+    def get_materialized_partitions(
+        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+    ) -> Iterable[str]:
         return [
             partition_key
-            for partition_key, count in self._asset_partition_count_cache[after_cursor][
-                asset_key
-            ].items()
+            for partition_key, count in self.get_materialized_partition_counts(
+                asset_key, after_cursor
+            ).items()
             if count > 0
         ]
 
@@ -404,6 +409,110 @@ class CachingInstanceQueryer:
             }
         return {}
 
+    def _calculate_partition_data_time(
+        self,
+        asset_key: AssetKey,
+        record_id: int,
+        partitions_def: TimeWindowPartitionsDefinition,
+        status_cache_value: "AssetStatusCacheValue",
+    ) -> Optional[datetime.datetime]:
+        if self.instance.can_cache_asset_status_data():
+            partition_subset = status_cache_value.deserialize_materialized_partition_subsets(
+                partitions_def=partitions_def
+            )
+        else:
+            # if we can't use the asset status cache, then we get the subset by querying for the
+            # existing partitions
+            partition_subset = partitions_def.empty_subset().with_partition_keys(
+                self.get_materialized_partitions(asset_key)
+            )
+
+        if not isinstance(partition_subset, TimeWindowPartitionsSubset):
+            check.failed(f"Invalid partition subset {type(partition_subset)}")
+
+        sorted_time_windows = sorted(partition_subset.included_time_windows)
+        # no time windows, no data
+        if len(sorted_time_windows) == 0:
+            return None
+        first_filled_time_window = sorted_time_windows[0]
+
+        first_available_time_window = partitions_def.get_first_partition_window()
+        if first_available_time_window is None:
+            return None
+
+        # if the first partition has not been filled
+        if first_available_time_window.start < first_filled_time_window.start:
+            return None
+
+        # there are no events for this asset after the given record
+        if status_cache_value.latest_storage_id <= record_id:
+            return first_filled_time_window.end
+
+        # get a per-partition count of the new materializations
+        new_partition_counts = self.get_materialized_partition_counts(
+            asset_key, after_cursor=record_id
+        )
+
+        total_partition_counts = self.get_materialized_partition_counts(asset_key)
+
+        # these are the partitions that did not exist before this record was created
+        net_new_partitions = {
+            partition_key
+            for partition_key, new_count in new_partition_counts.items()
+            if new_count == total_partition_counts[partition_key]
+        }
+
+        # there are new materializations, but they don't fill any new partitions
+        if not net_new_partitions:
+            return first_filled_time_window.end
+
+        # the oldest time window that was newly filled
+        oldest_net_new_time_window = min(
+            partitions_def.time_window_for_partition_key(partition_key)
+            for partition_key in net_new_partitions
+        )
+
+        # only factor in the oldest net new time window if it breaks the current first filled time window
+        return min(
+            oldest_net_new_time_window.start,
+            first_filled_time_window.end,
+        )
+
+    def _calculate_used_data_partitioned(
+        self,
+        asset_graph: AssetGraph,
+        asset_key: AssetKey,
+        record_id: int,
+        partitions_def: TimeWindowPartitionsDefinition,
+    ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
+        from dagster._core.storage.partition_status_cache import (
+            get_and_update_asset_status_cache_values,
+        )
+
+        # return the existing upstream data times already calculated for this record (if any)
+        known_data = self.get_known_used_data(asset_key, record_id)
+        if known_data:
+            return known_data
+
+        # this is the current state of the asset, not the state of the asset at the time of record_id
+        status_cache_value = get_and_update_asset_status_cache_values(
+            instance=self._instance,
+            asset_graph=asset_graph,
+            asset_key=asset_key,
+        )[asset_key]
+
+        partition_data_time = self._calculate_partition_data_time(
+            asset_key=asset_key,
+            record_id=record_id,
+            partitions_def=partitions_def,
+            status_cache_value=status_cache_value,
+        )
+        partition_data_timestamp = partition_data_time.timestamp() if partition_data_time else None
+        from dagster import AssetSelection
+
+        root_keys = AssetSelection.keys(asset_key).upstream().sources().resolve(asset_graph)
+        return {key: (None, partition_data_timestamp) for key in root_keys}
+
     @cached_method
     def _calculate_used_data_unpartitioned(
         self,
@@ -474,6 +583,35 @@ class CachingInstanceQueryer:
                     known_data[key] = min(known_data.get(key, tup), tup)
 
         return known_data
+
+    @cached_method
+    def _calculate_used_data(
+        self,
+        asset_graph: AssetGraph,
+        asset_key: AssetKey,
+        record_id: Optional[int],
+        record_timestamp: Optional[float],
+        record_tags: Mapping[str, str],
+    ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
+        if record_id is None:
+            return {key: (None, None) for key in asset_graph.get_non_source_roots(asset_key)}
+
+        partitions_def = asset_graph.get_partitions_def(asset_key)
+        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            return self._calculate_used_data_partitioned(
+                asset_graph=asset_graph,
+                asset_key=asset_key,
+                record_id=record_id,
+                partitions_def=partitions_def,
+            )
+        else:
+            return self._calculate_used_data_unpartitioned(
+                asset_graph=asset_graph,
+                asset_key=asset_key,
+                record_id=record_id,
+                record_timestamp=record_timestamp,
+                record_tags=record_tags,
+            )
 
     def get_used_data_times_for_record(
         self,
