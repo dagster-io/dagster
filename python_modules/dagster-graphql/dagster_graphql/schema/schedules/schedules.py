@@ -41,7 +41,7 @@ class GrapheneSchedule(graphene.ObjectType):
     futureTick = graphene.NonNull(
         GrapheneDryRunInstigationTick, tick_timestamp=graphene.NonNull(graphene.Int)
     )
-    ticksFromTimestamp = graphene.NonNull(
+    potentialTickTimestamps = graphene.NonNull(
         graphene.List(graphene.Float),
         start_timestamp=graphene.Float(),
         upper_limit=graphene.Int(),
@@ -150,7 +150,9 @@ class GrapheneSchedule(graphene.ObjectType):
             self._external_schedule.schedule_selector, float(tick_timestamp)
         )
 
-    def resolve_ticksFromTimestamp(self, _graphene_info: ResolveInfo, **kwargs: Dict[str, object]):
+    def resolve_potentialTickTimestamps(
+        self, _graphene_info: ResolveInfo, **kwargs: Dict[str, object]
+    ):
         """Get timestamps when ticks will occur before and after a given timestamp.
 
         upper_limit defines how many ticks will be retrieved after the current timestamp, and lower_limit defines how many ticks will be retrieved before the current timestamp.
@@ -177,7 +179,7 @@ class GrapheneSchedule(graphene.ObjectType):
         # ascending case), so we need to make sure not to double count start_timestamp
         # if it falls on a tick time.
         if first_past_tick.timestamp() < start_timestamp:
-            tick_times_below_timestamp.append(first_past_tick)
+            tick_times_below_timestamp.append(first_past_tick.timestamp())
             lower_limit -= 1
 
         for _ in range(lower_limit):

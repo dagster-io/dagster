@@ -86,7 +86,7 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
         }
         cursor
       }
-      ticksFromTimestamp(startTimestamp: $ticksAfter, upperLimit: 3, lowerLimit: 3)
+      potentialTickTimestamps(startTimestamp: $ticksAfter, upperLimit: 3, lowerLimit: 3)
       scheduleState {
         id
         selectorId
@@ -220,7 +220,7 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $startTimestamp: Float, 
     }
     ... on Schedule {
       name
-      ticksFromTimestamp(startTimestamp: $startTimestamp, upperLimit: $ticksAfter, lowerLimit: $ticksBefore)
+      potentialTickTimestamps(startTimestamp: $startTimestamp, upperLimit: $ticksAfter, lowerLimit: $ticksBefore)
     }
   }
 }
@@ -299,11 +299,17 @@ def _get_unloadable_schedule_origin(name):
     ).get_instigator_origin(name)
 
 
-def test_get_ticks_from_timestamp(graphql_context):
+@pytest.mark.parametrize("starting_case", ["on_tick_time", "offset_tick_time"])
+def test_get_potential_ticks_starting_at_tick_time(graphql_context, starting_case):
     schedule_selector = infer_schedule_selector(graphql_context, "timezone_schedule")
 
-    # Case where starting timestamp actually falls on a tick time
-    start_timestamp = create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp()
+    if starting_case == "on_tick_time":
+        # Starting timestamp falls exactly on the timestamp of a tick
+        start_timestamp = create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp()
+    else:
+        # Starting timestamp is offset from tick times
+        start_timestamp = create_pendulum_time(2019, 2, 26, hour=1, tz="US/Central").timestamp()
+
     result = execute_dagster_graphql(
         graphql_context,
         GET_SCHEDULE_TICKS_FROM_TIMESTAMP,
@@ -316,8 +322,8 @@ def test_get_ticks_from_timestamp(graphql_context):
     )
     assert result.data["scheduleOrError"]["__typename"] == "Schedule"
     assert result.data["scheduleOrError"]["name"] == "timezone_schedule"
-    assert len(result.data["scheduleOrError"]["ticksFromTimestamp"]) == 5
-    assert result.data["scheduleOrError"]["ticksFromTimestamp"] == [
+    assert len(result.data["scheduleOrError"]["potentialTickTimestamps"]) == 5
+    assert result.data["scheduleOrError"]["potentialTickTimestamps"] == [
         create_pendulum_time(2019, 2, 25, tz="US/Central").timestamp(),
         create_pendulum_time(2019, 2, 26, tz="US/Central").timestamp(),
         create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp(),
@@ -331,7 +337,6 @@ def test_schedule_dry_run(graphql_context):
 
     schedule_selector = infer_schedule_selector(context, "provide_config_schedule")
 
-    # fetch schedule before reconcile
     timestamp = get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
     result = execute_dagster_graphql(
         context,
@@ -356,7 +361,6 @@ def test_schedule_dry_run_errors(graphql_context):
 
     schedule_selector = infer_schedule_selector(context, "always_error")
 
-    # fetch schedule before reconcile
     timestamp = get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
     result = execute_dagster_graphql(
         context,
@@ -383,7 +387,6 @@ def test_dry_run_nonexistent_schedule(graphql_context):
 
     unknown_instigator_selector = infer_schedule_selector(context, "schedule_doesnt_exist")
 
-    # fetch schedule before reconcile
     timestamp = get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
     with pytest.raises(UserFacingGraphQLError, match="GrapheneScheduleNotFoundError"):
         execute_dagster_graphql(
@@ -614,7 +617,7 @@ def test_ticks_from_timestamp(graphql_context):
         variables={"scheduleSelector": schedule_selector, "ticksAfter": cur_timestamp},
     )
 
-    ticks = result.data["scheduleOrError"]["ticksFromTimestamp"]
+    ticks = result.data["scheduleOrError"]["potentialTickTimestamps"]
     assert len(ticks) == 6
     assert len([tick for tick in ticks if tick > cur_timestamp]) == 3
     assert len([tick for tick in ticks if tick <= cur_timestamp]) == 3
