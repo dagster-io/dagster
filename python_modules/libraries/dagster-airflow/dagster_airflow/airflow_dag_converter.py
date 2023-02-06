@@ -109,7 +109,7 @@ def make_dagster_op_from_airflow_task(
 
     @op(
         name=normalized_name(task.task_id, unique_id),
-        required_resource_keys={"airflow_db"},
+        required_resource_keys={"airflow_db", "dagrun", "dag"},
         ins={"airflow_task_ready": In(Nothing)},
         out={"airflow_task_complete": Out(Nothing)},
         retry_policy=RetryPolicy(
@@ -128,8 +128,8 @@ def make_dagster_op_from_airflow_task(
         context.log.info("Running Airflow task: {task_id}".format(task_id=task.task_id))
 
         with replace_airflow_logger_handlers():
-            dag = context.resources.airflow_db["dag"]
-            dagrun = context.resources.airflow_db["dagrun"]
+            dag = context.resources.dag
+            dagrun = context.resources.dagrun
             ti = dagrun.get_task_instance(task_id=task.task_id)
             ti.task = dag.get_task(task_id=task.task_id)
             ti.run(ignore_ti_state=True)
