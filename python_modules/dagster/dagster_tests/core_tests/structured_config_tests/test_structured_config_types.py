@@ -1,10 +1,11 @@
+from typing import Dict, List, Optional
+
 import pytest
 from dagster import job, op
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.structured_config import Config, PermissiveConfig
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.cached_method import cached_method
-from typing import Dict, List, Optional
 
 
 def test_default_config_class_non_permissive():
@@ -179,7 +180,7 @@ def test_struct_config_optional_nested():
     @op
     def a_struct_config_op(config: AnOpConfig):
         executed["yes"] = True
-        assert config.an_optional_nested == None
+        assert config.an_optional_nested is None
 
     @job
     def a_job():
