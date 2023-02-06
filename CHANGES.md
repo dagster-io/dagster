@@ -4,7 +4,7 @@
 
 ### New
 
-- [dagster-airflow] Has been moved to 1.x.x to denote the stability of its api's going forward.
+- The `dagster-airflow` library as been moved to 1.x.x to denote the stability of its api's going forward.
 - [dagster-airflow] `make_schedules_and_jobs_from_airflow_dag_bag` has been added to allow for more fine grained composition of your transformed airflow DAGs into Dagster.
 - [dagster-airflow] Airflow dag task `retries` and `retry_delay` configuration are now converted to op [RetryPolicies](https://docs.dagster.io/concepts/ops-jobs-graphs/op-retries#retrypolicy) with all `make_dagster_*` apis.
 
