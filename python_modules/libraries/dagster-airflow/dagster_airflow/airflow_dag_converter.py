@@ -28,9 +28,9 @@ def get_graph_definition_args(
 ):
     check.inst_param(dag, "dag", DAG)
 
-    dependencies = {}
-    node_defs = []
-    seen_tasks = []
+    dependencies: dict[str, dict[str, MultiDependencyDefinition]] = {}
+    node_defs: list[NodeDefinition] = []
+    seen_tasks: list[BaseOperator] = []
 
     # To enforce predictable iteration order
     dag_roots = sorted(dag.roots, key=lambda x: x.task_id)
