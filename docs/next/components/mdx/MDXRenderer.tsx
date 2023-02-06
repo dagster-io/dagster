@@ -239,8 +239,7 @@ export const VersionedContentLayout = ({children, asPath = null}) => {
           <VersionNotice />
           <div className="py-4 px-4 sm:px-6 lg:px-8 w-full">
             {children}
-            <div className="mt-12 mb-12 border-t border-gray-200 px-4 flex items-center justify-between sm:px-0">
-            </div>
+            <div className="mt-12 mb-12 border-t border-gray-200 px-4 flex items-center justify-between sm:px-0"></div>
           </div>
           {/* End main area */}
         </div>
