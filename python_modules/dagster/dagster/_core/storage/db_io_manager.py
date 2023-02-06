@@ -16,6 +16,7 @@ from typing import (
 import dagster._check as check
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.context.input import InputContext
@@ -26,8 +27,9 @@ T = TypeVar("T")
 
 
 class TablePartition(NamedTuple):
-    time_window: TimeWindow
     partition_expr: str
+    time_window: Optional[TimeWindow]
+    static_value: Optional[str]
 
 
 class TableSlice(NamedTuple):
@@ -137,7 +139,8 @@ class DbIOManager(IOManager):
 
         schema: str
         table: str
-        time_window: Optional[TimeWindow]
+        time_window: Optional[TimeWindow] = None
+        static_value: Optional[str] = None
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
@@ -154,9 +157,15 @@ class DbIOManager(IOManager):
                 schema = self._schema
             else:
                 schema = "public"
-            time_window = (
-                context.asset_partitions_time_window if context.has_asset_partitions else None
-            )
+            if context.has_asset_partitions:
+                if isinstance(context.asset_partitions_def, StaticPartitionsDefinition):
+                    static_value = context.asset_partition_key
+                else:
+                    time_window = (
+                        context.asset_partitions_time_window
+                        if context.has_asset_partitions
+                        else None
+                    )
         else:
             table = output_context.name
             if output_context_metadata.get("schema") and self._schema:
@@ -172,18 +181,17 @@ class DbIOManager(IOManager):
                 schema = self._schema
             else:
                 schema = "public"
-            time_window = None
 
-        if time_window is not None:
+        if time_window is not None or static_value is not None:
             partition_expr = cast(str, output_context_metadata.get("partition_expr"))
             if partition_expr is None:
                 raise ValueError(
-                    f"Asset '{context.asset_key}' has partitions, but no 'partition_expr' metadata "
-                    "value, so we don't know what column to filter it on."
+                    f"Asset '{context.asset_key}' has partitions, but no 'partition_expr' metadata"
+                    " value, so we don't know what column to filter it on. Specify which column of"
+                    " the  database contains partitioned data as the 'partition_expr' metadata."
                 )
             partition = TablePartition(
-                time_window=time_window,
-                partition_expr=partition_expr,
+                partition_expr=partition_expr, time_window=time_window, static_value=static_value
             )
         else:
             partition = None

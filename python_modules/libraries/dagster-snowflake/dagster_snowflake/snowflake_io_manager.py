@@ -158,10 +158,15 @@ class SnowflakeDbClient(DbClient):
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
         if table_slice.partition:
+            partition_where = (
+                _time_window_where_clause(table_slice.partition)
+                if table_slice.partition.time_window is not None
+                else _static_where_clause(table_slice.partition)
+            )
             return (
                 f"SELECT {col_str} FROM"
                 f" {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
-                + _time_window_where_clause(table_slice.partition)
+                + partition_where
             )
         else:
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
@@ -173,9 +178,14 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     being written.
     """
     if table_slice.partition:
+        partition_where = (
+            _time_window_where_clause(table_slice.partition)
+            if table_slice.partition.time_window is not None
+            else _static_where_clause(table_slice.partition)
+        )
         return (
             f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
-            + _time_window_where_clause(table_slice.partition)
+            + partition_where
         )
     else:
         return f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
@@ -188,3 +198,7 @@ def _time_window_where_clause(table_partition: TablePartition) -> str:
     # Snowflake BETWEEN is inclusive; start <= partition expr <= end. We don't want to remove the next partition so we instead
     # write this as start <= partition expr < end.
     return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+
+
+def _static_where_clause(table_partition: TablePartition) -> str:
+    return f"""WHERE {table_partition.partition_expr} == '{table_partition.static_value}'"""
