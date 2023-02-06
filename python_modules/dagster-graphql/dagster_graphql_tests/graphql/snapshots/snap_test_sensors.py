@@ -20,6 +20,7 @@ snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_deployed_g
         'ticks': [
         ]
     },
+    'sensorType': 'STANDARD',
     'targets': [
         {
             'mode': 'default',
@@ -42,6 +43,7 @@ snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_lazy_repos
         'ticks': [
         ]
     },
+    'sensorType': 'STANDARD',
     'targets': [
         {
             'mode': 'default',
@@ -64,6 +66,7 @@ snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_managed_gr
         'ticks': [
         ]
     },
+    'sensorType': 'STANDARD',
     'targets': [
         {
             'mode': 'default',
@@ -86,6 +89,7 @@ snapshots['TestSensors.test_get_sensor[non_launchable_sqlite_instance_multi_loca
         'ticks': [
         ]
     },
+    'sensorType': 'STANDARD',
     'targets': [
         {
             'mode': 'default',
@@ -159,6 +163,21 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_deployed_
     {
         'description': None,
         'minIntervalSeconds': 30,
+        'name': 'fresh_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
         'name': 'logging_sensor',
         'sensorState': {
             'runs': [
@@ -172,6 +191,26 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_deployed_
             {
                 'mode': 'default',
                 'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'many_asset_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'single_asset_pipeline',
                 'solidSelection': None
             }
         ]
@@ -239,6 +278,26 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_deployed_
     {
         'description': None,
         'minIntervalSeconds': 30,
+        'name': 'run_status',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
         'name': 'running_in_code_sensor',
         'sensorState': {
             'runs': [
@@ -254,6 +313,41 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_deployed_
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
             }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'single_asset_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'single_asset_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'the_failure_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
         ]
     },
     {
@@ -342,6 +436,21 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_lazy_repo
     {
         'description': None,
         'minIntervalSeconds': 30,
+        'name': 'fresh_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
         'name': 'logging_sensor',
         'sensorState': {
             'runs': [
@@ -355,6 +464,26 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_lazy_repo
             {
                 'mode': 'default',
                 'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'many_asset_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'single_asset_pipeline',
                 'solidSelection': None
             }
         ]
@@ -422,6 +551,26 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_lazy_repo
     {
         'description': None,
         'minIntervalSeconds': 30,
+        'name': 'run_status',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
         'name': 'running_in_code_sensor',
         'sensorState': {
             'runs': [
@@ -437,6 +586,41 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_lazy_repo
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
             }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'single_asset_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'single_asset_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'the_failure_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
         ]
     },
     {
@@ -525,6 +709,21 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_managed_g
     {
         'description': None,
         'minIntervalSeconds': 30,
+        'name': 'fresh_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
         'name': 'logging_sensor',
         'sensorState': {
             'runs': [
@@ -538,6 +737,26 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_managed_g
             {
                 'mode': 'default',
                 'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'many_asset_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'single_asset_pipeline',
                 'solidSelection': None
             }
         ]
@@ -605,6 +824,26 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_managed_g
     {
         'description': None,
         'minIntervalSeconds': 30,
+        'name': 'run_status',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
         'name': 'running_in_code_sensor',
         'sensorState': {
             'runs': [
@@ -620,6 +859,41 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_managed_g
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
             }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'single_asset_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'single_asset_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'the_failure_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
         ]
     },
     {
@@ -708,6 +982,21 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
     {
         'description': None,
         'minIntervalSeconds': 30,
+        'name': 'fresh_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
         'name': 'logging_sensor',
         'sensorState': {
             'runs': [
@@ -721,6 +1010,26 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
             {
                 'mode': 'default',
                 'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'many_asset_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'single_asset_pipeline',
                 'solidSelection': None
             }
         ]
@@ -788,6 +1097,26 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
     {
         'description': None,
         'minIntervalSeconds': 30,
+        'name': 'run_status',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
         'name': 'running_in_code_sensor',
         'sensorState': {
             'runs': [
@@ -803,6 +1132,41 @@ snapshots['TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
             }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'single_asset_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
+            {
+                'mode': 'default',
+                'pipelineName': 'single_asset_pipeline',
+                'solidSelection': None
+            }
+        ]
+    },
+    {
+        'description': None,
+        'minIntervalSeconds': 30,
+        'name': 'the_failure_sensor',
+        'sensorState': {
+            'runs': [
+            ],
+            'runsCount': 0,
+            'status': 'STOPPED',
+            'ticks': [
+            ]
+        },
+        'targets': [
         ]
     },
     {

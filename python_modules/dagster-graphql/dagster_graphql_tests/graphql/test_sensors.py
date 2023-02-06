@@ -369,6 +369,31 @@ query TickLogsQuery($sensorSelector: SensorSelector!) {
 
 
 class TestSensors(NonLaunchableGraphQLContextTestMatrix):
+    @pytest.mark.parametrize(
+        "sensor_name, expected_type",
+        [
+            ("always_no_config_sensor", "STANDARD"),
+            ("run_status", "RUN_STATUS"),
+            ("single_asset_sensor", "ASSET"),
+            ("many_asset_sensor", "MULTI_ASSET"),
+            ("fresh_sensor", "FRESHNESS_POLICY"),
+            ("the_failure_sensor", "RUN_STATUS"),
+        ],
+    )
+    def test_sensor_types(self, graphql_context, sensor_name, expected_type):
+        sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSOR_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        assert result.data
+        assert result.data["sensorOrError"]
+        assert result.data["sensorOrError"]["__typename"] == "Sensor"
+        sensor = result.data["sensorOrError"]
+        assert sensor["sensorType"] == expected_type
+
     def test_dry_run(self, graphql_context):
         instigator_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
         result = execute_dagster_graphql(
