@@ -360,6 +360,8 @@ def test_add_mutable_partitions_table(conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             assert "mutable_partitions" not in get_tables(instance)
 
+            instance.wipe()
+
             with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
                 instance.get_mutable_partitions("foo")
 

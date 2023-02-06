@@ -2674,6 +2674,9 @@ class TestEventLogStorage:
                     {"dagster/partition/country": "Brazil", "dagster/partition/date": "2022-10-13"}
                 ]
 
+            storage.wipe()
+            assert storage.get_event_tags_for_asset(asset_key=key) == []
+
     def test_event_record_filter_tags(self, storage, instance):
         key = AssetKey("hello")
 
@@ -2893,8 +2896,10 @@ class TestEventLogStorage:
 
                 assert _get_cached_status_for_asset(storage, asset_key) is None
 
-    def test_add_mutable_partitions(self, storage):
+    def test_add_mutable_partitions_and_wipe(self, storage):
         assert storage
+
+        assert storage.get_mutable_partitions("foo") == []
 
         storage.add_mutable_partitions(
             partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
@@ -2916,8 +2921,13 @@ class TestEventLogStorage:
 
         assert set(storage.get_mutable_partitions("baz")) == set()
 
+        storage.wipe()
+        assert storage.get_mutable_partitions("foo") == []
+
     def test_delete_mutable_partitions(self, storage):
         assert storage
+
+        assert storage.get_mutable_partitions("foo") == []
 
         storage.add_mutable_partitions(
             partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
@@ -2936,6 +2946,8 @@ class TestEventLogStorage:
 
     def test_has_mutable_partition(self, storage):
         assert storage
+
+        assert storage.get_mutable_partitions("foo") == []
 
         storage.add_mutable_partitions(
             partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]

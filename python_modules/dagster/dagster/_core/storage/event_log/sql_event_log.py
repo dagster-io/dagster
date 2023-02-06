@@ -612,9 +612,25 @@ class SqlEventLogStorage(EventLogStorage):
             conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
 
+            if self.has_table("asset_event_tags"):
+                conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
+
+            if self.has_table("mutable_partitions"):
+                conn.execute(
+                    MutablePartitionsTable.delete()
+                )  # pylint: disable=no-value-for-parameter
+
         with self.index_connection() as conn:
             conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
+
+            if self.has_table("asset_event_tags"):
+                conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
+
+            if self.has_table("mutable_partitions"):
+                conn.execute(
+                    MutablePartitionsTable.delete()
+                )  # pylint: disable=no-value-for-parameter
 
     def delete_events(self, run_id):
         with self.run_connection(run_id) as conn:
