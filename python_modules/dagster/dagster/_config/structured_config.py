@@ -1,11 +1,8 @@
 import inspect
 
-from dagster import String
-from dagster._config.config_type import Array, ConfigType
+from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType
 from dagster._config.source import BoolSource, IntSource, StringSource
-from dagster import Float
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
-from dagster._core.errors import DagsterInvalidConfigError
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -19,8 +16,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional, Type, cast
 
 from pydantic import BaseModel, Extra
-from pydantic.fields import SHAPE_LIST, SHAPE_SINGLETON, ModelField
-from typing_extensions import TypeAlias
 from pydantic.fields import (
     SHAPE_DICT,
     SHAPE_LIST,
@@ -28,6 +23,7 @@ from pydantic.fields import (
     SHAPE_SINGLETON,
     ModelField,
 )
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster import Field, Shape
@@ -231,7 +227,12 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
 PydanticShapeType: TypeAlias = int
 
 MAPPING_TYPES = {SHAPE_MAPPING, SHAPE_DICT}
-VALID_MAPPING_KEY_TYPES = {StringSource, IntSource, BoolSource, Float}
+MAPPING_KEY_TYPE_TO_SCALAR = {
+    StringSource: str,
+    IntSource: int,
+    BoolSource: bool,
+    ConfigFloatInstance: float,
+}
 
 
 def _wrap_config_type(
@@ -246,17 +247,13 @@ def _wrap_config_type(
     elif shape_type == SHAPE_LIST:
         return Array(config_type)
     elif shape_type in MAPPING_TYPES:
-        if not key_type:
-            raise DagsterInvalidConfigError(
-                "Pydantic shape type is a mapping, but no key type was provided."
-            )
-        if key_type not in VALID_MAPPING_KEY_TYPES:
-            raise DagsterInvalidConfigError(
+        if key_type not in MAPPING_KEY_TYPE_TO_SCALAR:
+            raise NotImplementedError(
                 f"Pydantic shape type is a mapping, but key type {key_type} is not a valid "
                 "Map key type. Valid Map key types are: "
-                f"{', '.join([str(t) for t in VALID_MAPPING_KEY_TYPES])}."
+                f"{', '.join([str(t) for t in MAPPING_KEY_TYPE_TO_SCALAR.keys()])}."
             )
-        return Map(key_type, config_type)
+        return Map(MAPPING_KEY_TYPE_TO_SCALAR[key_type], config_type)
     else:
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
 

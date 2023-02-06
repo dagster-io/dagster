@@ -1,4 +1,4 @@
-from typing import Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import pytest
 from dagster import job, op
@@ -249,5 +249,30 @@ def test_struct_config_nested_in_dict():
                 }
             }
         }
+    )
+    assert executed["yes"]
+
+
+@pytest.mark.parametrize(
+    "key_type, keys",
+    [(str, ["foo", "bar"]), (int, [1, 2]), (float, [1.0, 2.0]), (bool, [True, False])],
+)
+def test_struct_config_map_different_key_type(key_type, keys: List[Any]):
+    class AnOpConfig(Config):
+        my_dict: Dict[key_type, int]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.my_dict == {keys[0]: 1, keys[1]: 2}
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"my_dict": {keys[0]: 1, keys[1]: 2}}}}}
     )
     assert executed["yes"]
