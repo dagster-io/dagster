@@ -14,7 +14,6 @@ from dagster_airflow.dagster_schedule_factory import (
 )
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 from dagster_airflow.utils import (
-    DagsterAirflowError,
     contains_duplicate_task_names,
     create_airflow_connections,
 )
