@@ -14,7 +14,6 @@ from dagster_airflow.dagster_schedule_factory import (
 )
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 from dagster_airflow.utils import (
-    contains_duplicate_task_names,
     create_airflow_connections,
 )
 
@@ -151,8 +150,6 @@ def make_schedules_and_jobs_from_airflow_dag_bag(
     check.inst_param(dag_bag, "dag_bag", DagBag)
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
 
-    use_unique_id = contains_duplicate_task_names(dag_bag)
-
     job_defs = []
     schedule_defs = []
     count = 0
@@ -164,21 +161,11 @@ def make_schedules_and_jobs_from_airflow_dag_bag(
             continue
         if _is_dag_is_schedule(dag):
             schedule_defs.append(
-                make_dagster_schedule_from_airflow_dag(
-                    dag=dag,
-                    tags=None,
-                    connections=connections,
-                    unique_id=count if use_unique_id else None,
-                )
+                make_dagster_schedule_from_airflow_dag(dag=dag, tags=None, connections=connections)
             )
         else:
             job_defs.append(
-                make_dagster_job_from_airflow_dag(
-                    dag=dag,
-                    tags=None,
-                    connections=connections,
-                    unique_id=count if use_unique_id else None,
-                )
+                make_dagster_job_from_airflow_dag(dag=dag, tags=None, connections=connections)
             )
 
         count += 1

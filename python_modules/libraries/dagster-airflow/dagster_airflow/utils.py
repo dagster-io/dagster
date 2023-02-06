@@ -5,11 +5,7 @@ from contextlib import contextmanager
 
 from airflow import __version__ as airflow_version
 from airflow.models.connection import Connection
-from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
-from dagster import (
-    _check as check,
-)
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from packaging import version
 
@@ -24,24 +20,6 @@ if is_airflow_2_loaded_in_environment():
 else:
     from airflow.utils.db import create_session  # type: ignore  # (airflow 1 compat)
 # pylint: enable=no-name-in-module,import-error
-
-
-def contains_duplicate_task_names(dag_bag: DagBag):
-    check.inst_param(dag_bag, "dag_bag", DagBag)
-    seen_task_names = set()
-
-    # To enforce predictable iteration order
-    sorted_dag_ids = sorted(dag_bag.dag_ids)
-    for dag_id in sorted_dag_ids:
-        dag = dag_bag.dags.get(dag_id)
-        if not dag:
-            continue
-        for task in dag.tasks:
-            if task.task_id in seen_task_names:
-                return True
-            else:
-                seen_task_names.add(task.task_id)
-    return False
 
 
 class DagsterAirflowError(Exception):
@@ -65,12 +43,12 @@ def create_airflow_connections(connections):
 # Airflow DAG ids and Task ids allow a larger valid character set (alphanumeric characters,
 # dashes, dots and underscores) than Dagster's naming conventions (alphanumeric characters,
 # underscores), so Dagster will strip invalid characters and replace with '_'
-def normalized_name(name, unique_id=None):
-    base_name = "airflow_" + "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in name)
-    if not unique_id:
-        return base_name
-    else:
-        return base_name + "_" + str(unique_id)
+def normalized_name(dag_name, task_name=None):
+    base_name = "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in dag_name)
+    if task_name:
+        base_name += "__"
+        base_name += "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in task_name)
+    return base_name
 
 
 @contextmanager

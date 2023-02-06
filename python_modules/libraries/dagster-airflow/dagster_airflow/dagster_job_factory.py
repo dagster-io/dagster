@@ -165,7 +165,6 @@ def _create_dagrun_resource() -> ResourceDefinition:
 def make_dagster_job_from_airflow_dag(
     dag: DAG,
     tags: Optional[Mapping[str, str]] = None,
-    unique_id: Optional[int] = None,
     connections: Optional[List[Connection]] = None,
 ) -> JobDefinition:
     """Construct a Dagster job corresponding to a given Airflow DAG.
@@ -204,8 +203,6 @@ def make_dagster_job_from_airflow_dag(
         tags (Dict[str, Field]): Job tags. Optionally include
             `tags={'airflow_execution_date': utc_date_string}` to specify execution_date used within
             execution of Airflow Operators.
-        unique_id (int): If not None, this id will be postpended to generated op names. Used by
-            framework authors to enforce unique op names within a repo.
         connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
             Airflow DB, if use_emphemeral_airflow_db is False this will be ignored.
 
@@ -215,7 +212,6 @@ def make_dagster_job_from_airflow_dag(
     """
     check.inst_param(dag, "dag", DAG)
     tags = check.opt_mapping_param(tags, "tags")
-    unique_id = check.opt_int_param(unique_id, "unique_id")
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
 
     mutated_tags = dict(tags)
@@ -224,7 +220,7 @@ def make_dagster_job_from_airflow_dag(
 
     mutated_tags = validate_tags(mutated_tags)
 
-    node_dependencies, node_defs = get_graph_definition_args(dag=dag, unique_id=unique_id)
+    node_dependencies, node_defs = get_graph_definition_args(dag=dag)
 
     dag_resource = ResourceDefinition.hardcoded_resource(value=dag, description="DAG Airflow model")
     airflow_db_resource_def = _create_airflow_db_resource(
