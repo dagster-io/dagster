@@ -102,7 +102,6 @@ def test_struct_config_persmissive_cached_method():
     assert calls["plus"] == 1
 
 
-@pytest.mark.skip(reason="not yet supported")
 def test_struct_config_array():
     class AnOpConfig(Config):
         a_string_list: List[str]
@@ -190,7 +189,6 @@ def test_struct_config_optional_nested():
     assert executed["yes"]
 
 
-@pytest.mark.skip(reason="not yet supported")
 def test_struct_config_nested_in_list():
     class ANestedConfig(Config):
         a_str: str
