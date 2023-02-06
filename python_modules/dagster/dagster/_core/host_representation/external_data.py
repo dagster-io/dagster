@@ -405,7 +405,10 @@ class ExternalSensorMetadata(
 class ExternalSensorDataSerializer(DefaultNamedTupleSerializer):
     @classmethod
     def skip_when_empty(cls) -> Set[str]:
-        return {"default_status"}  # Maintain stable snapshot ID for back-compat purposes
+        return {
+            "default_status",
+            "sensor_type",
+        }  # Maintain stable snapshot ID for back-compat purposes
 
 
 @whitelist_for_serdes(serializer=ExternalSensorDataSerializer)
