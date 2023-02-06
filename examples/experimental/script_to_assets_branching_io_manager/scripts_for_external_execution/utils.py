@@ -39,6 +39,8 @@ def load_object_from_path(path: str):
     print(f"LOADING FROM {path}")
     upath = UPath(path)
     with upath.open("rb") as file:
+        # in the cluster this would write a dataframe to parquet (or something) in lakefs
+        # this is in the DB cluster
         return pickle.load(file)
 
 

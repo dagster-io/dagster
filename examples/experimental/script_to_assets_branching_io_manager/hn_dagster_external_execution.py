@@ -94,6 +94,7 @@ def build_asset(name: str, upstream_assets: Optional[Sequence[str]] = None) -> A
         dagster_type=Nothing,  # type: ignore
     )
     def _implementation(context: OpExecutionContext):
+        # this code in is the orchestration environment
         asset_namespaces = create_asset_namespace_mapping(
             instance=context.instance,
             current_asset_key_str=name,
@@ -127,6 +128,10 @@ def build_asset(name: str, upstream_assets: Optional[Sequence[str]] = None) -> A
     return _implementation
 
 
+# Imagine existing yaml files in their orchestration repo that encode the dependencies
+# They current dynamically create Airflow dags from that
+# Instead we will use the same yaml files to call an asset factory
+# Those generated assets will have logic similar to what is in this file, except they will launch DB jobs
 defs = Definitions(
     jobs=[define_asset_job("the_job", selection="*")],
     assets=[
