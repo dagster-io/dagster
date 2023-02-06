@@ -564,7 +564,13 @@ type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent
   runOrError: RunOrError!
   stepStats: RunStepStats!
   partition: String
+  tags: [EventTag!]!
   assetLineage: [AssetLineageInfo!]!
+}
+
+type EventTag {
+  key: String!
+  value: String!
 }
 
 type AssetLineageInfo {
@@ -587,6 +593,7 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runOrError: RunOrError!
   stepStats: RunStepStats!
   partition: String
+  tags: [EventTag!]!
 }
 
 type TypeCheck implements DisplayableEvent {

@@ -66,8 +66,9 @@ def test_logical_version_from_tags():
             assert _materialize_assets(context_v1, repo_v1)
             wait_for_runs_to_finish(context_v1.instance)
             result = _fetch_logical_versions(context_v1, repo_v1)
-            tags = result["assetNodes"][0]["assetMaterializations"][0]["tags"]
-            assert tags[LOGICAL_VERSION_TAG_KEY] == result["assetNodes"][0]["currentLogicalVersion"]
+            tags = result.data["assetNodes"][0]["assetMaterializations"][0]["tags"]
+            lv_tag = next(tag for tag in tags if tag["key"] == LOGICAL_VERSION_TAG_KEY)
+            assert lv_tag["value"] == result.data["assetNodes"][0]["currentLogicalVersion"]
 
 
 def get_repo_with_partitioned_self_dep_asset():

@@ -351,8 +351,12 @@ class AssetEventMixin:
         return self._metadata.partition
 
     def resolve_tags(self, _graphene_info):
-        print("TAGS ARE: ", self._metadata.tags)
-        return self._metadata.tags
+        if self._metadata.tags is None:
+            return []
+        else:
+            return [
+                GrapheneEventTag(key=key, value=value) for key, value in self._metadata.tags.items()
+            ]
 
 
 class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
