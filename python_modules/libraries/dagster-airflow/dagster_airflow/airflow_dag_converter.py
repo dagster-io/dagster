@@ -1,5 +1,6 @@
 import datetime
 import importlib
+from typing import AbstractSet, List, Mapping, Optional, Set, Tuple
 
 import airflow
 import dateutil
@@ -7,6 +8,7 @@ from airflow import __version__ as airflow_version
 from airflow.models.baseoperator import BaseOperator
 from airflow.models.dag import DAG
 from dagster import (
+    OpExecutionContext,
     DagsterInvariantViolationError,
     DependencyDefinition,
     In,
@@ -25,10 +27,8 @@ from dagster_airflow.utils import normalized_name, replace_airflow_logger_handle
 
 def get_graph_definition_args(
     dag,
-    unique_id=None,
 ):
     check.inst_param(dag, "dag", DAG)
-    unique_id = check.opt_int_param(unique_id, "unique_id")
 
     dependencies = {}
     node_defs = []
@@ -43,31 +43,24 @@ def get_graph_definition_args(
             seen_tasks=seen_tasks,
             dependencies=dependencies,
             node_defs=node_defs,
-            unique_id=unique_id,
         )
     return (dependencies, node_defs)
 
 
 def _traverse_airflow_dag(
-    dag,
+    dag: DAG,
     task,
     seen_tasks,
     dependencies,
-    node_defs,
-    unique_id,
+    node_defs: List[NodeDefinition],
 ):
     check.inst_param(dag, "dag", DAG)
     check.inst_param(task, "task", BaseOperator)
     check.list_param(seen_tasks, "seen_tasks", BaseOperator)
     check.list_param(node_defs, "node_defs", NodeDefinition)
-    unique_id = check.opt_int_param(unique_id, "unique_id")
 
     seen_tasks.append(task)
-    current_op = make_dagster_op_from_airflow_task(
-        dag=dag,
-        task=task,
-        unique_id=unique_id,
-    )
+    current_op = make_dagster_op_from_airflow_task(dag=dag, task=task)
     node_defs.append(current_op)
 
     if len(task.upstream_list) > 0:
@@ -78,7 +71,7 @@ def _traverse_airflow_dag(
             "airflow_task_ready": MultiDependencyDefinition(
                 [
                     DependencyDefinition(
-                        solid=normalized_name(task_upstream.task_id, unique_id),
+                        solid=normalized_name(dag_name=dag.dag_id, task_name=task_upstream.task_id),
                         output="airflow_task_complete",
                     )
                     for task_upstream in task_upstream_list
@@ -96,23 +89,18 @@ def _traverse_airflow_dag(
                 seen_tasks=seen_tasks,
                 dependencies=dependencies,
                 node_defs=node_defs,
-                unique_id=unique_id,
             )
 
 
-# If unique_id is not None, this id will be postpended to generated solid names, generally used
-# to enforce unique solid names within a repo.
 def make_dagster_op_from_airflow_task(
-    dag,
-    task,
-    unique_id=None,
+    dag: DAG,
+    task: BaseOperator,
 ):
     check.inst_param(dag, "dag", DAG)
     check.inst_param(task, "task", BaseOperator)
-    unique_id = check.opt_int_param(unique_id, "unique_id")
 
     @op(
-        name=normalized_name(task.task_id, unique_id),
+        name=normalized_name(dag_name=dag.dag_id, task_name=task.task_id),
         required_resource_keys={"airflow_db"},
         ins={"airflow_task_ready": In(Nothing)},
         out={"airflow_task_complete": Out(Nothing)},
@@ -121,7 +109,7 @@ def make_dagster_op_from_airflow_task(
             delay=task.retry_delay.total_seconds() if task.retry_delay is not None else 0,
         ),
     )
-    def _op(context):  # pylint: disable=unused-argument
+    def _op(context: OpExecutionContext):  # pylint: disable=unused-argument
         # reloading forces picking up any config that's been set for execution
         importlib.reload(airflow)
         context.log.info("Running Airflow task: {task_id}".format(task_id=task.task_id))

@@ -88,8 +88,6 @@ def make_dagster_job_from_airflow_dag(
         tags (Dict[str, Field]): Job tags. Optionally include
             `tags={'airflow_execution_date': utc_date_string}` to specify execution_date used within
             execution of Airflow Operators.
-        unique_id (int): If not None, this id will be postpended to generated op names. Used by
-            framework authors to enforce unique op names within a repo.
         connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
             Airflow DB, if use_emphemeral_airflow_db is False this will be ignored.
 
@@ -99,7 +97,6 @@ def make_dagster_job_from_airflow_dag(
     """
     check.inst_param(dag, "dag", DAG)
     tags = check.opt_mapping_param(tags, "tags")
-    unique_id = check.opt_int_param(unique_id, "unique_id")
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
 
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
@@ -110,7 +107,7 @@ def make_dagster_job_from_airflow_dag(
 
     tags = validate_tags(mutated_tags)
 
-    node_dependencies, node_defs = get_graph_definition_args(dag=dag, unique_id=unique_id)
+    node_dependencies, node_defs = get_graph_definition_args(dag=dag)
 
     serialized_connections = serialize_connections(connections)
 
@@ -365,27 +362,16 @@ def make_schedules_and_jobs_from_airflow_dag_bag(
 
     job_defs = []
     schedule_defs = []
-    count = 0
-    # To enforce predictable iteration order
     sorted_dag_ids = sorted(dag_bag.dag_ids)
     for dag_id in sorted_dag_ids:
         dag = dag_bag.dags.get(dag_id)
         if not dag:
             continue
-        if not use_unique_id:
-            job_def = make_dagster_job_from_airflow_dag(
-                dag=dag,
-                tags=None,
-                connections=connections,
-            )
-        else:
-            job_def = make_dagster_job_from_airflow_dag(
-                dag=dag,
-                tags=None,
-                unique_id=count,
-                connections=connections,
-            )
-            count += 1
+        job_def = make_dagster_job_from_airflow_dag(
+            dag=dag,
+            tags=None,
+            connections=connections,
+        )
         schedule_def = make_dagster_schedule_from_airflow_dag(
             dag=dag,
             job_def=job_def,

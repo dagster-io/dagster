@@ -59,12 +59,13 @@ def create_airflow_connections(connections):
 # Airflow DAG ids and Task ids allow a larger valid character set (alphanumeric characters,
 # dashes, dots and underscores) than Dagster's naming conventions (alphanumeric characters,
 # underscores), so Dagster will strip invalid characters and replace with '_'
-def normalized_name(name, unique_id=None):
-    base_name = "airflow_" + "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in name)
-    if not unique_id:
-        return base_name
-    else:
-        return base_name + "_" + str(unique_id)
+def normalized_name(dag_name: str, task_name: str = ""):
+    normalized_name = ""
+    normalized_name += "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in dag_name)
+    if task_name:
+        normalized_name += "__"
+        normalized_name += "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in task_name)
+    return normalized_name
 
 
 @contextmanager
