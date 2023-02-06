@@ -61,9 +61,9 @@ def test_normalize_name():
     result = job_def.execute_in_process()
 
     assert result.success
-    assert result.job_def.name == "airflow_dag_with_dot_dash"
+    assert result.job_def.name == "dag_with_dot_dash"
     assert len(result.job_def.solids) == 1
-    assert result.job_def.solids[0].name == "airflow_task_with_dot_dash"
+    assert result.job_def.solids[0].name == "dag_with_dot_dash__task_with_dot_dash"
 
 
 # Test names with 250 characters, Airflow's max allowed length
@@ -96,13 +96,13 @@ def test_long_name():
     assert result.success
     assert (
         result.job_def.name
-        == "airflow_dag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ong"
+        == "dag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ong"
     )
 
     assert len(result.job_def.solids) == 1
     assert (
         result.job_def.solids[0].name
-        == "airflow_task_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loong"
+        == "dag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loong"
     )
 
 
@@ -205,9 +205,9 @@ def test_template_task_dag():
         assert len(capture_events) == 1
         event = capture_events[0]
         assert event.logs_captured_data.step_keys == [
-            "airflow_print_hello",
-            "airflow_sleep",
-            "airflow_templated",
+            "dag__print_hello",
+            "dag__sleep",
+            "dag__templated",
         ]
         file_key = event.logs_captured_data.file_key
 

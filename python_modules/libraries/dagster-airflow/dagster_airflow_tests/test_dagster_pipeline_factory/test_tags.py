@@ -36,7 +36,7 @@ def check_captured_logs(manager, result, execution_date_fmt):
     ]
     assert len(capture_events) == 1
     event = capture_events[0]
-    assert event.logs_captured_data.step_keys == ["airflow_templated"]
+    assert event.logs_captured_data.step_keys == ["test_tags_dag__templated"]
     file_key = event.logs_captured_data.file_key
     compute_io_path = manager.get_local_path(result.run_id, file_key, ComputeIOType.STDOUT)
     assert os.path.exists(compute_io_path)
@@ -126,7 +126,7 @@ def test_pipeline_auto_tag():
             if event.event_type == DagsterEventType.LOGS_CAPTURED
         ]
         event = capture_events[0]
-        assert event.logs_captured_data.step_keys == ["airflow_templated"]
+        assert event.logs_captured_data.step_keys == ["test_tags_dag__templated"]
         file_key = event.logs_captured_data.file_key
         post_execute_time = get_current_datetime_in_utc()
 

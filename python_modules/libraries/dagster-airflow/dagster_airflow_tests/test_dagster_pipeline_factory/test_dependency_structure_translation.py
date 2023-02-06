@@ -516,11 +516,11 @@ def test_one_task_dag_to_job():
     )
     job_def = make_dagster_job_from_airflow_dag(dag=dag)
 
-    assert job_def.name == "airflow_dag_with_dot_dash"
+    assert job_def.name == "dag_with_dot_dash"
     assert len([job_def.solids]) == 1
     result = job_def.execute_in_process()
 
     assert result.success
     step_success_events = [evt for evt in result.all_node_events if evt.is_step_success]
     assert len(step_success_events) == 1
-    assert step_success_events[0].step_key == "airflow_dummy_operator"
+    assert step_success_events[0].step_key == "dag_with_dot_dash__dummy_operator"

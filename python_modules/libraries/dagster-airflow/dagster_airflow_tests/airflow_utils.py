@@ -323,30 +323,30 @@ if __name__ == "__main__":
 COMBINED_FILE_CONTENTS = COMPLEX_DAG_FILE_CONTENTS + BASH_DAG_FILE_CONTENTS
 
 test_make_from_dagbag_inputs = [
-    ([("complex.py", COMPLEX_DAG_FILE_CONTENTS)], None, ["airflow_example_complex"]),
-    ([("bash.py", BASH_DAG_FILE_CONTENTS)], None, ["airflow_example_bash_operator"]),
+    ([("complex.py", COMPLEX_DAG_FILE_CONTENTS)], None, ["example_complex"]),
+    ([("bash.py", BASH_DAG_FILE_CONTENTS)], None, ["example_bash_operator"]),
     (
         [
             ("complex.py", COMPLEX_DAG_FILE_CONTENTS),
             ("bash.py", BASH_DAG_FILE_CONTENTS),
         ],
         None,
-        ["airflow_example_complex", "airflow_example_bash_operator"],
+        ["example_complex", "example_bash_operator"],
     ),
     (
         [("complex.py", COMPLEX_DAG_FILE_CONTENTS)],
         "complex.py",
-        ["airflow_example_complex"],
+        ["example_complex"],
     ),
     (
         [("bash.py", BASH_DAG_FILE_CONTENTS)],
         "bash.py",
-        ["airflow_example_bash_operator"],
+        ["example_bash_operator"],
     ),
     (
         [("combined.py", COMBINED_FILE_CONTENTS)],
         None,
-        ["airflow_example_complex", "airflow_example_bash_operator"],
+        ["example_complex", "example_bash_operator"],
     ),
 ]
 
@@ -674,29 +674,29 @@ COMBINED_FILE_CONTENTS = COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2 + BASH_DAG_FILE_CON
 
 
 test_make_from_dagbag_inputs_airflow_2 = [
-    ([("complex.py", COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2)], None, ["airflow_example_complex"]),
-    ([("bash.py", BASH_DAG_FILE_CONTENTS_AIRFLOW_2)], None, ["airflow_example_bash_operator"]),
+    ([("complex.py", COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2)], None, ["example_complex"]),
+    ([("bash.py", BASH_DAG_FILE_CONTENTS_AIRFLOW_2)], None, ["example_bash_operator"]),
     (
         [
             ("complex.py", COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2),
             ("bash.py", BASH_DAG_FILE_CONTENTS_AIRFLOW_2),
         ],
         None,
-        ["airflow_example_complex", "airflow_example_bash_operator"],
+        ["example_complex", "example_bash_operator"],
     ),
     (
         [("complex.py", COMPLEX_DAG_FILE_CONTENTS_AIRFLOW_2)],
         "complex.py",
-        ["airflow_example_complex"],
+        ["example_complex"],
     ),
     (
         [("bash.py", BASH_DAG_FILE_CONTENTS_AIRFLOW_2)],
         "bash.py",
-        ["airflow_example_bash_operator"],
+        ["example_bash_operator"],
     ),
     (
         [("combined.py", COMBINED_FILE_CONTENTS)],
         None,
-        ["airflow_example_complex", "airflow_example_bash_operator"],
+        ["example_complex", "example_bash_operator"],
     ),
 ]

@@ -73,9 +73,9 @@ class TestConnectionsAirflow2(unittest.TestCase):
                 tmpdir_path, connections=connections
             )
             repo = definitions.get_repository_def()
-            assert repo.has_job("airflow_example_connections")
+            assert repo.has_job("example_connections")
 
-            job = repo.get_job("airflow_example_connections")
+            job = repo.get_job("example_connections")
             result = job.execute_in_process()
             assert result.success
             for event in result.all_events:
@@ -135,9 +135,9 @@ class TestConnectionsAirflow1(unittest.TestCase):
                 tmpdir_path, connections=connections
             )
             repo = definitions.get_repository_def()
-            assert repo.has_job("airflow_example_connections")
+            assert repo.has_job("example_connections")
 
-            job = repo.get_job("airflow_example_connections")
+            job = repo.get_job("example_connections")
             result = job.execute_in_process()
             assert result.success
             for event in result.all_events:
