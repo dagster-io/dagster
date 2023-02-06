@@ -1,10 +1,9 @@
 import importlib
 import os
 import tempfile
-from typing import List, Optional
+from typing import List, Mapping, Optional
 
 import airflow
-import dateutil
 import pytz
 from airflow import __version__ as airflow_version
 from airflow.models.connection import Connection
@@ -17,12 +16,14 @@ from dagster import (
     Definitions,
     Field,
     GraphDefinition,
+    InitResourceContext,
     JobDefinition,
+    ResourceDefinition,
     _check as check,
-    resource,
 )
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
+from dateutil.parser import parse
 
 from dagster_airflow.airflow_dag_converter import get_graph_definition_args
 from dagster_airflow.dagster_schedule_factory import make_dagster_schedule_from_airflow_dag
@@ -46,10 +47,10 @@ else:
 
 
 def make_dagster_job_from_airflow_dag(
-    dag,
-    tags=None,
-    unique_id=None,
-    connections=None,
+    dag: DAG,
+    tags: Optional[Mapping[str, str]] = None,
+    unique_id: Optional[int] = None,
+    connections: Optional[List[Connection]] = None,
 ):
     """Construct a Dagster job corresponding to a given Airflow DAG.
 
@@ -97,33 +98,21 @@ def make_dagster_job_from_airflow_dag(
 
     """
     check.inst_param(dag, "dag", DAG)
-    tags = check.opt_dict_param(tags, "tags")
+    tags = check.opt_mapping_param(tags, "tags")
     unique_id = check.opt_int_param(unique_id, "unique_id")
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
 
-    connections = check.opt_list_param(connections, "connections", of_type=Connection)
-
+    mutated_tags = dict(tags)
     if IS_AIRFLOW_INGEST_PIPELINE_STR not in tags:
-        tags[IS_AIRFLOW_INGEST_PIPELINE_STR] = "true"
+        mutated_tags[IS_AIRFLOW_INGEST_PIPELINE_STR] = "true"
 
-    tags = validate_tags(tags)
+    mutated_tags = validate_tags(mutated_tags)
 
     node_dependencies, node_defs = get_graph_definition_args(dag=dag, unique_id=unique_id)
 
     serialized_connections = serialize_connections(connections)
 
-    @resource(
-        config_schema={
-            "dag_location": Field(str, default_value=dag.fileloc),
-            "dag_id": Field(str, default_value=dag.dag_id),
-            "connections": Field(
-                Array(inner_type=dict),
-                default_value=serialized_connections,
-                is_required=False,
-            ),
-        }
-    )
-    def airflow_db(context):
+    def airflow_db(context: InitResourceContext):
         airflow_home_path = os.path.join(tempfile.gettempdir(), f"dagster_airflow_{context.run_id}")
         os.environ["AIRFLOW_HOME"] = airflow_home_path
         os.makedirs(airflow_home_path, exist_ok=True)
@@ -141,17 +130,19 @@ def make_dagster_job_from_airflow_dag(
                 create_airflow_connections(
                     [Connection(**c) for c in context.resource_config["connections"]]
                 )
-
-            dag_bag = airflow.models.dagbag.DagBag(
-                dag_folder=context.resource_config["dag_location"], include_examples=False
-            )
-            dag = dag_bag.get_dag(context.resource_config["dag_id"])
-            if AIRFLOW_EXECUTION_DATE_STR in context.dagster_run.tags:
+            dag = context.resources.dag
+            run_tags = context.dagster_run.tags if context.dagster_run else {}
+            if AIRFLOW_EXECUTION_DATE_STR in run_tags:
                 # for airflow DAGs that have not been turned into SDAs
-                execution_date_str = context.dagster_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
+                execution_date_str = run_tags.get(AIRFLOW_EXECUTION_DATE_STR)
+                if not execution_date_str:
+                    raise DagsterInvariantViolationError(
+                        "Expected execution_date_str to be set in run tags."
+                    )
                 check.str_param(execution_date_str, "execution_date_str")
                 try:
-                    execution_date = dateutil.parser.parse(execution_date_str)
+                    execution_date = parse(execution_date_str)
+                    execution_date = execution_date.replace(tzinfo=pytz.timezone(dag.timezone.name))
                 except ValueError:
                     raise DagsterInvariantViolationError(
                         'Could not parse execution_date "{execution_date_str}". Please use datetime'
@@ -166,17 +157,19 @@ def make_dagster_job_from_airflow_dag(
                             execution_date_str=execution_date_str,
                         )
                     )
-            elif "dagster/partition" in context.dagster_run.tags:
+            elif "dagster/partition" in run_tags:
                 # for airflow DAGs that have been turned into SDAs
-                execution_date_str = context.dagster_run.tags.get("dagster/partition")
-                execution_date = dateutil.parser.parse(execution_date_str)
+                execution_date_str = run_tags.get("dagster/partition")
+                if not execution_date_str:
+                    raise DagsterInvariantViolationError("dagster/partition is not set")
+                execution_date = parse(execution_date_str)
                 execution_date = execution_date.replace(tzinfo=pytz.timezone(dag.timezone.name))
             else:
                 raise DagsterInvariantViolationError(
                     'Could not find "{AIRFLOW_EXECUTION_DATE_STR}" in tags "{tags}". Please '
                     'add "{AIRFLOW_EXECUTION_DATE_STR}" to tags before executing'.format(
                         AIRFLOW_EXECUTION_DATE_STR=AIRFLOW_EXECUTION_DATE_STR,
-                        tags=context.dagster_run.tags,
+                        tags=run_tags,
                     )
                 )
 
@@ -194,26 +187,39 @@ def make_dagster_job_from_airflow_dag(
                         state=State.RUNNING,
                         execution_date=execution_date,
                     )
-
         return {
             "dag": dag,
             "dagrun": dagrun,
         }
+
+    dag_resource = ResourceDefinition.hardcoded_resource(value=dag, description="DAG model")
+    airflow_db_resource_def = ResourceDefinition(
+        resource_fn=airflow_db,
+        required_resource_keys={"dag"},
+        config_schema={
+            "connections": Field(
+                Array(inner_type=dict),
+                default_value=serialized_connections,
+                is_required=False,
+            ),
+        },
+        description="Airflow DB resource",
+    )
 
     graph_def = GraphDefinition(
         name=normalized_name(dag.dag_id),
         description="",
         node_defs=node_defs,
         dependencies=node_dependencies,
-        tags=tags,
+        tags=mutated_tags,
     )
 
     job_def = JobDefinition(
         name=normalized_name(dag.dag_id),
         description="",
-        resource_defs={"airflow_db": airflow_db},
+        resource_defs={"airflow_db": airflow_db_resource_def, "dag": dag_resource},
         graph_def=graph_def,
-        tags=tags,
+        tags=mutated_tags,
         metadata={},
         op_retry_policy=None,
         version_strategy=None,
@@ -222,8 +228,8 @@ def make_dagster_job_from_airflow_dag(
 
 
 def make_dagster_definitions_from_airflow_dag_bag(
-    dag_bag,
-    connections=None,
+    dag_bag: DagBag,
+    connections: Optional[List[Connection]] = None,
 ):
     """Construct a Dagster definition corresponding to Airflow DAGs in DagBag.
 
@@ -258,9 +264,9 @@ def make_dagster_definitions_from_airflow_dag_bag(
 
 
 def make_dagster_definitions_from_airflow_dags_path(
-    dag_path,
-    safe_mode=True,
-    connections=None,
+    dag_path: str,
+    safe_mode: bool = True,
+    connections: Optional[List[Connection]] = None,
 ):
     """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
 
@@ -368,6 +374,8 @@ def make_schedules_and_jobs_from_airflow_dag_bag(
     sorted_dag_ids = sorted(dag_bag.dag_ids)
     for dag_id in sorted_dag_ids:
         dag = dag_bag.dags.get(dag_id)
+        if not dag:
+            continue
         if not use_unique_id:
             job_def = make_dagster_job_from_airflow_dag(
                 dag=dag,
