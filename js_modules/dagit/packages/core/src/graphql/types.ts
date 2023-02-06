@@ -3534,7 +3534,7 @@ export type TickEvaluation = {
   __typename: 'TickEvaluation';
   cursor: Maybe<Scalars['String']>;
   error: Maybe<PythonError>;
-  runRequests: Maybe<Array<Maybe<RunRequest>>>;
+  runRequests: Maybe<Array<RunRequest>>;
   skipReason: Maybe<Scalars['String']>;
 };
 
