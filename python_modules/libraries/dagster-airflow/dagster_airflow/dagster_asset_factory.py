@@ -104,8 +104,7 @@ def load_assets_from_airflow_dag(
         upstream_dependencies_by_asset_key (Optional[Mapping[AssetKey, AbstractSet[AssetKey]]]): A
             mapping from upstream asset keys to assets provided in task_ids_by_asset_key. Used to
             declare new upstream SDA depenencies.
-        connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
-            Airflow DB
+        connections (List[Connection]): List of Airflow Connections to be created in the Airflow DB
 
     Returns:
         List[AssetsDefinition]
