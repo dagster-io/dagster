@@ -325,7 +325,7 @@ def test_static_partitioned_asset(tmp_path):
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="a string, time TIMESTAMP_NTZ(9), b int",
+        column_str="a string, color string, b int",
     ) as table_name:
 
         @asset(
