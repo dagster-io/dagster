@@ -128,10 +128,9 @@ def test_struct_config_array():
         )
 
 
-@pytest.mark.parametrize("DictType", [Dict, Mapping])
-def test_struct_config_map(DictType):
+def test_struct_config_map():
     class AnOpConfig(Config):
-        a_string_to_int_dict: DictType[str, int]
+        a_string_to_int_dict: Dict[str, int]
 
     executed = {}
 
@@ -164,6 +163,31 @@ def test_struct_config_map(DictType):
         a_job.execute_in_process(
             {"ops": {"a_struct_config_op": {"config": {"a_string_to_int_dict": {"foo": 1, 2: 4}}}}}
         )
+
+
+def test_struct_config_mapping():
+    class AnOpConfig(Config):
+        a_string_to_int_mapping: Mapping[str, int]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.a_string_to_int_mapping == {"foo": 1, "bar": 2}
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {
+            "ops": {
+                "a_struct_config_op": {"config": {"a_string_to_int_mapping": {"foo": 1, "bar": 2}}}
+            }
+        }
+    )
+    assert executed["yes"]
 
 
 @pytest.mark.skip(reason="not yet supported")
