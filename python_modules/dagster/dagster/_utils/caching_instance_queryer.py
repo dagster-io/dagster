@@ -459,7 +459,7 @@ class CachingInstanceQueryer:
         net_new_partitions = {
             partition_key
             for partition_key, new_count in new_partition_counts.items()
-            if new_count == total_partition_counts[partition_key]
+            if new_count == total_partition_counts.get(partition_key)
         }
 
         # there are new materializations, but they don't fill any new partitions
