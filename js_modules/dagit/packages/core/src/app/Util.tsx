@@ -1,3 +1,4 @@
+import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
 
 import {featureEnabled, FeatureFlag} from './Flags';
@@ -61,15 +62,19 @@ export const withMiddleTruncation = (text: string, options: {maxLength: number})
   return result;
 };
 
+const msecFormatter = memoize((locale: string) => {
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  });
+});
+
 /**
  * Return an i18n-formatted millisecond in seconds as a decimal, with no leading zero.
  */
 const formatMsecMantissa = (msec: number) =>
-  (msec / 1000)
-    .toLocaleString(navigator.language, {
-      minimumFractionDigits: 3,
-      maximumFractionDigits: 3,
-    })
+  msecFormatter(navigator.language)
+    .format(msec / 1000)
     .slice(-4);
 
 /**
