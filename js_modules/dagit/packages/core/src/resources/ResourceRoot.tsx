@@ -68,7 +68,7 @@ export const ResourceRoot: React.FC<Props> = (props) => {
       <PageHeader title={<Heading>{resourceName}</Heading>} />
       <Loading queryResult={queryResult} allowStaleData={true}>
         {({topLevelResourceDetailsOrError}) => {
-          if (topLevelResourceDetailsOrError.__typename !== 'topLevelResourceDetails') {
+          if (topLevelResourceDetailsOrError.__typename !== 'ResourceDetails') {
             let message: string | null = null;
             if (topLevelResourceDetailsOrError.__typename === 'PythonError') {
               message = topLevelResourceDetailsOrError.message;
