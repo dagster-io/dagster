@@ -33,7 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_airflow_tests*"]),
     install_requires=[
-        "dagster==1.1.17rc0",
+        "dagster==1.1.17",
         "docker>=5.0.3,<6.0.0",
         "lazy_object_proxy",
         "pendulum",

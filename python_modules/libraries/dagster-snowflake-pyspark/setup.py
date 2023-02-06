@@ -35,8 +35,8 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_snowflake_pyspark_tests*"]),
     install_requires=[
-        "dagster==1.1.17rc0",
-        "dagster-snowflake==0.17.17rc0",
+        "dagster==1.1.17",
+        "dagster-snowflake==0.17.17",
         "pyspark",
         "requests",
     ],

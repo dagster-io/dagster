@@ -32,6 +32,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_census_tests*"]),
-    install_requires=["dagster==1.1.17rc0"],
+    install_requires=["dagster==1.1.17"],
     zip_safe=False,
 )

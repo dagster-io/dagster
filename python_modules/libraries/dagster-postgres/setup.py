@@ -38,6 +38,6 @@ setup(
         ]
     },
     include_package_data=True,
-    install_requires=["dagster==1.1.17rc0", "psycopg2-binary"],
+    install_requires=["dagster==1.1.17", "psycopg2-binary"],
     zip_safe=False,
 )
