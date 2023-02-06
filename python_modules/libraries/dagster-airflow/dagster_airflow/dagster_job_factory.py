@@ -28,13 +28,13 @@ from dagster_airflow.airflow_dag_converter import get_graph_definition_args
 from dagster_airflow.utils import (
     Locker,
     create_airflow_connections,
-    is_airflow_2,
+    is_airflow_2_loaded_in_environment,
     normalized_name,
     serialize_connections,
 )
 
 # pylint: disable=no-name-in-module,import-error
-if is_airflow_2():
+if is_airflow_2_loaded_in_environment():
     from airflow.utils.state import DagRunState
     from airflow.utils.types import DagRunType
 else:
@@ -87,7 +87,7 @@ def airflow_db(context: InitResourceContext) -> None:
     with Locker(airflow_home_path):
         airflow_initialized = os.path.exists(f"{airflow_home_path}/airflow.db")
         # because AIRFLOW_HOME has been overriden airflow needs to be reloaded
-        if is_airflow_2():
+        if is_airflow_2_loaded_in_environment():
             importlib.reload(airflow.configuration)
             importlib.reload(airflow.settings)
             importlib.reload(airflow)
@@ -137,7 +137,7 @@ def get_dagrun(context: InitResourceContext) -> DagRun:
             )
         dagrun = dag.get_dagrun(execution_date=execution_date)
         if not dagrun:
-            if is_airflow_2():
+            if is_airflow_2_loaded_in_environment():
                 dagrun = dag.create_dagrun(
                     state=DagRunState.RUNNING,
                     execution_date=execution_date,

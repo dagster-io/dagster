@@ -14,12 +14,12 @@ from dagster._core.definitions.utils import VALID_NAME_REGEX
 from packaging import version
 
 
-def is_airflow_2() -> bool:
+def is_airflow_2_loaded_in_environment() -> bool:
     return version.parse(str(airflow_version)) >= version.parse("2.0.0")
 
 
 # pylint: disable=no-name-in-module,import-error
-if is_airflow_2():
+if is_airflow_2_loaded_in_environment():
     from airflow.utils.session import create_session
 else:
     from airflow.utils.db import create_session  # type: ignore  # (airflow 1 compat)

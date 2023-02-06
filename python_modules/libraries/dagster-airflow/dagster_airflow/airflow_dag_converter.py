@@ -16,7 +16,11 @@ from dagster import (
 )
 from dagster._core.definitions.node_definition import NodeDefinition
 
-from dagster_airflow.utils import is_airflow_2, normalized_name, replace_airflow_logger_handlers
+from dagster_airflow.utils import (
+    is_airflow_2_loaded_in_environment,
+    normalized_name,
+    replace_airflow_logger_handlers,
+)
 
 
 def get_graph_definition_args(
@@ -119,7 +123,7 @@ def make_dagster_op_from_airflow_task(
     )
     def _op(context: OpExecutionContext):  # pylint: disable=unused-argument
         # reloading forces picking up any config that's been set for execution
-        if is_airflow_2():
+        if is_airflow_2_loaded_in_environment():
             importlib.reload(airflow.configuration)
             importlib.reload(airflow.settings)
             importlib.reload(airflow)
