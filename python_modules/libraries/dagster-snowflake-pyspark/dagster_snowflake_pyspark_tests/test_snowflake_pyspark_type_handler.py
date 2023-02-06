@@ -26,6 +26,7 @@ from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler, snowflake_pyspark_io_manager
 from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.functions import to_timestamp
 
 resource_config = {
     "database": "database_abc",
@@ -203,8 +204,12 @@ def test_time_window_partitioned_asset(tmp_path):
                 value=SNOWFLAKE_JARS,
             ).getOrCreate()
 
-            columns = ["TIME", "A", "A"]
-            data = [(partition, value, 4), (partition, value, 5), (partition, value, 6)]
+            columns = ["TIME", "A", "B"]
+            data = [
+                (to_timestamp(partition), value, 4),
+                (to_timestamp(partition), value, 5),
+                (to_timestamp(partition), value, 6),
+            ]
             df = spark.createDataFrame(data).toDF(*columns)
 
             return df
