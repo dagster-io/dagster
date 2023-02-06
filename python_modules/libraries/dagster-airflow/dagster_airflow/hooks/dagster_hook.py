@@ -6,11 +6,12 @@ from typing import Any, Mapping, Optional, cast
 # Type errors ignored because some of these imports target deprecated modules for compatibility with
 # airflow 1.x and 2.x.
 import requests
-from airflow import __version__ as airflow_version
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook  # type: ignore  # (airflow 1 compat)
 from airflow.models import Connection
 from dagster._core.storage.pipeline_run import DagsterRunStatus
+
+from dagster_airflow.utils import is_airflow_2
 
 
 class DagsterHook(BaseHook):
@@ -58,7 +59,7 @@ class DagsterHook(BaseHook):
         url: str = "",
         user_token: Optional[str] = None,
     ) -> None:
-        if airflow_version >= "2.0.0":
+        if is_airflow_2():
             super().__init__()
         else:
             super().__init__(source=None)  # type: ignore  # (airflow 1 compat)
@@ -70,7 +71,7 @@ class DagsterHook(BaseHook):
             raise AirflowException(
                 "Cannot set both dagster_conn_id and organization_id/deployment_name"
             )
-        if dagster_conn_id is not None and airflow_version >= "2.0.0":
+        if dagster_conn_id is not None and is_airflow_2():
             conn = self.get_connection(dagster_conn_id)
             base_url = conn.login if conn.login else "https://dagster.cloud/"
             if base_url == "https://dagster.cloud/":

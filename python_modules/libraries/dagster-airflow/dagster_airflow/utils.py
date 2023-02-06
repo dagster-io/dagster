@@ -11,9 +11,15 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.utils import VALID_NAME_REGEX
+from packaging import version
+
+
+def is_airflow_2() -> bool:
+    return version.parse(str(airflow_version)) >= version.parse("2.0.0")
+
 
 # pylint: disable=no-name-in-module,import-error
-if str(airflow_version) >= "2.0.0":
+if is_airflow_2():
     from airflow.utils.session import create_session
 else:
     from airflow.utils.db import create_session  # type: ignore  # (airflow 1 compat)
