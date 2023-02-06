@@ -1372,7 +1372,7 @@ type Schedule {
   partitionSet: PartitionSet
   futureTicks(cursor: Float, limit: Int, until: Float): DryRunInstigationTicks!
   futureTick(tickTimestamp: Int!): DryRunInstigationTick!
-  ticksFromTimestamp(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float]!
+  potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float]!
 }
 
 union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
