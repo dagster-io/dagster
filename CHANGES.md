@@ -4,25 +4,22 @@
 
 ### New
 
-- [dagster-airflow] has been moved to 1.x.x to denote the stability of its api's going forward.
+- [dagster-airflow] Has been moved to 1.x.x to denote the stability of its api's going forward.
 - [dagster-airflow] `make_schedules_and_jobs_from_airflow_dag_bag` has been added to allow for more fine grained composition of your transformed airflow DAGs into Dagster.
-- [dagster-airflow] airflow dag task `retries` and `retry_delay` configuration are now converted to op RetryPolicies with all `make_dagster_*` apis.
-
-### Bugfixes
+- [dagster-airflow] Airflow dag task `retries` and `retry_delay` configuration are now converted to op [RetryPolicies](https://docs.dagster.io/concepts/ops-jobs-graphs/op-retries#retrypolicy) with all `make_dagster_*` apis.
 
 ### Breaking Changes
 
-- [dagster-airflow] the `use_airflow_template_context`, `mock_xcom` and `use_ephemeral_airflow_db` params have been dropped, by default all `make_dagster_*` apis now use run-scoped airflow db, similiar to how `use_ephemeral_airflow_db` worked.
+- [dagster-airflow] The `use_airflow_template_context`, `mock_xcom` and `use_ephemeral_airflow_db` params have been dropped, by default all `make_dagster_*` apis now use a run-scoped airflow db, similiar to how `use_ephemeral_airflow_db` worked.
 - [dagster-airflow] `make_airflow_dag` has been removed.
 - [dagster-airflow] `make_airflow_dag_for_operator` has been removed.
 - [dagster-airflow] `make_airflow_dag_containerized` has been removed.
 - [dagster-airflow] `airflow_operator_to_op` has been removed.
-- [dagster-airflow] the naming convention for ops generated from airflow tasks has been changed to `${dag_id}__${task_id}`.
-- [dagster-airflow] the naming convention for jobs generated from airflow dags has been changed to `${dag_id}`.
-
-### Community Contributions
-
-### Experimental
+- [dagster-airflow] `make_dagster_repo_from_airflow_dags_path` has been removed.
+- [dagster-airflow] `make_dagster_repo_from_airflow_dag_bag` has been removed.
+- [dagster-airflow] `make_dagster_repo_from_airflow_example_dags` has been removed.
+- [dagster-airflow] The naming convention for ops generated from airflow tasks has been changed to `${dag_id}__${task_id}` from `airflow_${task_id}_${unique_int}`.
+- [dagster-airflow] The naming convention for jobs generated from airflow dags has been changed to `${dag_id}` from `airflow_${dag_id}`.
 
 # 1.1.15 (core) / 0.17.15 (libraries)
 
