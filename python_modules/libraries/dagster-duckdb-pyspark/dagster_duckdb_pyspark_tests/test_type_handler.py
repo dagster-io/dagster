@@ -3,7 +3,15 @@ import os
 import duckdb
 import pandas as pd
 import pytest
-from dagster import DailyPartitionsDefinition, Out, asset, graph, materialize, op, StaticPartitionsDefinition
+from dagster import (
+    DailyPartitionsDefinition,
+    Out,
+    StaticPartitionsDefinition,
+    asset,
+    graph,
+    materialize,
+    op,
+)
 from dagster._check import CheckError
 from dagster_duckdb_pyspark import duckdb_pyspark_io_manager
 from pyspark.sql import (

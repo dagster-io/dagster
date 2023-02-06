@@ -7,14 +7,18 @@ from unittest.mock import patch
 
 import pytest
 from dagster import (
+    DailyPartitionsDefinition,
     IOManagerDefinition,
     MetadataValue,
     Out,
+    StaticPartitionsDefinition,
     TableColumn,
     TableSchema,
+    asset,
     build_input_context,
     build_output_context,
     job,
+    materialize,
     op,
 )
 from dagster._core.storage.db_io_manager import TableSlice
@@ -175,7 +179,6 @@ def test_io_manager_with_snowflake_pyspark():
         assert res.success
 
 
-
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_time_window_partitioned_asset(tmp_path):
     with temporary_snowflake_table(
@@ -217,7 +220,7 @@ def test_time_window_partitioned_asset(tmp_path):
             snowflake_config, logging.getLogger("temporary_snowflake_table")
         )
 
-        snowflake_io_manager = snowflake_pandas_io_manager.configured(snowflake_config)
+        snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
         resource_defs = {"io_manager": snowflake_io_manager}
 
         materialize(
@@ -281,13 +284,10 @@ def test_static_partitioned_asset(tmp_path):
                 value=SNOWFLAKE_JARS,
             ).getOrCreate()
 
-            return DataFrame(
-                {
-                    "color": [partition, partition, partition],
-                    "a": [value, value, value],
-                    "b": [4, 5, 6],
-                }
-            )
+            columns = ["color", "a", "b"]
+            data = [(partition, value, 4), (partition, value, 5), (partition, value, 6)]
+            df = spark.createDataFrame(data).toDF(*columns)
+            return df
 
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
@@ -300,7 +300,7 @@ def test_static_partitioned_asset(tmp_path):
             snowflake_config, logging.getLogger("temporary_snowflake_table")
         )
 
-        snowflake_io_manager = snowflake_pandas_io_manager.configured(snowflake_config)
+        snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
         resource_defs = {"io_manager": snowflake_io_manager}
         materialize(
             [static_partitioned],
