@@ -211,7 +211,7 @@ class PartialResource(Generic[ResValue], ResourceDefinition, MakeConfigCacheable
     def __init__(self, resource_cls: Type[Resource[ResValue]], data: Dict[str, Any]):
         check.invariant(data == {}, "PartialResource currently does not support config fields")
 
-        MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore (extends BaseModel, takes kwargs)
+        MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
         schema = infer_schema_from_config_class(
             resource_cls,
