@@ -16,6 +16,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.logical_version import get_input_event_pointer_tag_key
 from dagster._core.definitions.time_window_partitions import (
@@ -28,7 +29,6 @@ from dagster._core.events import DagsterEventType
 from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
-from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -43,7 +43,6 @@ from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster import DagsterInstance
-    from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 USED_DATA_TAG = ".dagster/used_data"
 
@@ -521,8 +520,8 @@ class CachingInstanceQueryer:
     ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
         """Returns the data time (i.e. the time up to which the asset has incorporated all available
         data) for a time-partitioned asset. This method takes into account all partitions that were
-        materialized for this asset up to the provided cursor."""
-
+        materialized for this asset up to the provided cursor.
+        """
         partition_data_time = self._calculate_time_partitioned_asset_data_time(
             asset_key=asset_key,
             asset_graph=asset_graph,
