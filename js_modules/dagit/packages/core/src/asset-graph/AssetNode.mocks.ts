@@ -262,7 +262,7 @@ export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
 export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
   stepKey: 'source_asset',
   unstartedRunIds: [],
-  inProgressRunIds: ['12345'],
+  inProgressRunIds: ['ABCDEF'],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -277,7 +277,7 @@ export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
 export const LiveDataForNodeSourceObservedStale: LiveDataForNode = {
   stepKey: 'source_asset',
   unstartedRunIds: [],
-  inProgressRunIds: ['12345'],
+  inProgressRunIds: [],
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: {
@@ -560,7 +560,7 @@ export const AssetNodeScenariosSource = [
     title: 'Source Asset - No Live Data',
     liveData: undefined,
     definition: AssetNodeFragmentSource,
-    expectedText: ['Observed', '–'],
+    expectedText: ['Loading'],
   },
 
   {
@@ -581,14 +581,14 @@ export const AssetNodeScenariosSource = [
     title: 'Source Asset - Never Observed',
     liveData: LiveDataForNodeSourceNeverObserved,
     definition: AssetNodeFragmentSource,
-    expectedText: ['Observed', '–'],
+    expectedText: ['Never observed', '–'],
   },
 
   {
     title: 'Source Asset - Observation Running',
     liveData: LiveDataForNodeSourceObservationRunning,
     definition: AssetNodeFragmentSource,
-    expectedText: ['Observed', '–'],
+    expectedText: ['Observing...', 'ABCDEF'],
   },
 
   {
