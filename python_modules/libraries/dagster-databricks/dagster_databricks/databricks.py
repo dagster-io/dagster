@@ -5,7 +5,9 @@ import dagster
 import dagster._check as check
 import dagster_pyspark
 import requests.exceptions
+from dagster._annotations import public
 from databricks_api import DatabricksAPI
+from databricks_cli.sdk.api_client import ApiClient
 
 import dagster_databricks
 
@@ -29,7 +31,51 @@ class DatabricksClient:
     def __init__(self, host, token, workspace_id=None):
         self.host = host
         self.workspace_id = workspace_id
+
+        # TODO: This is the old shim client that we were previously using. Arguably this is
+        # confusing for users to use since this is an unofficial wrapper around the documented
+        # Databricks REST API. We should consider removing this in the future.
         self.client = DatabricksAPI(host=host, token=token)
+
+        # Expose an interface directly to the official Databricks API client.
+        self._api_client = ApiClient(host=host, token=token)
+
+    @public
+    @property
+    def api_client(self) -> ApiClient:
+        """Retrieve a reference to the underlying Databricks API client. For more information,
+        see the `Databricks Python API <https://docs.databricks.com/dev-tools/python-api.html>`_.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import op
+            from databricks_cli.jobs.api import JobsApi
+            from databricks_cli.runs.api import RunsApi
+
+            @op(required_resource_keys={"databricks_client"})
+            def op1(context):
+                # Initialize the Databricks Jobs API
+                jobs_client = JobsApi(context.resources.databricks_client.api_client)
+                runs_client = RunsApi(context.resources.databricks_client.api_client)
+
+                # Example 1: Run a Databricks job with some parameters.
+                jobs_client.run_now(...)
+
+                # Example 2: Trigger a one-time run of a Databricks workload.
+                runs_client.submit_run(...)
+
+                # Example 3: Get an existing run.
+                runs_client.get_run(...)
+
+                # Example 4: Cancel a run.
+                runs_client.cancel_run(...)
+
+        Returns:
+            ApiClient: The authenticated Databricks API client.
+        """
+        return self._api_client
 
     def submit_run(self, *args, **kwargs):
         """Submit a run directly to the 'Runs Submit' API."""
