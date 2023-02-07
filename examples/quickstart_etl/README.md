@@ -1,3 +1,7 @@
+---
+requiredEnvVars: null
+---
+
 # Dagster starter kit
 
 This example is a starter kit for building a daily ETL pipeline. At a high level, this project shows how to ingest data from external sources, explore and transform the data, and materialize outputs that help visualize the data.

@@ -1,3 +1,16 @@
+---
+requiredEnvVars:
+- "AIRBYTE_CONNECTION_ID"
+- "AIRBYTE_HOST"
+- "AIRBYTE_PORT"
+- "PG_USERNAME"
+- "PG_PASSWORD"
+- "PG_HOST"
+- "PG_PORT"
+- "PG_SOURCE_DATABASE"
+- "PG_DESTINATION_DATABASE"
+---
+
 # Dagster + Modern Data Stack starter kit
 
 This starter kit shows how to build the Dagster's [Software-Defined Assets](https://docs.dagster.io/concepts/assets/software-defined-assets) alongside Modern Data Stack tools (specifically, [Airbyte](https://github.com/airbytehq/airbyte) and [dbt](https://github.com/dbt-labs/dbt-core)).
