@@ -175,6 +175,18 @@ class GrapheneScheduleSelector(graphene.InputObjectType):
         name = "ScheduleSelector"
 
 
+class GrapheneResourceSelector(graphene.InputObjectType):
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
+    resourceName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = (
+            """This type represents the fields necessary to identify a top-level resource."""
+        )
+        name = "ResourceSelector"
+
+
 class GrapheneExecutionMetadata(graphene.InputObjectType):
     runId = graphene.String()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
@@ -296,6 +308,7 @@ types = [
     GrapheneRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
+    GrapheneResourceSelector,
     GrapheneScheduleSelector,
     GrapheneSensorSelector,
     GrapheneStepExecution,
