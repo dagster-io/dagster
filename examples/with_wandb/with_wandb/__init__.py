@@ -32,11 +32,7 @@ defs = Definitions(
                 "project": {"env": "WANDB_PROJECT"},
             }
         ),
-        "wandb_resource": wandb_resource.configured(
-            {"api_key": {"env": "WANDB_API_KEY"}}
-        ),
-        "io_manager": wandb_artifacts_io_manager.configured(
-            {"cache_duration_in_minutes": 60}
-        ),
+        "wandb_resource": wandb_resource.configured({"api_key": {"env": "WANDB_API_KEY"}}),
+        "io_manager": wandb_artifacts_io_manager.configured({"cache_duration_in_minutes": 60}),
     },
 )
