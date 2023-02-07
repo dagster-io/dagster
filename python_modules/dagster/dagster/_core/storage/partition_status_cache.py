@@ -12,8 +12,8 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.partition import (
+    DynamicPartitionsDefinition,
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,

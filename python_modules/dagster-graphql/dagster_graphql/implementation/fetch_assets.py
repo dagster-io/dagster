@@ -447,7 +447,9 @@ def get_2d_run_length_encoded_materialized_partitions(
 
     materialized_2d_ranges = []
 
-    dim1_keys = primary_dim.partitions_def.get_partition_keys()
+    dim1_keys = primary_dim.partitions_def.get_partition_keys(
+        dynamic_partitions_store=dynamic_partitions_store
+    )
     unevaluated_idx = 0
     range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
 

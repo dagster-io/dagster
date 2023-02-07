@@ -5,8 +5,8 @@ import graphene
 from dagster import MultiPartitionsDefinition
 from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.host_representation.external_data import (
-    ExternalMultiPartitionsDefinitionData,
     ExternalDynamicPartitionsDefinitionData,
+    ExternalMultiPartitionsDefinitionData,
     ExternalPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,

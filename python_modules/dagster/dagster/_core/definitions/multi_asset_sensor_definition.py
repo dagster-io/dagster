@@ -329,7 +329,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         if not isinstance(partitions_def, PartitionsDefinition):
             raise DagsterInvalidInvocationError(f"No partitions defined for asset key {asset_key}")
 
-        partitions_to_fetch = list(partitions_def.get_partition_keys())
+        partitions_to_fetch = list(
+            partitions_def.get_partition_keys(dynamic_partitions_store=self.instance)
+        )
 
         if partition_key is not None:
             # Return partitions after the cursor partition, not including the cursor partition
@@ -497,7 +499,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         partitions_to_fetch = (
             self._get_partitions_after_cursor(asset_key)
             if after_cursor_partition
-            else list(partitions_def.get_partition_keys())
+            else list(partitions_def.get_partition_keys(dynamic_partitions_store=self.instance))
         )
 
         # Retain ordering of materializations
@@ -641,7 +643,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                     f"Asset key {asset_key} is not partitioned. Cannot check if partitions have"
                     " been materialized."
                 )
-            partitions = partitions_def.get_partition_keys()
+            partitions = partitions_def.get_partition_keys(dynamic_partitions_store=self.instance)
 
         return all(
             [materialization_count_by_partition.get(partition, 0) != 0 for partition in partitions]

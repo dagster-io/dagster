@@ -24,6 +24,7 @@ from dagster import (
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOutput,
+    DynamicPartitionsDefinition,
     Enum,
     EnumValue,
     ExpectationResult,
@@ -66,7 +67,6 @@ from dagster import (
     schedule,
     static_partitioned_config,
     usable_as_dagster_type,
-    DynamicPartitionsDefinition,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.executor_definition import in_process_executor

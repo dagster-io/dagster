@@ -1055,10 +1055,14 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             result.data["assetNodes"][0]["materializedPartitions"]["unmaterializedPartitions"]
         ) == set(partitions)
 
-        selector = infer_pipeline_selector(
-            graphql_context, "invalid_dynamic_partitioned_assets_job"
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_STATS,
+            variables={"pipelineSelector": selector},
         )
-        result = _get_materialized_partitions()
+        assert result.data
+        assert result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 0
+        assert result.data["assetNodes"][0]["partitionStats"]["numPartitions"] == 3
 
     def test_materialized_time_partitions(self, graphql_context):
         def _get_datetime_float(dt_str):

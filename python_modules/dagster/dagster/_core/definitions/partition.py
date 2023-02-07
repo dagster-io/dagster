@@ -307,8 +307,12 @@ class PartitionsDefinition(ABC, Generic[T]):
         tags = {PARTITION_NAME_TAG: partition_key}
         return tags
 
-    def get_num_partitions(self, current_time: Optional[datetime] = None) -> int:
-        return len(self.get_partition_keys(current_time))
+    def get_num_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> int:
+        return len(self.get_partition_keys(current_time, dynamic_partitions_store))
 
 
 def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]) -> None:
