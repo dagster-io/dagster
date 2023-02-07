@@ -36,8 +36,8 @@ from dagster_tests.definitions_tests.test_asset_reconciliation_sensor import (
     two_assets_in_sequence_fan_out_partitions,
     two_assets_in_sequence_one_partition,
     two_assets_in_sequence_two_partitions,
-    two_mutable_assets,
-    unpartitioned_after_mutable_asset,
+    two_dynamic_assets,
+    unpartitioned_after_dynamic_asset,
 )
 
 
@@ -64,8 +64,8 @@ assets_by_repo_name_by_scenario_name: Mapping[str, Mapping[str, Sequence[AssetsD
     "one_asset_self_dependency": {"repo": one_asset_self_dependency},
     "non_partitioned_after_partitioned": {"repo": non_partitioned_after_partitioned},
     "partitioned_after_non_partitioned": {"repo": partitioned_after_non_partitioned},
-    "unpartitioned_after_mutable_asset": {"repo": unpartitioned_after_mutable_asset},
-    "two_mutable_assets": {"repo": two_mutable_assets},
+    "unpartitioned_after_dynamic_asset": {"repo": unpartitioned_after_dynamic_asset},
+    "two_dynamic_assets": {"repo": two_dynamic_assets},
 }
 
 
@@ -74,8 +74,8 @@ assets_by_repo_name_by_scenario_name: Mapping[str, Mapping[str, Sequence[AssetsD
 @pytest.mark.parametrize("scenario_name", list(assets_by_repo_name_by_scenario_name.keys()))
 def test_scenario_to_completion(scenario_name: str, failures: str, some_or_all: str):
     with instance_for_test() as instance:
-        if "mutable" in scenario_name:
-            instance.add_mutable_partitions("foo", ["a", "b"])
+        if "dynamic" in scenario_name:
+            instance.add_dynamic_partitions("foo", ["a", "b"])
 
         with pendulum.test(create_pendulum_time(year=2020, month=1, day=7, hour=4)):
             assets_by_repo_name = assets_by_repo_name_by_scenario_name[scenario_name]
@@ -138,7 +138,7 @@ def make_backfill_data(
     some_or_all: str, asset_graph: ExternalAssetGraph, instance: DagsterInstance
 ) -> AssetBackfillData:
     if some_or_all == "all":
-        target_subset = AssetGraphSubset.all(asset_graph, mutable_partitions_store=instance)
+        target_subset = AssetGraphSubset.all(asset_graph, dynamic_partitions_store=instance)
     elif some_or_all == "some":
         # all partitions downstream of half of the partitions in each partitioned root asset
         root_asset_partitions: Set[AssetKeyPartitionKey] = set()
@@ -147,7 +147,7 @@ def make_backfill_data(
 
             if partitions_def is not None:
                 partition_keys = list(
-                    partitions_def.get_partition_keys(mutable_partitions_store=instance)
+                    partitions_def.get_partition_keys(dynamic_partitions_store=instance)
                 )
                 start_index = len(partition_keys) // 2
                 chosen_partition_keys = partition_keys[start_index:]
@@ -203,7 +203,7 @@ def execute_asset_backfill_iteration_consume_generator(
     ):
         if isinstance(result, AssetBackfillIterationResult):
             counts = traced_counter.get().counts()
-            assert counts.get("DagsterInstance.get_mutable_partitions", 0) <= 1
+            assert counts.get("DagsterInstance.get_dynamic_partitions", 0) <= 1
             return result
 
     assert False

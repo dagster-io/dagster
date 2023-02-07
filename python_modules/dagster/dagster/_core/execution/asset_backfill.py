@@ -26,7 +26,7 @@ from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.events import DagsterEventType
-from dagster._core.instance import DagsterInstance, MutablePartitionsStore
+from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
@@ -369,7 +369,7 @@ def execute_asset_backfill_iteration_inner(
             materialized_subset=updated_materialized_subset,
             target_subset=asset_backfill_data.target_subset,
             failed_and_downstream_subset=failed_and_downstream_subset,
-            mutable_partitions_store=instance_queryer,
+            dynamic_partitions_store=instance_queryer,
         ),
         initial_asset_partitions=initial_candidates,
     )
@@ -403,7 +403,7 @@ def should_backfill_atomic_asset_partitions_unit(
     target_subset: AssetGraphSubset,
     materialized_subset: AssetGraphSubset,
     failed_and_downstream_subset: AssetGraphSubset,
-    mutable_partitions_store: MutablePartitionsStore,
+    dynamic_partitions_store: DynamicPartitionsStore,
 ) -> bool:
     """
     Args:
@@ -418,7 +418,7 @@ def should_backfill_atomic_asset_partitions_unit(
         ):
             return False
 
-        for parent in asset_graph.get_parents_partitions(mutable_partitions_store, *candidate):
+        for parent in asset_graph.get_parents_partitions(dynamic_partitions_store, *candidate):
             can_run_with_parent = (
                 parent in asset_partitions_to_request
                 and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)

@@ -123,19 +123,19 @@ class UnresolvedAssetJobDefinition(
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
-        from dagster._core.definitions.mutable_partitions_definition import (
-            MutablePartitionsDefinition,
+        from dagster._core.definitions.partition import (
+            DynamicPartitionsDefinition,
         )
 
         partition_set = self.get_partition_set_def()
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        if isinstance(partition_set.partitions_def, MutablePartitionsDefinition):
+        if isinstance(partition_set.partitions_def, DynamicPartitionsDefinition):
             if not instance:
                 check.failed(
                     "Must provide a dagster instance when calling run_request_for_partition on a "
-                    "mutable partition set"
+                    "dynamic partition set"
                 )
 
         partition = partition_set.get_partition(partition_key, instance)

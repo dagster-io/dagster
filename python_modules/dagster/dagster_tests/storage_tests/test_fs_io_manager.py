@@ -29,7 +29,7 @@ from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.instance import MutablePartitionsStore
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import instance_for_test
 
@@ -289,7 +289,7 @@ def test_fs_io_manager_partitioned_no_partitions():
                 self,
                 downstream_partitions_subset: Optional[PartitionsSubset],
                 upstream_partitions_def: PartitionsDefinition,
-                mutable_partitions_store: Optional[MutablePartitionsStore] = None,
+                dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ) -> PartitionsSubset:
                 return upstream_partitions_def.empty_subset()
 
@@ -297,7 +297,7 @@ def test_fs_io_manager_partitioned_no_partitions():
                 self,
                 upstream_partitions_subset,
                 downstream_partitions_def,
-                mutable_partitions_store: Optional[MutablePartitionsStore] = None,
+                dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ):
                 raise NotImplementedError()
 

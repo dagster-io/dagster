@@ -8,7 +8,7 @@ from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
 )
-from dagster._core.instance import MutablePartitionsStore
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
@@ -192,11 +192,11 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     def get_partitions(
         self,
         current_time: Optional[datetime] = None,
-        mutable_partitions_store: Optional[MutablePartitionsStore] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[Partition]:
         partition_sequences = [
             partition_dim.partitions_def.get_partitions(
-                current_time=current_time, mutable_partitions_store=mutable_partitions_store
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
             )
             for partition_dim in self._partitions_defs
         ]

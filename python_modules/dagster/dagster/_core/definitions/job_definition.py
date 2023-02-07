@@ -35,8 +35,8 @@ from dagster._core.definitions.dependency import (
     NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
@@ -609,11 +609,11 @@ class JobDefinition(PipelineDefinition):
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        if isinstance(partition_set.partitions_def, MutablePartitionsDefinition):
+        if isinstance(partition_set.partitions_def, DynamicPartitionsDefinition):
             if not instance:
                 check.failed(
                     "Must provide a dagster instance when calling run_request_for_partition on a "
-                    "mutable partition set"
+                    "dynamic partition set"
                 )
 
         partition = partition_set.get_partition(partition_key, instance)

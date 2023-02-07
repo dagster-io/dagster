@@ -458,7 +458,7 @@ class OutputContext:
 
         return self.asset_partitions_def.get_partition_keys_in_range(
             self.step_context.asset_partition_key_range_for_output(self.name),
-            mutable_partitions_store=self.step_context.instance,
+            dynamic_partitions_store=self.step_context.instance,
         )
 
     @public

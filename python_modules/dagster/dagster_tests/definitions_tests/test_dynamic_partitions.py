@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Callable, Optional, Sequence
+
 import pytest
 from dagster import (
     AssetKey,
@@ -8,28 +11,64 @@ from dagster import (
     materialize_to_memory,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.mutable_partitions_definition import MutablePartitionsDefinition
+from dagster._core.definitions.partition import DynamicPartitionsDefinition, Partition
 from dagster._core.test_utils import instance_for_test
 
 
-def test_mutable_partitions_def_methods():
-    foo = MutablePartitionsDefinition("foo")
+@pytest.mark.parametrize(
+    argnames=["partition_fn"],
+    argvalues=[
+        (lambda _current_time: [Partition("a_partition")],),
+        (lambda _current_time: [Partition(x) for x in range(10)],),
+    ],
+)
+def test_dynamic_partitions_partitions(
+    partition_fn: Callable[[Optional[datetime]], Sequence[Partition]]
+):
+    partitions = DynamicPartitionsDefinition(partition_fn)
+
+    assert [(p.name, p.value) for p in partitions.get_partitions()] == [
+        (p.name, p.value) for p in partition_fn(None)
+    ]
+
+    assert partitions.get_partition_keys() == [p.name for p in partition_fn(None)]
+
+
+@pytest.mark.parametrize(
+    argnames=["partition_fn"],
+    argvalues=[
+        (lambda _current_time: ["a_partition"],),
+        (lambda _current_time: [str(x) for x in range(10)],),
+    ],
+)
+def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], Sequence[str]]):
+    partitions = DynamicPartitionsDefinition(partition_fn)
+
+    assert [(p.name, p.value) for p in partitions.get_partitions()] == [
+        (p, p) for p in partition_fn(None)
+    ]
+
+    assert partitions.get_partition_keys() == partition_fn(None)
+
+
+def test_dynamic_partitions_def_methods():
+    foo = DynamicPartitionsDefinition(name="foo")
     with instance_for_test() as instance:
         foo.add_partitions(["a", "b"], instance=instance)
-        assert set([p.name for p in foo.get_partitions(mutable_partitions_store=instance)]) == {
+        assert set([p.name for p in foo.get_partitions(dynamic_partitions_store=instance)]) == {
             "a",
             "b",
         }
         assert foo.has_partition("a", instance=instance)
 
         foo.delete_partition("a", instance=instance)
-        assert set([p.name for p in foo.get_partitions(mutable_partitions_store=instance)]) == {"b"}
+        assert set([p.name for p in foo.get_partitions(dynamic_partitions_store=instance)]) == {"b"}
         assert foo.has_partition("a", instance=instance) is False
 
 
-def test_mutable_partitioned_run():
+def test_dynamic_partitioned_run():
     with instance_for_test() as instance:
-        partitions_def = MutablePartitionsDefinition("foo")
+        partitions_def = DynamicPartitionsDefinition(name="foo")
 
         @asset(partitions_def=partitions_def)
         def my_asset():
@@ -39,7 +78,7 @@ def test_mutable_partitioned_run():
             materialize([my_asset], instance=instance, partition_key="a")
 
         partitions_def.add_partitions(["a"], instance)
-        assert partitions_def.get_partition_keys(mutable_partitions_store=instance) == ["a"]
+        assert partitions_def.get_partition_keys(dynamic_partitions_store=instance) == ["a"]
         assert materialize([my_asset], instance=instance, partition_key="a").success
         materialization = instance.get_latest_materialization_event(AssetKey("my_asset"))
         assert materialization
@@ -49,8 +88,8 @@ def test_mutable_partitioned_run():
             partitions_def.get_partition_keys()
 
 
-def test_mutable_partitioned_asset_dep():
-    partitions_def = MutablePartitionsDefinition(name="fruits")
+def test_dynamic_partitioned_asset_dep():
+    partitions_def = DynamicPartitionsDefinition(name="fruits")
 
     @asset(partitions_def=partitions_def)
     def asset1():
@@ -69,8 +108,8 @@ def test_mutable_partitioned_asset_dep():
         materialize_to_memory([asset1], instance=instance, partition_key="apple")
 
 
-def test_mutable_partitioned_asset_io_manager_context():
-    partitions_def = MutablePartitionsDefinition(name="fruits")
+def test_dynamic_partitioned_asset_io_manager_context():
+    partitions_def = DynamicPartitionsDefinition(name="fruits")
 
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -105,60 +144,60 @@ def test_mutable_partitioned_asset_io_manager_context():
         )
 
 
-def test_mutable_partitions_no_instance_provided():
-    partitions_def = MutablePartitionsDefinition(name="fruits")
+def test_dynamic_partitions_no_instance_provided():
+    partitions_def = DynamicPartitionsDefinition(name="fruits")
 
     with pytest.raises(CheckError, match="provide a dagster instance"):
         partitions_def.get_partitions()
 
 
-def test_mutable_partitions_mapping():
-    partitions_def = MutablePartitionsDefinition(name="fruits")
+def test_dynamic_partitions_mapping():
+    partitions_def = DynamicPartitionsDefinition(name="fruits")
 
     @asset(partitions_def=partitions_def)
-    def mutable1(context):
+    def dynamic1(context):
         assert context.asset_partition_key_for_output() == "apple"
         return 1
 
     @asset(partitions_def=partitions_def)
-    def mutable2(context, mutable1):
-        assert context.asset_partition_keys_for_input("mutable1") == ["apple"]
+    def dynamic2(context, dynamic1):
+        assert context.asset_partition_keys_for_input("dynamic1") == ["apple"]
         assert context.asset_partition_key_for_output() == "apple"
         return 1
 
     @asset
-    def unpartitioned(context, mutable1):
-        assert context.asset_partition_keys_for_input("mutable1") == ["apple"]
+    def unpartitioned(context, dynamic1):
+        assert context.asset_partition_keys_for_input("dynamic1") == ["apple"]
         return 1
 
     with instance_for_test() as instance:
         partitions_def.add_partitions(["apple"], instance=instance)
 
-        materialize([mutable1, mutable2, unpartitioned], instance=instance, partition_key="apple")
+        materialize([dynamic1, dynamic2, unpartitioned], instance=instance, partition_key="apple")
 
 
-def test_unpartitioned_downstream_of_mutable_asset():
+def test_unpartitioned_downstream_of_dynamic_asset():
     partitions = [
         "apple",
         "banana",
         "cantaloupe",
     ]
 
-    partitions_def = MutablePartitionsDefinition(name="fruits")
+    partitions_def = DynamicPartitionsDefinition(name="fruits")
 
     @asset(partitions_def=partitions_def)
-    def mutable1(context):
+    def dynamic1(context):
         return 1
 
     @asset
-    def unpartitioned(context, mutable1):
-        assert set(context.asset_partition_keys_for_input("mutable1")) == set(partitions)
+    def unpartitioned(context, dynamic1):
+        assert set(context.asset_partition_keys_for_input("dynamic1")) == set(partitions)
         return 1
 
     with instance_for_test() as instance:
         partitions_def.add_partitions(partitions, instance=instance)
 
         for partition in partitions[:-1]:
-            materialize([mutable1], instance=instance, partition_key=partition)
+            materialize([dynamic1], instance=instance, partition_key=partition)
 
-        materialize([unpartitioned, mutable1], instance=instance, partition_key=partitions[-1])
+        materialize([unpartitioned, dynamic1], instance=instance, partition_key=partitions[-1])

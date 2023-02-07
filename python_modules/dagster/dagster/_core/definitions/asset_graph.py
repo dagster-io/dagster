@@ -20,7 +20,7 @@ import toposort
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
-from dagster._core.instance import MutablePartitionsStore
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.selector.subset_selector import DependencyGraph, generate_asset_dep_graph
 from dagster._utils.cached_method import cached_method
 
@@ -159,7 +159,7 @@ class AssetGraph:
 
     def get_children_partitions(
         self,
-        mutable_partitions_store: MutablePartitionsStore,
+        dynamic_partitions_store: DynamicPartitionsStore,
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
     ) -> AbstractSet[AssetKeyPartitionKey]:
@@ -171,7 +171,7 @@ class AssetGraph:
         for child_asset_key in self.get_children(asset_key):
             if self.is_partitioned(child_asset_key):
                 for child_partition_key in self.get_child_partition_keys_of_parent(
-                    mutable_partitions_store, partition_key, asset_key, child_asset_key
+                    dynamic_partitions_store, partition_key, asset_key, child_asset_key
                 ):
                     result.add(AssetKeyPartitionKey(child_asset_key, child_partition_key))
             else:
@@ -180,7 +180,7 @@ class AssetGraph:
 
     def get_child_partition_keys_of_parent(
         self,
-        mutable_partitions_store: MutablePartitionsStore,
+        dynamic_partitions_store: DynamicPartitionsStore,
         parent_partition_key: Optional[str],
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
@@ -208,7 +208,7 @@ class AssetGraph:
             )
         if parent_partition_key is None:
             return child_partitions_def.get_partition_keys(
-                mutable_partitions_store=mutable_partitions_store
+                dynamic_partitions_store=dynamic_partitions_store
             )
 
         if parent_partitions_def is None:
@@ -220,14 +220,14 @@ class AssetGraph:
         child_partitions_subset = partition_mapping.get_downstream_partitions_for_partitions(
             parent_partitions_def.empty_subset().with_partition_keys([parent_partition_key]),
             downstream_partitions_def=child_partitions_def,
-            mutable_partitions_store=mutable_partitions_store,
+            dynamic_partitions_store=dynamic_partitions_store,
         )
 
         return list(child_partitions_subset.get_partition_keys())
 
     def get_parents_partitions(
         self,
-        mutable_partitions_store: MutablePartitionsStore,
+        dynamic_partitions_store: DynamicPartitionsStore,
         asset_key: AssetKey,
         partition_key: Optional[str] = None,
     ) -> AbstractSet[AssetKeyPartitionKey]:
@@ -242,7 +242,7 @@ class AssetGraph:
                     partition_key,
                     parent_asset_key,
                     asset_key,
-                    mutable_partitions_store=mutable_partitions_store,
+                    dynamic_partitions_store=dynamic_partitions_store,
                 ):
                     result.add(AssetKeyPartitionKey(parent_asset_key, parent_partition_key))
             else:
@@ -254,7 +254,7 @@ class AssetGraph:
         partition_key: Optional[str],
         parent_asset_key: AssetKey,
         child_asset_key: AssetKey,
-        mutable_partitions_store: Optional[MutablePartitionsStore] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[str]:
         """
         Converts a partition key from one asset to the corresponding partition keys in one of its
@@ -289,7 +289,7 @@ class AssetGraph:
             if partition_key
             else None,
             upstream_partitions_def=parent_partitions_def,
-            mutable_partitions_store=mutable_partitions_store,
+            dynamic_partitions_store=dynamic_partitions_store,
         )
         return list(parent_partition_key_subset.get_partition_keys())
 
@@ -356,7 +356,7 @@ class AssetGraph:
 
     def bfs_filter_asset_partitions(
         self,
-        mutable_partitions_store: MutablePartitionsStore,
+        dynamic_partitions_store: DynamicPartitionsStore,
         condition_fn: Callable[
             [Iterable[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]], bool
         ],
@@ -387,7 +387,7 @@ class AssetGraph:
 
                 for candidate in candidates_unit:
                     for child in self.get_children_partitions(
-                        mutable_partitions_store, candidate.asset_key, candidate.partition_key
+                        dynamic_partitions_store, candidate.asset_key, candidate.partition_key
                     ):
                         if child not in all_nodes:
                             queue.enqueue(child)

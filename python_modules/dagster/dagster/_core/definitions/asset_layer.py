@@ -644,7 +644,7 @@ class AssetLayer:
                             PartitionsDefinition, context.asset_partitions_def
                         ).get_partition_keys_in_range(
                             context.asset_partition_key_range,
-                            mutable_partitions_store=context.step_context.instance,
+                            dynamic_partitions_store=context.step_context.instance,
                         )
                     )
 

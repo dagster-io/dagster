@@ -38,7 +38,7 @@ from .sensor_definition import DefaultSensorStatus, SensorDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
-    from dagster._core.instance import DagsterInstance, MutablePartitionsStore
+    from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
 
@@ -63,7 +63,7 @@ class AssetReconciliationCursor(NamedTuple):
         return asset_key in self.materialized_or_requested_root_asset_keys
 
     def get_never_requested_never_materialized_partitions(
-        self, asset_key: AssetKey, asset_graph, mutable_partitions_store: "MutablePartitionsStore"
+        self, asset_key: AssetKey, asset_graph, dynamic_partitions_store: "DynamicPartitionsStore"
     ) -> Iterable[str]:
         partitions_def = asset_graph.get_partitions_def(asset_key)
 
@@ -87,7 +87,7 @@ class AssetReconciliationCursor(NamedTuple):
             ]
         else:
             return materialized_or_requested_subset.get_partition_keys_not_in_subset(
-                mutable_partitions_store=mutable_partitions_store
+                dynamic_partitions_store=dynamic_partitions_store
             )
 
     def with_updates(
