@@ -359,7 +359,7 @@ def test_structured_resource_runtime_config():
     assert out_txt == ["greeting: hello, world!"]
 
 
-def test_nested_resources2():
+def test_nested_resources():
     out_txt = []
 
     class Writer(Resource, ABC):
