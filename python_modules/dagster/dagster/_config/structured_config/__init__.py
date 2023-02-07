@@ -6,14 +6,13 @@ from typing_extensions import TypeAlias
 from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType
 from dagster._config.post_process import resolve_defaults
 from dagster._config.source import BoolSource, IntSource, StringSource
+from dagster._config.structured_config.typing_utils import TypecheckAllowPartialResourceInitParams
 from dagster._config.validate import validate_config
 from dagster._core.definitions.definition_config_schema import (
     DefinitionConfigSchema,
     IDefinitionConfigSchema,
 )
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._config.structured_config.typing_utils import TypecheckAllowPartialResourceInitParams
-from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.execution.context.init import InitResourceContext
 
 try:
@@ -25,12 +24,10 @@ except ImportError:
 
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Type
 from typing import Any, Dict, Optional, Type, cast
 
 from pydantic import BaseModel, Extra
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_MAPPING, SHAPE_SINGLETON, ModelField
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster import Field, Shape
@@ -214,7 +211,7 @@ class PartialResource(Generic[ResValue], ResourceDefinition, MakeConfigCacheable
     def __init__(self, resource_cls: Type[Resource[ResValue]], data: Dict[str, Any]):
         check.invariant(data == {}, "PartialResource currently does not support config fields")
 
-        MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)
+        MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore (extends BaseModel, takes kwargs)
 
         schema = infer_schema_from_config_class(
             resource_cls,
