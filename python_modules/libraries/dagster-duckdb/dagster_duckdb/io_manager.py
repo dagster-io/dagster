@@ -106,7 +106,12 @@ class DuckDbClient(DbClient):
     def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
         conn = _connect_duckdb(context).cursor()
         try:
+            print("DELETING")
             conn.execute(_get_cleanup_statement(table_slice))
+            print("OUT")
+            print(
+                conn.execute(f"SELECT * FROM {table_slice.schema}.{table_slice.table}").fetch_df()
+            )
         except duckdb.CatalogException:
             # table doesn't exist yet, so ignore the error
             pass
@@ -150,23 +155,23 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     being written.
     """
     if len(table_slice.partition) > 0:
-            query = f"DELETE FROM {table_slice.schema}.{table_slice.table} WHERE \n"
-            for i in range(len(table_slice.partition)):
-                part = table_slice.partition[i]
-                partition_where = (
-                    _static_where_clause(part)
-                    if isinstance(part.partition, str)
-                    else _time_window_where_clause(part)
-                )
-                query += partition_where
+        query = f"DELETE FROM {table_slice.schema}.{table_slice.table} WHERE \n"
+        for i in range(len(table_slice.partition)):
+            part = table_slice.partition[i]
+            partition_where = (
+                _static_where_clause(part)
+                if isinstance(part.partition, str)
+                else _time_window_where_clause(part)
+            )
+            query += partition_where
 
-                if i < len(table_slice.partition) - 1:
-                    query += " AND\n"
+            if i < len(table_slice.partition) - 1:
+                query += " AND\n"
 
-            print("DELETE STATEMENT")
-            print(query)
+        print("DELETE STATEMENT")
+        print(query)
 
-            return query
+        return query
     else:
         query = f"DELETE FROM {table_slice.schema}.{table_slice.table}"
         print("DELETE STATEMENT")
