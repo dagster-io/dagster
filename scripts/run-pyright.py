@@ -200,7 +200,11 @@ def normalize_env(env: str, rebuild: bool) -> None:
             [
                 f"python -m venv {venv_path}",
                 f"{venv_path}/bin/pip install -U pip setuptools wheel",
-                f"{venv_path}/bin/pip install -r {requirements_path}",
+                (
+                    f"{venv_path}/bin/pip install -r"
+                    # find-links for M1 lookup of grpcio wheels
+                    f" {requirements_path} --find-links=https://github.com/dagster-io/build-grpcio/wiki/Wheels"
+                ),
             ]
         )
         try:
