@@ -315,7 +315,6 @@ def test_multi_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
-    duckdb_conn.execute("EXPORT DATABASE '/Users/jamie/dev/duckdb_out/1' (FORMAT CSV, DELIMITER '|');")
     print(out_df)
     assert out_df["a"].tolist() == ["1", "1", "1"]
     duckdb_conn.close()
@@ -330,7 +329,6 @@ def test_multi_partitioned_asset(tmp_path):
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
     print(out_df)
-    duckdb_conn.execute("EXPORT DATABASE '/Users/jamie/dev/duckdb_out/2' (FORMAT CSV, DELIMITER '|');")
     assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
     duckdb_conn.close()
 
@@ -344,7 +342,6 @@ def test_multi_partitioned_asset(tmp_path):
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
     print(out_df)
-    duckdb_conn.execute("EXPORT DATABASE '/Users/jamie/dev/duckdb_out/3' (FORMAT CSV, DELIMITER '|');")
     assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()
 
@@ -355,10 +352,7 @@ def test_multi_partitioned_asset(tmp_path):
         run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "4"}}}},
     )
 
-    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-
-    duckdb_conn.execute("EXPORT DATABASE '/Users/jamie/dev/duckdb_out/4' (FORMAT CSV, DELIMITER '|');")
-
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))gi
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
     print(out_df)
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
