@@ -145,6 +145,10 @@ def test_with_resource_binding():
         resources={"foo": ResourceDefinition.hardcoded_resource("wrapped")},
     )
     repo = resolve_pending_repo_if_required(defs)
+
+    assert len(repo.get_top_level_resources()) == 1
+    assert "foo" in repo.get_top_level_resources()
+
     asset_job = repo.get_all_jobs()[0]
     asset_job.execute_in_process()
     assert executed["yes"]
@@ -163,6 +167,10 @@ def test_resource_coercion():
         resources={"foo": "object-to-coerce"},
     )
     repo = resolve_pending_repo_if_required(defs)
+
+    assert len(repo.get_top_level_resources()) == 1
+    assert "foo" in repo.get_top_level_resources()
+
     asset_job = repo.get_all_jobs()[0]
     asset_job.execute_in_process()
     assert executed["yes"]
