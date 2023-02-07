@@ -1,31 +1,25 @@
 from unittest import mock
 
 import pytest
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
+from dagster import job
 from dagster_databricks import create_databricks_job_op, databricks_client
 from dagster_databricks.databricks import DatabricksRunState
-from dagster_databricks.solids import create_ui_url
+from dagster_databricks.ops import create_ui_url
 from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
 
 
 @pytest.mark.parametrize("job_creator", [create_databricks_job_op])
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run_state")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
-def test_run_create_databricks_job_solid(
+def test_run_create_databricks_job_op(
     mock_submit_run, mock_get_run_state, databricks_run_config, job_creator
 ):
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={
-                    "databricks_client": databricks_client.configured(
-                        {"host": "a", "token": "fdshj"}
-                    )
-                }
-            )
-        ]
+    @job(
+        resource_defs={
+            "databricks_client": databricks_client.configured({"host": "a", "token": "fdshj"})
+        }
     )
-    def test_pipe():
+    def test_job():
         job_creator(num_inputs=0).configured(
             {"job": databricks_run_config, "poll_interval_sec": 0.01}, "test"
         )()
@@ -38,7 +32,7 @@ def test_run_create_databricks_job_solid(
         life_cycle_state=DatabricksRunLifeCycleState.Terminated,
     )
 
-    result = execute_pipeline(test_pipe)
+    result = test_job.execute_in_process()
     assert result.success
 
     assert mock_submit_run.call_count == 1

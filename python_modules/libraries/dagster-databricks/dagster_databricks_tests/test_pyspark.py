@@ -3,17 +3,9 @@ from typing import Dict
 from unittest import mock
 
 import pytest
-from dagster import fs_io_manager, reconstructable
+from dagster import In, Out, execute_job, fs_io_manager, graph, op, reconstructable
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
 from dagster._utils.merger import deep_merge_dicts
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_azure.adls2 import adls2_pickle_io_manager, adls2_resource
@@ -71,11 +63,11 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
 }
 
 
-@solid(
-    output_defs=[OutputDefinition(DataFrame)],
+@op(
+    out=Out(dagster_type=DataFrame),
     required_resource_keys={"pyspark_step_launcher", "pyspark"},
 )
-def make_df_solid(context):
+def make_df_op(context):
     schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
     rows = [
         Row(name="John", age=19),
@@ -85,85 +77,90 @@ def make_df_solid(context):
     return context.resources.pyspark.spark_session.createDataFrame(rows, schema)
 
 
-@solid(
+@op(
     name="blah",
     description="this is a test",
     config_schema={"foo": str, "bar": int},
-    input_defs=[InputDefinition("people", DataFrame)],
-    output_defs=[OutputDefinition(DataFrame)],
+    ins={"people": In(dagster_type=DataFrame)},
+    out=Out(dagster_type=DataFrame),
     required_resource_keys={"pyspark_step_launcher"},
 )
-def filter_df_solid(_, people):
+def filter_df_op(_, people):
     return people.filter(people["age"] < 30)
 
 
-MODE_DEFS = [
-    ModeDefinition(
-        "prod_adls2",
-        resource_defs={
-            "pyspark_step_launcher": databricks_pyspark_step_launcher,
-            "pyspark": pyspark_resource,
-            "adls2": adls2_resource,
-            "io_manager": adls2_pickle_io_manager,
-        },
-    ),
-    ModeDefinition(
-        "prod_s3",
-        resource_defs={
-            "pyspark_step_launcher": databricks_pyspark_step_launcher,
-            "pyspark": pyspark_resource,
-            "s3": s3_resource,
-            "io_manager": s3_pickle_io_manager,
-        },
-    ),
-    ModeDefinition(
-        "test",
-        resource_defs={
-            "pyspark_step_launcher": databricks_pyspark_step_launcher,
-            "pyspark": pyspark_resource,
-            "io_manager": fs_io_manager,
-        },
-    ),
-    ModeDefinition(
-        "local",
-        resource_defs={
-            "pyspark_step_launcher": no_step_launcher,
-            "pyspark": pyspark_resource,
-        },
-    ),
-]
+ADLS2_RESOURCE_DEFS = {
+    "pyspark_step_launcher": databricks_pyspark_step_launcher,
+    "pyspark": pyspark_resource,
+    "adls2": adls2_resource,
+    "io_manager": adls2_pickle_io_manager,
+}
+S3_RESOURCE_DEFS = {
+    "pyspark_step_launcher": databricks_pyspark_step_launcher,
+    "pyspark": pyspark_resource,
+    "s3": s3_resource,
+    "io_manager": s3_pickle_io_manager,
+}
+TEST_RESOURCE_DEFS = {
+    "pyspark_step_launcher": databricks_pyspark_step_launcher,
+    "pyspark": pyspark_resource,
+    "io_manager": fs_io_manager,
+}
+LOCAL_RESOURCE_DEFS = {
+    "pyspark_step_launcher": no_step_launcher,
+    "pyspark": pyspark_resource,
+}
 
 
-@pipeline(mode_defs=MODE_DEFS)
-def pyspark_pipe():
-    filter_df_solid(make_df_solid())
+@graph
+def pyspark_graph():
+    filter_df_op(make_df_op())
 
 
-def define_pyspark_pipe():
-    return pyspark_pipe
+pyspark_local_job = pyspark_graph.to_job(resource_defs=LOCAL_RESOURCE_DEFS)
+pyspark_s3_job = pyspark_graph.to_job(resource_defs=S3_RESOURCE_DEFS)
+pyspark_adls2_job = pyspark_graph.to_job(resource_defs=ADLS2_RESOURCE_DEFS)
 
 
-@solid(
+def define_pyspark_local_job():
+    return pyspark_local_job
+
+
+def define_pyspark_s3_job():
+    return pyspark_s3_job
+
+
+def define_pyspark_adls2_job():
+    return pyspark_adls2_job
+
+
+@op(
     required_resource_keys={"pyspark_step_launcher", "pyspark"},
 )
-def do_nothing_solid(_):
+def do_nothing_op(_):
     pass
 
 
-@pipeline(mode_defs=MODE_DEFS)
-def do_nothing_pipe():
-    do_nothing_solid()
+@graph
+def do_nothing_graph():
+    do_nothing_op()
 
 
-def define_do_nothing_pipe():
-    return do_nothing_pipe
+do_nothing_local_job = do_nothing_graph.to_job(resource_defs=LOCAL_RESOURCE_DEFS)
+do_nothing_test_job = do_nothing_graph.to_job(resource_defs=TEST_RESOURCE_DEFS)
+
+
+def define_do_nothing_test_job():
+    return do_nothing_test_job
 
 
 def test_local():
-    result = execute_pipeline(
-        pipeline=reconstructable(define_pyspark_pipe),
-        mode="local",
-        run_config={"solids": {"blah": {"config": {"foo": "a string", "bar": 123}}}},
+    result = pyspark_local_job.execute_in_process(
+        run_config={
+            "ops": {
+                "blah": {"config": {"foo": "a string", "bar": 123}},
+            }
+        }
     )
     assert result.success
 
@@ -194,60 +191,19 @@ def test_pyspark_databricks(
     mock_get_run_state.side_effect = [running_state] * 5 + [final_state]
 
     with instance_for_test() as instance:
-        result = execute_pipeline(
-            pipeline=reconstructable(define_do_nothing_pipe),
-            mode="local",
-            instance=instance,
-        )
+        result = do_nothing_local_job.execute_in_process(instance=instance)
         mock_get_step_events.return_value = [
-            event
-            for event in instance.all_logs(result.run_id)
-            if event.step_key == "do_nothing_solid"
+            event for event in instance.all_logs(result.run_id) if event.step_key == "do_nothing_op"
         ]
 
     # Test 1 - successful execution
 
-    config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
-    config.pop("local_pipeline_package_path")
-    result = execute_pipeline(
-        pipeline=reconstructable(define_do_nothing_pipe),
-        mode="test",
-        run_config={
-            "resources": {
-                "pyspark_step_launcher": {
-                    "config": deep_merge_dicts(
-                        config,
-                        {
-                            "databricks_host": "",
-                            "databricks_token": "",
-                            "poll_interval_sec": 0.1,
-                            "local_dagster_job_package_path": os.path.abspath(
-                                os.path.dirname(__file__)
-                            ),
-                        },
-                    ),
-                },
-            },
-        },
-    )
-    assert result.success
-    assert mock_perform_query.call_count == 2
-    assert mock_get_run.call_count == 1
-    assert mock_get_run_state.call_count == 6
-    assert mock_get_step_events.call_count == 6
-    assert mock_put_file.call_count == 4
-    assert mock_read_file.call_count == 2
-    assert mock_submit_run.call_count == 1
-
-    # Test 2 - attempting to update permissions for an existing cluster
-
-    config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
-    config.pop("local_pipeline_package_path")
-    config["run_config"]["cluster"] = {"existing": "cluster_id"}
-    with pytest.raises(ValueError) as excinfo:
-        execute_pipeline(
-            pipeline=reconstructable(define_do_nothing_pipe),
-            mode="test",
+    with instance_for_test() as instance:
+        config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
+        config.pop("local_pipeline_package_path")
+        result = execute_job(
+            job=reconstructable(define_do_nothing_test_job),
+            instance=instance,
             run_config={
                 "resources": {
                     "pyspark_step_launcher": {
@@ -264,12 +220,53 @@ def test_pyspark_databricks(
                         ),
                     },
                 },
+                "execution": {"config": {"in_process": {}}},
             },
         )
+        assert result.success
+        assert mock_perform_query.call_count == 2
+        assert mock_get_run.call_count == 1
+        assert mock_get_run_state.call_count == 6
+        assert mock_get_step_events.call_count == 6
+        assert mock_put_file.call_count == 4
+        assert mock_read_file.call_count == 2
+        assert mock_submit_run.call_count == 1
+
+    # Test 2 - attempting to update permissions for an existing cluster
+
+    with instance_for_test() as instance:
+        config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
+        config.pop("local_pipeline_package_path")
+        config["run_config"]["cluster"] = {"existing": "cluster_id"}
+        with pytest.raises(ValueError) as excinfo:
+            execute_job(
+                job=reconstructable(define_do_nothing_test_job),
+                instance=instance,
+                run_config={
+                    "resources": {
+                        "pyspark_step_launcher": {
+                            "config": deep_merge_dicts(
+                                config,
+                                {
+                                    "databricks_host": "",
+                                    "databricks_token": "",
+                                    "poll_interval_sec": 0.1,
+                                    "local_dagster_job_package_path": os.path.abspath(
+                                        os.path.dirname(__file__)
+                                    ),
+                                },
+                            ),
+                        },
+                    },
+                    "execution": {"config": {"in_process": {}}},
+                },
+                raise_on_error=True,
+            )
+
         assert (
             str(excinfo.value)
-            == "Attempting to update permissions of an existing cluster. This is dangerous and thus"
-            " unsupported."
+            == "Attempting to update permissions of an existing cluster. This is dangerous and"
+            " thus unsupported."
         )
 
 
@@ -278,11 +275,10 @@ def test_pyspark_databricks(
     reason="This test is slow and requires a Databricks cluster; run only upon explicit request",
 )
 def test_do_it_live_databricks_s3():
-    result = execute_pipeline(
-        reconstructable(define_pyspark_pipe),
-        mode="prod_s3",
+    result = execute_job(
+        reconstructable(define_pyspark_s3_job),
         run_config={
-            "solids": {"blah": {"config": {"foo": "a string", "bar": 123}}},
+            "ops": {"blah": {"config": {"foo": "a string", "bar": 123}}},
             "resources": {
                 "pyspark_step_launcher": {"config": BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG},
                 "io_manager": {
@@ -311,11 +307,10 @@ def test_do_it_live_databricks_adls2():
         }
     }
 
-    result = execute_pipeline(
-        reconstructable(define_pyspark_pipe),
-        mode="prod_adls2",
+    result = execute_job(
+        reconstructable(define_pyspark_adls2_job),
         run_config={
-            "solids": {"blah": {"config": {"foo": "a string", "bar": 123}}},
+            "ops": {"blah": {"config": {"foo": "a string", "bar": 123}}},
             "resources": {
                 "pyspark_step_launcher": {"config": config},
                 "adls2": {
