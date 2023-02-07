@@ -127,7 +127,7 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone or "UTC", fmt, end_offset, cron_schedule
+            cls, start_dt, timezone or "UTC", fmt, end_offset, cron_schedule  # type: ignore  # (pyright bug)
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
@@ -378,7 +378,7 @@ class TimeWindowPartitionsDefinition(
         )
 
         if self.end_offset == 0:
-            return next(iter(self._reverse_iterate_time_windows(current_time)))
+            return next(iter(self._reverse_iterate_time_windows(current_time)))  # type: ignore
         else:
             # TODO: make this efficient
             last_partition_key = super().get_last_partition_key(current_time)
@@ -435,7 +435,7 @@ class TimeWindowPartitionsDefinition(
 
         return self.get_partition_keys_in_time_window(TimeWindow(start_time, end_time))
 
-    @public  # type: ignore
+    @public
     @property
     def schedule_type(self) -> Optional[ScheduleType]:
         if re.match(r"\d+ \* \* \* \*", self.cron_schedule):
@@ -449,7 +449,7 @@ class TimeWindowPartitionsDefinition(
         else:
             return None
 
-    @public  # type: ignore
+    @public
     @property
     def minute_offset(self) -> int:
         match = re.match(r"(\d+) (\d+|\*) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
@@ -457,7 +457,7 @@ class TimeWindowPartitionsDefinition(
             check.failed(f"{self.cron_schedule} has no minute offset")
         return int(match.groups()[0])
 
-    @public  # type: ignore
+    @public
     @property
     def hour_offset(self) -> int:
         match = re.match(r"(\d+|\*) (\d+) (\d+|\*) (\d+|\*) (\d+|\*)", self.cron_schedule)
@@ -465,7 +465,7 @@ class TimeWindowPartitionsDefinition(
             check.failed(f"{self.cron_schedule} has no hour offset")
         return int(match.groups()[1])
 
-    @public  # type: ignore
+    @public
     @property
     def day_offset(self) -> int:
         schedule_type = self.schedule_type
@@ -1305,7 +1305,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
                     break
             else:
                 if result_windows and window.start == result_windows[0].start:
-                    result_windows[0] = TimeWindow(window.start, included_window.end)
+                    result_windows[0] = TimeWindow(window.start, included_window.end)  # type: ignore
                 else:
                     result_windows.insert(0, window)
 

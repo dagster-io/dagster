@@ -149,6 +149,12 @@ GET_ASSET_LOGICAL_VERSIONS = """
             id
             currentLogicalVersion
             projectedLogicalVersion
+            assetMaterializations {
+                tags {
+                    key
+                    value
+                }
+            }
         }
     }
 """

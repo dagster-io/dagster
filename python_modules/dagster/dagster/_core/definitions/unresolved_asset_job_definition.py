@@ -84,7 +84,7 @@ class UnresolvedAssetJobDefinition(
         )
         run_config_fn = (
             partitioned_config
-            and partitioned_config.run_config_for_partition_fn  # type: ignore
+            and partitioned_config.run_config_for_partition_fn
             or (lambda _: cast(Dict[str, str], {}))
         )
         return PartitionSetDefinition(

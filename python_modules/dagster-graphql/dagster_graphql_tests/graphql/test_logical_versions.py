@@ -6,6 +6,7 @@ from dagster import (
     asset,
     repository,
 )
+from dagster._core.definitions.logical_version import LOGICAL_VERSION_TAG_KEY
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
@@ -56,6 +57,18 @@ def test_dependencies_changed():
             wait_for_runs_to_finish(context_v1.instance)
         with define_out_of_process_context(__file__, "get_repo_v2", instance) as context_v2:
             assert _fetch_logical_versions(context_v2, repo_v2)
+
+
+def test_logical_version_from_tags():
+    repo_v1 = get_repo_v1()
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo_v1", instance) as context_v1:
+            assert _materialize_assets(context_v1, repo_v1)
+            wait_for_runs_to_finish(context_v1.instance)
+            result = _fetch_logical_versions(context_v1, repo_v1)
+            tags = result.data["assetNodes"][0]["assetMaterializations"][0]["tags"]
+            lv_tag = next(tag for tag in tags if tag["key"] == LOGICAL_VERSION_TAG_KEY)
+            assert lv_tag["value"] == result.data["assetNodes"][0]["currentLogicalVersion"]
 
 
 def get_repo_with_partitioned_self_dep_asset():

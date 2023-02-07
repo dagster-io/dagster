@@ -390,6 +390,12 @@ export type ConfigTypeOrError =
   | PythonError
   | RegularConfigType;
 
+export type ConfiguredValue = {
+  __typename: 'ConfiguredValue';
+  key: Scalars['String'];
+  value: Scalars['String'];
+};
+
 export type ConflictingExecutionParamsError = Error & {
   __typename: 'ConflictingExecutionParamsError';
   message: Scalars['String'];
@@ -534,6 +540,7 @@ export type DagitMutationWipeAssetsArgs = {
 
 export type DagitQuery = {
   __typename: 'DagitQuery';
+  allTopLevelResourceDetailsOrError: ResourcesOrError;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
@@ -572,9 +579,14 @@ export type DagitQuery = {
   sensorOrError: SensorOrError;
   sensorsOrError: SensorsOrError;
   shouldShowNux: Scalars['Boolean'];
+  topLevelResourceDetailsOrError: ResourceDetailsOrError;
   unloadableInstigationStatesOrError: InstigationStatesOrError;
   version: Scalars['String'];
   workspaceOrError: WorkspaceOrError;
+};
+
+export type DagitQueryAllTopLevelResourceDetailsOrErrorArgs = {
+  repositorySelector: RepositorySelector;
 };
 
 export type DagitQueryAssetNodeDefinitionCollisionsArgs = {
@@ -728,6 +740,10 @@ export type DagitQuerySensorOrErrorArgs = {
 
 export type DagitQuerySensorsOrErrorArgs = {
   repositorySelector: RepositorySelector;
+};
+
+export type DagitQueryTopLevelResourceDetailsOrErrorArgs = {
+  resourceSelector: ResourceSelector;
 };
 
 export type DagitQueryUnloadableInstigationStatesOrErrorArgs = {
@@ -1023,6 +1039,12 @@ export type EventConnection = {
 };
 
 export type EventConnectionOrError = EventConnection | PythonError | RunNotFoundError;
+
+export type EventTag = {
+  __typename: 'EventTag';
+  key: Scalars['String'];
+  value: Scalars['String'];
+};
 
 export type ExecutionMetadata = {
   parentRunId?: InputMaybe<Scalars['String']>;
@@ -1863,6 +1885,7 @@ export type MaterializationEvent = DisplayableEvent &
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
     stepStats: RunStepStats;
+    tags: Array<EventTag>;
     timestamp: Scalars['String'];
   };
 
@@ -2048,6 +2071,7 @@ export type ObservationEvent = DisplayableEvent &
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
     stepStats: RunStepStats;
+    tags: Array<EventTag>;
     timestamp: Scalars['String'];
   };
 
@@ -2618,6 +2642,7 @@ export type RepositoriesOrError = PythonError | RepositoryConnection;
 
 export type Repository = {
   __typename: 'Repository';
+  allTopLevelResourceDetails: Array<ResourceDetails>;
   assetGroups: Array<AssetGroup>;
   assetNodes: Array<AssetNode>;
   displayMetadata: Array<RepositoryMetadata>;
@@ -2700,6 +2725,21 @@ export type Resource = {
   name: Scalars['String'];
 };
 
+export type ResourceDetails = {
+  __typename: 'ResourceDetails';
+  configFields: Array<ConfigTypeField>;
+  configuredValues: Array<ConfiguredValue>;
+  description: Maybe<Scalars['String']>;
+  name: Scalars['String'];
+};
+
+export type ResourceDetailsList = {
+  __typename: 'ResourceDetailsList';
+  results: Array<ResourceDetails>;
+};
+
+export type ResourceDetailsOrError = PythonError | ResourceDetails | ResourceNotFoundError;
+
 export type ResourceInitFailureEvent = DisplayableEvent &
   ErrorEvent &
   MarkerEvent &
@@ -2759,10 +2799,24 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
     timestamp: Scalars['String'];
   };
 
+export type ResourceNotFoundError = Error & {
+  __typename: 'ResourceNotFoundError';
+  message: Scalars['String'];
+  resourceName: Scalars['String'];
+};
+
 export type ResourceRequirement = {
   __typename: 'ResourceRequirement';
   resourceKey: Scalars['String'];
 };
+
+export type ResourceSelector = {
+  repositoryLocationName: Scalars['String'];
+  repositoryName: Scalars['String'];
+  resourceName: Scalars['String'];
+};
+
+export type ResourcesOrError = PythonError | RepositoryNotFoundError | ResourceDetailsList;
 
 export type ResumeBackfillResult = PythonError | ResumeBackfillSuccess | UnauthorizedError;
 

@@ -187,6 +187,27 @@ class ScheduleSelector(
         )
 
 
+class ResourceSelector(NamedTuple):
+    location_name: str
+    repository_name: str
+    resource_name: str
+
+    def to_graphql_input(self):
+        return {
+            "repositoryLocationName": self.location_name,
+            "repositoryName": self.repository_name,
+            "resourceName": self.resource_name,
+        }
+
+    @staticmethod
+    def from_graphql_input(graphql_data):
+        return ResourceSelector(
+            location_name=graphql_data["repositoryLocationName"],
+            repository_name=graphql_data["repositoryName"],
+            resource_name=graphql_data["resourceName"],
+        )
+
+
 class SensorSelector(
     NamedTuple(
         "_SensorSelector", [("location_name", str), ("repository_name", str), ("sensor_name", str)]

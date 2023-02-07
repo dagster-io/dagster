@@ -554,7 +554,7 @@ class AssetLayer:
 
     @staticmethod
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
-        """Scrape asset info off of InputDefinition/OutputDefinition instances."""
+        """Legacy: scrape asset info off of InputDefinition/OutputDefinition instances."""
         check.inst_param(graph_def, "graph_def", GraphDefinition)
         asset_by_input, asset_by_output, asset_deps, io_manager_by_asset = _asset_mappings_for_node(
             graph_def, None

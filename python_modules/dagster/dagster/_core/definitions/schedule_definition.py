@@ -152,7 +152,7 @@ class ScheduleEvaluationContext:
         self._exit_stack.close()
         self._logger = None
 
-    @public  # type: ignore
+    @public
     @property
     def instance(self) -> "DagsterInstance":
         # self._instance_ref should only ever be None when this ScheduleEvaluationContext was
@@ -167,7 +167,7 @@ class ScheduleEvaluationContext:
             )
         return cast(DagsterInstance, self._instance)
 
-    @public  # type: ignore
+    @public
     @property
     def scheduled_execution_time(self) -> Optional[datetime]:
         return self._scheduled_execution_time
@@ -408,7 +408,7 @@ class ScheduleDefinition:
                 )
             elif tags:
                 tags = validate_tags(tags, allow_reserved_tags=False)
-                tags_fn = lambda _context: tags  # type: ignore
+                tags_fn = lambda _context: tags
             else:
                 tags_fn = check.opt_callable_param(
                     tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
@@ -439,8 +439,8 @@ class ScheduleDefinition:
                 ):
                     _run_config_fn = check.not_none(self._run_config_fn)
                     evaluated_run_config = copy.deepcopy(
-                        _run_config_fn(context)  # type: ignore  # fmt: skip
-                        if has_at_least_one_parameter(_run_config_fn)  # type: ignore  # fmt: skip
+                        _run_config_fn(context)
+                        if has_at_least_one_parameter(_run_config_fn)
                         else _run_config_fn()  # type: ignore  # (strict type guard)
                     )
 
@@ -448,11 +448,11 @@ class ScheduleDefinition:
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of tags_fn for schedule {name}",
                 ):
-                    evaluated_tags = validate_tags(tags_fn(context), allow_reserved_tags=False)  # type: ignore
+                    evaluated_tags = validate_tags(tags_fn(context), allow_reserved_tags=False)
 
                 yield RunRequest(
                     run_key=None,
-                    run_config=evaluated_run_config,  # type: ignore
+                    run_config=evaluated_run_config,
                     tags=evaluated_tags,
                 )
 
@@ -461,7 +461,7 @@ class ScheduleDefinition:
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
-                pendulum.tz.timezone(self._execution_timezone)
+                pendulum.tz.timezone(self._execution_timezone)  # type: ignore
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
                     f"Invalid execution timezone {self._execution_timezone} for {name}"
@@ -509,50 +509,50 @@ class ScheduleDefinition:
 
             context = context if context else build_schedule_context()
 
-            result = self._execution_fn.decorated_fn(context)  # type: ignore
+            result = self._execution_fn.decorated_fn(context)
         else:
             if len(args) + len(kwargs) > 0:
                 raise DagsterInvalidInvocationError(
                     "Decorated schedule function takes no arguments, but arguments were provided."
                 )
-            result = self._execution_fn.decorated_fn()  # type: ignore
+            result = self._execution_fn.decorated_fn()
 
         if isinstance(result, dict):
             return copy.deepcopy(result)
         else:
             return result
 
-    @public  # type: ignore
+    @public
     @property
     def name(self) -> str:
         return self._name
 
-    @public  # type: ignore
+    @public
     @property
     def job_name(self) -> str:
         return self._target.pipeline_name
 
-    @public  # type: ignore
+    @public
     @property
     def description(self) -> Optional[str]:
         return self._description
 
-    @public  # type: ignore
+    @public
     @property
     def cron_schedule(self) -> Union[str, Sequence[str]]:
         return self._cron_schedule  # type: ignore
 
-    @public  # type: ignore
+    @public
     @property
     def environment_vars(self) -> Mapping[str, str]:
         return self._environment_vars
 
-    @public  # type: ignore
+    @public
     @property
     def execution_timezone(self) -> Optional[str]:
         return self._execution_timezone
 
-    @public  # type: ignore
+    @public
     @property
     def job(self) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
         if isinstance(self._target, DirectTarget):
@@ -598,15 +598,15 @@ class ScheduleDefinition:
         else:
             # NOTE: mypy is not correctly reading this cast-- not sure why
             # (pyright reads it fine). Hence the type-ignores below.
-            result = cast(List[RunRequest], check.is_list(result, of_type=RunRequest))  # type: ignore
+            result = cast(List[RunRequest], check.is_list(result, of_type=RunRequest))
             check.invariant(
-                not any(not request.run_key for request in result),  # type: ignore
+                not any(not request.run_key for request in result),
                 (
                     "Schedules that return multiple RunRequests must specify a run_key in each"
                     " RunRequest"
                 ),
             )
-            run_requests = result  # type: ignore
+            run_requests = result
             skip_message = None
 
         # clone all the run requests with the required schedule tags
@@ -640,7 +640,7 @@ class ScheduleDefinition:
 
         check.failed("Target is not loadable")
 
-    @public  # type: ignore
+    @public
     @property
     def default_status(self) -> DefaultScheduleStatus:
         return self._default_status

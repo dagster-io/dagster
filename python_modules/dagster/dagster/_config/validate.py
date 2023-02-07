@@ -168,7 +168,7 @@ def validate_selector_config(
     # If there is a single field defined on the selector and if it is optional
     # it passes validation. (e.g. a single logger "console")
     if config_value == {}:
-        return _validate_empty_selector_config(context)  # type: ignore
+        return _validate_empty_selector_config(context)
 
     # Now we ensure that the used-provided config has only a a single entry
     # and then continue the validation pass
@@ -213,7 +213,7 @@ def validate_selector_config(
             frozendict({field_name: child_evaluate_value_result.value})
         )
     else:
-        return child_evaluate_value_result  # type: ignore
+        return child_evaluate_value_result
 
 
 def _validate_shape_config(
@@ -325,7 +325,7 @@ def validate_map_config(
         if not result.success:
             errors += cast(List, result.errors)
 
-    return EvaluateValueResult(not bool(errors), frozendict(config_value), errors)  # type: ignore
+    return EvaluateValueResult(not bool(errors), frozendict(config_value), errors)
 
 
 def validate_shape_config(
@@ -401,7 +401,7 @@ def validate_array_config(
         else:
             errors.extend(check.not_none(result.errors))
 
-    return EvaluateValueResult(not bool(errors), values, errors)  # type: ignore
+    return EvaluateValueResult(not bool(errors), values, errors)
 
 
 def validate_enum_config(

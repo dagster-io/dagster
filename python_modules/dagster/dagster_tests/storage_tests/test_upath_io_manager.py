@@ -187,7 +187,7 @@ def test_upath_io_manager_multiple_time_partitions(
     assert len(downstream_asset_data) == 24, "downstream day should map to upstream 24 hours"
 
 
-def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOManager):  # type: ignore[no-redef]
+def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOManager):
     upstream_partitions_def = StaticPartitionsDefinition(["A", "B"])
 
     @asset(partitions_def=upstream_partitions_def)

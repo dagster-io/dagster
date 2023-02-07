@@ -7,6 +7,7 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.selector import (
     InstigatorSelector,
     RepositorySelector,
+    ResourceSelector,
     ScheduleSelector,
     SensorSelector,
 )
@@ -41,6 +42,7 @@ from ...implementation.fetch_pipelines import (
     get_pipeline_snapshot_or_error_from_pipeline_selector,
     get_pipeline_snapshot_or_error_from_snapshot_id,
 )
+from ...implementation.fetch_resources import get_resource_or_error, get_resources_or_error
 from ...implementation.fetch_runs import (
     get_execution_plan,
     get_logs_for_run,
@@ -89,6 +91,7 @@ from ..inputs import (
     GrapheneInstigationSelector,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
+    GrapheneResourceSelector,
     GrapheneRunsFilter,
     GrapheneScheduleSelector,
     GrapheneSensorSelector,
@@ -109,6 +112,7 @@ from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
 from ..pipelines.pipeline import GrapheneEventConnectionOrError, GrapheneRunOrError
 from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
+from ..resources import GrapheneResourceDetailsListOrError, GrapheneResourceDetailsOrError
 from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
     GrapheneRunConfigData,
@@ -196,6 +200,21 @@ class GrapheneDagitQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneSchedulesOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         description="Retrieve all the schedules.",
+    )
+
+    topLevelResourceDetailsOrError = graphene.Field(
+        graphene.NonNull(GrapheneResourceDetailsOrError),
+        resourceSelector=graphene.NonNull(GrapheneResourceSelector),
+        description=(
+            "Retrieve a top level resource by its location name, repository name, and resource"
+            " name."
+        ),
+    )
+
+    allTopLevelResourceDetailsOrError = graphene.Field(
+        graphene.NonNull(GrapheneResourceDetailsListOrError),
+        repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        description="Retrieve all the top level resources.",
     )
 
     sensorOrError = graphene.Field(
@@ -480,6 +499,17 @@ class GrapheneDagitQuery(graphene.ObjectType):
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
+    def resolve_topLevelResourceDetailsOrError(self, graphene_info: ResolveInfo, resourceSelector):
+        return get_resource_or_error(
+            graphene_info, ResourceSelector.from_graphql_input(resourceSelector)
+        )
+
+    def resolve_allTopLevelResourceDetailsOrError(self, graphene_info: ResolveInfo, **kwargs):
+        return get_resources_or_error(
+            graphene_info,
+            RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
+        )
+
     def resolve_sensorOrError(self, graphene_info: ResolveInfo, sensorSelector):
         return get_sensor_or_error(graphene_info, SensorSelector.from_graphql_input(sensorSelector))
 
@@ -641,14 +671,15 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
 
-        if repo is not None:
-            asset_graph = ExternalAssetGraph.from_external_repository(repo)
-        else:
-            asset_graph = ExternalAssetGraph.from_workspace(graphene_info.context)
+        def load_asset_graph() -> ExternalAssetGraph:
+            if repo is not None:
+                return ExternalAssetGraph.from_external_repository(repo)
+            else:
+                return ExternalAssetGraph.from_workspace(graphene_info.context)
 
         stale_status_loader = StaleStatusLoader(
             instance=graphene_info.context.instance,
-            asset_graph=asset_graph,
+            asset_graph=load_asset_graph,
         )
 
         return [
@@ -707,7 +738,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         # Filter down to requested asset keys
         # Build mapping of asset key to the step keys required to generate the asset
-        step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {  # type: ignore
+        step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
             node.external_asset_node.asset_key: node.external_asset_node.op_names
             for node in results
             if node.assetKey in asset_keys

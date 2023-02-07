@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Union
 
 import packaging.version
 import yaml
-from typing_extensions import Literal, TypeAlias, TypedDict
+from typing_extensions import Literal, TypeAlias, TypedDict, TypeGuard
 
 from dagster_buildkite.git import ChangedFiles, get_commit_message
 
@@ -65,6 +65,12 @@ WaitStep: TypeAlias = Literal["wait"]
 
 BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep]
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
+BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
+
+
+def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
+    return isinstance(step, dict) and "commands" in step
+
 
 # ########################
 # ##### FUNCTIONS

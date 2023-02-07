@@ -75,9 +75,9 @@ if is_papermill_2():
             return DagstermillNotebookClient(nb_man, **final_kwargs).execute()
 
 else:
-    from papermill.engines import NBConvertEngine  # type: ignore  # (papermill 1 compat)
-    from papermill.preprocess import (
-        PapermillExecutePreprocessor,  # type: ignore  # (papermill 1 compat)
+    from papermill.engines import NBConvertEngine
+    from papermill.preprocess import (  # type: ignore  # (papermill 1 compat)
+        PapermillExecutePreprocessor,
     )
 
     class DagstermillExecutePreprocessor(PapermillExecutePreprocessor):
@@ -110,7 +110,7 @@ else:
 
             return nb_man.nb, resources
 
-    class DagstermillEngine(NBConvertEngine):  # type: ignore  # (papermill 1 compat)
+    class DagstermillEngine(NBConvertEngine):
         @classmethod
         def execute_managed_notebook(
             cls,

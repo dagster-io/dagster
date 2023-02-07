@@ -236,7 +236,7 @@ NUM_CALLS = {"sync": 0, "async": 0}
 
 
 def get_passes_on_retry_schedule(key):
-    @daily_schedule(  # type: ignore
+    @daily_schedule(
         pipeline_name="the_job",
         start_date=_COUPLE_DAYS_AGO,
         execution_timezone="UTC",

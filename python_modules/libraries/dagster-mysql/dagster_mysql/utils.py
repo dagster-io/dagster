@@ -19,7 +19,9 @@ from mysql.connector.pooling import PooledMySQLConnection
 from typing_extensions import TypeAlias
 
 # Represents the output of mysql connection function
-MySQLConnectionUnion: TypeAlias = Union[mysql.MySQLConnection, PooledMySQLConnection]
+MySQLConnectionUnion: TypeAlias = Union[
+    db.engine.Connection, mysql.MySQLConnection, PooledMySQLConnection
+]
 
 
 class DagsterMySQLException(Exception):
@@ -104,7 +106,7 @@ def retry_mysql_creation_fn(fn, retry_limit: int = 5, retry_wait: float = 0.2):
                 and exc.orig.errno == mysql_errorcode.ER_TABLE_EXISTS_ERROR
             ) or (
                 isinstance(exc, mysql.ProgrammingError)
-                and exc.errno == mysql_errorcode.ER_TABLE_EXISTS_ERROR  # type: ignore
+                and exc.errno == mysql_errorcode.ER_TABLE_EXISTS_ERROR
             ):
                 raise
             logging.warning("Retrying failed database creation")

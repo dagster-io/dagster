@@ -10,7 +10,7 @@ SUPPORTED_CONFIG_BUILTIN_MAP = {
     float: Float,
     bool: Bool,
     str: String,
-    list: Array(ConfigAnyInstance),  # type: ignore
+    list: Array(ConfigAnyInstance),
     dict: Permissive(),
 }
 

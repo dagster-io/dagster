@@ -1,0 +1,10 @@
+### CHECKED SEPARATELY
+
+examples/assets_pandas_type_metadata
+examples/project_fully_featured
+examples/experimental/project_fully_featured_v2_resources
+
+### NOT TYPE CHECKED
+
+examples/assets_smoke_test
+examples/tutorial_dbt_dagster/tutorial_template

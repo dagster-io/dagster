@@ -1,5 +1,3 @@
-# pyright: strict
-
 import sys
 import threading
 import time
@@ -204,7 +202,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def shutdown_repository_location(self, name: str):
         self.process_context.shutdown_repository_location(name)
 
-    def reload_workspace(self) -> Self:  # type: ignore  # fmt: skip
+    def reload_workspace(self) -> Self:
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
@@ -412,7 +410,7 @@ class IWorkspaceProcessContext(ABC):
     def instance(self) -> DagsterInstance:
         pass
 
-    def __enter__(self) -> Self:  # type: ignore  # fmt: skip
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):

@@ -86,6 +86,18 @@ class FreshnessPolicy(
             cron_schedule=check.opt_str_param(cron_schedule, "cron_schedule"),
         )
 
+    @classmethod
+    def _create(cls, *args):
+        """
+        Pickle requires a method with positional arguments to construct
+        instances of a class. Since the constructor for this class has
+        keyword arguments only, we define this method to be used by pickle.
+        """
+        return cls(maximum_lag_minutes=args[0], cron_schedule=args[1])
+
+    def __reduce__(self):
+        return (self._create, (self.maximum_lag_minutes, self.cron_schedule))
+
     @property
     def maximum_lag_delta(self) -> datetime.timedelta:
         return datetime.timedelta(minutes=self.maximum_lag_minutes)

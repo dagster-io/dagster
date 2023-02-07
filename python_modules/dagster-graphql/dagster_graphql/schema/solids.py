@@ -457,7 +457,7 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         if not isinstance(_solid_def_snap, SolidDefSnap):
             check.failed("Expected SolidDefSnap")
         self._solid_def_snap = _solid_def_snap
-        super().__init__(name=solid_def_name, description=self._solid_def_snap.description)  # type: ignore
+        super().__init__(name=solid_def_name, description=self._solid_def_snap.description)
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
 
     def resolve_config_field(self, _graphene_info):

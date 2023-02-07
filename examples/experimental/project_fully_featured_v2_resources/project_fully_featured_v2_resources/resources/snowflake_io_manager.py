@@ -46,7 +46,7 @@ class SnowflakeIOManager(IOManager):
         self._config = config
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
-        schema, table = context.asset_key.path[-2], context.asset_key.path[-1]  # type: ignore
+        schema, table = context.asset_key.path[-2], context.asset_key.path[-1]
 
         time_window = context.asset_partitions_time_window if context.has_asset_partitions else None
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -160,7 +160,7 @@ class SnowflakeIOManager(IOManager):
                 ),
                 con=con,
             )
-            result.columns = map(str.lower, result.columns)
+            result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
             return result
 
     def _get_select_statement(

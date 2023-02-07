@@ -1,3 +1,5 @@
+from typing import Any, Dict, List, Mapping, Optional, Type
+
 import pytest
 from dagster import job, op
 from dagster._config.config_type import ConfigTypeKind
@@ -98,3 +100,203 @@ def test_struct_config_persmissive_cached_method():
 
     assert plus_config.plus() == 3
     assert calls["plus"] == 1
+
+
+def test_struct_config_array():
+    class AnOpConfig(Config):
+        a_string_list: List[str]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.a_string_list == ["foo", "bar"]
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"a_string_list": ["foo", "bar"]}}}}
+    )
+    assert executed["yes"]
+
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {"ops": {"a_struct_config_op": {"config": {"a_string_list": ["foo", "bar", 3]}}}}
+        )
+
+
+def test_struct_config_map():
+    class AnOpConfig(Config):
+        a_string_to_int_dict: Dict[str, int]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.a_string_to_int_dict == {"foo": 1, "bar": 2}
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"a_string_to_int_dict": {"foo": 1, "bar": 2}}}}}
+    )
+    assert executed["yes"]
+
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {
+                "ops": {
+                    "a_struct_config_op": {
+                        "config": {"a_string_to_int_dict": {"foo": 1, "bar": 2, "baz": "qux"}}
+                    }
+                }
+            }
+        )
+
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {"ops": {"a_struct_config_op": {"config": {"a_string_to_int_dict": {"foo": 1, 2: 4}}}}}
+        )
+
+
+def test_struct_config_mapping():
+    class AnOpConfig(Config):
+        a_string_to_int_mapping: Mapping[str, int]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.a_string_to_int_mapping == {"foo": 1, "bar": 2}
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {
+            "ops": {
+                "a_struct_config_op": {"config": {"a_string_to_int_mapping": {"foo": 1, "bar": 2}}}
+            }
+        }
+    )
+    assert executed["yes"]
+
+
+@pytest.mark.skip(reason="not yet supported")
+def test_struct_config_optional_nested():
+    class ANestedConfig(Config):
+        a_str: str
+
+    class AnOpConfig(Config):
+        an_optional_nested: Optional[ANestedConfig]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.an_optional_nested is None
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {}}}})
+    assert executed["yes"]
+
+
+def test_struct_config_nested_in_list():
+    class ANestedConfig(Config):
+        a_str: str
+
+    class AnOpConfig(Config):
+        an_optional_nested: List[ANestedConfig]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.an_optional_nested[0].a_str == "foo"
+        assert config.an_optional_nested[1].a_str == "bar"
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {
+            "ops": {
+                "a_struct_config_op": {
+                    "config": {"an_optional_nested": [{"a_str": "foo"}, {"a_str": "bar"}]}
+                }
+            }
+        }
+    )
+    assert executed["yes"]
+
+
+def test_struct_config_nested_in_dict():
+    class ANestedConfig(Config):
+        a_str: str
+
+    class AnOpConfig(Config):
+        an_optional_nested: Dict[str, ANestedConfig]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.an_optional_nested["foo"].a_str == "foo"
+        assert config.an_optional_nested["bar"].a_str == "bar"
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {
+            "ops": {
+                "a_struct_config_op": {
+                    "config": {
+                        "an_optional_nested": {"foo": {"a_str": "foo"}, "bar": {"a_str": "bar"}}
+                    }
+                }
+            }
+        }
+    )
+    assert executed["yes"]
+
+
+@pytest.mark.parametrize(
+    "key_type, keys",
+    [(str, ["foo", "bar"]), (int, [1, 2]), (float, [1.0, 2.0]), (bool, [True, False])],
+)
+def test_struct_config_map_different_key_type(key_type: Type, keys: List[Any]):
+    class AnOpConfig(Config):
+        my_dict: Dict[key_type, int]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.my_dict == {keys[0]: 1, keys[1]: 2}
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"my_dict": {keys[0]: 1, keys[1]: 2}}}}}
+    )
+    assert executed["yes"]

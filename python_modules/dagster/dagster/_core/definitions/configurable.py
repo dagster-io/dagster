@@ -74,7 +74,7 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         config_or_config_fn: Any,
         config_schema: CoercableToConfigSchema = None,
         description: Optional[str] = None,
-    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
+    ) -> Self:
         """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
@@ -107,7 +107,7 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         self,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
-    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
+    ) -> Self:
         raise NotImplementedError()
 
 
@@ -120,7 +120,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         name: str,
         config_schema: Optional[UserConfigSchema] = None,
         description: Optional[str] = None,
-    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
+    ) -> Self:
         """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
@@ -158,7 +158,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         name: str,
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
-    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
+    ) -> Self:
         ...
 
 
@@ -255,7 +255,7 @@ def configured(
             name: str = check.not_none(kwargs.get("name") or fn_name)
             return configurable.configured(
                 config_or_config_fn=config_or_config_fn,
-                name=name,  # type: ignore [call-arg] # (mypy bug)
+                name=name,
                 config_schema=config_schema,
                 **{k: v for k, v in kwargs.items() if k != "name"},
             )

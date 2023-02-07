@@ -564,7 +564,13 @@ type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent
   runOrError: RunOrError!
   stepStats: RunStepStats!
   partition: String
+  tags: [EventTag!]!
   assetLineage: [AssetLineageInfo!]!
+}
+
+type EventTag {
+  key: String!
+  value: String!
 }
 
 type AssetLineageInfo {
@@ -587,6 +593,7 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runOrError: RunOrError!
   stepStats: RunStepStats!
   partition: String
+  tags: [EventTag!]!
 }
 
 type TypeCheck implements DisplayableEvent {
@@ -1735,6 +1742,11 @@ type RepositoryNotFoundError implements Error {
   repositoryLocationName: String!
 }
 
+type ResourceNotFoundError implements Error {
+  message: String!
+  resourceName: String!
+}
+
 type RunGroupNotFoundError implements Error {
   message: String!
   runId: String!
@@ -1823,6 +1835,7 @@ type Repository {
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
+  allTopLevelResourceDetails: [ResourceDetails!]!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -1852,6 +1865,18 @@ type Job implements SolidContainer & IPipelineSnapshot {
 type AssetGroup {
   groupName: String!
   assetKeys: [AssetKey!]!
+}
+
+type ResourceDetails {
+  name: String!
+  description: String
+  configFields: [ConfigTypeField!]!
+  configuredValues: [ConfiguredValue!]!
+}
+
+type ConfiguredValue {
+  key: String!
+  value: String!
 }
 
 type RepositoryConnection {
@@ -1957,6 +1982,12 @@ input PipelineSelector {
 input RepositorySelector {
   repositoryName: String!
   repositoryLocationName: String!
+}
+
+input ResourceSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  resourceName: String!
 }
 
 input ScheduleSelector {
@@ -2641,6 +2672,8 @@ type DagitQuery {
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
   schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
+  topLevelResourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
+  allTopLevelResourceDetailsOrError(repositorySelector: RepositorySelector!): ResourcesOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
   instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
@@ -2734,6 +2767,14 @@ input GraphSelector {
   graphName: String!
   repositoryName: String!
   repositoryLocationName: String!
+}
+
+union ResourceDetailsOrError = ResourceDetails | ResourceNotFoundError | PythonError
+
+union ResourcesOrError = ResourceDetailsList | RepositoryNotFoundError | PythonError
+
+type ResourceDetailsList {
+  results: [ResourceDetails!]!
 }
 
 input AssetGroupSelector {

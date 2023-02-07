@@ -3,7 +3,7 @@ import './publicPath';
 
 import {App} from '@dagster-io/dagit-core/app/App';
 import {createAppCache} from '@dagster-io/dagit-core/app/AppCache';
-import {errorLink} from '@dagster-io/dagit-core/app/AppError';
+import {errorLink, setupErrorToasts} from '@dagster-io/dagit-core/app/AppError';
 import {AppProvider} from '@dagster-io/dagit-core/app/AppProvider';
 import {AppTopNav} from '@dagster-io/dagit-core/app/AppTopNav';
 import {ContentRoot} from '@dagster-io/dagit-core/app/ContentRoot';
@@ -23,6 +23,9 @@ const apolloLinks = [logLink, errorLink, timeStartLink];
 
 if (telemetryEnabled) {
   apolloLinks.unshift(telemetryLink(pathPrefix));
+}
+if (process.env.NODE_ENV === 'development') {
+  setupErrorToasts();
 }
 
 const config = {

@@ -104,13 +104,13 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         )
         self._description = check.opt_str_param(description, "description")
 
-    @public  # type: ignore
+    @public
     @property
     def name(self) -> str:
         """Name of the executor."""
         return self._name
 
-    @public  # type: ignore
+    @public
     @property
     def description(self) -> Optional[str]:
         """Description of executor, if provided."""
@@ -125,7 +125,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     ) -> Sequence[ExecutorRequirement]:
         return self._requirements_fn(executor_config)
 
-    @public  # type: ignore
+    @public
     @property
     def executor_creation_fn(self) -> Optional[ExecutorCreationFunction]:
         return self._executor_creation_fn
@@ -133,7 +133,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     def copy_for_configured(self, name, description, config_schema) -> "ExecutorDefinition":
         return ExecutorDefinition(
             name=name,
-            config_schema=config_schema,
+            config_schema=config_schema,  # type: ignore
             executor_creation_fn=self.executor_creation_fn,
             description=description or self.description,
             requirements=self._requirements_fn,
@@ -157,7 +157,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         name: Optional[str] = None,
         config_schema: Optional[UserConfigSchema] = None,
         description: Optional[str] = None,
-    ) -> Self:  # type: ignore  # fmt: skip
+    ) -> Self:
         """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
