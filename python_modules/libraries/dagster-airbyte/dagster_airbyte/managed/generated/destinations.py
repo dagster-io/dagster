@@ -1129,7 +1129,7 @@ class BigqueryDenormalizedDestination(GeneratedAirbyteDestination):
 
 class DuckdbDestination(GeneratedAirbyteDestination):
     @public
-    def __init__(self, name: str, path: str):
+    def __init__(self, name: str, path: str, schema: Optional[str] = None):
         """
         Airbyte Destination for DuckDB
 
@@ -1137,9 +1137,11 @@ class DuckdbDestination(GeneratedAirbyteDestination):
 
         Args:
             name (str): The name of the destination.
-            destination_path (str): Path to the local.duckdb file. The file will be placed inside that local mount. For more information check out our docs
+            destination_path (str): Path to the bigdata.duckdb file. The file will be placed inside that local mount. For more information check out our docs
         """
         self.destination_path = check.str_param(path, "path")
+        if schema:
+            self.schema = check.str_param(schema, "schema")
         super().__init__("DuckDB", name)
 
 
