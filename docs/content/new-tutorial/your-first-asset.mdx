@@ -1,12 +1,12 @@
 ---
-title: "Intro to the Dagster Tutorial: Your First Asset | Dagster Docs"
+title: "Intro to Dagster tutorial, part one: Your first asset | Dagster Docs"
 description: "Get set up for the intro to assets tutorial."
 noindex: True
 ---
 
-# Writing Your Pipeline with Assets
+# Intro to Dagster, part one: Writing your pipeline with assets
 
-Now that you've installed Dagster and know what assets are, it's time for you to build parts of your first data pipeline!
+Now that you've installed Dagster and know what assets are, it's time for you to build your first data pipeline!
 
 In this tutorial, you will analyze activity on a popular news aggregation website called Hacker News. Similar to common data pipelines, you will fetch data from the website, clean it up, and build a report summarizing some findings.
 
@@ -14,8 +14,10 @@ By the end of this section, you will:
 
 - ingest data from the Hacker News API
 - turn that ingestion into an asset
-- explore the Dagit, the Dagster UI
+- explore Dagit, the Dagster UI
 - launch your first Dagster run manually
+
+---
 
 ## Understanding the pipeline
 
@@ -75,13 +77,13 @@ You want this visualization updated daily, and you want to use Dagster to orches
 
 Let's start moving that script over to Dagster and build your first asset while doing so!
 
-In your scaffolded Dagster project, there will be a directory called `tutorial-project`. If you named your project differently when running the Dagster CLI, the directory will be named after that name.
+In your scaffolded Dagster project, there's a directory called `tutorial-project`. If you named your project differently when running the Dagster CLI, the directory will be named after that name.
 
-In the `tutorial-project` directory, you will see a file called `assets.py`. This is where you will put your first data pipeline.
+In the `tutorial-project` directory is a file called `assets.py`. This is where you will put your first data pipeline.
 
 ### Ingesting data
 
-To get started, you will fetch data from the Hacker News API. You can do this by adding the following code snippet from to `assets.py`:
+To get started, you will fetch data from the Hacker News API. You can do this by adding the following code snippet to `assets.py`:
 
 ```python
 import requests
@@ -103,7 +105,7 @@ def hackernews_topstory_ids():
     return top_100_newstories
 ```
 
-By turning it into a function, you've made the first step into making it an asset. Now, you need to add the `@asset` decorator to the function.
+By turning it into a function, you've made the first step toward making it an asset. Now, you need to add the <PyObject object="asset" decorator /> decorator to the function:
 
 ```python
 import requests
@@ -162,7 +164,7 @@ width={308}
 height={260}
 />
 
-This will create a Dagster run that will make your assets. You can see the result in the Dagit UI:
+This creates a Dagster run that will materialize the asset. Dagit will display the result of the run:
 
 <Image
 alt="Dagit with the asset materialized"
@@ -181,6 +183,8 @@ height={1167}
 />
 
 In future sections, you'll learn how to materialize assets automatically on a schedule.
+
+---
 
 ## Next steps
 
