@@ -43,6 +43,7 @@ from dagster._core.definitions.pipeline_definition import (
 )
 from dagster._core.errors import (
     DagsterHomeNotSetError,
+    DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
@@ -1682,6 +1683,34 @@ class DagsterInstance:
         self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
+
+    @traced
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        return self._event_storage.get_dynamic_partitions(partitions_def_name)
+
+    @traced
+    def add_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        check.sequence_param(partition_keys, "partition_keys", of_type=str)
+        if isinstance(partition_keys, str):
+            # Guard against a single string being passed in `partition_keys`
+            raise DagsterInvalidInvocationError("partition_keys must be a sequence of strings")
+        return self._event_storage.add_dynamic_partitions(partitions_def_name, partition_keys)
+
+    @traced
+    def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        check.sequence_param(partition_key, "partition_key", of_type=str)
+        self._event_storage.delete_dynamic_partition(partitions_def_name, partition_key)
+
+    @traced
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        check.str_param(partition_key, "partition_key")
+        return self._event_storage.has_dynamic_partition(partitions_def_name, partition_key)
 
     # event subscriptions
 
