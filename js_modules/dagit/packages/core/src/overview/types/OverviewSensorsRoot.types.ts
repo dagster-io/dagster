@@ -46,6 +46,7 @@ export type OverviewSensorsQuery = {
                     id: string;
                     name: string;
                     description: string | null;
+                    sensorType: Types.SensorType;
                   }>;
                 }>;
               }
