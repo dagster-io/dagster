@@ -12,6 +12,8 @@ from dagster import (
     graph,
     materialize,
     op,
+    MultiPartitionsDefinition,
+    MultiPartitionKey
 )
 from dagster._check import CheckError
 from dagster_duckdb_pandas import duckdb_pandas_io_manager
@@ -180,6 +182,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
+    print(out_df)
     assert out_df["a"].tolist() == ["1", "1", "1"]
     duckdb_conn.close()
 
@@ -192,6 +195,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
+    print(out_df)
     assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
     duckdb_conn.close()
 
@@ -204,6 +208,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
+    print(out_df)
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()
 
@@ -266,4 +271,95 @@ def test_static_partitioned_asset(tmp_path):
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").fetch_df()
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+    duckdb_conn.close()
+
+
+@asset(
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2022-01-01"),
+            "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+        }
+    ),
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": {
+        "date": "DATE",
+        "color": "COLOR"
+    }},
+    config_schema={"value": str},
+)
+def multi_partitioned(context):
+    partition = context.partition_key.keys_by_dimension
+    value = context.op_config["value"]
+    return pd.DataFrame(
+        {
+            "color": [partition["color"], partition["color"], partition["color"]],
+            "date":[partition["date"], partition["date"], partition["date"]],
+            "a": [value, value, value],
+        }
+    )
+
+
+def test_multi_partitioned_asset(tmp_path):
+    duckdb_io_manager = duckdb_pandas_io_manager.configured(
+        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    )
+    resource_defs = {"io_manager": duckdb_io_manager}
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"date": "2022-01-01", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    duckdb_conn.execute("EXPORT DATABASE '/Users/jamie/dev/duckdb_out/1' (FORMAT CSV, DELIMITER '|');")
+    print(out_df)
+    assert out_df["a"].tolist() == ["1", "1", "1"]
+    duckdb_conn.close()
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"date": "2022-01-01", "color": "blue"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "2"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    print(out_df)
+    duckdb_conn.execute("EXPORT DATABASE '/Users/jamie/dev/duckdb_out/2' (FORMAT CSV, DELIMITER '|');")
+    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+    duckdb_conn.close()
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"date": "2022-01-02", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "3"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    print(out_df)
+    duckdb_conn.execute("EXPORT DATABASE '/Users/jamie/dev/duckdb_out/3' (FORMAT CSV, DELIMITER '|');")
+    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
+    duckdb_conn.close()
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"date": "2022-01-01", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "4"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+
+    duckdb_conn.execute("EXPORT DATABASE '/Users/jamie/dev/duckdb_out/4' (FORMAT CSV, DELIMITER '|');")
+
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    print(out_df)
+    assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
     duckdb_conn.close()

@@ -115,16 +115,22 @@ class DuckDbClient(DbClient):
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
-        if table_slice.partition:
-            partition_where = (
-                _static_where_clause(table_slice.partition)
-                if isinstance(table_slice.partition.partition, str)
-                else _time_window_where_clause(table_slice.partition)
-            )
-            return (
-                f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}\n"
-                + partition_where
-            )
+
+        if len(table_slice.partition) > 0:
+            query = f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table} WHERE\n"
+            for i in range(len(table_slice.partition)):
+                part = table_slice.partition[i]
+                partition_where = (
+                    _static_where_clause(part)
+                    if isinstance(part.partition, str)
+                    else _time_window_where_clause(part)
+                )
+                query += partition_where
+
+                if i < len(table_slice.partition) - 1:
+                    query += " AND\n"
+
+            return query
         else:
             return f"""SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}"""
 
@@ -143,15 +149,29 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.partition:
-        partition_where = (
-            _static_where_clause(table_slice.partition)
-            if isinstance(table_slice.partition.partition, str)
-            else _time_window_where_clause(table_slice.partition)
-        )
-        return f"DELETE FROM {table_slice.schema}.{table_slice.table}\n" + partition_where
+    if len(table_slice.partition) > 0:
+            query = f"DELETE FROM {table_slice.schema}.{table_slice.table} WHERE \n"
+            for i in range(len(table_slice.partition)):
+                part = table_slice.partition[i]
+                partition_where = (
+                    _static_where_clause(part)
+                    if isinstance(part.partition, str)
+                    else _time_window_where_clause(part)
+                )
+                query += partition_where
+
+                if i < len(table_slice.partition) - 1:
+                    query += " AND\n"
+
+            print("DELETE STATEMENT")
+            print(query)
+
+            return query
     else:
-        return f"DELETE FROM {table_slice.schema}.{table_slice.table}"
+        query = f"DELETE FROM {table_slice.schema}.{table_slice.table}"
+        print("DELETE STATEMENT")
+        print(query)
+        return query
 
 
 def _time_window_where_clause(table_partition: TablePartition) -> str:
@@ -159,8 +179,8 @@ def _time_window_where_clause(table_partition: TablePartition) -> str:
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(DUCKDB_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(DUCKDB_DATETIME_FORMAT)
-    return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+    return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
 
 
 def _static_where_clause(table_partition: TablePartition) -> str:
-    return f"""WHERE {table_partition.partition_expr} = '{table_partition.partition}'"""
+    return f"""{table_partition.partition_expr} = '{table_partition.partition}'"""
