@@ -17,6 +17,7 @@ import dagster._check as check
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.context.input import InputContext
@@ -36,7 +37,7 @@ class TableSlice(NamedTuple):
     schema: str
     database: Optional[str] = None
     columns: Optional[Sequence[str]] = None
-    partition: Optional[TablePartition] = None
+    partition: Optional[Sequence[TablePartition]] = None
 
 
 class DbTypeHandler(ABC, Generic[T]):
@@ -131,6 +132,7 @@ class DbIOManager(IOManager):
             context, self._get_table_slice(context, cast(OutputContext, context.upstream_output))
         )
 
+
     def _get_table_slice(
         self, context: Union[OutputContext, InputContext], output_context: OutputContext
     ) -> TableSlice:
@@ -139,6 +141,7 @@ class DbIOManager(IOManager):
         schema: str
         table: str
         partition_value: Optional[Union[TimeWindow, str]] = None
+        partitions: List[TablePartition] = []
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
@@ -156,10 +159,37 @@ class DbIOManager(IOManager):
             else:
                 schema = "public"
             if context.has_asset_partitions:
-                if isinstance(context.asset_partitions_def, StaticPartitionsDefinition):
-                    partition_value = context.asset_partition_key
+                partition_expr = output_context_metadata.get("partition_expr")
+                if partition_expr is None:
+                    raise ValueError(
+                        f"Asset '{context.asset_key}' has partitions, but no 'partition_expr' metadata"
+                        " value, so we don't know what column to filter it on. Specify which column(s) of"
+                        " the database contains partitioned data as the 'partition_expr' metadata."
+                    )
+
+                if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
+                    multi_partition_key_mapping = context.asset_partition_key.keys_by_dimension
+                    for part in context.asset_partitions_def.partitions_defs:
+                        if isinstance(part.partitions_def, StaticPartitionsDefinition):
+                            partition_value = multi_partition_key_mapping.get(part.name)
+                        else:
+                            time_partition_key = multi_partition_key_mapping.get(part.name)
+                            partition_value = part.partitions_def.time_window_for_partition_key(time_partition_key)
+                        partition_expr_str = partition_expr.get(part.name)
+                        if partition_expr is None:
+                            raise ValueError(
+                                f"Asset '{context.asset_key}' has partition {part.name}, but the 'partition_expr' metadata"
+                                f" does not contain a {part.name} entry, so we don't know what column to filter it on. Specify which column of"
+                                f" the database contains data for the {part.name} partition."
+                            )
+                        partitions.append(TablePartition(partition_expr=partition_expr_str, partition=partition_value))
                 else:
-                    partition_value = context.asset_partitions_time_window
+                    partition_expr_str = cast(str, partition_expr)
+                    if isinstance(context.asset_partitions_def, StaticPartitionsDefinition):
+                        partition_value = context.asset_partition_key
+                    else:
+                        partition_value = context.asset_partitions_time_window
+                    partitions.append(TablePartition(partition_expr=partition_expr_str, partition=partition_value))
         else:
             table = output_context.name
             if output_context_metadata.get("schema") and self._schema:
@@ -176,23 +206,11 @@ class DbIOManager(IOManager):
             else:
                 schema = "public"
 
-        if partition_value is not None:
-            partition_expr = cast(str, output_context_metadata.get("partition_expr"))
-            if partition_expr is None:
-                raise ValueError(
-                    f"Asset '{context.asset_key}' has partitions, but no 'partition_expr' metadata"
-                    " value, so we don't know what column to filter it on. Specify which column of"
-                    " the  database contains partitioned data as the 'partition_expr' metadata."
-                )
-            partition = TablePartition(partition_expr=partition_expr, partition=partition_value)
-        else:
-            partition = None
-
         return TableSlice(
             table=table,
             schema=schema,
             database=self._database,
-            partition=partition,
+            partition=partitions,
             columns=(context.metadata or {}).get("columns"),  # type: ignore  # (mypy bug)
         )
 
