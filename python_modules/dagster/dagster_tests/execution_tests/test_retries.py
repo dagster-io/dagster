@@ -5,7 +5,6 @@ from collections import defaultdict
 from typing import Sequence
 
 import pytest
-
 from dagster import (
     Backoff,
     DagsterEventType,

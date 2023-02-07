@@ -12,17 +12,17 @@ import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AssetLink} from '../assets/AssetLink';
+import {InstigationStatus, InstigationType} from '../graphql/types';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 import {EditCursorDialog} from './EditCursorDialog';
 import {SensorSwitch} from './SensorSwitch';
-import {SensorFragment} from './types/SensorFragment';
+import {SensorFragment} from './types/SensorFragment.types';
 
 export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
   if (!minIntervalSeconds) {

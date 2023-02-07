@@ -2,7 +2,6 @@ import os
 import sys
 
 import pytest
-
 from dagster._core.host_representation import InProcessRepositoryLocationOrigin
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,

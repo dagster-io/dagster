@@ -1,9 +1,9 @@
 from typing import List
 
 import pytest
-
 from dagster import (
     DynamicOutput,
+    OpExecutionContext,
     ReexecutionOptions,
     execute_job,
     fs_io_manager,
@@ -14,7 +14,7 @@ from dagster import (
 )
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import DynamicOut, Out
-from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterExecutionStepNotFoundError
 from dagster._core.test_utils import instance_for_test
 
 
@@ -98,24 +98,20 @@ def test_reexec_from_parent_1():
             }
 
 
-def test_reexec_from_parent_dynamic_fails():
+def test_reexec_from_parent_dynamic():
     with instance_for_test() as instance:
         parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
         parent_run_id = parent_result.run_id
-
-        # not currently supported, this needs to know all fan outs of previous step, should just run previous step
-        with pytest.raises(
-            DagsterInvariantViolationError,
-            match=r'Unresolved ExecutionStep "multiply_inputs\[\?\]" is resolved by "emit" which is not part of the current step selection',
-        ):
-            execute_job(
-                reconstructable(dynamic_pipeline),
-                instance=instance,
-                reexecution_options=ReexecutionOptions(
-                    parent_run_id=parent_run_id,
-                    step_selection=["multiply_inputs[?]"],
-                ),
-            )
+        with execute_job(
+            reconstructable(dynamic_pipeline),
+            instance=instance,
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=parent_run_id,
+                step_selection=["multiply_inputs[?]"],
+            ),
+        ) as result:
+            assert result.success
+            assert result.output_for_node("multiply_inputs") == {"0": 0, "1": 10, "2": 20}
 
 
 def test_reexec_from_parent_2():
@@ -328,3 +324,202 @@ def test_reexec_dynamic_with_transitive_optional_output_job_3():
         # FIXME: https://github.com/dagster-io/dagster/issues/3511
         # ideally it should skip the step because all its previous runs have skipped and finish the run successfully
         assert not re_result.success
+
+
+def test_reexec_all_steps_issue():
+    with instance_for_test() as instance:
+        result_1 = dynamic_pipeline.execute_in_process(instance=instance)
+        assert result_1.success
+
+        result_2 = execute_job(
+            reconstructable(dynamic_pipeline),
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=result_1.run_id,
+                step_selection=["+multiply_inputs[?]"],
+            ),
+            instance=instance,
+        )
+        assert result_2.success
+
+
+@op(
+    out={
+        "some": Out(is_required=False),
+        "none": Out(is_required=False),
+        "skip": Out(is_required=False),
+    }
+)
+def some_none_skip():
+    yield Output("abc", "some")
+    yield Output("", "none")
+
+
+@op
+def fail_once(context: OpExecutionContext, x):
+    key = context.op_handle.name
+    map_key = context.get_mapping_key()
+    if map_key:
+        key += f"[{map_key}]"
+    if context.instance.run_storage.kvs_get({key}).get(key):
+        return x
+    context.instance.run_storage.kvs_set({key: "true"})
+    raise Exception("failed (just this once)")
+
+
+@op(out=DynamicOut())
+def fan_out(y: str):
+    for letter in y:
+        yield DynamicOutput(letter, mapping_key=letter)
+
+
+@job(executor_def=in_process_executor)
+def fail_job():
+    some, _n, _s = some_none_skip()
+    fan_out(some).map(fail_once).map(echo)
+
+
+def test_resume_failed_mapped():
+    with instance_for_test() as instance:
+        result = execute_job(reconstructable(fail_job), instance)
+        assert not result.success
+        success_steps = {ev.step_key for ev in result.get_step_success_events()}
+        assert success_steps == {"some_none_skip", "fan_out"}
+
+        result_2 = execute_job(
+            reconstructable(fail_job),
+            instance,
+            reexecution_options=ReexecutionOptions.from_failure(result.run_id, instance),
+        )
+        assert result_2.success
+        success_steps = {ev.step_key for ev in result_2.get_step_success_events()}
+        assert success_steps == {
+            "fail_once[a]",
+            "fail_once[b]",
+            "fail_once[c]",
+            "echo[a]",
+            "echo[b]",
+            "echo[c]",
+        }
+
+
+@job(executor_def=in_process_executor)
+def branching_job():
+    some, none, skip = some_none_skip()
+    dyn_some = fan_out.alias("fan_out_some")(fail_once.alias("fail_once_some")(some))
+    dyn_none = fan_out.alias("fan_out_none")(fail_once.alias("fail_once_none")(none))
+    dyn_skip = fan_out.alias("fan_out_skip")(fail_once.alias("fail_once_skip")(skip))
+    col_some = echo.alias("echo_some")(
+        dyn_some.map(fail_once.alias("fail_once_fan_some")).collect()
+    )
+    col_none = echo.alias("echo_none")(
+        dyn_none.map(fail_once.alias("fail_once_fan_none")).collect()
+    )
+    col_skip = echo.alias("echo_skip")(
+        dyn_skip.map(fail_once.alias("fail_once_fan_skip")).collect()
+    )
+    echo.alias("final")([col_some, col_none, col_skip])
+
+
+def test_branching():
+    with instance_for_test() as instance:
+        result = execute_job(reconstructable(branching_job), instance)
+        assert not result.success
+        success_steps = {ev.step_key for ev in result.get_step_success_events()}
+        assert success_steps == {"some_none_skip"}
+        assert {ev.step_key for ev in result.get_step_skipped_events()} == {
+            "fan_out_skip",
+            "fail_once_skip",
+            "echo_skip",
+        }
+
+        result_2 = execute_job(
+            reconstructable(branching_job),
+            instance,
+            reexecution_options=ReexecutionOptions.from_failure(result.run_id, instance),
+        )
+        success_steps = {ev.step_key for ev in result_2.get_step_success_events()}
+        assert success_steps == {
+            "fan_out_some",
+            "fail_once_some",
+            "fan_out_none",
+            "fail_once_none",
+            "echo_none",
+        }
+
+        result_3 = execute_job(
+            reconstructable(branching_job),
+            instance,
+            reexecution_options=ReexecutionOptions.from_failure(result_2.run_id, instance),
+        )
+        success_steps = {ev.step_key for ev in result_3.get_step_success_events()}
+        assert success_steps == {
+            "fail_once_fan_some[a]",
+            "fail_once_fan_some[b]",
+            "fail_once_fan_some[c]",
+            "echo_some",
+            "final",
+        }
+        with result_3:
+            assert result_3.output_for_node("echo_some") == ["a", "b", "c"]
+            # some, none, skip (absent)
+            assert result_3.output_for_node("final") == [["a", "b", "c"], []]
+
+
+@op(out=DynamicOut())
+def emit_nums():
+    for i in range(4):
+        yield DynamicOutput(i, mapping_key=str(i))
+
+
+@op
+def fail_n(context: OpExecutionContext, x):
+    map_key = context.get_mapping_key()
+    assert map_key
+    key = f"{context.op_handle.name}[{map_key}]"
+
+    fails = int(context.instance.run_storage.kvs_get({key}).get(key, "0"))
+    if fails >= int(map_key):
+        return x
+    fails += 1
+    context.instance.run_storage.kvs_set({key: str(fails)})
+    raise Exception(f"failed {fails} out of {map_key}")
+
+
+@job(executor_def=in_process_executor)
+def mapped_fail_job():
+    echo(emit_nums().map(fail_n).collect())
+
+
+def test_many_retries():
+    with instance_for_test() as instance:
+        result = execute_job(reconstructable(mapped_fail_job), instance)
+        assert not result.success
+        success_steps = {ev.step_key for ev in result.get_step_success_events()}
+        assert success_steps == {"emit_nums", "fail_n[0]"}
+
+        result_2 = execute_job(
+            reconstructable(mapped_fail_job),
+            instance,
+            reexecution_options=ReexecutionOptions.from_failure(result.run_id, instance),
+        )
+        assert not result.success
+        success_steps = {ev.step_key for ev in result_2.get_step_success_events()}
+        assert success_steps == {"fail_n[1]"}
+
+        result_3 = execute_job(
+            reconstructable(mapped_fail_job),
+            instance,
+            reexecution_options=ReexecutionOptions.from_failure(result_2.run_id, instance),
+        )
+        assert not result.success
+        success_steps = {ev.step_key for ev in result_3.get_step_success_events()}
+        assert success_steps == {"fail_n[2]"}
+
+        result_4 = execute_job(
+            reconstructable(mapped_fail_job),
+            instance,
+            reexecution_options=ReexecutionOptions.from_failure(result_3.run_id, instance),
+        )
+        assert result_4.success
+        success_steps = {ev.step_key for ev in result_4.get_step_success_events()}
+        assert success_steps == {"fail_n[3]", "echo"}

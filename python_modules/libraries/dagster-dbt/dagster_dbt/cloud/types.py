@@ -1,9 +1,8 @@
 from datetime import datetime
 from typing import Any, Mapping, Optional
 
-from dateutil.parser import isoparse
-
 import dagster._check as check
+from dateutil.parser import isoparse
 
 from ..types import DbtOutput
 

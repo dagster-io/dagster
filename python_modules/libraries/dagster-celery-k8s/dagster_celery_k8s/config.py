@@ -1,16 +1,14 @@
+from dagster import Field, Float, Noneable, StringSource
+from dagster._core.host_representation import IN_PROCESS_NAME
+from dagster._utils.merger import merge_dicts
 from dagster_celery.executor import CELERY_CONFIG
 from dagster_k8s import DagsterK8sJobConfig
 from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
-
-from dagster import Field, Float, Noneable, StringSource
-from dagster._core.host_representation import IN_PROCESS_NAME
-from dagster._utils import merge_dicts
 
 CELERY_K8S_CONFIG_KEY = "celery-k8s"
 
 
 def celery_k8s_executor_config():
-
     # DagsterK8sJobConfig provides config schema for specifying Dagster K8s Jobs
     job_config = DagsterK8sJobConfig.config_type_job()
 
@@ -34,9 +32,11 @@ def celery_k8s_executor_config():
             StringSource,
             is_required=False,
             default_value="default",
-            description="The namespace into which to launch new jobs. Note that any "
-            "other Kubernetes resources the Job requires (such as the service account) must be "
-            'present in this namespace. Default: ``"default"``',
+            description=(
+                "The namespace into which to launch new jobs. Note that any "
+                "other Kubernetes resources the Job requires (such as the service account) must be "
+                'present in this namespace. Default: ``"default"``'
+            ),
         ),
         "repo_location_name": Field(
             StringSource,
@@ -48,7 +48,10 @@ def celery_k8s_executor_config():
             Float,
             is_required=False,
             default_value=DEFAULT_WAIT_TIMEOUT,
-            description=f"Wait this many seconds for a job to complete before marking the run as failed. Defaults to {DEFAULT_WAIT_TIMEOUT} seconds.",
+            description=(
+                "Wait this many seconds for a job to complete before marking the run as failed."
+                f" Defaults to {DEFAULT_WAIT_TIMEOUT} seconds."
+            ),
         ),
     }
 

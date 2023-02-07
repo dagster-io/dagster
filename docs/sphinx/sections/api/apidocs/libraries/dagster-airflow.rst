@@ -1,20 +1,29 @@
 Airflow (dagster-airflow)
 -------------------------
 
+This library provides a Dagster integration with `Airflow <https://github.com/apache/airflow>`_.
+
+For more information on getting started, see the `Airflow integration guide </integrations/airflow>`_.
+
 .. currentmodule:: dagster_airflow
 
-.. autofunction:: make_airflow_dag
+Run Airflow on Dagster
+======================
 
-.. autofunction:: make_airflow_dag_for_operator
+.. autofunction:: make_dagster_definitions_from_airflow_dags_path
 
-.. autofunction:: make_airflow_dag_containerized
+.. autofunction:: make_dagster_definitions_from_airflow_dag_bag
+
+.. autofunction:: make_schedules_and_jobs_from_airflow_dag_bag
 
 .. autofunction:: make_dagster_job_from_airflow_dag
 
-.. autofunction:: make_dagster_repo_from_airflow_dags_path
+.. autofunction:: load_assets_from_airflow_dag
 
-.. autofunction:: make_dagster_repo_from_airflow_dag_bag
 
-.. autofunction:: make_dagster_repo_from_airflow_example_dags
+Orchestrate Dagster from Airflow
+================================
 
-.. autofunction:: airflow_operator_to_op
+.. autoclass:: DagsterCloudOperator
+
+.. autoclass:: DagsterOperator

@@ -9,6 +9,7 @@ from ..utils import (
     BuildkiteStep,
     CommandStep,
     GroupStep,
+    is_command_step,
     skip_if_no_helm_changes,
 )
 
@@ -22,13 +23,16 @@ def build_helm_steps() -> List[BuildkiteStep]:
             AvailablePythonVersion.V3_8,
         ],
         name="dagster-helm",
-        upload_coverage=False,
         retries=2,
     )
 
     steps: List[BuildkiteLeafStep] = []
     steps += _build_lint_steps(package_spec)
-    steps += package_spec.build_steps()[0]["steps"]
+    pkg_step = package_spec.build_steps()[0]
+    if is_command_step(pkg_step):
+        steps.append(pkg_step)
+    else:
+        steps += pkg_step["steps"]  # type: ignore  # (strict type guard)
 
     return [
         GroupStep(
@@ -69,7 +73,10 @@ def _build_lint_steps(package_spec) -> List[CommandStep]:
         CommandStepBuilder("dagster dependency build")
         # https://github.com/dagster-io/dagster/issues/8167
         .run(
-            "helm repo add bitnami-pre-2022 https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami",
+            (
+                "helm repo add bitnami-pre-2022"
+                " https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami"
+            ),
             "helm dependency build helm/dagster",
         )
         .with_skip(skip_if_no_helm_changes() and package_spec.skip_reason)

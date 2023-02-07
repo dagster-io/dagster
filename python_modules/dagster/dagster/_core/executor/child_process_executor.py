@@ -7,7 +7,9 @@ import sys
 from abc import ABC, abstractmethod
 from multiprocessing import Queue
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
-from typing import TYPE_CHECKING, Iterator, NamedTuple, Union
+from typing import TYPE_CHECKING, Iterator, NamedTuple, Optional, Union
+
+from typing_extensions import Literal
 
 import dagster._check as check
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -44,13 +46,15 @@ class ChildProcessSystemErrorEvent(
 class ChildProcessCommand(ABC):  # pylint: disable=no-init
     """Inherit from this class in order to use this library.
 
-    The object must be picklable; instantiate it and pass it to _execute_command_in_child_process."""
+    The object must be picklable; instantiate it and pass it to _execute_command_in_child_process.
+    """
 
     @abstractmethod
     def execute(self) -> Iterator[Union[ChildProcessEvent, "DagsterEvent"]]:
         """This method is invoked in the child process.
 
-        Yields a sequence of events to be handled by _execute_command_in_child_process."""
+        Yields a sequence of events to be handled by _execute_command_in_child_process.
+        """
 
 
 class ChildProcessCrashException(Exception):
@@ -64,8 +68,8 @@ class ChildProcessCrashException(Exception):
 def _execute_command_in_child_process(event_queue: Queue, command: ChildProcessCommand):
     """Wraps the execution of a ChildProcessCommand.
 
-    Handles errors and communicates across a queue with the parent process."""
-
+    Handles errors and communicates across a queue with the parent process.
+    """
     check.inst_param(command, "command", ChildProcessCommand)
 
     with capture_interrupts():
@@ -95,7 +99,9 @@ PROCESS_DEAD_AND_QUEUE_EMPTY = "PROCESS_DEAD_AND_QUEUE_EMPTY"
 """Sentinel value."""
 
 
-def _poll_for_event(process, event_queue):
+def _poll_for_event(
+    process, event_queue
+) -> Optional[Union["DagsterEvent", Literal["PROCESS_DEAD_AND_QUEUE_EMPTY"]]]:
     try:
         return event_queue.get(block=True, timeout=TICK)
     except queue.Empty:
@@ -108,14 +114,13 @@ def _poll_for_event(process, event_queue):
             except queue.Empty:
                 # If the queue empty we know that there are no more events
                 # and that the process has died.
-                return PROCESS_DEAD_AND_QUEUE_EMPTY
-
+                return PROCESS_DEAD_AND_QUEUE_EMPTY  # type: ignore  # fmt: skip
     return None
 
 
 def execute_child_process_command(
     multiprocessing_ctx: MultiprocessingBaseContext, command: ChildProcessCommand
-) -> Iterator["DagsterEvent"]:
+) -> Iterator[Optional["DagsterEvent"]]:
     """Execute a ChildProcessCommand in a new process.
 
     This function starts a new process whose execution target is a ChildProcessCommand wrapped by
@@ -142,7 +147,6 @@ def execute_child_process_command(
     Warning: if the child process is in an infinite loop, this will
     also infinitely loop.
     """
-
     check.inst_param(command, "command", ChildProcessCommand)
 
     event_queue = multiprocessing_ctx.Queue()
@@ -160,7 +164,7 @@ def execute_child_process_command(
             if event == PROCESS_DEAD_AND_QUEUE_EMPTY:
                 break
 
-            yield event
+            yield event  # type: ignore  # fmt: skip
 
             if isinstance(event, (ChildProcessDoneEvent, ChildProcessSystemErrorEvent)):
                 completed_properly = True

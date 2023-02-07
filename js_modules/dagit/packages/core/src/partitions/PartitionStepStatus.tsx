@@ -20,9 +20,9 @@ import {PartitionHealthData, PartitionHealthDimension} from '../assets/usePartit
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
+import {RunStatus} from '../graphql/types';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
-import {RunStatus} from '../types/globalTypes';
 import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -38,17 +38,17 @@ import {
   topLabelHeightForLabels,
   TopLabelTilted,
 } from './RunMatrixUtils';
-import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
 import {
   PartitionStepStatusPipelineQuery,
   PartitionStepStatusPipelineQueryVariables,
-} from './types/PartitionStepStatusPipelineQuery';
+} from './types/PartitionStepStatus.types';
+import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
 import {
-  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
   MatrixStep,
   PartitionRuns,
   useMatrixData,
   MatrixData,
+  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
 } from './useMatrixData';
 
 const BUFFER = 3;
@@ -411,6 +411,7 @@ const PARTITION_STEP_STATUS_PIPELINE_QUERY = gql`
       }
     }
   }
+
   ${PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT}
 `;
 

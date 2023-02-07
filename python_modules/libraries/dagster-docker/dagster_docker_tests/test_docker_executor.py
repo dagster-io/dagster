@@ -3,6 +3,10 @@
 
 import os
 
+from dagster._core.execution.api import execute_pipeline
+from dagster._core.test_utils import environ
+from dagster._utils.merger import merge_dicts
+from dagster._utils.yaml_utils import merge_yamls
 from dagster_test.test_project import (
     find_local_test_image,
     get_buildkite_registry_config,
@@ -11,11 +15,6 @@ from dagster_test.test_project import (
     get_test_project_recon_pipeline,
 )
 
-from dagster._core.execution.api import execute_pipeline
-from dagster._core.test_utils import environ
-from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import merge_yamls
-
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
@@ -23,7 +22,6 @@ def test_docker_executor(aws_env):
     """
     Note that this test relies on having AWS credentials in the environment.
     """
-
     executor_config = {
         "execution": {
             "docker": {
@@ -100,7 +98,6 @@ def test_docker_executor_config_on_container_context(aws_env):
     """
     Note that this test relies on having AWS credentials in the environment.
     """
-
     executor_config = {"execution": {"docker": {"config": {}}}}
 
     docker_image = get_test_project_docker_image()
@@ -142,7 +139,6 @@ def test_docker_executor_retries(aws_env):
     """
     Note that this test relies on having AWS credentials in the environment.
     """
-
     executor_config = {
         "execution": {
             "docker": {

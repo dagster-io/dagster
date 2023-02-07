@@ -1,6 +1,6 @@
 import faker from 'faker';
 
-import {RunStatus} from '../types/globalTypes';
+import {RunStatus} from '../graphql/types';
 
 export const generateRunMocks = (runCount: number, range: [number, number]) => {
   const [start, end] = range;

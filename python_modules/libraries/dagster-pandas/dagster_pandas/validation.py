@@ -1,3 +1,16 @@
+from dagster import (
+    DagsterInvariantViolationError,
+    _check as check,
+)
+from pandas import DataFrame, Timestamp
+from pandas.core.dtypes.common import (
+    is_bool_dtype,
+    is_float_dtype,
+    is_integer_dtype,
+    is_numeric_dtype,
+    is_string_dtype,
+)
+
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
     ColumnDTypeFnConstraint,
@@ -9,17 +22,6 @@ from dagster_pandas.constraints import (
     NonNullableColumnConstraint,
     UniqueColumnConstraint,
 )
-from pandas import DataFrame, Timestamp
-from pandas.core.dtypes.common import (
-    is_bool_dtype,
-    is_float_dtype,
-    is_integer_dtype,
-    is_numeric_dtype,
-    is_string_dtype,
-)
-
-from dagster import DagsterInvariantViolationError
-from dagster import _check as check
 
 PANDAS_NUMERIC_TYPES = {"int64", "float"}
 
@@ -64,7 +66,8 @@ class PandasColumn:
             # Ignore validation if column is missing from dataframe and is not required
             if self.is_required:
                 raise ConstraintViolationException(
-                    "Required column {column_name} not in dataframe with columns {dataframe_columns}".format(
+                    "Required column {column_name} not in dataframe with columns"
+                    " {dataframe_columns}".format(
                         column_name=self.name, dataframe_columns=dataframe.columns
                     )
                 )

@@ -6,7 +6,8 @@ from dagster import In, Out, Output, graph, op
 def nonce_op(name, n_inputs, n_outputs):
     """Creates an op with the given number of (meaningless) inputs and outputs.
 
-    Config controls the behavior of the nonce op."""
+    Config controls the behavior of the nonce op.
+    """
 
     @op(
         name=name,

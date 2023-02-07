@@ -1,7 +1,6 @@
 import typing
 
 import pytest
-
 from dagster import DagsterTypeCheckDidNotPass, In, Optional, Out, op
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.types.python_set import create_typed_runtime_set

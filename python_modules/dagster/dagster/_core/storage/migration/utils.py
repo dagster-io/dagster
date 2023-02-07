@@ -49,7 +49,7 @@ def upgrading_instance(instance):
 
 
 def get_currently_upgrading_instance():
-    global _UPGRADING_INSTANCE  # pylint: disable=global-statement,global-variable-not-assigned
+    global _UPGRADING_INSTANCE  # noqa: PLW0602
     check.invariant(_UPGRADING_INSTANCE is not None, "currently upgrading instance not set")
     return _UPGRADING_INSTANCE
 
@@ -417,3 +417,32 @@ def add_cached_status_data_column():
         return
 
     op.add_column("asset_keys", db.Column("cached_status_data", db.Text))
+
+
+def add_run_job_index():
+    if not has_table("runs"):
+        return
+
+    if not has_index("runs", "idx_runs_by_job"):
+        op.create_index(
+            "idx_runs_by_job",
+            "runs",
+            ["pipeline_name", "id"],
+            unique=False,
+            postgresql_concurrently=True,
+            mysql_length={
+                "pipeline_name": 512,
+            },
+        )
+
+
+def drop_run_job_index():
+    if not has_table("runs"):
+        return
+
+    if has_index("runs", "idx_runs_by_job"):
+        op.drop_index(
+            "idx_runs_by_job",
+            "runs",
+            postgresql_concurrently=True,
+        )

@@ -3,9 +3,9 @@ import {Button, Spinner, Tooltip, Icon} from '@dagster-io/ui';
 import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
+import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
@@ -16,11 +16,11 @@ import {
   LAUNCH_ASSET_LOADER_QUERY,
 } from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
-import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionAssetNodeFragment';
 import {
+  LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
-} from './types/LaunchAssetLoaderQuery';
+} from './types/LaunchAssetExecutionButton.types';
 
 type ObserveAssetsState =
   | {type: 'none'}
@@ -28,7 +28,7 @@ type ObserveAssetsState =
   | {type: 'error'; error: string}
   | {
       type: 'single-run';
-      executionParams: LaunchPipelineExecutionVariables['executionParams'];
+      executionParams: LaunchPipelineExecutionMutationVariables['executionParams'];
     };
 
 export const LaunchAssetObservationButton: React.FC<{
@@ -36,7 +36,7 @@ export const LaunchAssetObservationButton: React.FC<{
   intent?: 'primary' | 'none';
   preferredJobName?: string;
 }> = ({assetKeys, preferredJobName, intent = 'none'}) => {
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 

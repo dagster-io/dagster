@@ -52,6 +52,7 @@ def my_input_op(abc, xyz):
 
 # start_typed_input_op_marker
 
+
 MyDagsterType = DagsterType(
     type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType"
 )
@@ -85,6 +86,7 @@ def my_multi_output_op():
 
 # end_multi_output_op_marker
 
+
 # start_op_context_marker
 @op(config_schema={"name": str})
 def context_op(context):
@@ -93,6 +95,7 @@ def context_op(context):
 
 
 # end_op_context_marker
+
 
 # start_op_factory_pattern_marker
 def my_op_factory(

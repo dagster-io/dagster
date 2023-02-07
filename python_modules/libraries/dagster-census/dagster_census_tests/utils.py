@@ -1,5 +1,4 @@
 def get_sync_data():
-
     return {
         "status": "success",
         "data": {
@@ -56,7 +55,6 @@ def get_sync_data():
 
 
 def get_source_data():
-
     return {
         "status": "success",
         "data": {
@@ -78,7 +76,6 @@ def get_source_data():
 
 
 def get_destination_data():
-
     return {
         "status": "success",
         "data": {
@@ -104,7 +101,6 @@ def get_destination_data():
 
 
 def get_sync_run_data():
-
     return {
         "status": "success",
         "data": {
@@ -134,5 +130,4 @@ def get_sync_run_data():
 
 
 def get_sync_trigger_data():
-
     return {"status": "success", "data": {"sync_run_id": 94}}

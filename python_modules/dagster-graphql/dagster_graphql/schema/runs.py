@@ -1,12 +1,12 @@
 import sys
-
-import graphene
-import yaml
-from graphene.types.generic import GenericScalar
+from typing import Mapping, Union
 
 import dagster._check as check
+import graphene
+import yaml
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import load_run_config_yaml
+from graphene.types.generic import GenericScalar
 
 from ..implementation.fetch_runs import get_runs, get_runs_count
 from ..implementation.utils import UserFacingGraphQLError
@@ -15,7 +15,7 @@ from .errors import (
     GraphenePythonError,
     GrapheneRunGroupNotFoundError,
 )
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneStepEventStatus(graphene.Enum):
@@ -110,10 +110,10 @@ class GrapheneRuns(graphene.ObjectType):
         self._cursor = cursor
         self._limit = limit
 
-    def resolve_results(self, graphene_info):
+    def resolve_results(self, graphene_info: ResolveInfo):
         return get_runs(graphene_info, self._filters, self._cursor, self._limit)
 
-    def resolve_count(self, graphene_info):
+    def resolve_count(self, graphene_info: ResolveInfo):
         return get_runs_count(graphene_info, self._filters)
 
 
@@ -147,7 +147,9 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
         name = "RunConfigData"
 
 
-def parse_run_config_input(run_config, raise_on_error: bool):
+def parse_run_config_input(
+    run_config: Union[str, Mapping[str, object]], raise_on_error: bool
+) -> Union[str, Mapping[str, object]]:
     if run_config and isinstance(run_config, str):
         try:
             return load_run_config_yaml(run_config)

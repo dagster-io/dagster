@@ -2,14 +2,18 @@ import logging
 import sys
 import time
 from enum import Enum
-from typing import Optional
+from typing import Callable, Optional, TypeVar
 
-import kubernetes
+import kubernetes.client
+import kubernetes.client.rest
+from dagster import (
+    DagsterInstance,
+    _check as check,
+)
+from dagster._core.storage.pipeline_run import DagsterRunStatus
 from kubernetes.client.models import V1JobStatus
 
-from dagster import DagsterInstance
-from dagster import _check as check
-from dagster._core.storage.pipeline_run import DagsterRunStatus
+T = TypeVar("T")
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
@@ -78,11 +82,11 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
 
 
 def k8s_api_retry(
-    fn,
-    max_retries,
-    timeout,
+    fn: Callable[..., T],
+    max_retries: int,
+    timeout: float,
     msg_fn=lambda: "Unexpected error encountered in Kubernetes API Client.",
-):
+) -> T:
     check.callable_param(fn, "fn")
     check.int_param(max_retries, "max_retries")
     check.numeric_param(timeout, "timeout")
@@ -116,6 +120,7 @@ def k8s_api_retry(
                     k8s_api_exception=e,
                     original_exc_info=sys.exc_info(),
                 ) from e
+    check.failed("Unreachable.")
 
 
 class KubernetesWaitingReasons:
@@ -180,8 +185,7 @@ class DagsterKubernetesClient:
         while not job:
             if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name}"
-                    " to launch".format(job_name=job_name)
+                    "Timed out while waiting for job {job_name} to launch".format(job_name=job_name)
                 )
 
             # Get all jobs in the namespace and find the matching job
@@ -192,9 +196,8 @@ class DagsterKubernetesClient:
                 if jobs.items:
                     check.invariant(
                         len(jobs.items) == 1,
-                        'There should only be one k8s job with name "{}", but got multiple jobs:" {}'.format(
-                            job_name, jobs.items
-                        ),
+                        'There should only be one k8s job with name "{}", but got multiple'
+                        ' jobs:" {}'.format(job_name, jobs.items),
                     )
                     return jobs.items[0]
                 else:
@@ -224,8 +227,9 @@ class DagsterKubernetesClient:
         while True:
             if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name}"
-                    " to have pods".format(job_name=job_name)
+                    "Timed out while waiting for job {job_name} to have pods".format(
+                        job_name=job_name
+                    )
                 )
 
             pod_list = k8s_api_retry(_get_pods, max_retries=3, timeout=wait_time_between_attempts)
@@ -310,8 +314,9 @@ class DagsterKubernetesClient:
         while True:
             if wait_timeout and (self.timer() - start_time > wait_timeout):
                 raise DagsterK8sTimeoutError(
-                    "Timed out while waiting for job {job_name}"
-                    " to complete".format(job_name=job_name)
+                    "Timed out while waiting for job {job_name} to complete".format(
+                        job_name=job_name
+                    )
                 )
 
             # Reads the status of the specified job. Returns a V1Job object that
@@ -363,7 +368,10 @@ class DagsterKubernetesClient:
         job_name,
         namespace,
     ):
-        """Delete Kubernetes Job. We also need to delete corresponding pods due to:
+        """Delete Kubernetes Job.
+
+        We also need to delete corresponding pods due to:
+
         https://github.com/kubernetes-client/python/issues/234
 
         Args:
@@ -477,7 +485,6 @@ class DagsterKubernetesClient:
         start = start_time or self.timer()
 
         while True:
-
             pods = self.core_api.list_namespaced_pod(
                 namespace=namespace, field_selector="metadata.name=%s" % pod_name
             ).items
@@ -531,8 +538,8 @@ class DagsterKubernetesClient:
                     continue
                 if state.waiting.reason == KubernetesWaitingReasons.CreateContainerConfigError:
                     self.logger(
-                        'Pod "%s" is waiting due to a CreateContainerConfigError with message "%s" - trying again to see if it recovers'
-                        % (pod_name, state.waiting.message)
+                        'Pod "%s" is waiting due to a CreateContainerConfigError with message "%s"'
+                        " - trying again to see if it recovers" % (pod_name, state.waiting.message)
                     )
                     self.sleeper(wait_time_between_attempts)
                     continue
@@ -570,7 +577,9 @@ class DagsterKubernetesClient:
             else:
                 raise DagsterK8sError("Should not get here, unknown pod state")
 
-    def retrieve_pod_logs(self, pod_name: str, namespace: str) -> str:
+    def retrieve_pod_logs(
+        self, pod_name: str, namespace: str, container_name: Optional[str] = None
+    ) -> str:
         """Retrieves the raw pod logs for the pod named `pod_name` from Kubernetes.
 
         Args:
@@ -589,5 +598,5 @@ class DagsterKubernetesClient:
         #
         # https://github.com/kubernetes-client/python/issues/811
         return self.core_api.read_namespaced_pod_log(
-            name=pod_name, namespace=namespace, _preload_content=False
+            name=pod_name, namespace=namespace, container=container_name, _preload_content=False
         ).data.decode("utf-8")

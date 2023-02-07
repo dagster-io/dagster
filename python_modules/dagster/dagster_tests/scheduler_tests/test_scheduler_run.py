@@ -6,7 +6,6 @@ from contextlib import ExitStack, contextmanager
 
 import pendulum
 import pytest
-
 from dagster import (
     Any,
     AssetKey,
@@ -16,6 +15,7 @@ from dagster import (
     asset,
     define_asset_job,
     job,
+    materialize,
     op,
     repository,
     schedule,
@@ -314,7 +314,7 @@ def wrong_config_schedule(_date):
     execution_timezone="UTC",
 )
 def empty_schedule(_date):
-    pass  # No RunRequests
+    return []
 
 
 def define_multi_run_schedule():
@@ -450,17 +450,25 @@ default_config_schedule = ScheduleDefinition(
 
 @asset
 def asset1():
-    ...
+    return "asset1"
 
 
 @asset
-def asset2():
-    ...
+def asset2(asset1):
+    return asset1 + "asset2"
 
 
-@schedule(job=define_asset_job("asset_job"), cron_schedule="@daily")
+asset_job = define_asset_job("asset_job")
+
+
+@schedule(job=asset_job, cron_schedule="@daily")
 def asset_selection_schedule():
     return RunRequest(asset_selection=[asset1.key])
+
+
+@schedule(job=asset_job, cron_schedule="@daily")
+def stale_asset_selection_schedule():
+    return RunRequest(stale_assets_only=True)
 
 
 @repository
@@ -496,6 +504,7 @@ def the_repo():
         empty_schedule,
         [asset1, asset2],
         asset_selection_schedule,
+        stale_asset_selection_schedule,
     ]
 
 
@@ -672,7 +681,6 @@ def test_simple_schedule(instance, workspace_context, external_repo, executor):
 
     freeze_datetime = freeze_datetime.add(days=2)
     with pendulum.test(freeze_datetime):
-
         # Traveling two more days in the future before running results in two new ticks
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 3
@@ -791,9 +799,11 @@ def test_schedule_without_timezone(instance, executor):
             workspace_load_target=workspace_load_target(),
             instance=instance,
         ) as workspace_context:
-            external_repo = next(
+            repo_location = next(
                 iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-            ).repository_location.get_repository("the_repo")
+            ).repository_location
+            assert repo_location is not None
+            external_repo = repo_location.get_repository("the_repo")
             external_schedule = external_repo.get_external_schedule(
                 "daily_schedule_without_timezone"
             )
@@ -1062,7 +1072,10 @@ def test_bad_should_execute(instance, workspace_context, external_repo, executor
             initial_datetime,
             TickStatus.FAILURE,
             [run.run_id for run in instance.get_runs()],
-            "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule",
+            (
+                "Error occurred during the execution of should_execute for schedule"
+                " bad_should_execute_schedule"
+            ),
             expected_failure_count=1,
         )
 
@@ -1227,7 +1240,8 @@ def test_bad_schedules_mixed_with_good_schedule(
         assert bad_ticks[0].status == TickStatus.FAILURE
 
         assert (
-            "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule"
+            "Error occurred during the execution of should_execute for schedule"
+            " bad_should_execute_schedule"
             in bad_ticks[0].error.message
         )
 
@@ -1347,7 +1361,8 @@ def test_bad_load_repository(instance, workspace_context, external_repo, caplog,
         assert len(ticks) == 0
 
         assert (
-            "Could not find repository invalid_repo_name in location test_location to run schedule simple_schedule"
+            "Could not find repository invalid_repo_name in location test_location to run schedule"
+            " simple_schedule"
             in caplog.text
         )
 
@@ -1473,7 +1488,8 @@ def test_load_repository_location_not_in_workspace(
         assert len(ticks) == 0
 
         assert (
-            "Schedule simple_schedule was started from a location missing_location that can no longer be found in the workspace"
+            "Schedule simple_schedule was started from a location missing_location that can no"
+            " longer be found in the workspace"
             in caplog.text
         )
 
@@ -1831,7 +1847,6 @@ def test_multi_runs(instance, workspace_context, external_repo, executor):
 
     freeze_datetime = freeze_datetime.add(days=1)
     with pendulum.test(freeze_datetime):
-
         # Traveling one more day in the future before running results in a tick
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 4
@@ -1902,7 +1917,6 @@ def test_multi_run_list(instance, workspace_context, external_repo, executor):
 
     freeze_datetime = freeze_datetime.add(days=1)
     with pendulum.test(freeze_datetime):
-
         # Traveling one more day in the future before running results in a tick
         evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
         assert instance.get_runs_count() == 4
@@ -1935,8 +1949,10 @@ def test_multi_runs_missing_run_key(instance, workspace_context, external_repo, 
             freeze_datetime,
             TickStatus.FAILURE,
             [],
-            "Error occurred during the execution function for schedule "
-            "multi_run_schedule_with_missing_run_key",
+            (
+                "Error occurred during the execution function for schedule "
+                "multi_run_schedule_with_missing_run_key"
+            ),
             expected_failure_count=1,
         )
 
@@ -2062,7 +2078,10 @@ def test_grpc_server_down(instance, executor):
                 initial_datetime,
                 TickStatus.FAILURE,
                 [],
-                "Unable to reach the user code server for schedule simple_schedule. Schedule will resume execution once the server is available.",
+                (
+                    "Unable to reach the user code server for schedule simple_schedule. Schedule"
+                    " will resume execution once the server is available."
+                ),
                 expected_failure_count=0,
             )
 
@@ -2329,7 +2348,6 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
         workspace_load_target=workspace_load_target(attribute=None),  # load all repos
         instance=instance,
     ) as full_workspace_context:
-
         with pendulum.test(freeze_datetime):
             full_location = next(
                 iter(
@@ -2455,6 +2473,84 @@ def test_asset_selection(instance, workspace_context, external_repo, executor):
         assert run.asset_selection == {AssetKey("asset1")}
 
         validate_run_started(instance, run, execution_time=create_pendulum_time(2019, 2, 28))
+
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_stale_asset_selection_never_materialized(
+    instance, workspace_context, external_repo, executor
+):
+    freeze_datetime = _get_stale_asset_selection_schedule_start()
+    external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+
+    with pendulum.test(freeze_datetime):
+        instance.start_schedule(external_schedule)
+
+    # never materialized so all assets stale
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+        wait_for_all_runs_to_start(instance)
+        schedule_run = next(
+            (r for r in instance.get_runs() if r.pipeline_name == "asset_job"), None
+        )
+        assert schedule_run is not None
+        assert schedule_run.asset_selection == {AssetKey("asset1"), AssetKey("asset2")}
+        validate_run_started(
+            instance, schedule_run, execution_time=create_pendulum_time(2019, 2, 28)
+        )
+
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_stale_asset_selection_empty(instance, workspace_context, external_repo, executor):
+    freeze_datetime = _get_stale_asset_selection_schedule_start()
+    external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+
+    with pendulum.test(freeze_datetime):
+        instance.start_schedule(external_schedule)
+
+    materialize([asset1, asset2], instance=instance)
+
+    # assets previously materialized so we expect empy set
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+        wait_for_all_runs_to_start(instance)
+        schedule_run = next(
+            (r for r in instance.get_runs() if r.pipeline_name == "asset_job"), None
+        )
+        assert schedule_run is None
+
+
+@pytest.mark.parametrize("executor", get_schedule_executors())
+def test_stale_asset_selection_subset(instance, workspace_context, external_repo, executor):
+    freeze_datetime = _get_stale_asset_selection_schedule_start()
+    external_schedule = external_repo.get_external_schedule("stale_asset_selection_schedule")
+
+    with pendulum.test(freeze_datetime):
+        instance.start_schedule(external_schedule)
+
+    materialize([asset1], instance=instance)
+
+    # assets previously materialized so we expect empy set
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        evaluate_schedules(workspace_context, executor, pendulum.now("UTC"))
+        wait_for_all_runs_to_start(instance)
+        schedule_run = next(
+            (r for r in instance.get_runs() if r.pipeline_name == "asset_job"), None
+        )
+        assert schedule_run is not None
+        assert schedule_run.asset_selection == {AssetKey("asset2")}
+        validate_run_started(
+            instance, schedule_run, execution_time=create_pendulum_time(2019, 2, 28)
+        )
+
+
+def _get_stale_asset_selection_schedule_start():
+    return to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
 
 
 def test_settings():

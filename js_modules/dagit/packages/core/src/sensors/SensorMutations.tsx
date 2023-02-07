@@ -2,10 +2,10 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 
-import {StartSensor_startSensor_PythonError, StartSensor} from './types/StartSensor';
-import {StopSensor_stopSensor_PythonError, StopSensor} from './types/StopSensor';
+import {StartSensorMutation, StopRunningSensorMutation} from './types/SensorMutations.types';
 
 export const START_SENSOR_MUTATION = gql`
   mutation StartSensor($sensorSelector: SensorSelector!) {
@@ -26,7 +26,7 @@ export const START_SENSOR_MUTATION = gql`
 `;
 
 export const STOP_SENSOR_MUTATION = gql`
-  mutation StopSensor($jobOriginId: String!, $jobSelectorId: String!) {
+  mutation StopRunningSensor($jobOriginId: String!, $jobSelectorId: String!) {
     stopSensor(jobOriginId: $jobOriginId, jobSelectorId: $jobSelectorId) {
       __typename
       ... on StopSensorMutationResult {
@@ -42,11 +42,10 @@ export const STOP_SENSOR_MUTATION = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-type PythonError = StartSensor_startSensor_PythonError | StopSensor_stopSensor_PythonError;
-
-export const displaySensorMutationErrors = (data: StartSensor | StopSensor) => {
-  let error: PythonError | null = null;
-
+export const displaySensorMutationErrors = (
+  data: StartSensorMutation | StopRunningSensorMutation,
+) => {
+  let error;
   if ('startSensor' in data && data.startSensor.__typename === 'PythonError') {
     error = data.startSensor;
   } else if ('stopSensor' in data && data.stopSensor.__typename === 'PythonError') {

@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import DagsterInvalidConfigDefinitionError, Noneable, Permissive, Selector, op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
@@ -140,7 +139,6 @@ def test_bad_solid_config_argument_map_bad_value():
 
 
 def test_bad_solid_config_argument_list_bad_item():
-
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
         @op(config_schema={"bad_list": ["kdjfkd"]})
@@ -156,7 +154,6 @@ def test_bad_solid_config_argument_list_bad_item():
 
 
 def test_bad_solid_config_argument_list_bad_nested_item():
-
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
         @op(config_schema={"bad_nested_list": [{"bad_field": "kjdkfd"}]})

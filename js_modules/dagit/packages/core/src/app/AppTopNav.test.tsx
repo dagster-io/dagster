@@ -1,9 +1,9 @@
 import {act, render, screen, waitFor, within} from '@testing-library/react';
 import * as React from 'react';
 
+import {InstigationStatus} from '../graphql/types';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {TestProvider} from '../testing/TestProvider';
-import {InstigationStatus} from '../types/globalTypes';
 
 import {AppTopNav} from './AppTopNav';
 
@@ -68,10 +68,7 @@ describe('AppTopNav', () => {
       const runsLink = screen.getByRole('link', {name: /runs/i});
       expect(runsLink.closest('a')).toHaveAttribute('href', '/runs');
       expect(screen.getByText('Assets').closest('a')).toHaveAttribute('href', '/assets');
-      expect(screen.getByText('Deployment').closest('a')).toHaveAttribute(
-        'href',
-        '/code-locations',
-      );
+      expect(screen.getByText('Deployment').closest('a')).toHaveAttribute('href', '/locations');
       expect(screen.getByText('RightOfSearchBar')).toBeVisible();
     });
   });

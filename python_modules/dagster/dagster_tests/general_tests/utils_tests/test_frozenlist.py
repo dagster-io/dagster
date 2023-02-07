@@ -1,7 +1,6 @@
 import pickle
 
 import pytest
-
 from dagster._utils import frozenlist
 
 

@@ -1,7 +1,12 @@
+# pyright: reportPrivateImportUsage=none
+
+# NOTE (2022-12-12): We ignore private attribute access errors because dask does not correctly mark
+# the symbols we are accessing as public (though they are intending to). Should be fixed in later
+# releases of dask. See: https://github.com/dask/dask/issues/9710
+
 import re
 
 import dask.dataframe as dd
-
 from dagster import Any, Bool, Field, Float, Int, Permissive, Shape, String
 
 
@@ -123,7 +128,9 @@ DataFrameUtilities = {
                     "divisions": Field(
                         Any,
                         is_required=False,
-                        description="Known values on which to separate index values of the partitions.",
+                        description=(
+                            "Known values on which to separate index values of the partitions."
+                        ),
                     ),
                 }
             ),

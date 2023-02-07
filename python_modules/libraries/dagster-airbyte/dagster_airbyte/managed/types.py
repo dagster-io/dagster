@@ -94,7 +94,6 @@ class AirbyteSyncMode(ABC):
 
         https://docs.airbyte.com/understanding-airbyte/connections/incremental-append-dedup/
         """
-
         cursor_field = check.opt_str_param(cursor_field, "cursor_field")
         if isinstance(primary_key, str):
             primary_key = [primary_key]
@@ -132,7 +131,7 @@ class AirbyteSource:
         )
 
     def must_be_recreated(self, other: "AirbyteSource") -> bool:
-        return self.name != other.name or self.source_configuration != other.source_configuration
+        return self.name != other.name or self.source_type != other.source_type
 
 
 class InitializedAirbyteSource:
@@ -182,10 +181,7 @@ class AirbyteDestination:
         )
 
     def must_be_recreated(self, other: "AirbyteDestination") -> bool:
-        return (
-            self.name != other.name
-            or self.destination_configuration != other.destination_configuration
-        )
+        return self.name != other.name or self.destination_type != other.destination_type
 
 
 class InitializedAirbyteDestination:
@@ -231,6 +227,7 @@ class AirbyteConnection:
     which streams to sync.
     """
 
+    @public
     def __init__(
         self,
         name: str,
@@ -241,8 +238,8 @@ class AirbyteConnection:
         destination_namespace: Optional[
             Union[AirbyteDestinationNamespace, str]
         ] = AirbyteDestinationNamespace.SAME_AS_SOURCE,
+        prefix: Optional[str] = None,
     ):
-
         """
         Args:
             name (str): The display name of the connection.
@@ -260,22 +257,24 @@ class AirbyteConnection:
                 AirbyteDestinationNamespace.DESTINATION_DEFAULT, the namespace will be
                 the default namespace for the destination. If set to a string, the
                 namespace will be that string.
+            prefix (Optional[str]): A prefix to add to the table names in the destination.
 
         Example:
-        .. code-block:: python
-            from dagster_airbyte.managed.generated.sources import FileSource
-            from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
-            from dagster_airbyte import AirbyteConnection, AirbyteSyncMode
+            .. code-block:: python
 
-            cereals_csv_source = FileSource(...)
-            local_json_destination = LocalJsonDestination(...)
+                from dagster_airbyte.managed.generated.sources import FileSource
+                from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
+                from dagster_airbyte import AirbyteConnection, AirbyteSyncMode
 
-            cereals_connection = AirbyteConnection(
-                name="download-cereals",
-                source=cereals_csv_source,
-                destination=local_json_destination,
-                stream_config={"cereals": AirbyteSyncMode.full_refresh_overwrite()},
-            )
+                cereals_csv_source = FileSource(...)
+                local_json_destination = LocalJsonDestination(...)
+
+                cereals_connection = AirbyteConnection(
+                    name="download-cereals",
+                    source=cereals_csv_source,
+                    destination=local_json_destination,
+                    stream_config={"cereals": AirbyteSyncMode.full_refresh_overwrite()},
+                )
         """
         self.name = check.str_param(name, "name")
         self.source = check.inst_param(source, "source", AirbyteSource)
@@ -287,6 +286,7 @@ class AirbyteConnection:
         self.destination_namespace = check.opt_inst_param(
             destination_namespace, "destination_namespace", (str, AirbyteDestinationNamespace)
         )
+        self.prefix = check.opt_str_param(prefix, "prefix")
 
     def must_be_recreated(self, other: Optional["AirbyteConnection"]) -> bool:
         return (
@@ -316,7 +316,6 @@ class InitializedAirbyteConnection:
         init_sources: Mapping[str, InitializedAirbyteSource],
         init_dests: Mapping[str, InitializedAirbyteDestination],
     ):
-
         source = next(
             (
                 source.source
@@ -353,6 +352,7 @@ class InitializedAirbyteConnection:
                 destination_namespace=api_dict["namespaceFormat"]
                 if api_dict["namespaceDefinition"] == "customformat"
                 else AirbyteDestinationNamespace(api_dict["namespaceDefinition"]),
+                prefix=api_dict["prefix"] if api_dict.get("prefix") else None,
             ),
             api_dict["connectionId"],
         )

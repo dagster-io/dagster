@@ -17,7 +17,7 @@ from dagster import Field, In, Out, Output, graph, op
     },
 )
 def hammer_op(context, chase_duration):
-    """what better way to do a lot of gnarly work than to pointer chase?"""
+    """What better way to do a lot of gnarly work than to pointer chase?"""
     ptr_length = context.op_config["chase_size"]
 
     data = list(range(0, ptr_length))

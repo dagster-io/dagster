@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
@@ -15,10 +15,10 @@ import {RunStateSummary, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {
   RunGroupPanelQuery,
   RunGroupPanelQueryVariables,
-  RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
-} from './types/RunGroupPanelQuery';
+  RunGroupPanelRunFragment,
+} from './types/RunGroupPanel.types';
 
-type Run = RunGroupPanelQuery_runGroupOrError_RunGroup_runs;
+type Run = RunGroupPanelRunFragment;
 
 function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   const stepsTag = run.tags.find((t) => t.key === DagsterTag.StepSelection);
@@ -33,7 +33,6 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
     RUN_GROUP_PANEL_QUERY,
     {
       variables: {runId},
-      fetchPolicy: 'cache-and-network',
       notifyOnNetworkStatusChange: true,
     },
   );
@@ -142,27 +141,33 @@ const RUN_GROUP_PANEL_QUERY = gql`
   query RunGroupPanelQuery($runId: ID!) {
     runGroupOrError(runId: $runId) {
       __typename
-      ...PythonErrorFragment
       ... on RunGroup {
         rootRunId
         runs {
           id
-          runId
-          parentRunId
-          status
-          stepKeysToExecute
-          pipelineName
-          tags {
-            key
-            value
-          }
-          ...RunTimeFragment
+          ...RunGroupPanelRun
         }
       }
+      ...PythonErrorFragment
     }
   }
-  ${RUN_TIME_FRAGMENT}
+
+  fragment RunGroupPanelRun on Run {
+    id
+    runId
+    parentRunId
+    status
+    stepKeysToExecute
+    pipelineName
+    tags {
+      key
+      value
+    }
+    ...RunTimeFragment
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
+  ${RUN_TIME_FRAGMENT}
 `;
 
 const RunGroupRun = styled(Link)<{selected: boolean}>`

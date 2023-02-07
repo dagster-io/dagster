@@ -1,14 +1,19 @@
-import {gql, useMutation} from '@apollo/client';
+import {gql, useMutation, useQuery} from '@apollo/client';
 import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {BulkActionStatus} from '../graphql/types';
 import {cancelableStatuses} from '../runs/RunStatuses';
 import {TerminationDialog} from '../runs/TerminationDialog';
-import {BulkActionStatus} from '../types/globalTypes';
 
-import {BackfillTableFragment} from './types/BackfillTableFragment';
-import {CancelBackfill, CancelBackfillVariables} from './types/CancelBackfill';
+import {SINGLE_BACKFILL_STATUS_DETAILS_QUERY} from './BackfillRow';
+import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
+import {BackfillTableFragment} from './types/BackfillTable.types';
+import {
+  CancelBackfillMutation,
+  CancelBackfillMutationVariables,
+} from './types/BackfillTerminationDialog.types';
 
 interface Props {
   backfill?: BackfillTableFragment;
@@ -16,15 +21,25 @@ interface Props {
   onComplete: () => void;
 }
 export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props) => {
-  const [cancelBackfill] = useMutation<CancelBackfill, CancelBackfillVariables>(
+  const [cancelBackfill] = useMutation<CancelBackfillMutation, CancelBackfillMutationVariables>(
     CANCEL_BACKFILL_MUTATION,
+  );
+  const {data} = useQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
+    SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
+    {
+      variables: {
+        backfillId: backfill?.backfillId || '',
+      },
+      notifyOnNetworkStatusChange: true,
+      skip: !backfill,
+    },
   );
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const unfinishedMap = React.useMemo(() => {
-    if (!backfill) {
+    if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {};
     }
-    const unfinishedPartitions = backfill.partitionStatuses.results.filter(
+    const unfinishedPartitions = data.partitionBackfillOrError.partitionStatuses.results.filter(
       (partition) =>
         partition.runStatus && partition.runId && cancelableStatuses.has(partition.runStatus),
     );
@@ -35,12 +50,12 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
         {},
       ) || {}
     );
-  }, [backfill]);
-  if (!backfill) {
+  }, [backfill, data]);
+  if (!backfill || !data) {
     return null;
   }
 
-  const numUnscheduled = (backfill.numPartitions || 0) - (backfill.numRequested || 0);
+  const numUnscheduled = backfill.numCancelable;
   const cancel = async () => {
     setIsSubmitting(true);
     await cancelBackfill({variables: {backfillId: backfill.backfillId}});

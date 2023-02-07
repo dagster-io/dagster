@@ -14,7 +14,7 @@ def get_version() -> str:
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "0+dev" else f"=={ver}"
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-snowflake-pandas",
     version=ver,
@@ -39,7 +39,7 @@ setup(
         "requests",
         "snowflake-connector-python[pandas]",
         "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
-        "snowflake-sqlalchemy",
+        "snowflake-sqlalchemy>=1.2",
     ],
     zip_safe=False,
 )

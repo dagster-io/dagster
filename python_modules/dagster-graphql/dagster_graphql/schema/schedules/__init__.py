@@ -1,20 +1,21 @@
 import graphene
-
-import dagster._check as check
-from dagster._core.host_representation import ExternalSchedule, ScheduleSelector
-from dagster._core.host_representation.selector import RepositorySelector
+from dagster._core.definitions.selector import ScheduleSelector
 from dagster._core.workspace.permissions import Permissions
 
+from dagster_graphql.schema.util import ResolveInfo
+
 from ...implementation.fetch_schedules import start_schedule, stop_schedule
-from ...implementation.utils import capture_error, check_permission
+from ...implementation.utils import (
+    assert_permission_for_location,
+    capture_error,
+    require_permission_check,
+)
 from ..errors import (
     GraphenePythonError,
-    GrapheneRepositoryNotFoundError,
-    GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
     GrapheneUnauthorizedError,
 )
-from ..inputs import GrapheneRepositorySelector, GrapheneScheduleSelector
+from ..inputs import GrapheneScheduleSelector
 from ..instigation import GrapheneInstigationState
 from .schedules import (
     GrapheneSchedule,
@@ -72,9 +73,13 @@ class GrapheneStartScheduleMutation(graphene.Mutation):
         name = "StartScheduleMutation"
 
     @capture_error
-    @check_permission(Permissions.START_SCHEDULE)
-    def mutate(self, graphene_info, schedule_selector):
-        return start_schedule(graphene_info, ScheduleSelector.from_graphql_input(schedule_selector))
+    @require_permission_check(Permissions.START_SCHEDULE)
+    def mutate(self, graphene_info: ResolveInfo, schedule_selector):
+        selector = ScheduleSelector.from_graphql_input(schedule_selector)
+        assert_permission_for_location(
+            graphene_info, Permissions.START_SCHEDULE, selector.location_name
+        )
+        return start_schedule(graphene_info, selector)
 
 
 class GrapheneStopRunningScheduleMutation(graphene.Mutation):
@@ -90,8 +95,8 @@ class GrapheneStopRunningScheduleMutation(graphene.Mutation):
         name = "StopRunningScheduleMutation"
 
     @capture_error
-    @check_permission(Permissions.STOP_RUNNING_SCHEDULE)
-    def mutate(self, graphene_info, schedule_origin_id, schedule_selector_id):
+    @require_permission_check(Permissions.STOP_RUNNING_SCHEDULE)
+    def mutate(self, graphene_info: ResolveInfo, schedule_origin_id, schedule_selector_id):
         return stop_schedule(graphene_info, schedule_origin_id, schedule_selector_id)
 
 

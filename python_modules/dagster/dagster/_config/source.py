@@ -66,8 +66,7 @@ class IntSourceType(ScalarUnion):
         except ValueError as e:
             raise PostProcessingError(
                 (
-                    'Value "{value}" stored in env variable "{var}" cannot be '
-                    "coerced into an int."
+                    'Value "{value}" stored in env variable "{var}" cannot be coerced into an int.'
                 ).format(value=value, var=cfg)
             ) from e
 
@@ -96,8 +95,7 @@ class BoolSourceType(ScalarUnion):
         except ValueError as e:
             raise PostProcessingError(
                 (
-                    'Value "{value}" stored in env variable "{var}" cannot be '
-                    "coerced into an bool."
+                    'Value "{value}" stored in env variable "{var}" cannot be coerced into an bool.'
                 ).format(value=value, var=cfg)
             ) from e
 

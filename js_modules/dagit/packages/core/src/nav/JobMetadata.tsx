@@ -14,19 +14,18 @@ import {RepoAddress} from '../workspace/types';
 
 import {LatestRunTag} from './LatestRunTag';
 import {ScheduleOrSensorTag} from './ScheduleOrSensorTag';
-import {JobMetadataFragment as Job} from './types/JobMetadataFragment';
 import {
+  JobMetadataAssetNodeFragment,
+  JobMetadataFragment,
   JobMetadataQuery,
   JobMetadataQueryVariables,
-  JobMetadataQuery_assetNodes,
-  JobMetadataQuery_pipelineOrError_Pipeline,
-  JobMetadataQuery_pipelineRunsOrError_Runs_results,
-} from './types/JobMetadataQuery';
+  RunMetadataFragment,
+} from './types/JobMetadata.types';
 
 type JobMetadata = {
-  assetNodes: JobMetadataQuery_assetNodes[] | null;
-  job: JobMetadataQuery_pipelineOrError_Pipeline | null;
-  runsForAssetScan: JobMetadataQuery_pipelineRunsOrError_Runs_results[];
+  assetNodes: JobMetadataAssetNodeFragment[] | null;
+  job: JobMetadataFragment | null;
+  runsForAssetScan: RunMetadataFragment[];
 };
 
 export function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
@@ -87,7 +86,7 @@ export const JobMetadata: React.FC<Props> = (props) => {
 };
 
 const JobScheduleOrSensorTag: React.FC<{
-  job: Job;
+  job: JobMetadataFragment;
   repoAddress: RepoAddress;
 }> = ({job, repoAddress}) => {
   const matchingSchedules = React.useMemo(() => {
@@ -180,22 +179,35 @@ const RelatedAssetsTag: React.FC<{relatedAssets: string[]}> = ({relatedAssets}) 
   );
 };
 
-const RUN_METADATA_FRAGMENT = gql`
-  fragment RunMetadataFragment on PipelineRun {
-    id
-    status
-    assets {
-      id
-      key {
-        path
+const JOB_METADATA_QUERY = gql`
+  query JobMetadataQuery($params: PipelineSelector!, $runsFilter: RunsFilter!) {
+    pipelineOrError(params: $params) {
+      ... on Pipeline {
+        id
+        ...JobMetadataFragment
       }
     }
-    ...RunTimeFragment
+    assetNodes(pipeline: $params) {
+      id
+      ...JobMetadataAssetNode
+    }
+    pipelineRunsOrError(filter: $runsFilter, limit: 5) {
+      ... on PipelineRuns {
+        results {
+          id
+          ...RunMetadataFragment
+        }
+      }
+    }
   }
-  ${RUN_TIME_FRAGMENT}
-`;
 
-const JOB_METADATA_FRAGMENT = gql`
+  fragment JobMetadataAssetNode on AssetNode {
+    id
+    assetKey {
+      path
+    }
+  }
+
   fragment JobMetadataFragment on Pipeline {
     id
     isJob
@@ -214,33 +226,20 @@ const JOB_METADATA_FRAGMENT = gql`
       ...SensorSwitchFragment
     }
   }
-  ${SCHEDULE_SWITCH_FRAGMENT}
-  ${SENSOR_SWITCH_FRAGMENT}
-`;
 
-const JOB_METADATA_QUERY = gql`
-  query JobMetadataQuery($params: PipelineSelector!, $runsFilter: RunsFilter!) {
-    pipelineOrError(params: $params) {
-      ... on Pipeline {
-        id
-        ...JobMetadataFragment
-      }
-    }
-    assetNodes(pipeline: $params) {
+  fragment RunMetadataFragment on PipelineRun {
+    id
+    status
+    assets {
       id
-      assetKey {
+      key {
         path
       }
     }
-    pipelineRunsOrError(filter: $runsFilter, limit: 5) {
-      ... on PipelineRuns {
-        results {
-          id
-          ...RunMetadataFragment
-        }
-      }
-    }
+    ...RunTimeFragment
   }
-  ${JOB_METADATA_FRAGMENT}
-  ${RUN_METADATA_FRAGMENT}
+
+  ${SCHEDULE_SWITCH_FRAGMENT}
+  ${SENSOR_SWITCH_FRAGMENT}
+  ${RUN_TIME_FRAGMENT}
 `;

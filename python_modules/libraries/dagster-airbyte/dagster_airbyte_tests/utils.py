@@ -1,6 +1,5 @@
-from dagster_airbyte import AirbyteState
-
 from dagster._utils.merger import deep_merge_dicts
+from dagster_airbyte import AirbyteState
 
 
 def get_sample_connection_json(**kwargs):
@@ -235,6 +234,62 @@ def get_project_connection_json(**kwargs):
                     },
                     {
                         "stream": {
+                            "name": "unknown_test",
+                            "jsonSchema": {
+                                "type": "unknown",
+                                "$schema": "http://json-schema.org/draft-07/schema#",
+                            },
+                            "supportedSyncModes": ["full_refresh", "overwrite"],
+                            "sourceDefinedCursor": True,
+                            "defaultCursorField": ["created_at"],
+                            "sourceDefinedPrimaryKey": [["id"]],
+                        },
+                        "config": {
+                            "syncMode": "incremental",
+                            "cursorField": ["created_at"],
+                            "destinationSyncMode": "append_dedup",
+                            "primaryKey": [["id"]],
+                            "aliasName": "unknown_test",
+                            "selected": True,
+                        },
+                    },
+                    {
+                        "stream": {
+                            "name": "array_test",
+                            "jsonSchema": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "required": ["name", "version"],
+                                    "properties": {
+                                        "name": {"type": "string"},
+                                        "version": {"type": "string"},
+                                        "author": {
+                                            "type": ["null", "object"],
+                                            "properties": {
+                                                "id": {"type": ["null", "integer"]},
+                                            },
+                                        },
+                                    },
+                                },
+                                "$schema": "http://json-schema.org/draft-07/schema#",
+                            },
+                            "supportedSyncModes": ["full_refresh", "overwrite"],
+                            "sourceDefinedCursor": True,
+                            "defaultCursorField": ["created_at"],
+                            "sourceDefinedPrimaryKey": [["id"]],
+                        },
+                        "config": {
+                            "syncMode": "incremental",
+                            "cursorField": ["created_at"],
+                            "destinationSyncMode": "append_dedup",
+                            "primaryKey": [["id"]],
+                            "aliasName": "array_test",
+                            "selected": True,
+                        },
+                    },
+                    {
+                        "stream": {
                             "name": "tags",
                             "jsonSchema": {
                                 "type": "object",
@@ -339,6 +394,14 @@ def get_project_job_json():
                         },
                         {
                             "streamName": "dagster_releases",
+                            "stats": {
+                                "recordsEmitted": 119,
+                                "bytesEmitted": 620910,
+                                "recordsCommitted": 119,
+                            },
+                        },
+                        {
+                            "streamName": "dagster_array_test",
                             "stats": {
                                 "recordsEmitted": 119,
                                 "bytesEmitted": 620910,
@@ -481,6 +544,62 @@ def get_instance_connections_json():
                                 "destinationSyncMode": "append_dedup",
                                 "primaryKey": [["id"]],
                                 "aliasName": "releases",
+                                "selected": True,
+                            },
+                        },
+                        {
+                            "stream": {
+                                "name": "unknown_test",
+                                "jsonSchema": {
+                                    "type": "unknown",
+                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                },
+                                "supportedSyncModes": ["full_refresh", "overwrite"],
+                                "sourceDefinedCursor": True,
+                                "defaultCursorField": ["created_at"],
+                                "sourceDefinedPrimaryKey": [["id"]],
+                            },
+                            "config": {
+                                "syncMode": "incremental",
+                                "cursorField": ["created_at"],
+                                "destinationSyncMode": "append_dedup",
+                                "primaryKey": [["id"]],
+                                "aliasName": "unknown_test",
+                                "selected": True,
+                            },
+                        },
+                        {
+                            "stream": {
+                                "name": "array_test",
+                                "jsonSchema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": ["name", "version"],
+                                        "properties": {
+                                            "name": {"type": "string"},
+                                            "version": {"type": "string"},
+                                            "author": {
+                                                "type": ["null", "object"],
+                                                "properties": {
+                                                    "id": {"type": ["null", "integer"]},
+                                                },
+                                            },
+                                        },
+                                    },
+                                    "$schema": "http://json-schema.org/draft-07/schema#",
+                                },
+                                "supportedSyncModes": ["full_refresh", "overwrite"],
+                                "sourceDefinedCursor": True,
+                                "defaultCursorField": ["created_at"],
+                                "sourceDefinedPrimaryKey": [["id"]],
+                            },
+                            "config": {
+                                "syncMode": "incremental",
+                                "cursorField": ["created_at"],
+                                "destinationSyncMode": "append_dedup",
+                                "primaryKey": [["id"]],
+                                "aliasName": "array_test",
                                 "selected": True,
                             },
                         },

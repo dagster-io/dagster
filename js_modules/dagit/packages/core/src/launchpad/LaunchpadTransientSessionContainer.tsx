@@ -10,8 +10,10 @@ import {RepoAddress} from '../workspace/types';
 
 import {LaunchpadType} from './LaunchpadRoot';
 import LaunchpadSession from './LaunchpadSession';
-import {LaunchpadSessionPartitionSetsFragment} from './types/LaunchpadSessionPartitionSetsFragment';
-import {LaunchpadSessionPipelineFragment} from './types/LaunchpadSessionPipelineFragment';
+import {
+  LaunchpadSessionPartitionSetsFragment,
+  LaunchpadSessionPipelineFragment,
+} from './types/LaunchpadRoot.types';
 
 interface Props {
   launchpadType: LaunchpadType;

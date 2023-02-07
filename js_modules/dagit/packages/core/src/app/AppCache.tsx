@@ -7,6 +7,11 @@ export const createAppCache = () =>
   new InMemoryCache({
     addTypename: true,
     possibleTypes,
+    typePolicies: {
+      PartitionStatus: {
+        keyFields: false,
+      },
+    },
     dataIdFromObject: (object: any) => {
       if (
         object.name &&
@@ -17,6 +22,8 @@ export const createAppCache = () =>
         return 'Instance';
       } else if (object.__typename === 'Workspace') {
         return 'Workspace';
+      } else if (object.__typename === 'PartitionBackfill') {
+        return object.backfillId;
       } else {
         return defaultDataIdFromObject(object);
       }

@@ -1,4 +1,4 @@
-import {RunStatus} from '../types/globalTypes';
+import {RunStatus} from '../graphql/types';
 
 export const queuedStatuses = new Set([RunStatus.QUEUED]);
 

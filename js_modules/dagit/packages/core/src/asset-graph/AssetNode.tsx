@@ -1,32 +1,28 @@
 import {gql} from '@apollo/client';
-import {Colors, Icon, FontFamily, Box, CaptionMono, Caption, Spinner} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily, Box, Caption, Spinner} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
 import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag';
 import {isAssetStale} from '../assets/StaleTag';
-import {OpTags} from '../graph/OpTags';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {AssetComputeKindTag} from '../graph/OpTags';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
 import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_NAME_MAX_LENGTH} from './layout';
-import {AssetNodeFragment} from './types/AssetNodeFragment';
+import {AssetNodeFragment} from './types/AssetNode.types';
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
   selected: boolean;
 }> = React.memo(({definition, selected, liveData}) => {
-  const firstOp = definition.opNames.length ? definition.opNames[0] : null;
-
-  // Used for linking to the run with this step highlighted. We only support highlighting
-  // a single step, so just use the first one.
-  const stepKey = firstOp || '';
-
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1];
   const isSource = definition.isSource;
 
@@ -57,41 +53,29 @@ export const AssetNode: React.FC<{
               <StatsRow>
                 <span>Observed</span>
                 {liveData?.lastObservation ? (
-                  <CaptionMono style={{textAlign: 'right'}}>
+                  <Caption style={{textAlign: 'right'}}>
                     <AssetRunLink
                       runId={liveData.lastObservation.runId}
-                      event={{stepKey, timestamp: liveData.lastObservation.timestamp}}
+                      event={{
+                        stepKey: getStepKey(definition),
+                        timestamp: liveData.lastObservation.timestamp,
+                      }}
                     >
                       <TimestampDisplay
                         timestamp={Number(liveData.lastObservation.timestamp) / 1000}
                         timeFormat={{showSeconds: false, showTimezone: false}}
                       />
                     </AssetRunLink>
-                  </CaptionMono>
+                  </Caption>
                 ) : (
                   <span>–</span>
                 )}
               </StatsRow>
             </Stats>
           ) : isSource ? null : (
-            <AssetNodeStatusRow definition={definition} liveData={liveData} stepKey={stepKey} />
+            <AssetNodeStatusRow definition={definition} liveData={liveData} />
           )}
-          {definition.computeKind && (
-            <OpTags
-              minified={false}
-              style={{right: -2, paddingTop: 7}}
-              tags={[
-                {
-                  label: definition.computeKind,
-                  onClick: () => {
-                    window.requestAnimationFrame(() =>
-                      document.dispatchEvent(new Event('show-kind-info')),
-                    );
-                  },
-                },
-              ]}
-            />
-          )}
+          <AssetComputeKindTag definition={definition} style={{right: -2, paddingTop: 7}} />
         </AssetNodeBox>
       </AssetNodeContainer>
     </AssetInsetForHoverEffect>
@@ -105,7 +89,7 @@ export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, 
       borderBottomLeftRadius: 6,
       borderBottomRightRadius: 6,
       whiteSpace: 'nowrap',
-      lineHeight: 12,
+      lineHeight: '12px',
       height: 24,
     }}
     flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
@@ -115,24 +99,51 @@ export const AssetNodeStatusBox: React.FC<{background: string}> = ({background, 
   </Box>
 );
 
-export const AssetNodeStatusRow: React.FC<{
+interface StatusRowProps {
   definition: AssetNodeFragment;
   liveData: LiveDataForNode | undefined;
-  stepKey: string;
-}> = ({definition, liveData, stepKey}) => {
+}
+
+export const AssetNodeStatusRow: React.FC<StatusRowProps> = (props) => {
+  const info = buildAssetNodeStatusRow(props);
+  return <AssetNodeStatusBox background={info.background}>{info.content}</AssetNodeStatusBox>;
+};
+
+function getStepKey(definition: AssetNodeFragment) {
+  // Used for linking to the run with this step highlighted. We only support highlighting
+  // a single step, so just use the first one.
+  const firstOp = definition.opNames.length ? definition.opNames[0] : null;
+  return firstOp || '';
+}
+
+export function buildAssetNodeStatusRow({
+  definition,
+  liveData,
+}: {
+  definition: AssetNodeFragment;
+  liveData: LiveDataForNode | undefined;
+}) {
   if (definition.isSource) {
-    return <span />;
+    return {
+      background: Colors.Gray100,
+      border: Colors.Gray300,
+      content: <span />,
+    };
   }
 
   if (!liveData) {
-    return (
-      <AssetNodeStatusBox background={Colors.Gray100}>
-        <Spinner purpose="caption-text" />
-        <Caption style={{flex: 1}} color={Colors.Gray800}>
-          Loading...
-        </Caption>
-      </AssetNodeStatusBox>
-    );
+    return {
+      background: Colors.Gray100,
+      border: Colors.Gray300,
+      content: (
+        <>
+          <Spinner purpose="caption-text" />
+          <Caption style={{flex: 1}} color={Colors.Gray800}>
+            Loading...
+          </Caption>
+        </>
+      ),
+    };
   }
 
   const {
@@ -146,68 +157,124 @@ export const AssetNodeStatusRow: React.FC<{
   const late = isAssetLate(liveData);
 
   if (materializingRunId) {
-    return (
-      <AssetNodeStatusBox background={Colors.Blue50}>
-        <AssetLatestRunSpinner liveData={liveData} />
-        <Caption style={{flex: 1}} color={Colors.Gray800}>
-          Materializing...
-        </Caption>
-        <AssetRunLink runId={materializingRunId} />
-      </AssetNodeStatusBox>
-    );
+    return {
+      background: Colors.Blue50,
+      border: Colors.Blue500,
+      content: (
+        <>
+          <AssetLatestRunSpinner liveData={liveData} />
+          <Caption style={{flex: 1}} color={Colors.Gray800}>
+            Materializing...
+          </Caption>
+          <AssetRunLink runId={materializingRunId} />
+        </>
+      ),
+    };
+  }
+
+  if (liveData.partitionStats) {
+    const {numPartitions, numMaterialized} = liveData.partitionStats;
+    const numMissing = numPartitions - numMaterialized;
+    return {
+      background: late ? Colors.Red50 : numMissing ? Colors.Yellow50 : Colors.Green50,
+      border: late ? Colors.Red500 : numMissing ? Colors.Yellow500 : Colors.Green500,
+      content: (
+        <>
+          <Caption color={late ? Colors.Red700 : numMissing ? Colors.Yellow700 : Colors.Green700}>
+            {`${numPartitions.toLocaleString()} partitions`}
+          </Caption>
+          <Caption>
+            <Link
+              to={assetDetailsPathForKey(definition.assetKey, {view: 'partitions'})}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {late
+                ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
+                : `${numMissing.toLocaleString()} missing`}
+            </Link>
+          </Caption>
+        </>
+      ),
+    };
   }
 
   const lastMaterializationLink = lastMaterialization ? (
-    <AssetRunLink
-      runId={lastMaterialization.runId}
-      event={{stepKey, timestamp: lastMaterialization.timestamp}}
-    >
-      <TimestampDisplay
-        timestamp={Number(lastMaterialization.timestamp) / 1000}
-        timeFormat={{showSeconds: false, showTimezone: false}}
-      />
-    </AssetRunLink>
+    <Caption>
+      <AssetRunLink
+        runId={lastMaterialization.runId}
+        event={{stepKey: getStepKey(definition), timestamp: lastMaterialization.timestamp}}
+      >
+        <TimestampDisplay
+          timestamp={Number(lastMaterialization.timestamp) / 1000}
+          timeFormat={{showSeconds: false, showTimezone: false}}
+        />
+      </AssetRunLink>
+    </Caption>
   ) : undefined;
 
   if (runWhichFailedToMaterialize || late) {
-    return (
-      <AssetNodeStatusBox background={Colors.Red50}>
-        <Caption color={Colors.Red700}>
-          {runWhichFailedToMaterialize && late
-            ? `Failed (Late)`
-            : late
-            ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
-            : 'Failed'}
-        </Caption>
-        {lastMaterializationLink}
-      </AssetNodeStatusBox>
-    );
+    return {
+      background: Colors.Red50,
+      border: Colors.Red500,
+      content: (
+        <>
+          <Caption color={Colors.Red700}>
+            {runWhichFailedToMaterialize && late
+              ? `Failed (Late)`
+              : late
+              ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
+              : 'Failed'}
+          </Caption>
+
+          {runWhichFailedToMaterialize ? (
+            <Caption>
+              <AssetRunLink runId={runWhichFailedToMaterialize.id}>
+                <TimestampDisplay
+                  timestamp={Number(runWhichFailedToMaterialize.endTime)}
+                  timeFormat={{showSeconds: false, showTimezone: false}}
+                />
+              </AssetRunLink>
+            </Caption>
+          ) : (
+            lastMaterializationLink
+          )}
+        </>
+      ),
+    };
   }
 
   if (!lastMaterialization) {
-    return (
-      <AssetNodeStatusBox background={Colors.Yellow50}>
-        <Caption color={Colors.Yellow700}>Never materialized</Caption>
-      </AssetNodeStatusBox>
-    );
+    return {
+      background: Colors.Yellow50,
+      border: Colors.Yellow500,
+      content: <Caption color={Colors.Yellow700}>Never materialized</Caption>,
+    };
   }
 
-  if (isAssetStale(liveData)) {
-    return (
-      <AssetNodeStatusBox background={Colors.Yellow50}>
-        <Caption color={Colors.Yellow700}>Stale</Caption>
+  if (!liveData.freshnessPolicy && isAssetStale(liveData)) {
+    return {
+      background: Colors.Yellow50,
+      border: Colors.Yellow500,
+      content: (
+        <>
+          <Caption color={Colors.Yellow700}>Stale</Caption>
+          {lastMaterializationLink}
+        </>
+      ),
+    };
+  }
+  return {
+    background: Colors.Green50,
+    border: Colors.Green500,
+    content: (
+      <>
+        <Caption color={Colors.Green700}>Materialized</Caption>
         {lastMaterializationLink}
-      </AssetNodeStatusBox>
-    );
-  }
-
-  return (
-    <AssetNodeStatusBox background={Colors.Green50}>
-      <Caption color={Colors.Green700}>Materialized</Caption>
-      {lastMaterializationLink}
-    </AssetNodeStatusBox>
-  );
-};
+      </>
+    ),
+  };
+}
 
 export const AssetNodeMinimal: React.FC<{
   selected: boolean;
@@ -215,8 +282,8 @@ export const AssetNodeMinimal: React.FC<{
   definition: AssetNodeFragment;
 }> = ({selected, definition, liveData}) => {
   const {isSource, assetKey} = definition;
+  const {border, background} = buildAssetNodeStatusRow({definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1];
-  const materializingRunId = liveData?.inProgressRunIds?.[0] || liveData?.unstartedRunIds?.[0];
 
   return (
     <AssetInsetForHoverEffect>
@@ -224,35 +291,15 @@ export const AssetNodeMinimal: React.FC<{
         <MinimalAssetNodeBox
           $selected={selected}
           $isSource={isSource}
-          $background={
-            !liveData || definition.isSource
-              ? Colors.Gray100
-              : materializingRunId
-              ? Colors.Blue50
-              : liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
-              ? Colors.Red50
-              : !liveData?.lastMaterialization || isAssetStale(liveData)
-              ? Colors.Yellow50
-              : Colors.Green50
-          }
-          $border={
-            !liveData || definition.isSource
-              ? Colors.Gray300
-              : materializingRunId
-              ? Colors.Blue500
-              : liveData?.runWhichFailedToMaterialize || isAssetLate(liveData)
-              ? Colors.Red500
-              : !liveData?.lastMaterialization || isAssetStale(liveData)
-              ? Colors.Yellow500
-              : Colors.Green500
-          }
+          $background={background}
+          $border={border}
         >
           <div style={{position: 'absolute', bottom: 6, left: 6}}>
             <AssetLatestRunSpinner liveData={liveData} purpose="section" />
           </div>
 
           <MinimalName style={{fontSize: 30}} $isSource={isSource}>
-            {withMiddleTruncation(displayName, {maxLength: 17})}
+            {withMiddleTruncation(displayName, {maxLength: 14})}
           </MinimalName>
         </MinimalAssetNodeBox>
       </MinimalAssetNodeContainer>
@@ -271,22 +318,42 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
       path
     }
     assetMaterializations(limit: 1) {
-      timestamp
-      runId
+      ...AssetNodeLiveMaterialization
     }
     freshnessPolicy {
-      maximumLagMinutes
-      cronSchedule
+      ...AssetNodeLiveFreshnessPolicy
     }
     freshnessInfo {
-      currentMinutesLate
+      ...AssetNodeLiveFreshnessInfo
     }
     assetObservations(limit: 1) {
-      timestamp
-      runId
+      ...AssetNodeLiveObservation
     }
     currentLogicalVersion
     projectedLogicalVersion
+    partitionStats {
+      numMaterialized
+      numPartitions
+    }
+  }
+
+  fragment AssetNodeLiveFreshnessPolicy on FreshnessPolicy {
+    maximumLagMinutes
+    cronSchedule
+  }
+
+  fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {
+    currentMinutesLate
+  }
+
+  fragment AssetNodeLiveMaterialization on MaterializationEvent {
+    timestamp
+    runId
+  }
+
+  fragment AssetNodeLiveObservation on ObservationEvent {
+    timestamp
+    runId
   }
 `;
 
@@ -307,8 +374,12 @@ export const ASSET_NODE_FRAGMENT = gql`
     isObservable
     isSource
     assetKey {
-      path
+      ...AssetNodeKey
     }
+  }
+
+  fragment AssetNodeKey on AssetKey {
+    path
   }
 `;
 
@@ -318,6 +389,8 @@ const AssetInsetForHoverEffect = styled.div`
 `;
 
 export const AssetNodeContainer = styled.div<{$selected: boolean}>`
+  user-select: none;
+  cursor: default;
   padding: 4px;
 `;
 

@@ -12,11 +12,9 @@ else:
     from airflow.utils.helpers import chain
 # pylint: enable=no-name-in-module,import-error
 
-from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
-from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
-
 from dagster._core.snap import PipelineSnapshot
 from dagster._serdes import serialize_pp
+from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 
 default_args = {
     "owner": "dagster",
@@ -37,7 +35,7 @@ def test_one_task_dag(snapshot):
             default_args=default_args,
             schedule_interval=None,
         )
-    dummy_operator = DummyOperator(
+    _dummy_operator = DummyOperator(
         task_id="dummy_operator",
         dag=dag,
     )
@@ -45,7 +43,7 @@ def test_one_task_dag(snapshot):
     snapshot.assert_match(
         serialize_pp(
             PipelineSnapshot.from_pipeline_def(
-                make_dagster_pipeline_from_airflow_dag(dag=dag)
+                make_dagster_job_from_airflow_dag(dag=dag)
             ).dep_structure_snapshot
         )
     )
@@ -64,11 +62,11 @@ def test_two_task_dag_no_dep(snapshot):
             default_args=default_args,
             schedule_interval=None,
         )
-    dummy_operator_1 = DummyOperator(
+    _dummy_operator_1 = DummyOperator(
         task_id="dummy_operator_1",
         dag=dag,
     )
-    dummy_operator_2 = DummyOperator(
+    _dummy_operator_2 = DummyOperator(
         task_id="dummy_operator_2",
         dag=dag,
     )
@@ -76,7 +74,7 @@ def test_two_task_dag_no_dep(snapshot):
     snapshot.assert_match(
         serialize_pp(
             PipelineSnapshot.from_pipeline_def(
-                make_dagster_pipeline_from_airflow_dag(dag=dag)
+                make_dagster_job_from_airflow_dag(dag=dag)
             ).dep_structure_snapshot
         )
     )
@@ -109,7 +107,7 @@ def test_two_task_dag_with_dep(snapshot):
     snapshot.assert_match(
         serialize_pp(
             PipelineSnapshot.from_pipeline_def(
-                make_dagster_pipeline_from_airflow_dag(dag=dag)
+                make_dagster_job_from_airflow_dag(dag=dag)
             ).dep_structure_snapshot
         )
     )
@@ -152,7 +150,7 @@ def test_diamond_task_dag(snapshot):
     snapshot.assert_match(
         serialize_pp(
             PipelineSnapshot.from_pipeline_def(
-                make_dagster_pipeline_from_airflow_dag(dag=dag)
+                make_dagster_job_from_airflow_dag(dag=dag)
             ).dep_structure_snapshot
         )
     )
@@ -195,7 +193,7 @@ def test_multi_root_dag(snapshot):
     snapshot.assert_match(
         serialize_pp(
             PipelineSnapshot.from_pipeline_def(
-                make_dagster_pipeline_from_airflow_dag(dag=dag)
+                make_dagster_job_from_airflow_dag(dag=dag)
             ).dep_structure_snapshot
         )
     )
@@ -237,7 +235,7 @@ def test_multi_leaf_dag(snapshot):
     snapshot.assert_match(
         serialize_pp(
             PipelineSnapshot.from_pipeline_def(
-                make_dagster_pipeline_from_airflow_dag(dag=dag)
+                make_dagster_job_from_airflow_dag(dag=dag)
             ).dep_structure_snapshot
         )
     )
@@ -493,7 +491,7 @@ def test_complex_dag(snapshot):
     snapshot.assert_match(
         serialize_pp(
             PipelineSnapshot.from_pipeline_def(
-                make_dagster_pipeline_from_airflow_dag(dag=dag)
+                make_dagster_job_from_airflow_dag(dag=dag)
             ).dep_structure_snapshot
         )
     )
@@ -512,17 +510,17 @@ def test_one_task_dag_to_job():
             default_args=default_args,
             schedule_interval=None,
         )
-    dummy_operator = DummyOperator(
+    _dummy_operator = DummyOperator(
         task_id="dummy_operator",
         dag=dag,
     )
     job_def = make_dagster_job_from_airflow_dag(dag=dag)
 
-    assert job_def.name == "airflow_dag_with_dot_dash"
+    assert job_def.name == "dag_with_dot_dash"
     assert len([job_def.solids]) == 1
     result = job_def.execute_in_process()
 
     assert result.success
     step_success_events = [evt for evt in result.all_node_events if evt.is_step_success]
     assert len(step_success_events) == 1
-    assert step_success_events[0].step_key == "airflow_dummy_operator"
+    assert step_success_events[0].step_key == "dag_with_dot_dash__dummy_operator"

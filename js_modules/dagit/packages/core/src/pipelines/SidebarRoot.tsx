@@ -1,4 +1,4 @@
-import {Box, Colors, Tabs} from '@dagster-io/ui';
+import {Box, Colors, Tabs, ErrorBoundary} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
@@ -11,7 +11,7 @@ import {RightInfoPanelContent} from './GraphExplorer';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarContainerOverview} from './SidebarContainerOverview';
 import {SidebarOp} from './SidebarOp';
-import {SidebarRootContainerFragment} from './types/SidebarRootContainerFragment';
+import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
 
 type TabKey = 'types' | 'info';
 
@@ -111,7 +111,9 @@ export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
         </Tabs>
       </Box>
       <RightInfoPanelContent>
-        {TabDefinitions.find((t) => t.key === activeTab)?.content()}
+        <ErrorBoundary region="tab" resetErrorOnChange={[activeTab, explorerPath]}>
+          {TabDefinitions.find((t) => t.key === activeTab)?.content()}
+        </ErrorBoundary>
       </RightInfoPanelContent>
     </>
   );

@@ -16,14 +16,10 @@ from typing import (
     Tuple,
 )
 
-from dagster_dbt.cli.types import DbtCliOutput
-from dagster_dbt.cli.utils import execute_cli
-from dagster_dbt.types import DbtOutput
-from dagster_dbt.utils import _get_input_name, _get_output_name, result_to_events
-
 from dagster import (
     AssetKey,
     AssetsDefinition,
+    FreshnessPolicy,
     In,
     MetadataValue,
     Nothing,
@@ -31,15 +27,24 @@ from dagster import (
     PartitionsDefinition,
     TableColumn,
     TableSchema,
+    _check as check,
+    get_dagster_logger,
+    op,
 )
-from dagster import _check as check
-from dagster import get_dagster_logger, op
+from dagster._config.field import Field
+from dagster._config.field_utils import Permissive
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
+from dagster._utils.merger import deep_merge_dicts
+
+from dagster_dbt.cli.types import DbtCliOutput
+from dagster_dbt.cli.utils import execute_cli
+from dagster_dbt.types import DbtOutput
+from dagster_dbt.utils import _get_input_name, _get_output_name, result_to_events
 
 
 def _load_manifest_for_project(
@@ -90,7 +95,7 @@ def _select_unique_ids_from_manifest_json(
         ) from e
 
     class _DictShim(dict):
-        """Shim to enable hydrating a dictionary into a dot-accessible object"""
+        """Shim to enable hydrating a dictionary into a dot-accessible object."""
 
         def __getattr__(self, item):
             ret = super().get(item)
@@ -149,7 +154,7 @@ def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
 
 
 def _get_node_group_name(node_info: Mapping[str, Any]) -> Optional[str]:
-    """A node's group name is subdirectory that it resides in"""
+    """A node's group name is subdirectory that it resides in."""
     fqn = node_info.get("fqn", [])
     # the first component is the package name, and the last component is the model name
     if len(fqn) < 3:
@@ -169,7 +174,7 @@ def _get_node_description(node_info, display_raw_sql):
 
 def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
     metadata: Dict[str, Any] = {}
-    columns = node_info.get("columns", [])
+    columns = node_info.get("columns", {})
     if len(columns) > 0:
         metadata["table_schema"] = MetadataValue.table_schema(
             TableSchema(
@@ -186,23 +191,31 @@ def _get_node_metadata(node_info: Mapping[str, Any]) -> Mapping[str, Any]:
     return metadata
 
 
+def _get_node_freshness_policy(node_info: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+    freshness_policy_config = node_info["config"].get("dagster_freshness_policy")
+    if freshness_policy_config:
+        return FreshnessPolicy(
+            maximum_lag_minutes=float(freshness_policy_config["maximum_lag_minutes"]),
+            cron_schedule=freshness_policy_config.get("cron_schedule"),
+        )
+    return None
+
+
+def _is_non_asset_node(node_info):
+    # some nodes exist inside the dbt graph but are not assets
+    resource_type = node_info["resource_type"]
+    if resource_type == "metric":
+        return True
+    if resource_type == "model" and node_info.get("config", {}).get("materialized") == "ephemeral":
+        return True
+    return False
+
+
 def _get_deps(
     dbt_nodes: Mapping[str, Any],
     selected_unique_ids: AbstractSet[str],
     asset_resource_types: List[str],
 ) -> Mapping[str, FrozenSet[str]]:
-    def _replaceable_node(node_info):
-        # some nodes exist inside the dbt graph but are not assets
-        resource_type = node_info["resource_type"]
-        if resource_type == "metric":
-            return True
-        if (
-            resource_type == "model"
-            and node_info.get("config", {}).get("materialized") == "ephemeral"
-        ):
-            return True
-        return False
-
     def _valid_parent_node(node_info):
         # sources are valid parents, but not assets
         return node_info["resource_type"] in asset_resource_types + ["source"]
@@ -213,14 +226,14 @@ def _get_deps(
         node_resource_type = node_info["resource_type"]
 
         # skip non-assets, such as metrics, tests, and ephemeral models
-        if _replaceable_node(node_info) or node_resource_type not in asset_resource_types:
+        if _is_non_asset_node(node_info) or node_resource_type not in asset_resource_types:
             continue
 
         asset_deps[unique_id] = set()
         for parent_unique_id in node_info["depends_on"]["nodes"]:
             parent_node_info = dbt_nodes[parent_unique_id]
             # for metrics or ephemeral dbt models, BFS to find valid parents
-            if _replaceable_node(parent_node_info):
+            if _is_non_asset_node(parent_node_info):
                 visited = set()
                 replaced_parent_ids = set()
                 queue = parent_node_info["depends_on"]["nodes"]
@@ -231,7 +244,7 @@ def _get_deps(
                     visited.add(candidate_parent_id)
 
                     candidate_parent_info = dbt_nodes[candidate_parent_id]
-                    if _replaceable_node(candidate_parent_info):
+                    if _is_non_asset_node(candidate_parent_info):
                         queue.extend(candidate_parent_info["depends_on"]["nodes"])
                     elif _valid_parent_node(candidate_parent_info):
                         replaced_parent_ids.add(candidate_parent_id)
@@ -249,12 +262,19 @@ def _get_deps(
 
 
 def _get_asset_deps(
-    dbt_nodes, deps, node_info_to_asset_key, node_info_to_group_fn, io_manager_key, display_raw_sql
+    dbt_nodes,
+    deps,
+    node_info_to_asset_key,
+    node_info_to_group_fn,
+    node_info_to_freshness_policy_fn,
+    io_manager_key,
+    display_raw_sql,
 ) -> Tuple[
     Dict[AssetKey, Set[AssetKey]],
     Dict[AssetKey, Tuple[str, In]],
     Dict[AssetKey, Tuple[str, Out]],
     Dict[AssetKey, str],
+    Dict[AssetKey, FreshnessPolicy],
     Dict[str, List[str]],
     Dict[str, Dict[str, Any]],
 ]:
@@ -265,6 +285,7 @@ def _get_asset_deps(
     # These dicts could be refactored as a single dict, mapping from output name to arbitrary
     # metadata that we need to store for reference.
     group_names_by_key: Dict[AssetKey, str] = {}
+    freshness_policies_by_key: Dict[AssetKey, FreshnessPolicy] = {}
     fqns_by_output_name: Dict[str, List[str]] = {}
     metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
 
@@ -300,6 +321,10 @@ def _get_asset_deps(
         if group_name is not None:
             group_names_by_key[asset_key] = group_name
 
+        freshness_policy = node_info_to_freshness_policy_fn(node_info)
+        if freshness_policy is not None:
+            freshness_policies_by_key[asset_key] = freshness_policy
+
         for parent_unique_id in parent_unique_ids:
             parent_node_info = dbt_nodes[parent_unique_id]
             parent_asset_key = node_info_to_asset_key(parent_node_info)
@@ -316,6 +341,7 @@ def _get_asset_deps(
         asset_ins,
         asset_outs,
         group_names_by_key,
+        freshness_policies_by_key,
         fqns_by_output_name,
         metadata_by_output_name,
     )
@@ -329,6 +355,7 @@ def _get_dbt_op(
     exclude: str,
     use_build_command: bool,
     fqns_by_output_name: Mapping[str, List[str]],
+    dbt_resource_key: str,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
     runtime_metadata_fn: Optional[
@@ -340,13 +367,31 @@ def _get_dbt_op(
         tags={"kind": "dbt"},
         ins=ins,
         out=outs,
-        required_resource_keys={"dbt"},
+        required_resource_keys={dbt_resource_key},
+        config_schema=Field(
+            Permissive(
+                {
+                    "select": Field(str, is_required=False),
+                    "exclude": Field(str, is_required=False),
+                    "vars": Field(dict, is_required=False),
+                    "full_refresh": Field(bool, is_required=False),
+                }
+            ),
+            default_value={},
+            description=(
+                "Keyword arguments to pass to the underlying dbt command. Additional arguments not"
+                " listed in the schema will be passed through as well, e.g. {'bool_flag': True,"
+                " 'string_flag': 'hi'} will result in the flags '--bool-flag --string-flag hi'"
+                " being passed into the underlying execution"
+            ),
+        ),
     )
     def _dbt_op(context):
         dbt_output = None
 
+        dbt_resource = getattr(context.resources, dbt_resource_key)
         # clean up any run results from the last run
-        context.resources.dbt.remove_run_results_json()
+        dbt_resource.remove_run_results_json()
 
         # in the case that we're running everything, opt for the cleaner selection string
         if len(context.selected_output_names) == len(outs):
@@ -366,17 +411,20 @@ def _get_dbt_op(
             if partition_key_to_vars_fn:
                 kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
 
+            # merge in any additional kwargs from the config
+            kwargs = deep_merge_dicts(kwargs, context.op_config)
+
             if use_build_command:
-                dbt_output = context.resources.dbt.build(**kwargs)
+                dbt_output = dbt_resource.build(**kwargs)
             else:
-                dbt_output = context.resources.dbt.run(**kwargs)
+                dbt_output = dbt_resource.run(**kwargs)
         finally:
             # in the case that the project only partially runs successfully, still attempt to generate
             # events for the parts that were successful
             if dbt_output is None:
-                dbt_output = DbtOutput(result=context.resources.dbt.get_run_results_json())
+                dbt_output = DbtOutput(result=dbt_resource.get_run_results_json())
 
-            manifest_json = context.resources.dbt.get_manifest_json()
+            manifest_json = dbt_resource.get_manifest_json()
 
             for result in dbt_output.result["results"]:
                 if runtime_metadata_fn:
@@ -402,6 +450,7 @@ def _dbt_nodes_to_assets(
     exclude: str,
     selected_unique_ids: AbstractSet[str],
     project_id: str,
+    dbt_resource_key: str,
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ] = None,
@@ -411,6 +460,9 @@ def _dbt_nodes_to_assets(
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_freshness_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[FreshnessPolicy]
+    ] = _get_node_freshness_policy,
     display_raw_sql: bool = True,
 ) -> AssetsDefinition:
     if use_build_command:
@@ -422,11 +474,20 @@ def _dbt_nodes_to_assets(
     else:
         deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
 
-    asset_deps, asset_ins, asset_outs, group_names_by_key, fqns_by_output_name, _ = _get_asset_deps(
+    (
+        asset_deps,
+        asset_ins,
+        asset_outs,
+        group_names_by_key,
+        freshness_policies_by_key,
+        fqns_by_output_name,
+        _,
+    ) = _get_asset_deps(
         dbt_nodes=dbt_nodes,
         deps=deps,
         node_info_to_asset_key=node_info_to_asset_key,
         node_info_to_group_fn=node_info_to_group_fn,
+        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         io_manager_key=io_manager_key,
         display_raw_sql=display_raw_sql,
     )
@@ -444,6 +505,7 @@ def _dbt_nodes_to_assets(
         exclude=exclude,
         use_build_command=use_build_command,
         fqns_by_output_name=fqns_by_output_name,
+        dbt_resource_key=dbt_resource_key,
         node_info_to_asset_key=node_info_to_asset_key,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         runtime_metadata_fn=runtime_metadata_fn,
@@ -460,6 +522,7 @@ def _dbt_nodes_to_assets(
         can_subset=True,
         asset_deps=asset_deps,
         group_names_by_key=group_names_by_key,
+        freshness_policies_by_key=freshness_policies_by_key,
         partitions_def=partitions_def,
     )
 
@@ -481,7 +544,11 @@ def load_assets_from_dbt_project(
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_freshness_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[FreshnessPolicy]
+    ] = _get_node_freshness_policy,
     display_raw_sql: Optional[bool] = None,
+    dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models from a dbt project into Dagster assets.
@@ -501,6 +568,7 @@ def load_assets_from_dbt_project(
             to exclude. Defaults to "".
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
             project. Does not apply to sources.
+        dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
         source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
             dbt project. Does not apply to models.
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
@@ -522,6 +590,13 @@ def load_assets_from_dbt_project(
             invocation (e.g. {"run_date": "2022-01-01"})
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
+        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]): A function
+            that takes a dictionary of dbt node info and optionally returns a FreshnessPolicy that
+            should be applied to this node. By default, freshness policies will be created from
+            config applied to dbt models, i.e.:
+            `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
+            will result in that model being assigned
+            `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
@@ -555,7 +630,9 @@ def load_assets_from_dbt_project(
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
+        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         display_raw_sql=display_raw_sql,
+        dbt_resource_key=dbt_resource_key,
     )
 
 
@@ -575,7 +652,11 @@ def load_assets_from_dbt_manifest(
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
     node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_freshness_policy_fn: Callable[
+        [Mapping[str, Any]], Optional[FreshnessPolicy]
+    ] = _get_node_freshness_policy,
     display_raw_sql: Optional[bool] = None,
+    dbt_resource_key: str = "dbt",
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -594,6 +675,7 @@ def load_assets_from_dbt_manifest(
             project. Does not apply to sources.
         source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
             dbt project. Does not apply to models.
+        dbt_resource_key (Optional[str]): The resource key that the dbt resource will be specified at. Defaults to "dbt".
         runtime_metadata_fn: (Optional[Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]]):
             A function that will be run after any of the assets are materialized and returns
             metadata entries for the asset, to be displayed in the asset catalog for that run.
@@ -614,6 +696,13 @@ def load_assets_from_dbt_manifest(
             invocation (e.g. {"run_date": "2022-01-01"})
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
+        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]): A function
+            that takes a dictionary of dbt node info and optionally returns a FreshnessPolicy that
+            should be applied to this node. By default, freshness policies will be created from
+            config applied to dbt models, i.e.:
+            `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
+            will result in that model being assigned
+            `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
@@ -630,8 +719,14 @@ def load_assets_from_dbt_manifest(
     if display_raw_sql is not None:
         experimental_arg_warning("display_raw_sql", "load_assets_from_dbt_manifest")
     display_raw_sql = check.opt_bool_param(display_raw_sql, "display_raw_sql", default=True)
+    dbt_resource_key = check.str_param(dbt_resource_key, "dbt_resource_key")
 
-    dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"], **manifest_json["metrics"]}
+    dbt_nodes = {
+        **manifest_json["nodes"],
+        **manifest_json["sources"],
+        **manifest_json["metrics"],
+        **manifest_json["exposures"],
+    }
 
     if selected_unique_ids:
         select = (
@@ -653,12 +748,14 @@ def load_assets_from_dbt_manifest(
         select=select,
         exclude=exclude,
         selected_unique_ids=selected_unique_ids,
+        dbt_resource_key=dbt_resource_key,
         project_id=manifest_json["metadata"]["project_id"][:5],
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         node_info_to_group_fn=node_info_to_group_fn,
+        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         display_raw_sql=display_raw_sql,
     )
     dbt_assets: Sequence[AssetsDefinition]

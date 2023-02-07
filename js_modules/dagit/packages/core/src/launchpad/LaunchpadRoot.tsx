@@ -4,8 +4,8 @@ import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {usePermissions} from '../app/Permissions';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
@@ -19,7 +19,7 @@ import {
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
 import {LaunchpadTransientSessionContainer} from './LaunchpadTransientSessionContainer';
-import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadRootQuery';
+import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/LaunchpadRoot.types';
 
 const LaunchpadStoredSessionsContainer = React.lazy(
   () => import('./LaunchpadStoredSessionsContainer'),
@@ -63,7 +63,7 @@ export const AssetLaunchpad: React.FC<{
 export const JobLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
 
   if (!canLaunchPipelineExecution.enabled) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
@@ -108,7 +108,6 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
     PIPELINE_EXECUTION_ROOT_QUERY,
     {
       variables: {repositoryName, repositoryLocationName, pipelineName},
-      fetchPolicy: 'cache-and-network',
       partialRefetch: true,
     },
   );
@@ -192,28 +191,6 @@ const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
   }
 };
 
-const EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT = gql`
-  fragment LaunchpadSessionPipelineFragment on Pipeline {
-    id
-    isJob
-    isAssetJob
-    ...ConfigEditorGeneratorPipelineFragment
-    modes {
-      id
-      name
-      description
-    }
-  }
-  ${CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT}
-`;
-
-const EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT = gql`
-  fragment LaunchpadSessionPartitionSetsFragment on PartitionSets {
-    ...ConfigEditorGeneratorPartitionSetsFragment
-  }
-  ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
-`;
-
 const PIPELINE_EXECUTION_ROOT_QUERY = gql`
   query LaunchpadRootQuery(
     $pipelineName: String!
@@ -230,11 +207,11 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ...PythonErrorFragment
       ... on Pipeline {
         id
         ...LaunchpadSessionPipelineFragment
       }
+      ...PythonErrorFragment
     }
     partitionSetsOrError(
       pipelineName: $pipelineName
@@ -244,15 +221,31 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       }
     ) {
       __typename
-      ...LaunchpadSessionPartitionSetsFragment
       ... on PipelineNotFoundError {
         message
       }
+      ...LaunchpadSessionPartitionSetsFragment
       ...PythonErrorFragment
     }
   }
 
-  ${EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT}
-  ${EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT}
+  fragment LaunchpadSessionPartitionSetsFragment on PartitionSets {
+    ...ConfigEditorGeneratorPartitionSetsFragment
+  }
+
+  fragment LaunchpadSessionPipelineFragment on Pipeline {
+    id
+    isJob
+    isAssetJob
+    ...ConfigEditorGeneratorPipelineFragment
+    modes {
+      id
+      name
+      description
+    }
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
+  ${CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT}
+  ${CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT}
 `;

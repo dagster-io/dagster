@@ -1,6 +1,5 @@
-from datadog import DogStatsd, initialize, statsd
-
 from dagster import Field, StringSource, resource
+from datadog import DogStatsd, initialize, statsd
 
 
 class DataDogResource:
@@ -47,7 +46,6 @@ def datadog_resource(context):
     resource.
 
     Examples:
-
         .. code-block:: python
 
             @op(required_resource_keys={'datadog'})

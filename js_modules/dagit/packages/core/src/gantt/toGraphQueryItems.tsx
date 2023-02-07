@@ -1,11 +1,11 @@
 import {gql} from '@apollo/client';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {StepKind} from '../graphql/types';
 import {IStepMetadata, IStepState} from '../runs/RunMetadataProvider';
-import {StepKind} from '../types/globalTypes';
 
 import {invocationsOfPlannedDynamicStep, replacePlannedIndex} from './DynamicStepSupport';
-import {ExecutionPlanToGraphFragment} from './types/ExecutionPlanToGraphFragment';
+import {ExecutionPlanToGraphFragment} from './types/toGraphQueryItems.types';
 
 /**
  * Converts a Run execution plan into a tree of `GraphQueryItem` items that

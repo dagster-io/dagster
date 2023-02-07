@@ -2,8 +2,11 @@ import time
 from typing import cast
 
 import dagster._seven as seven
-from dagster import Bool, Field
-from dagster import _check as check
+from dagster import (
+    Bool,
+    Field,
+    _check as check,
+)
 from dagster._core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
@@ -12,7 +15,7 @@ from dagster._serdes import (
     deserialize_as,
     deserialize_json_to_dagster_namedtuple,
 )
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher
 
@@ -211,7 +214,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def dispose(self):
         # defer for perf
-        from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+        from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
         from dagster._core.host_representation.repository_location import (
             GrpcServerRepositoryLocation,
         )
@@ -221,6 +224,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         for location in self._locations_to_wait_for:
             if isinstance(location, GrpcServerRepositoryLocation) and isinstance(
-                location.grpc_server_registry, ProcessGrpcServerRegistry
+                location.grpc_server_registry, GrpcServerRegistry
             ):
                 location.grpc_server_registry.wait_for_processes()

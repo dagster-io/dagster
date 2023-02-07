@@ -51,7 +51,7 @@ def my_materialization_op(context):
 
 
 # start_partitioned_asset_materialization
-from dagster import op, AssetMaterialization
+from dagster import AssetMaterialization, op
 
 
 @op(config_schema={"date": str})
@@ -69,7 +69,7 @@ def my_partitioned_asset_op(context):
 
 
 # start_materialization_ops_marker_2
-from dagster import op, AssetMaterialization, MetadataValue
+from dagster import AssetMaterialization, MetadataValue, op
 
 
 @op
@@ -97,7 +97,7 @@ def my_metadata_materialization_op(context):
 
 
 # start_materialization_ops_marker_3
-from dagster import op, AssetKey, AssetMaterialization, job, Output
+from dagster import AssetKey, AssetMaterialization, Output, job, op
 
 
 @op

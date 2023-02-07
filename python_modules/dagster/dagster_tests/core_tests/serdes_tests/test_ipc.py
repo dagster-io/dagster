@@ -4,7 +4,6 @@ import time
 from contextlib import ExitStack
 
 import pytest
-
 from dagster._serdes.ipc import (
     interrupt_ipc_subprocess,
     interrupt_ipc_subprocess_pid,

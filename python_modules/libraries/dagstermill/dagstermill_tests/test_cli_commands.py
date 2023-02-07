@@ -8,10 +8,9 @@ import sys
 
 import pytest
 from click.testing import CliRunner
-from dagstermill.cli import create_notebook, retroactively_scaffold_notebook
-
 from dagster._check import CheckError
 from dagster._utils import file_relative_path, pushd
+from dagstermill.cli import create_notebook, retroactively_scaffold_notebook
 
 EXPECTED_IMPORT_STATEMENT = "from dagstermill.examples.repository import define_example_repository"
 

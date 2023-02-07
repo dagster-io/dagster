@@ -1,10 +1,9 @@
 import pytest
 import responses
-from dagster_airbyte import airbyte_resource, load_assets_from_airbyte_project
-from dagster_airbyte.asset_defs import AirbyteConnectionMetadata
-
 from dagster import AssetKey, build_init_resource_context, materialize, with_resources
 from dagster._utils import file_relative_path
+from dagster_airbyte import airbyte_resource, load_assets_from_airbyte_project
+from dagster_airbyte.asset_defs import AirbyteConnectionMetadata
 
 from .utils import get_project_connection_json, get_project_job_json
 
@@ -19,7 +18,6 @@ from .utils import get_project_connection_json, get_project_job_json
 def test_load_from_project(
     use_normalization_tables, connection_to_group_fn, filter_connection, connection_to_asset_key_fn
 ):
-
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
@@ -56,8 +54,20 @@ def test_load_from_project(
         assert len(ab_assets) == 0
         return
 
-    tables = {"dagster_releases", "dagster_tags", "dagster_teams"} | (
-        {"dagster_releases_assets", "dagster_releases_author", "dagster_tags_commit"}
+    tables = {
+        "dagster_releases",
+        "dagster_tags",
+        "dagster_teams",
+        "dagster_array_test",
+        "dagster_unknown_test",
+    } | (
+        {
+            "dagster_releases_assets",
+            "dagster_releases_author",
+            "dagster_tags_commit",
+            "dagster_releases_foo",
+            "dagster_array_test_author",
+        }
         if use_normalization_tables
         else set()
     )

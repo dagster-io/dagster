@@ -1,7 +1,7 @@
 import pandas as pd
 import requests
 
-from dagster import MetadataValue, Output, asset, repository
+from dagster import MetadataValue, Output, asset
 
 
 @asset
@@ -36,8 +36,3 @@ def hackernews_top_stories(hackernews_top_story_ids):
     }
 
     return Output(value=df, metadata=metadata)
-
-
-@repository
-def hello_dagster():
-    return [hackernews_top_story_ids, hackernews_top_stories]

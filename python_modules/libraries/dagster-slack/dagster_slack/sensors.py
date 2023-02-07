@@ -11,8 +11,6 @@ from typing import (
     Union,
 )
 
-from slack_sdk.web.client import WebClient
-
 from dagster import (
     AssetSelection,
     DefaultSensorStatus,
@@ -27,9 +25,14 @@ from dagster._core.definitions.run_status_sensor_definition import (
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.backcompat import deprecation_warning
+from slack_sdk.web.client import WebClient
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.selector import JobSelector, RepositorySelector
+    from dagster._core.definitions.selector import (
+        CodeLocationSelector,
+        JobSelector,
+        RepositorySelector,
+    )
 
 T = TypeVar("T", RunFailureSensorContext, FreshnessPolicySensorContext)
 
@@ -46,9 +49,15 @@ def _build_slack_blocks_and_text(
         blocks.extend(blocks_fn(context))
     else:
         if isinstance(context, RunFailureSensorContext):
-            text = f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*'
+            text = (
+                f'*Job "{context.pipeline_run.pipeline_name}" failed.'
+                f' `{context.pipeline_run.run_id.split("-")[0]}`*'
+            )
         else:
-            text = f'*Asset "{context.asset_key.to_user_string()}" is now {"on time" if context.minutes_late == 0 else f"{context.minutes_late:.2f} minutes late.*"}'
+            text = (
+                f'*Asset "{context.asset_key.to_user_string()}" is now'
+                f' {"on time" if context.minutes_late == 0 else f"{context.minutes_late:.2f} minutes late.*"}'
+            )
 
         blocks.extend(
             [
@@ -105,6 +114,7 @@ def make_slack_on_run_failure_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
@@ -116,6 +126,7 @@ def make_slack_on_run_failure_sensor(
                 UnresolvedAssetJobDefinition,
                 "RepositorySelector",
                 "JobSelector",
+                "CodeLocationSelector",
             ]
         ]
     ] = None,
@@ -142,17 +153,16 @@ def make_slack_on_run_failure_sensor(
         name: (Optional[str]): The name of the sensor. Defaults to "slack_on_run_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
             messages to include deeplinks to the failed job run.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): The jobs in the
+        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSensor]]]): The jobs in the
             current repository that will be monitored by this failure sensor. Defaults to None, which
             means the alert will be sent when any job in the repository fails. To monitor jobs in external repositories, use RepositorySelector and JobSelector
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector]]]): (deprecated in favor of monitored_jobs)
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition, RepositorySelector, JobSelector, CodeLocationSensor]]]): (deprecated in favor of monitored_jobs)
             The jobs in the current repository that will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
 
     Examples:
-
         .. code-block:: python
 
             slack_on_run_failure = make_slack_on_run_failure_sensor(
@@ -181,7 +191,6 @@ def make_slack_on_run_failure_sensor(
 
 
     """
-
     slack_client = WebClient(token=slack_token)
 
     if job_selection:
@@ -200,7 +209,10 @@ def make_slack_on_run_failure_sensor(
 
 
 def _default_freshness_message_text_fn(context: FreshnessPolicySensorContext) -> str:
-    return f"Asset `{context.asset_key.to_user_string()}` is now {context.minutes_late:.2f} minutes late."
+    return (
+        f"Asset `{context.asset_key.to_user_string()}` is now {context.minutes_late:.2f} minutes"
+        " late."
+    )
 
 
 @experimental
@@ -253,7 +265,6 @@ def make_slack_on_freshness_policy_status_change_sensor(
             status can be overridden from Dagit or via the GraphQL API.
 
     Examples:
-
         .. code-block:: python
 
             slack_on_freshness_policy = make_slack_on_freshness_policy_status_change_sensor(
@@ -279,7 +290,6 @@ def make_slack_on_freshness_policy_status_change_sensor(
 
 
     """
-
     slack_client = WebClient(token=slack_token)
 
     @freshness_policy_sensor(

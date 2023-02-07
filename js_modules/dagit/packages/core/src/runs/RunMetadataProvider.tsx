@@ -1,16 +1,13 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
+import {StepEventStatus} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
-import {StepEventStatus} from '../types/globalTypes';
 
 import {LogsProviderLogs} from './LogsProvider';
 import {RunContext} from './RunContext';
-import {RunFragment} from './types/RunFragment';
-import {
-  RunMetadataProviderMessageFragment,
-  RunMetadataProviderMessageFragment_ResourceInitFailureEvent,
-} from './types/RunMetadataProviderMessageFragment';
+import {RunFragment} from './types/RunFragments.types';
+import {RunMetadataProviderMessageFragment} from './types/RunMetadataProvider.types';
 
 export enum IStepState {
   PREPARING = 'preparing',
@@ -172,17 +169,18 @@ const stepStatusToStepState = (status: StepEventStatus | null) => {
   }
 };
 
-const isMarkerEvent = (
-  log: RunMetadataProviderMessageFragment,
-): log is RunMetadataProviderMessageFragment_ResourceInitFailureEvent => {
-  return (
+const refineMarkerEvent = (log: RunMetadataProviderMessageFragment) => {
+  if (
     log.__typename === 'EngineEvent' ||
     log.__typename === 'ResourceInitFailureEvent' ||
     log.__typename === 'ResourceInitStartedEvent' ||
     log.__typename === 'ResourceInitSuccessEvent' ||
     log.__typename === 'StepWorkerStartedEvent' ||
     log.__typename === 'StepWorkerStartingEvent'
-  );
+  ) {
+    return log;
+  }
+  return null;
 };
 
 export function extractMetadataFromLogs(
@@ -235,12 +233,15 @@ export function extractMetadataFromLogs(
       }
     }
 
-    if (isMarkerEvent(log) && !log.stepKey) {
-      if (log.markerStart) {
-        upsertMarker(metadata.globalMarkers, log.markerStart).start = timestamp;
-      }
-      if (log.markerEnd) {
-        upsertMarker(metadata.globalMarkers, log.markerEnd).end = timestamp;
+    if (!log.stepKey) {
+      const markerEvent = refineMarkerEvent(log);
+      if (markerEvent) {
+        if (markerEvent.markerStart) {
+          upsertMarker(metadata.globalMarkers, markerEvent.markerStart).start = timestamp;
+        }
+        if (markerEvent.markerEnd) {
+          upsertMarker(metadata.globalMarkers, markerEvent.markerEnd).end = timestamp;
+        }
       }
     }
 
@@ -274,14 +275,16 @@ export function extractMetadataFromLogs(
           markers: [],
         } as IStepMetadata);
 
-      if (isMarkerEvent(log)) {
-        if (log.markerStart) {
-          upsertMarker(step.markers, log.markerStart).start = timestamp;
+      const markerEvent = refineMarkerEvent(log);
+      if (markerEvent) {
+        if (markerEvent.markerStart) {
+          upsertMarker(step.markers, markerEvent.markerStart).start = timestamp;
         }
-        if (log.markerEnd) {
-          upsertMarker(step.markers, log.markerEnd).end = timestamp;
+        if (markerEvent.markerEnd) {
+          upsertMarker(step.markers, markerEvent.markerEnd).end = timestamp;
         }
       }
+
       if (log.__typename === 'ExecutionStepStartEvent') {
         upsertState(step, timestamp, IStepState.RUNNING);
         step.start = timestamp;
@@ -381,5 +384,6 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       externalUrl
     }
   }
+
   ${METADATA_ENTRY_FRAGMENT}
 `;

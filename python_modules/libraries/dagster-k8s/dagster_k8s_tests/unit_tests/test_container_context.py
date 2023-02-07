@@ -1,10 +1,9 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from dagster_k8s.container_context import K8sContainerContext
-
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils import make_readonly_value
+from dagster_k8s.container_context import K8sContainerContext
 
 
 @pytest.fixture
@@ -37,6 +36,19 @@ def container_context_config():
                 "limits": {"memory": "128Mi", "cpu": "500m"},
             },
             "scheduler_name": "my_scheduler",
+            "server_k8s_config": {
+                "container_config": {"command": ["echo", "SERVER"]},
+                "pod_template_spec_metadata": {"namespace": "my_pod_server_amespace"},
+            },
+            "run_k8s_config": {
+                "container_config": {"command": ["echo", "RUN"], "tty": True},
+                "pod_template_spec_metadata": {"namespace": "my_pod_namespace"},
+                "pod_spec_config": {"dns_policy": "value"},
+                "job_metadata": {
+                    "namespace": "my_job_value",
+                },
+                "job_spec_config": {"backoff_limit": 120},
+            },
         },
     }
 
@@ -64,12 +76,26 @@ def other_container_context_config():
                 }
             ],
             "volumes": [{"name": "bar", "config_map": {"name": "your-settings-cm"}}],
-            "labels": {"bar_label": "baz_value"},
+            "labels": {"bar_label": "baz_value", "foo_label": "override_value"},
             "namespace": "your_namespace",
             "resources": {
                 "limits": {"memory": "64Mi", "cpu": "250m"},
             },
             "scheduler_name": "my_other_scheduler",
+            "run_k8s_config": {
+                "container_config": {
+                    "command": ["REPLACED"],
+                    "stdin": True,
+                },  # container_config is merged shallowly
+                "pod_template_spec_metadata": {"namespace": "my_other_namespace"},
+                "pod_spec_config": {
+                    "dnsPolicy": "other_value"
+                },  # camel case and snake case are reconciled and merged
+                "job_metadata": {
+                    "namespace": "my_other_job_value",
+                },
+                "job_spec_config": {"backoffLimit": 240},
+            },
         },
     }
 
@@ -136,7 +162,15 @@ def test_empty_container_context(empty_container_context):
     assert empty_container_context.labels == {}
     assert empty_container_context.namespace is None
     assert empty_container_context.resources == {}
-    assert empty_container_context.scheduler_name == None
+    assert empty_container_context.scheduler_name is None
+    assert all(
+        empty_container_context.server_k8s_config[key] == {}
+        for key in empty_container_context.server_k8s_config
+    )
+    assert all(
+        empty_container_context.run_k8s_config[key] == {}
+        for key in empty_container_context.run_k8s_config
+    )
 
 
 def test_invalid_config():
@@ -250,12 +284,28 @@ def test_merge(empty_container_context, container_context, other_container_conte
             {"name": "foo", "config_map": {"name": "settings-cm"}},
         ],
     )
-    assert merged.labels == {"foo_label": "bar_value", "bar_label": "baz_value"}
+    assert merged.labels == {"foo_label": "override_value", "bar_label": "baz_value"}
     assert merged.namespace == "your_namespace"
     assert merged.resources == {
         "limits": {"memory": "64Mi", "cpu": "250m"},
     }
     assert merged.scheduler_name == "my_other_scheduler"
 
+    assert merged.run_k8s_config == {
+        "container_config": {
+            "command": ["REPLACED"],
+            "stdin": True,
+            "tty": True,
+        },
+        "pod_template_spec_metadata": {"namespace": "my_other_namespace"},
+        "pod_spec_config": {"dns_policy": "other_value"},
+        "job_metadata": {
+            "namespace": "my_other_job_value",
+        },
+        "job_spec_config": {"backoff_limit": 240},
+        "job_config": {},
+    }
+
     assert container_context.merge(empty_container_context) == container_context
     assert empty_container_context.merge(container_context) == container_context
+    assert other_container_context.merge(empty_container_context) == other_container_context

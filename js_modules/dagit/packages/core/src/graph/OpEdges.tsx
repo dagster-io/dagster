@@ -6,7 +6,7 @@ import {buildSVGPath} from '../asset-graph/Utils';
 
 import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
 import {OpLayoutEdgeSide, OpLayoutIO} from './layout';
-import {OpGraphOpFragment} from './types/OpGraphOpFragment';
+import {OpGraphOpFragment} from './types/OpGraph.types';
 
 export type Edge = {a: string; b: string};
 

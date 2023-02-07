@@ -20,7 +20,6 @@ from .python_tuple import Tuple, create_typed_tuple
 
 
 def transform_typing_type(type_annotation):
-
     if type_annotation is typing.List:
         return List
     elif type_annotation is typing.Set:

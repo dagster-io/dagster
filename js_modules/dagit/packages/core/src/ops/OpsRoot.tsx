@@ -26,11 +26,7 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
-import {
-  OpsRootQuery,
-  OpsRootQueryVariables,
-  OpsRootQuery_repositoryOrError_Repository_usedSolids,
-} from './types/OpsRootQuery';
+import {OpsRootQuery, OpsRootQueryVariables, OpsRootUsedSolidFragment} from './types/OpsRoot.types';
 
 function flatUniq(arrs: string[][]) {
   const results: {[key: string]: boolean} = {};
@@ -42,7 +38,7 @@ function flatUniq(arrs: string[][]) {
   return Object.keys(results).sort((a, b) => a.localeCompare(b));
 }
 
-type Solid = OpsRootQuery_repositoryOrError_Repository_usedSolids;
+type Solid = OpsRootUsedSolidFragment;
 
 function searchSuggestionsForOps(solids: Solid[]): SuggestionProvider[] {
   return [
@@ -321,23 +317,26 @@ const OPS_ROOT_QUERY = gql`
       ... on Repository {
         id
         usedSolids {
-          __typename
-          definition {
-            name
-            ...OpTypeSignatureFragment
-          }
-          invocations {
-            __typename
-            pipeline {
-              id
-              isJob
-              name
-            }
-          }
+          ...OpsRootUsedSolid
         }
       }
     }
   }
+
+  fragment OpsRootUsedSolid on UsedSolid {
+    definition {
+      name
+      ...OpTypeSignatureFragment
+    }
+    invocations {
+      pipeline {
+        id
+        isJob
+        name
+      }
+    }
+  }
+
   ${OP_TYPE_SIGNATURE_FRAGMENT}
 `;
 

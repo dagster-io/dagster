@@ -1,4 +1,4 @@
-"""Add columns start_time and end_time
+"""Add columns start_time and end_time.
 
 Revision ID: 42add02bf976
 Revises: f78059038d01

@@ -1,11 +1,4 @@
 import pandas as pd
-from dagster_pandas.constraints import (
-    ColumnDTypeFnConstraint,
-    ColumnDTypeInSetConstraint,
-    ConstraintViolationException,
-)
-from dagster_pandas.validation import PandasColumn, validate_constraints
-
 from dagster import (
     AssetMaterialization,
     DagsterInvariantViolationError,
@@ -14,15 +7,23 @@ from dagster import (
     MetadataEntry,
     StringSource,
     TypeCheck,
+    _check as check,
+    dagster_type_loader,
+    dagster_type_materializer,
 )
-from dagster import _check as check
-from dagster import dagster_type_loader, dagster_type_materializer
 from dagster._annotations import experimental
 from dagster._check import CheckError
 from dagster._config import Selector
 from dagster._core.definitions.metadata import normalize_metadata
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._utils import dict_without_keys
+
+from dagster_pandas.constraints import (
+    ColumnDTypeFnConstraint,
+    ColumnDTypeInSetConstraint,
+    ConstraintViolationException,
+)
+from dagster_pandas.validation import PandasColumn, validate_constraints
 
 CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
 

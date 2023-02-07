@@ -7,12 +7,12 @@ import tempfile
 
 import pytest
 import sqlalchemy as db
-from sqlalchemy import inspect
-
 from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    DagsterEventType,
+    EventRecordsFilter,
     Output,
     job,
     op,
@@ -25,6 +25,7 @@ from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._legacy import execute_pipeline, pipeline, solid
 from dagster._utils import file_relative_path
+from sqlalchemy import inspect
 
 
 def get_columns(instance, table_name: str):
@@ -548,7 +549,6 @@ def test_jobs_selector_id_migration(hostname, conn_string):
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
-
             # runs the required data migrations
             instance.upgrade()
 
@@ -605,7 +605,6 @@ def test_add_bulk_actions_columns(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
@@ -623,7 +622,6 @@ def test_add_bulk_actions_columns(hostname, conn_string):
 
 
 def test_add_kvs_table(hostname, conn_string):
-
     _reconstruct_from_file(
         hostname,
         conn_string,
@@ -635,7 +633,6 @@ def test_add_kvs_table(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
@@ -653,7 +650,8 @@ def test_add_kvs_table(hostname, conn_string):
 
 def test_add_asset_event_tags_table(hostname, conn_string):
     @op
-    def yields_materialization_w_tags(_):
+    def yields_materialization_w_tags():
+        yield AssetMaterialization(asset_key=AssetKey(["a"]))
         yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
         yield Output(1)
 
@@ -683,6 +681,56 @@ def test_add_asset_event_tags_table(hostname, conn_string):
             assert "asset_event_tags" not in get_tables(instance)
 
             asset_job.execute_in_process(instance=instance)
+
+            assert (
+                len(
+                    instance.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            asset_key=AssetKey("a"),
+                            tags={"dagster/foo": "bar"},
+                        )
+                    )
+                )
+                == 1
+            )
+            assert (
+                len(
+                    instance.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            asset_key=AssetKey("a"),
+                            tags={"dagster/foo": "baz"},
+                        )
+                    )
+                )
+                == 0
+            )
+            assert (
+                len(
+                    instance.get_event_records(
+                        EventRecordsFilter(
+                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                            asset_key=AssetKey("a"),
+                            tags={"dagster/foo": "bar", "other": "otherr"},
+                        )
+                    )
+                )
+                == 0
+            )
+
+            with pytest.raises(
+                DagsterInvalidInvocationError, match="Cannot filter events on tags with a limit"
+            ):
+                instance.get_event_records(
+                    EventRecordsFilter(
+                        event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                        asset_key=AssetKey("a"),
+                        tags={"dagster/foo": "bar", "other": "otherr"},
+                    ),
+                    limit=5,
+                )
+
             with pytest.raises(
                 DagsterInvalidInvocationError, match="In order to search for asset event tags"
             ):
@@ -712,7 +760,6 @@ def test_add_cached_status_data_column(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
@@ -721,7 +768,9 @@ def test_add_cached_status_data_column(hostname, conn_string):
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
+            assert instance.can_cache_asset_status_data() is False
             assert {"cached_status_data"} & get_columns(instance, "asset_keys") == set()
 
             instance.upgrade()
+            assert instance.can_cache_asset_status_data() is True
             assert {"cached_status_data"} <= get_columns(instance, "asset_keys")

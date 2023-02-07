@@ -14,9 +14,11 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
@@ -30,21 +32,28 @@ import {RepoAddress} from '../workspace/types';
 import {OverviewSensorTable} from './OverviewSensorsTable';
 import {OverviewTabs} from './OverviewTabs';
 import {sortRepoBuckets} from './sortRepoBuckets';
-import {OverviewSensorsQuery} from './types/OverviewSensorsQuery';
-import {UnloadableSensorsQuery} from './types/UnloadableSensorsQuery';
+import {
+  OverviewSensorsQuery,
+  OverviewSensorsQueryVariables,
+  UnloadableSensorsQuery,
+} from './types/OverviewSensorsRoot.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
 
 export const OverviewSensorsRoot = () => {
   useTrackPageView();
+  useDocumentTitle('Overview | Sensors');
 
   const [searchValue, setSearchValue] = React.useState('');
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const repoCount = allRepos.length;
 
-  const queryResultOverview = useQuery<OverviewSensorsQuery>(OVERVIEW_SENSORS_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-  });
+  const queryResultOverview = useQuery<OverviewSensorsQuery, OverviewSensorsQueryVariables>(
+    OVERVIEW_SENSORS_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+    },
+  );
   const {data, loading} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);

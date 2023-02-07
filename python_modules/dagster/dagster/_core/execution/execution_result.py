@@ -1,7 +1,7 @@
 # pyright: strict
 
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Callable, List, Sequence, Set, Union, cast
+from typing import AbstractSet, Callable, List, Optional, Sequence, Set, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import JobDefinition, NodeHandle
@@ -16,27 +16,32 @@ from dagster._core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
+from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.step import StepKind
 from dagster._core.storage.pipeline_run import DagsterRun
 
 
 class ExecutionResult(ABC):
     @property
+    @abstractmethod
     def job_def(self) -> JobDefinition:
-        raise NotImplementedError()
+        ...
 
     @property
+    @abstractmethod
     def dagster_run(self) -> DagsterRun:
-        raise NotImplementedError()
+        ...
 
     @property
+    @abstractmethod
     def all_events(self) -> Sequence[DagsterEvent]:
-        raise NotImplementedError()
+        ...
 
     @property
+    @abstractmethod
     def run_id(self) -> str:
         """The unique identifier of the executed run."""
-        raise NotImplementedError()
+        ...
 
     @property
     def success(self) -> bool:
@@ -46,7 +51,6 @@ class ExecutionResult(ABC):
     @property
     def all_node_events(self) -> Sequence[DagsterEvent]:
         """List[DagsterEvent]: All dagster events from the execution."""
-
         step_events: List[DagsterEvent] = []
 
         for node_name in self.job_def.graph.node_dict.keys():
@@ -69,13 +73,13 @@ class ExecutionResult(ABC):
         return self.filter_events(_is_event_from_node)
 
     def output_value(self, output_name: str = DEFAULT_OUTPUT) -> object:
-
         check.str_param(output_name, "output_name")
 
         graph_def = self.job_def.graph
         if not graph_def.has_output(output_name) and len(graph_def.output_mappings) == 0:
             raise DagsterInvariantViolationError(
-                f"Attempted to retrieve top-level outputs for '{graph_def.name}', which has no outputs."
+                f"Attempted to retrieve top-level outputs for '{graph_def.name}', which has no"
+                " outputs."
             )
         elif not graph_def.has_output(output_name):
             raise DagsterInvariantViolationError(
@@ -93,7 +97,6 @@ class ExecutionResult(ABC):
         return self._get_output_for_handle(check.not_none(origin_handle), origin_output_def.name)
 
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> object:
-
         # resolve handle of node that node_str is referring to
         target_handle = NodeHandle.from_string(node_str)
         target_node_def = self.job_def.graph.get_solid(target_handle).definition
@@ -122,7 +125,7 @@ class ExecutionResult(ABC):
 
     def get_job_failure_event(self) -> DagsterEvent:
         """Returns a DagsterEvent with type DagsterEventType.PIPELINE_FAILURE if it ocurred during
-        execution
+        execution.
         """
         events = self.filter_events(
             lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE
@@ -135,7 +138,7 @@ class ExecutionResult(ABC):
 
     def get_job_success_event(self) -> DagsterEvent:
         """Returns a DagsterEvent with type DagsterEventType.PIPELINE_SUCCESS if it ocurred during
-        execution
+        execution.
         """
         events = self.filter_events(
             lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS
@@ -164,6 +167,9 @@ class ExecutionResult(ABC):
 
     def get_step_success_events(self) -> Sequence[DagsterEvent]:
         return [event for event in self.all_events if event.is_step_success]
+
+    def get_step_skipped_events(self) -> Sequence[DagsterEvent]:
+        return [event for event in self.all_events if event.is_step_skipped]
 
     def get_failed_step_keys(self) -> AbstractSet[str]:
         failure_events = self.filter_events(
@@ -195,3 +201,16 @@ class ExecutionResult(ABC):
             cast(StepExpectationResultData, event.event_specific_data).expectation_result
             for event in expectation_result_events
         ]
+
+    def retry_attempts_for_node(self, node_str: str) -> int:
+        count = 0
+        for event in self.events_for_node(node_str):
+            if event.event_type == DagsterEventType.STEP_RESTARTED:
+                count += 1
+        return count
+
+    def failure_data_for_node(self, node_str: str) -> Optional[StepFailureData]:
+        for event in self.events_for_node(node_str):
+            if event.event_type == DagsterEventType.STEP_FAILURE:
+                return event.step_failure_data
+        return None

@@ -1,8 +1,8 @@
 from typing import Optional
 
-import sqlalchemy as db
-
 import dagster._check as check
+import sqlalchemy as db
+import sqlalchemy.dialects.postgresql as db_dialects_postgresql
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
@@ -152,6 +152,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
+
         Args:
             event (EventLogEntry): The event to store.
         """
@@ -169,22 +170,23 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 """NOTIFY {channel}, %s; """.format(channel=CHANNEL_NAME),
                 (res[0] + "_" + str(res[1]),),
             )
+            event_id = res[1]
 
         if (
             event.is_dagster_event
             and event.dagster_event_type in ASSET_EVENTS
             and event.dagster_event.asset_key
         ):
-            self.store_asset_event(event)
+            self.store_asset_event(event, event_id)
 
-            if res[1] is None:
+            if event_id is None:
                 raise DagsterInvariantViolationError(
                     "Cannot store asset event tags for null event id."
                 )
 
-            self.store_asset_event_tags(event, res[1])
+            self.store_asset_event_tags(event, event_id)
 
-    def store_asset_event(self, event: EventLogEntry):
+    def store_asset_event(self, event: EventLogEntry, event_id: int):
         check.inst_param(event, "event", EventLogEntry)
         if not (event.dagster_event and event.dagster_event.asset_key):
             return
@@ -219,9 +221,11 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # run id for a set of assets in one roundtrip call to event log storage.
         # https://github.com/dagster-io/dagster/pull/7319
 
-        values = self._get_asset_entry_values(event, self.has_secondary_index(ASSET_KEY_INDEX_COLS))
+        values = self._get_asset_entry_values(
+            event, event_id, self.has_secondary_index(ASSET_KEY_INDEX_COLS)
+        )
         with self.index_connection() as conn:
-            query = db.dialects.postgresql.insert(AssetKeyTable).values(
+            query = db_dialects_postgresql.insert(AssetKeyTable).values(
                 asset_key=event.dagster_event.asset_key.to_string(),
                 **values,
             )

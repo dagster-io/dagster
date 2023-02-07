@@ -31,7 +31,7 @@ import {
   OpMappingTable,
   TypeWrapper,
 } from './SidebarOpHelpers';
-import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinitionFragment';
+import {SidebarOpDefinitionFragment} from './types/SidebarOpDefinition.types';
 
 interface SidebarOpDefinitionProps {
   definition: SidebarOpDefinitionFragment;
@@ -173,7 +173,6 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
 
 export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
   fragment SidebarOpDefinitionFragment on ISolidDefinition {
-    ...OpTypeSignatureFragment
     __typename
     name
     description
@@ -244,11 +243,12 @@ export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
         }
       }
     }
+    ...OpTypeSignatureFragment
   }
 
   ${DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT}
-  ${OP_TYPE_SIGNATURE_FRAGMENT}
   ${CONFIG_TYPE_SCHEMA_FRAGMENT}
+  ${OP_TYPE_SIGNATURE_FRAGMENT}
 `;
 
 const InvocationList: React.FC<{

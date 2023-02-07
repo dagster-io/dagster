@@ -4593,12 +4593,89 @@ configuration:
         - - id
         alias_name: pull_requests
         selected: false
+    - config:
+        aliasName: array_test
+        cursorField:
+        - created_at
+        destinationSyncMode: append_dedup
+        primaryKey:
+        - - id
+        selected: true
+        syncMode: incremental
+      stream:
+        defaultCursorField:
+        - created_at
+        jsonSchema:
+          $schema: http://json-schema.org/draft-07/schema#
+          items:
+            properties:
+              author:
+                properties:
+                  id:
+                    type:
+                    - 'null'
+                    - integer
+                type:
+                - 'null'
+                - object
+              name:
+                type: string
+              version:
+                type: string
+            required:
+            - name
+            - version
+            type: object
+          type: array
+        name: array_test
+        sourceDefinedCursor: true
+        sourceDefinedPrimaryKey:
+        - - id
+        supportedSyncModes:
+        - full_refresh
+        - overwrite
+    - config:
+        aliasName: unknown_test
+        cursorField:
+        - created_at
+        destinationSyncMode: append_dedup
+        primaryKey:
+        - - id
+        selected: true
+        syncMode: incremental
+      stream:
+        defaultCursorField:
+        - created_at
+        jsonSchema:
+          $schema: http://json-schema.org/draft-07/schema#
+          type: unknown
+        name: unknown_test
+        sourceDefinedCursor: true
+        sourceDefinedPrimaryKey:
+        - - id
+        supportedSyncModes:
+        - full_refresh
+        - overwrite
     - stream:
         name: releases
         json_schema:
           type: object
           $schema: http://json-schema.org/draft-07/schema#
           properties:
+            foo:
+              oneOf:
+              - properties:
+                  bar:
+                    type: string
+                type:
+                - 'null'
+                - object
+              - properties:
+                  baz:
+                    type: string
+                type:
+                - 'null'
+                - object
             id:
               type:
               - 'null'

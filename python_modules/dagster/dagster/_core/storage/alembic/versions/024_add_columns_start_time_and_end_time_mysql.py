@@ -1,4 +1,4 @@
-"""add_columns_start_time_and_end_time
+"""add_columns_start_time_and_end_time.
 
 Revision ID: f78059038d01
 Revises: 05844c702676

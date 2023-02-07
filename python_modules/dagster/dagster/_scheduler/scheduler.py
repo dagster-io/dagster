@@ -14,9 +14,10 @@ import pendulum
 import dagster._check as check
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation import ExternalSchedule, PipelineSelector
+from dagster._core.host_representation import ExternalSchedule
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DagsterInstance
@@ -34,10 +35,11 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, Run
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._scheduler.stale import resolve_stale_or_unknown_assets
 from dagster._seven.compat.pendulum import to_timezone
-from dagster._utils import merge_dicts
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
+from dagster._utils.merger import merge_dicts
 
 
 class _ScheduleLaunchContext:
@@ -96,8 +98,15 @@ class _ScheduleLaunchContext:
             )
 
 
-MIN_INTERVAL_LOOP_TIME = 5
+SECONDS_IN_MINUTE = 60
 VERBOSE_LOGS_INTERVAL = 60
+
+
+def _get_next_scheduler_iteration_time(start_time):
+    # Wait until at least the next minute to run again, since the minimum granularity
+    # for a cron schedule is every minute
+    last_minute_time = start_time - (start_time % SECONDS_IN_MINUTE)
+    return last_minute_time + SECONDS_IN_MINUTE
 
 
 def execute_scheduler_iteration_loop(
@@ -105,6 +114,7 @@ def execute_scheduler_iteration_loop(
     logger: logging.Logger,
     max_catchup_runs: int,
     max_tick_retries: int,
+    shutdown_event: threading.Event,
 ):
     schedule_state_lock = threading.Lock()
     scheduler_run_futures: Dict[str, Future] = {}
@@ -141,15 +151,19 @@ def execute_scheduler_iteration_loop(
                 max_tick_retries=max_tick_retries,
                 log_verbose_checks=verbose_logs_iteration,
             )
+            yield
             end_time = pendulum.now("UTC").timestamp()
 
             if verbose_logs_iteration:
                 last_verbose_time = end_time
 
-            loop_duration = end_time - start_time
-            sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
-            time.sleep(sleep_time)
-            yield
+            next_minute_time = _get_next_scheduler_iteration_time(start_time)
+
+            if next_minute_time > end_time:
+                # Sleep until the beginning of the next minute, plus a small epsilon to
+                # be sure that we're past the start of the minute
+                shutdown_event.wait(next_minute_time - end_time + 0.001)
+                yield
 
 
 def launch_scheduled_runs(
@@ -185,6 +199,7 @@ def launch_scheduled_runs(
 
     schedules: Dict[str, ExternalSchedule] = {}
     error_locations = set()
+
     for location_entry in workspace_snapshot.values():
         repo_location = location_entry.repository_location
         if repo_location:
@@ -198,7 +213,8 @@ def launch_scheduled_runs(
         elif location_entry.load_error:
             if log_verbose_checks:
                 logger.warning(
-                    f"Could not load location {location_entry.origin.location_name} to check for schedules due to the following error: {location_entry.load_error}"
+                    f"Could not load location {location_entry.origin.location_name} to check for"
+                    f" schedules due to the following error: {location_entry.load_error}"
                 )
             error_locations.add(location_entry.origin.location_name)
 
@@ -257,9 +273,11 @@ def launch_scheduled_runs(
                 )
             else:
                 logger.warning(
-                    f"Could not find schedule {schedule_name} in repository {repo_name}. If this "
-                    "schedule no longer exists, you can turn it off in the Dagit UI from the "
-                    "Status tab.",
+                    (
+                        f"Could not find schedule {schedule_name} in repository {repo_name}. If"
+                        " this schedule no longer exists, you can turn it off in the Dagit UI from"
+                        " the Status tab."
+                    ),
                 )
 
     if not schedules:
@@ -340,9 +358,7 @@ def launch_scheduled_runs(
                 )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.error(
-                f"Scheduler caught an error for schedule {external_schedule.name} : {error_info.to_string()}"
-            )
+            logger.exception(f"Scheduler caught an error for schedule {external_schedule.name}")
         yield error_info
 
 
@@ -396,7 +412,6 @@ def launch_scheduled_runs_for_schedule_iterator(
     instance = workspace_process_context.instance
 
     with schedule_state_lock:
-
         instigator_origin_id = external_schedule.get_external_origin_id()
         ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
         latest_tick: Optional[InstigatorTick] = ticks[0] if ticks else None
@@ -506,10 +521,16 @@ def launch_scheduled_runs_for_schedule_iterator(
                 if isinstance(e, DagsterUserCodeUnreachableError):
                     try:
                         raise DagsterSchedulerError(
-                            f"Unable to reach the user code server for schedule {schedule_name}. Schedule will resume execution once the server is available."
+                            f"Unable to reach the user code server for schedule {schedule_name}."
+                            " Schedule will resume execution once the server is available."
                         ) from e
                     except:
                         error_data = serializable_error_info_from_exc_info(sys.exc_info())
+
+                        logger.exception(
+                            "Scheduler daemon caught an error for schedule "
+                            f"{external_schedule.name}"
+                        )
 
                         tick_context.update_state(
                             TickStatus.FAILURE,
@@ -588,6 +609,16 @@ def _schedule_runs_at_time(
         return
 
     for run_request in schedule_execution_data.run_requests:
+        if run_request.stale_assets_only:
+            stale_assets = resolve_stale_or_unknown_assets(workspace_process_context, run_request, external_schedule)  # type: ignore
+            # asset selection is empty set after filtering for stale
+            if len(stale_assets) == 0:
+                continue
+            else:
+                run_request = run_request.with_replaced_attrs(
+                    asset_selection=stale_assets, stale_assets_only=False
+                )
+
         pipeline_selector = PipelineSelector(
             location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
             repository_name=schedule_origin.external_repository_origin.repository_name,
@@ -605,14 +636,16 @@ def _schedule_runs_at_time(
                 # into a SUCCESS state
 
                 logger.info(
-                    f"Run {run.run_id} already completed for this execution of {external_schedule.name}"
+                    f"Run {run.run_id} already completed for this execution of"
+                    f" {external_schedule.name}"
                 )
                 tick_context.add_run_info(run_id=run.run_id, run_key=run_request.run_key)
                 yield None
                 continue
             else:
                 logger.info(
-                    f"Run {run.run_id} already created for this execution of {external_schedule.name}"
+                    f"Run {run.run_id} already created for this execution of"
+                    f" {external_schedule.name}"
                 )
         else:
             run = _create_scheduler_run(
@@ -632,9 +665,7 @@ def _schedule_runs_at_time(
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                logger.error(
-                    f"Run {run.run_id} created successfully but failed to launch: {str(serializable_error_info_from_exc_info(sys.exc_info()))}"
-                )
+                logger.exception(f"Run {run.run_id} created successfully but failed to launch")
                 yield error_info
 
         _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
@@ -651,7 +682,7 @@ def _get_existing_run_for_request(
     external_schedule: ExternalSchedule,
     schedule_time,
     run_request: RunRequest,
-):
+) -> Optional[DagsterRun]:
     tags = merge_dicts(
         DagsterRun.tags_for_schedule(external_schedule),
         {
@@ -689,7 +720,7 @@ def _create_scheduler_run(
     external_schedule: ExternalSchedule,
     external_pipeline: ExternalPipeline,
     run_request: RunRequest,
-):
+) -> DagsterRun:
     from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     run_config = run_request.run_config

@@ -17,9 +17,9 @@ import {useHistory} from 'react-router-dom';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
-import {ReexecutionStrategy} from '../types/globalTypes';
+import {ReexecutionStrategy} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -37,14 +37,14 @@ import {
 } from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
 import {
-  LaunchPipelineReexecution,
-  LaunchPipelineReexecutionVariables,
-} from './types/LaunchPipelineReexecution';
-import {
   PipelineEnvironmentYamlQuery,
   PipelineEnvironmentYamlQueryVariables,
-} from './types/PipelineEnvironmentYamlQuery';
-import {RunTableRunFragment} from './types/RunTableRunFragment';
+} from './types/RunActionsMenu.types';
+import {RunTableRunFragment} from './types/RunTable.types';
+import {
+  LaunchPipelineReexecutionMutation,
+  LaunchPipelineReexecutionMutationVariables,
+} from './types/RunUtils.types';
 
 export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment;
@@ -55,17 +55,21 @@ export const RunActionsMenu: React.FC<{
   >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
+  const {
+    canTerminatePipelineExecution,
+    canDeletePipelineRun,
+    canLaunchPipelineReexecution,
+  } = usePermissionsDEPRECATED();
   const history = useHistory();
 
   const copyConfig = useCopyToClipboard();
 
-  const [reexecute] = useMutation<LaunchPipelineReexecution, LaunchPipelineReexecutionVariables>(
-    LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-    {
-      onCompleted: refetch,
-    },
-  );
+  const [reexecute] = useMutation<
+    LaunchPipelineReexecutionMutation,
+    LaunchPipelineReexecutionMutationVariables
+  >(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
+    onCompleted: refetch,
+  });
 
   const [loadEnv, {called, loading, data}] = useLazyQuery<
     PipelineEnvironmentYamlQuery,
@@ -97,7 +101,8 @@ export const RunActionsMenu: React.FC<{
         content={
           <Menu>
             <MenuItem
-              text={loading ? 'Loading Configuration...' : 'View Configuration...'}
+              tagName="button"
+              text={loading ? 'Loading configuration...' : 'View configuration...'}
               disabled={!runConfigYaml}
               icon="open_in_new"
               onClick={() => setVisibleDialog('config')}
@@ -124,14 +129,19 @@ export const RunActionsMenu: React.FC<{
                 />
               </Tooltip>
               <Tooltip
-                content="Re-execute is unavailable because the pipeline is not present in the current workspace."
+                content={
+                  !canLaunchPipelineReexecution.enabled
+                    ? canLaunchPipelineReexecution.disabledReason
+                    : 'Re-execute is unavailable because the pipeline is not present in the current workspace.'
+                }
                 position="bottom"
-                disabled={infoReady && !!repoMatch}
+                disabled={infoReady && !!repoMatch && canLaunchPipelineReexecution.enabled}
                 targetTagName="div"
               >
                 <MenuItem
+                  tagName="button"
                   text="Re-execute"
-                  disabled={!infoReady || !repoMatch}
+                  disabled={!infoReady || !repoMatch || !canLaunchPipelineReexecution.enabled}
                   icon="refresh"
                   onClick={async () => {
                     if (repoMatch && runConfigYaml) {
@@ -157,6 +167,7 @@ export const RunActionsMenu: React.FC<{
               </Tooltip>
               {isFinished || !canTerminatePipelineExecution.enabled ? null : (
                 <MenuItem
+                  tagName="button"
                   icon="cancel"
                   text="Terminate"
                   onClick={() => setVisibleDialog('terminate')}
@@ -165,13 +176,14 @@ export const RunActionsMenu: React.FC<{
               <MenuDivider />
             </>
             <MenuExternalLink
-              text="Download Debug File"
+              text="Download debug file"
               icon="download_for_offline"
               download
               href={`${rootServerURI}/download_debug/${run.runId}`}
             />
             {canDeletePipelineRun.enabled ? (
               <MenuItem
+                tagName="button"
                 icon="delete"
                 text="Delete"
                 intent="danger"
@@ -249,7 +261,7 @@ export const RunBulkActionsMenu: React.FC<{
     canTerminatePipelineExecution,
     canDeletePipelineRun,
     canLaunchPipelineReexecution,
-  } = usePermissions();
+  } = usePermissionsDEPRECATED();
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'reexecute-from-failure' | 'reexecute'
   >('none');
@@ -393,5 +405,6 @@ const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
       }
     }
   }
+
   ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
 `;

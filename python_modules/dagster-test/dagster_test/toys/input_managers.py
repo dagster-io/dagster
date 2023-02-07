@@ -2,8 +2,7 @@ import os
 
 import numpy as np
 import pandas as pd
-
-from dagster import Field, IOManager, In, Noneable, graph, io_manager, op
+from dagster import Field, In, IOManager, Noneable, graph, io_manager, op
 
 
 class PandasCsvIOManager(IOManager):
@@ -50,7 +49,7 @@ class NumpyCsvIOManager(PandasCsvIOManager):
                     "strings": ["ten", "twenty", "thirty", "forty"],
                 }
             )
-            return df
+            return df.to_numpy()  # type: ignore  # fmt: skip
 
 
 @io_manager(

@@ -7,8 +7,8 @@ import {
   applyCreateSession,
   useExecutionSessionStorage,
 } from '../app/ExecutionSessionStorage';
-import {usePermissions} from '../app/Permissions';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {usePermissionsForLocation} from '../app/Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -17,11 +17,14 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {LaunchpadSessionError} from './LaunchpadSessionError';
 import {LaunchpadSessionLoading} from './LaunchpadSessionLoading';
-import {ConfigForRunQuery, ConfigForRunQueryVariables} from './types/ConfigForRunQuery';
+import {
+  ConfigForRunQuery,
+  ConfigForRunQueryVariables,
+} from './types/LaunchpadSetupFromRunRoot.types';
 
 export const LaunchpadSetupFromRunRoot: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {repoAddress} = props;
-  const {canLaunchPipelineExecution} = usePermissions();
+  const {canLaunchPipelineExecution} = usePermissionsForLocation(repoAddress.location);
   const {repoPath, pipelinePath, runId} = useParams<{
     repoPath: string;
     pipelinePath: string;
@@ -66,7 +69,9 @@ const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
 
   const {data, loading} = useQuery<ConfigForRunQuery, ConfigForRunQueryVariables>(
     CONFIG_FOR_RUN_QUERY,
-    {variables: {runId}},
+    {
+      variables: {runId},
+    },
   );
   const runOrError = data?.runOrError;
   const run = runOrError?.__typename === 'Run' ? runOrError : null;
@@ -142,5 +147,6 @@ const CONFIG_FOR_RUN_QUERY = gql`
       ...PythonErrorFragment
     }
   }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;

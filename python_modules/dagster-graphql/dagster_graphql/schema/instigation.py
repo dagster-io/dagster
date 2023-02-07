@@ -1,12 +1,12 @@
 import sys
 import warnings
-
-import graphene
-import pendulum
+from typing import Union
 
 import dagster._check as check
+import graphene
+import pendulum
+from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
-from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorTick,
@@ -29,7 +29,7 @@ from .errors import GrapheneError, GraphenePythonError
 from .logs.log_level import GrapheneLogLevel
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneInstigationType(graphene.Enum):
@@ -139,7 +139,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             timestamp=tick.timestamp,
             runIds=tick.run_ids,
             runKeys=tick.run_keys,
-            error=tick.error,
+            error=GraphenePythonError(tick.error) if tick.error else None,
             skipReason=tick.skip_reason,
             originRunIds=tick.origin_run_ids,
             cursor=tick.cursor,
@@ -149,7 +149,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     def resolve_id(self, _):
         return "%s:%s" % (self._tick.instigator_origin_id, self._tick.timestamp)
 
-    def resolve_runs(self, graphene_info):
+    def resolve_runs(self, graphene_info: ResolveInfo):
         from .pipelines.pipeline import GrapheneRun
 
         instance = graphene_info.context.instance
@@ -164,7 +164,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
 
         return [GrapheneRun(records_by_id[run_id]) for run_id in run_ids if run_id in records_by_id]
 
-    def resolve_logEvents(self, graphene_info):
+    def resolve_logEvents(self, graphene_info: ResolveInfo):
         return get_tick_log_events(graphene_info, self._tick)
 
 
@@ -182,7 +182,7 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
             timestamp=check.float_param(timestamp, "timestamp"),
         )
 
-    def resolve_evaluationResult(self, graphene_info):
+    def resolve_evaluationResult(self, graphene_info: ResolveInfo):
         if not self._state.is_running or self._state.instigator_type != InstigatorType.SCHEDULE:
             return None
 
@@ -210,6 +210,7 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
 
         next_tick_datetime = next(external_schedule.execution_time_iterator(self._timestamp))
         schedule_time = to_timezone(pendulum.instance(next_tick_datetime), timezone_str)
+        schedule_data: Union[ScheduleExecutionData, SerializableErrorInfo]
         try:
             schedule_data = repository_location.get_external_schedule_execution_data(
                 instance=graphene_info.context.instance,
@@ -237,7 +238,11 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             "schedule_data",
             (ScheduleExecutionData, SerializableErrorInfo),
         )
-        error = schedule_data if isinstance(schedule_data, SerializableErrorInfo) else None
+        error = (
+            GraphenePythonError(schedule_data)
+            if isinstance(schedule_data, SerializableErrorInfo)
+            else None
+        )
         skip_reason = (
             schedule_data.skip_message if isinstance(schedule_data, ScheduleExecutionData) else None
         )
@@ -246,7 +251,7 @@ class GrapheneTickEvaluation(graphene.ObjectType):
         )
         super().__init__(skipReason=skip_reason, error=error)
 
-    def resolve_runRequests(self, _graphene_info):
+    def resolve_runRequests(self, _graphene_info: ResolveInfo):
         if not self._run_requests:
             return self._run_requests
 
@@ -265,14 +270,14 @@ class GrapheneRunRequest(graphene.ObjectType):
         super().__init__(runKey=run_request.run_key)
         self._run_request = check.inst_param(run_request, "run_request", RunRequest)
 
-    def resolve_tags(self, _graphene_info):
+    def resolve_tags(self, _graphene_info: ResolveInfo):
         return [
             GraphenePipelineTag(key=key, value=value)
             for key, value in self._run_request.tags.items()
             if get_tag_type(key) != TagType.HIDDEN
         ]
 
-    def resolve_runConfigYaml(self, _graphene_info):
+    def resolve_runConfigYaml(self, _graphene_info: ResolveInfo):
         return dump_run_config_yaml(self._run_request.run_config)
 
 
@@ -340,17 +345,17 @@ class GrapheneInstigationState(graphene.ObjectType):
             ),
         )
 
-    def resolve_repositoryOrigin(self, _graphene_info):
+    def resolve_repositoryOrigin(self, _graphene_info: ResolveInfo):
         origin = self._instigator_state.origin.external_repository_origin
         return GrapheneRepositoryOrigin(origin)
 
-    def resolve_repositoryName(self, _graphene_info):
+    def resolve_repositoryName(self, _graphene_info: ResolveInfo):
         return self._instigator_state.repository_selector.repository_name
 
-    def resolve_repositoryLocationName(self, _graphene_info):
+    def resolve_repositoryLocationName(self, _graphene_info: ResolveInfo):
         return self._instigator_state.repository_selector.location_name
 
-    def resolve_typeSpecificData(self, _graphene_info):
+    def resolve_typeSpecificData(self, _graphene_info: ResolveInfo):
         if not self._instigator_state.instigator_data:
             return None
 
@@ -362,7 +367,7 @@ class GrapheneInstigationState(graphene.ObjectType):
 
         return None
 
-    def resolve_runs(self, graphene_info, **kwargs):
+    def resolve_runs(self, graphene_info: ResolveInfo, **kwargs):
         from .pipelines.pipeline import GrapheneRun
 
         if kwargs.get("limit") and self._batch_loader:
@@ -399,14 +404,14 @@ class GrapheneInstigationState(graphene.ObjectType):
             )
         ]
 
-    def resolve_runsCount(self, graphene_info):
+    def resolve_runsCount(self, graphene_info: ResolveInfo):
         if self._instigator_state.instigator_type == InstigatorType.SENSOR:
             filters = RunsFilter.for_sensor(self._instigator_state)
         else:
             filters = RunsFilter.for_schedule(self._instigator_state)
         return graphene_info.context.instance.get_runs_count(filters=filters)
 
-    def resolve_tick(self, graphene_info, timestamp):
+    def resolve_tick(self, graphene_info: ResolveInfo, timestamp):
         matches = graphene_info.context.instance.get_ticks(
             self._instigator_state.instigator_origin_id,
             self._instigator_state.selector_id,
@@ -466,14 +471,14 @@ class GrapheneInstigationState(graphene.ObjectType):
             )
         ]
 
-    def resolve_nextTick(self, graphene_info):
+    def resolve_nextTick(self, graphene_info: ResolveInfo):
         # sensor
         if self._instigator_state.instigator_type == InstigatorType.SENSOR:
             return get_sensor_next_tick(graphene_info, self._instigator_state)
         else:
             return get_schedule_next_tick(graphene_info, self._instigator_state)
 
-    def resolve_runningCount(self, _graphene_info):
+    def resolve_runningCount(self, _graphene_info: ResolveInfo):
         return 1 if self._instigator_state.is_running else 0
 
 

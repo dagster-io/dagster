@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import Extra, Field
 
@@ -52,6 +52,17 @@ class CeleryK8sRunLauncherConfig(BaseModel):
         extra = Extra.forbid
 
 
+class RunK8sConfig(BaseModel):
+    containerConfig: Optional[Dict[str, Any]]
+    podSpecConfig: Optional[Dict[str, Any]]
+    podTemplateSpecMetadata: Optional[Dict[str, Any]]
+    jobSpecConfig: Optional[Dict[str, Any]]
+    jobMetadata: Optional[Dict[str, Any]]
+
+    class Config:
+        extra = Extra.forbid
+
+
 class K8sRunLauncherConfig(BaseModel):
     image: Optional[kubernetes.Image]
     imagePullPolicy: kubernetes.PullPolicy
@@ -67,6 +78,8 @@ class K8sRunLauncherConfig(BaseModel):
     failPodOnRunFailure: Optional[bool]
     resources: Optional[kubernetes.ResourceRequirements]
     schedulerName: Optional[str]
+    securityContext: Optional[kubernetes.SecurityContext]
+    runK8sConfig: Optional[RunK8sConfig]
 
     class Config:
         extra = Extra.forbid

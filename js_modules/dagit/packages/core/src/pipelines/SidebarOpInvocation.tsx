@@ -8,7 +8,7 @@ import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT} from '../typeexplorer/TypeWithToolti
 
 import {SidebarSection, SidebarTitle} from './SidebarComponents';
 import {DependencyHeaderRow, DependencyRow, DependencyTable} from './SidebarOpHelpers';
-import {SidebarOpInvocationFragment} from './types/SidebarOpInvocationFragment';
+import {SidebarOpInvocationFragment} from './types/SidebarOpInvocation.types';
 
 interface ISidebarOpInvocationProps {
   solid: SidebarOpInvocationFragment;

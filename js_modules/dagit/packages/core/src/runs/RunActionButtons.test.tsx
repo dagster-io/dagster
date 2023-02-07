@@ -2,12 +2,15 @@ import {gql, useQuery} from '@apollo/client';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
+import {RunStatus} from '../graphql/types';
 import {TestProvider} from '../testing/TestProvider';
-import {RunStatus} from '../types/globalTypes';
 
 import {RunActionButtons} from './RunActionButtons';
-import {RunFragments} from './RunFragments';
-import {RunActionButtonsTestQuery} from './types/RunActionButtonsTestQuery';
+import {RUN_FRAGMENT} from './RunFragments';
+import {
+  RunActionButtonsTestQuery,
+  RunActionButtonsTestQueryVariables,
+} from './types/RunActionButtons.test.types';
 
 describe('RunActionButtons', () => {
   const props = {
@@ -26,7 +29,9 @@ describe('RunActionButtons', () => {
   };
 
   const Test = () => {
-    const {data} = useQuery<RunActionButtonsTestQuery>(RUN_ACTION_BUTTONS_TEST_QUERY);
+    const {data} = useQuery<RunActionButtonsTestQuery, RunActionButtonsTestQueryVariables>(
+      RUN_ACTION_BUTTONS_TEST_QUERY,
+    );
     if (data) {
       const run = data.pipelineRunOrError;
       if (run.__typename === 'Run') {
@@ -164,5 +169,5 @@ const RUN_ACTION_BUTTONS_TEST_QUERY = gql`
     }
   }
 
-  ${RunFragments.RunFragment}
+  ${RUN_FRAGMENT}
 `;

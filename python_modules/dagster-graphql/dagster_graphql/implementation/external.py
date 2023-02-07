@@ -3,12 +3,11 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union
 
-from graphene import ResolveInfo
-
 import dagster._check as check
 from dagster._config import validate_config_from_snap
+from dagster._core.definitions.selector import PipelineSelector, RepositorySelector
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation import ExternalPipeline, PipelineSelector, RepositorySelector
+from dagster._core.host_representation import ExternalPipeline
 from dagster._core.host_representation.external import ExternalExecutionPlan
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -23,28 +22,26 @@ if TYPE_CHECKING:
         GrapheneWorkspace,
         GrapheneWorkspaceLocationStatusEntries,
     )
-    from dagster_graphql.schema.util import HasContext
+    from dagster_graphql.schema.util import ResolveInfo
 
 
 def get_full_external_pipeline_or_raise(
-    graphene_info: HasContext,
+    graphene_info: "ResolveInfo",
     selector: PipelineSelector,
 ) -> ExternalPipeline:
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
     return _get_external_pipeline_or_raise(graphene_info, selector, ignore_subset=True)
 
 
 def get_external_pipeline_or_raise(
-    graphene_info: HasContext, selector: PipelineSelector
+    graphene_info: "ResolveInfo", selector: PipelineSelector
 ) -> ExternalPipeline:
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
     return _get_external_pipeline_or_raise(graphene_info, selector)
 
 
 def _get_external_pipeline_or_raise(
-    graphene_info: HasContext, selector: PipelineSelector, ignore_subset: bool = False
+    graphene_info: "ResolveInfo", selector: PipelineSelector, ignore_subset: bool = False
 ) -> ExternalPipeline:
     from ..schema.errors import GrapheneInvalidSubsetError, GraphenePipelineNotFoundError
     from ..schema.pipelines.pipeline import GraphenePipeline
@@ -91,7 +88,6 @@ def ensure_valid_config(
     )
 
     if not validated_config.success:
-
         raise UserFacingGraphQLError(
             GrapheneRunConfigValidationInvalid.for_validation_errors(
                 external_pipeline, validated_config.errors
@@ -102,14 +98,13 @@ def ensure_valid_config(
 
 
 def get_external_execution_plan_or_raise(
-    graphene_info: HasContext,
+    graphene_info: "ResolveInfo",
     external_pipeline: ExternalPipeline,
     mode: Optional[str],
     run_config: Mapping[str, object],
     step_keys_to_execute: Optional[Sequence[str]],
     known_state: Optional[KnownExecutionState],
 ) -> ExternalExecutionPlan:
-
     return graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
         run_config=run_config,
@@ -120,10 +115,9 @@ def get_external_execution_plan_or_raise(
 
 
 @capture_error
-def fetch_repositories(graphene_info: HasContext) -> GrapheneRepositoryConnection:
+def fetch_repositories(graphene_info: "ResolveInfo") -> GrapheneRepositoryConnection:
     from ..schema.external import GrapheneRepository, GrapheneRepositoryConnection
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     return GrapheneRepositoryConnection(
         nodes=[
             GrapheneRepository(
@@ -139,12 +133,11 @@ def fetch_repositories(graphene_info: HasContext) -> GrapheneRepositoryConnectio
 
 @capture_error
 def fetch_repository(
-    graphene_info: HasContext, repository_selector: RepositorySelector
+    graphene_info: "ResolveInfo", repository_selector: RepositorySelector
 ) -> Union[GrapheneRepository, GrapheneRepositoryNotFoundError]:
     from ..schema.errors import GrapheneRepositoryNotFoundError
     from ..schema.external import GrapheneRepository
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
     if graphene_info.context.has_repository_location(repository_selector.location_name):

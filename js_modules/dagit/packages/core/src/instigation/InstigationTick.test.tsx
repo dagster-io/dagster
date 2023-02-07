@@ -2,10 +2,10 @@ import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
-import {InstigationTickStatus} from '../types/globalTypes';
+import {InstigationTickStatus} from '../graphql/types';
 
 import {TickTag} from './InstigationTick';
-import {TickTagFragment} from './types/TickTagFragment';
+import {TickTagFragment} from './types/InstigationTick.types';
 
 describe('TickTag', () => {
   const tick: TickTagFragment = {

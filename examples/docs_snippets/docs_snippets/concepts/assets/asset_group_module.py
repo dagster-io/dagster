@@ -1,5 +1,5 @@
-# isort: skip_file
-# pylint: disable=import-error
+# pyright: reportMissingImports=false
+# isort: off
 
 from dagster import (
     load_assets_from_package_module,
@@ -7,7 +7,7 @@ from dagster import (
 
 # start_example
 
-import my_package.cereal as cereal
+from my_package import cereal
 
 cereal_assets = load_assets_from_package_module(
     cereal,

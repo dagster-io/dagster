@@ -1,6 +1,4 @@
 from dagster import (
-    In,
-    Out,
     config_from_files,
     file_relative_path,
     fs_io_manager,
@@ -8,9 +6,7 @@ from dagster import (
     in_process_executor,
     repository,
 )
-from dagster._legacy import InputDefinition, OutputDefinition
 
-from ..data_frame import DataFrame
 from .pandas_hello_world.ops import always_fails_op, papermill_pandas_hello_world, sum_op, sum_sq_op
 
 

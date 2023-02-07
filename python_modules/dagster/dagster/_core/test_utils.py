@@ -1,23 +1,23 @@
 import asyncio
 import os
 import re
-import signal
-import sys
-import tempfile
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from typing import NamedTuple, Optional, Sequence, TypeVar
 
 import pendulum
-import yaml
 
-from dagster import Permissive, Shape
-from dagster import _check as check
-from dagster import fs_io_manager
+from dagster import (
+    Permissive,
+    Shape,
+    _check as check,
+    fs_io_manager,
+)
 from dagster._config import Array, Field
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     InProcessRepositoryLocationOrigin,
@@ -29,13 +29,18 @@ from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
-from dagster._daemon.controller import create_daemon_grpc_server_registry
 from dagster._legacy import ModeDefinition, pipeline, solid
 from dagster._serdes import ConfigurableClass
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
-from dagster._utils import Counter, merge_dicts, traced, traced_counter
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
+
+# test utils from separate light weight file since are exported top level
+from .instance_for_test import (
+    cleanup_test_instance as cleanup_test_instance,
+    environ as environ,
+    instance_for_test as instance_for_test,
+)
 
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 
@@ -54,7 +59,7 @@ def assert_namedtuples_equal(
 ) -> None:
     exclude_fields = exclude_fields or []
     for field in type(t1)._fields:
-        if not field in exclude_fields:
+        if field not in exclude_fields:
             assert getattr(t1, field) == getattr(t2, field)
 
 
@@ -96,89 +101,11 @@ def nesting_graph_pipeline(depth, num_children, *args, **kwargs):
     return nested_pipeline
 
 
-@contextmanager
-def environ(env):
-    """Temporarily set environment variables inside the context manager and
-    fully restore previous environment afterwards
-    """
-    previous_values = {key: os.getenv(key) for key in env}
-    for key, value in env.items():
-        if value is None:
-            if key in os.environ:
-                del os.environ[key]
-        else:
-            os.environ[key] = value
-    try:
-        yield
-    finally:
-        for key, value in previous_values.items():
-            if value is None:
-                if key in os.environ:
-                    del os.environ[key]
-            else:
-                os.environ[key] = value
-
-
-@contextmanager
-def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
-    with ExitStack() as stack:
-        if not temp_dir:
-            temp_dir = stack.enter_context(tempfile.TemporaryDirectory())
-
-        # If using the default run launcher, wait for any grpc processes that created runs
-        # during test disposal to finish, since they might also be using this instance's tempdir
-        instance_overrides = merge_dicts(
-            {
-                "run_launcher": {
-                    "class": "DefaultRunLauncher",
-                    "module": "dagster._core.launcher.default_run_launcher",
-                    "config": {
-                        "wait_for_processes": True,
-                    },
-                },
-                "telemetry": {"enabled": False},
-            },
-            (overrides if overrides else {}),
-        )
-
-        if set_dagster_home:
-            stack.enter_context(
-                environ({"DAGSTER_HOME": temp_dir, "DAGSTER_DISABLE_TELEMETRY": "yes"})
-            )
-
-        with open(os.path.join(temp_dir, "dagster.yaml"), "w", encoding="utf8") as fd:
-            yaml.dump(instance_overrides, fd, default_flow_style=False)
-
-        with DagsterInstance.from_config(temp_dir) as instance:
-            try:
-                yield instance
-            except:
-                sys.stderr.write(
-                    "Test raised an exception, attempting to clean up instance:"
-                    + serializable_error_info_from_exc_info(sys.exc_info()).to_string()
-                    + "\n"
-                )
-                raise
-            finally:
-                cleanup_test_instance(instance)
-
-
-def cleanup_test_instance(instance):
-    check.inst_param(instance, "instance", DagsterInstance)
-    # To avoid filesystem contention when we close the temporary directory, wait for
-    # all runs to reach a terminal state, and close any subprocesses or threads
-    # that might be accessing the run history DB.
-
-    # Since launcher is lazy loaded, we don't need to do anyting if it's None
-    if instance._run_launcher:  # pylint: disable=protected-access
-        instance._run_launcher.join()  # pylint: disable=protected-access
-
-
 TEST_PIPELINE_NAME = "_test_pipeline_"
 
 
 def create_run_for_test(
-    instance,
+    instance: DagsterInstance,
     pipeline_name=TEST_PIPELINE_NAME,
     run_id=None,
     run_config=None,
@@ -196,21 +123,23 @@ def create_run_for_test(
     pipeline_code_origin=None,
 ):
     return instance.create_run(
-        pipeline_name,
-        run_id,
-        run_config,
-        mode,
-        solids_to_execute,
-        step_keys_to_execute,
-        status,
-        tags,
-        root_run_id,
-        parent_run_id,
-        pipeline_snapshot,
-        execution_plan_snapshot,
-        parent_pipeline_snapshot,
+        pipeline_name=pipeline_name,
+        run_id=run_id,
+        run_config=run_config,
+        mode=mode,
+        solids_to_execute=solids_to_execute,
+        step_keys_to_execute=step_keys_to_execute,
+        status=status,
+        tags=tags,
+        root_run_id=root_run_id,
+        parent_run_id=parent_run_id,
+        pipeline_snapshot=pipeline_snapshot,
+        execution_plan_snapshot=execution_plan_snapshot,
+        parent_pipeline_snapshot=parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline_origin,
         pipeline_code_origin=pipeline_code_origin,
+        asset_selection=None,
+        solid_selection=None,
     )
 
 
@@ -364,11 +293,12 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
 
 
 class MockedRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None, bad_run_ids=None):
+    def __init__(self, inst_data=None, bad_run_ids=None, bad_user_code_run_ids=None):
         self._inst_data = inst_data
         self._queue = []
         self._launched_run_ids = set()
-        self._bad_run_ids = bad_run_ids
+        self.bad_run_ids = bad_run_ids or set()
+        self.bad_user_code_run_ids = bad_user_code_run_ids or set()
 
         super().__init__()
 
@@ -377,8 +307,11 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(run, "run", DagsterRun)
         check.invariant(run.status == DagsterRunStatus.STARTING)
 
-        if self._bad_run_ids and run.run_id in self._bad_run_ids:
+        if run.run_id in self.bad_run_ids:
             raise Exception(f"Bad run {run.run_id}")
+
+        if run.run_id in self.bad_user_code_run_ids:
+            raise DagsterUserCodeUnreachableError(f"User code error launching run {run.run_id}")
 
         self._queue.append(run)
         self._launched_run_ids.add(run.run_id)
@@ -392,7 +325,12 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return Shape({"bad_run_ids": Field(Array(str), is_required=False)})
+        return Shape(
+            {
+                "bad_run_ids": Field(Array(str), is_required=False),
+                "bad_user_code_run_ids": Field(Array(str), is_required=False),
+            }
+        )
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
@@ -465,12 +403,6 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
         return TestSecretsLoader(inst_data=inst_data, **config_value)
 
 
-def get_terminate_signal():
-    if sys.platform == "win32":
-        return signal.SIGTERM
-    return signal.SIGKILL
-
-
 def get_crash_signals():
     return [get_terminate_signal()]
 
@@ -520,7 +452,10 @@ def create_test_daemon_workspace_context(
     workspace_load_target: WorkspaceLoadTarget,
     instance: DagsterInstance,
 ):
-    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
+    """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests.
+    """
+    from dagster._daemon.controller import create_daemon_grpc_server_registry
+
     configure_loggers()
     with create_daemon_grpc_server_registry(instance) as grpc_server_registry:
         with WorkspaceProcessContext(
@@ -548,7 +483,7 @@ def remove_none_recursively(obj):
         return obj
 
 
-default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
+default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})  # type: ignore[has-type]
 
 
 def strip_ansi(input_str):

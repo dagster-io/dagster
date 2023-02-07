@@ -2,13 +2,10 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {VersionNumberQuery} from './types/VersionNumberQuery';
+import {VersionNumberQuery} from './types/VersionNumber.types';
 
 export const VersionNumber = () => {
-  const {data} = useQuery<VersionNumberQuery>(VERSION_NUMBER_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
-
+  const {data} = useQuery<VersionNumberQuery>(VERSION_NUMBER_QUERY);
   return <Version>{data?.version || <span>&nbsp;</span>}</Version>;
 };
 

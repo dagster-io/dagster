@@ -72,7 +72,6 @@ def test_dep_dsl():
 
 
 def test_dynamic_examples():
-
     assert naive.execute_in_process().success
     assert dynamic_graph.execute_in_process().success
     assert chained.execute_in_process().success

@@ -16,6 +16,7 @@
    sections/api/apidocs/ops
    sections/api/apidocs/io-managers
    sections/api/apidocs/partitions
+   sections/api/apidocs/definitions
    sections/api/apidocs/repositories
    sections/api/apidocs/resources
    sections/api/apidocs/schedules-sensors
@@ -57,6 +58,7 @@
    sections/api/apidocs/libraries/dagster-slack
    sections/api/apidocs/libraries/dagster-snowflake
    sections/api/apidocs/libraries/dagster-snowflake-pandas
+   sections/api/apidocs/libraries/dagster-snowflake-pyspark
    sections/api/apidocs/libraries/dagster-spark
    sections/api/apidocs/libraries/dagster-ssh
    sections/api/apidocs/libraries/dagster-twilio

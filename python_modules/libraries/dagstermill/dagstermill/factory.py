@@ -8,12 +8,14 @@ from typing import Any, Mapping, Optional, Sequence, Set, Union, cast
 
 import nbformat
 import papermill
-from papermill.engines import papermill_engines
-from papermill.iorw import load_notebook_node, write_ipynb
-
-from dagster import In, OpDefinition, Out, Output
-from dagster import _check as check
-from dagster import _seven
+from dagster import (
+    In,
+    OpDefinition,
+    Out,
+    Output,
+    _check as check,
+    _seven,
+)
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
@@ -26,6 +28,8 @@ from dagster._serdes import pack_value
 from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
+from papermill.engines import papermill_engines
+from papermill.iorw import load_notebook_node, write_ipynb
 
 from .compat import ExecutionError
 from .engine import DagstermillEngine
@@ -35,7 +39,7 @@ from .translator import DagsterTranslator
 
 def _clean_path_for_windows(notebook_path: str) -> str:
     """In windows, the notebook cant render in dagit unless the C: prefix is removed.
-    os.path.splitdrive will split the path into (drive, tail), so just return the tail
+    os.path.splitdrive will split the path into (drive, tail), so just return the tail.
     """
     return os.path.splitdrive(notebook_path)[1]
 
@@ -55,7 +59,7 @@ def _find_first_tagged_cell_index(nb, tag):
 # Typically, papermill injects the injected-parameters cell *below* the parameters cell
 # but we want to *replace* the parameters cell, which is what this function does.
 def replace_parameters(context, nb, parameters):
-    """Assigned parameters into the appropriate place in the input notebook
+    """Assigned parameters into the appropriate place in the input notebook.
 
     Args:
         nb (NotebookNode): Executable notebook object
@@ -88,10 +92,8 @@ def replace_parameters(context, nb, parameters):
     else:
         # Inject to the top of the notebook, presumably first cell includes dagstermill import
         context.log.debug(
-            (
-                "Executing notebook with no tagged parameters cell: injecting boilerplate in first "
-                "cell."
-            )
+            "Executing notebook with no tagged parameters cell: injecting boilerplate in first "
+            "cell."
         )
         before = []
         after = nb.cells
@@ -179,7 +181,6 @@ def _dm_compute(
 
         with tempfile.TemporaryDirectory() as output_notebook_dir:
             with safe_tempfile_path() as output_log_path:
-
                 prefix = str(uuid.uuid4())
                 parameterized_notebook_path = os.path.join(
                     output_notebook_dir, f"{prefix}-inter.ipynb"
@@ -223,8 +224,9 @@ def _dm_compute(
                         ex.ename == "RetryRequested" or ex.ename == "Failure"
                     ):
                         step_execution_context.log.warn(
-                            f"Encountered raised {ex.ename} in notebook. Use dagstermill.yield_event "
-                            "with RetryRequested or Failure to trigger their behavior."
+                            f"Encountered raised {ex.ename} in notebook. Use"
+                            " dagstermill.yield_event with RetryRequested or Failure to trigger"
+                            " their behavior."
                         )
 
                     if save_notebook_on_failure:
@@ -277,12 +279,14 @@ def _dm_compute(
                     # if file manager writing errors, e.g. file manager is not provided, we throw a warning
                     # and fall back to the previously stored temp executed notebook.
                     step_context.log.warning(
-                        "Error when attempting to materialize executed notebook using file manager: "
-                        f"{str(serializable_error_info_from_exc_info(sys.exc_info()))}"
-                        f"\nNow falling back to local: notebook execution was temporarily materialized at {executed_notebook_path}"
-                        "\nIf you have supplied a file manager and expect to use it for materializing the "
-                        'notebook, please include "file_manager" in the `required_resource_keys` argument '
-                        f"to `{dagster_factory_name}`"
+                        "Error when attempting to materialize executed notebook using file"
+                        " manager:"
+                        f" {str(serializable_error_info_from_exc_info(sys.exc_info()))}\nNow"
+                        " falling back to local: notebook execution was temporarily materialized"
+                        f" at {executed_notebook_path}\nIf you have supplied a file manager and"
+                        " expect to use it for materializing the notebook, please include"
+                        ' "file_manager" in the `required_resource_keys` argument to'
+                        f" `{dagster_factory_name}`"
                     )
 
                 if output_notebook is not None:
@@ -402,11 +406,17 @@ def define_dagstermill_op(
     if tags is not None:
         check.invariant(
             "notebook_path" not in tags,
-            "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key is reserved for use by Dagster",
+            (
+                "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
+                " is reserved for use by Dagster"
+            ),
         )
         check.invariant(
             "kind" not in tags,
-            "user-defined op tags contains the `kind` key, but the `kind` key is reserved for use by Dagster",
+            (
+                "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
+                " use by Dagster"
+            ),
         )
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
 

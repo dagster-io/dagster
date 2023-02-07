@@ -2,7 +2,6 @@ import time
 
 import pendulum
 import pytest
-
 from dagster import DagsterInvariantViolationError
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
@@ -17,7 +16,6 @@ from dagster._utils.error import SerializableErrorInfo
 
 
 def test_healthy():
-
     with instance_for_test(
         overrides={
             "run_coordinator": {
@@ -46,7 +44,6 @@ def test_healthy():
             workspace_load_target=EmptyWorkspaceTarget(),
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ) as controller:
-
             while True:
                 now = pendulum.now("UTC")
                 if all_daemons_healthy(
@@ -58,7 +55,6 @@ def test_healthy():
                     curr_time_seconds=now.float_timestamp,
                     heartbeat_interval_seconds=heartbeat_interval_seconds,
                 ):
-
                     controller.check_daemon_threads()
                     controller.check_daemon_heartbeats()
 
@@ -90,7 +86,6 @@ def test_healthy_with_different_daemons():
             instance,
             workspace_load_target=EmptyWorkspaceTarget(),
         ):
-
             with instance_for_test(
                 overrides={
                     "run_coordinator": {
@@ -112,7 +107,7 @@ def test_thread_die_daemon(monkeypatch):
 
         iteration_ran = {"ran": False}
 
-        def run_loop_error(_, _ctx):
+        def run_loop_error(_, _ctx, _shutdown_event):
             iteration_ran["ran"] = True
             raise KeyboardInterrupt
             yield  # pylint: disable=unreachable
@@ -188,7 +183,7 @@ def test_error_daemon(monkeypatch):
 
         error_count = {"count": 0}
 
-        def run_loop_error(_, _ctx):
+        def run_loop_error(_, _ctx, _shutdown_event):
             if should_raise_errors:
                 time.sleep(0.5)
                 error_count["count"] = error_count["count"] + 1
@@ -240,11 +235,9 @@ def test_error_daemon(monkeypatch):
 
                     # Errors build up until there are > 5, then pull off the last
                     if len(status.last_heartbeat.errors) >= 5:
-
                         first_error_number = _get_error_number(status.last_heartbeat.errors[0])
 
                         if first_error_number > 5:
-
                             # Verify error numbers decrease consecutively
                             assert [
                                 _get_error_number(error) for error in status.last_heartbeat.errors
@@ -318,7 +311,7 @@ def test_multiple_error_daemon(monkeypatch):
     with instance_for_test() as instance:
         from dagster._daemon.daemon import SensorDaemon
 
-        def run_loop_error(_, _ctx):
+        def run_loop_error(_, _ctx, _shutdown_event):
             # ?message stack cls_name cause"
             yield SerializableErrorInfo("foobar", None, None, None)
             yield SerializableErrorInfo("bizbuz", None, None, None)
@@ -339,13 +332,11 @@ def test_multiple_error_daemon(monkeypatch):
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ) as controller:
             while True:
-
                 now = pendulum.now("UTC")
 
                 if all_daemons_live(
                     instance, heartbeat_interval_seconds=heartbeat_interval_seconds
                 ):
-
                     # Despite error, daemon should still be running
                     controller.check_daemon_threads()
                     controller.check_daemon_heartbeats()

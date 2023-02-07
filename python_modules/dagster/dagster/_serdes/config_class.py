@@ -149,7 +149,7 @@ class ConfigurableClass(ABC):
 
     @staticmethod
     @abstractmethod
-    def from_config_value(inst_data: Any, config_value: Mapping[str, object]) -> object:
+    def from_config_value(inst_data: Any, config_value: Mapping[str, Any]) -> object:
         """New up an instance of the ConfigurableClass from a validated config value.
 
         Called by ConfigurableClassData.rehydrate.
@@ -180,8 +180,7 @@ def class_from_code_pointer(module_name: str, class_name: str) -> Type[Any]:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError:
         check.failed(
-            "Couldn't import module {module_name} when attempting to load the "
-            "class {klass}".format(
+            "Couldn't import module {module_name} when attempting to load the class {klass}".format(
                 module_name=module_name,
                 klass=module_name + "." + class_name,
             )

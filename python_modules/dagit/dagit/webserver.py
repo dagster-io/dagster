@@ -4,6 +4,14 @@ import uuid
 from os import path
 from typing import Generic, List, TypeVar
 
+import dagster._check as check
+from dagster import __version__ as dagster_version
+from dagster._core.debug import DebugRunPayload
+from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
+from dagster._seven import json
+from dagster._utils import Counter, traced_counter
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
 from graphene import Schema
@@ -23,15 +31,6 @@ from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.types import Message
 
-import dagster._check as check
-from dagster import __version__ as dagster_version
-from dagster._core.debug import DebugRunPayload
-from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
-from dagster._seven import json
-from dagster._utils import Counter, traced_counter
-
 from .graphql import GraphQLServer
 from .version import __version__
 
@@ -45,13 +44,13 @@ ROOT_ADDRESS_STATIC_RESOURCES = [
     "/favicon-run-success.svg",
     "/asset-manifest.json",
     "/robots.txt",
+    "/Dagster_world.mp4",
 ]
 
 T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
 
 class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
-
     _process_context: T_IWorkspaceProcessContext
 
     def __init__(self, process_context: T_IWorkspaceProcessContext, app_path_prefix: str = ""):
@@ -212,7 +211,9 @@ class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
                     rendered_template.replace('href="/', f'href="{self._app_path_prefix}/')
                     .replace('src="/', f'src="{self._app_path_prefix}/')
                     .replace("__PATH_PREFIX__", self._app_path_prefix)
-                    .replace("__TELEMETRY_ENABLED__", str(context.instance.telemetry_enabled))
+                    .replace(
+                        '"__TELEMETRY_ENABLED__"', str(context.instance.telemetry_enabled).lower()
+                    )
                     .replace("NONCE-PLACEHOLDER", nonce),
                     headers=headers,
                 )

@@ -1,20 +1,21 @@
 # pylint: disable=protected-access
-# pylint: disable=unused-variable
 
 import copy
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 import dagster_aws
 import pytest
 from botocore.exceptions import ClientError
-from dagster_aws.ecs import EcsEventualConsistencyTimeout
-from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
-from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
-
 from dagster._check import CheckError
 from dagster._core.code_pointer import FileCodePointer
 from dagster._core.events import MetadataEntry
+from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
 from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster_aws.ecs import EcsEventualConsistencyTimeout
+from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
+from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
@@ -56,7 +57,10 @@ def test_default_launcher(
     assert not container_definition.get("entryPoint")
     assert not container_definition.get("dependsOn")
     # But other stuff is inherited from the parent task definition
-    assert container_definition["environment"] == environment
+    assert all(item in container_definition["environment"] for item in environment)
+    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in container_definition[
+        "environment"
+    ]
 
     # A new task is launched
     tasks = ecs.list_tasks()["taskArns"]
@@ -149,7 +153,10 @@ def test_launcher_dont_use_current_task(
     assert not container_definition.get("entryPoint")
     assert not container_definition.get("dependsOn")
     # It takes in the environment configured on the instance
-    assert container_definition["environment"] == environment
+    assert all(item in container_definition["environment"] for item in environment)
+    assert {"name": "DAGSTER_RUN_JOB_NAME", "value": "pipeline"} in container_definition[
+        "environment"
+    ]
 
     # A new task is launched
     tasks = ecs.list_tasks(cluster=cluster)["taskArns"]
@@ -194,7 +201,7 @@ def test_task_definition_registration(
     ecs, instance, workspace, run, other_workspace, other_run, secrets_manager, monkeypatch
 ):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
-    initial_tasks = ecs.list_tasks()["taskArns"]
+    _initial_tasks = ecs.list_tasks()["taskArns"]
 
     instance.launch_run(run.run_id, workspace)
 
@@ -238,15 +245,38 @@ def test_task_definition_registration(
     assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == len(task_definitions) + 1
 
 
-def test_reuse_task_definition(instance, ecs):
+@pytest.mark.skip(
+    "This remains occassionally flaky on older versions of Python. See"
+    " https://github.com/dagster-io/dagster/pull/11290 "
+    "https://linear.app/elementl/issue/CLOUD-2093/re-enable-flaky-ecs-task-registration-race-condition-tests"
+)
+def test_task_definition_registration_race_condition(ecs, instance, workspace, run):
+    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    initial_tasks = ecs.list_tasks()["taskArns"]
 
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        for i in range(10):
+            executor.submit(instance.launch_run, run.run_id, workspace)
+
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    assert len(task_definitions) == len(initial_task_definitions) + 1
+
+    tasks = ecs.list_tasks()["taskArns"]
+    assert len(tasks) == len(initial_tasks) + 10
+
+
+def test_reuse_task_definition(instance, ecs):
     image = "image"
     secrets = []
     environment = [
         {
             "name": "MY_ENV_VAR",
             "value": "MY_VALUE",
-        }
+        },
+        {
+            "name": "MY_OTHER_ENV_VAR",
+            "value": "MY_OTHER_VALUE",
+        },
     ]
 
     container_name = instance.run_launcher.container_name
@@ -282,6 +312,16 @@ def test_reuse_task_definition(instance, ecs):
 
     assert instance.run_launcher._reuse_task_definition(task_definition_config, container_name)
 
+    # Reordering environment is still reused
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["containerDefinitions"][0]["environment"] = list(
+        reversed(task_definition["containerDefinitions"][0]["environment"])
+    )
+    assert instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
     # Changed image fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["image"] = "new-image"
@@ -308,7 +348,9 @@ def test_reuse_task_definition(instance, ecs):
 
     # Changed secrets fails
     task_definition = copy.deepcopy(original_task_definition)
-    task_definition["containerDefinitions"][0]["secrets"].append("new-secrets")
+    task_definition["containerDefinitions"][0]["secrets"].append(
+        {"name": "new-secret", "valueFrom": "fake-arn"}
+    )
     assert not instance.run_launcher._reuse_task_definition(
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
         container_name,
@@ -535,7 +577,6 @@ def test_launching_custom_task_definition(
     with instance_cm(
         {"task_definition": task_definition_arn, "container_name": container_name}
     ) as instance:
-
         run = instance.create_run_for_pipeline(
             pipeline,
             external_pipeline_origin=external_pipeline.get_external_origin(),
@@ -622,6 +663,55 @@ def test_public_ip_assignment(ecs, ec2, instance, workspace, run, assign_public_
     assert bool(attributes.get("PublicIp")) == assign_public_ip
 
 
+def test_launcher_run_resources(
+    ecs,
+    instance_with_resources,
+    workspace,
+    external_pipeline,
+    pipeline,
+):
+    instance = instance_with_resources
+    run = instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+    )
+
+    existing_tasks = ecs.list_tasks()["taskArns"]
+
+    instance.launch_run(run.run_id, workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = list(set(tasks).difference(existing_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert task.get("overrides").get("memory") == "2048"
+    assert task.get("overrides").get("cpu") == "1024"
+
+
+def test_container_context_run_resources(
+    ecs,
+    instance,
+    launch_run_with_container_context,
+    container_context_config,
+):
+    existing_tasks = ecs.list_tasks()["taskArns"]
+
+    launch_run_with_container_context(instance)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = list(set(tasks).difference(existing_tasks))[0]
+    task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+    assert (
+        task.get("overrides").get("memory")
+        == container_context_config["ecs"]["run_resources"]["memory"]
+    )
+    assert (
+        task.get("overrides").get("cpu") == container_context_config["ecs"]["run_resources"]["cpu"]
+    )
+
+
 def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
     # By default
     initial_tasks = ecs.list_tasks()["taskArns"]
@@ -679,8 +769,25 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
         instance.launch_run(run.run_id, workspace)
 
 
-def test_status(ecs, instance, workspace, run):
-    instance.launch_run(run.run_id, workspace)
+def test_status(
+    ecs,
+    instance_with_log_group,
+    pipeline,
+    external_pipeline,
+    cloudwatch_client,
+    log_group,
+):
+    instance = instance_with_log_group
+
+    run = instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+    )
+
+    instance.run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=None))
+
+    assert instance.run_launcher.logs == cloudwatch_client
 
     # Reach into StubbedEcs and grab the task
     # so we can modify its status. This is kind of complicated
@@ -688,7 +795,9 @@ def test_status(ecs, instance, workspace, run):
     # our internal task data structure - maybe a dict of dicts
     # using cluster and arn as keys - instead of a dict of lists?
     task_arn = instance.get_run_by_id(run.run_id).tags["ecs/task_arn"]
-    task = [task for task in ecs.tasks["default"] if task["taskArn"] == task_arn][0]
+    task = [task for task in ecs.storage.tasks["default"] if task["taskArn"] == task_arn][0]
+
+    task_id = task_arn.split("/")[-1]
 
     for status in RUNNING_STATUSES:
         task["lastStatus"] = status
@@ -701,7 +810,41 @@ def test_status(ecs, instance, workspace, run):
         assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.SUCCESS
 
         task["containers"][0]["exitCode"] = 1
-        assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.FAILED
+        # Without logs (or on a failure fetching logs) the health check sitll fails
+
+        failure_health_check = instance.run_launcher.check_run_worker_health(run)
+        assert failure_health_check.status == WorkerStatus.FAILED
+        assert (
+            failure_health_check.msg
+            == f"ECS task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
+            " failed. Check the logs for the failed task for details."
+        )
+
+        # with logs, the failure includes the run worker logs
+
+        family = instance.run_launcher._get_run_task_definition_family(run)
+        log_stream = f"{family}/run/{task_id}"
+        cloudwatch_client.create_log_stream(logGroupName=log_group, logStreamName=log_stream)
+
+        cloudwatch_client.put_log_events(
+            logGroupName=log_group,
+            logStreamName=log_stream,
+            logEvents=[
+                {"timestamp": int(time.time() * 1000), "message": "Oops something bad happened"}
+            ],
+        )
+
+        failure_health_check = instance.run_launcher.check_run_worker_health(run)
+        assert failure_health_check.status == WorkerStatus.FAILED
+
+        assert (
+            failure_health_check.msg
+            == f"ECS task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
+            " failed. Task logs:\nOops something bad happened"
+        )
+
+        # Failure includes logs
+        assert "Task logs:\nOops something bad happened" in failure_health_check.msg
 
     task["lastStatus"] = "foo"
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.UNKNOWN
@@ -713,7 +856,6 @@ def test_overrides_too_long(
     pipeline,
     external_pipeline,
 ):
-
     large_container_context = {i: "boom" for i in range(10000)}
 
     mock_pipeline_code_origin = PipelinePythonOrigin(

@@ -5,6 +5,7 @@ from typing import Callable, Iterable, Mapping, Optional, Sequence, cast
 
 import pendulum
 import sqlalchemy as db
+import sqlalchemy.exc as db_exc
 
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
@@ -29,7 +30,7 @@ from .schema import InstigatorsTable, JobTable, JobTickTable, SecondaryIndexMigr
 
 
 class SqlScheduleStorage(ScheduleStorage):
-    """Base class for SQL backed schedule storage"""
+    """Base class for SQL backed schedule storage."""
 
     @abstractmethod
     def connect(self):
@@ -113,7 +114,7 @@ class SqlScheduleStorage(ScheduleStorage):
                     instigator_body=serialize_dagster_namedtuple(state),
                 )
             )
-        except db.exc.IntegrityError:
+        except db_exc.IntegrityError:
             conn.execute(
                 InstigatorsTable.update()
                 .where(InstigatorsTable.c.selector_id == selector_id)
@@ -138,7 +139,7 @@ class SqlScheduleStorage(ScheduleStorage):
                         job_body=serialize_dagster_namedtuple(state),
                     )
                 )
-            except db.exc.IntegrityError as exc:
+            except db_exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
                     f"InstigatorState {state.instigator_origin_id} is already present in storage"
                 ) from exc
@@ -346,9 +347,10 @@ class SqlScheduleStorage(ScheduleStorage):
                 result = conn.execute(tick_insert)
                 tick_id = result.inserted_primary_key[0]
                 return InstigatorTick(tick_id, tick_data)
-            except db.exc.IntegrityError as exc:
+            except db_exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
-                    f"Unable to insert InstigatorTick for job {tick_data.instigator_name} in storage"
+                    f"Unable to insert InstigatorTick for job {tick_data.instigator_name} in"
+                    " storage"
                 ) from exc
 
     def update_tick(self, tick):
@@ -425,7 +427,7 @@ class SqlScheduleStorage(ScheduleStorage):
         query = (
             db.select([1])
             .where(SecondaryIndexMigrationTable.c.name == migration_name)
-            .where(SecondaryIndexMigrationTable.c.migration_completed != None)
+            .where(SecondaryIndexMigrationTable.c.migration_completed != None)  # noqa: E711
             .limit(1)
         )
         with self.connect() as conn:
@@ -443,7 +445,7 @@ class SqlScheduleStorage(ScheduleStorage):
         with self.connect() as conn:
             try:
                 conn.execute(query)
-            except db.exc.IntegrityError:
+            except db_exc.IntegrityError:
                 conn.execute(
                     SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
                     .where(SecondaryIndexMigrationTable.c.name == migration_name)

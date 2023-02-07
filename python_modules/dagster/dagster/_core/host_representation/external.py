@@ -7,6 +7,7 @@ from typing import (
     AbstractSet,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -16,10 +17,12 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import (
     DEFAULT_SENSOR_DAEMON_INTERVAL,
     DefaultSensorStatus,
@@ -36,6 +39,7 @@ from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
 from dagster._core.utils import toposort
 from dagster._serdes import create_snapshot_id
+from dagster._utils import iter_to_list
 from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
@@ -46,6 +50,7 @@ from .external_data import (
     ExternalPipelineData,
     ExternalPresetData,
     ExternalRepositoryData,
+    ExternalResourceData,
     ExternalScheduleData,
     ExternalSensorData,
     ExternalSensorMetadata,
@@ -54,7 +59,6 @@ from .external_data import (
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
-from .selector import InstigatorSelector, RepositorySelector
 
 if TYPE_CHECKING:
     from dagster._core.scheduler.instigation import InstigatorState
@@ -88,7 +92,8 @@ class ExternalRepository:
             self._deferred_snapshots = True
             if ref_to_data_fn is None:
                 check.failed(
-                    "ref_to_data_fn is required when ExternalRepositoryData is loaded with deferred snapshots"
+                    "ref_to_data_fn is required when ExternalRepositoryData is loaded with deferred"
+                    " snapshots"
                 )
 
             self._ref_to_data_fn = ref_to_data_fn
@@ -128,7 +133,26 @@ class ExternalRepository:
         return self._external_schedules[schedule_name]
 
     def get_external_schedules(self) -> Sequence[ExternalSchedule]:
-        return self._external_schedules.values()
+        return iter_to_list(self._external_schedules.values())
+
+    @property
+    @cached_method
+    def _external_resources(self) -> Dict[str, ExternalResource]:
+        return {
+            external_resource_data.name: ExternalResource(external_resource_data, self._handle)
+            for external_resource_data in (
+                self.external_repository_data.external_resource_data or []
+            )
+        }
+
+    def has_external_resource(self, resource_name: str) -> bool:
+        return resource_name in self._external_resources
+
+    def get_external_resource(self, resource_name: str) -> ExternalResource:
+        return self._external_resources[resource_name]
+
+    def get_external_resources(self) -> Iterable[ExternalResource]:
+        return self._external_resources.values()
 
     @property
     @cached_method
@@ -145,7 +169,7 @@ class ExternalRepository:
         return self._external_sensors[sensor_name]
 
     def get_external_sensors(self) -> Sequence[ExternalSensor]:
-        return self._external_sensors.values()
+        return iter_to_list(self._external_sensors.values())
 
     @property
     @cached_method
@@ -164,7 +188,7 @@ class ExternalRepository:
         return self._external_partition_sets[partition_set_name]
 
     def get_external_partition_sets(self) -> Sequence[ExternalPartitionSet]:
-        return self._external_partition_sets.values()
+        return iter_to_list(self._external_partition_sets.values())
 
     def has_external_job(self, job_name: str) -> bool:
         return job_name in self._job_map
@@ -506,6 +530,40 @@ class ExternalExecutionPlan:
         return self._topological_step_levels
 
 
+class ExternalResource:
+    """
+    Represents a top-level resource in a repository, e.g. one passed through the Definitions API.
+    """
+
+    def __init__(self, external_resource_data: ExternalResourceData, handle: RepositoryHandle):
+        self._external_resource_data = check.inst_param(
+            external_resource_data, "external_resource_data", ExternalResourceData
+        )
+        self._handle = InstigatorHandle(
+            self._external_resource_data.name, check.inst_param(handle, "handle", RepositoryHandle)
+        )
+
+    @property
+    def name(self) -> str:
+        return self._external_resource_data.name
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._external_resource_data.resource_snapshot.description
+
+    @property
+    def config_field_snaps(self) -> List[ConfigFieldSnap]:
+        return self._external_resource_data.config_field_snaps
+
+    @property
+    def configured_values(self) -> Dict[str, str]:
+        return self._external_resource_data.configured_values
+
+    @property
+    def config_schema_snap(self) -> ConfigSchemaSnapshot:
+        return self._external_resource_data.config_schema_snap
+
+
 class ExternalSchedule:
     def __init__(self, external_schedule_data: ExternalScheduleData, handle: RepositoryHandle):
         self._external_schedule_data = check.inst_param(
@@ -562,14 +620,16 @@ class ExternalSchedule:
         return self.get_external_origin().get_id()
 
     @property
-    def selector_id(self) -> str:
-        return create_snapshot_id(
-            InstigatorSelector(
-                self.handle.location_name,
-                self.handle.repository_name,
-                self._external_schedule_data.name,
-            )
+    def selector(self) -> InstigatorSelector:
+        return InstigatorSelector(
+            self.handle.location_name,
+            self.handle.repository_name,
+            self._external_schedule_data.name,
         )
+
+    @property
+    def selector_id(self) -> str:
+        return create_snapshot_id(self.selector)
 
     @property
     def default_status(self) -> DefaultScheduleStatus:
@@ -686,14 +746,16 @@ class ExternalSensor:
         return self.get_external_origin().get_id()
 
     @property
-    def selector_id(self) -> str:
-        return create_snapshot_id(
-            InstigatorSelector(
-                self.handle.location_name,
-                self.handle.repository_name,
-                self._external_sensor_data.name,
-            )
+    def selector(self) -> InstigatorSelector:
+        return InstigatorSelector(
+            self.handle.location_name,
+            self.handle.repository_name,
+            self._external_sensor_data.name,
         )
+
+    @property
+    def selector_id(self) -> str:
+        return create_snapshot_id(self.selector)
 
     def get_current_instigator_state(
         self, stored_state: Optional["InstigatorState"]
@@ -783,7 +845,7 @@ class ExternalPartitionSet:
         # Partition sets from older versions of Dagster as well as partition sets using
         # a DynamicPartitionsDefinition require calling out to user code to compute the partition
         # names
-        return self._external_partition_set_data.external_partitions_data != None
+        return self._external_partition_set_data.external_partitions_data is not None
 
     def get_partition_names(self) -> Sequence[str]:
         check.invariant(self.has_partition_name_data())

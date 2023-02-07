@@ -5,7 +5,7 @@ from airflow.decorators import dag, task
 
 
 @dag(
-    schedule="* * * * *",
+    schedule_interval="* * * * *",
     start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
     catchup=False,
     tags=["example"],
@@ -17,7 +17,7 @@ def tutorial_taskflow_api():
     the TaskFlow API using three simple tasks for Extract, Transform, and Load.
     Documentation that goes along with the Airflow TaskFlow API tutorial is
     located
-    [here](https://airflow.apache.org/docs/apache-airflow/stable/tutorial_taskflow_api.html)
+    [here](https://airflow.apache.org/docs/apache-airflow/stable/tutorial_taskflow_api.html).
     """
 
     @task()
@@ -54,7 +54,6 @@ def tutorial_taskflow_api():
         A simple Load task which takes in the result of the Transform task and
         instead of saving it to end user review, just prints it out.
         """
-
         print(f"Total order value is: {total_order_value:.2f}")
 
     order_data = extract()

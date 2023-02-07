@@ -3,17 +3,17 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {AssetLink} from '../assets/AssetLink';
+import {InstigationType} from '../graphql/types';
 import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {InstigationType} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {humanizeSensorInterval} from './SensorDetails';
 import {SensorSwitch} from './SensorSwitch';
-import {SensorFragment} from './types/SensorFragment';
+import {SensorFragment} from './types/SensorFragment.types';
 
 export const SensorsTable: React.FC<{
   repoAddress: RepoAddress;

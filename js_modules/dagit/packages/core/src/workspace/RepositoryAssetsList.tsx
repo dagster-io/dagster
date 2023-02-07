@@ -15,7 +15,7 @@ import {RepoAddress} from './types';
 import {
   RepositoryAssetsListQuery,
   RepositoryAssetsListQueryVariables,
-} from './types/RepositoryAssetsListQuery';
+} from './types/RepositoryAssetsList.types';
 
 const REPOSITORY_ASSETS_LIST_QUERY = gql`
   query RepositoryAssetsListQuery($repositorySelector: RepositorySelector!) {
@@ -61,7 +61,6 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
     RepositoryAssetsListQuery,
     RepositoryAssetsListQueryVariables
   >(REPOSITORY_ASSETS_LIST_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {repositorySelector},
   });
 

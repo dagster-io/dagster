@@ -13,13 +13,14 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AllIndividualEventsLink} from './AllIndividualEventsLink';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
+import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetKey} from './types';
 import {
   AssetPartitionDetailQuery,
   AssetPartitionDetailQueryVariables,
-} from './types/AssetPartitionDetailQuery';
-import {ASSET_MATERIALIZATION_FRAGMENT} from './useRecentAssetEvents';
+} from './types/AssetPartitionDetail.types';
+import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
 
 export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partitionKey: string}> = (
   props,
@@ -34,25 +35,38 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
     },
   );
 
+  const {materializations, observations, hasLineage} = React.useMemo(() => {
+    if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
+      return {materializations: [], observations: [], hasLineage: false};
+    }
+    return {
+      materializations: [...result.data.assetNodeOrError.assetMaterializations].sort(
+        (a, b) => Number(b.timestamp) - Number(a.timestamp),
+      ),
+      observations: [...result.data.assetNodeOrError.assetObservations].sort(
+        (a, b) => Number(b.timestamp) - Number(a.timestamp),
+      ),
+      hasLineage: result.data.assetNodeOrError.assetMaterializations.some(
+        (m) => m.assetLineage.length > 0,
+      ),
+    };
+  }, [result.data]);
+
   if (result.loading || !result.data) {
     return <AssetPartitionDetailEmpty partitionKey={props.partitionKey} />;
   }
 
-  const events =
-    result.data?.assetNodeOrError?.__typename === 'AssetNode'
-      ? result.data.assetNodeOrError.assetMaterializations
-      : [];
-
-  const hasLineage = events.some((m) => m.assetLineage.length > 0);
-
   return (
     <AssetPartitionDetail
+      assetKey={props.assetKey}
       hasLineage={hasLineage}
       group={{
-        latest: events[0],
-        all: events,
-        timestamp: events[0]?.timestamp,
+        latest: materializations[0],
+        timestamp: materializations[0]?.timestamp,
         partition: props.partitionKey,
+        all: [...materializations, ...observations].sort(
+          (a, b) => Number(b.timestamp) - Number(a.timestamp),
+        ),
       }}
     />
   );
@@ -70,17 +84,26 @@ const ASSET_PARTITION_DETAIL_QUERY = gql`
             ...AssetMaterializationFragment
           }
         }
+        assetObservations(partitions: [$partitionKey]) {
+          ... on ObservationEvent {
+            runId
+            ...AssetObservationFragment
+          }
+        }
       }
     }
   }
+
   ${ASSET_MATERIALIZATION_FRAGMENT}
+  ${ASSET_OBSERVATION_FRAGMENT}
 `;
 
 export const AssetPartitionDetail: React.FC<{
+  assetKey: AssetKey;
   group: AssetEventGroup;
   hasLineage: boolean;
   hasLoadingState?: boolean;
-}> = ({group, hasLineage, hasLoadingState}) => {
+}> = ({assetKey, group, hasLineage, hasLoadingState}) => {
   const {latest, partition, all} = group;
   const run = latest?.runOrError?.__typename === 'Run' ? latest.runOrError : null;
   const repositoryOrigin = run?.repositoryOrigin;
@@ -191,12 +214,17 @@ export const AssetPartitionDetail: React.FC<{
         <Subheading>Metadata</Subheading>
         <AssetEventMetadataEntriesTable event={latest} observations={observationsAboutLatest} />
       </Box>
+      <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
+        <Subheading>Source Data</Subheading>
+        <AssetMaterializationUpstreamData timestamp={latest?.timestamp} assetKey={assetKey} />
+      </Box>
     </Box>
   );
 };
 
 export const AssetPartitionDetailEmpty = ({partitionKey}: {partitionKey?: string}) => (
   <AssetPartitionDetail
+    assetKey={{path: ['']}}
     group={{all: [], latest: null, timestamp: '0', partition: partitionKey}}
     hasLineage={false}
     hasLoadingState

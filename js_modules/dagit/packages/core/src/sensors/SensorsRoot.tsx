@@ -1,15 +1,16 @@
-import {useQuery, gql} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, NonIdealState} from '@dagster-io/ui';
 import React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {InstigationType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
-import {InstigationType} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -18,7 +19,7 @@ import {RepoAddress} from '../workspace/types';
 import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorsTable} from './SensorsTable';
-import {SensorsRootQuery, SensorsRootQueryVariables} from './types/SensorsRootQuery';
+import {SensorsRootQuery, SensorsRootQueryVariables} from './types/SensorsRoot.types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -37,7 +38,6 @@ export const SensorsRoot = (props: Props) => {
       repositorySelector,
       instigationType: InstigationType.SENSOR,
     },
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
@@ -114,13 +114,13 @@ const SENSORS_ROOT_QUERY = gql`
   ) {
     sensorsOrError(repositorySelector: $repositorySelector) {
       __typename
-      ...PythonErrorFragment
       ... on Sensors {
         results {
           id
           ...SensorFragment
         }
       }
+      ...PythonErrorFragment
     }
     unloadableInstigationStatesOrError(instigationType: $instigationType) {
       ... on InstigationStates {
@@ -135,8 +135,9 @@ const SENSORS_ROOT_QUERY = gql`
       ...InstanceHealthFragment
     }
   }
+
+  ${SENSOR_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${INSTIGATION_STATE_FRAGMENT}
-  ${SENSOR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;

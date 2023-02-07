@@ -11,7 +11,7 @@ import {
   Table,
   Mono,
 } from '@dagster-io/ui';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -27,8 +27,10 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetEventGroup} from './groupByPartition';
-import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {AssetObservationFragment} from './types/AssetObservationFragment';
+import {
+  AssetMaterializationFragment,
+  AssetObservationFragment,
+} from './types/useRecentAssetEvents.types';
 
 export const AssetEventsTable: React.FC<{
   hasPartitions: boolean;
@@ -132,9 +134,9 @@ const MetadataEntriesRow: React.FC<{
                             <Link to={`/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
                               <Mono>{titleForRun({runId: obs.runId})}</Mono>
                             </Link>
-                            {` (${moment(Number(obs.timestamp)).from(
-                              Number(timestamp),
-                              true,
+                            {` (${dayjs(obs.timestamp).from(
+                              timestamp,
+                              true, // withoutSuffix
                             )} later)`}
                           </span>
                         </Box>

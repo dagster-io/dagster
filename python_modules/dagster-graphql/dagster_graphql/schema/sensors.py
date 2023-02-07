@@ -1,11 +1,16 @@
-import graphene
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
-from dagster_graphql.implementation.utils import capture_error, check_permission
-
 import dagster._check as check
-from dagster._core.host_representation import ExternalSensor, ExternalTargetData, SensorSelector
+import graphene
+from dagster._core.definitions.selector import SensorSelector
+from dagster._core.host_representation import ExternalSensor, ExternalTargetData
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.workspace.permissions import Permissions
+
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+from dagster_graphql.implementation.utils import (
+    assert_permission_for_location,
+    capture_error,
+    require_permission_check,
+)
 
 from ..implementation.fetch_sensors import (
     get_sensor_next_tick,
@@ -22,7 +27,7 @@ from .errors import (
 )
 from .inputs import GrapheneSensorSelector
 from .instigation import GrapheneFutureInstigationTick, GrapheneInstigationState
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneTarget(graphene.ObjectType):
@@ -89,11 +94,11 @@ class GrapheneSensor(graphene.ObjectType):
     def resolve_id(self, _):
         return self._external_sensor.get_external_origin_id()
 
-    def resolve_sensorState(self, _graphene_info):
+    def resolve_sensorState(self, _graphene_info: ResolveInfo):
         # forward the batch run loader to the instigation state, which provides the sensor runs
         return GrapheneInstigationState(self._sensor_state, self._batch_loader)
 
-    def resolve_nextTick(self, graphene_info):
+    def resolve_nextTick(self, graphene_info: ResolveInfo):
         return get_sensor_next_tick(graphene_info, self._sensor_state)
 
 
@@ -133,9 +138,13 @@ class GrapheneStartSensorMutation(graphene.Mutation):
         name = "StartSensorMutation"
 
     @capture_error
-    @check_permission(Permissions.EDIT_SENSOR)
-    def mutate(self, graphene_info, sensor_selector):
-        return start_sensor(graphene_info, SensorSelector.from_graphql_input(sensor_selector))
+    @require_permission_check(Permissions.EDIT_SENSOR)
+    def mutate(self, graphene_info: ResolveInfo, sensor_selector):
+        selector = SensorSelector.from_graphql_input(sensor_selector)
+        assert_permission_for_location(
+            graphene_info, Permissions.EDIT_SENSOR, selector.location_name
+        )
+        return start_sensor(graphene_info, selector)
 
 
 class GrapheneStopSensorMutationResult(graphene.ObjectType):
@@ -150,7 +159,7 @@ class GrapheneStopSensorMutationResult(graphene.ObjectType):
             instigator_state, "instigator_state", InstigatorState
         )
 
-    def resolve_instigationState(self, _graphene_info):
+    def resolve_instigationState(self, _graphene_info: ResolveInfo):
         return GrapheneInstigationState(instigator_state=self._instigator_state)
 
 
@@ -173,8 +182,8 @@ class GrapheneStopSensorMutation(graphene.Mutation):
         name = "StopSensorMutation"
 
     @capture_error
-    @check_permission(Permissions.EDIT_SENSOR)
-    def mutate(self, graphene_info, job_origin_id, job_selector_id):
+    @require_permission_check(Permissions.EDIT_SENSOR)
+    def mutate(self, graphene_info: ResolveInfo, job_origin_id, job_selector_id):
         return stop_sensor(graphene_info, job_origin_id, job_selector_id)
 
 
@@ -191,11 +200,12 @@ class GrapheneSetSensorCursorMutation(graphene.Mutation):
         name = "SetSensorCursorMutation"
 
     @capture_error
-    @check_permission(Permissions.EDIT_SENSOR)
-    def mutate(self, graphene_info, sensor_selector, cursor=None):
-        return set_sensor_cursor(
-            graphene_info, SensorSelector.from_graphql_input(sensor_selector), cursor
+    def mutate(self, graphene_info: ResolveInfo, sensor_selector, cursor=None):
+        selector = SensorSelector.from_graphql_input(sensor_selector)
+        assert_permission_for_location(
+            graphene_info, Permissions.EDIT_SENSOR, selector.location_name
         )
+        return set_sensor_cursor(graphene_info, selector, cursor)
 
 
 types = [

@@ -1,11 +1,9 @@
 # pylint: disable=anomalous-backslash-in-string
 
 import datetime
-import functools
 import itertools
 import json
 from collections import defaultdict
-from heapq import heapify, heappop, heappush
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -26,10 +24,13 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessConstraint
-from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 
 from .asset_selection import AssetGraph, AssetSelection
+from .decorators.sensor_decorator import sensor
 from .partition import PartitionsDefinition, PartitionsSubset
 from .repository_definition import RepositoryDefinition
 from .run_request import RunRequest
@@ -38,7 +39,7 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
-    from dagster._core.storage.event_log.base import EventLogRecord
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
 
 
 class AssetReconciliationCursor(NamedTuple):
@@ -64,9 +65,28 @@ class AssetReconciliationCursor(NamedTuple):
     def get_never_requested_never_materialized_partitions(
         self, asset_key: AssetKey, asset_graph
     ) -> Iterable[str]:
-        return self.materialized_or_requested_root_partitions_by_asset_key.get(
-            asset_key, asset_graph.get_partitions_def(asset_key).empty_subset()
-        ).get_partition_keys_not_in_subset()
+        partitions_def = asset_graph.get_partitions_def(asset_key)
+
+        materialized_or_requested_subset = (
+            self.materialized_or_requested_root_partitions_by_asset_key.get(
+                asset_key, partitions_def.empty_subset()
+            )
+        )
+
+        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            allowable_time_window = allowable_time_window_for_partitions_def(partitions_def)
+            if allowable_time_window is None:
+                return []
+            # for performance, only iterate over keys within the allowable time window
+            return [
+                partition_key
+                for partition_key in partitions_def.get_partition_keys_in_time_window(
+                    allowable_time_window
+                )
+                if partition_key not in materialized_or_requested_subset
+            ]
+        else:
+            return materialized_or_requested_subset.get_partition_keys_not_in_subset()
 
     def with_updates(
         self,
@@ -85,7 +105,7 @@ class AssetReconciliationCursor(NamedTuple):
 
         for run_request in run_requests:
             for asset_key in cast(Iterable[AssetKey], run_request.asset_selection):
-                if len(asset_graph.get_parents(asset_key)) == 0:
+                if not asset_graph.has_non_source_parents(asset_key):
                     if run_request.partition_key:
                         requested_root_partitions_by_asset_key[asset_key].add(
                             run_request.partition_key
@@ -182,92 +202,61 @@ class AssetReconciliationCursor(NamedTuple):
         return serialized
 
 
-class ToposortedPriorityQueue:
-    """Queue that returns parents before their children"""
-
-    @functools.total_ordering
-    class QueueItem(NamedTuple):
-        level: int
-        asset_partition: AssetKeyPartitionKey
-
-        def __eq__(self, other):
-            return self.level == other.level
-
-        def __lt__(self, other):
-            return self.level < other.level
-
-    def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKeyPartitionKey]):
-        toposorted_asset_keys = asset_graph.toposort_asset_keys()
-        self._toposort_level_by_asset_key = {
-            asset_key: i
-            for i, asset_keys in enumerate(toposorted_asset_keys)
-            for asset_key in asset_keys
-        }
-        self._heap = [
-            ToposortedPriorityQueue.QueueItem(
-                self._toposort_level_by_asset_key[asset_partition.asset_key], asset_partition
-            )
-            for asset_partition in items
-        ]
-        heapify(self._heap)
-
-    def enqueue(self, asset_partition: AssetKeyPartitionKey) -> None:
-        priority = self._toposort_level_by_asset_key[asset_partition.asset_key]
-        heappush(self._heap, ToposortedPriorityQueue.QueueItem(priority, asset_partition))
-
-    def dequeue(self) -> AssetKeyPartitionKey:
-        return heappop(self._heap).asset_partition
-
-    def __len__(self) -> int:
-        return len(self._heap)
-
-
-def find_stale_candidates(
-    instance_queryer: CachingInstanceQueryer,
-    cursor: AssetReconciliationCursor,
+def find_parent_materialized_asset_partitions(
+    instance_queryer: "CachingInstanceQueryer",
+    latest_storage_id: Optional[int],
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], Optional[int]]:
     """
-    Cheaply identifies a set of reconciliation candidates, which can then be vetted with more
-    heavyweight logic after.
-
-    The contract of this function is:
-    - Every asset (partition) that requires reconciliation must either be one of the returned
-        candidates or a descendant of one of the returned candidates.
-    - Not every returned candidate must require reconciliation.
+    Finds asset partitions in the given selection whose parents have been materialized since
+    latest_storage_id.
 
     Returns:
-        - A set of reconciliation candidates.
+        - A set of asset partitions.
         - The latest observed storage_id across all relevant assets. Can be used to avoid scanning
             the same events the next time this function is called.
     """
-
-    stale_candidates: Set[AssetKeyPartitionKey] = set()
-    latest_storage_id = None
+    result_asset_partitions: Set[AssetKeyPartitionKey] = set()
+    result_latest_storage_id = latest_storage_id
 
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
-    for asset_key, record in instance_queryer.get_latest_materialization_records_by_key(
-        target_asset_selection.upstream(depth=1).resolve(asset_graph),
-        cursor.latest_storage_id,
-    ).items():
-        # The children of updated assets might now be unreconciled:
-        for child in asset_graph.get_children_partitions(asset_key, record.partition_key):
-            if (
-                child.asset_key in target_asset_keys
-                and not instance_queryer.is_asset_partition_in_run(record.run_id, child)
+    target_parent_asset_keys = target_asset_selection.upstream(depth=1).resolve(asset_graph)
+
+    for asset_key in target_parent_asset_keys:
+        if asset_graph.is_source(asset_key):
+            continue
+
+        latest_record = instance_queryer.get_latest_materialization_record(
+            asset_key, after_cursor=latest_storage_id
+        )
+        if latest_record is None:
+            continue
+
+        for child in asset_graph.get_children_partitions(asset_key, latest_record.partition_key):
+            if child.asset_key in target_asset_keys and not instance_queryer.is_asset_in_run(
+                latest_record.run_id, child
             ):
-                stale_candidates.add(child)
+                result_asset_partitions.add(child)
 
-        if latest_storage_id is None or record.storage_id > latest_storage_id:
-            latest_storage_id = record.storage_id
+        if result_latest_storage_id is None or latest_record.storage_id > result_latest_storage_id:
+            result_latest_storage_id = latest_record.storage_id
 
-    return (stale_candidates, latest_storage_id)
+        # for partitioned assets, we'll want a count of all asset partitions that have been
+        # materialized since the latest_storage_id, not just the most recent
+        if asset_graph.is_partitioned(asset_key):
+            for partition_key in instance_queryer.get_materialized_partitions(
+                asset_key, after_cursor=latest_storage_id
+            ):
+                for child in asset_graph.get_children_partitions(asset_key, partition_key):
+                    result_asset_partitions.add(child)
+
+    return (result_asset_partitions, result_latest_storage_id)
 
 
 def find_never_materialized_or_requested_root_asset_partitions(
-    instance_queryer: CachingInstanceQueryer,
+    instance_queryer: "CachingInstanceQueryer",
     cursor: AssetReconciliationCursor,
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
@@ -313,8 +302,63 @@ def find_never_materialized_or_requested_root_asset_partitions(
     )
 
 
+def allowable_time_window_for_partitions_def(
+    partitions_def: TimeWindowPartitionsDefinition,
+) -> Optional[TimeWindow]:
+    """Returns a time window encompassing the partitions that the reconciliation sensor is currently
+    allowed to materialize for this partitions_def
+    """
+    latest_partition_window = partitions_def.get_last_partition_window()
+    if latest_partition_window is None:
+        return None
+
+    earliest_partition_window = partitions_def.get_first_partition_window()
+    if earliest_partition_window is None:
+        return None
+
+    start = max(
+        earliest_partition_window.start,
+        # we add datetime.timedelta.resolution because if the latest partition starts at 2023-01-02,
+        # then we don't want 2023-01-01 to be within the allowable time window
+        latest_partition_window.start - datetime.timedelta(days=1) + datetime.timedelta.resolution,
+    )
+
+    return TimeWindow(
+        start=start,
+        end=latest_partition_window.end,
+    )
+
+
+def candidates_unit_within_allowable_time_window(
+    asset_graph: AssetGraph, candidates_unit: Iterable[AssetKeyPartitionKey]
+):
+    """A given time-window partition may only be materialized if its window ends within 1 day of the
+    latest window for that partition.
+    """
+    representative_candidate = next(iter(candidates_unit), None)
+    if not representative_candidate:
+        return True
+
+    partitions_def = asset_graph.get_partitions_def(representative_candidate.asset_key)
+    partition_key = representative_candidate.partition_key
+    if not isinstance(partitions_def, TimeWindowPartitionsDefinition) or not partition_key:
+        return True
+
+    partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
+
+    allowable_time_window = allowable_time_window_for_partitions_def(partitions_def)
+    if allowable_time_window is None:
+        return False
+
+    candidate_partition_window = partitions_def.time_window_for_partition_key(partition_key)
+    return (
+        candidate_partition_window.start >= allowable_time_window.start
+        and candidate_partition_window.end <= allowable_time_window.end
+    )
+
+
 def determine_asset_partitions_to_reconcile(
-    instance_queryer: CachingInstanceQueryer,
+    instance_queryer: "CachingInstanceQueryer",
     cursor: AssetReconciliationCursor,
     target_asset_selection: AssetSelection,
     asset_graph: AssetGraph,
@@ -336,65 +380,61 @@ def determine_asset_partitions_to_reconcile(
         asset_graph=asset_graph,
     )
 
-    stale_candidates, latest_storage_id = find_stale_candidates(
+    stale_candidates, latest_storage_id = find_parent_materialized_asset_partitions(
         instance_queryer=instance_queryer,
-        cursor=cursor,
+        latest_storage_id=cursor.latest_storage_id,
         target_asset_selection=target_asset_selection,
         asset_graph=asset_graph,
     )
+
     target_asset_keys = target_asset_selection.resolve(asset_graph)
 
-    to_reconcile: Set[AssetKeyPartitionKey] = set()
-    all_candidates = set(itertools.chain(never_materialized_or_requested_roots, stale_candidates))
-
-    # invariant: we never consider a candidate before considering its ancestors
-    candidates_queue = ToposortedPriorityQueue(asset_graph, all_candidates)
-
-    while len(candidates_queue) > 0:
-        candidate = candidates_queue.dequeue()
-
-        # no need to update this now, as it will be updated later
-        if candidate in eventual_asset_partitions_to_reconcile_for_freshness:
-            continue
-
-        if (
-            # all of its parents reconciled first
-            all(
+    def parents_will_be_reconciled(
+        candidate: AssetKeyPartitionKey,
+        to_reconcile: AbstractSet[AssetKeyPartitionKey],
+    ) -> bool:
+        return all(
+            (
                 (
-                    (
-                        parent in to_reconcile
-                        # if they don't have the same partitioning, then we can't launch a run that
-                        # targets both, so we need to wait until the parent is reconciled before
-                        # launching a run for the child
-                        and asset_graph.have_same_partitioning(
-                            parent.asset_key, candidate.asset_key
-                        )
-                    )
-                    or (
-                        instance_queryer.is_reconciled(
-                            asset_partition=parent, asset_graph=asset_graph
-                        )
-                    )
+                    parent in to_reconcile
+                    # if they don't have the same partitioning, then we can't launch a run that
+                    # targets both, so we need to wait until the parent is reconciled before
+                    # launching a run for the child
+                    and asset_graph.have_same_partitioning(parent.asset_key, candidate.asset_key)
+                    and parent.partition_key == candidate.partition_key
                 )
-                for parent in asset_graph.get_parents_partitions(
-                    candidate.asset_key, candidate.partition_key
-                )
+                or (instance_queryer.is_reconciled(asset_partition=parent, asset_graph=asset_graph))
             )
-            and not instance_queryer.is_reconciled(
-                asset_partition=candidate, asset_graph=asset_graph
-            )
-        ):
-            to_reconcile.add(candidate)
-            for child in asset_graph.get_children_partitions(
+            for parent in asset_graph.get_parents_partitions(
                 candidate.asset_key, candidate.partition_key
-            ):
-                if (
-                    child.asset_key in target_asset_keys
-                    and child not in all_candidates
-                    and asset_graph.have_same_partitioning(child.asset_key, candidate.asset_key)
-                ):
-                    candidates_queue.enqueue(child)
-                    all_candidates.add(child)
+            )
+        )
+
+    def should_reconcile(
+        candidates_unit: Iterable[AssetKeyPartitionKey],
+        to_reconcile: AbstractSet[AssetKeyPartitionKey],
+    ) -> bool:
+        if not candidates_unit_within_allowable_time_window(asset_graph, candidates_unit):
+            return False
+
+        if any(
+            candidate in eventual_asset_partitions_to_reconcile_for_freshness
+            or candidate.asset_key not in target_asset_keys
+            for candidate in candidates_unit
+        ):
+            return False
+
+        return all(
+            parents_will_be_reconciled(candidate, to_reconcile) for candidate in candidates_unit
+        ) and any(
+            not instance_queryer.is_reconciled(asset_partition=candidate, asset_graph=asset_graph)
+            for candidate in candidates_unit
+        )
+
+    to_reconcile = asset_graph.bfs_filter_asset_partitions(
+        should_reconcile,
+        set(itertools.chain(never_materialized_or_requested_roots, stale_candidates)),
+    )
 
     return (
         to_reconcile,
@@ -405,7 +445,7 @@ def determine_asset_partitions_to_reconcile(
 
 
 def get_freshness_constraints_by_key(
-    instance_queryer: CachingInstanceQueryer,
+    instance_queryer: "CachingInstanceQueryer",
     asset_graph: AssetGraph,
     plan_window_start: datetime.datetime,
     plan_window_end: datetime.datetime,
@@ -421,20 +461,10 @@ def get_freshness_constraints_by_key(
             continue
         has_freshness_policy = True
         upstream_keys = asset_graph.get_non_source_roots(key)
-        latest_record = instance_queryer.get_latest_materialization_record(key)
-        used_data_times = (
-            instance_queryer.get_used_data_times_for_record(
-                asset_graph=asset_graph, record=latest_record, upstream_keys=upstream_keys
-            )
-            if latest_record is not None
-            else {}
-        )
-        available_data_times = {upstream_key: plan_window_start for upstream_key in upstream_keys}
         constraints_by_key[key] = freshness_policy.constraints_for_time_window(
             window_start=plan_window_start,
             window_end=plan_window_end,
-            used_data_times=used_data_times,
-            available_data_times=available_data_times,
+            upstream_keys=frozenset(upstream_keys),
         )
 
     # no freshness policies, so don't bother with constraints
@@ -449,7 +479,7 @@ def get_freshness_constraints_by_key(
     # upstream of another asset.
     for level in reversed(asset_graph.toposort_asset_keys()):
         for key in level:
-            if key in asset_graph.source_asset_keys:
+            if asset_graph.is_source(key):
                 continue
             for upstream_key in asset_graph.get_parents(key):
                 # pass along all of your constraints to your parents
@@ -458,12 +488,11 @@ def get_freshness_constraints_by_key(
 
 
 def get_current_data_times_for_key(
-    instance_queryer: CachingInstanceQueryer,
+    instance_queryer: "CachingInstanceQueryer",
     asset_graph: AssetGraph,
     relevant_upstream_keys: AbstractSet[AssetKey],
     asset_key: AssetKey,
 ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
-
     # calculate the data time for this record in relation to the upstream keys which are
     # set to be updated this tick and are involved in some constraint
     latest_record = instance_queryer.get_latest_materialization_record(asset_key)
@@ -472,7 +501,6 @@ def get_current_data_times_for_key(
     else:
         return instance_queryer.get_used_data_times_for_record(
             asset_graph=asset_graph,
-            upstream_keys=relevant_upstream_keys,
             record=latest_record,
         )
 
@@ -486,7 +514,7 @@ def get_expected_data_times_for_key(
     """Returns the data times for the given asset key if this asset were to be executed in this
     tick.
     """
-    expected_data_times: Dict[AssetKey, datetime.datetime] = {asset_key: current_time}
+    expected_data_times: Dict[AssetKey, Optional[datetime.datetime]] = {asset_key: current_time}
 
     def _min_or_none(a, b):
         if a is None or b is None:
@@ -509,64 +537,63 @@ def get_expected_data_times_for_key(
 
 
 def get_execution_time_window_for_constraints(
-    instance_queryer: CachingInstanceQueryer,
     constraints: AbstractSet[FreshnessConstraint],
-    current_time: datetime.datetime,
     current_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
+    in_progress_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
+    failed_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
-    asset_key: AssetKey,
+    relevant_upstream_keys: AbstractSet[AssetKey],
 ) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
-    # check to find if this asset is currently being materialized by a run, and if so, which
-    # other assets are being materialized in that run
-    (
-        current_run_data_time,
-        currently_materializing,
-    ) = instance_queryer.get_in_progress_run_time_and_planned_materializations(asset_key)
-
+    currently_executable = False
     execution_window_start = None
     execution_window_end = None
-    for constraint in sorted(constraints, key=lambda c: c.required_by_time):
-        current_data_time = current_data_times.get(constraint.asset_key)
-        expected_data_time = expected_data_times.get(constraint.asset_key)
+    min_dt = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
 
-        if not (
-            # this constraint is irrelevant, as it is satisfied by the current data time
-            (current_data_time is not None and current_data_time > constraint.required_data_time)
-            # this constraint is irrelevant, as materializing on this tick will not solve it
-            or (expected_data_time is None)
-            # this constraint is irrelevant, as materializing on this tick will not make progress
-            # towards solving it
-            or (current_data_time is not None and expected_data_time <= current_data_time)
-            # this constraint is irrelevant, as a currently-executing run will satisfy it
-            or (
-                constraint.asset_key in currently_materializing
-                # if the run hasn't started yet, assume it'll get data from the current time
-                and (current_run_data_time or current_time) > constraint.required_data_time
-            )
+    for constraint in sorted(constraints, key=lambda c: c.required_by_time):
+        # the set of keys in this constraint that are actually upstream of this asset
+        relevant_constraint_keys = constraint.asset_keys & relevant_upstream_keys
+
+        if not all(
+            # ensure that this constraint is not satisfied by the current state of the data and
+            # will not be satisfied once all in progress runs complete, and was not intended to
+            # be satisfied by a run that failed
+            (current_data_times.get(key) or min_dt) >= constraint.required_data_time
+            or (in_progress_data_times.get(key) or min_dt) >= constraint.required_data_time
+            or (failed_data_times.get(key) or min_dt) >= constraint.required_data_time
+            for key in relevant_constraint_keys
         ):
-            if execution_window_start is None:
-                execution_window_start = constraint.required_data_time
-            if execution_window_end is None:
-                execution_window_end = constraint.required_by_time
+            # for this constraint, if all required data times will be satisfied by an execution
+            # on this tick, it is valid to execute this asset
+            if all(
+                (expected_data_times.get(key) or min_dt) >= constraint.required_data_time
+                for key in relevant_constraint_keys
+            ):
+                currently_executable = True
 
             # you can solve this constraint within the existing execution window
-            if constraint.required_data_time < execution_window_end:
+            if execution_window_end is None or constraint.required_data_time < execution_window_end:
                 execution_window_start = max(
-                    execution_window_start,
+                    execution_window_start or constraint.required_data_time,
                     constraint.required_data_time,
                 )
                 execution_window_end = min(
-                    execution_window_end,
+                    execution_window_end or constraint.required_by_time,
                     constraint.required_by_time,
                 )
+            else:
+                break
+
+    if not currently_executable:
+        return None, execution_window_end
+
     return execution_window_start, execution_window_end
 
 
 def determine_asset_partitions_to_reconcile_for_freshness(
-    instance_queryer: CachingInstanceQueryer,
+    instance_queryer: "CachingInstanceQueryer",
     asset_graph: AssetGraph,
     target_asset_selection: AssetSelection,
 ) -> Tuple[AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
@@ -576,7 +603,6 @@ def determine_asset_partitions_to_reconcile_for_freshness(
 
     Attempts to minimize the total number of asset executions.
     """
-
     # look within a 12-hour time window to combine future runs together
     current_time = pendulum.now(tz=pendulum.UTC)
     plan_window_start = current_time
@@ -602,18 +628,18 @@ def determine_asset_partitions_to_reconcile_for_freshness(
     ] = defaultdict(dict)
     for level in asset_graph.toposort_asset_keys():
         for key in level:
-            if key in asset_graph.source_asset_keys:
+            if asset_graph.is_source(key):
                 continue
             # no need to evaluate this key, as it has no constraints
             constraints = constraints_by_key[key]
             if not constraints:
                 continue
 
-            constraint_keys = {constraint.asset_key for constraint in constraints}
+            constraint_keys = set().union(*(constraint.asset_keys for constraint in constraints))
 
             # the set of asset keys which are involved in some constraint and are actually upstream
             # of this asset
-            relevant_upstream_keys = (
+            relevant_upstream_keys = set(
                 set().union(
                     *(
                         expected_data_times_by_key[parent_key].keys()
@@ -627,38 +653,64 @@ def determine_asset_partitions_to_reconcile_for_freshness(
             current_data_times = get_current_data_times_for_key(
                 instance_queryer, asset_graph, relevant_upstream_keys, key
             )
+            expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
 
+            # should not execute if key is not targeted or previous run failed
             if key not in target_asset_keys:
                 # cannot execute this asset, so if something consumes it, it should expect to
                 # recieve the current contents of the asset
                 execution_window_start = None
-                expected_data_times: Mapping[AssetKey, Optional[datetime.datetime]] = {}
+                expected_data_times = {}
             else:
-                # figure out the data times you'd expect for this key if you were to run it
+                # calculate the data times you would expect after all currently-executing runs
+                # were to successfully complete
+                in_progress_data_times = instance_queryer.get_in_progress_data_times_for_key(
+                    asset_graph, key, current_time
+                )
+
+                # if the latest run for this asset failed, then calculate the data times you would
+                # have expected after that failed run completed
+                failed_data_times = instance_queryer.get_failed_data_times_for_key(
+                    asset_graph, key, relevant_upstream_keys
+                )
+                # calculate the data times you'd expect for this key if you were to run it
                 expected_data_times = get_expected_data_times_for_key(
                     asset_graph, current_time, expected_data_times_by_key, key
                 )
-                # this key has constraints within the plan window, so must be updated within it
-                eventually_materialize.add(AssetKeyPartitionKey(key, None))
 
                 # figure out a time window that you can execute this asset within to solve a maximum
                 # number of constraints
                 (
                     execution_window_start,
-                    _execution_window_end,
+                    execution_window_end,
                 ) = get_execution_time_window_for_constraints(
-                    instance_queryer,
-                    constraints,
-                    current_time,
-                    current_data_times,
-                    expected_data_times,
-                    key,
+                    constraints=constraints,
+                    current_data_times=current_data_times,
+                    in_progress_data_times=in_progress_data_times,
+                    failed_data_times=failed_data_times,
+                    expected_data_times=expected_data_times,
+                    relevant_upstream_keys=relevant_upstream_keys,
                 )
 
-            # this key should be updated on this tick, as we are within the allowable window
-            if execution_window_start is not None and execution_window_start <= current_time:
-                to_materialize.add(AssetKeyPartitionKey(key, None))
+                # this key will be updated within the plan window
+                if execution_window_end is not None and execution_window_end <= plan_window_end:
+                    eventually_materialize.add(AssetKeyPartitionKey(key, None))
+
+            # a key may already be in to_materialize by the time we get here if a required
+            # neighbor was selected to be updated
+            asset_key_partition_key = AssetKeyPartitionKey(key, None)
+            if asset_key_partition_key in to_materialize:
                 expected_data_times_by_key[key] = expected_data_times
+            elif (
+                # this key should be updated on this tick, as we are within the allowable window
+                execution_window_start is not None
+                and execution_window_start <= current_time
+            ):
+                to_materialize.add(asset_key_partition_key)
+                expected_data_times_by_key[key] = expected_data_times
+                # all required neighbors will be updated on the same tick
+                for required_key in asset_graph.get_required_multi_asset_keys(key):
+                    to_materialize.add(AssetKeyPartitionKey(required_key, None))
             else:
                 # if downstream assets consume this, they should expect data times equal to the
                 # current times for this asset, as it's not going to be updated
@@ -674,8 +726,16 @@ def reconcile(
     cursor: AssetReconciliationCursor,
     run_tags: Optional[Mapping[str, str]],
 ):
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer  # expensive import
+
     instance_queryer = CachingInstanceQueryer(instance=instance)
     asset_graph = repository_def.asset_graph
+
+    # fetch some data in advance to batch together some queries
+    instance_queryer.prefetch_for_keys(
+        list(asset_selection.upstream(depth=1).resolve(asset_graph)),
+        after_cursor=cursor.latest_storage_id,
+    )
 
     (
         asset_partitions_to_reconcile_for_freshness,
@@ -699,33 +759,11 @@ def reconcile(
         eventual_asset_partitions_to_reconcile_for_freshness=eventual_asset_partitions_to_reconcile_for_freshness,
     )
 
-    assets_to_reconcile_by_partitions_def_partition_key: Mapping[
-        Tuple[Optional[PartitionsDefinition], Optional[str]], Set[AssetKey]
-    ] = defaultdict(set)
-
-    for asset_partition in (
-        asset_partitions_to_reconcile | asset_partitions_to_reconcile_for_freshness
-    ):
-        assets_to_reconcile_by_partitions_def_partition_key[
-            asset_graph.get_partitions_def(asset_partition.asset_key), asset_partition.partition_key
-        ].add(asset_partition.asset_key)
-
-    run_requests = []
-
-    for (
-        _,
-        partition_key,
-    ), asset_keys in assets_to_reconcile_by_partitions_def_partition_key.items():
-        tags = {**(run_tags or {})}
-        if partition_key is not None:
-            tags[PARTITION_NAME_TAG] = partition_key
-
-        run_requests.append(
-            RunRequest(
-                asset_selection=list(asset_keys),
-                tags=tags,
-            )
-        )
+    run_requests = build_run_requests(
+        asset_partitions_to_reconcile | asset_partitions_to_reconcile_for_freshness,
+        asset_graph,
+        run_tags,
+    )
 
     return run_requests, cursor.with_updates(
         latest_storage_id=latest_storage_id,
@@ -734,6 +772,42 @@ def reconcile(
         newly_materialized_root_asset_keys=newly_materialized_root_asset_keys,
         newly_materialized_root_partitions_by_asset_key=newly_materialized_root_partitions_by_asset_key,
     )
+
+
+def build_run_requests(
+    asset_partitions: Iterable[AssetKeyPartitionKey],
+    asset_graph: AssetGraph,
+    run_tags: Optional[Mapping[str, str]],
+) -> Sequence[RunRequest]:
+    assets_to_reconcile_by_partitions_def_partition_key: Mapping[
+        Tuple[Optional[PartitionsDefinition], Optional[str]], Set[AssetKey]
+    ] = defaultdict(set)
+
+    for asset_partition in asset_partitions:
+        assets_to_reconcile_by_partitions_def_partition_key[
+            asset_graph.get_partitions_def(asset_partition.asset_key), asset_partition.partition_key
+        ].add(asset_partition.asset_key)
+
+    run_requests = []
+
+    for (
+        partitions_def,
+        partition_key,
+    ), asset_keys in assets_to_reconcile_by_partitions_def_partition_key.items():
+        tags = {**(run_tags or {})}
+        if partition_key is not None:
+            if partitions_def is None:
+                check.failed("Partition key provided for unpartitioned asset")
+            tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
+
+        run_requests.append(
+            RunRequest(
+                asset_selection=list(asset_keys),
+                tags=tags,
+            )
+        )
+
+    return run_requests
 
 
 @experimental
@@ -745,7 +819,7 @@ def build_asset_reconciliation_sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     run_tags: Optional[Mapping[str, str]] = None,
 ) -> SensorDefinition:
-    """Constructs a sensor that will monitor the provided assets and launch materializations to
+    r"""Constructs a sensor that will monitor the provided assets and launch materializations to
     "reconcile" them.
 
     An asset is considered "unreconciled" if any of:
@@ -847,7 +921,14 @@ def build_asset_reconciliation_sensor(
     check_valid_name(name)
     check.opt_mapping_param(run_tags, "run_tags", key_type=str, value_type=str)
 
-    def sensor_fn(context):
+    @sensor(
+        name=name,
+        asset_selection=asset_selection,
+        minimum_interval_seconds=minimum_interval_seconds,
+        description=description,
+        default_status=default_status,
+    )
+    def _sensor(context):
         cursor = (
             AssetReconciliationCursor.from_serialized(
                 context.cursor, context.repository_def.asset_graph
@@ -866,11 +947,4 @@ def build_asset_reconciliation_sensor(
         context.update_cursor(updated_cursor.serialize())
         return run_requests
 
-    return SensorDefinition(
-        evaluation_fn=sensor_fn,
-        name=name,
-        asset_selection=asset_selection,
-        minimum_interval_seconds=minimum_interval_seconds,
-        description=description,
-        default_status=default_status,
-    )
+    return _sensor

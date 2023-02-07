@@ -3,7 +3,7 @@ import {Box, Colors, NonIdealState, PageHeader, Tag, Heading} from '@dagster-io/
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -19,10 +19,7 @@ import {Loading} from '../ui/Loading';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {RepoAddress} from './types';
-import {
-  GraphExplorerRootQuery,
-  GraphExplorerRootQueryVariables,
-} from './types/GraphExplorerRootQuery';
+import {GraphExplorerRootQuery, GraphExplorerRootQueryVariables} from './types/GraphRoot.types';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -147,8 +144,6 @@ const GRAPH_EXPLORER_ROOT_QUERY = gql`
       ... on Graph {
         id
         name
-        ...GraphExplorerFragment
-
         solidHandle(handleID: $rootHandleID) {
           ...GraphExplorerSolidHandleFragment
         }
@@ -159,6 +154,7 @@ const GRAPH_EXPLORER_ROOT_QUERY = gql`
           }
           ...GraphExplorerSolidHandleFragment
         }
+        ...GraphExplorerFragment
       }
       ... on GraphNotFoundError {
         message
@@ -166,7 +162,8 @@ const GRAPH_EXPLORER_ROOT_QUERY = gql`
       ...PythonErrorFragment
     }
   }
-  ${GRAPH_EXPLORER_FRAGMENT}
+
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${GRAPH_EXPLORER_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

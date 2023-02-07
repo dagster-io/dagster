@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 
 export const RESUME_BACKFILL_MUTATION = gql`
   mutation resumeBackfill($backfillId: String!) {
@@ -29,7 +29,6 @@ export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
       ... on PartitionSetNotFoundError {
         message
       }
-      ...PythonErrorFragment
       ... on InvalidStepError {
         invalidStepKey
       }
@@ -61,7 +60,9 @@ export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
           reason
         }
       }
+      ...PythonErrorFragment
     }
   }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;

@@ -5,17 +5,8 @@ import tempfile
 import uuid
 from typing import Any, Mapping, Optional, Set, Union
 
-import papermill
-from dagstermill.compat import ExecutionError
-from dagstermill.factory import (
-    _clean_path_for_windows,
-    get_papermill_parameters,
-    replace_parameters,
-)
-from papermill.engines import papermill_engines
-from papermill.iorw import load_notebook_node, write_ipynb
-
 import dagster._check as check
+import papermill
 from dagster import (
     AssetIn,
     AssetKey,
@@ -33,6 +24,15 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._utils import safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
+from papermill.engines import papermill_engines
+from papermill.iorw import load_notebook_node, write_ipynb
+
+from dagstermill.compat import ExecutionError
+from dagstermill.factory import (
+    _clean_path_for_windows,
+    get_papermill_parameters,
+    replace_parameters,
+)
 
 from .engine import DagstermillEngine
 
@@ -57,7 +57,6 @@ def _dm_compute(
 
         with tempfile.TemporaryDirectory() as output_notebook_dir:
             with safe_tempfile_path() as output_log_path:
-
                 prefix = str(uuid.uuid4())
                 parameterized_notebook_path = os.path.join(
                     output_notebook_dir, f"{prefix}-inter.ipynb"
@@ -92,7 +91,8 @@ def _dm_compute(
                     )
                 except Exception as ex:
                     step_execution_context.log.warn(
-                        f"Error when attempting to materialize executed notebook: {serializable_error_info_from_exc_info(sys.exc_info())}"  # noqa: E501
+                        "Error when attempting to materialize executed notebook:"
+                        f" {serializable_error_info_from_exc_info(sys.exc_info())}"
                     )
                     # pylint: disable=no-member
                     # compat:
@@ -100,8 +100,9 @@ def _dm_compute(
                         ex.ename == "RetryRequested" or ex.ename == "Failure"
                     ):
                         step_execution_context.log.warn(
-                            f"Encountered raised {ex.ename} in notebook. Use dagstermill.yield_event "
-                            "with RetryRequested or Failure to trigger their behavior."
+                            f"Encountered raised {ex.ename} in notebook. Use"
+                            " dagstermill.yield_event with RetryRequested or Failure to trigger"
+                            " their behavior."
                         )
 
                     if save_notebook_on_failure:
@@ -197,33 +198,30 @@ def define_dagstermill_asset(
             Defaults to False.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            from dagstermill import define_dagstermill_asset
+            from dagster import asset, AssetIn, AssetKey
+            from sklearn import datasets
+            import pandas as pd
+            import numpy as np
 
-        from dagstermill import define_dagstermill_asset
-        from dagster import asset, AssetIn, AssetKey
-        from sklearn import datasets
-        import pandas as pd
-        import numpy as np
+            @asset
+            def iris_dataset():
+                sk_iris = datasets.load_iris()
+                return pd.DataFrame(
+                    data=np.c_[sk_iris["data"], sk_iris["target"]],
+                    columns=sk_iris["feature_names"] + ["target"],
+                )
 
-        @asset
-        def iris_dataset():
-            sk_iris = datasets.load_iris()
-            return pd.DataFrame(
-                data=np.c_[sk_iris["data"], sk_iris["target"]],
-                columns=sk_iris["feature_names"] + ["target"],
+            iris_kmeans_notebook = define_dagstermill_asset(
+                name="iris_kmeans_notebook",
+                notebook_path="/path/to/iris_kmeans.ipynb",
+                ins={
+                    "iris": AssetIn(key=AssetKey("iris_dataset"))
+                }
             )
-
-        iris_kmeans_notebook = define_dagstermill_asset(
-            name="iris_kmeans_notebook",
-            notebook_path="/path/to/iris_kmeans.ipynb",
-            ins={
-                "iris": AssetIn(key=AssetKey("iris_dataset"))
-            }
-        )
-
     """
-
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
     check.bool_param(save_notebook_on_failure, "save_notebook_on_failure")
@@ -249,11 +247,17 @@ def define_dagstermill_asset(
     if op_tags is not None:
         check.invariant(
             "notebook_path" not in op_tags,
-            "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key is reserved for use by Dagster",  # noqa: E501
+            (
+                "user-defined op tags contains the `notebook_path` key, but the `notebook_path` key"
+                " is reserved for use by Dagster"
+            ),
         )
         check.invariant(
             "kind" not in op_tags,
-            "user-defined op tags contains the `kind` key, but the `kind` key is reserved for use by Dagster",
+            (
+                "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
+                " use by Dagster"
+            ),
         )
 
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}

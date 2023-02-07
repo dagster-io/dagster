@@ -19,26 +19,53 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     cast,
 )
 
-from graphene import ResolveInfo
-from typing_extensions import ParamSpec, TypeAlias
-
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
-from dagster._core.host_representation import GraphSelector, PipelineSelector
+from dagster._core.definitions.selector import GraphSelector, PipelineSelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
+from typing_extensions import ParamSpec, TypeAlias
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.errors import GraphenePythonError
+    from dagster_graphql.schema.errors import GrapheneError, GraphenePythonError
+    from dagster_graphql.schema.util import ResolveInfo
 
 P = ParamSpec("P")
 T = TypeVar("T")
 
 GrapheneResolverFn: TypeAlias = Callable[..., object]
 T_Callable = TypeVar("T_Callable", bound=Callable)
+
+
+def assert_permission_for_location(
+    graphene_info: "ResolveInfo", permission: str, location_name: str
+):
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
+    if not context.has_permission_for_location(permission, location_name):
+        raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def require_permission_check(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
+    def decorator(fn: GrapheneResolverFn) -> GrapheneResolverFn:
+        def _fn(
+            self, graphene_info, *args: P.args, **kwargs: P.kwargs
+        ):  # pylint: disable=unused-argument
+            result = fn(self, graphene_info, *args, **kwargs)
+
+            if not graphene_info.context.was_permission_checked(permission):
+                raise Exception(f"Permission {permission} was never checked during the request")
+
+            return result
+
+        return _fn
+
+    return decorator
 
 
 def check_permission(permission: str) -> Callable[[GrapheneResolverFn], GrapheneResolverFn]:
@@ -55,7 +82,7 @@ def check_permission(permission: str) -> Callable[[GrapheneResolverFn], Graphene
     return decorator
 
 
-def assert_permission(graphene_info: ResolveInfo, permission: str) -> None:
+def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
     context = cast(BaseWorkspaceRequestContext, graphene_info.context)
@@ -71,7 +98,7 @@ class ErrorCapture:
     @staticmethod
     def default_on_exception(
         exc_info: Tuple[Type[BaseException], BaseException, TracebackType]
-    ) -> GraphenePythonError:
+    ) -> "GraphenePythonError":
         from dagster_graphql.schema.errors import GraphenePythonError
 
         # Transform exception in to PythonErron to present to user
@@ -95,8 +122,10 @@ class ErrorCapture:
             ErrorCapture.observer.reset(token)
 
 
-def capture_error(fn: T_Callable) -> T_Callable:
-    def _fn(*args, **kwargs):
+def capture_error(
+    fn: Callable[P, T]
+) -> Callable[P, Union[T, "GrapheneError", "GraphenePythonError"]]:
+    def _fn(*args: P.args, **kwargs: P.kwargs):
         try:
             return fn(*args, **kwargs)
         except UserFacingGraphQLError as de_exception:
@@ -105,11 +134,13 @@ def capture_error(fn: T_Callable) -> T_Callable:
             ErrorCapture.observer.get()(exc)
             return ErrorCapture.on_exception(sys.exc_info())  # type: ignore
 
-    return cast(T_Callable, _fn)
+    return _fn
 
 
 class UserFacingGraphQLError(Exception):
-    def __init__(self, error):
+    # The `error` arg here should be a Graphene type implementing the interface `GrapheneError`, but
+    # this is not trackable by the Python type system.
+    def __init__(self, error: Any):
         self.error = error
         message = "[{cls}] {message}".format(
             cls=error.__class__.__name__,
@@ -125,9 +156,7 @@ def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> PipelineSelector:
         repository_name=data["repositoryName"],
         pipeline_name=data.get("pipelineName") or data.get("jobName"),  # type: ignore
         solid_selection=data.get("solidSelection"),
-        asset_selection=[  # type: ignore
-            check.not_none(AssetKey.from_graphql_input(asset_key)) for asset_key in asset_selection
-        ]
+        asset_selection=[AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
         if asset_selection
         else None,
     )

@@ -13,7 +13,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import TypeAlias, TypeGuard
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -25,6 +25,7 @@ from dagster._utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (
     get_function_params,
+    has_at_least_one_parameter,
     is_required_param,
     positional_arg_name_list,
     validate_expected_params,
@@ -40,12 +41,10 @@ from .resource_requirement import (
     ResourceDependencyRequirement,
     ResourceRequirement,
 )
-
-# pylint: disable=unused-import
-from .scoped_resources_builder import (  # type: ignore
-    IContainsGenerator,
-    Resources,
-    ScopedResourcesBuilder,
+from .scoped_resources_builder import (  # re-exported
+    IContainsGenerator as IContainsGenerator,
+    Resources as Resources,
+    ScopedResourcesBuilder as ScopedResourcesBuilder,
 )
 
 if TYPE_CHECKING:
@@ -57,10 +56,6 @@ ResourceFunction: TypeAlias = Union[
     ResourceFunctionWithContext,
     ResourceFunctionWithoutContext,
 ]
-
-
-def is_context_provided(fn: ResourceFunction) -> TypeGuard[ResourceFunctionWithContext]:
-    return len(get_function_params(fn)) >= 1
 
 
 class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
@@ -192,7 +187,6 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
         self,
         description: Optional[str],
         config_schema: CoercableToConfigSchema,
-        _,
     ) -> "ResourceDefinition":
         return ResourceDefinition(
             config_schema=config_schema,
@@ -205,13 +199,11 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     def __call__(self, *args, **kwargs):
         from dagster._core.execution.context.init import UnboundInitResourceContext
 
-        context_provided = is_context_provided(self.resource_fn)
-
-        if context_provided:
+        if has_at_least_one_parameter(self.resource_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
-                    "Resource initialization function has context argument, but no context was provided "
-                    "when invoking."
+                    "Resource initialization function has context argument, but no context was"
+                    " provided when invoking."
                 )
             if len(args) + len(kwargs) > 1:
                 raise DagsterInvalidInvocationError(
@@ -240,7 +232,9 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
                 )
         elif len(args) + len(kwargs) > 0:
             raise DagsterInvalidInvocationError(
-                "Attempted to invoke resource with argument, but underlying function has no context argument. Either specify a context argument on the resource function, or remove the passed-in argument."
+                "Attempted to invoke resource with argument, but underlying function has no context"
+                " argument. Either specify a context argument on the resource function, or remove"
+                " the passed-in argument."
             )
         else:
             return resource_invocation_result(self, None)
@@ -271,7 +265,7 @@ class _ResourceDecoratorCallable:
     def __call__(self, resource_fn: ResourceFunction) -> ResourceDefinition:
         check.callable_param(resource_fn, "resource_fn")
 
-        any_name = ["*"] if is_context_provided(resource_fn) else []
+        any_name = ["*"] if has_at_least_one_parameter(resource_fn) else []  # type: ignore  # fmt: skip
 
         params = get_function_params(resource_fn)
 
@@ -287,8 +281,9 @@ class _ResourceDecoratorCallable:
         required_extras = list(filter(is_required_param, extras))
         if required_extras:
             raise DagsterInvalidDefinitionError(
-                f"@resource decorated function '{resource_fn.__name__}' expects only a single positional required argument. "
-                f"Got required extra params {', '.join(positional_arg_name_list(required_extras))}"
+                f"@resource decorated function '{resource_fn.__name__}' expects only a single"
+                " positional required argument. Got required extra params"
+                f" {', '.join(positional_arg_name_list(required_extras))}"
             )
 
         resource_def = ResourceDefinition(
@@ -345,7 +340,6 @@ def resource(
             definition when provided with the same inputs.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by this resource.
     """
-
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
@@ -387,7 +381,6 @@ def make_values_resource(**kwargs: Any) -> ResourceDefinition:
     Returns:
         ResourceDefinition: A resource that passes in user-defined values.
     """
-
     return ResourceDefinition(
         resource_fn=lambda init_context: init_context.resource_config,
         config_schema=kwargs or Any,  # type: ignore

@@ -5,7 +5,7 @@ import * as React from 'react';
 import {v4 as uuidv4} from 'uuid';
 
 import {AppContext} from './AppContext';
-import {PYTHON_ERROR_FRAGMENT} from './PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from './PythonErrorFragment';
 
 export enum TelemetryAction {
   LAUNCH_RUN = 'LAUNCH_RUN',
@@ -53,7 +53,7 @@ export async function logTelemetry(
       variables: {
         action,
         metadata: JSON.stringify(metadata),
-        clientTime: Date.now(),
+        clientTime: String(Date.now()),
         clientId: clientID(),
       },
     }),

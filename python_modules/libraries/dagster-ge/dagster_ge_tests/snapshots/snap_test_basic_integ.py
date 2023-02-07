@@ -6,7 +6,9 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_yielded_results_config_pandas[hello_world_pandas_pipeline_v2-./great_expectations] 1'] = '''
+snapshots[
+    "test_yielded_results_config_pandas[hello_world_pandas_pipeline_v2-./great_expectations] 1"
+] = """
 # Validation Results
 
 
@@ -124,9 +126,11 @@ Q3  | 117.62
 
 
 
-'''
+"""
 
-snapshots['test_yielded_results_config_pandas[hello_world_pandas_pipeline_v3-./great_expectations_v3] 1'] = '''
+snapshots[
+    "test_yielded_results_config_pandas[hello_world_pandas_pipeline_v3-./great_expectations_v3] 1"
+] = """
 # Validation Results
 
 
@@ -244,9 +248,11 @@ Q3  | 117.62
 
 
 
-'''
+"""
 
-snapshots['test_yielded_results_config_pyspark_v2 1'] = '''
+snapshots[
+    "test_yielded_results_config_pyspark_v2 1"
+] = """
 # Validation Results
 
 
@@ -364,4 +370,4 @@ Q3  | 117.62
 
 
 
-'''
+"""

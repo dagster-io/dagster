@@ -1,14 +1,13 @@
 import sys
 from unittest import mock
 
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_graphql.client.client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
 )
 from dagster_graphql.implementation.utils import ErrorCapture
 from dagster_graphql.schema.errors import GraphenePythonError
 from dagster_graphql.test.utils import execute_dagster_graphql
-
-from dagster._utils.error import serializable_error_info_from_exc_info
 
 
 def test_python_error():
@@ -22,10 +21,11 @@ def test_python_error():
         python_error = GraphenePythonError(serializable_error_info_from_exc_info(sys.exc_info()))
 
     assert python_error
-    assert isinstance(python_error.message, str)
-    assert isinstance(python_error.stack, list)
-    assert len(python_error.stack) == 2
-    assert "bar" in python_error.stack[1]
+    assert isinstance(python_error.resolve_message(None), str)  #
+    stack = python_error.resolve_stack(None)
+    assert isinstance(stack, list)
+    assert len(stack) == 2
+    assert "bar" in stack[1]
 
 
 def test_error_capture(graphql_context):

@@ -33,7 +33,7 @@
   route: /instance/assets
   vetted: false
 
-- id: status-instance.png
+- id: deployment-status.png
   base_url: https://demo.elementl.show
   route: /instance/health
   vetted: false

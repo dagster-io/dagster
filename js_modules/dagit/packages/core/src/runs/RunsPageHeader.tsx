@@ -13,7 +13,7 @@ import {
 import {RunListTabs, RUN_TABS_COUNT_QUERY} from './RunListTabs';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsFilterForSearchTokens, useQueryPersistedRunFilters} from './RunsFilterInput';
-import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunTabsCountQuery';
+import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
 
 interface Props {
   refreshStates: QueryRefreshState[];

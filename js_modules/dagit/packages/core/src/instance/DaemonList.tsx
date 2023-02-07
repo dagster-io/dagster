@@ -1,16 +1,16 @@
 import {gql} from '@apollo/client';
 import {Group, Table} from '@dagster-io/ui';
-import moment from 'moment-timezone';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {Timestamp} from '../app/time/Timestamp';
+import {TimeFromNow} from '../ui/TimeFromNow';
 
 import {DaemonHealth} from './DaemonHealth';
-import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from './types/DaemonHealthFragment';
+import {DaemonStatusForListFragment} from './types/DaemonList.types';
 
 interface DaemonLabelProps {
-  daemon: DaemonStatus;
+  daemon: DaemonStatusForListFragment;
 }
 
 const DaemonLabel = (props: DaemonLabelProps) => {
@@ -34,7 +34,7 @@ const DaemonLabel = (props: DaemonLabelProps) => {
 };
 
 interface Props {
-  daemonStatuses: DaemonStatus[] | undefined;
+  daemonStatuses: DaemonStatusForListFragment[] | undefined;
   showTimestampColumn?: boolean;
 }
 
@@ -46,7 +46,7 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
   }
 
   return (
-    <Table>
+    <Table $monospaceFont={false}>
       <thead>
         <tr>
           <th style={{width: '25%'}}>Daemon</th>
@@ -74,7 +74,10 @@ export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn
                           timestamp={{unix: daemon.lastHeartbeatTime}}
                           timeFormat={TIME_FORMAT}
                         />
-                        <span>&nbsp;({`${moment.unix(daemon.lastHeartbeatTime).fromNow()}`})</span>
+                        <span>
+                          &nbsp;(
+                          <TimeFromNow unixTimestamp={daemon.lastHeartbeatTime} />)
+                        </span>
                       </Group>
                     ) : (
                       'Never'
@@ -94,15 +97,20 @@ export const DAEMON_HEALTH_FRAGMENT = gql`
     id
     allDaemonStatuses {
       id
-      daemonType
-      required
-      healthy
-      lastHeartbeatErrors {
-        __typename
-        ...PythonErrorFragment
-      }
-      lastHeartbeatTime
+      ...DaemonStatusForList
     }
   }
+
+  fragment DaemonStatusForList on DaemonStatus {
+    id
+    daemonType
+    required
+    healthy
+    lastHeartbeatErrors {
+      ...PythonErrorFragment
+    }
+    lastHeartbeatTime
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;

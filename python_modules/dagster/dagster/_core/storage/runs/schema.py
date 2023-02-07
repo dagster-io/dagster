@@ -105,6 +105,14 @@ KeyValueStoreTable = db.Table(
 
 db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value, mysql_length=64)
 db.Index("idx_run_partitions", RunsTable.c.partition_set, RunsTable.c.partition, mysql_length=64)
+db.Index(
+    "idx_runs_by_job",
+    RunsTable.c.pipeline_name,
+    RunsTable.c.id,
+    mysql_length={
+        "pipeline_name": 255,
+    },
+)
 db.Index("idx_bulk_actions", BulkActionsTable.c.key, mysql_length=32)
 db.Index("idx_bulk_actions_status", BulkActionsTable.c.status, mysql_length=32)
 db.Index("idx_bulk_actions_action_type", BulkActionsTable.c.action_type, mysql_length=32)

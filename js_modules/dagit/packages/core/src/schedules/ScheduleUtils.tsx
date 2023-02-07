@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
@@ -29,6 +29,7 @@ export const SCHEDULE_FRAGMENT = gql`
       }
     }
   }
+
   ${INSTIGATION_STATE_FRAGMENT}
 `;
 
@@ -46,8 +47,9 @@ export const REPOSITORY_SCHEDULES_FRAGMENT = gql`
     }
     ...RepositoryInfoFragment
   }
-  ${REPOSITORY_INFO_FRAGMENT}
+
   ${SCHEDULE_FRAGMENT}
+  ${REPOSITORY_INFO_FRAGMENT}
 `;
 
 export const SCHEDULES_ROOT_QUERY = gql`
@@ -77,8 +79,8 @@ export const SCHEDULES_ROOT_QUERY = gql`
     }
   }
 
-  ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_SCHEDULES_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
   ${INSTIGATION_STATE_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;

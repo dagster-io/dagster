@@ -1,17 +1,22 @@
-import graphene
-
 import dagster._check as check
+import graphene
 from dagster._core.definitions.events import AssetKey
+from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
 
-from ...implementation.execution import (
+from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill,
     create_and_launch_partition_backfill,
-    delete_pipeline_run,
+    resume_partition_backfill,
+)
+from dagster_graphql.implementation.execution.launch_execution import (
     launch_pipeline_execution,
     launch_pipeline_reexecution,
     launch_reexecution_from_parent_run,
-    resume_partition_backfill,
+)
+
+from ...implementation.execution import (
+    delete_pipeline_run,
     terminate_pipeline_execution,
     wipe_assets,
 )
@@ -21,9 +26,11 @@ from ...implementation.utils import (
     ExecutionMetadata,
     ExecutionParams,
     UserFacingGraphQLError,
+    assert_permission_for_location,
     capture_error,
     check_permission,
     pipeline_selector_from_graphql,
+    require_permission_check,
 )
 from ..asset_key import GrapheneAssetKey
 from ..backfill import (
@@ -60,7 +67,7 @@ from ..sensors import (
     GrapheneStartSensorMutation,
     GrapheneStopSensorMutation,
 )
-from ..util import non_null_list
+from ..util import ResolveInfo, non_null_list
 
 
 def create_execution_params(graphene_info, graphql_execution_params):
@@ -170,8 +177,8 @@ class GrapheneDeleteRunMutation(graphene.Mutation):
         name = "DeleteRunMutation"
 
     @capture_error
-    @check_permission(Permissions.DELETE_PIPELINE_RUN)
-    def mutate(self, graphene_info, **kwargs):
+    @require_permission_check(Permissions.DELETE_PIPELINE_RUN)
+    def mutate(self, graphene_info: ResolveInfo, **kwargs):
         run_id = kwargs["runId"]
         return delete_pipeline_run(graphene_info, run_id)
 
@@ -230,13 +237,18 @@ class GrapheneTerminateRunResult(graphene.Union):
         name = "TerminateRunResult"
 
 
-@capture_error
 def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
     # refactored into a helper function here in order to wrap with @capture_error,
     # because create_execution_params may raise
+    execution_params = create_execution_params(graphene_info, execution_params_dict)
+    assert_permission_for_location(
+        graphene_info,
+        Permissions.LAUNCH_PIPELINE_EXECUTION,
+        execution_params.selector.location_name,
+    )
     return launch_pipeline_execution(
         graphene_info,
-        execution_params=create_execution_params(graphene_info, execution_params_dict),
+        execution_params,
     )
 
 
@@ -252,8 +264,8 @@ class GrapheneLaunchRunMutation(graphene.Mutation):
         name = "LaunchRunMutation"
 
     @capture_error
-    @check_permission(Permissions.LAUNCH_PIPELINE_EXECUTION)
-    def mutate(self, graphene_info, **kwargs):
+    @require_permission_check(Permissions.LAUNCH_PIPELINE_EXECUTION)
+    def mutate(self, graphene_info: ResolveInfo, **kwargs):
         return create_execution_params_and_launch_pipeline_exec(
             graphene_info, kwargs["executionParams"]
         )
@@ -271,8 +283,8 @@ class GrapheneLaunchBackfillMutation(graphene.Mutation):
         name = "LaunchBackfillMutation"
 
     @capture_error
-    @check_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
-    def mutate(self, graphene_info, **kwargs):
+    @require_permission_check(Permissions.LAUNCH_PARTITION_BACKFILL)
+    def mutate(self, graphene_info: ResolveInfo, **kwargs):
         return create_and_launch_partition_backfill(graphene_info, kwargs["backfillParams"])
 
 
@@ -288,8 +300,8 @@ class GrapheneCancelBackfillMutation(graphene.Mutation):
         name = "CancelBackfillMutation"
 
     @capture_error
-    @check_permission(Permissions.CANCEL_PARTITION_BACKFILL)
-    def mutate(self, graphene_info, **kwargs):
+    @require_permission_check(Permissions.CANCEL_PARTITION_BACKFILL)
+    def mutate(self, graphene_info: ResolveInfo, **kwargs):
         return cancel_partition_backfill(graphene_info, kwargs["backfillId"])
 
 
@@ -305,8 +317,8 @@ class GrapheneResumeBackfillMutation(graphene.Mutation):
         name = "ResumeBackfillMutation"
 
     @capture_error
-    @check_permission(Permissions.LAUNCH_PARTITION_BACKFILL)
-    def mutate(self, graphene_info, **kwargs):
+    @require_permission_check(Permissions.LAUNCH_PARTITION_BACKFILL)
+    def mutate(self, graphene_info: ResolveInfo, **kwargs):
         return resume_partition_backfill(graphene_info, kwargs["backfillId"])
 
 
@@ -314,10 +326,13 @@ class GrapheneResumeBackfillMutation(graphene.Mutation):
 def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_params_dict):
     # refactored into a helper function here in order to wrap with @capture_error,
     # because create_execution_params may raise
-    return launch_pipeline_reexecution(
+    execution_params = create_execution_params(graphene_info, execution_params_dict)
+    assert_permission_for_location(
         graphene_info,
-        execution_params=create_execution_params(graphene_info, execution_params_dict),
+        Permissions.LAUNCH_PIPELINE_REEXECUTION,
+        execution_params.selector.location_name,
     )
+    return launch_pipeline_reexecution(graphene_info, execution_params=execution_params)
 
 
 class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
@@ -333,8 +348,8 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
         name = "LaunchRunReexecutionMutation"
 
     @capture_error
-    @check_permission(Permissions.LAUNCH_PIPELINE_REEXECUTION)
-    def mutate(self, graphene_info, **kwargs):
+    @require_permission_check(Permissions.LAUNCH_PIPELINE_REEXECUTION)
+    def mutate(self, graphene_info: ResolveInfo, **kwargs):
         execution_params = kwargs.get("executionParams")
         reexecution_params = kwargs.get("reexecutionParams")
         check.invariant(
@@ -347,12 +362,14 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
                 graphene_info,
                 execution_params_dict=kwargs["executionParams"],
             )
-        else:
+        elif reexecution_params:
             return launch_reexecution_from_parent_run(
                 graphene_info,
                 reexecution_params["parentRunId"],
                 reexecution_params["strategy"],
             )
+        else:
+            check.failed("Unreachable")
 
 
 class GrapheneTerminateRunPolicy(graphene.Enum):
@@ -383,10 +400,10 @@ class GrapheneTerminateRunMutation(graphene.Mutation):
         name = "TerminateRunMutation"
 
     @capture_error
-    @check_permission(Permissions.TERMINATE_PIPELINE_EXECUTION)
-    def mutate(self, graphene_info, **kwargs):
+    @require_permission_check(Permissions.TERMINATE_PIPELINE_EXECUTION)
+    def mutate(self, graphene_info: ResolveInfo, **kwargs):
         return terminate_pipeline_execution(
-            graphene_info.context.instance,
+            graphene_info,
             kwargs["runId"],
             kwargs.get("terminatePolicy", GrapheneTerminateRunPolicy.SAFE_TERMINATE),
         )
@@ -440,9 +457,12 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
         name = "ReloadRepositoryLocationMutation"
 
     @capture_error
-    @check_permission(Permissions.RELOAD_REPOSITORY_LOCATION)
-    def mutate(self, graphene_info, **kwargs):
+    @require_permission_check(Permissions.RELOAD_REPOSITORY_LOCATION)
+    def mutate(self, graphene_info: ResolveInfo, **kwargs):
         location_name = kwargs["repositoryLocationName"]
+        assert_permission_for_location(
+            graphene_info, Permissions.RELOAD_REPOSITORY_LOCATION, location_name
+        )
 
         if not graphene_info.context.has_repository_location_name(location_name):
             return GrapheneRepositoryLocationNotFound(location_name)
@@ -456,7 +476,9 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
         # our current WorkspaceRequestContext outdated. Therefore, `reload_repository_location` returns
         # an updated WorkspaceRequestContext for us to use.
         new_context = graphene_info.context.reload_repository_location(location_name)
-        return GrapheneWorkspaceLocationEntry(new_context.get_location_entry(location_name))
+        return GrapheneWorkspaceLocationEntry(
+            check.not_none(new_context.get_location_entry(location_name))
+        )
 
 
 class GrapheneShutdownRepositoryLocationMutation(graphene.Mutation):
@@ -471,10 +493,12 @@ class GrapheneShutdownRepositoryLocationMutation(graphene.Mutation):
         name = "ShutdownRepositoryLocationMutation"
 
     @capture_error
-    @check_permission(Permissions.RELOAD_REPOSITORY_LOCATION)
-    def mutate(self, graphene_info, **kwargs):
+    @require_permission_check(Permissions.RELOAD_REPOSITORY_LOCATION)
+    def mutate(self, graphene_info: ResolveInfo, **kwargs):
         location_name = kwargs["repositoryLocationName"]
-
+        assert_permission_for_location(
+            graphene_info, Permissions.RELOAD_REPOSITORY_LOCATION, location_name
+        )
         if not graphene_info.context.has_repository_location_name(location_name):
             return GrapheneRepositoryLocationNotFound(location_name)
 
@@ -507,7 +531,7 @@ class GrapheneReloadWorkspaceMutation(graphene.Mutation):
 
     @capture_error
     @check_permission(Permissions.RELOAD_WORKSPACE)
-    def mutate(self, graphene_info, **_kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **_kwargs):
         new_context = graphene_info.context.reload_workspace()
         return fetch_workspace(new_context)
 
@@ -547,7 +571,7 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
 
     @capture_error
     @check_permission(Permissions.WIPE_ASSETS)
-    def mutate(self, graphene_info, **kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **kwargs):
         return wipe_assets(
             graphene_info,
             [AssetKey.from_graphql_input(asset_key) for asset_key in kwargs["assetKeys"]],
@@ -589,7 +613,7 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
         name = "LogTelemetryMutation"
 
     @capture_error
-    def mutate(self, graphene_info, **kwargs):
+    def mutate(self, graphene_info: ResolveInfo, **kwargs):
         action = log_dagit_telemetry_event(
             graphene_info,
             action=kwargs["action"],
@@ -598,6 +622,20 @@ class GrapheneLogTelemetryMutation(graphene.Mutation):
             metadata=kwargs["metadata"],
         )
         return action
+
+
+class GrapheneSetNuxSeenMutation(graphene.Mutation):
+    """Store whether we've shown the nux to any user and they've dismissed or submitted it"""
+
+    Output = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "SetNuxSeenMutation"
+
+    @capture_error
+    def mutate(self, _graphene_info):
+        set_nux_seen()
+        return get_has_seen_nux()
 
 
 class GrapheneDagitMutation(graphene.ObjectType):
@@ -627,3 +665,4 @@ class GrapheneDagitMutation(graphene.ObjectType):
     resume_partition_backfill = GrapheneResumeBackfillMutation.Field()
     cancel_partition_backfill = GrapheneCancelBackfillMutation.Field()
     log_telemetry = GrapheneLogTelemetryMutation.Field()
+    set_nux_seen = GrapheneSetNuxSeenMutation.Field()

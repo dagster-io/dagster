@@ -36,7 +36,6 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     output is retrieved.
 
     Examples:
-
         .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_script_utility.py
            :language: python
 
@@ -133,7 +132,6 @@ def execute(shell_command, output_logging, log, cwd=None, env=None):
     output is retrieved.
 
     Examples:
-
         .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_command_utility.py
            :language: python
 

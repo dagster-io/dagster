@@ -150,6 +150,11 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     return new ApolloClient({
       cache: appCache,
       link: ApolloLink.from([...apolloLinks, splitLink]),
+      defaultOptions: {
+        watchQuery: {
+          fetchPolicy: 'cache-and-network',
+        },
+      },
     });
   }, [apolloLinks, appCache, graphqlPath, headerObject, websocketClient]);
 

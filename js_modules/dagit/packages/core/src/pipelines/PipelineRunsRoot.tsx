@@ -11,7 +11,7 @@ import {
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -36,7 +36,10 @@ import {repoAddressAsTag} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 import {explorerPathFromString} from './PipelinePathUtils';
-import {PipelineRunsRootQuery, PipelineRunsRootQueryVariables} from './types/PipelineRunsRootQuery';
+import {
+  PipelineRunsRootQuery,
+  PipelineRunsRootQueryVariables,
+} from './types/PipelineRunsRoot.types';
 import {useJobTitle} from './useJobTitle';
 
 const PAGE_SIZE = 25;

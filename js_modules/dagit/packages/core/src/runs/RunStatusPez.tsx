@@ -3,13 +3,13 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {RunStatus} from '../graphql/types';
 import {StepSummaryForRun} from '../instance/StepSummaryForRun';
-import {RunStatus} from '../types/globalTypes';
 
 import {RunStatusIndicator} from './RunStatusDots';
 import {failedStatuses, inProgressStatuses} from './RunStatuses';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
-import {RunTimeFragment} from './types/RunTimeFragment';
+import {RunTimeFragment} from './types/RunUtils.types';
 
 const RUN_STATUS_COLORS = {
   QUEUED: Colors.Blue500,

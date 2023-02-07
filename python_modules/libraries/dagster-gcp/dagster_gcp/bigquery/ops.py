@@ -1,12 +1,17 @@
 import hashlib
 
+from dagster import (
+    In,
+    List,
+    Nothing,
+    Out,
+    _check as check,
+    op,
+)
 from dagster_pandas import DataFrame
+from google.cloud.bigquery.encryption_configuration import EncryptionConfiguration
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
-from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
-
-from dagster import In, List, Nothing, Out
-from dagster import _check as check
-from dagster import op
+from google.cloud.bigquery.table import TimePartitioning
 
 from .configs import (
     define_bigquery_create_dataset_config,
@@ -40,7 +45,6 @@ def bq_op_for_queries(sql_queries):
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """
-
     sql_queries = check.list_param(sql_queries, "sql queries", of_type=str)
     m = hashlib.sha1()
     for query in sql_queries:
@@ -167,7 +171,6 @@ def bq_delete_dataset(context):
 
     Expects a BQ client to be provisioned in resources as context.resources.bigquery.
     """
-
     (dataset, delete_contents, not_found_ok) = [
         context.op_config.get(k) for k in ("dataset", "delete_contents", "not_found_ok")
     ]

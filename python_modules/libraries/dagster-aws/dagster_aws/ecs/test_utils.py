@@ -3,6 +3,7 @@ from typing import Any, Mapping, Optional
 from dagster._core.events import EngineEventData, MetadataEntry
 from dagster._core.storage.pipeline_run import DagsterRun
 
+from .container_context import EcsContainerContext
 from .launcher import EcsRunLauncher
 
 
@@ -39,7 +40,9 @@ class CustomECSRunLauncher(EcsRunLauncher):
     def from_config_value(inst_data, config_value):
         return CustomECSRunLauncher(inst_data=inst_data, **config_value)
 
-    def get_cpu_and_memory_overrides(self, run: DagsterRun) -> Mapping[str, str]:
+    def get_cpu_and_memory_overrides(
+        self, container_context: EcsContainerContext, run: DagsterRun
+    ) -> Mapping[str, str]:
         return {"cpu": "4096", "memory": "16384"}
 
     def _get_task_overrides(self, run: DagsterRun) -> Mapping[str, Any]:

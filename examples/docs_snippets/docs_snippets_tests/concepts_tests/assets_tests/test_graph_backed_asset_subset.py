@@ -1,9 +1,9 @@
 from dagster import AssetKey
-from docs_snippets.concepts.assets.subset_graph_backed_asset import my_repo
+from docs_snippets.concepts.assets.subset_graph_backed_asset import defs
 
 
 def test_subset_graph_backed_asset():
-    result = my_repo.get_job("graph_asset").execute_in_process(
+    result = defs.get_job_def("graph_asset").execute_in_process(
         asset_selection=[AssetKey("baz_asset")]
     )
     assert result.success

@@ -5,25 +5,23 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {assertUnreachable} from '../app/Util';
+import {RunStatus} from '../graphql/types';
 import {StatusTable} from '../instigation/InstigationUtils';
-import {RunStatus} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {ScheduleFragment} from './types/ScheduleFragment';
 import {
   SchedulePartitionStatusFragment,
-  SchedulePartitionStatusFragment_partitionSet_partitionStatusesOrError_PartitionStatuses_results as Partition,
-} from './types/SchedulePartitionStatusFragment';
-import {
   SchedulePartitionStatusQuery,
   SchedulePartitionStatusQueryVariables,
-} from './types/SchedulePartitionStatusQuery';
+  SchedulePartitionStatusResultFragment,
+} from './types/SchedulePartitionStatus.types';
+import {ScheduleFragment} from './types/ScheduleUtils.types';
 
 const RUN_STATUSES = ['Succeeded', 'Failed', 'Missing', 'Pending'];
 
-const calculateDisplayStatus = (partition: Partition) => {
+const calculateDisplayStatus = (partition: SchedulePartitionStatusResultFragment) => {
   switch (partition.runStatus) {
     case null:
       return 'Missing';
@@ -164,7 +162,16 @@ const RetrievedSchedulePartitionStatus: React.FC<{
   );
 };
 
-const SCHEDULE_PARTITION_STATUS_FRAGMENT = gql`
+const SCHEDULE_PARTITION_STATUS_QUERY = gql`
+  query SchedulePartitionStatusQuery($scheduleSelector: ScheduleSelector!) {
+    scheduleOrError(scheduleSelector: $scheduleSelector) {
+      ... on Schedule {
+        id
+        ...SchedulePartitionStatusFragment
+      }
+    }
+  }
+
   fragment SchedulePartitionStatusFragment on Schedule {
     id
     mode
@@ -176,23 +183,16 @@ const SCHEDULE_PARTITION_STATUS_FRAGMENT = gql`
         ... on PartitionStatuses {
           results {
             id
-            partitionName
-            runStatus
+            ...SchedulePartitionStatusResult
           }
         }
       }
     }
   }
-`;
 
-const SCHEDULE_PARTITION_STATUS_QUERY = gql`
-  query SchedulePartitionStatusQuery($scheduleSelector: ScheduleSelector!) {
-    scheduleOrError(scheduleSelector: $scheduleSelector) {
-      ... on Schedule {
-        id
-        ...SchedulePartitionStatusFragment
-      }
-    }
+  fragment SchedulePartitionStatusResult on PartitionStatus {
+    id
+    partitionName
+    runStatus
   }
-  ${SCHEDULE_PARTITION_STATUS_FRAGMENT}
 `;

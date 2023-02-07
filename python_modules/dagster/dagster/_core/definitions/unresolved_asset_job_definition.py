@@ -12,15 +12,16 @@ from .config import ConfigMapping
 
 if TYPE_CHECKING:
     from dagster._core.definitions import (
-        AssetSelection,
         AssetsDefinition,
+        AssetSelection,
         ExecutorDefinition,
         JobDefinition,
-        PartitionSetDefinition,
         PartitionedConfig,
         PartitionsDefinition,
+        PartitionSetDefinition,
         SourceAsset,
     )
+    from dagster._core.definitions.asset_graph import InternalAssetGraph
 
 
 class UnresolvedAssetJobDefinition(
@@ -67,7 +68,7 @@ class UnresolvedAssetJobDefinition(
         )
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
-        from dagster._core.definitions import PartitionSetDefinition, PartitionedConfig
+        from dagster._core.definitions import PartitionedConfig, PartitionSetDefinition
 
         if self.partitions_def is None:
             return None
@@ -132,6 +133,7 @@ class UnresolvedAssetJobDefinition(
         )
 
         return RunRequest(
+            job_name=self.name,
             run_key=run_key,
             run_config=run_config
             if run_config is not None
@@ -142,13 +144,35 @@ class UnresolvedAssetJobDefinition(
 
     def resolve(
         self,
-        assets: Sequence["AssetsDefinition"],
-        source_assets: Sequence["SourceAsset"],
+        assets: Optional[Sequence["AssetsDefinition"]] = None,
+        source_assets: Optional[Sequence["SourceAsset"]] = None,
         default_executor_def: Optional["ExecutorDefinition"] = None,
+        asset_graph: Optional["InternalAssetGraph"] = None,
     ) -> "JobDefinition":
         """
         Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
+
+        The assets and source_assets arguments are deprecated. Although they were never technically
+        public, a lot of users use them, so going to wait until a minor release to get rid of them.
         """
+        from dagster._core.definitions.asset_graph import AssetGraph
+
+        if asset_graph is not None:
+            if assets is not None or source_assets is not None:
+                check.failed(
+                    "If providing asset_graph, can't also provide assets and source_assets, and"
+                    " vice-versa."
+                )
+            assets = asset_graph.assets
+            source_assets = asset_graph.source_assets
+        else:
+            if assets is None or source_assets is None:
+                check.failed(
+                    "If asset_graph is not provided, must provide both assets and source_assets"
+                )
+
+            asset_graph = AssetGraph.from_assets([*assets, *source_assets])
+
         return build_asset_selection_job(
             name=self.name,
             assets=assets,
@@ -156,7 +180,7 @@ class UnresolvedAssetJobDefinition(
             source_assets=source_assets,
             description=self.description,
             tags=self.tags,
-            asset_selection=self.selection.resolve([*assets, *source_assets]),
+            asset_selection=self.selection.resolve(asset_graph),
             partitions_def=self.partitions_def,
             executor_def=self.executor_def or default_executor_def,
         )
@@ -183,7 +207,11 @@ def _selection_from_string(string: str) -> "AssetSelection":
 
 def define_asset_job(
     name: str,
-    selection: Optional[Union[str, Sequence[str], "AssetSelection"]] = None,
+    selection: Optional[
+        Union[
+            str, Sequence[str], Sequence[AssetKey], Sequence["AssetsDefinition"], "AssetSelection"
+        ]
+    ] = None,
     config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
@@ -191,18 +219,22 @@ def define_asset_job(
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will materialize a selection of assets. This will only be
-    resolved to a JobDefinition once placed in a repository.
+    resolved to a JobDefinition once placed in a code location.
 
     Args:
         name (str):
             The name for the job.
-        selection (Union[str, Sequence[str], AssetSelection]):
-            A selection over the set of Assets available on your repository. This can be a string
-            such as "my_asset*", a list of such strings (representing a union of these selections),
-            or an AssetSelection object.
+        selection (Union[str, Sequence[str], Sequence[AssetKey], Sequence[AssetsDefinition], AssetSelection]):
+            The assets that will be materialized when the job is run.
 
-            This selection will be resolved to a set of Assets once the repository is loaded with a
-            set of AssetsDefinitions.
+            The selected assets must all be included in the assets that are passed to the assets
+            argument of the Definitions object that this job is included on.
+
+            The string "my_asset*" selects my_asset and all downstream assets within the code
+            location. A list of strings represents the union of all assets selected by strings
+            within the list.
+
+            The selection will be resolved to a set of assets once the when location is loaded.
         config:
             Describes how the Job is parameterized at runtime.
 
@@ -234,56 +266,75 @@ def define_asset_job(
 
 
     Returns:
-        UnresolvedAssetJobDefinition: The job, which can be placed inside a repository.
+        UnresolvedAssetJobDefinition: The job, which can be placed inside a code location.
 
     Examples:
-
         .. code-block:: python
 
-            # A job that targets all assets in the repository:
+            # A job that targets all assets in the code location:
             @asset
             def asset1():
                 ...
 
-            @repository
-            def repo():
-                return [asset1, define_asset_job("all_assets")]
+            defs = Definitions(
+                assets=[asset1],
+                jobs=[define_asset_job("all_assets")],
+            )
+
+            # A job that targets a single asset
+            @asset
+            def asset1():
+                ...
+
+            defs = Definitions(
+                assets=[asset1],
+                jobs=[define_asset_job("all_assets", selection=[asset1])],
+            )
 
             # A job that targets all the assets in a group:
-            @repository
-            def repo():
-                return [
-                    assets,
-                    define_asset_job("marketing_job", selection=AssetSelection.groups("marketing")),
-                ]
+            defs = Definitions(
+                assets=assets,
+                jobs=[define_asset_job("marketing_job", selection=AssetSelection.groups("marketing"))],
+            )
 
             # Resources are supplied to the assets, not the job:
             @asset(required_resource_keys={"slack_client"})
             def asset1():
                 ...
 
-            @repository
-            def prod_repo():
-                return [
-                    *with_resources([asset1], resource_defs={"slack_client": prod_slack_client}),
-                    define_asset_job("all_assets"),
-                ]
+            defs = Definitions(
+                assets=[asset1],
+                jobs=[define_asset_job("all_assets")],
+                resources={"slack_client": prod_slack_client},
+            )
     """
-    from dagster._core.definitions import AssetSelection
+    from dagster._core.definitions import AssetsDefinition, AssetSelection
 
-    selection = check.opt_inst_param(
-        selection, "selection", (str, list, AssetSelection), default=AssetSelection.all()
-    )
     # convert string-based selections to AssetSelection objects
-    if isinstance(selection, str):
-        selection = _selection_from_string(selection)
-    elif isinstance(selection, list):
-        check.list_param(selection, "selection", of_type=str)
-        selection = reduce(operator.or_, [_selection_from_string(s) for s in selection])
+    resolved_selection: AssetSelection
+    if selection is None:
+        resolved_selection = AssetSelection.all()
+    elif isinstance(selection, str):
+        resolved_selection = _selection_from_string(selection)
+    elif isinstance(selection, AssetSelection):
+        resolved_selection = selection
+    elif isinstance(selection, list) and all(isinstance(el, str) for el in selection):
+        resolved_selection = reduce(
+            operator.or_, [_selection_from_string(cast(str, s)) for s in selection]
+        )
+    elif isinstance(selection, list) and all(isinstance(el, AssetsDefinition) for el in selection):
+        resolved_selection = AssetSelection.assets(*cast(Sequence[AssetsDefinition], selection))
+    elif isinstance(selection, list) and all(isinstance(el, AssetKey) for el in selection):
+        resolved_selection = AssetSelection.keys(*cast(Sequence[AssetKey], selection))
+    else:
+        check.failed(
+            "selection argument must be one of str, Sequence[str], Sequence[AssetKey],"
+            f" Sequence[AssetsDefinition], AssetSelection. Was {type(selection)}."
+        )
 
     return UnresolvedAssetJobDefinition(
         name=name,
-        selection=cast(AssetSelection, selection),
+        selection=resolved_selection,
         config=config,
         description=description,
         tags=tags,

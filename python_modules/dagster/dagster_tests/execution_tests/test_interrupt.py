@@ -5,7 +5,6 @@ import time
 from threading import Thread
 
 import pytest
-
 from dagster import (
     DagsterEventType,
     Failure,
@@ -71,7 +70,6 @@ def test_single_proc_interrupt():
         write_a_file()
 
     with safe_tempfile_path() as success_tempfile:
-
         # launch a thread the waits until the file is written to launch an interrupt
         Thread(target=_send_kbd_int, args=([success_tempfile],)).start()
 
@@ -93,7 +91,8 @@ def test_single_proc_interrupt():
         assert any(
             [
                 "Execution was interrupted unexpectedly. "
-                "No user initiated termination request was found, treating as failure." in message
+                "No user initiated termination request was found, treating as failure."
+                in message
                 for message in result_messages
             ]
         )
@@ -103,7 +102,6 @@ def test_single_proc_interrupt():
 def test_interrupt_multiproc():
     with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test(temp_dir=tempdir) as instance:
-
             file_1 = os.path.join(tempdir, "file_1")
             file_2 = os.path.join(tempdir, "file_2")
             file_3 = os.path.join(tempdir, "file_3")
@@ -163,7 +161,6 @@ def test_interrupt_resource_teardown():
         write_a_file_resource_solid()
 
     with safe_tempfile_path() as success_tempfile:
-
         # launch a thread the waits until the file is written to launch an interrupt
         Thread(target=_send_kbd_int, args=([success_tempfile],)).start()
 

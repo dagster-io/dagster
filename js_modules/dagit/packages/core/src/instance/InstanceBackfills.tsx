@@ -1,6 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
 import {
-  Alert,
   Box,
   CursorPaginationControls,
   NonIdealState,
@@ -10,26 +9,29 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {OverviewTabs} from '../overview/OverviewTabs';
+import {DaemonNotRunningAlertBody} from '../partitions/BackfillMessaging';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
 
-import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './BackfillTable';
+import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from './BackfillTable';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {
   InstanceBackfillsQuery,
   InstanceBackfillsQueryVariables,
-} from './types/InstanceBackfillsQuery';
-import {InstanceHealthForBackfillsQuery} from './types/InstanceHealthForBackfillsQuery';
+  InstanceHealthForBackfillsQuery,
+} from './types/InstanceBackfills.types';
 
 const PAGE_SIZE = 10;
 
 export const InstanceBackfills = () => {
   useTrackPageView();
+  useDocumentTitle('Overview | Backfills');
 
   const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
 
@@ -50,7 +52,6 @@ export const InstanceBackfills = () => {
         : [],
   });
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
-  useDocumentTitle('Backfills');
 
   return (
     <Page>
@@ -85,23 +86,7 @@ export const InstanceBackfills = () => {
             <div>
               {isBackfillHealthy ? null : (
                 <Box padding={{horizontal: 24, vertical: 16}}>
-                  <Alert
-                    intent="warning"
-                    title="The backfill daemon is not running."
-                    description={
-                      <div>
-                        See the{' '}
-                        <a
-                          href="https://docs.dagster.io/deployment/dagster-daemon"
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          dagster-daemon documentation
-                        </a>{' '}
-                        for more information on how to deploy the dagster-daemon process.
-                      </div>
-                    }
-                  />
+                  <DaemonNotRunningAlertBody />
                 </Box>
               )}
               <BackfillTable
@@ -138,8 +123,6 @@ const BACKFILLS_QUERY = gql`
         results {
           backfillId
           status
-          backfillStatus
-          numRequested
           numPartitions
           timestamp
           partitionSetName
@@ -165,6 +148,6 @@ const BACKFILLS_QUERY = gql`
     }
   }
 
-  ${BACKFILL_TABLE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
+  ${BACKFILL_TABLE_FRAGMENT}
 `;

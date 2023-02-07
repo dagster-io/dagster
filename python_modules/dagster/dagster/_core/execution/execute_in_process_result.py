@@ -3,6 +3,7 @@ from typing import Any, Mapping, Optional, Sequence
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions import JobDefinition, NodeHandle
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
@@ -60,7 +61,6 @@ class ExecuteInProcessResult(ExecutionResult):
     @property
     def all_events(self) -> Sequence[DagsterEvent]:
         """List[DagsterEvent]: All dagster events emitted during execution."""
-
         return self._event_list
 
     @public  # type: ignore
@@ -73,7 +73,6 @@ class ExecuteInProcessResult(ExecutionResult):
         step_key = str(handle)
         output_found = False
         for step_output_handle, value in self._output_capture.items():
-
             # For the mapped output case, where step keys are in the format
             # "step_key[upstream_mapped_output_name]" within the step output handle.
             if (
@@ -117,6 +116,15 @@ class ExecuteInProcessResult(ExecutionResult):
         """
         return super(ExecuteInProcessResult, self).output_for_node(
             node_str, output_name=output_name
+        )
+
+    @public
+    def asset_value(self, asset_key: CoercibleToAssetKey) -> Any:
+        node_output_handle = self._job_def.asset_layer.node_output_handle_for_asset(
+            AssetKey.from_coerceable(asset_key)
+        )
+        return self.output_for_node(
+            node_str=str(node_output_handle.node_handle), output_name=node_output_handle.output_name
         )
 
     @public

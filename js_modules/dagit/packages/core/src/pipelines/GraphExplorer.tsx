@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs} from '@blueprintjs/core';
-import {Checkbox, Colors, SplitPanelContainer, TextInput} from '@dagster-io/ui';
+import {Checkbox, Colors, SplitPanelContainer, TextInput, ErrorBoundary} from '@dagster-io/ui';
 import Color from 'color';
 import qs from 'qs';
 import * as React from 'react';
@@ -25,8 +25,7 @@ import {
 import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
-import {GraphExplorerFragment} from './types/GraphExplorerFragment';
-import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandleFragment';
+import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
 
 export interface GraphExplorerOptions {
   explodeComposites: boolean;
@@ -195,7 +194,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
       identifier="explorer"
       firstInitialPercent={70}
       first={
-        <>
+        <ErrorBoundary region="op graph">
           {solidsQueryEnabled ? (
             <QueryOverlay>
               <GraphQueryInput
@@ -282,7 +281,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
               layout={layout}
             />
           )}
-        </>
+        </ErrorBoundary>
       }
       second={
         <RightInfoPanel>
@@ -315,6 +314,7 @@ export const GRAPH_EXPLORER_FRAGMENT = gql`
     description
     ...SidebarRootContainerFragment
   }
+
   ${SIDEBAR_ROOT_CONTAINER_FRAGMENT}
 `;
 
@@ -332,10 +332,15 @@ export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
   fragment GraphExplorerSolidHandleFragment on SolidHandle {
     handleID
     solid {
-      name
-      ...OpGraphOpFragment
+      ...GraphExplorerSolid
     }
   }
+
+  fragment GraphExplorerSolid on Solid {
+    name
+    ...OpGraphOpFragment
+  }
+
   ${OP_GRAPH_OP_FRAGMENT}
 `;
 

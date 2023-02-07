@@ -3,7 +3,7 @@ import {PartitionState} from '../partitions/PartitionStatus';
 import {
   PartitionHealthData,
   PartitionHealthDimension,
-  PartitionHealthDimensionRange,
+  PartitionDimensionSelection,
 } from './usePartitionHealthData';
 
 export function isTimeseriesDimension(dimension: PartitionHealthDimension) {
@@ -18,7 +18,6 @@ export function mergedAssetHealth(
 ): {
   dimensions: PartitionHealthDimension[];
   stateForKey: (dimensionKeys: string[]) => PartitionState;
-  stateForPartialKey: (dimensionKeys: string[]) => PartitionState;
   stateForSingleDimension: (
     dimensionIdx: number,
     dimensionKey: string,
@@ -29,7 +28,6 @@ export function mergedAssetHealth(
     return {
       dimensions: [],
       stateForKey: () => PartitionState.MISSING,
-      stateForPartialKey: () => PartitionState.MISSING,
       stateForSingleDimension: () => PartitionState.MISSING,
     };
   }
@@ -59,8 +57,6 @@ export function mergedAssetHealth(
     })),
     stateForKey: (dimensionKeys: string[]) =>
       mergedStates(assetHealth.map((health) => health.stateForKey(dimensionKeys))),
-    stateForPartialKey: (dimensionKeys: string[]) =>
-      mergedStates(assetHealth.map((health) => health.stateForPartialKey(dimensionKeys))),
     stateForSingleDimension: (
       dimensionIdx: number,
       dimensionKey: string,
@@ -82,25 +78,25 @@ export function mergedStates(states: PartitionState[]): PartitionState {
   }
 }
 
-export function explodePartitionKeysInRanges(
-  ranges: PartitionHealthDimensionRange[],
+export function explodePartitionKeysInSelection(
+  selections: PartitionDimensionSelection[],
   stateForKey: (dimensionKeys: string[]) => PartitionState,
 ) {
-  if (ranges.length === 0) {
+  if (selections.length === 0) {
     return [];
   }
-  if (ranges.length === 1) {
-    return ranges[0].selected.map((key) => {
+  if (selections.length === 1) {
+    return selections[0].selectedKeys.map((key) => {
       return {
         partitionKey: key,
         state: stateForKey([key]),
       };
     });
   }
-  if (ranges.length === 2) {
+  if (selections.length === 2) {
     const all: {partitionKey: string; state: PartitionState}[] = [];
-    for (const key of ranges[0].selected) {
-      for (const subkey of ranges[1].selected) {
+    for (const key of selections[0].selectedKeys) {
+      for (const subkey of selections[1].selectedKeys) {
         all.push({
           partitionKey: `${key}|${subkey}`,
           state: stateForKey([key, subkey]),
@@ -113,7 +109,8 @@ export function explodePartitionKeysInRanges(
   throw new Error('Unsupported >2 partitions defined');
 }
 
-export const placeholderDimensionRange = (name: string) => ({
+export const placeholderDimensionSelection = (name: string): PartitionDimensionSelection => ({
   dimension: {name, partitionKeys: []},
-  selected: [],
+  selectedKeys: [],
+  selectedRanges: [],
 });

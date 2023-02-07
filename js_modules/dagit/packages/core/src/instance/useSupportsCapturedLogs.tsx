@@ -1,9 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
 
-import {InstanceSupportsCapturedLogs} from './types/InstanceSupportsCapturedLogs';
+import {InstanceSupportsCapturedLogsQuery} from './types/useSupportsCapturedLogs.types';
 
 export const useSupportsCapturedLogs = () => {
-  const {data} = useQuery<InstanceSupportsCapturedLogs>(INSTANCE_SUPPORTS_CAPTURED_LOGS);
+  const {data} = useQuery<InstanceSupportsCapturedLogsQuery>(INSTANCE_SUPPORTS_CAPTURED_LOGS);
   return !!data?.instance.hasCapturedLogManager;
 };
 

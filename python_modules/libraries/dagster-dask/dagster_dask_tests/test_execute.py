@@ -5,9 +5,6 @@ from threading import Thread
 
 import dagster_pandas as dagster_pd
 import pytest
-from dagster_dask import DataFrame, dask_executor
-from dask.distributed import Scheduler, Worker
-
 from dagster import (
     DagsterUnmetExecutorRequirementsError,
     VersionStrategy,
@@ -30,6 +27,8 @@ from dagster._legacy import (
     solid,
 )
 from dagster._utils import send_interrupt
+from dagster_dask import DataFrame, dask_executor
+from dask.distributed import Scheduler, Worker
 
 
 @solid
@@ -161,7 +160,6 @@ def test_dask():
         }
     }
     with instance_for_test() as instance:
-
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, dask_pipeline.name),
             run_config={

@@ -71,7 +71,15 @@ export const AppTopNav: React.FC<Props> = ({
             shortcutLabel="⌥3"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit3'}
           >
-            <TopNavLink to="/assets" data-cy="AppTopNav_AssetsLink" exact={false}>
+            <TopNavLink
+              to="/assets"
+              data-cy="AppTopNav_AssetsLink"
+              isActive={(_, location) => {
+                const {pathname} = location;
+                return pathname.startsWith('/assets') || pathname.startsWith('/asset-groups');
+              }}
+              exact={false}
+            >
               Assets
             </TopNavLink>
           </ShortcutHandler>
@@ -82,19 +90,17 @@ export const AppTopNav: React.FC<Props> = ({
         element: (
           <ShortcutHandler
             key="deployment"
-            onShortcut={() => history.push('/code-locations')}
+            onShortcut={() => history.push('/locations')}
             shortcutLabel="⌥4"
             shortcutFilter={(e) => e.altKey && e.code === 'Digit4'}
           >
             <TopNavLink
-              to="/code-locations"
+              to="/locations"
               data-cy="AppTopNav_StatusLink"
               isActive={(_, location) => {
                 const {pathname} = location;
                 return (
-                  pathname.startsWith('/code-locations') ||
                   pathname.startsWith('/locations') ||
-                  pathname.startsWith('/definitions') ||
                   pathname.startsWith('/health') ||
                   pathname.startsWith('/config')
                 );
@@ -160,22 +166,28 @@ export const AppTopNavLogo: React.FC = () => {
         </ShortcutHandler>
       ) : null}
       <Box flex={{display: 'inline-flex'}} margin={{left: 8}}>
-        <DaggyTooltip
-          content={
-            <Box flex={{direction: 'row', gap: 4}}>
-              <WebSocketStatus />
-              <VersionNumber />
-            </Box>
-          }
-          placement="bottom"
-          modifiers={{offset: {enabled: true, options: {offset: [0, 18]}}}}
-        >
-          <Link to="/home" style={{outline: 0, display: 'flex'}}>
-            <GhostDaggy />
-          </Link>
-        </DaggyTooltip>
+        <GhostDaggyWithTooltip />
       </Box>
     </LogoContainer>
+  );
+};
+
+export const GhostDaggyWithTooltip = () => {
+  return (
+    <DaggyTooltip
+      content={
+        <Box flex={{direction: 'row', gap: 4}}>
+          <WebSocketStatus />
+          <VersionNumber />
+        </Box>
+      }
+      placement="bottom"
+      modifiers={{offset: {enabled: true, options: {offset: [0, 18]}}}}
+    >
+      <Link to="/home" style={{outline: 0, display: 'flex'}}>
+        <GhostDaggy />
+      </Link>
+    </DaggyTooltip>
   );
 };
 

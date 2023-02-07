@@ -1,14 +1,19 @@
-import {BaseTag, Box, Colors, Icon, IconWrapper, StyledTag} from '@dagster-io/ui';
+import {BaseTag, Box, Colors, Icon, IconWrapper, MiddleTruncate, StyledTag} from '@dagster-io/ui';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
+import {useFeatureFlags} from '../app/Flags';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {LeftNavItem} from '../nav/LeftNavItem';
 import {LeftNavItemType} from '../nav/LeftNavItemType';
-import {getAssetGroupItemsForOption, getJobItemsForOption} from '../nav/getLeftNavItemsForOption';
+import {
+  getAssetGroupItemsForOption,
+  getJobItemsForOption,
+  gettopLevelResourceDetailsItemsForOption,
+} from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress, DUNDER_REPO_NAME} from '../workspace/buildRepoAddress';
@@ -128,7 +133,7 @@ interface SectionProps {
   collapsible: boolean;
   onToggle: (repoAddress: RepoAddress) => void;
   option: DagsterRepoOption;
-  match: {itemName: string; itemType: 'asset-group' | 'job'} | null;
+  match: {itemName: string; itemType: 'asset-group' | 'job' | 'resource'} | null;
   repoAddress: RepoAddress;
   showRepoLocation: boolean;
 }
@@ -139,8 +144,18 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
 
   const jobItems = React.useMemo(() => getJobItemsForOption(option), [option]);
   const assetGroupItems = React.useMemo(() => getAssetGroupItemsForOption(option), [option]);
-  const empty = jobItems.length === 0 && assetGroupItems.length === 0;
-  const showTypeLabels = expanded && jobItems.length > 0 && assetGroupItems.length > 0;
+
+  const {flagSidebarResources} = useFeatureFlags();
+  const resourceItems = React.useMemo(
+    () => (flagSidebarResources ? gettopLevelResourceDetailsItemsForOption(option) : []),
+    [option, flagSidebarResources],
+  );
+
+  const empty = jobItems.length === 0 && assetGroupItems.length === 0 && resourceItems.length === 0;
+  const showTypeLabels =
+    expanded &&
+    [jobItems.length > 0, assetGroupItems.length > 0, resourceItems.length > 0].filter(Boolean)
+      .length > 1;
 
   React.useEffect(() => {
     if (match && matchRef.current) {
@@ -148,7 +163,13 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
     }
   }, [match]);
 
-  const visibleItems = ({items, type}: {items: LeftNavItemType[]; type: 'job' | 'asset-group'}) => {
+  const visibleItems = ({
+    items,
+    type,
+  }: {
+    items: LeftNavItemType[];
+    type: 'job' | 'asset-group' | 'resource';
+  }) => {
     const matchItem =
       match?.itemType === type ? items.find((i) => i.name === match.itemName) : null;
 
@@ -160,7 +181,9 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
     return (
       <Box padding={{vertical: 8, horizontal: 12}}>
         {showTypeLabels && (
-          <ItemTypeLabel>{type === 'asset-group' ? 'Asset Groups' : 'Jobs'}</ItemTypeLabel>
+          <ItemTypeLabel>
+            {type === 'asset-group' ? 'Asset Groups' : type === 'resource' ? 'Resources' : 'Jobs'}
+          </ItemTypeLabel>
         )}
         {shownItems.map((item) => (
           <LeftNavItem
@@ -173,9 +196,6 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
       </Box>
     );
   };
-
-  const {name: repoName, location: repoLocation} = repoAddress;
-  const isDunderName = repoName === DUNDER_REPO_NAME;
 
   return (
     <Box background={Colors.Gray100} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
@@ -194,17 +214,12 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
             <Icon name="folder_open" size={16} />
           </Box>
           <RepoNameContainer>
-            <Box flex={{direction: 'column'}} style={{flex: 1, minWidth: 0}}>
-              <RepoName style={{fontWeight: 500}} data-tooltip={option.repository.name}>
-                {isDunderName ? repoLocation : repoName}
-              </RepoName>
-              {showRepoLocation && !isDunderName ? (
-                <RepoLocation data-tooltip={`@${option.repositoryLocation.name}`} $disabled={empty}>
-                  @{option.repositoryLocation.name}
-                </RepoLocation>
-              ) : null}
-            </Box>
-
+            <RepoName
+              data-tooltip={repoAddressAsHumanString(repoAddress)}
+              data-tooltip-style={CodeLocationTooltipStyles}
+            >
+              <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} showTitle={false} />
+            </RepoName>
             {/* Wrapper div to prevent tag from stretching vertically */}
             <div>
               <BaseTag
@@ -223,22 +238,38 @@ export const Section: React.FC<SectionProps> = React.memo((props) => {
       </SectionHeader>
       {visibleItems({type: 'job', items: jobItems})}
       {visibleItems({type: 'asset-group', items: assetGroupItems})}
+      {visibleItems({type: 'resource', items: resourceItems})}
     </Box>
   );
 });
+
+const CodeLocationTooltipStyles = JSON.stringify({
+  background: Colors.Gray100,
+  filter: `brightness(97%)`,
+  color: Colors.Gray900,
+  fontWeight: 500,
+  border: 'none',
+  borderRadius: 7,
+  overflow: 'hidden',
+  fontSize: 14,
+  padding: '5px 10px',
+  transform: 'translate(-10px,-5px)',
+} as React.CSSProperties);
 
 type PathMatch = {
   repoPath: string;
   pipelinePath?: string;
   groupName?: string;
+  resourceName?: string;
 };
 
 const usePathMatch = () => {
   const match = useRouteMatch<PathMatch>([
     '/locations/:repoPath/(jobs|pipelines)/:pipelinePath',
     '/locations/:repoPath/asset-groups/:groupName',
+    '/locations/:repoPath/resources/:resourceName',
   ]);
-  const {groupName, repoPath, pipelinePath} = match?.params || {};
+  const {groupName, repoPath, pipelinePath, resourceName} = match?.params || {};
 
   return React.useMemo(() => {
     if (!repoPath) {
@@ -261,8 +292,14 @@ const usePathMatch = () => {
           itemName: groupName,
           itemType: 'asset-group' as const,
         }
+      : resourceName
+      ? {
+          repoAddress,
+          itemName: resourceName,
+          itemType: 'resource' as const,
+        }
       : null;
-  }, [groupName, repoPath, pipelinePath]);
+  }, [groupName, repoPath, pipelinePath, resourceName]);
 };
 
 const ItemTypeLabel = styled.div`
@@ -356,15 +393,5 @@ const RepoNameContainer = styled.div`
 const RepoName = styled.div`
   font-weight: 500;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-`;
-
-const RepoLocation = styled.div<{$disabled: boolean}>`
-  color: ${({$disabled}) => ($disabled ? Colors.Gray400 : Colors.Gray700)};
-  font-size: 12px;
-  margin-top: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 `;

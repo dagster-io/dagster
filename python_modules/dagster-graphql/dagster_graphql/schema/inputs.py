@@ -1,6 +1,5 @@
 import graphene
 import pendulum
-
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 
 from .pipelines.status import GrapheneRunStatus
@@ -143,7 +142,7 @@ class GraphenePartitionSetSelector(graphene.InputObjectType):
 
 
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
-    selector = graphene.NonNull(GraphenePartitionSetSelector)
+    selector = graphene.InputField(GraphenePartitionSetSelector)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.InputField(graphene.List(graphene.NonNull(GrapheneAssetKeyInput)))
@@ -174,6 +173,18 @@ class GrapheneScheduleSelector(graphene.InputObjectType):
     class Meta:
         description = """This type represents the fields necessary to identify a schedule."""
         name = "ScheduleSelector"
+
+
+class GrapheneResourceSelector(graphene.InputObjectType):
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
+    resourceName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = (
+            """This type represents the fields necessary to identify a top-level resource."""
+        )
+        name = "ResourceSelector"
 
 
 class GrapheneExecutionMetadata(graphene.InputObjectType):
@@ -297,6 +308,7 @@ types = [
     GrapheneRunsFilter,
     GraphenePipelineSelector,
     GrapheneRepositorySelector,
+    GrapheneResourceSelector,
     GrapheneScheduleSelector,
     GrapheneSensorSelector,
     GrapheneStepExecution,

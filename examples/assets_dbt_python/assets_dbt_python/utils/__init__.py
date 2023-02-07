@@ -1,7 +1,7 @@
 import datetime
 import time
 import uuid
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
@@ -26,7 +26,7 @@ def _random_times(n: int):
             clipped_flipped_dist, clipped_flipped_dist[: n - len(clipped_flipped_dist)]
         )
 
-    return pd.to_datetime((clipped_flipped_dist * (end_u - start_u)) + start_u, unit="s")
+    return pd.to_datetime((clipped_flipped_dist * (end_u - start_u)) + start_u, unit="s")  # type: ignore  # (bad stubs)
 
 
 def random_data(extra_columns: Dict[str, Any], n: int) -> pd.DataFrame:

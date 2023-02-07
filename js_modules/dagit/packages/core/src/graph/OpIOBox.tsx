@@ -7,11 +7,11 @@ import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
 import {Edge, isHighlighted, position} from './common';
 import {OpLayoutIO} from './layout';
 import {
+  OpNodeInputDefinitionFragment,
+  OpNodeOutputDefinitionFragment,
   OpNodeDefinitionFragment,
-  OpNodeDefinitionFragment_SolidDefinition_inputDefinitions,
-  OpNodeDefinitionFragment_SolidDefinition_outputDefinitions,
-} from './types/OpNodeDefinitionFragment';
-import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
+  OpNodeInvocationFragment,
+} from './types/OpNode.types';
 
 export const PARENT_IN = 'PARENT_IN';
 export const PARENT_OUT = 'PARENT_OUT';
@@ -24,9 +24,7 @@ interface OpIORenderMetadata {
 
 interface OpIOBoxProps extends OpIORenderMetadata {
   colorKey: 'input' | 'output';
-  item:
-    | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
-    | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions;
+  item: OpNodeInputDefinitionFragment | OpNodeOutputDefinitionFragment;
   layoutInfo: OpLayoutIO | undefined;
 
   // Passed through from Solid props
@@ -131,9 +129,7 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
 
 export function metadataForCompositeParentIO(
   parentDefinition: OpNodeDefinitionFragment,
-  item:
-    | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
-    | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions,
+  item: OpNodeInputDefinitionFragment | OpNodeOutputDefinitionFragment,
 ): OpIORenderMetadata {
   const edges: Edge[] = [];
   let title = `${item.name}: ${item.type.displayName}`;
@@ -177,9 +173,7 @@ export function metadataForCompositeParentIO(
 }
 
 export function metadataForIO(
-  item:
-    | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
-    | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions,
+  item: OpNodeInputDefinitionFragment | OpNodeOutputDefinitionFragment,
   invocation?: OpNodeInvocationFragment,
 ): OpIORenderMetadata {
   const edges: Edge[] = [];

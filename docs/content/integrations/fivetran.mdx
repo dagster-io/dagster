@@ -163,7 +163,7 @@ In this case, we have a Fivetran connector which is storing data in the `public.
 
 ```python startafter=start_add_downstream_assets endbefore=end_add_downstream_assets file=/integrations/fivetran/fivetran.py dedent=4
 import json
-from dagster import asset, repository, with_resources, AssetIn, AssetKey
+from dagster import asset, AssetIn, AssetKey, Definitions
 from dagster_fivetran import load_assets_from_fivetran_instance
 
 fivetran_assets = load_assets_from_fivetran_instance(
@@ -172,20 +172,16 @@ fivetran_assets = load_assets_from_fivetran_instance(
 )
 
 @asset(
-    ins={"survey_responses": AssetIn(key=AssetKey("public", "survey_responses"))}
+    ins={"survey_responses": AssetIn(key=AssetKey(["public", "survey_responses"]))}
 )
 def survey_responses_file(survey_responses):
     with open("survey_responses.json", "w", encoding="utf8") as f:
         f.write(json.dumps(survey_responses, indent=2))
 
-@repository
-def my_repo():
-    return [
-        with_resources(
-            [fivetran_assets, survey_responses_file],
-            {"snowflake_io_manager": snowflake_io_manager},
-        )
-    ]
+defs = Definitions(
+    assets=[fivetran_assets, survey_responses_file],
+    resources={"snowflake_io_manager": snowflake_io_manager},
+)
 ```
 
 ---
@@ -195,9 +191,14 @@ def my_repo():
 Once you have Fivetran assets, you can define a job that runs some or all of these assets on a schedule, triggering the underlying Fivetran sync.
 
 ```python startafter=start_schedule_assets endbefore=end_schedule_assets file=/integrations/fivetran/fivetran.py dedent=4
-from dagster import ScheduleDefinition, define_asset_job, repository, AssetSelection
+from dagster import (
+    ScheduleDefinition,
+    define_asset_job,
+    AssetSelection,
+    Definitions,
+)
 
-# materialize all assets in the repository
+# materialize all assets
 run_everything_job = define_asset_job("run_everything", selection="*")
 
 # only run my_fivetran_connection and downstream assets
@@ -205,10 +206,9 @@ my_etl_job = define_asset_job(
     "my_etl_job", AssetSelection.groups("my_fivetran_connection").downstream()
 )
 
-@repository
-def my_repo():
-    return [
-        fivetran_assets,
+defs = Definitions(
+    assets=[fivetran_assets],
+    schedules=[
         ScheduleDefinition(
             job=my_etl_job,
             cron_schedule="@daily",
@@ -217,7 +217,8 @@ def my_repo():
             job=run_everything_job,
             cron_schedule="@weekly",
         ),
-    ]
+    ],
+)
 ```
 
 Refer to the [Schedule documentation](/concepts/partitions-schedules-sensors/schedules#running-the-scheduler) for more info on running jobs on a schedule.

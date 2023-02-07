@@ -8,7 +8,7 @@ from dagster._core.workspace.context import IWorkspace, WorkspaceRequestContext
 
 class SubmitRunContext(NamedTuple):
     """
-    Context available within a run coordinator's submit_run method
+    Context available within a run coordinator's submit_run method.
     """
 
     pipeline_run: DagsterRun

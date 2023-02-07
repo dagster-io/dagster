@@ -6,12 +6,11 @@ import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {StatusAndMessage} from './DeploymentStatusType';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
-import {InstanceWarningQuery} from './types/InstanceWarningQuery';
+import {InstanceWarningQuery} from './types/useDaemonStatus.types';
 
 export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
   const {options} = useRepositoryOptions();
   const queryResult = useQuery<InstanceWarningQuery>(INSTANCE_WARNING_QUERY, {
-    fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
     skip,
   });
@@ -105,5 +104,6 @@ const INSTANCE_WARNING_QUERY = gql`
       }
     }
   }
+
   ${INSTANCE_HEALTH_FRAGMENT}
 `;

@@ -14,7 +14,7 @@ def get_version() -> str:
 
 ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "0+dev" else f"=={ver}"
+pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
     name="dagster-azure",
     version=ver,
@@ -35,6 +35,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "azure-core<2.0.0,>=1.7.0",
+        "azure-identity<2.0.0,>=1.7.0",
         "azure-storage-blob<13.0.0,>=12.5.0",
         "azure-storage-file-datalake<13.0.0,>=12.5",
         f"dagster{pin}",

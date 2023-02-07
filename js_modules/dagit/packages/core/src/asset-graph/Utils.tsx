@@ -1,25 +1,26 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
-import {RunStatus} from '../types/globalTypes';
+import {RunStatus} from '../graphql/types';
 
 import {
-  AssetGraphLiveQuery_assetsLatestInfo_latestRun,
-  AssetGraphLiveQuery_assetNodes_assetMaterializations,
-  AssetGraphLiveQuery_assetNodes_assetObservations,
-  AssetGraphLiveQuery,
-  AssetGraphLiveQuery_assetsLatestInfo,
-  AssetGraphLiveQuery_assetNodes,
-  AssetGraphLiveQuery_assetNodes_freshnessPolicy,
-  AssetGraphLiveQuery_assetNodes_freshnessInfo,
-} from './types/AssetGraphLiveQuery';
+  AssetNodeKeyFragment,
+  AssetNodeLiveFragment,
+  AssetNodeLiveMaterializationFragment,
+  AssetNodeLiveFreshnessPolicyFragment,
+  AssetNodeLiveFreshnessInfoFragment,
+  AssetNodeLiveObservationFragment,
+} from './types/AssetNode.types';
+import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {
-  AssetGraphQuery_assetNodes,
-  AssetGraphQuery_assetNodes_assetKey,
-} from './types/AssetGraphQuery';
-type AssetNode = AssetGraphQuery_assetNodes;
-type AssetKey = AssetGraphQuery_assetNodes_assetKey;
-type AssetLiveNode = AssetGraphLiveQuery_assetNodes;
-type AssetLatestInfo = AssetGraphLiveQuery_assetsLatestInfo;
+  AssetLatestInfoFragment,
+  AssetLatestInfoRunFragment,
+  AssetGraphLiveQuery,
+} from './types/useLiveDataForAssetKeys.types';
+
+type AssetNode = AssetNodeForGraphQueryFragment;
+type AssetKey = AssetNodeKeyFragment;
+type AssetLiveNode = AssetNodeLiveFragment;
+type AssetLatestInfo = AssetLatestInfoFragment;
 
 export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
 
@@ -57,6 +58,10 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
   };
 
   const addEdge = (upstreamGraphId: string, downstreamGraphId: string) => {
+    if (upstreamGraphId === downstreamGraphId) {
+      // Skip add edges for self-dependencies (eg: assets relying on older partitions of themselves)
+      return;
+    }
     data.downstream[upstreamGraphId] = {
       ...(data.downstream[upstreamGraphId] || {}),
       [downstreamGraphId]: true,
@@ -86,6 +91,11 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
   return data;
 };
 
+export const nodeDependsOnSelf = (node: GraphNode) => {
+  const id = toGraphId(node.assetKey);
+  return node.definition.dependedByKeys.some((d) => toGraphId(d) === id);
+};
+
 export const graphHasCycles = (graphData: GraphData) => {
   const nodes = new Set(Object.keys(graphData.nodes));
   const search = (stack: string[], node: string): boolean => {
@@ -101,8 +111,8 @@ export const graphHasCycles = (graphData: GraphData) => {
     return false;
   };
   let hasCycles = false;
-  while (nodes.size !== 0) {
-    hasCycles = hasCycles || search([], nodes.values().next().value);
+  while (nodes.size !== 0 && !hasCycles) {
+    hasCycles = search([], nodes.values().next().value);
   }
   return hasCycles;
 };
@@ -118,14 +128,15 @@ export interface LiveDataForNode {
   stepKey: string;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
-  runWhichFailedToMaterialize: AssetGraphLiveQuery_assetsLatestInfo_latestRun | null;
-  lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
+  runWhichFailedToMaterialize: AssetLatestInfoRunFragment | null;
+  lastMaterialization: AssetNodeLiveMaterializationFragment | null;
   lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
-  freshnessPolicy: AssetGraphLiveQuery_assetNodes_freshnessPolicy | null;
-  freshnessInfo: AssetGraphLiveQuery_assetNodes_freshnessInfo | null;
-  lastObservation: AssetGraphLiveQuery_assetNodes_assetObservations | null;
+  freshnessPolicy: AssetNodeLiveFreshnessPolicyFragment | null;
+  freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
+  lastObservation: AssetNodeLiveObservationFragment | null;
   currentLogicalVersion: string | null;
   projectedLogicalVersion: string | null;
+  partitionStats: {numMaterialized: number; numPartitions: number} | null;
 }
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
@@ -139,6 +150,7 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   lastObservation: null,
   currentLogicalVersion: null,
   projectedLogicalVersion: null,
+  partitionStats: null,
   stepKey: '',
 };
 
@@ -201,6 +213,7 @@ export const buildLiveDataForNode = (
     freshnessPolicy: assetNode.freshnessPolicy,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
+    partitionStats: assetNode.partitionStats || null,
     runWhichFailedToMaterialize,
   };
 };

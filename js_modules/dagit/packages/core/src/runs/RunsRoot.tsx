@@ -13,10 +13,9 @@ import partition from 'lodash/partition';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {Loading} from '../ui/Loading';
@@ -33,15 +32,17 @@ import {
   RunFilterToken,
 } from './RunsFilterInput';
 import {RunsPageHeader} from './RunsPageHeader';
-import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
-import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
+import {
+  QueueDaemonStatusQuery,
+  RunsRootQuery,
+  RunsRootQueryVariables,
+} from './types/RunsRoot.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 
 const PAGE_SIZE = 25;
 
 export const RunsRoot = () => {
   useTrackPageView();
-  useDocumentTitle('Runs');
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);

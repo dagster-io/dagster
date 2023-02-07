@@ -1,9 +1,9 @@
 from dagster import (
     AssetSelection,
+    Definitions,
     FreshnessPolicy,
     asset,
     build_asset_reconciliation_sensor,
-    repository,
 )
 
 
@@ -27,6 +27,4 @@ update_sensor = build_asset_reconciliation_sensor(
 )
 
 
-@repository
-def my_repo():
-    return [[a, b, c], [update_sensor]]
+defs = Definitions(assets=[a, b, c], sensors=[update_sensor])

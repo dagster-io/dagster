@@ -1,9 +1,9 @@
 from typing import Any, Iterator, Mapping, Sequence
 
-from dagster_airbyte.types import AirbyteOutput
-
 from dagster import AssetMaterialization, MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+
+from dagster_airbyte.types import AirbyteOutput
 
 
 def generate_table_schema(stream_schema_props: Mapping[str, Any]) -> TableSchema:
@@ -31,7 +31,6 @@ def _materialization_for_stream(
     stream_stats: Mapping[str, Any],
     asset_key_prefix: Sequence[str],
 ) -> AssetMaterialization:
-
     return AssetMaterialization(
         asset_key=[*asset_key_prefix, name],
         metadata={

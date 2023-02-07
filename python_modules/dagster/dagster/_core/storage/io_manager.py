@@ -84,7 +84,6 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         self,
         description: Optional[str],
         config_schema: CoercableToConfigSchema,
-        _,
     ) -> "IOManagerDefinition":
         return IOManagerDefinition(
             config_schema=config_schema,

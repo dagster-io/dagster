@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="project_fully_featured",
-    version="0+dev",
+    version="1!0+dev",
     author="Elementl",
     author_email="hello@elementl.com",
     classifiers=[
@@ -15,7 +15,7 @@ setup(
     packages=find_packages(exclude=["test"]),
     package_data={"project_fully_featured": ["hacker_news_dbt/*"]},
     install_requires=[
-        "aiobotocore==1.3.3",
+        "aiobotocore",
         "dagster",
         "dagster-aws",
         "dagster-dbt",

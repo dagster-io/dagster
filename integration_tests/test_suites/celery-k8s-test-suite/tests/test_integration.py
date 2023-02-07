@@ -7,6 +7,11 @@ import uuid
 
 import boto3
 import pytest
+from dagster import DagsterEventType
+from dagster._core.storage.pipeline_run import DagsterRunStatus
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._utils.merger import deep_merge_dicts, merge_dicts
+from dagster._utils.yaml_utils import merge_yamls
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_k8s_test_infra.integration_utils import (
     can_terminate_run_over_graphql,
@@ -16,12 +21,6 @@ from dagster_k8s_test_infra.integration_utils import (
 )
 from dagster_test.test_project import cleanup_memoized_results, get_test_project_environments_path
 from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
-
-from dagster import DagsterEventType
-from dagster._core.storage.pipeline_run import DagsterRunStatus
-from dagster._core.storage.tags import DOCKER_IMAGE_TAG
-from dagster._utils.merger import deep_merge_dicts, merge_dicts
-from dagster._utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -520,7 +519,6 @@ def test_memoization_on_celery_k8s(  # pylint: disable=redefined-outer-name
     )
 
     try:
-
         run_ids = []
         for _ in range(2):
             run_id = launch_run_over_graphql(

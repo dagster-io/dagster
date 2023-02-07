@@ -1,7 +1,12 @@
+# pyright: reportPrivateImportUsage=none
+
+# NOTE (2022-12-12): We ignore private attribute access errors because dask does not correctly mark
+# the symbols we are accessing as public (though they are intending to). Should be fixed in later
+# releases of dask. See: https://github.com/dask/dask/issues/9710
+
 import contextlib
 
 import dask.dataframe as dd
-
 from dagster import (
     Any,
     AssetMaterialization,
@@ -18,9 +23,10 @@ from dagster import (
     Shape,
     String,
     TypeCheck,
+    _check as check,
+    dagster_type_loader,
+    dagster_type_materializer,
 )
-from dagster import _check as check
-from dagster import dagster_type_loader, dagster_type_materializer
 
 from .utils import DataFrameUtilities, apply_utilities_to_df
 
@@ -42,7 +48,6 @@ EngineParquetOptions = Enum(
     ],
 )
 
-
 DataFrameReadTypes = {
     "csv": {
         "function": dd.read_csv,
@@ -58,7 +63,10 @@ DataFrameReadTypes = {
             "assume_missing": (
                 Bool,
                 False,
-                "If True, all integer columns that aren’t specified in `dtype` are assumed to contain missing values, and are converted to floats.",
+                (
+                    "If True, all integer columns that aren't specified in `dtype` are assumed to"
+                    " contain missing values, and are converted to floats."
+                ),
             ),
             "storage_options": (
                 Permissive(),
@@ -87,7 +95,10 @@ DataFrameReadTypes = {
             "categories": (
                 Any,
                 False,
-                "For any fields listed here, if the parquet encoding is Dictionary, the column will be created with dtype category.",
+                (
+                    "For any fields listed here, if the parquet encoding is Dictionary, the column"
+                    " will be created with dtype category."
+                ),
             ),
             "storage_options": (
                 Permissive(),
@@ -103,7 +114,10 @@ DataFrameReadTypes = {
             "split_row_groups": (
                 Bool,
                 False,
-                "If True (default) then output dataframe partitions will correspond to parquet-file row-groups.",
+                (
+                    "If True (default) then output dataframe partitions will correspond to"
+                    " parquet-file row-groups."
+                ),
             ),
             "chunksize": (Any, False, "The target task partition size."),
         },
@@ -151,9 +165,12 @@ DataFrameReadTypes = {
             "sample": (
                 Int,
                 False,
-                "Number of bytes to pre-load, to provide an empty dataframe structure to any blocks without data.",
+                (
+                    "Number of bytes to pre-load, to provide an empty dataframe structure to any"
+                    " blocks without data."
+                ),
             ),
-            "compression": (String, False, "String like ‘gzip’ or ‘xz’."),
+            "compression": (String, False, "String like 'gzip' or 'xz'."),
         },
     },
     "sql_table": {
@@ -191,7 +208,10 @@ DataFrameReadTypes = {
             "schema": (
                 String,
                 False,
-                "If using a table name, pass this to sqlalchemy to select which DB schema to use within the URI connection.",
+                (
+                    "If using a table name, pass this to sqlalchemy to select which DB schema to"
+                    " use within the URI connection."
+                ),
             ),
         },
     },
@@ -209,7 +229,10 @@ DataFrameReadTypes = {
             "assume_missing": (
                 Bool,
                 False,
-                "If True, all integer columns that aren’t specified in dtype are assumed to contain missing values, and are converted to floats.",
+                (
+                    "If True, all integer columns that aren't specified in dtype are assumed to"
+                    " contain missing values, and are converted to floats."
+                ),
             ),
             "storage_options": (
                 Permissive(),
@@ -237,7 +260,10 @@ DataFrameReadTypes = {
             "assume_missing": (
                 Bool,
                 False,
-                "If True, all integer columns that aren’t specified in dtype are assumed to contain missing values, and are converted to floats.",
+                (
+                    "If True, all integer columns that aren't specified in dtype are assumed to"
+                    " contain missing values, and are converted to floats."
+                ),
             ),
             "storage_options": (
                 Permissive(),
@@ -309,7 +335,10 @@ DataFrameToTypes = {
             "compression": (
                 Any,
                 False,
-                'Either a string like ``"snappy"`` or a dictionary mapping column names to compressors like ``{"name": "gzip", "values": "snappy"}``.',
+                (
+                    'Either a string like ``"snappy"`` or a dictionary mapping column names to'
+                    ' compressors like ``{"name": "gzip", "values": "snappy"}``.'
+                ),
             ),
             "write_index": (Bool, False, "Whether or not to write the index."),
             "append": (
@@ -320,7 +349,10 @@ DataFrameToTypes = {
             "ignore_divisions": (
                 Bool,
                 False,
-                "If False (default) raises error when previous divisions overlap with the new appended divisions.",
+                (
+                    "If False (default) raises error when previous divisions overlap with the new"
+                    " appended divisions."
+                ),
             ),
             "partition_on": (
                 list,
@@ -447,7 +479,7 @@ def dataframe_loader(_context, config):
 
     if not read_type:
         raise DagsterInvariantViolationError("No read_type found. Expected read key in config.")
-    if not read_type in DataFrameReadTypes:
+    if read_type not in DataFrameReadTypes:
         raise DagsterInvariantViolationError(
             "Unsupported read_type {read_type}.".format(read_type=read_type)
         )
@@ -511,7 +543,7 @@ def dataframe_materializer(_context, config, dask_df):
 
     # Materialize to specified types
     for to_type, to_options in to_specs.items():
-        if not to_type in DataFrameToTypes:
+        if to_type not in DataFrameToTypes:
             check.failed("Unsupported to_type {to_type}".format(to_type=to_type))
 
         # Get the metadata entry for the read_type in order to know which method

@@ -1,4 +1,4 @@
-from dagster import AssetKey
+from dagster import AssetKey, FreshnessPolicy
 
 
 def assert_assets_match_project(dbt_assets, prefix=None, has_non_argument_deps=False):
@@ -39,3 +39,14 @@ def assert_assets_match_project(dbt_assets, prefix=None, has_non_argument_deps=F
     assert len(dbt_assets[0].asset_deps[AssetKey(prefix + ["sort_by_calories"])]) == int(
         has_non_argument_deps
     )
+
+    expected_policies = {
+        AssetKey(prefix + ["sort_hot_cereals_by_calories"]): FreshnessPolicy(
+            maximum_lag_minutes=123
+        ),
+        AssetKey(prefix + ["cold_schema", "sort_cold_cereals_by_calories"]): FreshnessPolicy(
+            maximum_lag_minutes=123, cron_schedule="0 9 * * *"
+        ),
+    }
+    actual_policies = dbt_assets[0].freshness_policies_by_key
+    assert actual_policies == expected_policies

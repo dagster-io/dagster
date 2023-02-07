@@ -21,10 +21,10 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissions} from '../app/Permissions';
+import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
+import {RunStatus} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {RunStatus} from '../types/globalTypes';
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePathFromRunDetails, workspacePipelinePath} from '../workspace/workspacePath';
 
@@ -33,8 +33,8 @@ import {RunTags} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
 import {TimeElapsed} from './TimeElapsed';
-import {RunDetailsFragment} from './types/RunDetailsFragment';
-import {RunFragment} from './types/RunFragment';
+import {RunDetailsFragment} from './types/RunDetails.types';
+import {RunFragment} from './types/RunFragments.types';
 
 export const timingStringForStatus = (status?: RunStatus) => {
   switch (status) {
@@ -133,7 +133,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
 
   const {rootServerURI} = React.useContext(AppContext);
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
+  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissionsDEPRECATED();
 
   const copy = useCopyToClipboard();
   const history = useHistory();

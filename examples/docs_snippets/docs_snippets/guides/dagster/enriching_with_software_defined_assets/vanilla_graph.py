@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from dagster import job, op, repository
+from dagster import Definitions, job, op
 
 from .mylib import create_db_connection, fetch_products
 
@@ -32,6 +32,6 @@ def ingest_products_and_categories():
     return write_products_table(products), write_categories_table(product_categories)
 
 
-@repository
-def repo():
-    return [ingest_products_and_categories]
+defs = Definitions(
+    jobs=[ingest_products_and_categories],
+)

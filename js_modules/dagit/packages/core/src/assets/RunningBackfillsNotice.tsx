@@ -3,14 +3,17 @@ import {Box, Colors, Icon} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
-import {RunningBackfillsNoticeQuery} from './types/RunningBackfillsNoticeQuery';
+import {
+  RunningBackfillsNoticeQuery,
+  RunningBackfillsNoticeQueryVariables,
+} from './types/RunningBackfillsNotice.types';
 
 export const RunningBackfillsNotice: React.FC<{partitionSetName: string}> = ({
   partitionSetName,
 }) => {
-  const {data} = useQuery<RunningBackfillsNoticeQuery>(RUNNING_BACKFILLS_NOTICE_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
+  const {data} = useQuery<RunningBackfillsNoticeQuery, RunningBackfillsNoticeQueryVariables>(
+    RUNNING_BACKFILLS_NOTICE_QUERY,
+  );
 
   const runningBackfills =
     data?.partitionBackfillsOrError.__typename === 'PartitionBackfills'

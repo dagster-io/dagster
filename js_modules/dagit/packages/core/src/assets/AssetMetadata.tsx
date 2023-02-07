@@ -3,11 +3,11 @@ import {Box, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {DAGSTER_TYPE_FRAGMENT} from '../dagstertype/DagsterType';
-import {DagsterTypeFragment} from '../dagstertype/types/DagsterTypeFragment';
+import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
 import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
 
-import {AssetNodeOpMetadataFragment} from './types/AssetNodeOpMetadataFragment';
+import {AssetNodeOpMetadataFragment} from './types/AssetMetadata.types';
 
 export const metadataForAssetNode = (
   assetNode: AssetNodeOpMetadataFragment,
@@ -44,6 +44,7 @@ export const ASSET_NODE_OP_METADATA_FRAGMENT = gql`
       ...DagsterTypeFragment
     }
   }
+
   ${METADATA_ENTRY_FRAGMENT}
   ${DAGSTER_TYPE_FRAGMENT}
 `;

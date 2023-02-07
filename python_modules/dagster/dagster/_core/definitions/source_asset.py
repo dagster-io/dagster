@@ -7,6 +7,7 @@ from typing_extensions import Protocol, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.logical_version import LOGICAL_VERSION_TAG_KEY, LogicalVersion
 from dagster._core.definitions.metadata import (
@@ -32,8 +33,8 @@ from dagster._core.definitions.utils import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._utils import merge_dicts
 from dagster._utils.backcompat import ExperimentalWarning, experimental_arg_warning
+from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.compute import (
@@ -107,7 +108,6 @@ class SourceAsset(ResourceAddable):
         observe_fn: Optional[SourceAssetObserveFunction] = None,
         # Add additional fields to with_resources and with_group below
     ):
-
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "SourceAsset.__new__")
 
@@ -132,7 +132,8 @@ class SourceAsset(ResourceAddable):
                 and self.resource_defs[io_manager_key] != io_manager_def
             ):
                 raise DagsterInvalidDefinitionError(
-                    f"Provided conflicting definitions for io manager key '{io_manager_key}'. Please provide only one definition per key."
+                    f"Provided conflicting definitions for io manager key '{io_manager_key}'."
+                    " Please provide only one definition per key."
                 )
 
             self.resource_defs[io_manager_key] = self._io_manager_def
@@ -177,41 +178,42 @@ class SourceAsset(ResourceAddable):
     def is_observable(self) -> bool:
         return self.node_def is not None
 
+    def _get_op_def_compute_fn(self, observe_fn: SourceAssetObserveFunction):
+        from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+
+        observe_fn_has_context = has_at_least_one_parameter(observe_fn)  # type: ignore # mypy-only error
+
+        def fn(context: OpExecutionContext):
+            logical_version = observe_fn(context) if observe_fn_has_context else observe_fn()  # type: ignore
+
+            check.inst(
+                logical_version,
+                LogicalVersion,
+                "Source asset observation function must return a LogicalVersion",
+            )
+            tags = {LOGICAL_VERSION_TAG_KEY: logical_version.value}
+            context.log_event(
+                AssetObservation(
+                    asset_key=self.key,
+                    tags=tags,
+                )
+            )
+
+        return DecoratedOpFunction(fn)
+
     @property
     def node_def(self) -> Optional[OpDefinition]:
         """Op that generates observation metadata for a source asset."""
-        from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
-
         if self.observe_fn is None:
             return None
-        elif self._node_def is None:
-            observe_fn = self.observe_fn
 
-            def fn(context: OpExecutionContext):
-                logical_version = observe_fn(context)  # type: ignore
-                check.inst(
-                    logical_version,
-                    LogicalVersion,
-                    "Source asset observation function must return a LogicalVersion",
-                )
-                tags = {LOGICAL_VERSION_TAG_KEY: logical_version.value}
-                context.log_event(
-                    AssetObservation(
-                        asset_key=self.key,
-                        tags=tags,
-                    )
-                )
-
-            compute_fn = DecoratedOpFunction(decorated_fn=fn)
-
+        if self._node_def is None:
             self._node_def = OpDefinition(
-                compute_fn=compute_fn,
+                compute_fn=self._get_op_def_compute_fn(self.observe_fn),
                 name="__".join(self.key.path).replace("-", "_"),
                 description=self.description,
             )
-            return self._node_def
-        else:
-            return self._node_def
+        return self._node_def
 
     def with_resources(self, resource_defs) -> "SourceAsset":
         from dagster._core.execution.resources_init import get_transitive_required_resource_keys
@@ -231,7 +233,8 @@ class SourceAsset(ResourceAddable):
         io_manager_def = merged_resource_defs.get(self.get_io_manager_key())
         if not io_manager_def and self.get_io_manager_key() != DEFAULT_IO_MANAGER_KEY:
             raise DagsterInvalidDefinitionError(
-                f"SourceAsset with asset key {self.key} requires IO manager with key '{self.get_io_manager_key()}', but none was provided."
+                f"SourceAsset with asset key {self.key} requires IO manager with key"
+                f" '{self.get_io_manager_key()}', but none was provided."
             )
         relevant_keys = get_transitive_required_resource_keys(
             {self.get_io_manager_key()}, merged_resource_defs
@@ -265,7 +268,8 @@ class SourceAsset(ResourceAddable):
     def with_group_name(self, group_name: str) -> "SourceAsset":
         if self.group_name != DEFAULT_GROUP_NAME:
             raise DagsterInvalidDefinitionError(
-                f"A group name has already been provided to source asset {self.key.to_user_string()}"
+                "A group name has already been provided to source asset"
+                f" {self.key.to_user_string()}"
             )
 
         with warnings.catch_warnings():

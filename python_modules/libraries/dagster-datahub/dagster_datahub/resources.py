@@ -1,3 +1,4 @@
+from dagster import Array, Field, InitResourceContext, Map, Noneable, Shape, StringSource, resource
 from datahub.emitter.kafka_emitter import (
     DEFAULT_MCE_KAFKA_TOPIC,
     DEFAULT_MCP_KAFKA_TOPIC,
@@ -7,8 +8,6 @@ from datahub.emitter.kafka_emitter import (
     KafkaEmitterConfig,
 )
 from datahub.emitter.rest_emitter import DatahubRestEmitter
-
-from dagster import Array, Field, InitResourceContext, Map, Noneable, Shape, StringSource, resource
 
 
 @resource(

@@ -1,6 +1,6 @@
 import os
 
-from dagster import graph, repository, with_resources
+from dagster import Definitions, graph
 
 from .clone_and_drop_db import drop_database_clone
 from .repository_v2 import (
@@ -8,7 +8,7 @@ from .repository_v2 import (
     comments,
     get_current_env,
     items,
-    resource_defs,
+    resources,
     stories,
 )
 
@@ -20,23 +20,18 @@ def drop_prod_clone():
     drop_database_clone()
 
 
-@repository
-def repo():
-    ...
-    branch_deployment_jobs = [
-        clone_prod.to_job(resource_defs=resource_defs[get_current_env()]),
-        drop_prod_clone.to_job(resource_defs=resource_defs[get_current_env()]),
-    ]
-    return [
-        with_resources(
-            [items, comments, stories], resource_defs=resource_defs[get_current_env()]
-        ),
-        *(
-            branch_deployment_jobs
-            if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
-            else []
-        ),
-    ]
+branch_deployment_jobs = [
+    clone_prod.to_job(resource_defs=resources[get_current_env()]),
+    drop_prod_clone.to_job(resource_defs=resources[get_current_env()]),
+]
+
+defs = Definitions(
+    assets=[items, comments, stories],
+    resources=resources[get_current_env()],
+    jobs=branch_deployment_jobs
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+    else [],
+)
 
 
 # end_drop_db

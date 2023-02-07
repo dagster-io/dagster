@@ -4,7 +4,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
@@ -13,7 +13,7 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelectorQuery';
+import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelector.types';
 
 interface IOpSelectorProps {
   pipelineName: string;
@@ -50,6 +50,7 @@ const SOLID_SELECTOR_QUERY = gql`
       ...PythonErrorFragment
     }
   }
+
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
@@ -73,7 +74,6 @@ export const OpSelector = (props: IOpSelectorProps) => {
     SOLID_SELECTOR_QUERY,
     {
       variables: {selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
-      fetchPolicy: 'cache-and-network',
     },
   );
 

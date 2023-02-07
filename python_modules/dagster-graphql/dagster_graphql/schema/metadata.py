@@ -45,7 +45,6 @@ class GrapheneTableMetadataEntry(graphene.ObjectType):
 
 
 class GrapheneTableSchemaMetadataEntry(graphene.ObjectType):
-
     schema = graphene.NonNull(GrapheneTableSchema)
 
     class Meta:
@@ -140,6 +139,12 @@ class GrapheneAssetMetadataEntry(graphene.ObjectType):
         name = "AssetMetadataEntry"
 
 
+class GrapheneNullMetadataEntry(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "NullMetadataEntry"
+
+
 def types():
     return [
         GrapheneMetadataEntry,
@@ -158,4 +163,5 @@ def types():
         GrapheneUrlMetadataEntry,
         GraphenePipelineRunMetadataEntry,
         GrapheneAssetMetadataEntry,
+        GrapheneNullMetadataEntry,
     ]

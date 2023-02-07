@@ -1,10 +1,9 @@
 import datetime
 import os
 
+import dagster._check as check
 import pytest
 import yaml
-
-import dagster._check as check
 from dagster._utils import file_relative_path
 from dagster._utils.yaml_utils import (
     dump_run_config_yaml,
@@ -117,7 +116,6 @@ final: "result"
 
 
 def test_dump_octal_string():
-
     octal_str_list = {"keys": ["0001823", "0001234"]}
 
     # normal dump parses the first string as an int

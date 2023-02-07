@@ -1,4 +1,5 @@
 from functools import lru_cache, update_wrapper
+from inspect import Parameter
 from typing import (
     AbstractSet,
     Any,
@@ -16,9 +17,9 @@ from typing import (
 import dagster._check as check
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import format_docstring_for_description
+from dagster._core.definitions.resource_output import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._seven import funcsigs
 
 from ...decorator_utils import (
     get_function_params,
@@ -34,7 +35,7 @@ from ..policy import RetryPolicy
 
 
 class DecoratedOpFunction(NamedTuple):
-    """Wrapper around the decorated solid function to provide commonly used util methods"""
+    """Wrapper around the decorated solid function to provide commonly used util methods."""
 
     decorated_fn: Callable[..., Any]
 
@@ -43,13 +44,36 @@ class DecoratedOpFunction(NamedTuple):
         return is_context_provided(get_function_params(self.decorated_fn))
 
     @lru_cache(maxsize=1)
-    def _get_function_params(self) -> Sequence[funcsigs.Parameter]:
+    def _get_function_params(self) -> Sequence[Parameter]:
         return get_function_params(self.decorated_fn)
+
+    def has_config_arg(self) -> bool:
+        for param in get_function_params(self.decorated_fn):
+            if param.name == "config":
+                return True
+
+        return False
+
+    def get_config_arg(self) -> Parameter:
+        for param in get_function_params(self.decorated_fn):
+            if param.name == "config":
+                return param
+
+        check.failed("Requested config arg on function that does not have one")
+
+    def get_resource_args(self) -> Sequence[Parameter]:
+        return get_resource_args(self.decorated_fn)
 
     def positional_inputs(self) -> Sequence[str]:
         params = self._get_function_params()
         input_args = params[1:] if self.has_context_arg() else params
-        return positional_arg_name_list(input_args)
+        resource_arg_names = [arg.name for arg in self.get_resource_args()]
+        input_args_filtered = [
+            input_arg
+            for input_arg in input_args
+            if input_arg.name != "config" and input_arg.name not in resource_arg_names
+        ]
+        return positional_arg_name_list(input_args_filtered)
 
     def has_var_kwargs(self) -> bool:
         params = self._get_function_params()
@@ -134,6 +158,17 @@ class _Solid:
             exclude_nothing=True,
         )
 
+        arg_resource_keys = {arg.name for arg in compute_fn.get_resource_args()}
+        decorator_resource_keys = set(self.required_resource_keys or [])
+        check.param_invariant(
+            len(decorator_resource_keys) == 0 or len(arg_resource_keys) == 0,
+            (
+                "Cannot specify resource requirements in both @op decorator and as arguments to the"
+                " decorated function"
+            ),
+        )
+        resolved_resource_keys = decorator_resource_keys.union(arg_resource_keys)
+
         solid_def = OpDefinition(
             name=self.name,
             ins={
@@ -143,7 +178,7 @@ class _Solid:
             compute_fn=compute_fn,
             config_schema=self.config_schema,
             description=self.description or format_docstring_for_description(fn),
-            required_resource_keys=self.required_resource_keys,
+            required_resource_keys=resolved_resource_keys,
             tags=self.tags,
             version=self.version,
             retry_policy=self.retry_policy,
@@ -234,7 +269,6 @@ def solid(
 
 
     Examples:
-
         .. code-block:: python
 
             @solid
@@ -329,7 +363,7 @@ def resolve_checked_solid_fn_inputs(
         exclude_nothing (bool): True if Nothing type inputs should be excluded from compute_fn
             arguments.
     """
-
+    explicit_names = set()
     if exclude_nothing:
         explicit_names = set(
             inp.name
@@ -349,15 +383,26 @@ def resolve_checked_solid_fn_inputs(
 
     input_args = params[1:] if compute_fn.has_context_arg() else params
 
+    # filter out config arg
+    resource_arg_names = {arg.name for arg in compute_fn.get_resource_args()}
+    explicit_names = explicit_names - resource_arg_names
+
+    if compute_fn.has_config_arg() or resource_arg_names:
+        new_input_args = []
+        for input_arg in input_args:
+            if input_arg.name != "config" and input_arg.name not in resource_arg_names:
+                new_input_args.append(input_arg)
+        input_args = new_input_args
+
     # Validate input arguments
     used_inputs = set()
     inputs_to_infer = set()
     has_kwargs = False
 
-    for param in cast(List[funcsigs.Parameter], input_args):
-        if param.kind == funcsigs.Parameter.VAR_KEYWORD:
+    for param in cast(List[Parameter], input_args):
+        if param.kind == Parameter.VAR_KEYWORD:
             has_kwargs = True
-        elif param.kind == funcsigs.Parameter.VAR_POSITIONAL:
+        elif param.kind == Parameter.VAR_POSITIONAL:
             raise DagsterInvalidDefinitionError(
                 f"{decorator_name} '{fn_name}' decorated function has positional vararg parameter "
                 f"'{param}'. {decorator_name} decorated functions should only have keyword "
@@ -369,9 +414,9 @@ def resolve_checked_solid_fn_inputs(
             if param.name not in explicit_names:
                 if param.name in nothing_names:
                     raise DagsterInvalidDefinitionError(
-                        f"{decorator_name} '{fn_name}' decorated function has parameter '{param.name}' that is "
-                        "one of the input_defs of type 'Nothing' which should not be included since "
-                        "no data will be passed for it. "
+                        f"{decorator_name} '{fn_name}' decorated function has parameter"
+                        f" '{param.name}' that is one of the input_defs of type 'Nothing' which"
+                        " should not be included since no data will be passed for it. "
                     )
                 else:
                     inputs_to_infer.add(param.name)
@@ -413,9 +458,10 @@ def resolve_checked_solid_fn_inputs(
         for in_def in inferred_input_defs:
             if in_def.dagster_type.is_nothing:
                 raise DagsterInvalidDefinitionError(
-                    f"Input parameter {in_def.name} is annotated with {in_def.dagster_type.display_name} "
-                    "which is a type that represents passing no data. This type must be used "
-                    f"via In() and no parameter should be included in the {decorator_name} decorated function."
+                    f"Input parameter {in_def.name} is annotated with"
+                    f" {in_def.dagster_type.display_name} which is a type that represents passing"
+                    " no data. This type must be used via In() and no parameter should be included"
+                    f" in the {decorator_name} decorated function."
                 )
 
     input_defs.extend(inferred_input_defs)
@@ -423,7 +469,7 @@ def resolve_checked_solid_fn_inputs(
     return input_defs
 
 
-def is_context_provided(params: Sequence[funcsigs.Parameter]) -> bool:
+def is_context_provided(params: Sequence[Parameter]) -> bool:
     if len(params) == 0:
         return False
     return params[0].name in get_valid_name_permutations("context")
@@ -461,7 +507,6 @@ def lambda_solid(
             :class:`OutputDefinition() <OutputDefinition>`.
 
     Examples:
-
     .. code-block:: python
 
         @lambda_solid

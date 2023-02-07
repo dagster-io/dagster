@@ -27,7 +27,7 @@ To define a graph-backed asset, use the `from_graph` attribute on the <PyObject 
 
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start example endbefore=end example
 import pandas as pd
-from dagster import AssetsDefinition, asset, graph, op
+from dagster import AssetsDefinition, graph, op
 
 
 @op(required_resource_keys={"slack"})
@@ -183,12 +183,10 @@ def my_graph():
     return {"foo_asset": foo_1, "baz_asset": baz(foo_2, bar_2)}
 
 
-@repository
-def my_repo():
-    return [
-        define_asset_job("graph_asset"),
-        AssetsDefinition.from_graph(my_graph, can_subset=True),
-    ]
+defs = Definitions(
+    assets=[AssetsDefinition.from_graph(my_graph, can_subset=True)],
+    jobs=[define_asset_job("graph_asset")],
+)
 ```
 
 Depending on how outputs are returned from the ops within a graph-backed asset, there could be unexpected materializations. For example, the following `foo` implementation would unexpectedly materialize `foo_asset` if `baz_asset` was the only asset selected for execution.
@@ -200,7 +198,7 @@ def foo():
 
 
 # Will unexpectedly materialize foo_asset
-my_repo.get_job("graph_asset").execute_in_process(
+defs.get_job_def("graph_asset").execute_in_process(
     asset_selection=[AssetKey("baz_asset")]
 )
 ```

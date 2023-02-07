@@ -11,16 +11,15 @@ import tempfile
 
 import docker
 import pytest
-from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
-
 from dagster._utils import mkdir_p
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 @pytest.fixture(scope="module")
 def airflow_home():
-    """Check that AIRFLOW_HOME is set, and return it"""
+    """Check that AIRFLOW_HOME is set, and return it."""
     airflow_home_dir = os.getenv("AIRFLOW_HOME")
     assert airflow_home_dir, "No AIRFLOW_HOME set -- is airflow installed?"
     airflow_home_dir = os.path.abspath(os.path.expanduser(airflow_home_dir))
@@ -31,7 +30,6 @@ def airflow_home():
 @pytest.fixture(scope="function")
 def clean_airflow_home(airflow_home):
     """Ensure that the existing contents of AIRFLOW_HOME do not interfere with test."""
-
     airflow_dags_path = os.path.join(airflow_home, "dags")
 
     # Ensure Airflow DAGs folder exists

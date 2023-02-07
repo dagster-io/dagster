@@ -7,7 +7,7 @@ import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RepoAddress} from '../workspace/types';
 
-import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorsFragment';
+import {AssetNodeInstigatorsFragment} from './types/AssetNodeInstigatorTag.types';
 
 export const AssetNodeInstigatorTag: React.FC<{
   assetNode: AssetNodeInstigatorsFragment;
@@ -44,6 +44,7 @@ export const ASSET_NODE_INSTIGATORS_FRAGMENT = gql`
       }
     }
   }
+
   ${SCHEDULE_SWITCH_FRAGMENT}
   ${SENSOR_SWITCH_FRAGMENT}
 `;

@@ -19,10 +19,10 @@ from dagster._api.snapshot_partition import (
 from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
-from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -60,9 +60,7 @@ from dagster._grpc.impl import (
 from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
-from dagster._utils import merge_dicts
-
-from .selector import PipelineSelector
+from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
@@ -130,7 +128,8 @@ class RepositoryLocation(AbstractContextManager):
         """Return the ExternalPipeline for a specific pipeline. Subclasses only
         need to implement get_subset_external_pipeline_result to handle the case where
         a solid selection is specified, which requires access to the underlying PipelineDefinition
-        to generate the subsetted pipeline snapshot."""
+        to generate the subsetted pipeline snapshot.
+        """
         if not selector.solid_selection and not selector.asset_selection:
             return self.get_repository(selector.repository_name).get_full_external_job(
                 selector.pipeline_name
@@ -142,7 +141,8 @@ class RepositoryLocation(AbstractContextManager):
         external_data = subset_result.external_pipeline_data
         if external_data is None:
             check.failed(
-                f"Failed to fetch subset data, success: {subset_result.success} error: {subset_result.error}"
+                f"Failed to fetch subset data, success: {subset_result.success} error:"
+                f" {subset_result.error}"
             )
 
         return ExternalPipeline(external_data, repo_handle)
@@ -153,7 +153,8 @@ class RepositoryLocation(AbstractContextManager):
     ) -> ExternalPipelineSubsetResult:
         """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
         access to the underlying PipelineDefinition. Callsites should likely use
-        `get_external_pipeline` instead."""
+        `get_external_pipeline` instead.
+        """
 
     @abstractmethod
     def get_external_partition_config(
@@ -349,9 +350,8 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}".format(
-                self=self, selector=selector
-            ),
+            "PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            " {self.name}".format(self=self, selector=selector),
         )
 
         from dagster._grpc.impl import get_external_pipeline_subset_result
@@ -449,7 +449,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time,
+        scheduled_execution_time: datetime.datetime,  # actually a pendulum datetime
     ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -463,7 +463,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             scheduled_execution_timestamp=scheduled_execution_time.timestamp()
             if scheduled_execution_time
             else None,
-            scheduled_execution_timezone=scheduled_execution_time.timezone.name
+            scheduled_execution_timezone=scheduled_execution_time.timezone.name  # type: ignore
             if scheduled_execution_time
             else None,
         )
@@ -738,9 +738,8 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}".format(
-                self=self, selector=selector
-            ),
+            "PipelineSelector location_name mismatch, got {selector.location_name} expected"
+            " {self.name}".format(self=self, selector=selector),
         )
 
         external_repository = self.get_repository(selector.repository_name)
@@ -819,6 +818,8 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         last_run_key: Optional[str],
         cursor: Optional[str],
     ) -> "SensorExecutionData":
+        from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
+
         return sync_get_external_sensor_execution_data_grpc(
             self.client,
             instance,

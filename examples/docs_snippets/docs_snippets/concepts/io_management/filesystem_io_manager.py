@@ -29,6 +29,7 @@ class PandasParquetIOManager(UPathIOManager):
 
 # the IO Manager can be used with any filesystem (see https://github.com/fsspec/universal_pathlib)
 
+
 # start_def_marker
 @io_manager(config_schema={"base_path": Field(str, is_required=False)})
 def local_pandas_parquet_io_manager(

@@ -9,6 +9,7 @@ import {
   Tab,
   Tabs,
   Tag,
+  ErrorBoundary,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -20,10 +21,17 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {Timestamp} from '../app/time/Timestamp';
-import {GraphData, LiveDataForNode, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {
+  GraphData,
+  LiveDataForNode,
+  nodeDependsOnSelf,
+  toGraphId,
+  tokenForAssetKey,
+} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {StaleTag} from '../assets/StaleTag';
+import {AssetComputeKindTag} from '../graph/OpTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -41,10 +49,10 @@ import {CurrentMinutesLateTag} from './CurrentMinutesLateTag';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
 import {
+  AssetViewDefinitionNodeFragment,
   AssetViewDefinitionQuery,
   AssetViewDefinitionQueryVariables,
-  AssetViewDefinitionQuery_assetOrError_Asset_definition,
-} from './types/AssetViewDefinitionQuery';
+} from './types/AssetView.types';
 
 interface Props {
   assetKey: AssetKey;
@@ -79,6 +87,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   });
 
   const {upstream, downstream} = useNeighborsFromGraph(visibleAssetGraph.assetGraphData, assetKey);
+  const node = visibleAssetGraph.assetGraphData?.nodes[toGraphId(assetKey)];
 
   // Observe the live state of the visible assets. Note: We use the "last materialization"
   // provided by this hook to trigger resets of the datasets inside the Activity / Plots tabs
@@ -108,6 +117,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         assetNode={definition}
         upstream={upstream}
         downstream={downstream}
+        dependsOnSelf={node ? nodeDependsOnSelf(node) : false}
         liveDataByNode={liveDataByNode}
       />
     );
@@ -213,7 +223,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           <Spinner purpose="page" />
         </Box>
       ) : (
-        <>
+        <ErrorBoundary region="page" resetErrorOnChange={[assetKey, params]}>
           {selectedTab === 'definition' ? (
             renderDefinitionTab()
           ) : selectedTab === 'lineage' ? (
@@ -221,7 +231,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           ) : selectedTab === 'partitions' ? (
             <AssetPartitions
               assetKey={assetKey}
-              assetPartitionNames={definition?.partitionKeysByDimension.map((k) => k.name)}
+              assetPartitionDimensions={definition?.partitionKeysByDimension.map((k) => k.name)}
               assetLastMaterializedAt={lastMaterializedAt}
               params={params}
               paramsTimeWindowOnly={!!params.asOf}
@@ -248,7 +258,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           ) : (
             <span />
           )}
-        </>
+        </ErrorBoundary>
       )}
     </Box>
   );
@@ -345,29 +355,35 @@ const ASSET_VIEW_DEFINITION_QUERY = gql`
         }
         definition {
           id
-          groupName
-          partitionDefinition {
-            __typename
-            description
-          }
-          partitionKeysByDimension {
-            name
-          }
-          repository {
-            id
-            name
-            location {
-              id
-              name
-            }
-          }
-
-          ...AssetNodeInstigatorsFragment
-          ...AssetNodeDefinitionFragment
+          ...AssetViewDefinitionNode
         }
       }
     }
   }
+
+  fragment AssetViewDefinitionNode on AssetNode {
+    id
+    groupName
+    partitionDefinition {
+      __typename
+      description
+    }
+    partitionKeysByDimension {
+      name
+    }
+    repository {
+      id
+      name
+      location {
+        id
+        name
+      }
+    }
+
+    ...AssetNodeInstigatorsFragment
+    ...AssetNodeDefinitionFragment
+  }
+
   ${ASSET_NODE_INSTIGATORS_FRAGMENT}
   ${ASSET_NODE_DEFINITION_FRAGMENT}
 `;
@@ -407,7 +423,7 @@ const HistoricalViewAlert: React.FC<{
 );
 
 const AssetViewPageHeaderTags: React.FC<{
-  definition: AssetViewDefinitionQuery_assetOrError_Asset_definition | null;
+  definition: AssetViewDefinitionNodeFragment | null;
   liveData?: LiveDataForNode;
   onShowUpstream: () => void;
 }> = ({definition, liveData, onShowUpstream}) => {
@@ -436,6 +452,9 @@ const AssetViewPageHeaderTags: React.FC<{
       )}
       {liveData?.freshnessPolicy && <CurrentMinutesLateTag liveData={liveData} policyOnHover />}
       <StaleTag liveData={liveData} onClick={onShowUpstream} />
+      {definition && (
+        <AssetComputeKindTag style={{position: 'relative'}} definition={definition} reduceColor />
+      )}
     </>
   );
 };

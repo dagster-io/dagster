@@ -4,6 +4,7 @@ import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {AssetKeyInput} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun, linkToRunEvent} from '../runs/RunUtils';
@@ -12,12 +13,16 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {AssetLineageElements} from './AssetLineageElements';
-import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
-import {AssetObservationFragment} from './types/AssetObservationFragment';
+import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
+import {
+  AssetMaterializationFragment,
+  AssetObservationFragment,
+} from './types/useRecentAssetEvents.types';
 
 export const AssetEventDetail: React.FC<{
+  assetKey: AssetKeyInput;
   event: AssetMaterializationFragment | AssetObservationFragment;
-}> = ({event}) => {
+}> = ({event, assetKey}) => {
   const run = event.runOrError?.__typename === 'Run' ? event.runOrError : null;
   const repositoryOrigin = run?.repositoryOrigin;
   const repoAddress = repositoryOrigin
@@ -110,6 +115,13 @@ export const AssetEventDetail: React.FC<{
         <Subheading>Metadata</Subheading>
         <AssetEventMetadataEntriesTable event={event} />
       </Box>
+
+      {event.__typename === 'MaterializationEvent' && (
+        <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
+          <Subheading>Source Data</Subheading>
+          <AssetMaterializationUpstreamData timestamp={event.timestamp} assetKey={assetKey} />
+        </Box>
+      )}
 
       {assetLineage.length > 0 && (
         <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>

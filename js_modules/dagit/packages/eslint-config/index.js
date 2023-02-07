@@ -26,7 +26,7 @@ module.exports = {
         null: 'ignore',
       },
     ],
-    'import/no-cycle': 'error',
+    'import/no-cycle': ['error', {ignoreExternal: true}],
     'import/no-default-export': 'error',
     'import/no-duplicates': 'error',
     'import/order': [
@@ -69,6 +69,14 @@ module.exports = {
           {
             name: 'lodash',
             message: 'Please import specific lodash modules, e.g. `lodash/throttle`.',
+          },
+          {
+            name: 'moment',
+            message: 'Please use native Intl APIs for date/time, or dayjs if necessary.',
+          },
+          {
+            name: 'moment-timezone',
+            message: 'Please use native Intl APIs for date/time, or dayjs if necessary.',
           },
           {
             name: 'styled-components',

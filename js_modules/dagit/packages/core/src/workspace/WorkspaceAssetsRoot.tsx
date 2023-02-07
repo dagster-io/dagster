@@ -2,20 +2,27 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useAssetNodeSearch} from '../assets/useAssetSearch';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 
-import {VirtualizedAssetTable} from './VirtualizedAssetTable';
+import {VirtualizedRepoAssetTable} from './VirtualizedRepoAssetTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
-import {WorkspaceAssetsQuery, WorkspaceAssetsQueryVariables} from './types/WorkspaceAssetsQuery';
+import {
+  WorkspaceAssetsQuery,
+  WorkspaceAssetsQueryVariables,
+} from './types/WorkspaceAssetsRoot.types';
 
 export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
+
+  const repoName = repoAddressAsHumanString(repoAddress);
+  useDocumentTitle(`Assets: ${repoName}`);
 
   const [searchValue, setSearchValue] = React.useState('');
   const selector = repoAddressToSelector(repoAddress);
@@ -55,8 +62,6 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       );
     }
 
-    const repoName = repoAddressAsHumanString(repoAddress);
-
     if (!filteredBySearch.length) {
       if (anySearch) {
         return (
@@ -85,7 +90,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
       );
     }
 
-    return <VirtualizedAssetTable repoAddress={repoAddress} assets={filteredBySearch} />;
+    return <VirtualizedRepoAssetTable repoAddress={repoAddress} assets={filteredBySearch} />;
   };
 
   return (

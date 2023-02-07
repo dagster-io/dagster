@@ -1,10 +1,9 @@
 import json
 
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
-
 import dagster._check as check
 from dagster._config import ALL_CONFIG_BUILTINS
 from dagster._utils import file_relative_path
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 from .repo import csv_hello_world_solids_config
@@ -397,7 +396,6 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert valid_data["pipelineName"] == "more_complicated_nested_config"
 
     def test_multiple_missing_fields(self, graphql_context):
-
         result = execute_config_graphql(
             graphql_context,
             pipeline_name="more_complicated_nested_config",

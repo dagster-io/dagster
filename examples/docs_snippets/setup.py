@@ -50,6 +50,7 @@ setup(
             "scikit-learn",
             "slack_sdk",
             "snapshottest",
+            "dbt-duckdb",
             "dagit[test]",
         ]
     },

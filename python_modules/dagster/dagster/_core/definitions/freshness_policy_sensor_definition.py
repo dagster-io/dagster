@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Mapping, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, Callable, Dict, Mapping, NamedTuple, Optional, cast
 
 import pendulum
 
@@ -21,7 +21,6 @@ from dagster._serdes import (
 )
 from dagster._serdes.errors import DeserializationError
 from dagster._seven import JSONDecodeError
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from ..decorator_utils import get_function_params
 from .sensor_definition import (
@@ -29,8 +28,11 @@ from .sensor_definition import (
     SensorDefinition,
     SensorEvaluationContext,
     SkipReason,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
+
+if TYPE_CHECKING:
+    pass
 
 
 @whitelist_for_serdes
@@ -41,7 +43,6 @@ class FreshnessPolicySensorCursor(
     )
 ):
     def __new__(cls, minutes_late_by_key_str: Mapping[str, Optional[float]]):
-
         return super(FreshnessPolicySensorCursor, cls).__new__(
             cls,
             minutes_late_by_key_str=check.mapping_param(
@@ -163,7 +164,6 @@ def build_freshness_policy_sensor_context(
             )
             freshness_policy_sensor_to_invoke(context)
     """
-
     return FreshnessPolicySensorContext(
         sensor_name=sensor_name,
         asset_key=asset_key,
@@ -200,7 +200,6 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         description: Optional[str] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
-
         check.str_param(name, "name")
         check.inst_param(asset_selection, "asset_selection", AssetSelection)
         check.opt_int_param(minimum_interval_seconds, "minimum_interval_seconds")
@@ -212,6 +211,9 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         )
 
         def _wrapped_fn(context: SensorEvaluationContext):
+            from dagster._utils.caching_instance_queryer import (
+                CachingInstanceQueryer,  # expensive import
+            )
 
             if context.repository_def is None:
                 raise DagsterInvalidInvocationError(
@@ -265,7 +267,8 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
 
                 if result is not None:
                     raise DagsterInvalidDefinitionError(
-                        "Functions decorated by `@freshness_policy_sensor` may not return or yield a value."
+                        "Functions decorated by `@freshness_policy_sensor` may not return or yield"
+                        " a value."
                     )
 
             context.update_cursor(
@@ -281,11 +284,11 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
         )
 
     def __call__(self, *args, **kwargs):
-        if is_context_provided(self._freshness_policy_sensor_fn):
+        if has_at_least_one_parameter(self._freshness_policy_sensor_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
-                    "Freshness policy sensor function expected context argument, but no context argument "
-                    "was provided when invoking."
+                    "Freshness policy sensor function expected context argument, but no context"
+                    " argument was provided when invoking."
                 )
             if len(args) + len(kwargs) > 1:
                 raise DagsterInvalidInvocationError(
@@ -302,7 +305,8 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
             else:
                 if context_param_name not in kwargs:
                     raise DagsterInvalidInvocationError(
-                        f"Freshness policy sensor invocation expected argument '{context_param_name}'."
+                        "Freshness policy sensor invocation expected argument"
+                        f" '{context_param_name}'."
                     )
                 context = check.opt_inst_param(
                     kwargs[context_param_name],
@@ -356,7 +360,6 @@ def freshness_policy_sensor(
     def inner(
         fn: Callable[[FreshnessPolicySensorContext], None]
     ) -> FreshnessPolicySensorDefinition:
-
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 

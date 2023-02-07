@@ -1,20 +1,25 @@
-from graphene import ResolveInfo
-
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
+from dagster._core.definitions.selector import PipelineSelector, RepositorySelector, SensorSelector
 from dagster._core.scheduler.instigation import InstigatorState, SensorInstigatorData
+from dagster._core.workspace.permissions import Permissions
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
+from dagster_graphql.schema.util import ResolveInfo
+
 from .loader import RepositoryScopedBatchLoader
-from .utils import UserFacingGraphQLError, capture_error
+from .utils import (
+    UserFacingGraphQLError,
+    assert_permission,
+    assert_permission_for_location,
+    capture_error,
+)
 
 
 @capture_error
-def get_sensors_or_error(graphene_info, repository_selector):
+def get_sensors_or_error(graphene_info: ResolveInfo, repository_selector):
     from ..schema.sensors import GrapheneSensor, GrapheneSensors
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
@@ -38,11 +43,10 @@ def get_sensors_or_error(graphene_info, repository_selector):
 
 
 @capture_error
-def get_sensor_or_error(graphene_info, selector):
+def get_sensor_or_error(graphene_info: ResolveInfo, selector):
     from ..schema.errors import GrapheneSensorNotFoundError
     from ..schema.sensors import GrapheneSensor
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", SensorSelector)
     location = graphene_info.context.get_repository_location(selector.location_name)
     repository = location.get_repository(selector.repository_name)
@@ -59,11 +63,10 @@ def get_sensor_or_error(graphene_info, selector):
 
 
 @capture_error
-def start_sensor(graphene_info, sensor_selector):
+def start_sensor(graphene_info: ResolveInfo, sensor_selector):
     from ..schema.errors import GrapheneSensorNotFoundError
     from ..schema.sensors import GrapheneSensor
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(sensor_selector, "sensor_selector", SensorSelector)
 
     location = graphene_info.context.get_repository_location(sensor_selector.location_name)
@@ -80,10 +83,9 @@ def start_sensor(graphene_info, sensor_selector):
 
 
 @capture_error
-def stop_sensor(graphene_info, instigator_origin_id, instigator_selector_id):
+def stop_sensor(graphene_info: ResolveInfo, instigator_origin_id, instigator_selector_id):
     from ..schema.sensors import GrapheneStopSensorMutationResult
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(instigator_origin_id, "instigator_origin_id")
     instance = graphene_info.context.instance
 
@@ -93,10 +95,24 @@ def stop_sensor(graphene_info, instigator_origin_id, instigator_selector_id):
         for repository in repository_location.get_repositories().values()
         for sensor in repository.get_external_sensors()
     }
+
+    external_sensor = external_sensors.get(instigator_origin_id)
+    if external_sensor:
+        assert_permission_for_location(
+            graphene_info,
+            Permissions.EDIT_SENSOR,
+            external_sensor.selector.location_name,
+        )
+    else:
+        assert_permission(
+            graphene_info,
+            Permissions.EDIT_SENSOR,
+        )
+
     state = instance.stop_sensor(
         instigator_origin_id,
         instigator_selector_id,
-        external_sensors.get(instigator_origin_id),
+        external_sensor,
     )
     return GrapheneStopSensorMutationResult(state)
 
@@ -133,10 +149,9 @@ def get_unloadable_sensor_states_or_error(graphene_info):
     )
 
 
-def get_sensors_for_pipeline(graphene_info, pipeline_selector):
+def get_sensors_for_pipeline(graphene_info: ResolveInfo, pipeline_selector):
     from ..schema.sensors import GrapheneSensor
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
 
     location = graphene_info.context.get_repository_location(pipeline_selector.location_name)
@@ -159,10 +174,9 @@ def get_sensors_for_pipeline(graphene_info, pipeline_selector):
     return results
 
 
-def get_sensor_next_tick(graphene_info, sensor_state):
+def get_sensor_next_tick(graphene_info: ResolveInfo, sensor_state):
     from ..schema.instigation import GrapheneFutureInstigationTick
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(sensor_state, "sensor_state", InstigatorState)
 
     repository_origin = sensor_state.origin.external_repository_origin
@@ -201,8 +215,7 @@ def get_sensor_next_tick(graphene_info, sensor_state):
 
 
 @capture_error
-def set_sensor_cursor(graphene_info, selector, cursor):
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+def set_sensor_cursor(graphene_info: ResolveInfo, selector, cursor):
     check.inst_param(selector, "selector", SensorSelector)
     check.opt_str_param(cursor, "cursor")
 
@@ -221,10 +234,13 @@ def set_sensor_cursor(graphene_info, selector, cursor):
         external_sensor.selector_id,
     )
     sensor_state = external_sensor.get_current_instigator_state(stored_state)
+    instigator_data = sensor_state.instigator_data
+    if not isinstance(instigator_data, SensorInstigatorData):
+        check.failed("Expected SensorInstigatorData")
     updated_state = sensor_state.with_data(
         SensorInstigatorData(
-            last_tick_timestamp=sensor_state.instigator_data.last_tick_timestamp,
-            last_run_key=sensor_state.instigator_data.last_run_key,
+            last_tick_timestamp=instigator_data.last_tick_timestamp,
+            last_run_key=instigator_data.last_run_key,
             min_interval=external_sensor.min_interval_seconds,
             cursor=cursor,
         )

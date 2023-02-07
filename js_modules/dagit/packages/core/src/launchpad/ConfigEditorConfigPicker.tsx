@@ -20,30 +20,28 @@ import styled from 'styled-components/macro';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {ConfigEditorGeneratorPartitionSetsFragment_results} from './types/ConfigEditorGeneratorPartitionSetsFragment';
 import {
   ConfigEditorGeneratorPipelineFragment,
-  ConfigEditorGeneratorPipelineFragment_presets,
-} from './types/ConfigEditorGeneratorPipelineFragment';
-import {
+  ConfigEditorPipelinePresetFragment,
+  PartitionSetForConfigEditorFragment,
+  ConfigPartitionResultFragment,
   ConfigPartitionsQuery,
   ConfigPartitionsQueryVariables,
-  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
-} from './types/ConfigPartitionsQuery';
+} from './types/ConfigEditorConfigPicker.types';
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
-type Preset = ConfigEditorGeneratorPipelineFragment_presets;
-type PartitionSet = ConfigEditorGeneratorPartitionSetsFragment_results;
-type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
+type Preset = ConfigEditorPipelinePresetFragment;
+type PartitionSet = PartitionSetForConfigEditorFragment;
+type Partition = ConfigPartitionResultFragment;
 type ConfigGenerator = Preset | PartitionSet;
 
 interface ConfigEditorConfigPickerProps {
@@ -179,7 +177,7 @@ const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = 
       return sortOrder === 'asc' ? retrieved : [...retrieved].reverse();
     }, [data, sortOrder]);
 
-    const error: PythonErrorFragment | null =
+    const error =
       data?.partitionSetOrError.__typename === 'PartitionSet' &&
       data?.partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
         ? data.partitionSetOrError.partitionsOrError
@@ -385,40 +383,6 @@ const PickerContainer = styled.div`
   gap: 6px;
 `;
 
-export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
-  fragment ConfigEditorGeneratorPipelineFragment on Pipeline {
-    id
-    isJob
-    name
-    presets {
-      __typename
-      name
-      mode
-      solidSelection
-      runConfigYaml
-      tags {
-        key
-        value
-      }
-    }
-    tags {
-      key
-      value
-    }
-  }
-`;
-
-export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = gql`
-  fragment ConfigEditorGeneratorPartitionSetsFragment on PartitionSets {
-    results {
-      id
-      name
-      mode
-      solidSelection
-    }
-  }
-`;
-
 const CONFIG_PARTITIONS_QUERY = gql`
   query ConfigPartitionsQuery(
     $repositorySelector: RepositorySelector!
@@ -434,7 +398,7 @@ const CONFIG_PARTITIONS_QUERY = gql`
         partitionsOrError {
           ... on Partitions {
             results {
-              name
+              ...ConfigPartitionResult
             }
           }
           ...PythonErrorFragment
@@ -442,6 +406,11 @@ const CONFIG_PARTITIONS_QUERY = gql`
       }
     }
   }
+
+  fragment ConfigPartitionResult on Partition {
+    name
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
@@ -481,5 +450,48 @@ export const CONFIG_PARTITION_SELECTION_QUERY = gql`
       }
     }
   }
+
   ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
+  fragment ConfigEditorGeneratorPipelineFragment on Pipeline {
+    id
+    isJob
+    name
+    presets {
+      ...ConfigEditorPipelinePreset
+    }
+    tags {
+      key
+      value
+    }
+  }
+
+  fragment ConfigEditorPipelinePreset on PipelinePreset {
+    name
+    mode
+    solidSelection
+    runConfigYaml
+    tags {
+      key
+      value
+    }
+  }
+`;
+
+export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = gql`
+  fragment ConfigEditorGeneratorPartitionSetsFragment on PartitionSets {
+    results {
+      id
+      ...PartitionSetForConfigEditor
+    }
+  }
+
+  fragment PartitionSetForConfigEditor on PartitionSet {
+    id
+    name
+    mode
+    solidSelection
+  }
 `;

@@ -6,11 +6,11 @@ import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {RepoAddress} from '../workspace/types';
 
+import {SensorFragment} from './types/SensorFragment.types';
 import {
   PreviousRunsForSensorQuery,
   PreviousRunsForSensorQueryVariables,
-} from './types/PreviousRunsForSensorQuery';
-import {SensorFragment} from './types/SensorFragment';
+} from './types/SensorPreviousRuns.types';
 
 const RUNS_LIMIT = 20;
 
@@ -23,7 +23,6 @@ export const SensorPreviousRuns: React.FC<{
   const {data} = useQuery<PreviousRunsForSensorQuery, PreviousRunsForSensorQueryVariables>(
     PREVIOUS_RUNS_FOR_SENSOR_QUERY,
     {
-      fetchPolicy: 'cache-and-network',
       variables: {
         limit: RUNS_LIMIT,
         filter: {
@@ -83,5 +82,6 @@ const PREVIOUS_RUNS_FOR_SENSOR_QUERY = gql`
       }
     }
   }
+
   ${RUN_TABLE_RUN_FRAGMENT}
 `;

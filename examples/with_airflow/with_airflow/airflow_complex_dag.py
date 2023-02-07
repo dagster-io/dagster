@@ -1,4 +1,4 @@
-# pylint: disable=pointless-statement
+# pyright: reportUnusedExpression=none
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -21,9 +21,11 @@
 Example Airflow DAG that shows the complex DAG structure.
 """
 
+# Type errors ignored because some of these imports target deprecated modules for compatibility with
+# airflow 1.x and 2.x.
 from airflow import models
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.bash_operator import BashOperator  # type: ignore  # (airflow 1 compat)
+from airflow.operators.python_operator import PythonOperator  # type: ignore  # (airflow 1 compat)
 from airflow.utils.dates import days_ago
 from airflow.utils.helpers import chain
 
@@ -32,7 +34,6 @@ default_args = {"start_date": days_ago(1)}
 with models.DAG(
     dag_id="complex_dag", default_args=default_args, schedule_interval=None
 ) as complex_dag:
-
     # Create
     create_entry_group = BashOperator(
         task_id="create_entry_group", bash_command="echo create_entry_group"

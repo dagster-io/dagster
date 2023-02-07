@@ -1,7 +1,5 @@
-import sqlalchemy as db
-from packaging.version import parse
-
 import dagster._check as check
+import sqlalchemy as db
 from dagster._core.storage.config import mysql_config
 from dagster._core.storage.event_log import (
     AssetKeyTable,
@@ -23,6 +21,7 @@ from ..utils import (
     create_mysql_connection,
     mysql_alembic_config,
     mysql_url_from_config,
+    parse_mysql_version,
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
@@ -135,11 +134,13 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         return row[0]
 
-    def store_asset_event(self, event):
+    def store_asset_event(self, event, event_id):
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
         # See SqlEventLogStorage.store_asset_event method for more details
 
-        values = self._get_asset_entry_values(event, self.has_secondary_index(ASSET_KEY_INDEX_COLS))
+        values = self._get_asset_entry_values(
+            event, event_id, self.has_secondary_index(ASSET_KEY_INDEX_COLS)
+        )
         with self.index_connection() as conn:
             if values:
                 conn.execute(
@@ -196,7 +197,9 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @property
     def supports_intersect(self):
-        return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_INTERSECT_VERSION)
+        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(
+            MINIMUM_MYSQL_INTERSECT_VERSION
+        )
 
     @property
     def event_watcher(self):

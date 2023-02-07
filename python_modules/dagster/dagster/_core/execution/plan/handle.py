@@ -8,7 +8,7 @@ from dagster._serdes import whitelist_for_serdes
 
 @whitelist_for_serdes
 class StepHandle(NamedTuple("_StepHandle", [("solid_handle", NodeHandle), ("key", str)])):
-    """A reference to an ExecutionStep that was determined statically"""
+    """A reference to an ExecutionStep that was determined statically."""
 
     def __new__(cls, solid_handle: NodeHandle, key: Optional[str] = None):
         return super(StepHandle, cls).__new__(
@@ -40,7 +40,7 @@ class StepHandle(NamedTuple("_StepHandle", [("solid_handle", NodeHandle), ("key"
 
 @whitelist_for_serdes
 class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("solid_handle", NodeHandle)])):
-    """A reference to an UnresolvedMappedExecutionStep in an execution"""
+    """A reference to an UnresolvedMappedExecutionStep in an execution."""
 
     def __new__(cls, solid_handle: NodeHandle):
         return super(UnresolvedStepHandle, cls).__new__(

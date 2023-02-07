@@ -1,11 +1,13 @@
 from typing import Optional
+
 import click
 
+from dagit_screenshot.commands.asset_svg import generate_svg as _svg
 from dagit_screenshot.commands.audit import audit as _audit
 from dagit_screenshot.commands.capture import capture as _capture
 from dagit_screenshot.commands.show import show as _show
-from dagit_screenshot.utils import load_spec, normalize_output_path, spec_id_to_relative_path
 from dagit_screenshot.defaults import DEFAULT_OUTPUT_ROOT, DEFAULT_SPEC_DB, DEFAULT_WORKSPACE_ROOT
+from dagit_screenshot.utils import load_spec, normalize_output_path, spec_id_to_relative_path
 
 
 @click.group(
@@ -22,7 +24,7 @@ from dagit_screenshot.defaults import DEFAULT_OUTPUT_ROOT, DEFAULT_SPEC_DB, DEFA
     "--spec-db",
     type=click.Path(exists=True),
     default=DEFAULT_SPEC_DB,
-    help="Path to directory containing a tree of YAML files with screenshot specs."
+    help="Path to directory containing a tree of YAML files with screenshot specs.",
 )
 @click.option(
     "--workspace-root",
@@ -43,7 +45,14 @@ def dagit_screenshot(ctx, output_root: str, spec_db: str, workspace_root: str) -
     workspace files exist. Optionally verify that corresponding output files exist.
     """
 )
-@click.option("--verify-outputs/--no-verify-outputs", type=click.BOOL, default=False, help="If set, then the existence of output screenshots in the output root will also be checked.")
+@click.option(
+    "--verify-outputs/--no-verify-outputs",
+    type=click.BOOL,
+    default=False,
+    help=(
+        "If set, then the existence of output screenshots in the output root will also be checked."
+    ),
+)
 @click.pass_context
 def audit(ctx, verify_outputs) -> None:
     output_root = ctx.obj["output_root"]
@@ -71,11 +80,24 @@ def capture(ctx, spec_id: str, output_path: str) -> None:
     spec = load_spec(spec_id, ctx.obj["spec_db"])
     _capture(spec, output_path)
 
+
 @dagit_screenshot.command(help="Dump the contents of a screenshot DB to the terminal as YAML.")
-@click.option('--prefix', help="If provided, only specs with ids starting with the passed value will be dumped.")
+@click.option(
+    "--prefix",
+    help="If provided, only specs with ids starting with the passed value will be dumped.",
+)
 @click.pass_context
 def show(ctx, prefix: Optional[str]):
-    _show(ctx.obj['spec_db'], prefix)
+    _show(ctx.obj["spec_db"], prefix)
+
+
+@dagit_screenshot.command(
+    help="Reads a given markdown file and generates asset graph SVGs for code snippets."
+)
+@click.option("--target", "-t", help="Path to markdown file to process.")
+def svg(target: str) -> None:
+    _svg(target)
+
 
 def main():
     dagit_screenshot(obj={})

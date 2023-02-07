@@ -96,7 +96,8 @@ class ExecuteJobResult(ExecutionResult):
     def _get_output_for_handle(self, handle: NodeHandle, output_name: str) -> Any:
         if not self._context:
             raise DagsterInvariantViolationError(
-                "In order to access output objects, the result of `execute_job` must be opened as a context manager: 'with execute_job(...) as result:"
+                "In order to access output objects, the result of `execute_job` must be opened as a"
+                " context manager: 'with execute_job(...) as result:"
             )
         found = False
         result = None

@@ -1,8 +1,8 @@
 from typing import Mapping
 
-import sqlalchemy as db
-
 import dagster._check as check
+import sqlalchemy as db
+import sqlalchemy.dialects.postgresql as db_dialects_postgresql
 from dagster._core.storage.config import pg_config
 from dagster._core.storage.runs import (
     DaemonHeartbeatsTable,
@@ -158,10 +158,9 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:
-
             # insert or update if already present, using postgres specific on_conflict
             conn.execute(
-                db.dialects.postgresql.insert(DaemonHeartbeatsTable)
+                db_dialects_postgresql.insert(DaemonHeartbeatsTable)
                 .values(  # pylint: disable=no-value-for-parameter
                     timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type,
@@ -182,7 +181,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
 
         # pg speciic on_conflict_do_update
-        insert_stmt = db.dialects.postgresql.insert(KeyValueStoreTable).values(
+        insert_stmt = db_dialects_postgresql.insert(KeyValueStoreTable).values(
             [{"key": k, "value": v} for k, v in pairs.items()]
         )
         upsert_stmt = insert_stmt.on_conflict_do_update(

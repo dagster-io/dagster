@@ -6,6 +6,7 @@ import {useParams} from 'react-router-dom';
 import {formatElapsedTime} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
@@ -15,18 +16,18 @@ import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 import {Run} from './Run';
 import {RunConfigDialog, RunDetails} from './RunDetails';
-import {RunFragments} from './RunFragments';
+import {RUN_FRAGMENT} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
 import {assetKeysForRun} from './RunUtils';
-import {RunRootQuery, RunRootQueryVariables} from './types/RunRootQuery';
+import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
 
 export const RunRoot = () => {
   useTrackPageView();
 
   const {runId} = useParams<{runId: string}>();
+  useDocumentTitle(runId ? `Run ${runId.slice(0, 8)}` : 'Run');
 
   const {data, loading} = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
-    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
     variables: {runId},
   });
@@ -185,5 +186,5 @@ const RUN_ROOT_QUERY = gql`
     }
   }
 
-  ${RunFragments.RunFragment}
+  ${RUN_FRAGMENT}
 `;

@@ -12,7 +12,7 @@ import {RepoAddress} from './types';
 import {
   RepositoryPipelinesListQuery,
   RepositoryPipelinesListQueryVariables,
-} from './types/RepositoryPipelinesListQuery';
+} from './types/RepositoryPipelinesList.types';
 
 const REPOSITORY_PIPELINES_LIST_QUERY = gql`
   query RepositoryPipelinesListQuery($repositorySelector: RepositorySelector!) {
@@ -30,6 +30,7 @@ const REPOSITORY_PIPELINES_LIST_QUERY = gql`
       }
     }
   }
+
   ${PIPELINE_TABLE_FRAGMENT}
 `;
 
@@ -48,7 +49,6 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
     RepositoryPipelinesListQuery,
     RepositoryPipelinesListQueryVariables
   >(REPOSITORY_PIPELINES_LIST_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {repositorySelector},
   });
 

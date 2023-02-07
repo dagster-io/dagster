@@ -3,7 +3,6 @@ from enum import Enum as PythonEnum
 from unittest import mock
 
 import pytest
-
 from dagster import (
     DagsterEventType,
     DagsterInvariantViolationError,
@@ -114,7 +113,10 @@ def test_resource_with_dependencies():
         called["dep_op"] = True
         assert context.resources.bar_resource == "foobar"
 
-    job_def = GraphDefinition(name="with_dep_resource", node_defs=[dep_op],).to_job(
+    job_def = GraphDefinition(
+        name="with_dep_resource",
+        node_defs=[dep_op],
+    ).to_job(
         resource_defs={
             "foo_resource": foo_resource,
             "bar_resource": bar_resource,
@@ -151,7 +153,10 @@ def test_resource_cyclic_dependencies():
         DagsterInvariantViolationError,
         match='Resource key "(foo_resource|bar_resource)" transitively depends on itself.',
     ):
-        GraphDefinition(name="with_dep_resource", node_defs=[dep_op],).to_job(
+        GraphDefinition(
+            name="with_dep_resource",
+            node_defs=[dep_op],
+        ).to_job(
             resource_defs={
                 "foo_resource": foo_resource,
                 "bar_resource": bar_resource,
@@ -201,7 +206,10 @@ def test_yield_multiple_resources():
 
     yield_string_resource = ResourceDefinition(config_schema=String, resource_fn=_do_resource)
 
-    job_def = GraphDefinition(name="with_yield_resources", node_defs=[a_op],).to_job(
+    job_def = GraphDefinition(
+        name="with_yield_resources",
+        node_defs=[a_op],
+    ).to_job(
         resource_defs={
             "string_one": yield_string_resource,
             "string_two": yield_string_resource,
@@ -245,7 +253,10 @@ def test_resource_decorator():
         yield init_context.resource_config
         saw.append("after yield " + init_context.resource_config)
 
-    job_def = GraphDefinition(name="with_yield_resources", node_defs=[a_op],).to_job(
+    job_def = GraphDefinition(
+        name="with_yield_resources",
+        node_defs=[a_op],
+    ).to_job(
         resource_defs={
             "string_one": yielding_string_resource,
             "string_two": yielding_string_resource,
@@ -297,7 +308,10 @@ def test_mixed_multiple_resources():
         config_schema=String, resource_fn=_do_return_resource
     )
 
-    job_def = GraphDefinition(name="with_a_yield_resource", node_defs=[a_op],).to_job(
+    job_def = GraphDefinition(
+        name="with_a_yield_resource",
+        node_defs=[a_op],
+    ).to_job(
         resource_defs={
             "yielded_string": yield_string_resource,
             "returned_string": return_string_resource,
@@ -599,7 +613,9 @@ def test_incorrect_resource_init_error():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="expects only a single positional required argument. Got required extra params _b, _c",
+        match=(
+            "expects only a single positional required argument. Got required extra params _b, _c"
+        ),
     ):
 
         @resource
@@ -638,7 +654,6 @@ def test_resource_init_failure():
         DagsterResourceFunctionError,
         match="Error executing resource_fn on ResourceDefinition failing_resource",
     ):
-
         execute_plan(
             execution_plan,
             InMemoryPipeline(the_job),
@@ -760,7 +775,7 @@ def test_solid_failure_resource_teardown():
 
 
 def test_solid_failure_resource_teardown_raise():
-    """test that teardown is invoked in resources for tests that raise_on_error"""
+    """Test that teardown is invoked in resources for tests that raise_on_error."""
     called = []
     cleaned = []
 
@@ -863,7 +878,10 @@ def define_resource_teardown_failure_job():
     def resource_op(_):
         pass
 
-    return GraphDefinition(name="resource_teardown_failure", node_defs=[resource_op],).to_job(
+    return GraphDefinition(
+        name="resource_teardown_failure",
+        node_defs=[resource_op],
+    ).to_job(
         resource_defs={
             "a": resource_a,
             "b": resource_b,
@@ -910,7 +928,10 @@ def test_single_step_resource_event_logs():
         context.log.info(USER_RESOURCE_MESSAGE)
         return "A"
 
-    the_job = GraphDefinition(name="resource_logging_job", node_defs=[resource_op],).to_job(
+    the_job = GraphDefinition(
+        name="resource_logging_job",
+        node_defs=[resource_op],
+    ).to_job(
         resource_defs={"a": resource_a},
         logger_defs={"callback": construct_event_logger(event_callback)},
     )
@@ -1030,7 +1051,10 @@ def test_resource_needs_resource():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Resource with key 'bar_resource' required by resource with key 'foo_resource', but not provided.",
+        match=(
+            "Resource with key 'bar_resource' required by resource with key 'foo_resource', but not"
+            " provided."
+        ),
     ):
 
         @job(
@@ -1171,8 +1195,10 @@ def test_context_manager_resource():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="At least one provided resource is a generator, but attempting to access resources "
-        "outside of context manager scope.",
+        match=(
+            "At least one provided resource is a generator, but attempting to access resources "
+            "outside of context manager scope."
+        ),
     ):
         basic(build_op_context(resources={"cm": cm_resource}))
 

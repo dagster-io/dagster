@@ -1,19 +1,20 @@
 import json
 import logging
 import time
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, cast
 
+# Type errors ignored because some of these imports target deprecated modules for compatibility with
+# airflow 1.x and 2.x.
 import requests
-from airflow import __version__ as airflow_version
 from airflow.exceptions import AirflowException
-from airflow.hooks.base_hook import BaseHook
+from airflow.hooks.base_hook import BaseHook  # type: ignore  # (airflow 1 compat)
 from airflow.models import Connection
-
 from dagster._core.storage.pipeline_run import DagsterRunStatus
+
+from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 
 class DagsterHook(BaseHook):
-
     conn_name_attr = "dagster_conn_id"
     default_conn_name = "dagster_default"
     conn_type = "dagster"
@@ -21,7 +22,7 @@ class DagsterHook(BaseHook):
 
     @staticmethod
     def get_ui_field_behaviour() -> Mapping[str, Any]:
-        """Returns custom field behaviour"""
+        """Returns custom field behaviour."""
         return {
             "hidden_fields": ["port", "schema", "extra"],
             "relabeling": {
@@ -58,10 +59,10 @@ class DagsterHook(BaseHook):
         url: str = "",
         user_token: Optional[str] = None,
     ) -> None:
-        if airflow_version >= "2.0.0":
+        if is_airflow_2_loaded_in_environment():
             super().__init__()
         else:
-            super().__init__(source=None)
+            super().__init__(source=None)  # type: ignore  # (airflow 1 compat)
         self.url = url
         self.user_token = user_token
         self.organization_id = organization_id
@@ -70,7 +71,7 @@ class DagsterHook(BaseHook):
             raise AirflowException(
                 "Cannot set both dagster_conn_id and organization_id/deployment_name"
             )
-        if dagster_conn_id is not None and airflow_version >= "2.0.0":
+        if dagster_conn_id is not None and is_airflow_2_loaded_in_environment():
             conn = self.get_connection(dagster_conn_id)
             base_url = conn.login if conn.login else "https://dagster.cloud/"
             if base_url == "https://dagster.cloud/":
@@ -100,7 +101,7 @@ class DagsterHook(BaseHook):
         self.url = f"{base_url}{self.organization_id}/{self.deployment_name}/graphql"
 
     def set_hook_for_oss(self, conn: Connection):
-        self.url = conn.login
+        self.url = cast(str, conn.login)
 
     def launch_run(
         self,
@@ -152,7 +153,7 @@ fragment PythonErrorFragment on PythonError {
         """
         variables = {
             "executionParams": {
-                "runConfigData": json.dumps({} if run_config == None else run_config),
+                "runConfigData": json.dumps({} if run_config is None else run_config),
                 "selector": {
                     "repositoryName": repository_name,
                     "repositoryLocationName": repostitory_location_name,
@@ -174,7 +175,8 @@ fragment PythonErrorFragment on PythonError {
             return run["id"]
         else:
             raise AirflowException(
-                f'Error launching run: {response_json["data"]["launchPipelineExecution"]["message"]}'
+                "Error launching run:"
+                f' {response_json["data"]["launchPipelineExecution"]["message"]}'
             )
 
     def wait_for_run(
@@ -294,5 +296,6 @@ fragment PythonErrorFragment on PythonError {
             != "TerminateRunSuccess"
         ):
             raise AirflowException(
-                f'Error terminating run: {response_json["data"]["terminatePipelineExecution"]["message"]}'
+                "Error terminating run:"
+                f' {response_json["data"]["terminatePipelineExecution"]["message"]}'
             )

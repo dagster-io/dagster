@@ -11,8 +11,7 @@ import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
 import {OpLayout} from './asyncGraphLayout';
 import {Edge, position} from './common';
-import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
-import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
+import {OpNodeInvocationFragment, OpNodeDefinitionFragment} from './types/OpNode.types';
 
 interface IOpNodeProps {
   layout: OpLayout;
@@ -165,13 +164,12 @@ export class OpNode extends React.Component<IOpNodeProps> {
 
         {tags.length > 0 && (
           <OpTags
+            tags={tags}
             style={{
               left: layout.op.x + layout.op.width,
               top: layout.op.y + layout.op.height,
               transform: 'translate(-100%, 3px)',
             }}
-            minified={minified}
-            tags={tags}
           />
         )}
 
@@ -259,17 +257,10 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
       }
     }
     inputDefinitions {
-      name
-      type {
-        displayName
-      }
+      ...OpNodeInputDefinition
     }
     outputDefinitions {
-      name
-      isDynamic
-      type {
-        displayName
-      }
+      ...OpNodeOutputDefinition
     }
     ... on SolidDefinition {
       configField {
@@ -309,6 +300,21 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
       }
     }
   }
+
+  fragment OpNodeInputDefinition on InputDefinition {
+    name
+    type {
+      displayName
+    }
+  }
+
+  fragment OpNodeOutputDefinition on OutputDefinition {
+    name
+    isDynamic
+    type {
+      displayName
+    }
+  }
 `;
 
 export const NodeHighlightColors = {
@@ -324,6 +330,8 @@ const NodeContainer = styled.div<{
 }>`
   opacity: ${({$dim}) => ($dim ? 0.3 : 1)};
   pointer-events: auto;
+  user-select: none;
+  cursor: default;
 
   .highlight-box {
     border-radius: 13px;

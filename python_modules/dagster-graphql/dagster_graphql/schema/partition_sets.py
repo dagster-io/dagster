@@ -1,15 +1,8 @@
-import graphene
-from dagster_graphql.implementation.fetch_partition_sets import (
-    get_partition_by_name,
-    get_partition_config,
-    get_partition_set_partition_runs,
-    get_partition_set_partition_statuses,
-    get_partition_tags,
-    get_partitions,
-)
-from dagster_graphql.implementation.fetch_runs import get_runs
+from typing import cast
 
 import dagster._check as check
+import graphene
+from dagster import MultiPartitionsDefinition
 from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.host_representation.external_data import (
     ExternalMultiPartitionsDefinitionData,
@@ -19,7 +12,17 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
+
+from dagster_graphql.implementation.fetch_partition_sets import (
+    get_partition_by_name,
+    get_partition_config,
+    get_partition_set_partition_runs,
+    get_partition_set_partition_statuses,
+    get_partition_tags,
+    get_partitions,
+)
+from dagster_graphql.implementation.fetch_runs import get_runs
 
 from .backfill import GraphenePartitionBackfill
 from .errors import (
@@ -32,7 +35,7 @@ from .pipelines.pipeline import GrapheneRun
 from .pipelines.status import GrapheneRunStatus
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GraphenePartitionTags(graphene.ObjectType):
@@ -73,6 +76,14 @@ class GraphenePartitionRun(graphene.ObjectType):
 
     class Meta:
         name = "PartitionRun"
+
+
+class GraphenePartitionStatusCounts(graphene.ObjectType):
+    runStatus = graphene.NonNull(GrapheneRunStatus)
+    count = graphene.NonNull(graphene.Int)
+
+    class Meta:
+        name = "PartitionStatusCounts"
 
 
 class GraphenePartitionStatuses(graphene.ObjectType):
@@ -128,7 +139,7 @@ class GraphenePartition(graphene.ObjectType):
             mode=external_partition_set.mode,
         )
 
-    def resolve_runConfigOrError(self, graphene_info):
+    def resolve_runConfigOrError(self, graphene_info: ResolveInfo):
         return get_partition_config(
             graphene_info,
             self._external_repository_handle,
@@ -136,7 +147,7 @@ class GraphenePartition(graphene.ObjectType):
             self._partition_name,
         )
 
-    def resolve_tagsOrError(self, graphene_info):
+    def resolve_tagsOrError(self, graphene_info: ResolveInfo):
         return get_partition_tags(
             graphene_info,
             self._external_repository_handle,
@@ -144,7 +155,7 @@ class GraphenePartition(graphene.ObjectType):
             self._partition_name,
         )
 
-    def resolve_runs(self, graphene_info, **kwargs):
+    def resolve_runs(self, graphene_info: ResolveInfo, **kwargs):
         filters = kwargs.get("filter")
         partition_tags = {
             PARTITION_SET_TAG: self._external_partition_set.name,
@@ -219,20 +230,20 @@ class GraphenePartitionSet(graphene.ObjectType):
             mode=external_partition_set.mode,
         )
 
-    def resolve_id(self, _graphene_info):
+    def resolve_id(self, _graphene_info: ResolveInfo):
         return self._external_partition_set.get_external_origin_id()
 
-    def resolve_partitionsOrError(self, graphene_info, **kwargs):
+    def resolve_partitionsOrError(self, graphene_info: ResolveInfo, **kwargs):
         return get_partitions(
             graphene_info,
             self._external_repository_handle,
             self._external_partition_set,
             cursor=kwargs.get("cursor"),
             limit=kwargs.get("limit"),
-            reverse=kwargs.get("reverse"),
+            reverse=kwargs.get("reverse") or False,
         )
 
-    def resolve_partition(self, graphene_info, partition_name):
+    def resolve_partition(self, graphene_info: ResolveInfo, partition_name):
         return get_partition_by_name(
             graphene_info,
             self._external_repository_handle,
@@ -240,10 +251,10 @@ class GraphenePartitionSet(graphene.ObjectType):
             partition_name,
         )
 
-    def resolve_partitionRuns(self, graphene_info):
+    def resolve_partitionRuns(self, graphene_info: ResolveInfo):
         return get_partition_set_partition_runs(graphene_info, self._external_partition_set)
 
-    def resolve_partitionStatusesOrError(self, graphene_info):
+    def resolve_partitionStatusesOrError(self, graphene_info: ResolveInfo):
         return get_partition_set_partition_statuses(
             graphene_info,
             self._external_partition_set,
@@ -253,13 +264,15 @@ class GraphenePartitionSet(graphene.ObjectType):
         origin = self._external_partition_set.get_external_origin().external_repository_origin
         return GrapheneRepositoryOrigin(origin)
 
-    def resolve_backfills(self, graphene_info, **kwargs):
+    def resolve_backfills(self, graphene_info: ResolveInfo, **kwargs):
         matching = [
             backfill
             for backfill in graphene_info.context.instance.get_backfills(
                 cursor=kwargs.get("cursor"),
             )
-            if backfill.partition_set_origin.partition_set_name == self._external_partition_set.name
+            if backfill.partition_set_origin
+            and backfill.partition_set_origin.partition_set_name
+            == self._external_partition_set.name
             and backfill.partition_set_origin.external_repository_origin.repository_name
             == self._external_repository_handle.repository_name
         ]
@@ -312,20 +325,45 @@ class GrapheneDimensionDefinitionType(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.NonNull(graphene.String)
     type = graphene.NonNull(GraphenePartitionDefinitionType)
+    isPrimaryDimension = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "DimensionDefinitionType"
+
+
+class GrapheneTimePartitionsDefinitionMetadata(graphene.ObjectType):
+    startTime = graphene.NonNull(graphene.Float)
+    endTime = graphene.NonNull(graphene.Float)
+    startKey = graphene.NonNull(graphene.String)
+    endKey = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "TimePartitionsDefinitionMetadata"
 
 
 class GraphenePartitionDefinition(graphene.ObjectType):
     description = graphene.NonNull(graphene.String)
     type = graphene.NonNull(GraphenePartitionDefinitionType)
     dimensionTypes = non_null_list(GrapheneDimensionDefinitionType)
+    timeWindowMetadata = graphene.Field(GrapheneTimePartitionsDefinitionMetadata)
 
     class Meta:
         name = "PartitionDefinition"
 
     def __init__(self, partition_def_data: ExternalPartitionsDefinitionData):
+        def _get_time_partitions_metadata(partition_def_data):
+            check.inst_param(
+                partition_def_data, "partition_def_data", ExternalTimeWindowPartitionsDefinitionData
+            )
+
+            partitions_def = partition_def_data.get_partitions_definition()
+            return GrapheneTimePartitionsDefinitionMetadata(
+                startTime=partitions_def.start.timestamp(),
+                endTime=partitions_def.get_current_timestamp(),
+                startKey=partitions_def.get_first_partition_key(),
+                endKey=partitions_def.get_last_partition_key(),
+            )
+
         super().__init__(
             description=str(partition_def_data.get_partitions_definition()),
             type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data),
@@ -336,11 +374,27 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                     type=GraphenePartitionDefinitionType.from_partition_def_data(
                         dim.external_partitions_def_data
                     ),
+                    isPrimaryDimension=dim.name
+                    == cast(
+                        MultiPartitionsDefinition, partition_def_data.get_partitions_definition()
+                    ).primary_dimension.name,
                 )
                 for dim in partition_def_data.external_partition_dimension_definitions
             ]
             if isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData)
-            else [],
+            else [
+                GrapheneDimensionDefinitionType(
+                    name="default",
+                    description="",
+                    type=GraphenePartitionDefinitionType.from_partition_def_data(
+                        partition_def_data
+                    ),
+                    isPrimaryDimension=True,
+                )
+            ],
+            timeWindowMetadata=_get_time_partitions_metadata(partition_def_data)
+            if isinstance(partition_def_data, ExternalTimeWindowPartitionsDefinitionData)
+            else None,
         )
 
 
@@ -363,6 +417,7 @@ types = [
     GraphenePartitionSetsOrError,
     GraphenePartitionsOrError,
     GraphenePartitionStatus,
+    GraphenePartitionStatusCounts,
     GraphenePartitionStatuses,
     GraphenePartitionStatusesOrError,
     GraphenePartitionTags,

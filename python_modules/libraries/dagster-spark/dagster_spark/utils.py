@@ -32,7 +32,6 @@ def parse_spark_config(spark_conf):
 
     --conf "key=value"
     """
-
     spark_conf_list = flatten_dict(spark_conf)
     return format_for_cli(spark_conf_list)
 
@@ -63,10 +62,8 @@ def construct_spark_shell_command(
     spark_home = spark_home if spark_home else os.environ.get("SPARK_HOME")
     if spark_home is None:
         raise SparkOpError(
-            (
-                "No spark home set. You must either pass spark_home in config or "
-                "set $SPARK_HOME in your environment (got None)."
-            )
+            "No spark home set. You must either pass spark_home in config or "
+            "set $SPARK_HOME in your environment (got None)."
         )
 
     master_url = ["--master", master_url] if master_url else []

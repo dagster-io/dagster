@@ -1,9 +1,10 @@
 import os
+from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from dagster import IOManager, In, InputManager, input_manager, io_manager, job, op
+from dagster import In, InputManager, IOManager, input_manager, io_manager, job, op
 
 
 class PandasIOManager(IOManager):
@@ -40,7 +41,7 @@ def write_dataframe_to_table(*_args, **_kwargs):
     pass
 
 
-pd_series_io_manager = None
+pd_series_io_manager: Any = None
 
 # start_different_input_managers
 
@@ -50,7 +51,7 @@ def op_1():
     return [1, 2, 3]
 
 
-@op(ins=In(input_manager_key="pandas_series"))
+@op(ins={"a": In(input_manager_key="pandas_series")})
 def op_2(a):
     return pd.concat([a, pd.Series([4, 5, 6])])
 
@@ -63,6 +64,7 @@ def a_job():
 # end_different_input_managers
 
 # start_plain_input_manager
+
 
 # in this case PandasIOManager is an existing IO Manager
 class MyNumpyLoader(PandasIOManager):
@@ -92,6 +94,7 @@ def my_job():
 
 
 # start_better_input_manager
+
 
 # this IO Manager is owned by a different team
 class BetterPandasIOManager(IOManager):
@@ -183,6 +186,7 @@ def load_table_job():
 
 
 # end_load_unconnected_input
+
 
 # start_load_unconnected_io
 # in this example, TableIOManager is defined elsewhere and we just want to override load_input

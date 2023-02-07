@@ -1,4 +1,9 @@
-from dagster import AssetSelection, asset, build_asset_reconciliation_sensor, repository
+from dagster import (
+    AssetSelection,
+    Definitions,
+    asset,
+    build_asset_reconciliation_sensor,
+)
 
 
 @asset
@@ -21,7 +26,7 @@ update_sensor = build_asset_reconciliation_sensor(
     name="update_sensor", asset_selection=AssetSelection.all()
 )
 
-
-@repository
-def my_repo():
-    return [[a, b, c], [update_sensor]]
+defs = Definitions(
+    assets=[a, b, c],
+    sensors=[update_sensor],
+)

@@ -1,8 +1,5 @@
 from enum import Enum, unique
-from typing import TYPE_CHECKING, Dict, Mapping, NamedTuple, Optional
-
-if TYPE_CHECKING:
-    from .context import WorkspaceProcessContext
+from typing import Dict, Mapping, NamedTuple, Optional
 
 
 @unique
@@ -54,6 +51,19 @@ EDITOR_PERMISSIONS: Dict[str, bool] = {
     Permissions.CANCEL_PARTITION_BACKFILL: True,
 }
 
+LOCATION_SCOPED_PERMISSIONS = {
+    Permissions.LAUNCH_PIPELINE_EXECUTION,
+    Permissions.LAUNCH_PIPELINE_REEXECUTION,
+    Permissions.START_SCHEDULE,
+    Permissions.STOP_RUNNING_SCHEDULE,
+    Permissions.EDIT_SENSOR,
+    Permissions.TERMINATE_PIPELINE_EXECUTION,
+    Permissions.DELETE_PIPELINE_RUN,
+    Permissions.RELOAD_REPOSITORY_LOCATION,
+    Permissions.LAUNCH_PARTITION_BACKFILL,
+    Permissions.CANCEL_PARTITION_BACKFILL,
+}
+
 
 class PermissionResult(
     NamedTuple("_PermissionResult", [("enabled", bool), ("disabled_reason", Optional[str])])
@@ -77,4 +87,13 @@ def get_user_permissions(read_only: bool) -> Mapping[str, PermissionResult]:
     return {
         perm: PermissionResult(enabled=enabled, disabled_reason=_get_disabled_reason(enabled))
         for perm, enabled in perm_map.items()
+    }
+
+
+def get_location_scoped_user_permissions(read_only: bool) -> Mapping[str, PermissionResult]:
+    all_permissions = get_user_permissions(read_only)
+    return {
+        perm: result
+        for perm, result in all_permissions.items()
+        if perm in LOCATION_SCOPED_PERMISSIONS
     }

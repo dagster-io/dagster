@@ -2,11 +2,9 @@ from typing import Mapping, Optional
 from urllib.parse import urljoin, urlparse
 
 import click
-import requests
-
 import dagster._check as check
 import dagster._seven as seven
-from dagster import __version__ as dagster_version
+import requests
 from dagster._cli.workspace import workspace_target_argument
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
@@ -100,9 +98,8 @@ def execute_query_against_remote(host, query, variables):
     parsed_url = urlparse(host)
     if not (parsed_url.scheme and parsed_url.netloc):
         raise click.UsageError(
-            "Host {host} is not a valid URL. Host URL should include scheme ie http://localhost".format(
-                host=host
-            )
+            "Host {host} is not a valid URL. Host URL should include scheme ie http://localhost"
+            .format(host=host)
         )
 
     sanity_check = requests.get(urljoin(host, "/dagit_info"))
@@ -130,8 +127,8 @@ PREDEFINED_QUERIES = {
 @click.command(
     name="ui",
     help=(
-        "Run a GraphQL query against the dagster interface to a specified repository or pipeline/job."
-        "\n\n{warning}".format(warning=WORKSPACE_TARGET_WARNING)
+        "Run a GraphQL query against the dagster interface to a specified repository or"
+        " pipeline/job.\n\n{warning}".format(warning=WORKSPACE_TARGET_WARNING)
     )
     + (
         "\n\nExamples:"
@@ -172,8 +169,11 @@ PREDEFINED_QUERIES = {
     "--output",
     "-o",
     type=click.STRING,
-    help="A file path to store the GraphQL response to. This flag is useful when making pipeline/job "
-    "execution queries, since pipeline/job execution causes logs to print to stdout and stderr.",
+    help=(
+        "A file path to store the GraphQL response to. This flag is useful when making pipeline/job"
+        " execution queries, since pipeline/job execution causes logs to print to stdout and"
+        " stderr."
+    ),
 )
 @click.option(
     "--ephemeral-instance",

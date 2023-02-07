@@ -124,7 +124,8 @@ class ConfigTypeSnap(
 
     @property
     def inner_type_key(self) -> str:
-        """For container types such as Array or Noneable, the contained type. For a Map, the value type."""
+        """For container types such as Array or Noneable, the contained type. For a Map, the value type.
+        """
         # valid for Noneable, Map, and Array
         check.invariant(
             self.kind == ConfigTypeKind.NONEABLE
@@ -281,7 +282,6 @@ def snap_from_config_type(config_type: ConfigType) -> ConfigTypeSnap:
 def minimal_config_for_type_snap(
     config_schema_snap: ConfigSchemaSnapshot, config_type_snap: ConfigTypeSnap
 ) -> Any:
-
     check.inst_param(config_schema_snap, "config_schema_snap", ConfigSchemaSnapshot)
     check.inst_param(config_type_snap, "config_type_snap", ConfigTypeSnap)
 

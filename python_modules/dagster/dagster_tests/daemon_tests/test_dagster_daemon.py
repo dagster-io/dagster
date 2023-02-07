@@ -1,6 +1,5 @@
 import pytest
 from click.testing import CliRunner
-
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon.cli import run_command

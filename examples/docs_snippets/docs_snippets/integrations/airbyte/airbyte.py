@@ -119,7 +119,7 @@ def scope_add_downstream_assets():
 
     # start_add_downstream_assets
     import json
-    from dagster import asset, repository, with_resources
+    from dagster import asset, Definitions
     from dagster_airbyte import load_assets_from_airbyte_instance
 
     airbyte_assets = load_assets_from_airbyte_instance(
@@ -132,24 +132,34 @@ def scope_add_downstream_assets():
         with open("stargazers.json", "w", encoding="utf8") as f:
             f.write(json.dumps(stargazers, indent=2))
 
-    @repository
-    def my_repo():
-        return [
-            with_resources(
-                [airbyte_assets, stargazers_file],
-                {"snowflake_io_manager": snowflake_io_manager},
-            )
-        ]
+    defs = Definitions(
+        assets=[airbyte_assets, stargazers_file],
+        resources={"snowflake_io_manager": snowflake_io_manager},
+    )
 
     # end_add_downstream_assets
 
 
 def scope_schedule_assets():
-    airbyte_assets = []
-    # start_schedule_assets
-    from dagster import ScheduleDefinition, define_asset_job, repository, AssetSelection
+    from dagster_airbyte import airbyte_resource, load_assets_from_airbyte_instance
 
-    # materialize all assets in the repository
+    airbyte_instance = airbyte_resource.configured(
+        {
+            "host": "localhost",
+            "port": "8000",
+        }
+    )
+    airbyte_assets = load_assets_from_airbyte_instance(airbyte_instance)
+
+    # start_schedule_assets
+    from dagster import (
+        ScheduleDefinition,
+        define_asset_job,
+        AssetSelection,
+        Definitions,
+    )
+
+    # materialize all assets
     run_everything_job = define_asset_job("run_everything", selection="*")
 
     # only run my_airbyte_connection and downstream assets
@@ -157,10 +167,9 @@ def scope_schedule_assets():
         "my_etl_job", AssetSelection.groups("my_airbyte_connection").downstream()
     )
 
-    @repository
-    def my_repo():
-        return [
-            airbyte_assets,
+    defs = Definitions(
+        assets=[airbyte_assets],
+        schedules=[
             ScheduleDefinition(
                 job=my_etl_job,
                 cron_schedule="@daily",
@@ -169,6 +178,7 @@ def scope_schedule_assets():
                 job=run_everything_job,
                 cron_schedule="@weekly",
             ),
-        ]
+        ],
+    )
 
     # end_schedule_assets

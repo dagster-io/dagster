@@ -133,7 +133,7 @@ def test_load_pipeline(
 ):
     with pushd(path_to_tutorial_file(dirname)):
         filepath = path_to_tutorial_file(os.path.join(dirname, filename))
-        load_dagit_for_workspace_cli_args(python_file=filepath, fn_name=fn_name)
+        load_dagit_for_workspace_cli_args(python_file=(filepath,), fn_name=fn_name)
 
 
 @pytest.mark.parametrize(

@@ -36,7 +36,7 @@ class RepositoryPythonOrigin(
           to load the repository. Defaults to ["dagster"] (and may differ from the executable_path).
       container_context (Optional[Dict[str, Any]]): Additional context to use when creating a new
           container that loads the repository. Keys can be specific to a given compute substrate
-          (for example, "docker", "k8s", etc.)
+          (for example, "docker", "k8s", etc.).
     """
 
     def __new__(
@@ -54,12 +54,12 @@ class RepositoryPythonOrigin(
             check.opt_str_param(container_image, "container_image"),
             (
                 frozenlist(check.list_param(entry_point, "entry_point", of_type=str))
-                if entry_point != None
+                if entry_point is not None
                 else None
             ),
             (
                 check.opt_dict_param(container_context, "container_context")
-                if container_context != None
+                if container_context is not None
                 else None
             ),
         )

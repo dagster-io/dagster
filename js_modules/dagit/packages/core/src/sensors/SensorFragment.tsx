@@ -27,5 +27,6 @@ export const SENSOR_FRAGMENT = gql`
       }
     }
   }
+
   ${INSTIGATION_STATE_FRAGMENT}
 `;

@@ -16,5 +16,6 @@ export const ASSET_NODE_CONFIG_FRAGMENT = gql`
       }
     }
   }
+
   ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;

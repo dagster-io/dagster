@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 import subprocess
 
+import dagster._check as check
 from dagster import OpExecutionContext, RetryRequested, executor, job, op, reconstructable
 from dagster._config import Permissive
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
@@ -12,7 +13,7 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
 )
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 
 class TestStepHandler(StepHandler):
@@ -25,14 +26,10 @@ class TestStepHandler(StepHandler):
         return "TestStepHandler"
 
     def launch_step(self, step_handler_context):
-
         assert step_handler_context.execute_step_args.step_keys_to_execute == ["retry_op"]
 
-        attempt_count = (
-            step_handler_context.execute_step_args.known_state.get_retry_state().get_attempt_count(
-                "retry_op"
-            )
-        )
+        known_state = check.not_none(step_handler_context.execute_step_args.known_state)
+        attempt_count = known_state.get_retry_state().get_attempt_count("retry_op")
         if attempt_count == 0:
             assert TestStepHandler.launched_first_attempt is False
             assert TestStepHandler.launched_second_attempt is False
@@ -51,14 +48,10 @@ class TestStepHandler(StepHandler):
         return iter(())
 
     def check_step_health(self, step_handler_context) -> CheckStepHealthResult:
-
         assert step_handler_context.execute_step_args.step_keys_to_execute == ["retry_op"]
 
-        attempt_count = (
-            step_handler_context.execute_step_args.known_state.get_retry_state().get_attempt_count(
-                "retry_op"
-            )
-        )
+        known_state = check.not_none(step_handler_context.execute_step_args.known_state)  # type: ignore  # fmt: skip
+        attempt_count = known_state.get_retry_state().get_attempt_count("retry_op")
         if attempt_count == 0:
             assert TestStepHandler.launched_first_attempt is True
             assert TestStepHandler.launched_second_attempt is False

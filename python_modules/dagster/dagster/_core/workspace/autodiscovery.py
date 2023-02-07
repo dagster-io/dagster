@@ -12,7 +12,6 @@ from dagster._core.code_pointer import load_python_file, load_python_module
 from dagster._core.definitions import AssetGroup
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
-from dagster._legacy import PipelineDefinition
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
 
@@ -54,6 +53,8 @@ def loadable_targets_from_python_package(
 
 
 def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
+    from dagster._legacy import PipelineDefinition
+
     loadable_defs = _loadable_targets_of_type(module, Definitions)
 
     if loadable_defs:
@@ -80,10 +81,10 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
         target_type = "job" if len(loadable_jobs) > 1 else "pipeline"
         raise DagsterInvariantViolationError(
             (
-                'No repository and more than one {target_type} found in "{module_name}". If you load '
-                "a file or module directly it must have only one {target_type} "
-                "in scope. Found {target_type}s defined in variables or decorated "
-                "functions: {pipeline_symbols}."
+                'No repository and more than one {target_type} found in "{module_name}". If you'
+                " load a file or module directly it must have only one {target_type} in scope."
+                " Found {target_type}s defined in variables or decorated functions:"
+                " {pipeline_symbols}."
             ).format(
                 module_name=module.__name__,
                 pipeline_symbols=repr([p.attribute for p in loadable_pipelines]),
@@ -116,12 +117,10 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     elif len(loadable_asset_groups) > 1:
         var_names = repr([a.attribute for a in loadable_asset_groups])
         raise DagsterInvariantViolationError(
-            (
-                f'More than one asset group found in "{module.__name__}". '
-                "If you load a file or module directly and it has no repositories, jobs, "
-                "pipeline, or graphs in scope, it must have no more than one asset group in scope. "
-                f"Found asset groups defined in variables: {var_names}."
-            )
+            f'More than one asset group found in "{module.__name__}". '
+            "If you load a file or module directly and it has no repositories, jobs, "
+            "pipeline, or graphs in scope, it must have no more than one asset group in scope. "
+            f"Found asset groups defined in variables: {var_names}."
         )
 
     asset_group_from_module_assets = AssetGroup.from_modules([module])

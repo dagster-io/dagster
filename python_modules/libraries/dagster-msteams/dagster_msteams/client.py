@@ -5,7 +5,8 @@ from requests import codes, exceptions, post
 
 class TeamsClient:
     """MS Teams web client responsible for connecting to a channel using the webhook URL
-    and posting informaton in the form of cards."""
+    and posting informaton in the form of cards.
+    """
 
     def __init__(
         self,
@@ -37,7 +38,7 @@ class TeamsClient:
             timeout=self._timeout,
             verify=self._verify,
         )
-        if response.status_code == codes.ok and response.text == "1":  # pylint: disable=no-member
+        if response.status_code == codes["ok"] and response.text == "1":
             return True
         else:
             raise exceptions.RequestException(response.text)

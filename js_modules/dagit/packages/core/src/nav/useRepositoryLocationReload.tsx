@@ -5,16 +5,18 @@ import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {useInvalidateConfigsForRepo} from '../app/ExecutionSessionStorage';
-import {PYTHON_ERROR_FRAGMENT, UNAUTHORIZED_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
-import {RepositoryLocationLoadStatus} from '../types/globalTypes';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {UNAUTHORIZED_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
+import {RepositoryLocationLoadStatus} from '../graphql/types';
 
 import {
-  ReloadRepositoryLocationMutation,
+  RepositoryLocationStatusQuery,
   ReloadRepositoryLocationMutationVariables,
-} from './types/ReloadRepositoryLocationMutation';
-import {ReloadWorkspaceMutation} from './types/ReloadWorkspaceMutation';
-import {RepositoryLocationStatusQuery} from './types/RepositoryLocationStatusQuery';
+  ReloadWorkspaceMutationVariables,
+  ReloadWorkspaceMutation,
+  ReloadRepositoryLocationMutation,
+} from './types/useRepositoryLocationReload.types';
 
 type State = {
   mutating: boolean;
@@ -241,13 +243,14 @@ const REPOSITORY_LOCATION_STATUS_QUERY = gql`
       ...PythonErrorFragment
     }
   }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
 // Reload Function - Workspace
 
 export const reloadFnForWorkspace = async (client: ApolloClient<any>): Promise<Action> => {
-  const {data} = await client.mutate<ReloadWorkspaceMutation>({
+  const {data} = await client.mutate<ReloadWorkspaceMutation, ReloadWorkspaceMutationVariables>({
     mutation: RELOAD_WORKSPACE_MUTATION,
   });
   if (!data) {
@@ -295,6 +298,7 @@ const RELOAD_WORKSPACE_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
+
   ${UNAUTHORIZED_ERROR_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;
@@ -348,5 +352,6 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
       ...PythonErrorFragment
     }
   }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;

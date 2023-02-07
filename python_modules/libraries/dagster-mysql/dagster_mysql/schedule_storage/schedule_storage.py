@@ -1,8 +1,6 @@
+import dagster._check as check
 import pendulum
 import sqlalchemy as db
-from packaging.version import parse
-
-import dagster._check as check
 from dagster._core.storage.config import mysql_config
 from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
 from dagster._core.storage.schedules.schema import InstigatorsTable
@@ -18,6 +16,7 @@ from ..utils import (
     create_mysql_connection,
     mysql_alembic_config,
     mysql_url_from_config,
+    parse_mysql_version,
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
@@ -118,7 +117,9 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         if not self._mysql_version:
             return False
 
-        return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_BATCH_VERSION)
+        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(
+            MINIMUM_MYSQL_BATCH_VERSION
+        )
 
     def get_server_version(self):
         rows = self.execute("select version()")

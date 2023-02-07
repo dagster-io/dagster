@@ -5,9 +5,12 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import ExitStack
 from itertools import count
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Set, TypeVar, Union
+
+from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import (
     DagsterRepositoryLocationLoadError,
     DagsterRepositoryLocationNotFoundError,
@@ -18,14 +21,12 @@ from dagster._core.host_representation import (
     ExternalPartitionSet,
     ExternalPipeline,
     GrpcServerRepositoryLocation,
-    PipelineSelector,
     RepositoryHandle,
     RepositoryLocation,
     RepositoryLocationOrigin,
 )
 from dagster._core.host_representation.grpc_server_registry import (
     GrpcServerRegistry,
-    ProcessGrpcServerRegistry,
 )
 from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
@@ -37,7 +38,11 @@ from dagster._core.instance import DagsterInstance
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from .load_target import WorkspaceLoadTarget
-from .permissions import PermissionResult, get_user_permissions
+from .permissions import (
+    PermissionResult,
+    get_location_scoped_user_permissions,
+    get_user_permissions,
+)
 from .workspace import (
     IWorkspace,
     WorkspaceLocationEntry,
@@ -55,6 +60,7 @@ if TYPE_CHECKING:
         ExternalPartitionTagsData,
     )
 
+T = TypeVar("T")
 
 DAGIT_GRPC_SERVER_HEARTBEAT_TTL = 45
 
@@ -104,7 +110,23 @@ class BaseWorkspaceRequestContext(IWorkspace):
         pass
 
     @abstractmethod
+    def permissions_for_location(self, location_name: str) -> Mapping[str, PermissionResult]:
+        pass
+
+    def has_permission_for_location(self, permission: str, location_name: str) -> bool:
+        if self.has_repository_location_name(location_name):
+            permissions = self.permissions_for_location(location_name)
+            return permissions[permission].enabled
+
+        # if not in workspace, fall back to the global permissions across all code locations
+        return self.has_permission(permission)
+
+    @abstractmethod
     def has_permission(self, permission: str) -> bool:
+        pass
+
+    @abstractmethod
+    def was_permission_checked(self, permission: str) -> bool:
         pass
 
     @property
@@ -122,7 +144,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
             return location_entry.repository_location
 
         if location_entry.load_error:
-            error_info = cast(SerializableErrorInfo, location_entry.load_error)
+            error_info = location_entry.load_error
             raise DagsterRepositoryLocationLoadError(
                 f"Failure loading {location_name}: {error_info.to_string()}",
                 load_error_infos=[error_info],
@@ -150,7 +172,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         ]
 
     def has_repository_location_error(self, name: str) -> bool:
-        return self.get_repository_location_error(name) != None
+        return self.get_repository_location_error(name) is not None
 
     def get_repository_location_error(self, name: str) -> Optional[SerializableErrorInfo]:
         entry = self.get_location_entry(name)
@@ -161,7 +183,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def has_repository_location(self, name: str) -> bool:
         location_entry = self.get_location_entry(name)
-        return bool(location_entry and location_entry.repository_location != None)
+        return bool(location_entry and location_entry.repository_location is not None)
 
     def is_reload_supported(self, name: str) -> bool:
         entry = self.get_location_entry(name)
@@ -180,7 +202,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def shutdown_repository_location(self, name: str):
         self.process_context.shutdown_repository_location(name)
 
-    def reload_workspace(self) -> "BaseWorkspaceRequestContext":
+    def reload_workspace(self) -> Self:  # type: ignore  # fmt: skip
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
@@ -263,7 +285,9 @@ class BaseWorkspaceRequestContext(IWorkspace):
             partition_names=partition_names,
         )
 
-    def get_external_notebook_data(self, repository_location_name, notebook_path: str):
+    def get_external_notebook_data(
+        self, repository_location_name: str, notebook_path: str
+    ) -> bytes:
         check.str_param(repository_location_name, "repository_location_name")
         check.str_param(notebook_path, "notebook_path")
         repository_location = self.get_repository_location(repository_location_name)
@@ -286,6 +310,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         self._version = version
         self._source = source
         self._read_only = read_only
+        self._checked_permissions: Set[str] = set()
 
     @property
     def instance(self) -> DagsterInstance:
@@ -294,7 +319,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def get_workspace_snapshot(self) -> Mapping[str, WorkspaceLocationEntry]:
         return self._workspace_snapshot
 
-    def get_location_entry(self, name) -> Optional[WorkspaceLocationEntry]:
+    def get_location_entry(self, name: str) -> Optional[WorkspaceLocationEntry]:
         return self._workspace_snapshot.get(name)
 
     def get_location_statuses(self) -> Sequence[WorkspaceLocationStatusEntry]:
@@ -319,12 +344,23 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def permissions(self) -> Mapping[str, PermissionResult]:
         return get_user_permissions(self._read_only)
 
+    def permissions_for_location(self, location_name: str) -> Mapping[str, PermissionResult]:
+        return get_location_scoped_user_permissions(self._read_only)
+
     def has_permission(self, permission: str) -> bool:
         permissions = self.permissions
         check.invariant(
             permission in permissions, f"Permission {permission} not listed in permissions map"
         )
+        self._checked_permissions.add(permission)
         return permissions[permission].enabled
+
+    def has_permission_for_location(self, permission: str, location_name: str) -> bool:
+        self._checked_permissions.add(permission)
+        return super().has_permission_for_location(permission, location_name)
+
+    def was_permission_checked(self, permission: str) -> bool:
+        return permission in self._checked_permissions
 
     @property
     def source(self) -> Optional[object]:
@@ -332,19 +368,18 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         The source of the request this WorkspaceRequestContext originated from.
         For example in Dagit this object represents the web request.
         """
-
         return self._source
 
 
 class IWorkspaceProcessContext(ABC):
     """
     Class that stores process-scoped information about a dagit session.
-    In most cases, you will want to create an `BaseWorkspaceRequestContext` to create a request-scoped
+    In most cases, you will want to create a `BaseWorkspaceRequestContext` to create a request-scoped
     object.
     """
 
     @abstractmethod
-    def create_request_context(self, source=None) -> BaseWorkspaceRequestContext:
+    def create_request_context(self, source: Optional[Any] = None) -> BaseWorkspaceRequestContext:
         """
         Create a usable fixed context for the scope of a request.
 
@@ -375,7 +410,7 @@ class IWorkspaceProcessContext(ABC):
     def instance(self) -> DagsterInstance:
         pass
 
-    def __enter__(self):
+    def __enter__(self) -> Self:  # type: ignore  # fmt: skip
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
@@ -386,9 +421,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     """
     This class is a process-scoped object that:
 
-    1. Maintain an update-to-date dictionary of repository locations
-    1. Create a `WorkspaceRequestContext` to be the workspace for each request
-    2. Run watch thread processes that monitor repository locations
+    1. Maintains an update-to-date dictionary of repository locations
+    2. Creates a `WorkspaceRequestContext` to be the workspace for each request
+    3. Runs watch thread processes that monitor repository locations
 
     To access a RepositoryLocation, you should create a `WorkspaceRequestContext`
     using `create_request_context`.
@@ -400,7 +435,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         workspace_load_target: Optional[WorkspaceLoadTarget],
         version: str = "",
         read_only: bool = False,
-        grpc_server_registry=None,
+        grpc_server_registry: Optional[GrpcServerRegistry] = None,
+        code_server_log_level: str = "INFO",
     ):
         self._stack = ExitStack()
 
@@ -433,11 +469,12 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             )
         else:
             self._grpc_server_registry = self._stack.enter_context(
-                ProcessGrpcServerRegistry(
+                GrpcServerRegistry(
                     instance=self._instance,
                     reload_interval=0,
                     heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
                     startup_timeout=instance.code_server_process_startup_timeout,
+                    log_level=code_server_log_level,
                 )
             )
 
@@ -447,7 +484,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         )
 
     @property
-    def workspace_load_target(self):
+    def workspace_load_target(self) -> Optional[WorkspaceLoadTarget]:
         return self._workspace_load_target
 
     @property
@@ -487,16 +524,19 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             )
 
     @property
-    def instance(self):
+    def instance(self) -> DagsterInstance:
         return self._instance
 
     @property
-    def read_only(self):
+    def read_only(self) -> bool:
         return self._read_only
 
     @property
     def permissions(self) -> Mapping[str, PermissionResult]:
         return get_user_permissions(True)
+
+    def permissions_for_location(self, _location_name: str) -> Mapping[str, PermissionResult]:
+        return get_location_scoped_user_permissions(True)
 
     @property
     def version(self) -> str:
@@ -528,8 +568,10 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 LocationStateChangeEvent(
                     LocationStateChangeEventType.LOCATION_ERROR,
                     location_name=location_name,
-                    message="Unable to reconnect to server. You can reload the server once it is "
-                    "reachable again",
+                    message=(
+                        "Unable to reconnect to server. You can reload the server once it is "
+                        "reachable again"
+                    ),
                 )
             ),
         )
@@ -639,7 +681,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             if entry.repository_location:
                 entry.repository_location.cleanup()
 
-    def create_request_context(self, source=None) -> WorkspaceRequestContext:
+    def create_request_context(self, source: Optional[object] = None) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
             instance=self._instance,
             workspace_snapshot=self.create_snapshot(),
@@ -670,7 +712,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._stack.close()
 
     def copy_for_test_instance(self, instance: DagsterInstance) -> "WorkspaceProcessContext":
-        """make a copy with a different instance, created for tests"""
+        """make a copy with a different instance, created for tests."""
         return WorkspaceProcessContext(
             instance=instance,
             workspace_load_target=self.workspace_load_target,

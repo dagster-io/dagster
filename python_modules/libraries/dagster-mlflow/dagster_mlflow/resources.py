@@ -10,9 +10,8 @@ from os import environ
 from typing import Any, Optional
 
 import mlflow
-from mlflow.entities.run_status import RunStatus
-
 from dagster import Field, Noneable, Permissive, StringSource, resource
+from mlflow.entities.run_status import RunStatus
 
 CONFIG_SCHEMA = {
     "experiment_name": Field(StringSource, is_required=True, description="MlFlow experiment name."),
@@ -63,7 +62,6 @@ class MlFlow(metaclass=MlflowMeta):
     """
 
     def __init__(self, context):
-
         # Context associated attributes
         self.log = context.log
         self.run_name = context.dagster_run.pipeline_name
@@ -101,7 +99,7 @@ class MlFlow(metaclass=MlflowMeta):
         to the same Mlflow run, even when multiprocess executors are used.
         """
         # Get the run id
-        run_id = self._get_current_run_id()  # pylint: disable=no-member
+        run_id = self._get_current_run_id()
         self._set_active_run(run_id=run_id)
         self._set_all_tags()
 
@@ -122,6 +120,7 @@ class MlFlow(metaclass=MlflowMeta):
             dagster_run_id (optional): The Dagster run id.
             When none is passed it fetches the dagster_run_id object set in
             the constructor.  Defaults to None.
+
         Returns:
             run_id (str or None): run_id if it is found else None
         """
@@ -135,7 +134,7 @@ class MlFlow(metaclass=MlflowMeta):
                 filter_string=f"tags.dagster_run_id='{dagster_run_id}'",
             )
             if not current_run_df.empty:
-                return current_run_df.run_id.values[0]  # pylint: disable=no-member
+                return current_run_df.run_id.values[0]
 
     def _set_active_run(self, run_id=None):
         """
@@ -156,7 +155,6 @@ class MlFlow(metaclass=MlflowMeta):
         """
         Catches the Mlflow exception if a run is already active.
         """
-
         try:
             run = mlflow.start_run(**kwargs)
             self.log.info(
@@ -240,7 +238,6 @@ def mlflow_tracking(context):
        when the Dagster run is finished.
 
     Examples:
-
         .. code-block:: python
 
             from dagster_mlflow import end_mlflow_on_run_finished, mlflow_tracking

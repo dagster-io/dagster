@@ -16,7 +16,7 @@ import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {logNodeLevel} from './logNodeLevel';
-import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
+import {RunDagsterRunEventFragment} from './types/RunFragments.types';
 
 const LOGS_PADDING_BOTTOM = 50;
 

@@ -7,11 +7,11 @@ import styled from 'styled-components/macro';
 import {gqlTypePredicate} from '../app/Util';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {TableSchema} from '../metadata/TableSchema';
-import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntry.types';
 import {Description} from '../pipelines/Description';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 
-import {DagsterTypeFragment} from './types/DagsterTypeFragment';
+import {DagsterTypeFragment} from './types/DagsterType.types';
 
 export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}) => {
   const tableSchema = type.metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'));
@@ -110,6 +110,7 @@ export const DAGSTER_TYPE_FRAGMENT = gql`
       }
     }
   }
-  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
+
   ${METADATA_ENTRY_FRAGMENT}
+  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;

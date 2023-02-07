@@ -5,7 +5,7 @@ import pendulum
 
 _IS_PENDULUM_2 = (
     hasattr(pendulum, "__version__")
-    and getattr(packaging.version.parse(pendulum.__version__), "major")
+    and getattr(packaging.version.parse(getattr(pendulum, "__version__")), "major")
     == 2  # pylint: disable=no-member
 )
 
@@ -16,13 +16,11 @@ def mock_pendulum_timezone(override_timezone):
         with pendulum.tz.test_local_timezone(  # pylint: disable=no-member
             pendulum.tz.timezone(override_timezone)  # pylint: disable=no-member
         ):
-
             yield
     else:
         with pendulum.tz.LocalTimezone.test(  # pylint: disable=no-member
             pendulum.Timezone.load(override_timezone)  # pylint: disable=no-member
         ):
-
             yield
 
 
@@ -42,6 +40,7 @@ def create_pendulum_time(year, month, day, *args, **kwargs):
 PendulumDateTime = (
     pendulum.DateTime if _IS_PENDULUM_2 else pendulum.Pendulum  # type: ignore[attr-defined]
 )
+
 
 # Workaround for issues with .in_tz() in pendulum:
 # https://github.com/sdispater/pendulum/issues/535

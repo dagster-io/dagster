@@ -7,13 +7,12 @@ import objgraph
 import pytest
 from dagit.graphql import GraphQLWS
 from dagit.webserver import DagitWebserver
-from starlette.testclient import TestClient
-
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget
 from dagster._legacy import execute_pipeline, pipeline, solid
 from dagster._utils import file_relative_path
+from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
     subscription PipelineRunLogsSubscription($runId: ID!) {
@@ -92,7 +91,6 @@ def test_event_log_subscription():
         with create_asgi_client(instance) as client:
             # pylint: disable=not-context-manager
             with client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
-
                 start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
                 gc.collect()
                 assert len(objgraph.by_type("async_generator")) == 1
@@ -115,7 +113,6 @@ def test_event_log_subscription_chunked():
         with create_asgi_client(instance) as client:
             # pylint: disable=not-context-manager
             with client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
-
                 start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
                 gc.collect()
                 assert len(objgraph.by_type("async_generator")) == 1
@@ -140,7 +137,6 @@ def test_compute_log_subscription(mock_watch_completed):
         with create_asgi_client(instance) as client:
             # pylint: disable=not-context-manager
             with client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
-
                 start_subscription(
                     ws,
                     COMPUTE_LOG_SUBSCRIPTION,

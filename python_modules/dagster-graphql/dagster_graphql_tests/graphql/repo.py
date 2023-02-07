@@ -10,23 +10,17 @@ from contextlib import contextmanager
 from copy import deepcopy
 from typing import List, Tuple
 
-from dagster_graphql.test.utils import (
-    define_out_of_process_context,
-    infer_pipeline_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
-
 from dagster import (
     Any,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
     AssetOut,
-    AssetSelection,
     AssetsDefinition,
+    AssetSelection,
     Bool,
     DagsterInstance,
+    DailyPartitionsDefinition,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOutput,
@@ -35,9 +29,9 @@ from dagster import (
     ExpectationResult,
     Field,
     HourlyPartitionsDefinition,
+    Int,
     IOManager,
     IOManagerDefinition,
-    Int,
     Map,
     MetadataEntry,
     Noneable,
@@ -56,9 +50,7 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
-)
-from dagster import _check as check
-from dagster import (
+    _check as check,
     asset,
     dagster_type_loader,
     dagster_type_materializer,
@@ -110,6 +102,12 @@ from dagster._legacy import (
 )
 from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    infer_pipeline_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
 
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
@@ -542,7 +540,10 @@ def naughty_programmer_pipeline():
     def throw_a_thing():
         try:
             try:
-                raise Exception("bad programmer, bad")
+                try:
+                    raise Exception("The inner sanctum")
+                except:
+                    raise Exception("bad programmer, bad")
             except Exception as e:
                 raise Exception("Outer exception") from e
         except Exception as e:
@@ -1178,7 +1179,7 @@ def define_schedules():
     @daily_schedule(
         pipeline_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
-        should_execute=lambda _: asdf,  # pylint: disable=undefined-variable
+        should_execute=lambda _: asdf,  # noqa: F821
     )
     def should_execute_error_schedule(_date):
         return {}
@@ -1186,7 +1187,7 @@ def define_schedules():
     @daily_schedule(
         pipeline_name="no_config_pipeline",
         start_date=today_at_midnight().subtract(days=1),
-        tags_fn_for_date=lambda _: asdf,  # pylint: disable=undefined-variable
+        tags_fn_for_date=lambda _: asdf,  # noqa: F821
     )
     def tags_error_schedule(_date):
         return {}
@@ -1196,7 +1197,7 @@ def define_schedules():
         start_date=today_at_midnight().subtract(days=1),
     )
     def run_config_error_schedule(_date):
-        return asdf  # pylint: disable=undefined-variable
+        return asdf  # noqa: F821
 
     @daily_schedule(
         pipeline_name="no_config_pipeline",
@@ -1298,6 +1299,10 @@ def define_sensors():
         )
 
     @sensor(job_name="no_config_pipeline")
+    def always_error_sensor(_):
+        raise Exception("OOPS")
+
+    @sensor(job_name="no_config_pipeline")
     def once_no_config_sensor(_):
         return RunRequest(
             run_key="once",
@@ -1334,6 +1339,7 @@ def define_sensors():
 
     return [
         always_no_config_sensor,
+        always_error_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
         multi_no_config_sensor,
@@ -1523,8 +1529,8 @@ def asset_one():
 
 
 @asset
-def asset_two(asset_one):  # pylint: disable=redefined-outer-name,unused-argument
-    return first_asset + 1
+def asset_two(asset_one):  # pylint: disable=redefined-outer-name
+    return asset_one + 1
 
 
 two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
@@ -1594,7 +1600,6 @@ time_partitioned_assets_job = build_assets_job(
 
 @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
 def yield_partition_materialization():
-    yield AssetMaterialization(asset_key=AssetKey("yield_partition_materialization"), partition="c")
     yield Output(5)
 
 
@@ -1677,31 +1682,31 @@ failure_assets_job = build_assets_job(
 
 @asset
 def foo(context):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return 5
 
 
 @asset
 def bar(context):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return 10
 
 
 @asset
 def foo_bar(context, foo, bar):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return foo + bar
 
 
 @asset
 def baz(context, foo_bar):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
     return foo_bar
 
 
 @asset
 def unconnected(context):
-    assert context.pipeline_def.asset_selection_data != None
+    assert context.pipeline_def.asset_selection_data is not None
 
 
 asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")
@@ -1769,8 +1774,8 @@ def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
 
 multipartitions_def = MultiPartitionsDefinition(
     {
-        "12": StaticPartitionsDefinition(["1", "2"]),
-        "ab": StaticPartitionsDefinition(["a", "b"]),
+        "date": DailyPartitionsDefinition(start_date="2022-01-01"),
+        "ab": StaticPartitionsDefinition(["a", "b", "c"]),
     }
 )
 

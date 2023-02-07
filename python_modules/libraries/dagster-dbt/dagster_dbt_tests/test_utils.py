@@ -1,8 +1,7 @@
 import pytest
+from dagster import AssetKey
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import generate_materializations
-
-from dagster import AssetKey
 
 from .sample_results import (
     DBT_18_RUN_RESULTS_SAMPLE,

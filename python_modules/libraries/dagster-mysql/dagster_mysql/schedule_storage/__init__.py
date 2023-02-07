@@ -1,1 +1,1 @@
-from .schedule_storage import MySQLScheduleStorage
+from .schedule_storage import MySQLScheduleStorage as MySQLScheduleStorage

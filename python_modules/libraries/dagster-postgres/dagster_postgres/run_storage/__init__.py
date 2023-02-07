@@ -1,1 +1,1 @@
-from .run_storage import PostgresRunStorage
+from .run_storage import PostgresRunStorage as PostgresRunStorage

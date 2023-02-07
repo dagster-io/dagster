@@ -1,6 +1,11 @@
 import re
 
 import pytest
+from dagster import (
+    __version__ as dagster_version,
+    graph,
+)
+from dagster._core.test_utils import environ, remove_none_recursively
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.job import (
     DAGSTER_PG_PASSWORD_ENV_VAR,
@@ -11,13 +16,8 @@ from dagster_k8s.job import (
 )
 from dagster_k8s.utils import sanitize_k8s_label
 
-from dagster import __version__ as dagster_version
-from dagster import graph
-from dagster._core.test_utils import environ, remove_none_recursively
-
 
 def test_job_serialization():
-
     cfg = DagsterK8sJobConfig(
         job_image="test/foo:latest",
         dagster_home="/opt/dagster/dagster_home",
@@ -720,7 +720,6 @@ K8s_LABEL_REGEX = r"(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?"
 
 
 def test_sanitize_labels_regex():
-
     assert re.fullmatch(K8s_LABEL_REGEX, sanitize_k8s_label("normal-string"))
 
     assert not re.fullmatch(

@@ -18,7 +18,9 @@ setup(
     author_email="hello@elementl.com",
     license="Apache-2.0",
     description="A Microsoft Teams client resource for posting to Microsoft Teams",
-    url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-msteams",
+    url=(
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-msteams"
+    ),
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

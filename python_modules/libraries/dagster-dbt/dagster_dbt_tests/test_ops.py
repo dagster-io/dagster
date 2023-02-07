@@ -1,11 +1,9 @@
 import pytest
-from dagster_dbt import dbt_build_op, dbt_cli_resource, dbt_run_op, dbt_seed_op, dbt_test_op
-
 from dagster import build_op_context, job
+from dagster_dbt import dbt_build_op, dbt_cli_resource, dbt_run_op, dbt_seed_op, dbt_test_op
 
 
 def test_seed_op(conn_string, test_project_dir, dbt_config_dir):  # pylint: disable=unused-argument
-
     dbt_resource = dbt_cli_resource.configured(
         {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
     )
@@ -17,7 +15,6 @@ def test_seed_op(conn_string, test_project_dir, dbt_config_dir):  # pylint: disa
 def test_build_op(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir, yield_asset_events
 ):  # pylint: disable=unused-argument
-
     dbt_resource = dbt_cli_resource.configured(
         {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
     )
@@ -41,7 +38,6 @@ def test_build_op(
 def test_run_op(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
-
     dbt_resource = dbt_cli_resource.configured(
         {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
     )
@@ -56,7 +52,6 @@ def test_run_op(
 def test_run_op_with_select(
     dbt_build, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
-
     dbt_resource = dbt_cli_resource.configured(
         {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir, "select": "least_caloric"}
     )
@@ -71,7 +66,6 @@ def test_run_op_with_select(
 def test_run_test_job(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
-
     dbt_resource = dbt_cli_resource.configured(
         {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
     )

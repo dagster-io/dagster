@@ -7,8 +7,9 @@ from typing import Dict, List, Optional, Union
 
 import packaging.version
 import yaml
+from typing_extensions import Literal, TypeAlias, TypedDict, TypeGuard
+
 from dagster_buildkite.git import ChangedFiles, get_commit_message
-from typing_extensions import Literal, TypeAlias, TypedDict
 
 BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
     "rex@elementl.com": "eng-buildkite-rex",
@@ -64,6 +65,12 @@ WaitStep: TypeAlias = Literal["wait"]
 
 BuildkiteStep: TypeAlias = Union[CommandStep, GroupStep, TriggerStep, WaitStep]
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
+BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
+
+
+def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
+    return isinstance(step, dict) and "commands" in step
+
 
 # ########################
 # ##### FUNCTIONS
@@ -89,7 +96,9 @@ def buildkite_yaml_for_steps(steps) -> str:
             "notify": [
                 {
                     "slack": f"elementl#{slack_channel}",
-                    "if": f"build.creator.email == '{buildkite_email}'  && build.state != 'canceled'",
+                    "if": (
+                        f"build.creator.email == '{buildkite_email}'  && build.state != 'canceled'"
+                    ),
                 }
                 for buildkite_email, slack_channel in BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP.items()
             ],
@@ -138,11 +147,9 @@ def connect_sibling_docker_container(
     return [
         # Now, we grab the IP address of the target container from within the target
         # bridge network and export it; this will let the tox tests talk to the target cot.
-        (
-            f"export {env_variable}=`docker inspect --format "
-            f"'{{{{ .NetworkSettings.Networks.{network_name}.IPAddress }}}}' "
-            f"{container_name}`"
-        )
+        f"export {env_variable}=`docker inspect --format "
+        f"'{{{{ .NetworkSettings.Networks.{network_name}.IPAddress }}}}' "
+        f"{container_name}`"
     ]
 
 
@@ -208,14 +215,6 @@ def skip_if_no_helm_changes():
         return None
 
     return "No helm changes"
-
-
-@functools.lru_cache(maxsize=None)
-def skip_coverage_if_feature_branch():
-    if not is_feature_branch():
-        return None
-
-    return "Skip coverage uploads until we're finished with our Buildkite refactor"
 
 
 def message_contains(substring: str) -> bool:

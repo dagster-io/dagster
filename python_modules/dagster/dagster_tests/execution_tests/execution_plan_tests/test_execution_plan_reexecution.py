@@ -1,9 +1,8 @@
 import os
 import pickle
 
-import pytest
-
 import dagster._check as check
+import pytest
 from dagster import DependencyDefinition, In, Int, Out, op
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import (

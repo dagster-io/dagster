@@ -5,8 +5,10 @@ from typing import Optional, Sequence, Union
 import click
 
 import dagster._check as check
-from dagster import DagsterInvariantViolationError
-from dagster import __version__ as dagster_version
+from dagster import (
+    DagsterInvariantViolationError,
+    __version__ as dagster_version,
+)
 from dagster._cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     repository_target_argument,
@@ -128,16 +130,14 @@ def check_repo_and_scheduler(repository: ExternalRepository, instance: DagsterIn
 
     if not os.getenv("DAGSTER_HOME"):
         raise click.UsageError(
-            (
-                "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
-                "environment variable to be set to an existing directory in your filesystem "
-                "that contains your dagster instance configuration file (dagster.yaml).\n"
-                "You can resolve this error by exporting the environment variable."
-                "For example, you can run the following command in your shell or "
-                "include it in your shell configuration file:\n"
-                '\texport DAGSTER_HOME="~/dagster_home"'
-                "\n\n"
-            )
+            "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
+            "environment variable to be set to an existing directory in your filesystem "
+            "that contains your dagster instance configuration file (dagster.yaml).\n"
+            "You can resolve this error by exporting the environment variable."
+            "For example, you can run the following command in your shell or "
+            "include it in your shell configuration file:\n"
+            '\texport DAGSTER_HOME="~/dagster_home"'
+            "\n\n"
         )
 
 
@@ -273,7 +273,6 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
                 )
             else:
                 try:
-
                     instance.start_schedule(external_repo.get_external_schedule(schedule_name))
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
@@ -429,7 +428,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                     external_schedule.get_external_origin_id(),
                     external_schedule.selector_id,
                 )
-                if schedule_state != None and schedule_state.status != InstigatorStatus.RUNNING:
+                if schedule_state is not None and schedule_state.status != InstigatorStatus.RUNNING:
                     click.UsageError(
                         "Cannot restart a schedule {name} because is not currently running".format(
                             name=schedule_state.instigator_name
@@ -457,7 +456,8 @@ def schedule_wipe_command():
 def execute_wipe_command(print_fn):
     with DagsterInstance.get() as instance:
         confirmation = click.prompt(
-            "Are you sure you want to turn off all schedules and delete all schedule history? Type DELETE"
+            "Are you sure you want to turn off all schedules and delete all schedule history? Type"
+            " DELETE"
         )
         if confirmation == "DELETE":
             instance.wipe_all_schedules()

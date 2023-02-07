@@ -2,7 +2,7 @@ import {Box, Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 
 interface Props {
   location: string;

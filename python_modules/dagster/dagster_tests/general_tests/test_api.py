@@ -4,7 +4,6 @@ import subprocess
 import sys
 
 import pytest
-
 from dagster._module_alias_map import AliasedModuleFinder, get_meta_path_insertion_index
 
 
@@ -19,9 +18,9 @@ def test_deprecated_imports():
     with pytest.warns(
         DeprecationWarning, match=re.escape("dagster_type_materializer is deprecated")
     ):
-        from dagster import dagster_type_materializer  # pylint: disable=unused-import
+        from dagster import dagster_type_materializer  # noqa: F401
     with pytest.warns(DeprecationWarning, match=re.escape("DagsterTypeMaterializer is deprecated")):
-        from dagster import DagsterTypeMaterializer  # pylint: disable=unused-import
+        from dagster import DagsterTypeMaterializer  # noqa: F401
 
 
 @pytest.fixture

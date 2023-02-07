@@ -1,3 +1,5 @@
+.PHONY: pyright
+
 # Makefile oddities:
 # - Commands must start with literal tab characters (\t), not spaces.
 # - Multi-command rules (like `black` below) by default terminate as soon as a command has a non-0
@@ -25,35 +27,14 @@ check_black:
 	black --check --fast \
     examples/docs_snippets
 
+pyright:
+	python scripts/run-pyright.py --all
 
-# NOTE: We use `git ls-files` instead of isort's built-in recursive discovery
-# because it is much faster. Note that we also need to skip files with `git
-# ls-files` (the `:!:` directives are exclued patterns). Even isort
-# `--skip`/`--filter-files` is very slow.
-isort:
-	isort \
-    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
-      ':!:examples/docs_snippets' \
-      ':!:*/snapshots/*.py'`
-	isort \
-   `git ls-files 'examples/docs_snippets/*.py'`
+ruff:
+	ruff --fix .
 
-check_isort:
-	isort --check \
-    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
-      ':!:examples/docs_snippets' \
-      ':!:*/snapshots/*.py'`
-	isort --check \
-    `git ls-files 'examples/docs_snippets/*.py'`
-
-pylint:
-	pylint \
-    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' \
-      'helm/*.py' 'python_modules/*.py' 'scripts/*.py' \
-      ':!:examples/with_airflow' \
-      ':!:python_modules/libraries/dagster-airflow' \
-      ':!:vendor' \
-      ':!:*/snapshots/*.py'`
+check_ruff:
+	ruff .
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict \
@@ -64,6 +45,9 @@ install_dev_python_modules:
 
 install_dev_python_modules_verbose:
 	python scripts/install_dev_python_modules.py
+
+install_dev_python_modules_verbose_m1:
+	python scripts/install_dev_python_modules.py -qqq --include-prebuilt-grpcio-wheel
 
 graphql:
 	cd js_modules/dagit/; make generate-graphql; make generate-perms
@@ -78,6 +62,8 @@ rebuild_dagit: sanity_check
 
 rebuild_dagit_with_profiling: sanity_check
 	cd js_modules/dagit/; yarn install && yarn build-with-profiling
+
+dev_install_m1_grpcio_wheel: install_dev_python_modules_verbose_m1 rebuild_dagit
 
 dev_install: install_dev_python_modules_verbose rebuild_dagit
 

@@ -4,13 +4,13 @@ import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {StepEventStatus} from '../graphql/types';
 import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
-import {StepEventStatus} from '../types/globalTypes';
 
 import {
   StepSummaryForRunQuery,
   StepSummaryForRunQueryVariables,
-} from './types/StepSummaryForRunQuery';
+} from './types/StepSummaryForRun.types';
 
 interface Props {
   runId: string;
@@ -20,7 +20,9 @@ export const StepSummaryForRun = (props: Props) => {
   const {runId} = props;
   const {data} = useQuery<StepSummaryForRunQuery, StepSummaryForRunQueryVariables>(
     STEP_SUMMARY_FOR_RUN_QUERY,
-    {variables: {runId}},
+    {
+      variables: {runId},
+    },
   );
 
   const run = data?.pipelineRunOrError;

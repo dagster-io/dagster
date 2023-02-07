@@ -65,6 +65,7 @@ def naive():
 
 # non_dyn_end
 
+
 # dyn_out_start
 @op(out=DynamicOut())
 def load_pieces():
@@ -116,6 +117,7 @@ def chained_alt():
 
 
 # dyn_chain_end
+
 
 # dyn_add_start
 @job

@@ -27,7 +27,7 @@ class DagsterMessageProps(
         ],
     )
 ):
-    """Internal class used to represent specific attributes about a logged message"""
+    """Internal class used to represent specific attributes about a logged message."""
 
     def __new__(
         cls,
@@ -98,7 +98,7 @@ class DagsterLoggingMetadata(
     )
 ):
     """Internal class used to represent the context in which a given message was logged (i.e. the
-    step, pipeline run, resource, etc.)
+    step, pipeline run, resource, etc.).
     """
 
     def __new__(
@@ -136,7 +136,6 @@ class DagsterLoggingMetadata(
 def construct_log_string(
     logging_metadata: DagsterLoggingMetadata, message_props: DagsterMessageProps
 ) -> str:
-
     from dagster._core.events import EVENT_TYPE_VALUE_TO_DISPLAY_STRING
 
     event_type_str = (
@@ -253,8 +252,7 @@ class DagsterLogHandler(logging.Handler):
         )
 
     def emit(self, record: logging.LogRecord):
-        """For any received record, add Dagster metadata, and have handlers handle it"""
-
+        """For any received record, add Dagster metadata, and have handlers handle it."""
         try:
             # to prevent the potential for infinite loops in which a handler produces log messages
             # which are then captured and then handled by that same handler (etc.), do not capture
@@ -322,14 +320,13 @@ class DagsterLogManager(logging.Logger):
         pipeline_run: Optional["DagsterRun"] = None,
     ) -> "DagsterLogManager":
         """Create a DagsterLogManager with a set of subservient loggers."""
-
         handlers = check.opt_sequence_param(handlers, "handlers", of_type=logging.Handler)
 
         managed_loggers = [get_dagster_logger()]
         python_log_level = logging.NOTSET
 
         if instance:
-            handlers += instance.get_handlers()
+            handlers = [*handlers, *instance.get_handlers()]
             managed_loggers += [
                 logging.getLogger(lname) if lname != "root" else logging.getLogger()
                 for lname in instance.managed_python_loggers

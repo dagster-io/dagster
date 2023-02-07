@@ -1,10 +1,9 @@
 # pylint: disable=no-value-for-parameter
 
-from dagster_ge.factory import ge_data_context, ge_validation_op_factory
-from pandas import read_csv
-
 from dagster import job, op
 from dagster._utils import file_relative_path
+from dagster_ge.factory import ge_data_context, ge_validation_op_factory
+from pandas import read_csv
 
 
 @op

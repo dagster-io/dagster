@@ -45,7 +45,7 @@ def execute_docker_push(image: str) -> None:
 
 
 def execute_docker_tag(local_image: str, remote_image: str) -> None:
-    """Re-tag an existing image"""
+    """Re-tag an existing image."""
     check.str_param(local_image, "local_image")
     check.str_param(remote_image, "remote_image")
 
@@ -57,12 +57,12 @@ def execute_docker_tag(local_image: str, remote_image: str) -> None:
 
 
 def python_version_image_tag(python_version: str, image_version: str) -> str:
-    """Dagster images are typically tagged as py<PYTHON VERSION>-<IMAGE VERSION>"""
+    """Dagster images are typically tagged as py<PYTHON VERSION>-<IMAGE VERSION>."""
     check.str_param(python_version, "python_version")
     check.str_param(image_version, "image_version")
     return "py{}-{}".format(python_version, image_version)
 
 
 def current_time_str() -> str:
-    """Should be UTC date string like 2020-07-11T035005"""
+    """Should be UTC date string like 2020-07-11T035005."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%S")

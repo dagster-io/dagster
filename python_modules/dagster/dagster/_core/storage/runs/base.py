@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
+
+from typing_extensions import TypedDict
 
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -14,6 +16,14 @@ from dagster._core.storage.pipeline_run import (
     TagBucket,
 )
 from dagster._daemon.types import DaemonHeartbeat
+
+if TYPE_CHECKING:
+    from dagster._core.host_representation.origin import ExternalPipelineOrigin
+
+
+class RunGroupInfo(TypedDict):
+    count: int
+    runs: Iterable[DagsterRun]
 
 
 class RunStorage(ABC, MayHaveInstanceWeakref):
@@ -41,7 +51,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def handle_run_event(self, run_id: str, event: DagsterEvent):
-        """Update run storage in accordance to a pipeline run related DagsterEvent
+        """Update run storage in accordance to a pipeline run related DagsterEvent.
 
         Args:
             run_id (str)
@@ -104,7 +114,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Mapping[str, Mapping[str, Union[Iterable[DagsterRun], int]]]:
+    ) -> Mapping[str, RunGroupInfo]:
         """Return all of the run groups present in the storage that include rows matching the
         given filter.
 
@@ -136,17 +146,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         # interface rather than burying them deeply paginated down. Note also that this query can
         # return no more run groups than there are runs in an equivalent call to get_runs, and no
         # more than 2x total instances of PipelineRun.
-
-    @abstractmethod
-    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
-        """Get a run by its id.
-
-        Args:
-            run_id (str): The id of the run
-
-        Returns:
-            Optional[PipelineRun]
-        """
 
     @abstractmethod
     def get_run_records(
@@ -258,7 +257,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> PipelineSnapshot:
-        """Fetch a snapshot by ID
+        """Fetch a snapshot by ID.
 
         Args:
             pipeline_snapshot_id (str)
@@ -302,7 +301,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def get_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> ExecutionPlanSnapshot:
-        """Fetch a snapshot by ID
+        """Fetch a snapshot by ID.
 
         Args:
             execution_plan_snapshot_id (str)
@@ -317,7 +316,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def delete_run(self, run_id: str):
-        """Remove a run from storage"""
+        """Remove a run from storage."""
 
     @property
     def supports_bucket_queries(self):
@@ -328,16 +327,17 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """Get run partition data for a given partitioned job."""
 
     def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
-        """Call this method to run any required data migrations"""
+        """Call this method to run any required data migrations."""
 
     def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
-        """Call this method to run any optional data migrations for optimized reads"""
+        """Call this method to run any optional data migrations for optimized reads."""
 
     def dispose(self):
         """Explicit lifecycle management."""
 
     def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
-        """Allows for optimizing database connection / use in the context of a long lived dagit process"""
+        """Allows for optimizing database connection / use in the context of a long lived dagit process.
+        """
 
     # Daemon Heartbeat Storage
     #
@@ -348,15 +348,15 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat):
-        """Called on a regular interval by the daemon"""
+        """Called on a regular interval by the daemon."""
 
     @abstractmethod
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
-        """Latest heartbeats of all daemon types"""
+        """Latest heartbeats of all daemon types."""
 
     @abstractmethod
     def wipe_daemon_heartbeats(self):
-        """Wipe all daemon heartbeats"""
+        """Wipe all daemon heartbeats."""
 
     # Backfill storage
     @abstractmethod
@@ -366,7 +366,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Sequence[PartitionBackfill]:
-        """Get a list of partition backfills"""
+        """Get a list of partition backfills."""
 
     @abstractmethod
     def get_backfill(self, backfill_id: str) -> Optional[PartitionBackfill]:
@@ -374,11 +374,11 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def add_backfill(self, partition_backfill: PartitionBackfill):
-        """Add partition backfill to run storage"""
+        """Add partition backfill to run storage."""
 
     @abstractmethod
     def update_backfill(self, partition_backfill: PartitionBackfill):
-        """Update a partition backfill in run storage"""
+        """Update a partition backfill in run storage."""
 
     def alembic_version(self):
         return None
@@ -398,3 +398,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def kvs_set(self, pairs: Mapping[str, str]) -> None:
         """Set the value for a given key in the current deployment."""
+
+    @abstractmethod
+    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalPipelineOrigin"):
+        ...

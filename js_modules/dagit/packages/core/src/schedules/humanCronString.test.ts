@@ -65,11 +65,6 @@ describe('humanCronString', () => {
     });
 
     describe('Invalid timezone', () => {
-      beforeEach(() => {
-        // `moment-timezone` will spew to the console, which is expected and not useful to us here.
-        jest.spyOn(console, 'error').mockImplementation(() => {});
-      });
-
       it('skips showing timezone if invalid', () => {
         const timezone = 'FooBar';
         expect(humanCronString('@daily', timezone)).toBe('At 12:00 AM');
@@ -102,13 +97,13 @@ describe('humanCronString', () => {
     });
 
     it('shows 24h format if locale uses it, and shows timezone if provided, if cron specifies a time', () => {
-      expect(humanCronString('@daily', timezone)).toBe('At 00:00 +07');
-      expect(humanCronString('@weekly', timezone)).toBe('At 00:00 +07, only on Sunday');
-      expect(humanCronString('@monthly', timezone)).toBe('At 00:00 +07, on day 1 of the month');
+      expect(humanCronString('@daily', timezone)).toBe('At 00:00 GMT+7');
+      expect(humanCronString('@weekly', timezone)).toBe('At 00:00 GMT+7, only on Sunday');
+      expect(humanCronString('@monthly', timezone)).toBe('At 00:00 GMT+7, on day 1 of the month');
       expect(humanCronString('0 23 ? * MON-FRI', timezone)).toBe(
-        'At 23:00 +07, Monday through Friday',
+        'At 23:00 GMT+7, Monday through Friday',
       );
-      expect(humanCronString('0 23 * * *', timezone)).toBe('At 23:00 +07');
+      expect(humanCronString('0 23 * * *', timezone)).toBe('At 23:00 GMT+7');
     });
 
     it('shows 24h format if locale uses it, does not show timezone if not provided', () => {
@@ -121,10 +116,10 @@ describe('humanCronString', () => {
 
     it('shows timezone in complex time cases', () => {
       expect(humanCronString('2-59/3 1,9,22 11-26 1-6 ?', timezone)).toBe(
-        'Every 3 minutes, minutes 2 through 59 past the hour, at 01:00 +07, 09:00 +07, and 22:00 +07, between day 11 and 26 of the month, January through June',
+        'Every 3 minutes, minutes 2 through 59 past the hour, at 01:00 GMT+7, 09:00 GMT+7, and 22:00 GMT+7, between day 11 and 26 of the month, January through June',
       );
       expect(humanCronString('12-50 0-10 22 * * * 2022', timezone)).toBe(
-        'Seconds 12 through 50 past the minute, minutes 0 through 10 past the hour, at 22:00 +07, only in 2022',
+        'Seconds 12 through 50 past the minute, minutes 0 through 10 past the hour, at 22:00 GMT+7, only in 2022',
       );
     });
   });

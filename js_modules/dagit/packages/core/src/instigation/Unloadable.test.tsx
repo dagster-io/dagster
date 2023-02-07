@@ -2,13 +2,13 @@ import {gql, useQuery} from '@apollo/client';
 import {act, render, screen} from '@testing-library/react';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {InstigationStatus} from '../graphql/types';
 import {TestProvider} from '../testing/TestProvider';
-import {InstigationStatus} from '../types/globalTypes';
 
 import {INSTIGATION_STATE_FRAGMENT} from './InstigationUtils';
 import {UnloadableSchedules, UnloadableSensors} from './Unloadable';
-import {UnloadableInstigationStatesQuery} from './types/UnloadableInstigationStatesQuery';
+import {UnloadableInstigationStatesQuery} from './types/Unloadable.test.types';
 
 describe('Unloadables', () => {
   const UNLOADABLE_INSTIGATION_STATES_QUERY = gql`
@@ -24,8 +24,8 @@ describe('Unloadables', () => {
       }
     }
 
-    ${PYTHON_ERROR_FRAGMENT}
     ${INSTIGATION_STATE_FRAGMENT}
+    ${PYTHON_ERROR_FRAGMENT}
   `;
 
   const defaultMocks = {

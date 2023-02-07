@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     FrozenSet,
@@ -18,8 +19,8 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions import (
     GraphDefinition,
-    IPipeline,
     InputDefinition,
+    IPipeline,
     JobDefinition,
     Node,
     NodeHandle,
@@ -118,9 +119,11 @@ class _PlanBuilder:
         if isinstance(pipeline, ReconstructablePipeline) and repository_load_data is not None:
             check.invariant(
                 pipeline.repository.repository_load_data == repository_load_data,
-                "When building an ExecutionPlan with explicit repository_load_data and a "
-                "ReconstructablePipeline, the repository_load_data on the pipeline must be identical "
-                "to passed-in repository_load_data.",
+                (
+                    "When building an ExecutionPlan with explicit repository_load_data and a"
+                    " ReconstructablePipeline, the repository_load_data on the pipeline must be"
+                    " identical to passed-in repository_load_data."
+                ),
             )
         self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
         self.resolved_run_config = check.inst_param(
@@ -179,8 +182,7 @@ class _PlanBuilder:
         self.step_output_map[key] = val
 
     def build(self) -> "ExecutionPlan":
-        """Builds the execution plan"""
-
+        """Builds the execution plan."""
         _check_persistent_storage_requirement(
             self.pipeline,
             self.mode_definition,
@@ -499,13 +501,13 @@ def get_step_input_source(
         #  make sure input is unconnected in the outer dependency structure too
         not solid.container_maps_input(input_handle.input_name)
     ):
-        if input_def.root_manager_key or input_def.input_manager_key:
-            return FromRootInputManager(solid_handle=handle, input_name=input_name)
         # can only load from source asset if assets defs are available
-        elif asset_layer.has_assets_defs and asset_layer.asset_key_for_input(
+        if asset_layer.has_assets_defs and asset_layer.asset_key_for_input(
             handle, input_handle.input_name
         ):
             return FromSourceAsset(solid_handle=handle, input_name=input_name)
+        elif input_def.root_manager_key or input_def.input_manager_key:
+            return FromRootInputManager(solid_handle=handle, input_name=input_name)
 
     if dependency_structure.has_direct_dep(input_handle):
         solid_output_handle = dependency_structure.get_direct_dep(input_handle)
@@ -723,7 +725,7 @@ class ExecutionPlan(
 
     def get_step_by_key(self, key: str) -> IExecutionStep:
         check.str_param(key, "key")
-        if not key in self.step_dict_by_key:
+        if key not in self.step_dict_by_key:
             check.failed(f"plan has no step with key {key}")
         return self.step_dict_by_key[key]
 
@@ -745,7 +747,7 @@ class ExecutionPlan(
         for step in self.step_dict.values():
             if isinstance(step, ExecutionStep):
                 deps[step.key] = step.get_execution_dependency_keys()
-            elif isinstance(step, UnresolvedMappedExecutionStep):
+            elif isinstance(step, (UnresolvedMappedExecutionStep, UnresolvedCollectExecutionStep)):
                 deps[step.key] = step.get_all_dependency_keys()
             else:
                 check.failed(f"Unexpected execution step type {step}")
@@ -767,10 +769,9 @@ class ExecutionPlan(
 
     def resolve(
         self,
-        mappings: Mapping[str, Mapping[str, Sequence[str]]],
+        mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]],
     ) -> Mapping[str, Set[str]]:
-        """Resolve any dynamic map or collect steps with the resolved dynamic mappings"""
-
+        """Resolve any dynamic map or collect steps with the resolved dynamic mappings."""
         previous = self.get_executable_step_deps()
 
         _update_from_resolved_dynamic_outputs(
@@ -805,7 +806,6 @@ class ExecutionPlan(
         bad_keys = []
 
         for handle in step_handles_to_validate_set:
-
             if handle not in self.step_dict:
                 # Ok if the entire dynamic step is selected to execute.
                 # https://github.com/dagster-io/dagster/issues/8000
@@ -834,7 +834,10 @@ class ExecutionPlan(
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(
-                f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}: {', '.join(bad_keys)}",
+                (
+                    f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}:"
+                    f" {', '.join(bad_keys)}"
+                ),
                 step_keys=bad_keys,
             )
 
@@ -946,7 +949,8 @@ class ExecutionPlan(
                 io_manager = getattr(resources, io_manager_key)
                 if not isinstance(io_manager, MemoizableIOManager):
                     raise DagsterInvariantViolationError(
-                        f"{pipeline_def.describe_target().capitalize()} uses memoization, but IO manager "
+                        f"{pipeline_def.describe_target().capitalize()} uses memoization, but IO"
+                        " manager "
                         f"'{io_manager_key}' is not a MemoizableIOManager. In order to use "
                         "memoization, all io managers need to subclass MemoizableIOManager. "
                         "Learn more about MemoizableIOManagers here: "
@@ -982,6 +986,8 @@ class ExecutionPlan(
         self,
         retry_mode: RetryMode,
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
+        max_concurrent: Optional[int] = None,
+        tag_concurrency_limits: Optional[List[Dict[str, Any]]] = None,
     ) -> "ActiveExecution":
         from .active import ActiveExecution
 
@@ -989,6 +995,8 @@ class ExecutionPlan(
             self,
             retry_mode,
             sort_key_fn,
+            max_concurrent,
+            tag_concurrency_limits,
         )
 
     def step_handle_for_single_step_plans(
@@ -1001,10 +1009,9 @@ class ExecutionPlan(
         # https://github.com/dagster-io/dagster/issues/2239
         if len(self.step_handles_to_execute) == 1:
             only_step = self.step_dict[self.step_handles_to_execute[0]]
-            check.invariant(
-                isinstance(only_step, ExecutionStep),
-                "Unexpected unresolved single step plan",
-            )
+            if not isinstance(only_step, ExecutionStep):
+                return None
+
             return cast(ExecutionStep, only_step).handle
 
         return None
@@ -1093,8 +1100,8 @@ class ExecutionPlan(
     ) -> "ExecutionPlan":
         if not execution_plan_snapshot.can_reconstruct_plan:
             raise DagsterInvariantViolationError(
-                "Tried to reconstruct an old ExecutionPlanSnapshot that was created before snapshots "
-                "had enough information to fully reconstruct the ExecutionPlan"
+                "Tried to reconstruct an old ExecutionPlanSnapshot that was created before"
+                " snapshots had enough information to fully reconstruct the ExecutionPlan"
             )
 
         step_dict: Dict[StepHandleUnion, IExecutionStep] = {}
@@ -1187,7 +1194,7 @@ def _update_from_resolved_dynamic_outputs(
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
     resolvable_map: Dict[FrozenSet[str], Sequence[Union[StepHandle, UnresolvedStepHandle]]],
     step_handles_to_execute: Sequence[StepHandleUnion],
-    dynamic_mappings: Mapping[str, Mapping[str, Sequence[str]]],
+    dynamic_mappings: Mapping[str, Mapping[str, Optional[Sequence[str]]]],
 ) -> None:
     resolved_steps: List[ExecutionStep] = []
     key_sets_to_clear: List[FrozenSet[str]] = []
@@ -1269,10 +1276,10 @@ def _check_persistent_storage_requirement(
                 '@pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})])'
             )
         raise DagsterUnmetExecutorRequirementsError(
-            f"You have attempted to use an executor that uses multiple processes, but your {target} "
-            f"includes {node} outputs that will not be stored somewhere where other processes can "
-            "retrieve them. Please use a persistent IO manager for these outputs. E.g. with\n"
-            f"    {suggestion}"
+            "You have attempted to use an executor that uses multiple processes, but your"
+            f" {target} includes {node} outputs that will not be stored somewhere where other"
+            " processes can retrieve them. Please use a persistent IO manager for these outputs."
+            f" E.g. with\n    {suggestion}"
         )
 
 
@@ -1377,14 +1384,6 @@ def _compute_artifacts_persisted(
     return True
 
 
-def _get_step_by_key(step_dict: Dict[StepHandleUnion, IExecutionStep], key: str) -> IExecutionStep:
-    check.str_param(key, "key")
-    for step in step_dict.values():
-        if step.key == key:
-            return step
-    check.failed(f"plan has no step with key {key}")
-
-
 def _get_steps_to_execute_by_level(
     step_dict: Mapping[StepHandleUnion, IExecutionStep],
     step_dict_by_key: Mapping[str, IExecutionStep],
@@ -1485,6 +1484,7 @@ def _compute_step_maps(
         )
 
     step_keys_to_execute = [step_handle.to_key() for step_handle in step_handles_to_execute]
+    past_mappings = known_state.dynamic_mappings if known_state else {}
 
     executable_map: Dict[str, Union[StepHandle, ResolvedFromDynamicStepHandle]] = {}
     resolvable_map: Dict[
@@ -1496,10 +1496,10 @@ def _compute_step_maps(
             executable_map[step.key] = step.handle
         elif isinstance(step, (UnresolvedMappedExecutionStep, UnresolvedCollectExecutionStep)):
             for key in step.resolved_by_step_keys:
-                if key not in step_keys_to_execute:
+                if key not in step_keys_to_execute and key not in past_mappings:
                     raise DagsterInvariantViolationError(
-                        f'Unresolved ExecutionStep "{step.key}" is resolved by "{key}" '
-                        "which is not part of the current step selection"
+                        f'Unresolved ExecutionStep "{step.key}" is resolved by "{key}" which is not'
+                        " part of the current step selection or known state from parent run."
                     )
 
             resolvable_map[step.resolved_by_step_keys].append(step.handle)
@@ -1508,14 +1508,14 @@ def _compute_step_maps(
                 step.key in executable_map, "Expect all steps to be executable or resolvable"
             )
 
-    if known_state:
+    if past_mappings:
         _update_from_resolved_dynamic_outputs(
             step_dict,
             step_dict_by_key,
             executable_map,
             dict(resolvable_map),
             step_handles_to_execute,
-            known_state.dynamic_mappings,
+            past_mappings,
         )
 
     return (executable_map, dict(resolvable_map))

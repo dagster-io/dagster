@@ -9,7 +9,10 @@ import {linkToRunEvent} from '../runs/RunUtils';
 import {RepoAddress} from '../workspace/types';
 
 import {SidebarSection} from './SidebarComponents';
-import {SidebarOpGraphsQuery, SidebarOpGraphsQueryVariables} from './types/SidebarOpGraphsQuery';
+import {
+  SidebarOpGraphsQuery,
+  SidebarOpGraphsQueryVariables,
+} from './types/SidebarOpExecutionGraphs.types';
 
 export const StateColors = {
   SUCCESS: Colors.Green500,
@@ -35,7 +38,6 @@ export const SidebarOpExecutionGraphs: React.FC<{
           pipelineName,
         },
       },
-      fetchPolicy: 'cache-and-network',
     },
   );
   const stepStats =

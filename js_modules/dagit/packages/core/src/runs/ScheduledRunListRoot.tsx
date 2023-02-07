@@ -3,25 +3,26 @@ import {Page, Alert, ButtonLink, Colors, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {REPOSITORY_SCHEDULES_FRAGMENT} from '../schedules/ScheduleUtils';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
-import {SchedulesNextTicks} from '../schedules/SchedulesNextTicks';
+import {
+  REPOSITORY_FOR_NEXT_TICKS_FRAGMENT,
+  SchedulesNextTicks,
+} from '../schedules/SchedulesNextTicks';
 import {Loading} from '../ui/Loading';
 
 import {RunsPageHeader} from './RunsPageHeader';
-import {SchedulerInfoQuery} from './types/SchedulerInfoQuery';
+import {ScheduledRunsListQuery} from './types/ScheduledRunListRoot.types';
 
 export const ScheduledRunListRoot = () => {
   useTrackPageView();
-  useDocumentTitle('Scheduled runs');
+  useDocumentTitle('Runs | Scheduled');
 
-  const queryResult = useQuery<SchedulerInfoQuery>(SCHEDULER_INFO_QUERY, {
-    fetchPolicy: 'cache-and-network',
+  const queryResult = useQuery<ScheduledRunsListQuery>(SCHEDULED_RUNS_LIST_QUERY, {
     partialRefetch: true,
     notifyOnNetworkStatusChange: true,
   });
@@ -78,8 +79,8 @@ export const ScheduledRunListRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default ScheduledRunListRoot;
 
-const SCHEDULER_INFO_QUERY = gql`
-  query SchedulerInfoQuery {
+const SCHEDULED_RUNS_LIST_QUERY = gql`
+  query ScheduledRunsListQuery {
     instance {
       ...InstanceHealthFragment
     }
@@ -89,14 +90,16 @@ const SCHEDULER_INFO_QUERY = gql`
           __typename
           id
           ... on Repository {
-            ...RepositorySchedulesFragment
+            id
+            ...RepositoryForNextTicksFragment
           }
         }
       }
       ...PythonErrorFragment
     }
   }
+
   ${INSTANCE_HEALTH_FRAGMENT}
-  ${REPOSITORY_SCHEDULES_FRAGMENT}
+  ${REPOSITORY_FOR_NEXT_TICKS_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

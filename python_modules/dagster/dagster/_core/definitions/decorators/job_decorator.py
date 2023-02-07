@@ -155,6 +155,9 @@ def job(
     ops (or graphs).
 
     Args:
+        compose_fn (Callable[..., Any]:
+            The decorated function. The body should contain op or graph invocations. Unlike op
+            functions, does not accept a context argument.
         name (Optional[str]):
             The name for the Job. Defaults to the name of the this graph.
         resource_defs (Optional[Mapping[str, ResourceDefinition]]):
@@ -194,15 +197,30 @@ def job(
             How this Job will be executed. Defaults to :py:class:`multiprocess_executor` .
         op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops in this job.
             Only used if retry policy is not defined on the op definition or op invocation.
-        version_strategy (Optional[VersionStrategy]):
+        version_strategy (Optional[VersionStrategy]): (Deprecated)
             Defines how each op (and optionally, resource) in the job can be versioned. If
-            provided, memoization will be enabled for this job.
+            provided, memoization will be enabled for this job. This is deprecated in favor of asset
+            versioning.
         partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition keys
             that can parameterize the job. If this argument is supplied, the config argument
             can't also be supplied.
         input_values (Optional[Mapping[str, Any]]):
             A dictionary that maps python objects to the top-level inputs of a job.
 
+    Examples:
+        .. code-block:: python
+
+            @op
+            def return_one():
+                return 1
+
+            @op
+            def add_one(in1):
+                return in1 + 1
+
+            @job
+            def job1():
+                add_one(return_one())
     """
     if compose_fn is not None:
         check.invariant(description is None)

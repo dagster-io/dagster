@@ -68,7 +68,6 @@ class ConfigType:
         description: Optional[str] = None,
         type_params: Optional[Sequence["ConfigType"]] = None,
     ):
-
         self.key: str = check.str_param(key, "key")
         self.kind: ConfigTypeKind = check.inst_param(kind, "kind", ConfigTypeKind)
         self.given_name: Optional[str] = check.opt_str_param(given_name, "given_name")
@@ -321,8 +320,7 @@ class Enum(ConfigType):
 
         check.failed(
             (
-                "Should never reach this. config_value should be pre-validated. "
-                "Got {config_value}"
+                "Should never reach this. config_value should be pre-validated. Got {config_value}"
             ).format(config_value=value)
         )
 
@@ -338,7 +336,6 @@ class Enum(ConfigType):
                 The name for the enum. If not present, `enum.__name__` will be used.
 
         Example:
-
         .. code-block:: python
 
             class Color(enum.Enum):
@@ -407,7 +404,9 @@ class ScalarUnion(ConfigType):
     ):
         from .field import resolve_to_config_type
 
-        self.scalar_type = resolve_to_config_type(scalar_type)
+        self.scalar_type = check.inst(
+            cast(ConfigType, resolve_to_config_type(scalar_type)), ConfigType
+        )
         self.non_scalar_type = resolve_to_config_type(non_scalar_schema)
 
         check.param_invariant(self.scalar_type.kind == ConfigTypeKind.SCALAR, "scalar_type")
@@ -429,7 +428,7 @@ class ScalarUnion(ConfigType):
         )
 
     def type_iterator(self) -> Iterator["ConfigType"]:
-        yield from self.scalar_type.type_iterator()
+        yield from self.scalar_type.type_iterator()  # type: ignore
         yield from self.non_scalar_type.type_iterator()
         yield from super().type_iterator()
 

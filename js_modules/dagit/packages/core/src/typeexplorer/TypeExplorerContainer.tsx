@@ -10,7 +10,7 @@ import {TypeExplorer, TYPE_EXPLORER_FRAGMENT} from './TypeExplorer';
 import {
   TypeExplorerContainerQuery,
   TypeExplorerContainerQueryVariables,
-} from './types/TypeExplorerContainerQuery';
+} from './types/TypeExplorerContainer.types';
 
 interface ITypeExplorerContainerProps {
   explorerPath: ExplorerPath;
@@ -27,7 +27,6 @@ export const TypeExplorerContainer: React.FC<ITypeExplorerContainerProps> = ({
   const queryResult = useQuery<TypeExplorerContainerQuery, TypeExplorerContainerQueryVariables>(
     TYPE_EXPLORER_CONTAINER_QUERY,
     {
-      fetchPolicy: 'cache-and-network',
       variables: {
         pipelineSelector,
         dagsterTypeName: typeName,
@@ -76,5 +75,6 @@ const TYPE_EXPLORER_CONTAINER_QUERY = gql`
       }
     }
   }
+
   ${TYPE_EXPLORER_FRAGMENT}
 `;

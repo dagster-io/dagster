@@ -1,13 +1,13 @@
 import {gql, useSubscription} from '@apollo/client';
 import * as React from 'react';
 
-import {ComputeIOType} from '../types/globalTypes';
+import {ComputeIoType} from '../graphql/types';
 
 import {
+  ComputeLogForSubscriptionFragment,
   ComputeLogsSubscription,
-  ComputeLogsSubscription_computeLogs,
   ComputeLogsSubscriptionVariables,
-} from './types/ComputeLogsSubscription';
+} from './types/useComputeLogs.types';
 
 const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 
@@ -15,9 +15,9 @@ const slice = (s: string) =>
   s.length < MAX_STREAMING_LOG_BYTES ? s : s.slice(-MAX_STREAMING_LOG_BYTES);
 
 const merge = (
-  a: ComputeLogsSubscription_computeLogs | null,
-  b: ComputeLogsSubscription_computeLogs | null,
-): ComputeLogsSubscription_computeLogs | null => {
+  a: ComputeLogForSubscriptionFragment | null,
+  b: ComputeLogForSubscriptionFragment | null,
+): ComputeLogForSubscriptionFragment | null => {
   if (!b) {
     return a;
   }
@@ -38,14 +38,14 @@ const merge = (
 
 interface State {
   stepKey: string;
-  stdout: ComputeLogsSubscription_computeLogs | null;
-  stderr: ComputeLogsSubscription_computeLogs | null;
+  stdout: ComputeLogForSubscriptionFragment | null;
+  stderr: ComputeLogForSubscriptionFragment | null;
   isLoading: boolean;
 }
 
 type Action =
-  | {type: 'stdout'; stepKey: string; log: ComputeLogsSubscription_computeLogs | null}
-  | {type: 'stderr'; stepKey: string; log: ComputeLogsSubscription_computeLogs | null};
+  | {type: 'stdout'; stepKey: string; log: ComputeLogForSubscriptionFragment | null}
+  | {type: 'stderr'; stepKey: string; log: ComputeLogForSubscriptionFragment | null};
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
@@ -76,7 +76,7 @@ export const useComputeLogs = (runId: string, stepKey: string) => {
     COMPUTE_LOGS_SUBSCRIPTION,
     {
       fetchPolicy: 'no-cache',
-      variables: {runId, stepKey, ioType: ComputeIOType.STDOUT, cursor: null},
+      variables: {runId, stepKey, ioType: ComputeIoType.STDOUT, cursor: null},
       onSubscriptionData: ({subscriptionData}) => {
         dispatch({type: 'stdout', stepKey, log: subscriptionData.data?.computeLogs || null});
       },
@@ -87,7 +87,7 @@ export const useComputeLogs = (runId: string, stepKey: string) => {
     COMPUTE_LOGS_SUBSCRIPTION,
     {
       fetchPolicy: 'no-cache',
-      variables: {runId, stepKey, ioType: ComputeIOType.STDERR, cursor: null},
+      variables: {runId, stepKey, ioType: ComputeIoType.STDERR, cursor: null},
       onSubscriptionData: ({subscriptionData}) => {
         dispatch({type: 'stderr', stepKey, log: subscriptionData.data?.computeLogs || null});
       },
@@ -105,10 +105,14 @@ const COMPUTE_LOGS_SUBSCRIPTION = gql`
     $cursor: String
   ) {
     computeLogs(runId: $runId, stepKey: $stepKey, ioType: $ioType, cursor: $cursor) {
-      path
-      cursor
-      data
-      downloadUrl
+      ...ComputeLogForSubscription
     }
+  }
+
+  fragment ComputeLogForSubscription on ComputeLogFile {
+    path
+    cursor
+    data
+    downloadUrl
   }
 `;

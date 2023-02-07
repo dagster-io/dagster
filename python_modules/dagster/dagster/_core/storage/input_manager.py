@@ -1,26 +1,26 @@
 from abc import ABC, abstractmethod
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Callable, Optional
+from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union, cast, overload
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from dagster._core.definitions.resource_definition import (
-    ResourceDefinition,
-    ResourceFunction,
-    is_context_provided,
-)
+from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext
 
-InputLoadFn: TypeAlias = Callable[["InputContext", object], object]
+InputLoadFn: TypeAlias = Union[
+    Callable[["InputContext"], object],
+    Callable[[], object],
+]
 
 
 class InputManager(ABC):
@@ -45,7 +45,8 @@ class IInputManagerDefinition:
     @abstractmethod
     def input_config_schema(self) -> IDefinitionConfigSchema:
         """The schema for per-input configuration for inputs that are managed by this
-        input manager"""
+        input manager.
+        """
 
 
 class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
@@ -85,7 +86,9 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         return self._input_config_schema
 
     def copy_for_configured(
-        self, description: Optional[str], config_schema: CoercableToConfigSchema, _
+        self,
+        description: Optional[str],
+        config_schema: CoercableToConfigSchema,
     ) -> "InputManagerDefinition":
         return InputManagerDefinition(
             config_schema=config_schema,
@@ -96,6 +99,14 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         )
 
 
+@overload
+def input_manager(
+    config_schema: InputLoadFn,
+) -> InputManagerDefinition:
+    ...
+
+
+@overload
 def input_manager(
     config_schema: Optional[CoercableToConfigSchema] = None,
     description: Optional[str] = None,
@@ -103,6 +114,16 @@ def input_manager(
     required_resource_keys: Optional[AbstractSet[str]] = None,
     version: Optional[str] = None,
 ) -> Callable[[InputLoadFn], InputManagerDefinition]:
+    ...
+
+
+def input_manager(
+    config_schema: Union[InputLoadFn, Optional[CoercableToConfigSchema]] = None,
+    description: Optional[str] = None,
+    input_config_schema: Optional[CoercableToConfigSchema] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
+    version: Optional[str] = None,
+) -> Union[InputManagerDefinition, Callable[[InputLoadFn], InputManagerDefinition]]:
     """Define an input manager.
 
     Input managers load op inputs, either from upstream outputs or by providing default values.
@@ -149,13 +170,14 @@ def input_manager(
         def csv_loader(context):
             return read_csv(context.config["path"])
     """
-
-    if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
+    if _is_input_load_fn(config_schema):
         return _InputManagerDecoratorCallable()(config_schema)
+
+    config_schema = cast(Optional[CoercableToConfigSchema], config_schema)
 
     def _wrap(load_fn: InputLoadFn) -> InputManagerDefinition:
         return _InputManagerDecoratorCallable(
-            config_schema=config_schema,
+            config_schema=config_schema,  # type: ignore  # fmt: skip
             description=description,
             version=version,
             input_config_schema=input_config_schema,
@@ -165,19 +187,23 @@ def input_manager(
     return _wrap
 
 
+def _is_input_load_fn(obj: Union[InputLoadFn, CoercableToConfigSchema]) -> TypeGuard[InputLoadFn]:
+    return callable(obj) and not is_callable_valid_config_arg(obj)
+
+
 class InputManagerWrapper(InputManager):
-    def __init__(self, load_fn):
+    def __init__(self, load_fn: InputLoadFn):
         self._load_fn = load_fn
 
-    def load_input(self, context):
+    def load_input(self, context: "InputContext") -> object:
         # the @input_manager decorated function (self._load_fn) may return a direct value that
         # should be used or an instance of an InputManager. So we call self._load_fn and see if the
         # result is an InputManager. If so we call it's load_input method
         intermediate = (
             # type-ignore because function being used as attribute
-            self._load_fn(context)
-            if is_context_provided(self._load_fn)
-            else self._load_fn()  # type: ignore
+            self._load_fn(context)  # type: ignore  # fmt: skip
+            if has_at_least_one_parameter(self._load_fn)  # type: ignore  # fmt: skip
+            else self._load_fn()  # type: ignore  # (strict type guard)
         )
 
         if isinstance(intermediate, InputManager):
