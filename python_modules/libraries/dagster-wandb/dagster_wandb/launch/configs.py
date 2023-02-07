@@ -1,5 +1,5 @@
 from dagster import Bool, Field, Noneable, Permissive, String
-from dagster.core.types.dagster_type import Array  # pylint: disable=no-name-in-module, import-error
+from dagster._core.types.dagster_type import Array
 
 
 def launch_config():

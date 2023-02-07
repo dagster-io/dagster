@@ -32,7 +32,7 @@ MY_TABLE = "my_table"
     compute_kind="wandb",
     metadata={"wandb_artifact_configuration": wandb_artifact_configuration},
 )
-def write_advanced_artifact() -> wandb.sdk.wandb_artifacts.Artifact:
+def write_advanced_artifact() -> wandb.wandb_sdk.wandb_artifacts.Artifact:
     """Example that writes an advanced Artifact.
 
     Here we use the full power of the integration with W&B Artifacts.
@@ -132,12 +132,14 @@ def get_path(context: OpExecutionContext, path: str) -> None:
     },
     output_required=False,
 )
-def get_artifact(context: OpExecutionContext, artifact: wandb.apis.public.Artifact) -> None:
+def get_artifact(
+    context: OpExecutionContext, artifact: wandb.wandb_sdk.wandb_artifacts.Artifact
+) -> None:
     """Example that gets the entire Artifact object.
 
     Args:
         context (OpExecutionContext): Dagster execution context
-        artifact (wandb.apis.public.Artifact): Downloaded Artifact object
+        artifact (wandb.wandb_sdk.wandb_artifacts.Artifact): Downloaded Artifact object
 
     Here, we use the integration to collect the entire W&B Artifact object created from in first
     asset.

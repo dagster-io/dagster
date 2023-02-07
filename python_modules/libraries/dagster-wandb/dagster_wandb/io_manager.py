@@ -721,14 +721,14 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
         dagster_run_id = context.run_id  # type: ignore
 
     config: Config = {
-        "dagster_run_id": dagster_run_id,
+        "dagster_run_id": dagster_run_id or "",
         "wandb_host": wandb_host,
         "wandb_entity": wandb_entity,
         "wandb_project": wandb_project,
         "wandb_run_name": wandb_run_name,
         "wandb_run_id": wandb_run_id,
         "wandb_run_tags": wandb_run_tags,
-        "base_dir": base_dir,
+        "base_dir": base_dir,  # type: ignore
         "cache_duration_in_minutes": cache_duration_in_minutes,
     }
     return ArtifactsIOManager(wandb_client, config)
