@@ -1040,6 +1040,12 @@ export type EventConnection = {
 
 export type EventConnectionOrError = EventConnection | PythonError | RunNotFoundError;
 
+export type EventTag = {
+  __typename: 'EventTag';
+  key: Scalars['String'];
+  value: Scalars['String'];
+};
+
 export type ExecutionMetadata = {
   parentRunId?: InputMaybe<Scalars['String']>;
   rootRunId?: InputMaybe<Scalars['String']>;
@@ -1879,6 +1885,7 @@ export type MaterializationEvent = DisplayableEvent &
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
     stepStats: RunStepStats;
+    tags: Array<EventTag>;
     timestamp: Scalars['String'];
   };
 
@@ -2064,6 +2071,7 @@ export type ObservationEvent = DisplayableEvent &
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
     stepStats: RunStepStats;
+    tags: Array<EventTag>;
     timestamp: Scalars['String'];
   };
 

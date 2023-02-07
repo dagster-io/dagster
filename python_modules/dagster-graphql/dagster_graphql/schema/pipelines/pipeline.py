@@ -866,7 +866,7 @@ class GrapheneJob(GraphenePipeline):
 
     # doesn't inherit from base class
     def __init__(self, external_pipeline, batch_loader=None):
-        super().__init__()  # type: ignore  # (graphene weirdness)
+        super().__init__()
         self._external_pipeline = check.inst_param(
             external_pipeline, "external_pipeline", ExternalPipeline
         )

@@ -64,6 +64,91 @@ class MappedInputPlaceholder:
     """Marker for holding places in fan-in lists where input mappings will feed."""
 
 
+class InvokedNodeOutputHandle:
+    """The return value for an output when invoking a node in a composition function."""
+
+    solid_name: str
+    output_name: str
+    node_type: str
+
+    def __init__(self, solid_name: str, output_name: str, node_type: str):
+        self.solid_name = check.str_param(solid_name, "solid_name")
+        self.output_name = check.str_param(output_name, "output_name")
+        self.node_type = check.str_param(node_type, "node_type")
+
+    def __iter__(self) -> NoReturn:
+        raise DagsterInvariantViolationError(
+            'Attempted to iterate over an {cls}. This object represents the output "{out}" '
+            'from the solid "{solid}". Consider defining multiple Outs if you seek to pass '
+            "different parts of this output to different solids.".format(
+                cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
+            )
+        )
+
+    def __getitem__(self, idx: object) -> NoReturn:
+        raise DagsterInvariantViolationError(
+            'Attempted to index in to an {cls}. This object represents the output "{out}" '
+            "from the {described_node}. Consider defining multiple Outs if you seek to pass "
+            "different parts of this output to different {node_type}s.".format(
+                cls=self.__class__.__name__,
+                out=self.output_name,
+                described_node=self.describe_node(),
+                node_type=self.node_type,
+            )
+        )
+
+    def describe_node(self) -> str:
+        return f"{self.node_type} '{self.solid_name}'"
+
+    def alias(self, _) -> NoReturn:
+        raise DagsterInvariantViolationError(
+            "In {source} {name}, attempted to call alias method for {cls}. This object "
+            'represents the output "{out}" from the already invoked {described_node}. Consider '
+            "checking the location of parentheses.".format(
+                source=current_context().source,
+                name=current_context().name,
+                cls=self.__class__.__name__,
+                out=self.output_name,
+                described_node=self.describe_node(),
+            )
+        )
+
+    def with_hooks(self, _) -> NoReturn:
+        raise DagsterInvariantViolationError(
+            "In {source} {name}, attempted to call hook method for {cls}. This object "
+            'represents the output "{out}" from the already invoked {described_node}. Consider '
+            "checking the location of parentheses.".format(
+                source=current_context().source,
+                name=current_context().name,
+                cls=self.__class__.__name__,
+                out=self.output_name,
+                described_node=self.describe_node(),
+            )
+        )
+
+
+class InputMappingNode(NamedTuple):
+    input_def: InputDefinition
+
+
+class DynamicFanIn(NamedTuple):
+    """
+    Type to signify collecting over a dynamic output, output by collect() on a
+    InvokedNodeDynamicOutputWrapper.
+    """
+
+    solid_name: str
+    output_name: str
+
+
+InputSource = Union[
+    InvokedNodeOutputHandle,
+    InputMappingNode,
+    DynamicFanIn,
+    List[Union[InvokedNodeOutputHandle, InputMappingNode]],
+]
+
+
 def _not_invoked_warning(
     solid: "PendingNodeInvocation",
     context_source: str,
@@ -150,7 +235,7 @@ class InProgressCompositionContext:
         self,
         given_alias: Optional[str],
         node_def: NodeDefinition,
-        input_bindings: Mapping[str, Any],
+        input_bindings: Mapping[str, InputSource],
         tags: Optional[frozentags],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         retry_policy: Optional[RetryPolicy],
@@ -374,15 +459,7 @@ class PendingNodeInvocation:
                 return op_invocation_result(self, None, *args, **kwargs)
 
         assert_in_composition(node_name, self.node_def)
-        input_bindings: Dict[
-            str,
-            Union[
-                InvokedNodeOutputHandle,
-                InputMappingNode,
-                DynamicFanIn,
-                List[Union[InvokedNodeOutputHandle, InputMappingNode]],
-            ],
-        ] = {}
+        input_bindings: Dict[str, InputSource] = {}
 
         # handle *args
         for idx, output_node in enumerate(args):
@@ -692,83 +769,10 @@ class InvokedNode(NamedTuple):
 
     node_name: str
     node_def: NodeDefinition
-    input_bindings: Mapping[str, Any]
+    input_bindings: Mapping[str, InputSource]
     tags: Optional[frozentags]
     hook_defs: Optional[AbstractSet[HookDefinition]]
     retry_policy: Optional[RetryPolicy]
-
-
-class InvokedNodeOutputHandle:
-    """The return value for an output when invoking a node in a composition function."""
-
-    solid_name: str
-    output_name: str
-    node_type: str
-
-    def __init__(self, solid_name: str, output_name: str, node_type: str):
-        self.solid_name = check.str_param(solid_name, "solid_name")
-        self.output_name = check.str_param(output_name, "output_name")
-        self.node_type = check.str_param(node_type, "node_type")
-
-    def __iter__(self) -> NoReturn:
-        raise DagsterInvariantViolationError(
-            'Attempted to iterate over an {cls}. This object represents the output "{out}" '
-            'from the solid "{solid}". Consider defining multiple Outs if you seek to pass '
-            "different parts of this output to different solids.".format(
-                cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
-            )
-        )
-
-    def __getitem__(self, idx: object) -> NoReturn:
-        raise DagsterInvariantViolationError(
-            'Attempted to index in to an {cls}. This object represents the output "{out}" '
-            "from the {described_node}. Consider defining multiple Outs if you seek to pass "
-            "different parts of this output to different {node_type}s.".format(
-                cls=self.__class__.__name__,
-                out=self.output_name,
-                described_node=self.describe_node(),
-                node_type=self.node_type,
-            )
-        )
-
-    def describe_node(self) -> str:
-        return f"{self.node_type} '{self.solid_name}'"
-
-    def alias(self, _) -> NoReturn:
-        raise DagsterInvariantViolationError(
-            "In {source} {name}, attempted to call alias method for {cls}. This object "
-            'represents the output "{out}" from the already invoked {described_node}. Consider '
-            "checking the location of parentheses.".format(
-                source=current_context().source,
-                name=current_context().name,
-                cls=self.__class__.__name__,
-                out=self.output_name,
-                described_node=self.describe_node(),
-            )
-        )
-
-    def with_hooks(self, _) -> NoReturn:
-        raise DagsterInvariantViolationError(
-            "In {source} {name}, attempted to call hook method for {cls}. This object "
-            'represents the output "{out}" from the already invoked {described_node}. Consider '
-            "checking the location of parentheses.".format(
-                source=current_context().source,
-                name=current_context().name,
-                cls=self.__class__.__name__,
-                out=self.output_name,
-                described_node=self.describe_node(),
-            )
-        )
-
-
-class DynamicFanIn(NamedTuple):
-    """
-    Type to signify collecting over a dynamic output, output by collect() on a
-    InvokedNodeDynamicOutputWrapper.
-    """
-
-    solid_name: str
-    output_name: str
 
 
 class InvokedNodeDynamicOutputWrapper:
@@ -869,10 +873,6 @@ class InvokedNodeDynamicOutputWrapper:
                 described_node=self.describe_node(),
             )
         )
-
-
-class InputMappingNode(NamedTuple):
-    input_def: InputDefinition
 
 
 def composite_mapping_from_output(

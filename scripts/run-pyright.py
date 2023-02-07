@@ -42,6 +42,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--json",
+    action="store_true",
+    default=False,
+    help="Output results in JSON format.",
+)
+
+parser.add_argument(
     "--rebuild",
     "-r",
     action="store_true",
@@ -53,7 +60,7 @@ parser.add_argument(
     "paths",
     type=str,
     nargs="*",
-    help="Paths to run pyright on. If passed, must provide only a single environment.",
+    help="Path to directories or python files to target with pyright.",
 )
 
 # ########################
@@ -63,6 +70,7 @@ parser.add_argument(
 
 class Args(TypedDict):
     envs: Sequence[str]
+    json: bool
     paths: Sequence[str]
     rebuild: bool
 
@@ -141,7 +149,7 @@ def normalize_args(args: argparse.Namespace) -> Args:
                 raise Exception(f"Environment {env} not found in {PYRIGHT_ENV_ROOT}.")
     else:
         envs = []
-    return Args(envs=envs, paths=args.paths, rebuild=args.rebuild)
+    return Args(envs=envs, paths=args.paths, json=args.json, rebuild=args.rebuild)
 
 
 def match_path(path: str, path_spec: EnvPathSpec) -> bool:
@@ -192,7 +200,11 @@ def normalize_env(env: str, rebuild: bool) -> None:
             [
                 f"python -m venv {venv_path}",
                 f"{venv_path}/bin/pip install -U pip setuptools wheel",
-                f"{venv_path}/bin/pip install -r {requirements_path}",
+                (
+                    f"{venv_path}/bin/pip install -r"
+                    # find-links for M1 lookup of grpcio wheels
+                    f" {requirements_path} --find-links=https://github.com/dagster-io/build-grpcio/wiki/Wheels"
+                ),
             ]
         )
         try:
@@ -249,7 +261,7 @@ def merge_pyright_results(result_1: RunResult, result_2: RunResult) -> RunResult
     output_1, output_2 = (result["output"] for result in (result_1, result_2))
     summary = {}
     for key in output_1["summary"].keys():
-        summary[key] = output_1["summary"][key] + output_2["summary"][key]  # type: ignore  # (all ints)
+        summary[key] = output_1["summary"][key] + output_2["summary"][key]
     diagnostics = [*output_1["generalDiagnostics"], *output_2["generalDiagnostics"]]
     return {
         "returncode": returncode,
@@ -260,6 +272,13 @@ def merge_pyright_results(result_1: RunResult, result_2: RunResult) -> RunResult
             "generalDiagnostics": diagnostics,
         },
     }
+
+
+def print_output(result: RunResult, output_json: bool) -> None:
+    if output_json:
+        print(json.dumps(result["output"], indent=2))
+    else:
+        print_report(result)
 
 
 def print_report(result: RunResult) -> None:
@@ -300,5 +319,5 @@ if __name__ == "__main__":
         for env in env_path_map
     ]
     merged_result = reduce(merge_pyright_results, run_results)
-    print_report(merged_result)
+    print_output(merged_result, norm_args["json"])
     sys.exit(merged_result["returncode"])

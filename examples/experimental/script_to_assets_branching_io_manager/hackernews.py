@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 from tqdm import tqdm
-from wordcloud import STOPWORDS, WordCloud  # type: ignore
+from wordcloud import STOPWORDS, WordCloud
 
 
 def extract() -> pd.DataFrame:

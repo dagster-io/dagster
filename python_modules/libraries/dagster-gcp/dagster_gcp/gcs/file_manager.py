@@ -10,7 +10,7 @@ from dagster._core.storage.file_manager import (
     TempfileManager,
     check_file_like_obj,
 )
-from google.cloud import storage  # type: ignore
+from google.cloud import storage
 
 
 class GCSFileHandle(FileHandle):

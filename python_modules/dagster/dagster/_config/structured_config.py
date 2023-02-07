@@ -14,7 +14,7 @@ try:
     from functools import cached_property  # type: ignore  # (py37 compat)
 except ImportError:
 
-    class cached_property:  # type: ignore[no-redef]
+    class cached_property:
         pass
 
 

@@ -318,7 +318,7 @@ class ExternalPipeline(RepresentedPipeline):
                     self.external_pipeline_data.pipeline_snapshot,
                     self.external_pipeline_data.parent_pipeline_snapshot,
                 )
-            return self._index  # type: ignore
+            return self._index
 
     @property
     def name(self) -> str:

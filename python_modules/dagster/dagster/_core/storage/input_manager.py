@@ -177,7 +177,7 @@ def input_manager(
 
     def _wrap(load_fn: InputLoadFn) -> InputManagerDefinition:
         return _InputManagerDecoratorCallable(
-            config_schema=config_schema,  # type: ignore  # fmt: skip
+            config_schema=config_schema,
             description=description,
             version=version,
             input_config_schema=input_config_schema,
@@ -201,8 +201,8 @@ class InputManagerWrapper(InputManager):
         # result is an InputManager. If so we call it's load_input method
         intermediate = (
             # type-ignore because function being used as attribute
-            self._load_fn(context)  # type: ignore  # fmt: skip
-            if has_at_least_one_parameter(self._load_fn)  # type: ignore  # fmt: skip
+            self._load_fn(context)
+            if has_at_least_one_parameter(self._load_fn)
             else self._load_fn()  # type: ignore  # (strict type guard)
         )
 

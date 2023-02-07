@@ -256,27 +256,27 @@ class JobDefinition(PipelineDefinition):
     def describe_target(self):
         return f"{self.target_type} '{self.name}'"
 
-    @public  # type: ignore
+    @public
     @property
     def executor_def(self) -> ExecutorDefinition:
         return self.get_mode_definition().executor_defs[0]
 
-    @public  # type: ignore
+    @public
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
         return self.get_mode_definition().resource_defs
 
-    @public  # type: ignore
+    @public
     @property
     def partitioned_config(self) -> Optional[PartitionedConfig]:
         return self.get_mode_definition().partitioned_config
 
-    @public  # type: ignore
+    @public
     @property
     def config_mapping(self) -> Optional[ConfigMapping]:
         return self.get_mode_definition().config_mapping
 
-    @public  # type: ignore
+    @public
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         return self.get_mode_definition().loggers
@@ -430,7 +430,7 @@ class JobDefinition(PipelineDefinition):
         self,
         op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> Self:  # type: ignore  # fmt: skip
+    ) -> Self:
         check.invariant(
             not (op_selection and asset_selection),
             (
@@ -448,7 +448,7 @@ class JobDefinition(PipelineDefinition):
     def _get_job_def_for_asset_selection(
         self,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> Self:  # type: ignore  # fmt: skip
+    ) -> Self:
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
 
         nonexistent_assets = [
@@ -494,7 +494,7 @@ class JobDefinition(PipelineDefinition):
     def _get_job_def_for_op_selection(
         self,
         op_selection: Optional[Sequence[str]] = None,
-    ) -> Self:  # type: ignore  # fmt: skip
+    ) -> Self:
         if not op_selection:
             return self
 
@@ -567,7 +567,7 @@ class JobDefinition(PipelineDefinition):
 
         return self._cached_partition_set
 
-    @public  # type: ignore
+    @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         mode = self.get_mode_definition()
@@ -873,7 +873,7 @@ def default_job_io_manager(init_context: "InitResourceContext"):
                 ),
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
-                return resources.io_manager  # type: ignore
+                return resources.io_manager
         except Exception as e:
             if not silence_failures:
                 raise
@@ -914,7 +914,7 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
                 ),
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
-                return resources.io_manager  # type: ignore
+                return resources.io_manager
         except Exception as e:
             if not silence_failures:
                 raise

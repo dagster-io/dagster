@@ -9,15 +9,15 @@ from airflow import __version__ as airflow_version
 
 if airflow_version >= "2.0.0":
     from airflow.providers.apache.spark.operators.spark_submit import (
-        SparkSubmitOperator,  # type: ignore  # (airflow 1 compat)
+        SparkSubmitOperator,
     )
 else:
     from airflow.contrib.operators.spark_submit_operator import (
         SparkSubmitOperator,  # type: ignore  # (airflow 1 compat)
     )
 
-from airflow.models.dag import DAG  # type: ignore  # (airflow 1 compat)
-from airflow.operators.bash_operator import BashOperator  # type: ignore  # (airflow 1 compat)
+from airflow.models.dag import DAG
+from airflow.operators.bash_operator import BashOperator
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.utils.dates import days_ago
 from dagster import DagsterEventType

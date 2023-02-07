@@ -165,7 +165,7 @@ class AirbyteResource:
     def get_default_workspace(self) -> str:
         workspaces = cast(
             List[Dict[str, Any]],
-            check.not_none(self.make_request_cached(endpoint="/workspaces/list", data={})).get(  # type: ignore  # fmt: skip
+            check.not_none(self.make_request_cached(endpoint="/workspaces/list", data={})).get(
                 "workspaces", []
             ),
         )

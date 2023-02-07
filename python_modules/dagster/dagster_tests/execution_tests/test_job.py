@@ -80,7 +80,7 @@ def basic_graph():
     pass
 
 
-basic_job = basic_graph.to_job()  # type: ignore[union-attr]
+basic_job = basic_graph.to_job()
 
 
 def test_non_reconstructable_job_error():

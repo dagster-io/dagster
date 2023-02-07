@@ -27,7 +27,7 @@ def usable_as_dagster_type(
     ...
 
 
-def usable_as_dagster_type(  # type: ignore  # bug
+def usable_as_dagster_type(
     name: Optional[Union[str, T_Type]] = None,
     description: Optional[str] = None,
     loader: Optional["DagsterTypeLoader"] = None,

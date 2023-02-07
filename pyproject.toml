@@ -53,6 +53,7 @@ exclude = [
   "**/.tox",
   ".git",
   "**/.venv*",
+  "**/build",
 ]
 
 # These two settings point pyright to a python environment to resolve imports against. This virtual
@@ -85,6 +86,10 @@ reportInvalidStringEscapeSequence = false
 # As of 2023-02-02, there are still many `py.typed` libs that are not compliant with the standards
 # for defining a public API.
 reportPrivateImportUsage = false
+
+# Since we only use pyright, there is no need to suppress type errors that pyright does not
+# recognize.
+reportUnnecessaryTypeIgnoreComment = "warning"
 
 # ########################
 # ##### PYTEST

@@ -858,13 +858,13 @@ def test_opt_nullable_list_param():
     assert check.opt_nullable_list_param(obj_list, "list_param") == obj_list
 
     with pytest.raises(ParameterCheckError):
-        check.opt_nullable_list_param(0, "list_param")  # type: ignore
+        check.opt_nullable_list_param(0, "list_param")
 
     with pytest.raises(ParameterCheckError):
-        check.opt_nullable_list_param("", "list_param")  # type: ignore
+        check.opt_nullable_list_param("", "list_param")
 
     with pytest.raises(ParameterCheckError):
-        check.opt_nullable_list_param("3u4", "list_param")  # type: ignore
+        check.opt_nullable_list_param("3u4", "list_param")
 
 
 def test_typed_is_list():
@@ -991,7 +991,7 @@ def test_opt_mapping_param():
     assert check.opt_mapping_param(None, param_name="name") == dict()
 
     with pytest.raises(CheckError):
-        check.opt_mapping_param("foo", param_name="name")  # type: ignore
+        check.opt_mapping_param("foo", param_name="name")
 
 
 # ########################
@@ -1023,10 +1023,10 @@ def test_path_param():
         assert check.opt_path_param(Path("/a/b.csv"), "path_param") == "/a/b.csv"
 
     with pytest.raises(ParameterCheckError):
-        check.path_param(None, "path_param")  # type: ignore
+        check.path_param(None, "path_param")
 
     with pytest.raises(ParameterCheckError):
-        check.path_param(0, "path_param")  # type: ignore
+        check.path_param(0, "path_param")
 
 
 def test_opt_path_param():
@@ -1040,7 +1040,7 @@ def test_opt_path_param():
     assert check.opt_path_param(None, "path_param") is None
 
     with pytest.raises(ParameterCheckError):
-        check.opt_path_param(0, "path_param")  # type: ignore
+        check.opt_path_param(0, "path_param")
 
 
 # ########################
@@ -1053,10 +1053,10 @@ def test_set_param():
     assert check.set_param(frozenset(), "set_param") == set()
 
     with pytest.raises(ParameterCheckError):
-        check.set_param(None, "set_param")  # type: ignore
+        check.set_param(None, "set_param")
 
     with pytest.raises(ParameterCheckError):
-        check.set_param("3u4", "set_param")  # type: ignore
+        check.set_param("3u4", "set_param")
 
     obj_set = {1}
     assert check.set_param(obj_set, "set_param") == obj_set
@@ -1080,10 +1080,10 @@ def test_opt_set_param():
     assert check.opt_set_param({3}, "set_param") == {3}
 
     with pytest.raises(ParameterCheckError):
-        check.opt_set_param(0, "set_param")  # type: ignore
+        check.opt_set_param(0, "set_param")
 
     with pytest.raises(ParameterCheckError):
-        check.opt_set_param("3u4", "set_param")  # type: ignore
+        check.opt_set_param("3u4", "set_param")
 
 
 # ########################
@@ -1100,10 +1100,10 @@ def test_sequence_param():
     assert check.sequence_param("foo", "sequence_param", of_type=str) == "foo"
 
     with pytest.raises(ParameterCheckError):
-        check.sequence_param(None, "sequence_param")  # type: ignore
+        check.sequence_param(None, "sequence_param")
 
     with pytest.raises(CheckError):
-        check.sequence_param(1, "sequence_param", of_type=int)  # type: ignore
+        check.sequence_param(1, "sequence_param", of_type=int)
 
     with pytest.raises(CheckError):
         check.sequence_param(["foo"], "sequence_param", of_type=int)
@@ -1120,7 +1120,7 @@ def test_opt_sequence_param():
     assert check.opt_sequence_param(None, "sequence_param") == []
 
     with pytest.raises(CheckError):
-        check.opt_sequence_param(1, "sequence_param", of_type=int)  # type: ignore
+        check.opt_sequence_param(1, "sequence_param", of_type=int)
 
     with pytest.raises(CheckError):
         check.opt_sequence_param(["foo"], "sequence_param", of_type=int)
@@ -1137,7 +1137,7 @@ def test_opt_nullable_sequence_param():
     assert check.opt_nullable_sequence_param(None, "sequence_param") is None
 
     with pytest.raises(CheckError):
-        check.opt_nullable_sequence_param(1, "sequence_param", of_type=int)  # type: ignore
+        check.opt_nullable_sequence_param(1, "sequence_param", of_type=int)
 
     with pytest.raises(CheckError):
         check.opt_nullable_sequence_param(["foo"], "sequence_param", of_type=int)
@@ -1450,7 +1450,7 @@ def test_failed():
         check.failed("some desc")
 
     with pytest.raises(CheckError, match="must be a string"):
-        check.failed(0)  # type: ignore
+        check.failed(0)
 
 
 def test_not_implemented():
@@ -1458,7 +1458,7 @@ def test_not_implemented():
         check.not_implemented("some string")
 
     with pytest.raises(CheckError, match="desc argument must be a string"):
-        check.not_implemented(None)  # type: ignore
+        check.not_implemented(None)
 
 
 def test_iterable():
@@ -1473,10 +1473,10 @@ def test_iterable():
     check.iterable_param("lkjsdkf", "stringisiterable")
 
     with pytest.raises(CheckError, match="Iterable.*None"):
-        check.iterable_param(None, "nonenotallowed")  # type: ignore
+        check.iterable_param(None, "nonenotallowed")
 
     with pytest.raises(CheckError, match="Iterable.*int"):
-        check.iterable_param(1, "intnotallowed")  # type: ignore
+        check.iterable_param(1, "intnotallowed")
 
     with pytest.raises(CheckError, match="Member of iterable mismatches type"):
         check.iterable_param([1], "typemismatch", of_type=str)
@@ -1504,7 +1504,7 @@ def test_opt_iterable():
     check.opt_iterable_param(None, "noneisallowed")
 
     with pytest.raises(CheckError, match="Iterable.*int"):
-        check.opt_iterable_param(1, "intnotallowed")  # type: ignore
+        check.opt_iterable_param(1, "intnotallowed")
 
     with pytest.raises(CheckError, match="Member of iterable mismatches type"):
         check.opt_iterable_param([1], "typemismatch", of_type=str)

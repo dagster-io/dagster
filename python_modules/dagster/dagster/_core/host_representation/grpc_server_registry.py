@@ -238,7 +238,7 @@ class GrpcServerRegistry(AbstractContextManager):
             )
 
         return GrpcServerEndpoint(
-            server_id=active_entry.server_id,  # type: ignore
+            server_id=active_entry.server_id,
             host="localhost",
             port=active_entry.process.port,
             socket=active_entry.process.socket,

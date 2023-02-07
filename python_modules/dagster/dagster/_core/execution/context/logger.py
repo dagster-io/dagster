@@ -48,7 +48,7 @@ class InitLoggerContext:
         self._logger_def = check.opt_inst_param(logger_def, "logger_def", LoggerDefinition)
         self._run_id = check.opt_str_param(run_id, "run_id")
 
-    @public  # type: ignore
+    @public
     @property
     def logger_config(self) -> Any:
         return self._logger_config
@@ -57,7 +57,7 @@ class InitLoggerContext:
     def pipeline_def(self) -> Optional[PipelineDefinition]:
         return self._pipeline_def
 
-    @public  # type: ignore
+    @public
     @property
     def job_def(self) -> Optional[JobDefinition]:
         if not self._pipeline_def:
@@ -69,12 +69,12 @@ class InitLoggerContext:
             )
         return self._pipeline_def
 
-    @public  # type: ignore
+    @public
     @property
     def logger_def(self) -> Optional[LoggerDefinition]:
         return self._logger_def
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> Optional[str]:
         return self._run_id

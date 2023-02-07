@@ -450,7 +450,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
     def _get_run_task_definition_family(self, run) -> str:
         return sanitize_family(
-            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name  # type: ignore
+            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
         )
 
     def _get_container_name(self, container_context) -> str:

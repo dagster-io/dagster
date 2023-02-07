@@ -75,17 +75,17 @@ class HookContext:
     def pipeline_name(self) -> str:
         return self.job_name
 
-    @public  # type: ignore
+    @public
     @property
     def job_name(self) -> str:
         return self._step_execution_context.job_name
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> str:
         return self._step_execution_context.run_id
 
-    @public  # type: ignore
+    @public
     @property
     def hook_def(self) -> HookDefinition:
         return self._hook_def
@@ -102,17 +102,17 @@ class HookContext:
         )
         return self._step_execution_context.step
 
-    @public  # type: ignore
+    @public
     @property
     def step_key(self) -> str:
         return self._step_execution_context.step.key
 
-    @public  # type: ignore
+    @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> "Resources":
         return self._resources
@@ -124,7 +124,7 @@ class HookContext:
         )
         return solid_config.config if solid_config else None
 
-    @public  # type: ignore
+    @public
     @property
     def op_config(self) -> Any:
         return self.solid_config
@@ -132,7 +132,7 @@ class HookContext:
     # Because of the fact that we directly use the log manager of the step, if a user calls
     # hook_context.log.with_tags, then they will end up mutating the step's logging tags as well.
     # This is not problematic because the hook only runs after the step has been completed.
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> DagsterLogManager:
         return self._step_execution_context.log
@@ -146,7 +146,7 @@ class HookContext:
         """
         return self.op_exception
 
-    @public  # type: ignore
+    @public
     @property
     def op_exception(self):
         exc = self._step_execution_context.step_exception
@@ -184,7 +184,7 @@ class HookContext:
 
         return results
 
-    @public  # type: ignore
+    @public
     @property
     def op_output_values(self):
         return self.solid_output_values
@@ -417,7 +417,7 @@ def build_hook_context(
 
     return UnboundHookContext(
         resources=check.opt_mapping_param(resources, "resources", key_type=str),
-        op=op,  # type: ignore[arg-type] # (mypy bug)
+        op=op,
         run_id=check.opt_str_param(run_id, "run_id"),
         job_name=check.opt_str_param(job_name, "job_name"),
         op_exception=check.opt_inst_param(op_exception, "op_exception", Exception),

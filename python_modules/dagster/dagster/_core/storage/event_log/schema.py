@@ -70,6 +70,17 @@ AssetEventTagsTable = db.Table(
     db.Column("event_timestamp", db.types.TIMESTAMP),
 )
 
+
+DynamicPartitionsTable = db.Table(
+    "dynamic_partitions",
+    SqlEventLogStorageMetadata,
+    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column("partitions_def_name", db.Text, nullable=False),
+    db.Column("partition", db.Text, nullable=False),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+)
+
+
 db.Index(
     "idx_step_key",
     SqlEventLogStorageTable.c.step_key,
@@ -119,4 +130,11 @@ db.Index(
         )
     ),
     mysql_length={"asset_key": 64, "dagster_event_type": 64, "partition": 64},
+)
+db.Index(
+    "idx_dynamic_partitions",
+    DynamicPartitionsTable.c.partitions_def_name,
+    DynamicPartitionsTable.c.partition,
+    mysql_length={"partitions_def_name": 64, "partition": 64},
+    unique=True,
 )

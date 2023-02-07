@@ -41,12 +41,12 @@ from .retry_jobs import (
 class TestStepHandler(StepHandler):
     # This step handler waits for all processes to exit, because windows tests flake when processes
     # are left alive when the test ends. Non-test step handlers should not keep their own state in memory.
-    processes = []  # type: ignore
-    launch_step_count = 0  # type: ignore
+    processes = []
+    launch_step_count = 0
     saw_baz_op = False
-    check_step_health_count = 0  # type: ignore
-    terminate_step_count = 0  # type: ignore
-    verify_step_count = 0  # type: ignore
+    check_step_health_count = 0
+    terminate_step_count = 0
+    verify_step_count = 0
 
     @property
     def name(self):

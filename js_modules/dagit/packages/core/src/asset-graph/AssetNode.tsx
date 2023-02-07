@@ -48,31 +48,7 @@ export const AssetNode: React.FC<{
           ) : (
             <Description $color={Colors.Gray400}>No description</Description>
           )}
-          {definition.isObservable && isSource ? (
-            <Stats>
-              <StatsRow>
-                <span>Observed</span>
-                {liveData?.lastObservation ? (
-                  <Caption style={{textAlign: 'right'}}>
-                    <AssetRunLink
-                      runId={liveData.lastObservation.runId}
-                      event={{
-                        stepKey: getStepKey(definition),
-                        timestamp: liveData.lastObservation.timestamp,
-                      }}
-                    >
-                      <TimestampDisplay
-                        timestamp={Number(liveData.lastObservation.timestamp) / 1000}
-                        timeFormat={{showSeconds: false, showTimezone: false}}
-                      />
-                    </AssetRunLink>
-                  </Caption>
-                ) : (
-                  <span>–</span>
-                )}
-              </StatsRow>
-            </Stats>
-          ) : isSource ? null : (
+          {isSource && !definition.isObservable ? null : (
             <AssetNodeStatusRow definition={definition} liveData={liveData} />
           )}
           <AssetComputeKindTag definition={definition} style={{right: -2, paddingTop: 7}} />
@@ -123,14 +99,6 @@ export function buildAssetNodeStatusRow({
   definition: AssetNodeFragment;
   liveData: LiveDataForNode | undefined;
 }) {
-  if (definition.isSource) {
-    return {
-      background: Colors.Gray100,
-      border: Colors.Gray300,
-      content: <span />,
-    };
-  }
-
   if (!liveData) {
     return {
       background: Colors.Gray100,
@@ -155,6 +123,59 @@ export function buildAssetNodeStatusRow({
 
   const materializingRunId = inProgressRunIds[0] || unstartedRunIds[0];
   const late = isAssetLate(liveData);
+
+  if (definition.isSource) {
+    if (materializingRunId) {
+      return {
+        background: Colors.Gray100,
+        border: Colors.Gray300,
+        content: (
+          <>
+            <AssetLatestRunSpinner liveData={liveData} />
+            <Caption style={{flex: 1}} color={Colors.Gray800}>
+              Observing...
+            </Caption>
+            <AssetRunLink runId={materializingRunId} />
+          </>
+        ),
+      };
+    }
+    if (liveData?.lastObservation) {
+      return {
+        background: Colors.Gray100,
+        border: Colors.Gray300,
+        content: (
+          <>
+            <Caption>Observed</Caption>
+            <Caption style={{textAlign: 'right'}}>
+              <AssetRunLink
+                runId={liveData.lastObservation.runId}
+                event={{
+                  stepKey: getStepKey(definition),
+                  timestamp: liveData.lastObservation.timestamp,
+                }}
+              >
+                <TimestampDisplay
+                  timestamp={Number(liveData.lastObservation.timestamp) / 1000}
+                  timeFormat={{showSeconds: false, showTimezone: false}}
+                />
+              </AssetRunLink>
+            </Caption>
+          </>
+        ),
+      };
+    }
+    return {
+      background: Colors.Gray100,
+      border: Colors.Gray300,
+      content: (
+        <>
+          <Caption>Never observed</Caption>
+          <Caption>–</Caption>
+        </>
+      ),
+    };
+  }
 
   if (materializingRunId) {
     return {
@@ -481,21 +502,4 @@ const Description = styled.div<{$color: string}>`
   border-top: 1px solid ${Colors.Blue50};
   background: ${Colors.White};
   font-size: 12px;
-`;
-
-const Stats = styled.div`
-  padding: 4px 8px;
-  border-top: 1px solid ${Colors.Blue50};
-  background: ${Colors.White};
-  font-size: 12px;
-  line-height: 20px;
-`;
-
-const StatsRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  min-height: 18px;
-  & > span {
-    color: ${Colors.Gray800};
-  }
 `;
