@@ -151,7 +151,7 @@ class ExternalRepository:
         return self._external_resources[resource_name]
 
     def get_external_resources(self) -> Sequence[ExternalResource]:
-        return self._external_resources.values()
+        return list(self._external_resources.values())
 
     @property
     @cached_method
