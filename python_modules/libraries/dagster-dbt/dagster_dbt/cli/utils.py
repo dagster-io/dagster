@@ -1,7 +1,8 @@
 import json
+from msilib.schema import EventMapping
 import os
 import subprocess
-from typing import Any, Iterator, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Iterator, List, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level
@@ -18,11 +19,60 @@ from .types import DbtCliOutput
 class DbtCliEvent(NamedTuple):
     """Helper class to encapsulate parsed information from an active dbt CLI process."""
 
-    line: Optional[str] = None
-    message: Optional[str] = None
-    parsed_json_line: Optional[Mapping[str, Any]] = None
-    log_level: Optional[int] = None
-    return_code: Optional[int] = None
+    line: Optional[str]
+    message: Optional[str]
+    parsed_json_line: Optional[Mapping[str, Any]]
+    log_level: Optional[int]
+
+    @classmethod
+    def from_line(cls, line: str, json_log_format: bool) -> "DbtCliEvent":
+        message = line
+        parsed_json_line = None
+        log_level = "info"
+
+        # parse attributes out of json fields
+        if json_log_format:
+            try:
+                parsed_json_line = json.loads(line)
+            except json.JSONDecodeError:
+                pass
+            else:
+                # in rare cases, the loaded json line may be a string rather than a dictionary
+                if isinstance(parsed_json_line, dict):
+                    message = parsed_json_line.get(
+                        # Attempt to get the message from the dbt-core==1.3.* format
+                        "msg",
+                        # Otherwise, try to get the message from the dbt-core==1.4.* format
+                        parsed_json_line.get("info", {}).get(
+                            "msg",
+                            # If all else fails, default to the whole line
+                            line,
+                        ),
+                    )
+                    log_level = parsed_json_line.get(
+                        # Attempt to get the log level from the dbt-core==1.3.* format
+                        "level",
+                        # Otherwise, try to get the message from the dbt-core==1.4.* format
+                        parsed_json_line.get("info", {}).get(
+                            "level",
+                            # If all else fails, default to the `debug` level
+                            "debug",
+                        ),
+                    )
+        # attempt to parse log level out of raw line
+        elif "Done." not in line:
+            # attempt to parse a log level out of the line
+            if "ERROR" in line:
+                log_level = "error"
+            elif "WARN" in line:
+                log_level = "warn"
+
+        return DbtCliEvent(
+            line=line,
+            message=message,
+            parsed_json_line=parsed_json_line,
+            log_level=coerce_valid_log_level(log_level),
+        )
 
 
 def _create_command_list(
@@ -58,61 +108,11 @@ def _create_command_list(
     return prefix + full_command
 
 
-def _parse_line(line: str, json_log_format: bool) -> DbtCliEvent:
-    message = line
-    parsed_json_line = None
-    log_level = "info"
-
-    # parse attributes out of json fields
-    if json_log_format:
-        try:
-            parsed_json_line = json.loads(line)
-        except json.JSONDecodeError:
-            pass
-        else:
-            # in rare cases, the loaded json line may be a string rather than a dictionary
-            if isinstance(parsed_json_line, dict):
-                message = parsed_json_line.get(
-                    # Attempt to get the message from the dbt-core==1.3.* format
-                    "msg",
-                    # Otherwise, try to get the message from the dbt-core==1.4.* format
-                    parsed_json_line.get("info", {}).get(
-                        "msg",
-                        # If all else fails, default to the whole line
-                        line,
-                    ),
-                )
-                log_level = parsed_json_line.get(
-                    # Attempt to get the log level from the dbt-core==1.3.* format
-                    "level",
-                    # Otherwise, try to get the message from the dbt-core==1.4.* format
-                    parsed_json_line.get("info", {}).get(
-                        "level",
-                        # If all else fails, default to the `debug` level
-                        "debug",
-                    ),
-                )
-    # attempt to parse log level out of raw line
-    elif "Done." not in line:
-        # attempt to parse a log level out of the line
-        if "ERROR" in line:
-            log_level = "error"
-        elif "WARN" in line:
-            log_level = "warn"
-
-    return DbtCliEvent(
-        line=line,
-        message=message,
-        parsed_json_line=parsed_json_line,
-        log_level=coerce_valid_log_level(log_level),
-    )
-
-
 def execute_cli_stream(
     command_list: Sequence[str],
     ignore_handled_error: bool,
     json_log_format: bool,
-) -> Iterator[DbtCliEvent]:
+) -> Iterator[Union[DbtCliEvent, int]]:
     """Runs a dbt command in a subprocess and yields parsed output line by line."""
     try:
         import dbt  # noqa: F401
@@ -136,13 +136,13 @@ def execute_cli_stream(
     for raw_line in process.stdout or []:
         line = raw_line.decode().strip()
 
-        cli_msg = _parse_line(line, json_log_format)
+        cli_event = DbtCliEvent.from_line(line, json_log_format)
 
-        if cli_msg.message is not None:
-            messages.append(cli_msg.message)
+        if cli_event.message is not None:
+            messages.append(cli_event.message)
 
         # yield the parsed values
-        yield cli_msg
+        yield cli_event
 
     process.wait()
     return_code = process.returncode
@@ -153,7 +153,7 @@ def execute_cli_stream(
     if return_code == 1 and not ignore_handled_error:
         raise DagsterDbtCliHandledRuntimeError(messages=messages)
 
-    yield DbtCliEvent(return_code=return_code)
+    yield return_code
 
 
 def execute_cli(
@@ -191,8 +191,8 @@ def execute_cli(
         json_log_format=json_log_format,
         ignore_handled_error=ignore_handled_error,
     ):
-        if event.return_code is not None:
-            return_code = event.return_code
+        if isinstance(event, int):
+            return_code = event
             log.info(f"dbt exited with return code {return_code}")
             break
 
