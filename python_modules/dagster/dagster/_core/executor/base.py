@@ -23,7 +23,7 @@ class Executor(ABC):
             A stream of dagster events.
         """
 
-    @public  # type: ignore
+    @public
     @property
     @abstractmethod
     def retries(self) -> RetryMode:

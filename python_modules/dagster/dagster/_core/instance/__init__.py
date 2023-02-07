@@ -170,7 +170,7 @@ class _EventListenerLogHandler(logging.Handler):
                 name=record.name,
                 message=record.msg,
                 level=record.levelno,
-                meta=record.dagster_meta,  # type: ignore
+                meta=record.dagster_meta,
                 record=record,
             )
         )
@@ -498,7 +498,7 @@ class DagsterInstance:
             unified_storage.schedule_storage if unified_storage else instance_ref.schedule_storage
         )
 
-        return klass(  # type: ignore
+        return klass(
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=instance_ref.local_artifact_storage,
             run_storage=run_storage,
@@ -1491,7 +1491,7 @@ class DagsterInstance:
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Mapping[str, "RunGroupInfo"]:
-        return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)  # type: ignore  # fmt: skip
+        return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
     @public
     @traced

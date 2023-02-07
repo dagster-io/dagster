@@ -220,14 +220,14 @@ class FromSourceAsset(
         from ..resolve_versions import check_valid_version, resolve_config_version
 
         op = pipeline_def.get_solid(self.solid_handle)
-        input_manager_key = check.not_none(op.input_def_named(self.input_name).input_manager_key)  # type: ignore  # fmt: skip
+        input_manager_key = check.not_none(op.input_def_named(self.input_name).input_manager_key)
         io_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
             input_manager_key
         ]
 
-        op_config = check.not_none(resolved_run_config.solids.get(op.name))  # type: ignore  # fmt: skip
+        op_config = check.not_none(resolved_run_config.solids.get(op.name))
         input_config = op_config.inputs.get(self.input_name)
-        resource_entry = check.not_none(resolved_run_config.resources.get(input_manager_key))  # type: ignore  # fmt: skip
+        resource_entry = check.not_none(resolved_run_config.resources.get(input_manager_key))
         resource_config = resource_entry.config
 
         version_context = ResourceVersionContext(

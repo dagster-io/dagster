@@ -429,7 +429,7 @@ class DagsterRun(
             ),
         )
 
-    def with_status(self, status: DagsterRunStatus) -> Self:  # type: ignore  # fmt: skip
+    def with_status(self, status: DagsterRunStatus) -> Self:
         if status == DagsterRunStatus.QUEUED:
             # Placing this with the other imports causes a cyclic import
             # https://github.com/dagster-io/dagster/issues/3181
@@ -443,16 +443,16 @@ class DagsterRun(
 
         return self._replace(status=status)
 
-    def with_job_origin(self, origin: "ExternalPipelineOrigin") -> Self:  # type: ignore  # fmt: skip
+    def with_job_origin(self, origin: "ExternalPipelineOrigin") -> Self:
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
         check.inst_param(origin, "origin", ExternalPipelineOrigin)
         return self._replace(external_pipeline_origin=origin)
 
-    def with_mode(self, mode: str) -> Self:  # type: ignore  # fmt: skip
+    def with_mode(self, mode: str) -> Self:
         return self._replace(mode=mode)
 
-    def with_tags(self, tags: Mapping[str, str]) -> Self:  # type: ignore  # fmt: skip
+    def with_tags(self, tags: Mapping[str, str]) -> Self:
         return self._replace(tags=tags)
 
     def get_root_run_id(self):
@@ -475,27 +475,27 @@ class DagsterRun(
 
         return {**repository_tags, **self.tags}
 
-    @public  # type: ignore
+    @public
     @property
     def is_finished(self):
         return self.status in FINISHED_STATUSES
 
-    @public  # type: ignore
+    @public
     @property
     def is_success(self) -> bool:
         return self.status == DagsterRunStatus.SUCCESS
 
-    @public  # type: ignore
+    @public
     @property
     def is_failure(self) -> bool:
         return self.status == DagsterRunStatus.FAILURE
 
-    @public  # type: ignore
+    @public
     @property
     def is_failure_or_canceled(self):
         return self.status == DagsterRunStatus.FAILURE or self.status == DagsterRunStatus.CANCELED
 
-    @public  # type: ignore
+    @public
     @property
     def is_resume_retry(self) -> bool:
         return self.tags.get(RESUME_RETRY_TAG) == "true"
@@ -505,7 +505,7 @@ class DagsterRun(
         # Compat
         return self.parent_run_id
 
-    @public  # type: ignore
+    @public
     @property
     def job_name(self) -> str:
         return self.pipeline_name

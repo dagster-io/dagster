@@ -13,7 +13,7 @@ from dagster import (
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.backoff import backoff
 from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
-from google.cloud import storage  # type: ignore
+from google.cloud import storage
 
 DEFAULT_LEASE_DURATION = 60  # One minute
 

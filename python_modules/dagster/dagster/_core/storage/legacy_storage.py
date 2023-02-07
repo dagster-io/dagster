@@ -367,7 +367,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         )
         # Type checker says LegacyEventStorage is abstract and can't be instantiated. Not sure whether
         # type check is wrong, or is unused code path.
-        return LegacyEventLogStorage(storage, inst_data=inst_data)  # type: ignore
+        return LegacyEventLogStorage(storage, inst_data=inst_data)
 
     @property
     def _instance(self):

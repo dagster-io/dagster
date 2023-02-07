@@ -73,7 +73,7 @@ def _check_node_defs_arg(
 
     _node_defs = check.opt_sequence_param(node_defs, "node_defs")
     for node_def in _node_defs:
-        if isinstance(node_def, NodeDefinition):  # type: ignore
+        if isinstance(node_def, NodeDefinition):
             continue
         elif callable(node_def):
             raise DagsterInvalidDefinitionError(
@@ -230,7 +230,7 @@ class GraphDefinition(NodeDefinition):
             input_defs=input_defs,
             output_defs=output_defs,
             tags=tags,
-            **kwargs,  # type: ignore  # fmt: skip
+            **kwargs,
         )
 
         # must happen after base class construction as properties are assumed to be there
@@ -353,17 +353,17 @@ class GraphDefinition(NodeDefinition):
                 yield from graph_def.iterate_node_handles(cur_node_handle)
             yield cur_node_handle
 
-    @public  # type: ignore
+    @public
     @property
     def input_mappings(self) -> Sequence[InputMapping]:
         return self._input_mappings
 
-    @public  # type: ignore
+    @public
     @property
     def output_mappings(self) -> Sequence[OutputMapping]:
         return self._output_mappings
 
-    @public  # type: ignore
+    @public
     @property
     def config_mapping(self) -> Optional[ConfigMapping]:
         return self._config_mapping
@@ -420,7 +420,7 @@ class GraphDefinition(NodeDefinition):
         mapped_solid = self.solid_named(mapping.maps_from.solid_name)
         return mapped_solid.definition.resolve_output_to_origin(
             mapping.maps_from.output_name,
-            NodeHandle(mapped_solid.name, handle),  # type: ignore
+            NodeHandle(mapped_solid.name, handle),
         )
 
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
@@ -689,7 +689,7 @@ class GraphDefinition(NodeDefinition):
         run_config = run_config if run_config is not None else {}
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
 
-        return ephemeral_job.execute_in_process(  # type: ignore  # fmt: skip
+        return ephemeral_job.execute_in_process(
             run_config=run_config,
             instance=instance,
             raise_on_error=raise_on_error,
@@ -713,12 +713,12 @@ class GraphDefinition(NodeDefinition):
         for dagster_type in self.all_dagster_types():
             yield from dagster_type.get_resource_requirements()
 
-    @public  # type: ignore
+    @public
     @property
     def name(self) -> str:
         return super(GraphDefinition, self).name
 
-    @public  # type: ignore
+    @public
     @property
     def tags(self) -> Mapping[str, str]:
         return super(GraphDefinition, self).tags
@@ -815,7 +815,7 @@ def _validate_in_mappings(
 
     for mapping in input_mappings:
         # handle incorrect objects passed in as mappings
-        if not isinstance(mapping, InputMapping):  # type: ignore  # (isinstance check for error)
+        if not isinstance(mapping, InputMapping):
             if isinstance(mapping, InputDefinition):
                 raise DagsterInvalidDefinitionError(
                     f"In {class_name} '{name}' you passed an InputDefinition "
@@ -912,7 +912,7 @@ def _validate_out_mappings(
 ) -> Tuple[Sequence[OutputMapping], Sequence[OutputDefinition]]:
     output_defs: List[OutputDefinition] = []
     for mapping in output_mappings:
-        if isinstance(mapping, OutputMapping):  # type: ignore
+        if isinstance(mapping, OutputMapping):
             target_solid = solid_dict.get(mapping.maps_from.solid_name)
             if target_solid is None:
                 raise DagsterInvalidDefinitionError(

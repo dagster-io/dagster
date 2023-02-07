@@ -42,19 +42,19 @@ class AssetSelection(ABC):
             AssetSelection.all() - AssetSelection.groups("marketing")
     """
 
-    @public  # type: ignore
+    @public
     @staticmethod
     def all() -> "AllAssetSelection":
         """Returns a selection that includes all assets."""
         return AllAssetSelection()
 
-    @public  # type: ignore
+    @public
     @staticmethod
     def assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
         """Returns a selection that includes all of the provided assets."""
         return KeysAssetSelection(*(key for assets_def in assets_defs for key in assets_def.keys))
 
-    @public  # type: ignore
+    @public
     @staticmethod
     def keys(*asset_keys: CoercibleToAssetKey) -> "KeysAssetSelection":
         """
@@ -82,14 +82,14 @@ class AssetSelection(ABC):
         ]
         return KeysAssetSelection(*_asset_keys)
 
-    @public  # type: ignore
+    @public
     @staticmethod
     def groups(*group_strs) -> "GroupsAssetSelection":
         """Returns a selection that includes assets that belong to any of the provided groups."""
         check.tuple_param(group_strs, "group_strs", of_type=str)
         return GroupsAssetSelection(*group_strs)
 
-    @public  # type: ignore
+    @public
     def downstream(
         self, depth: Optional[int] = None, include_self: bool = True
     ) -> "DownstreamAssetSelection":
@@ -109,7 +109,7 @@ class AssetSelection(ABC):
         check.opt_bool_param(include_self, "include_self")
         return DownstreamAssetSelection(self, depth=depth, include_self=include_self)
 
-    @public  # type: ignore
+    @public
     def upstream(
         self, depth: Optional[int] = None, include_self: bool = True
     ) -> "UpstreamAssetSelection":
@@ -130,7 +130,7 @@ class AssetSelection(ABC):
         check.opt_bool_param(include_self, "include_self")
         return UpstreamAssetSelection(self, depth=depth, include_self=include_self)
 
-    @public  # type: ignore
+    @public
     def sinks(self) -> "SinkAssetSelection":
         """
         Given an asset selection, returns a new asset selection that contains all of the sink
@@ -141,7 +141,7 @@ class AssetSelection(ABC):
         """
         return SinkAssetSelection(self)
 
-    @public  # type: ignore
+    @public
     def sources(self) -> "SourceAssetSelection":
         """
         Given an asset selection, returns a new asset selection that contains all of the source

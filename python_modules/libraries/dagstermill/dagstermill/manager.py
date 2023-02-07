@@ -409,7 +409,7 @@ class Manager:
 
     def load_input_parameter(self, input_name: str):
         # load input from source
-        dm_context = check.not_none(self.context)  # type: ignore  # fmt: skip
+        dm_context = check.not_none(self.context)
         if not isinstance(dm_context, DagstermillRuntimeExecutionContext):
             check.failed("Expected DagstermillRuntimeExecutionContext")
         step_context = dm_context.step_context  # pylint: disable=protected-access

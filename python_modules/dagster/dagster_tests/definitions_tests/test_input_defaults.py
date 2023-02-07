@@ -80,7 +80,7 @@ def test_early_fail():
 
 # we can't catch bad default_values except for scalars until runtime since the type_check function depends on
 # a context that has access to resources etc.
-@op(ins={"x": In(Optional[int], default_value="number")})  # type: ignore[arg-type]
+@op(ins={"x": In(Optional[int], default_value="number")})
 def bad_default(x):
     return x
 

@@ -62,7 +62,7 @@ class DagsterDockerImage(
         images_path: Optional[str] = None,
         build_cm: Callable = do_nothing,
     ):
-        return super(DagsterDockerImage, cls).__new__(  # type: ignore
+        return super(DagsterDockerImage, cls).__new__(
             cls,
             check.str_param(image, "image"),
             check.opt_str_param(  # type: ignore
