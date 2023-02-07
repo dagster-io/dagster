@@ -213,9 +213,9 @@ class Resource(
             self.__class__, ignore_resource_fields=set(resource_pointers.keys())
         )
 
-        schema = _curry_config_schema(schema, data_without_resources)
-
         Config.__init__(self, **data)
+
+        schema = _curry_config_schema(schema, data_without_resources)
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
@@ -285,14 +285,18 @@ class Resource(
 
 
 def _is_fully_configured(resource: ResourceDefinition) -> bool:
-    return (
+    res = (
         ConfiguredDefinitionConfigSchema(
-            resource, convert_user_facing_definition_config_schema(resource.config_schema), {}
+            resource,
+            convert_user_facing_definition_config_schema(resource.config_schema),
+            resource.config_schema.default_value if resource.config_schema.default_provided else {},
         )
         .resolve_config({})
         .success
         is True
     )
+
+    return res
 
 
 class PartialResource(
@@ -486,7 +490,6 @@ def _wrap_config_type(
         return Map(MAPPING_KEY_TYPE_TO_SCALAR[key_type], config_type)
     else:
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
-
 
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
