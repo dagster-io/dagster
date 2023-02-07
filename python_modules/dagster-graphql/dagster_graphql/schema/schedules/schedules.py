@@ -42,7 +42,7 @@ class GrapheneSchedule(graphene.ObjectType):
         GrapheneDryRunInstigationTick, tick_timestamp=graphene.NonNull(graphene.Int)
     )
     potentialTickTimestamps = graphene.NonNull(
-        graphene.List(graphene.Float),
+        graphene.List(graphene.NonNull(graphene.Float)),
         start_timestamp=graphene.Float(),
         upper_limit=graphene.Int(),
         lower_limit=graphene.Int(),

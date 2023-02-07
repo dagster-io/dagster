@@ -70,7 +70,6 @@ export const SensorDryRun: React.FC<{
   );
 
   const submitTest = React.useCallback(async () => {
-    debugger;
     setSubmitting(true);
     const result = await sensorDryRun({
       variables: {
@@ -246,7 +245,9 @@ export const SensorDryRun: React.FC<{
             {didSkip ? (
               <div>
                 <Subheading>Skip Reason</Subheading>
-                <div>{sensorExecutionData?.evaluationResult?.skipReason}</div>
+                <div>
+                  {sensorExecutionData?.evaluationResult?.skipReason || 'No skip reason was output'}
+                </div>
               </div>
             ) : null}
             {numRunRequests && runRequests ? (
