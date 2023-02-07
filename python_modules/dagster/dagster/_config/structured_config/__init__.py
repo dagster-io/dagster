@@ -488,16 +488,6 @@ def _wrap_config_type(
         raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
 
 
-class PartialIOManager(PartialResource[IOManager], IOManagerDefinition):
-    def __init__(self, resource_cls: Type[StructuredConfigIOManagerBase], data: Dict[str, Any]):
-        PartialResource.__init__(self, resource_cls, data)
-        IOManagerDefinition.__init__(
-            self,
-            resource_fn=self._resource_fn,
-            config_schema=self._config_schema,
-            description=resource_cls.__doc__,
-        )
-
 
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     """

@@ -149,9 +149,6 @@ setup(
             "types-tzlocal",  # version will be resolved against tzlocal
             "types-toml",  # version will be resolved against toml
         ],
-        "pyright": [
-            "pyright==1.1.291",
-        ],
         "ruff": [
             "ruff==0.0.241",
         ],
