@@ -9,6 +9,7 @@ setup(
         "onnxruntime",
         "skl2onnx",
         "joblib",
+        "torch",
     ],
     extras_require={"dev": ["dagit", "pytest"]},
 )
