@@ -718,14 +718,18 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_materializedPartitions(
         self, graphene_info: ResolveInfo
     ) -> Union[GrapheneDefaultPartitions, GrapheneTimePartitions, GrapheneMultiPartitions]:
-        asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
         asset_key = self._external_asset_node.asset_key
 
         if not self._dynamic_partitions_loader:
             check.failed("dynamic_partitions_loader must be provided to get partition keys")
 
         materialized_partition_subset = get_materialized_partitions_subset(
-            graphene_info.context.instance, asset_key, asset_graph, self._dynamic_partitions_loader
+            graphene_info.context.instance,
+            asset_key,
+            self._dynamic_partitions_loader,
+            self._external_asset_node.partitions_def_data.get_partitions_definition()
+            if self._external_asset_node.partitions_def_data
+            else None,
         )
 
         return build_materialized_partitions(
@@ -737,7 +741,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
             asset_key = self._external_asset_node.asset_key
-            asset_graph = ExternalAssetGraph.from_external_repository(self._external_repository)
 
             if not self._dynamic_partitions_loader:
                 check.failed("dynamic_partitions_loader must be provided to get partition keys")
@@ -745,8 +748,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             materialized_partition_subset = get_materialized_partitions_subset(
                 graphene_info.context.instance,
                 asset_key,
-                asset_graph,
                 self._dynamic_partitions_loader,
+                self._external_asset_node.partitions_def_data.get_partitions_definition()
+                if self._external_asset_node.partitions_def_data
+                else None,
             )
 
             if materialized_partition_subset is None:
