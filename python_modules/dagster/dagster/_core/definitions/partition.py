@@ -26,7 +26,7 @@ from dateutil.relativedelta import relativedelta
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental, public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
@@ -34,7 +34,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster._utils import frozenlist
-from dagster._utils.backcompat import deprecation_warning
+from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import schedule_execution_time_iterator
 
@@ -491,7 +491,6 @@ class ScheduleTimeBasedPartitionsDefinition(
             check.assert_never(self.schedule_type)
 
 
-@experimental
 class DynamicPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
@@ -517,6 +516,12 @@ class DynamicPartitionsDefinition(
 
     Partitions can be added and removed using the `add_partitions` and `remove_partitions` methods.
 
+    Args:
+        name (Optional[str]): (Experimental) The name of the partitions definition.
+        partition_fn (Optional[Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]]):
+            A function that returns the current set of partitions. This argument is deprecated and
+            will be removed in 2.0.0.
+
     Examples:
         .. code-block:: python
 
@@ -539,14 +544,22 @@ class DynamicPartitionsDefinition(
         partition_fn = check.opt_callable_param(partition_fn, "partition_fn")
         name = check.opt_str_param(name, "name")
 
+        if name:
+            experimental_arg_warning("name", "DynamicPartitionsDefinition.__new__")
+
         if partition_fn:
             deprecation_warning(
-                "partition_fn", "1.2.0", "Provide partition definition name instead."
+                "partition_fn", "2.0.0", "Provide partition definition name instead."
             )
 
         if partition_fn is None and name is None:
             raise DagsterInvalidDefinitionError(
                 "Must provide either partition_fn or name to DynamicPartitionsDefinition."
+            )
+
+        if partition_fn and name:
+            raise DagsterInvalidDefinitionError(
+                "Cannot provide both partition_fn and name to DynamicPartitionsDefinition."
             )
 
         return super(DynamicPartitionsDefinition, cls).__new__(
@@ -797,7 +810,6 @@ class PartitionSetDefinition(Generic[T]):
                 is passed through to the ``partition_fn`` (if it accepts a parameter).  Defaults to
                 the current time in UTC.
 
-        TODO update docstring
         """
         return self._partitions_def.get_partitions(
             current_time, dynamic_partitions_store=dynamic_partitions_store

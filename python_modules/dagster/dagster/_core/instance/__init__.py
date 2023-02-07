@@ -23,17 +23,16 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Protocol,
     Sequence,
     Set,
     Tuple,
     TypeVar,
     Union,
     cast,
-    runtime_checkable,
 )
 
 import yaml
+from typing_extensions import Protocol, runtime_checkable
 
 import dagster._check as check
 from dagster._annotations import public
