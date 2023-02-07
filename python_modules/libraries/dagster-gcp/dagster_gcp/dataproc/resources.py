@@ -35,7 +35,6 @@ class DataprocResource:
     def dataproc_clusters(self):
         return (
             # Google APIs dynamically genned, so pylint pukes
-            # pylint: disable=no-member
             self.dataproc.projects()
             .regions()
             .clusters()
@@ -45,7 +44,6 @@ class DataprocResource:
     def dataproc_jobs(self):
         return (
             # Google APIs dynamically genned, so pylint pukes
-            # pylint: disable=no-member
             self.dataproc.projects()
             .regions()
             .jobs()

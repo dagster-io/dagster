@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-
 from dagster import Output, asset
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF

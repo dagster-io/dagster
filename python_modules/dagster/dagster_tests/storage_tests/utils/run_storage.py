@@ -70,7 +70,7 @@ class TestRunStorage:
         __test__ = True
 
         @pytest.fixture(scope='function', name='storage')
-        def run_storage(self):  # pylint: disable=arguments-differ
+        def run_storage(self):
             return MyStorageImplementation()
     ```
     """

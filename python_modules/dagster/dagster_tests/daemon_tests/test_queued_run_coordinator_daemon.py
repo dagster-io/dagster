@@ -1,5 +1,3 @@
-# pylint: disable=redefined-outer-name
-
 import time
 from contextlib import contextmanager
 

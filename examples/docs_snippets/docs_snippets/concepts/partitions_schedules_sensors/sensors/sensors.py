@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=unnecessary-ellipsis
+
 
 from dagster import (
     Definitions,
@@ -46,9 +46,7 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
 
 
@@ -169,9 +167,7 @@ def my_directory_sensor_with_skip_reasons():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={
-                    "ops": {"process_file": {"config": {"filename": filename}}}
-                },
+                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
             )
             has_files = True
     if not has_files:
@@ -208,7 +204,6 @@ def get_the_db_connection(_):
     ...
 
 
-# pylint: disable=unused-variable,reimported
 # start_build_resources_example
 from dagster import resource, build_resources, sensor
 

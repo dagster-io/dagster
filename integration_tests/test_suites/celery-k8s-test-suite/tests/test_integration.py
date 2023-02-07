@@ -74,7 +74,7 @@ def get_celery_job_engine_config(
     }
 
 
-def test_execute_on_celery_k8s_default(  # pylint: disable=redefined-outer-name
+def test_execute_on_celery_k8s_default(
     dagster_docker_image,
     dagster_instance,
     helm_namespace,
@@ -107,7 +107,7 @@ def test_execute_on_celery_k8s_default(  # pylint: disable=redefined-outer-name
     assert updated_run.tags[DOCKER_IMAGE_TAG] == dagster_docker_image
 
 
-def test_execute_on_celery_k8s_job_api(  # pylint: disable=redefined-outer-name
+def test_execute_on_celery_k8s_job_api(
     dagster_docker_image, dagster_instance, helm_namespace, dagit_url
 ):
     run_config = merge_dicts(
@@ -137,7 +137,7 @@ def test_execute_on_celery_k8s_job_api(  # pylint: disable=redefined-outer-name
     assert updated_run.tags[DOCKER_IMAGE_TAG] == dagster_docker_image
 
 
-def test_execute_on_celery_k8s_job_api_with_legacy_configmap_set(  # pylint: disable=redefined-outer-name
+def test_execute_on_celery_k8s_job_api_with_legacy_configmap_set(
     dagster_docker_image, dagster_instance, helm_namespace, dagit_url
 ):
     # Originally, jobs needed to include "dagster-pipeline-env" to pick up needed config when
@@ -170,7 +170,7 @@ def test_execute_on_celery_k8s_job_api_with_legacy_configmap_set(  # pylint: dis
     assert updated_run.tags[DOCKER_IMAGE_TAG] == dagster_docker_image
 
 
-def test_execute_on_celery_k8s_image_from_origin(  # pylint: disable=redefined-outer-name
+def test_execute_on_celery_k8s_image_from_origin(
     dagster_docker_image, dagster_instance, helm_namespace, dagit_url
 ):
     # Like the previous test, but the image is found from the pipeline origin
@@ -199,9 +199,7 @@ def test_execute_on_celery_k8s_image_from_origin(  # pylint: disable=redefined-o
     assert updated_run.tags[DOCKER_IMAGE_TAG] == dagster_docker_image
 
 
-def test_execute_subset_on_celery_k8s(  # pylint: disable=redefined-outer-name
-    dagster_docker_image, helm_namespace, dagit_url
-):
+def test_execute_subset_on_celery_k8s(dagster_docker_image, helm_namespace, dagit_url):
     run_config = merge_dicts(
         merge_yamls(
             [
@@ -228,7 +226,7 @@ def test_execute_subset_on_celery_k8s(  # pylint: disable=redefined-outer-name
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
 
 
-def test_execute_on_celery_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
+def test_execute_on_celery_k8s_retry_pipeline(
     dagster_docker_image, dagster_instance, helm_namespace, dagit_url
 ):
     run_config = merge_dicts(
@@ -276,7 +274,7 @@ def test_execute_on_celery_k8s_retry_pipeline(  # pylint: disable=redefined-oute
     ]
 
 
-def test_execute_on_celery_k8s_with_resource_requirements(  # pylint: disable=redefined-outer-name
+def test_execute_on_celery_k8s_with_resource_requirements(
     dagster_docker_image, dagster_instance, helm_namespace, dagit_url
 ):
     run_config = merge_dicts(
@@ -395,7 +393,7 @@ def _test_termination(dagit_url, dagster_instance, run_config):
     assert s3.get_object(Bucket=bucket, Key=key)
 
 
-def test_execute_on_celery_k8s_with_termination(  # pylint: disable=redefined-outer-name
+def test_execute_on_celery_k8s_with_termination(
     dagster_docker_image,
     dagster_instance,
     helm_namespace,
@@ -427,7 +425,7 @@ def set_dagster_k8s_pipeline_run_namespace_env(helm_namespace):
             os.environ["DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"] = old_value
 
 
-def test_execute_on_celery_k8s_with_env_var_and_termination(  # pylint: disable=redefined-outer-name
+def test_execute_on_celery_k8s_with_env_var_and_termination(
     dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env, dagit_url
 ):
     run_config = merge_dicts(
@@ -445,7 +443,7 @@ def test_execute_on_celery_k8s_with_env_var_and_termination(  # pylint: disable=
     _test_termination(dagit_url, dagster_instance, run_config)
 
 
-def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-outer-name
+def test_execute_on_celery_k8s_with_hard_failure(
     dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env, dagit_url
 ):
     run_config = merge_dicts(
@@ -503,7 +501,7 @@ def _get_step_events(event_logs):
     ]
 
 
-def test_memoization_on_celery_k8s(  # pylint: disable=redefined-outer-name
+def test_memoization_on_celery_k8s(
     dagster_docker_image, dagster_instance, helm_namespace, dagit_url
 ):
     ephemeral_prefix = str(uuid.uuid4())

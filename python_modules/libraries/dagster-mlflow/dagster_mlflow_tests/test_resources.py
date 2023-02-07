@@ -1,6 +1,6 @@
 """Unit testing the Mlflow class.
 """
-# pylint: disable=redefined-outer-name
+
 import logging
 import random
 import string
@@ -90,7 +90,7 @@ def child_context(basic_context, mlflow_run_config):
 def cleanup_mlflow_runs():
     yield
     while mlflow.active_run():
-        mlflow.end_run()  # pylint: disable=no-member
+        mlflow.end_run()
 
 
 @patch("os.environ.update")
@@ -152,9 +152,7 @@ def test_mlflow_meta_not_overloading():
     over_list = ["log_params"]
     for methods in over_list:
         # then: the function signature is not the same as the mlflow one
-        assert getattr(MlFlow, methods) != getattr(  # pylint: disable=comparison-with-callable
-            mlflow, methods
-        )  # pylint: disable=comparison-with-callable
+        assert getattr(MlFlow, methods) != getattr(mlflow, methods)
 
 
 def test_mlflow_meta_overloading():
@@ -197,7 +195,7 @@ def test_cleanup_on_error(
         # Given: a context  passed into the __init__ for MlFlow
         mlf = MlFlow(context)
     # When: a run is started
-    mlf.start_run()  # pylint: disable=no-member
+    mlf.start_run()
 
     with patch("sys.exc_info", return_value=[0, any_error]):
         # When: cleanup_on_error is called
@@ -276,7 +274,7 @@ def test_setup(mock_atexit, context):
         # - _set_all_tags is called once
         mock_set_all_tags.assert_called_once()
     # - atexit.unregister is called with mlf.end_run as an argument
-    mock_atexit.assert_called_once_with(mlf.end_run)  # pylint: disable=no-member
+    mock_atexit.assert_called_once_with(mlf.end_run)
 
 
 @pytest.mark.parametrize("run_id", [None, 0, "12"])

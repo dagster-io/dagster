@@ -85,7 +85,7 @@ class _HashedSeq(list):
 
     __slots__ = "hashvalue"
 
-    def __init__(self, tup: Tuple[object, ...]):  # pylint: disable=super-init-not-called
+    def __init__(self, tup: Tuple[object, ...]):
         self[:] = tup
         self.hashvalue = hash(tup)
 

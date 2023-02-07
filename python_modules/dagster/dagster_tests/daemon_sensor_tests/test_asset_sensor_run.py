@@ -1,4 +1,3 @@
-# pylint: disable=anomalous-backslash-in-string
 import threading
 
 import pendulum

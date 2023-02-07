@@ -48,7 +48,6 @@ from dagster._legacy import (
 from dagster._utils.test import execute_solid_within_pipeline
 
 # protected members
-# pylint: disable=W0212
 
 
 def _default_passthrough_compute_fn(*args, **kwargs):
@@ -1130,7 +1129,7 @@ def test_multi_dep_optional():
     @op(out={"skip": Out(is_required=False)})
     def skip(_):
         return
-        yield  # pylint: disable=unreachable
+        yield
 
     @op
     def collect(_, items):

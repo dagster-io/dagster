@@ -1008,7 +1008,7 @@ class DagsterGrpcServer:
         self.server.start()
 
         # Note: currently this is hardcoded as serving, since both services are cohosted
-        # pylint: disable=no-member
+
         self._health_servicer.set("DagsterApi", health_pb2.HealthCheckResponse.SERVING)
 
         if self._ipc_output_file:

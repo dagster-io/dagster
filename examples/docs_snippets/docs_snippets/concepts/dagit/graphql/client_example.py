@@ -1,5 +1,4 @@
 # isort: skip_file
-# pylint: disable=W0404
 # start_setup_marker
 from dagster_graphql import DagsterGraphQLClient
 
@@ -14,7 +13,7 @@ REPO_NAME = "quux"
 REPO_LOCATION_NAME = "corge"
 
 
-def do_something_on_success(some_arg=None):  # pylint: disable=W0613
+def do_something_on_success(some_arg=None):
     pass
 
 
@@ -22,7 +21,7 @@ def do_something_else():
     pass
 
 
-def do_something_with_exc(some_exception):  # pylint: disable=W0613
+def do_something_with_exc(some_exception):
     pass
 
 

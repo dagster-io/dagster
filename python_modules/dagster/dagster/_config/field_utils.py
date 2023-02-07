@@ -136,7 +136,7 @@ class Shape(_ConfigHasFields):
         field_aliases=None,
     ):
         # if we hit in the field cache - skip double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+        if self._initialized:
             return
 
         fields = expand_fields_dict(fields)
@@ -253,7 +253,7 @@ class Permissive(_ConfigHasFields):
 
     def __init__(self, fields=None, description=None):
         # if we hit in field cache avoid double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+        if self._initialized:
             return
 
         fields = expand_fields_dict(fields) if fields else None
@@ -320,7 +320,7 @@ class Selector(_ConfigHasFields):
 
     def __init__(self, fields, description=None):
         # if we hit in field cache avoid double init
-        if self._initialized:  # pylint: disable=access-member-before-definition
+        if self._initialized:
             return
 
         fields = expand_fields_dict(fields)

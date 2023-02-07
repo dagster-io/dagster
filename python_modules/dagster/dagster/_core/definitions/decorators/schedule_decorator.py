@@ -58,9 +58,6 @@ from ..utils import validate_tags
 if TYPE_CHECKING:
     from dagster import Partition
 
-# Error messages are long
-# pylint: disable=C0301
-
 
 def schedule(
     cron_schedule: Union[str, Sequence[str]],

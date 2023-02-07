@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=reimported,unnecessary-ellipsis,unused-variable,unused-argument
+# pylint: disable=unused-argument
 from dagster import (
     AssetMaterialization,
     DagsterEventType,
@@ -136,9 +136,7 @@ def my_foo_resource(context):
 
 
 def test_op_resource_def():
-    context = build_op_context(
-        resources={"foo": my_foo_resource.configured({"my_str": "bar"})}
-    )
+    context = build_op_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
     assert op_requires_foo(context) == "found bar"
 
 

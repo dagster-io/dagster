@@ -10,7 +10,7 @@ from pandas import (
 )
 from pyspark.sql import DataFrame as SparkDataFrame
 from snowflake.connector.pandas_tools import pd_writer
-from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
+from snowflake.sqlalchemy import URL
 from sqlalchemy import create_engine
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -91,7 +91,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
     def _handle_pandas_output(
         self, obj: PandasDataFrame, schema: str, table: str
     ) -> Mapping[str, Any]:
-        from snowflake import connector  # pylint: disable=no-name-in-module
+        from snowflake import connector
 
         connector.paramstyle = "pyformat"
         with connect_snowflake(config=self._config, schema=schema) as con:

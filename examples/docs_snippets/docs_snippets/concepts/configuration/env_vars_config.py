@@ -1,5 +1,3 @@
-# pylint: disable=unused-variable, unnecessary-ellipsis
-
 # start_database_example
 from dagster import StringSource, job, op, resource
 

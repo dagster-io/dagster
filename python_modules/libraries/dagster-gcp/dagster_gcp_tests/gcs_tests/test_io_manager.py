@@ -156,7 +156,7 @@ def test_dynamic(gcs_bucket):
 
     @job(resource_defs={"io_manager": gcs_pickle_io_manager, "gcs": mock_gcs_resource})
     def dynamic():
-        numbers().map(echo)  # pylint: disable=no-member
+        numbers().map(echo)
 
     result = dynamic.execute_in_process(
         run_config={"resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket}}}}

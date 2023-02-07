@@ -17,7 +17,7 @@ def test_python_error():
     python_error = None
     try:
         func()
-    except:  # pylint: disable=W0702
+    except:
         python_error = GraphenePythonError(serializable_error_info_from_exc_info(sys.exc_info()))
 
     assert python_error

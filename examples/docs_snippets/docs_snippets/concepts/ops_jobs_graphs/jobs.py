@@ -1,6 +1,6 @@
 # isort: skip_file
 
-# pylint: disable=unused-argument,reimported
+# pylint: disable=unused-argument
 
 from dagster import DependencyDefinition, GraphDefinition, job, op
 

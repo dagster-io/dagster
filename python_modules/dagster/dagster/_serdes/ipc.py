@@ -217,7 +217,7 @@ def open_ipc_subprocess(parts: Sequence[str], **kwargs: object) -> Popen[bytes]:
 def interrupt_ipc_subprocess(proc: Popen[bytes]) -> None:
     """Send CTRL_BREAK on Windows, SIGINT on other platforms."""
     if sys.platform == "win32":
-        proc.send_signal(signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
+        proc.send_signal(signal.CTRL_BREAK_EVENT)
     else:
         proc.send_signal(signal.SIGINT)
 
@@ -227,6 +227,6 @@ def interrupt_ipc_subprocess_pid(pid: int) -> None:
     check.int_param(pid, "pid")
 
     if sys.platform == "win32":
-        os.kill(pid, signal.CTRL_BREAK_EVENT)  # pylint: disable=no-member
+        os.kill(pid, signal.CTRL_BREAK_EVENT)
     else:
         os.kill(pid, signal.SIGINT)

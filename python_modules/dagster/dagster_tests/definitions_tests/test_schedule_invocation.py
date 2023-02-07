@@ -54,13 +54,13 @@ def test_incorrect_cron_schedule_invocation():
             "provided when invoking."
         ),
     ):
-        basic_schedule()  # pylint: disable=no-value-for-parameter
+        basic_schedule()
 
     with pytest.raises(
         DagsterInvalidInvocationError,
         match="Schedule invocation expected argument '_'.",
     ):
-        basic_schedule(foo=None)  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
+        basic_schedule(foo=None)
 
 
 def partition_schedule_factory():
@@ -88,15 +88,13 @@ def test_incorrect_partition_schedule_invocation():
         DagsterInvalidInvocationError,
         match="Schedule decorated function has date argument, but no date argument was provided.",
     ):
-        my_partition_schedule()  # pylint: disable=no-value-for-parameter
+        my_partition_schedule()
 
     with pytest.raises(
         DagsterInvalidInvocationError,
         match="Schedule invocation expected argument 'date'.",
     ):
-        my_partition_schedule(  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
-            foo=None
-        )
+        my_partition_schedule(foo=None)
 
 
 def test_instance_access():

@@ -20,7 +20,7 @@ def test_generator_exit():
         try:
             yield "A"
         finally:
-            yield "EXIT"  # pylint: disable=finally-yield
+            yield "EXIT"
 
     gen = generator()
     next(gen)

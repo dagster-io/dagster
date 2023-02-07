@@ -19,12 +19,10 @@ def is_airflow_2_loaded_in_environment() -> bool:
     return version.parse(str(airflow_version)) >= version.parse("2.0.0")
 
 
-# pylint: disable=no-name-in-module,import-error
 if is_airflow_2_loaded_in_environment():
     from airflow.utils.session import create_session
 else:
     from airflow.utils.db import create_session
-# pylint: enable=no-name-in-module,import-error
 
 
 class DagsterAirflowError(Exception):
@@ -97,7 +95,7 @@ def serialize_connections(connections: List[Connection] = []) -> List[Mapping[st
 
 
 if os.name == "nt":
-    import msvcrt  # pylint: disable=import-error
+    import msvcrt
 
     def portable_lock(fp):
         fp.seek(0)

@@ -1,4 +1,4 @@
-# pylint: disable=redefined-outer-name, unused-argument
+# pylint: disable=unused-argument
 import logging
 
 import mock

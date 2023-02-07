@@ -563,7 +563,7 @@ def test_pipeline_run_dagster_run():
         pass
 
     @_whitelist_for_serdes(legacy_env)
-    class PipelineRunStatus(Enum):  # pylint: disable=unused-variable
+    class PipelineRunStatus(Enum):
         QUEUED = "QUEUED"
         NOT_STARTED = "NOT_STARTED"
 
@@ -731,7 +731,7 @@ def test_legacy_event_log_load():
         whitelist_map=legacy_env,
         storage_name="EventLogEntry",  # use this to avoid collision with current EventLogEntry
     )
-    class OldEventLogEntry(  # pylint: disable=unused-variable
+    class OldEventLogEntry(
         NamedTuple(
             "_OldEventLogEntry",
             [

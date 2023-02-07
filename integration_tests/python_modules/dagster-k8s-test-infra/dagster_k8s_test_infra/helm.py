@@ -1,5 +1,5 @@
 # ruff: noqa: T201
-# pylint: disable= redefined-outer-name, unused-argument
+# pylint: disable=unused-argument
 import base64
 import os
 import subprocess

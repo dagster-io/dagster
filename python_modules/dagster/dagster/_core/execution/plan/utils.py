@@ -56,7 +56,7 @@ def op_execution_error_boundary(
             # The system has thrown an error that is part of the user-framework contract
             raise de
 
-        except Exception as e:  # pylint: disable=W0703
+        except Exception as e:
             # An exception has been thrown by user code and computation should cease
             # with the error reported further up the stack
 

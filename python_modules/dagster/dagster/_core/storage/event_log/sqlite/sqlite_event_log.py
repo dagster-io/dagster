@@ -382,7 +382,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def _delete_mirrored_events_for_asset_key(self, asset_key: AssetKey) -> None:
         with self.index_connection() as conn:
             conn.execute(
-                SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
+                SqlEventLogStorageTable.delete().where(
                     SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                 )
             )

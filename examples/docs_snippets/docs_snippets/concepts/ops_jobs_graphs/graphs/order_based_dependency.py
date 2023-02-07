@@ -1,4 +1,4 @@
-# pylint: disable=unused-argument, no-value-for-parameter
+# pylint: disable=unused-argument
 
 
 class MockDatabase:

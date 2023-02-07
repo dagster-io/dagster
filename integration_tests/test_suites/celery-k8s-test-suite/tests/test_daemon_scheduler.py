@@ -12,7 +12,7 @@ from marks import mark_daemon
 
 @mark_daemon
 @pytest.mark.skip("Temporarily skip until we figure out why this is so flaky")
-def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name, disable=unused-argument
+def test_execute_schedule_on_celery_k8s(  # pylint: disable=unused-argument
     dagster_instance_for_daemon, helm_namespace_for_daemon
 ):
     schedule_name = "frequent_celery"

@@ -15,14 +15,11 @@ from dagster_airflow.utils import (
     is_airflow_2_loaded_in_environment,
 )
 
-# pylint: disable=no-name-in-module,import-error
 if is_airflow_2_loaded_in_environment():
     from airflow.utils.state import DagRunState
     from airflow.utils.types import DagRunType
 else:
     from airflow.utils.state import State
-
-    # pylint: enable=no-name-in-module,import-error
 
 
 class AirflowDatabase:

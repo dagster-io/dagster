@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 import time
 
 from dagster import AssetKey, IOManager, IOManagerDefinition, SourceAsset, asset

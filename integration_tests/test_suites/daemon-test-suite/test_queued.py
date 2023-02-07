@@ -5,7 +5,7 @@ from dagster._utils.merger import merge_dicts
 from utils import start_daemon
 
 
-def create_run(instance, external_pipeline, **kwargs):  # pylint: disable=redefined-outer-name
+def create_run(instance, external_pipeline, **kwargs):
     pipeline_args = merge_dicts(
         {
             "pipeline_name": "foo_pipeline",

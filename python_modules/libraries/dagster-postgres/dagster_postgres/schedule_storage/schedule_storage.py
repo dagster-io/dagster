@@ -154,7 +154,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         selector_id = state.selector_id
         conn.execute(
             db_dialects.postgresql.insert(InstigatorsTable)
-            .values(  # pylint: disable=no-value-for-parameter
+            .values(
                 selector_id=selector_id,
                 repository_selector_id=state.repository_selector_id,
                 status=state.status.value,

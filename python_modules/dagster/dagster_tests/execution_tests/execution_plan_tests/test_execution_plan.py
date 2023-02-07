@@ -474,7 +474,7 @@ def test_fan_out_should_skip_step():
     @job
     def optional_outputs():
         foo_res = foo()
-        # pylint: disable=no-member
+
         bar.alias("bar_1")(input_arg=foo_res.out_1)
         bar.alias("bar_2")(input_arg=foo_res.out_2)
         bar.alias("bar_3")(input_arg=foo_res.out_3)
@@ -513,7 +513,7 @@ def test_fan_in_should_skip_step():
     @op(out=Out(is_required=False))
     def skip(_):
         return
-        yield  # pylint: disable=unreachable
+        yield
 
     @op
     def fan_in(_context, items):

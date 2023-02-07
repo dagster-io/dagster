@@ -49,9 +49,9 @@ import dagster._check as check
 import dagster._seven as seven
 
 if sys.version_info > (3,):
-    from pathlib import Path  # pylint: disable=import-error
+    from pathlib import Path
 else:
-    from pathlib2 import Path  # pylint: disable=import-error
+    from pathlib2 import Path
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
@@ -641,7 +641,7 @@ def restore_sys_modules() -> Iterator[None]:
 
 def process_is_alive(pid: int) -> bool:
     if seven.IS_WINDOWS:
-        import psutil  # pylint: disable=import-error
+        import psutil
 
         return psutil.pid_exists(pid=pid)
     else:

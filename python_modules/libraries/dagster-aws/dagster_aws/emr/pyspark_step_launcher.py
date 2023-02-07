@@ -376,7 +376,7 @@ class EmrPySparkStepLauncher(StepLauncher):
                 all_events = all_events_new
 
     def read_events(self, s3, run_id, step_key):
-        events_s3_obj = s3.Object(  # pylint: disable=no-member
+        events_s3_obj = s3.Object(
             self.staging_bucket, self._artifact_s3_key(run_id, step_key, PICKLED_EVENTS_FILE_NAME)
         )
 

@@ -281,13 +281,13 @@ class TestGCSComputeLogManager(TestCapturedLogManager):
     __test__ = True
 
     @pytest.fixture(name="captured_log_manager")
-    def captured_log_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+    def captured_log_manager(self, gcs_bucket):
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)
 
     # for streaming tests
     @pytest.fixture(name="write_manager")
-    def write_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+    def write_manager(self, gcs_bucket):
         # should be a different local directory as the read manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(
@@ -298,7 +298,7 @@ class TestGCSComputeLogManager(TestCapturedLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, gcs_bucket):  # pylint: disable=arguments-differ
+    def read_manager(self, gcs_bucket):
         # should be a different local directory as the write manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)

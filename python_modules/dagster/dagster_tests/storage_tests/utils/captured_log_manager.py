@@ -21,7 +21,7 @@ class TestCapturedLogManager:
         __test__ = True
 
         @pytest.fixture(scope='function', name='captured_log_manager')
-        def captured_log_manager(self):  # pylint: disable=arguments-differ
+        def captured_log_manager(self):
             return MyCapturedLogManagerImplementation()
     ```
     """

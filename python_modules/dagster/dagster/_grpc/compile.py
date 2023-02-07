@@ -31,12 +31,12 @@ GENERATED_HEADER = [
 ]
 
 GENERATED_GRPC_PYLINT_DIRECTIVE = [
-    "# pylint: disable=no-member, unused-argument\n",
+    "# pylint: disable=unused-argument\n",
     "\n",
 ]
 
 GENERATED_PB2_PYLINT_DIRECTIVE = [
-    "# noqa: SLF001,no-name-in-module\n",
+    "# noqa: SLF001\n",
     "\n",
 ]
 
@@ -63,7 +63,7 @@ def protoc(generated_dir: str):
     )
 
     # The generated api_pb2_grpc.py file must be altered in two ways:
-    # 1. Add a pylint directive, `disable=no-member, unused-argument`
+    # 1. Add a pylint directive, `disable=unused-argument`
     # 2. Change the import from `import api_pb2 as api__pb2` to `from . import api_pb2 as api__pb2`.
     #    See: https://github.com/grpc/grpc/issues/22914
     with safe_tempfile_path() as tempfile_path:
@@ -101,11 +101,7 @@ def protoc(generated_dir: str):
                 for line in generated.readlines():
                     rewritten.write(line)
 
-    installed_pkgs = {
-        # pylint: disable=not-an-iterable
-        pkg.key
-        for pkg in pkg_resources.working_set
-    }
+    installed_pkgs = {pkg.key for pkg in pkg_resources.working_set}
 
     # Run black if it's available. This is under a conditional because black may not be available in
     # a test environment.

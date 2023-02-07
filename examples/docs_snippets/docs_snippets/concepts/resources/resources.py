@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=unused-argument,reimported,unnecessary-ellipsis
+# pylint: disable=unused-argument
 from dagster import ResourceDefinition, graph, job
 
 
@@ -108,12 +108,8 @@ def do_database_stuff():
     op_requires_resources()
 
 
-do_database_stuff_prod = do_database_stuff.to_job(
-    resource_defs={"database": database_resource_a}
-)
-do_database_stuff_dev = do_database_stuff.to_job(
-    resource_defs={"database": database_resource_b}
-)
+do_database_stuff_prod = do_database_stuff.to_job(resource_defs={"database": database_resource_a})
+do_database_stuff_dev = do_database_stuff.to_job(resource_defs={"database": database_resource_b})
 
 
 # end_graph_example
@@ -202,7 +198,6 @@ def db_connection():
 # end_cm_resource
 
 
-# pylint: disable=unused-variable
 # start_cm_resource_op
 @op(required_resource_keys={"db_connection"})
 def use_db_connection(context):
@@ -222,7 +217,6 @@ def get_the_db_connection(_):
     ...
 
 
-# pylint: disable=unused-variable,reimported
 # start_build_resources_example
 from dagster import resource, build_resources
 

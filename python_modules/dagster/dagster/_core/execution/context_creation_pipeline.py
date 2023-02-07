@@ -349,7 +349,6 @@ def orchestration_context_event_generator(
         dagster_error = cast(DagsterUserCodeExecutionError, dagster_error)
         user_facing_exc_info = (
             # pylint does not know original_exc_info exists is is_user_code_error is true
-            # pylint: disable=no-member
             dagster_error.original_exc_info
             if dagster_error.is_user_code_error
             else sys.exc_info()

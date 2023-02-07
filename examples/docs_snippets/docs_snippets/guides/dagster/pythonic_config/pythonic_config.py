@@ -1,5 +1,5 @@
 # isort: skip_file
-# pylint: disable=unused-argument,reimported,unnecessary-ellipsis
+# pylint: disable=unused-argument
 
 
 class Engine:
@@ -197,9 +197,7 @@ def metadata_config() -> None:
     class MyMetadataConfig(Config):
         # Here, the ellipses `...` indicates that the field is required and has no default value.
         person_name: str = Field(..., description="The name of the person to greet")
-        age: int = Field(
-            ..., gt=0, lt=100, description="The age of the person to greet"
-        )
+        age: int = Field(..., gt=0, lt=100, description="The age of the person to greet")
 
     # errors!
     MyMetadataConfig(person_name="Alice", age=200)

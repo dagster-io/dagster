@@ -9,7 +9,7 @@ def get_version() -> str:
     with open(
         Path(__file__).parent / "dagster_snowflake_pyspark/version.py", encoding="utf8"
     ) as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)
 
     return version["__version__"]
 

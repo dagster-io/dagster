@@ -21,23 +21,21 @@ def test_logger_invocation_arguments():
             "provided when invoking."
         ),
     ):
-        foo_logger()  # pylint: disable=no-value-for-parameter
+        foo_logger()
 
     # Check that proper error is thrown when logger def is invoked with wrong context arg name
     with pytest.raises(
         DagsterInvalidInvocationError,
         match="Logger initialization expected argument '_my_context'",
     ):
-        foo_logger(  # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
-            context=build_init_logger_context()
-        )
+        foo_logger(context=build_init_logger_context())
 
     # Check that proper error is thrown when logger def is invoked with too many args
     with pytest.raises(
         DagsterInvalidInvocationError,
         match="Initialization of logger received multiple arguments.",
     ):
-        foo_logger(build_init_logger_context(), 5)  # pylint: disable=too-many-function-args
+        foo_logger(build_init_logger_context(), 5)
 
     ret_logger = foo_logger(build_init_logger_context())
 

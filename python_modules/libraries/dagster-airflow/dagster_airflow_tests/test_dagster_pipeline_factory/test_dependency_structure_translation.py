@@ -1,16 +1,13 @@
-# pylint: disable=pointless-statement
-
 from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.utils.dates import days_ago
 
-# pylint: disable=no-name-in-module,import-error
 if airflow_version >= "2.0.0":
     from airflow.models.baseoperator import chain
 else:
     from airflow.utils.helpers import chain
-# pylint: enable=no-name-in-module,import-error
+
 
 from dagster._core.snap import PipelineSnapshot
 from dagster._serdes import serialize_pp

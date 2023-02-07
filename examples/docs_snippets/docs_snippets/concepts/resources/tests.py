@@ -1,6 +1,6 @@
 # isort: skip_file
 # pylint: disable=unused-argument
-# pylint: disable=reimported
+
 from dagster import ResourceDefinition
 
 api_client = ResourceDefinition.mock_resource()

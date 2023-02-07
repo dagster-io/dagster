@@ -64,7 +64,7 @@ def get_failing_celery_job_engine_config(dagster_docker_image, job_namespace):
 
 
 @mark_monitoring
-def test_run_monitoring_fails_on_interrupt(  # pylint: disable=redefined-outer-name
+def test_run_monitoring_fails_on_interrupt(
     dagster_docker_image, dagster_instance, helm_namespace, dagit_url
 ):
     run_config = merge_dicts(
@@ -103,7 +103,7 @@ def test_run_monitoring_fails_on_interrupt(  # pylint: disable=redefined-outer-n
 
 
 @mark_monitoring
-def test_run_monitoring_startup_fail(  # pylint: disable=redefined-outer-name
+def test_run_monitoring_startup_fail(
     dagster_docker_image, dagster_instance, helm_namespace, dagit_url
 ):
     run_config = merge_dicts(

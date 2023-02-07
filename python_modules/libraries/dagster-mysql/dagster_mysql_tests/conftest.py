@@ -6,7 +6,7 @@ from dagster._utils.test.mysql_instance import TestMySQLInstance
 
 
 @pytest.fixture(scope="session")
-def hostname(conn_string):  # pylint: disable=redefined-outer-name, unused-argument
+def hostname(conn_string):  # pylint: disable=unused-argument
     parse_result = urlparse(conn_string)
     return parse_result.hostname
 
@@ -14,7 +14,7 @@ def hostname(conn_string):  # pylint: disable=redefined-outer-name, unused-argum
 @pytest.fixture(
     scope="session", params=[("test-mysql-db", {}), ("test-mysql-db-pinned", {"port": 3307})]
 )
-def conn_string(request):  # pylint: disable=redefined-outer-name, unused-argument
+def conn_string(request):  # pylint: disable=unused-argument
     service, conn_args = request.param
     with TestMySQLInstance.docker_service_up_or_skip(
         file_relative_path(__file__, "docker-compose.yml"), service, conn_args
@@ -26,7 +26,7 @@ def conn_string(request):  # pylint: disable=redefined-outer-name, unused-argume
     scope="session",
     params=[("test-mysql-db", {}), ("test-mysql-db-pinned-backcompat", {"port": 3308})],
 )
-def backcompat_conn_string(request):  # pylint: disable=redefined-outer-name, unused-argument
+def backcompat_conn_string(request):  # pylint: disable=unused-argument
     service, conn_args = request.param
     with TestMySQLInstance.docker_service_up_or_skip(
         file_relative_path(__file__, "docker-compose.yml"), service, conn_args

@@ -22,9 +22,7 @@ class FakeADLS2Resource(ADLS2Resource):
     Wraps a ``mock.MagicMock``. Containers are implemented using an in-memory dict.
     """
 
-    def __init__(
-        self, account_name, credential="fake-creds"
-    ):  # pylint: disable=unused-argument,super-init-not-called
+    def __init__(self, account_name, credential="fake-creds"):  # pylint: disable=unused-argument
         self._adls2_client = FakeADLS2ServiceClient(account_name)
         self._blob_client = FakeBlobServiceClient(account_name)
         self._lease_client_constructor = FakeLeaseClient

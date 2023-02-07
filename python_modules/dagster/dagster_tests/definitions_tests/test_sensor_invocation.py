@@ -82,9 +82,7 @@ def test_sensor_invocation_args():
         DagsterInvalidInvocationError,
         match="Sensor invocation expected argument '_arbitrary_context'.",
     ):
-        basic_sensor_with_context(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-            bad_context=context
-        )
+        basic_sensor_with_context(bad_context=context)
 
     # pass context with no args
     with pytest.raises(
@@ -94,7 +92,7 @@ def test_sensor_invocation_args():
             "provided when invoking."
         ),
     ):
-        basic_sensor_with_context()  # pylint: disable=no-value-for-parameter
+        basic_sensor_with_context()
 
     # pass context with too many args
     with pytest.raises(
@@ -104,9 +102,7 @@ def test_sensor_invocation_args():
             "parameter should be provided when invoking."
         ),
     ):
-        basic_sensor_with_context(  # pylint: disable=redundant-keyword-arg
-            context, _arbitrary_context=None
-        )
+        basic_sensor_with_context(context, _arbitrary_context=None)
 
 
 def test_sensor_invocation_resources() -> None:
@@ -424,18 +420,8 @@ def test_multi_asset_sensor_has_assets():
 
     @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")])
     def passing_sensor(context):
-        assert (
-            context.assets_defs_by_key[  # pylint: disable=comparison-with-callable
-                AssetKey("asset_a")
-            ]
-            == two_assets
-        )
-        assert (
-            context.assets_defs_by_key[  # pylint: disable=comparison-with-callable
-                AssetKey("asset_b")
-            ]
-            == two_assets
-        )
+        assert context.assets_defs_by_key[AssetKey("asset_a")] == two_assets
+        assert context.assets_defs_by_key[AssetKey("asset_b")] == two_assets
         assert len(context.assets_defs_by_key) == 2
 
     @repository

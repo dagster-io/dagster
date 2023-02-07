@@ -181,7 +181,7 @@ def helm_postgres_url_for_k8s_run_launcher(system_namespace_for_k8s_run_launcher
 @pytest.fixture(scope="session")
 def helm_postgres_url_for_user_deployments_subchart_disabled(
     helm_namespace_for_user_deployments_subchart_disabled,
-):  # pylint: disable=unused-argument, redefined-outer-name
+):  # pylint: disable=unused-argument
     with local_port_forward_postgres(
         namespace=helm_namespace_for_user_deployments_subchart_disabled
     ) as local_forward_port:
@@ -195,7 +195,7 @@ def helm_postgres_url_for_user_deployments_subchart_disabled(
 @pytest.fixture(scope="function")
 def dagster_instance_for_user_deployments_subchart_disabled(
     helm_postgres_url_for_user_deployments_subchart_disabled,
-):  # pylint: disable=redefined-outer-name
+):
     tempdir = DagsterInstance.temp_storage()
 
     with DagsterInstance(
@@ -227,7 +227,7 @@ def helm_postgres_url_for_daemon(helm_namespace_for_daemon):
 @pytest.fixture(scope="function")
 def dagster_instance_for_daemon(
     helm_postgres_url_for_daemon,
-):  # pylint: disable=redefined-outer-name
+):
     tempdir = DagsterInstance.temp_storage()
 
     with DagsterInstance(
@@ -249,7 +249,7 @@ def dagster_instance_for_daemon(
 @pytest.fixture(scope="function")
 def dagster_instance_for_k8s_run_launcher(
     helm_postgres_url_for_k8s_run_launcher,
-):  # pylint: disable=redefined-outer-name
+):
     tempdir = DagsterInstance.temp_storage()
 
     instance_ref = InstanceRef.from_dir(tempdir)
@@ -281,7 +281,7 @@ def helm_postgres_url(helm_namespace):
 
 
 @pytest.fixture(scope="function")
-def dagster_instance(helm_postgres_url):  # pylint: disable=redefined-outer-name
+def dagster_instance(helm_postgres_url):
     with tempfile.TemporaryDirectory() as tempdir:
         with environ({"DAGSTER_HOME": tempdir}):
             with DagsterInstance(

@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 import boto3
 import pytest
 from dagster_aws.athena.resources import AthenaError, AthenaTimeout, FakeAthenaResource

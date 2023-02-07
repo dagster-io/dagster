@@ -595,7 +595,7 @@ def test_fan_in_skips():
 def test_collect_optional():
     @op(out=Out(is_required=False))
     def optional_out_op():
-        if False:  # pylint: disable=using-constant-test
+        if False:
             yield None
 
     @op(out=DynamicOut())
@@ -621,7 +621,7 @@ def test_collect_optional():
 def test_non_required_dynamic_collect_skips():
     @op(out=DynamicOut(is_required=False))
     def producer():
-        if False:  # pylint: disable=using-constant-test
+        if False:
             yield DynamicOutput("yay")
 
     @op

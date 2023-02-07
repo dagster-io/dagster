@@ -798,7 +798,6 @@ def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: Pipel
     from dagster._core.storage.mem_io_manager import mem_io_manager
 
     if (
-        # pylint: disable=comparison-with-callable
         resources.get(DEFAULT_IO_MANAGER_KEY) in [default_job_io_manager]
         and job.version_strategy is None
     ):

@@ -378,7 +378,7 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
 
 class StaticPartitionsDefinition(
     PartitionsDefinition[str]
-):  # pylint: disable=unsubscriptable-object
+):
     """A statically-defined set of partitions.
 
     Example:
@@ -422,7 +422,7 @@ class StaticPartitionsDefinition(
 
 
 class ScheduleTimeBasedPartitionsDefinition(
-    PartitionsDefinition[datetime],  # pylint: disable=unsubscriptable-object
+    PartitionsDefinition[datetime],
     NamedTuple(
         "_ScheduleTimeBasedPartitionsDefinition",
         [
@@ -439,7 +439,7 @@ class ScheduleTimeBasedPartitionsDefinition(
 ):
     """Computes the partitions backwards from the scheduled execution times."""
 
-    def __new__(  # pylint: disable=arguments-differ
+    def __new__(
         cls,
         schedule_type: ScheduleType,
         start: datetime,
@@ -602,7 +602,7 @@ class DynamicPartitionsDefinition(
 
     """
 
-    def __new__(  # pylint: disable=arguments-differ
+    def __new__(
         cls,
         partition_fn: Optional[
             Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
@@ -739,7 +739,7 @@ class PartitionSetDefinition(Generic[T_cov]):
             [Partition[T_cov]], Optional[Mapping[str, str]]
         ] = lambda _partition: {},
         partitions_def: Optional[
-            PartitionsDefinition[T_cov]  # pylint: disable=unsubscriptable-object
+            PartitionsDefinition[T_cov]
         ] = None,
         job_name: Optional[str] = None,
     ):
@@ -1099,7 +1099,7 @@ class PartitionedConfig(Generic[T_cov]):
 
     def __init__(
         self,
-        partitions_def: PartitionsDefinition[T_cov],  # pylint: disable=unsubscriptable-object
+        partitions_def: PartitionsDefinition[T_cov],
         run_config_for_partition_fn: Callable[[Partition[T_cov]], Mapping[str, Any]],
         decorated_fn: Optional[Callable[..., Mapping[str, Any]]] = None,
         tags_for_partition_fn: Optional[Callable[[Partition[T_cov]], Mapping[str, str]]] = None,
@@ -1117,7 +1117,7 @@ class PartitionedConfig(Generic[T_cov]):
     @property
     def partitions_def(
         self,
-    ) -> PartitionsDefinition[T_cov]:  # pylint: disable=unsubscriptable-object
+    ) -> PartitionsDefinition[T_cov]:
         return self._partitions
 
     @public

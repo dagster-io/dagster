@@ -394,7 +394,7 @@ def test_k8s_executor_resource_requirements(
 
 
 @pytest.mark.integration
-def test_execute_on_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
+def test_execute_on_k8s_retry_pipeline(
     dagster_instance_for_k8s_run_launcher,
     user_code_namespace_for_k8s_run_launcher,
     dagster_docker_image,
