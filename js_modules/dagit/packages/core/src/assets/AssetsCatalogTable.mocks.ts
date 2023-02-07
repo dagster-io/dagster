@@ -76,6 +76,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<SingleAss
               __typename: 'RepositoryLocation',
             },
           },
+          partitionStats: null,
           assetKey: {
             path: ['good_asset'],
             __typename: 'AssetKey',
@@ -164,6 +165,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<SingleAsse
               __typename: 'RepositoryLocation',
             },
           },
+          partitionStats: null,
           assetKey: {
             path: ['late_asset'],
             __typename: 'AssetKey',
@@ -250,6 +252,11 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<SingleAssetQuery> = {
               name: 'test.py',
               __typename: 'RepositoryLocation',
             },
+          },
+          partitionStats: {
+            __typename: 'PartitionStats',
+            numMaterialized: 8,
+            numPartitions: 11,
           },
           assetKey: {
             path: ['run_failing_asset'],
