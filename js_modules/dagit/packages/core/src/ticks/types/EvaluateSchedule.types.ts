@@ -13,7 +13,7 @@ export type GetScheduleQuery = {
   __typename: 'DagitQuery';
   scheduleOrError:
     | {__typename: 'PythonError'; message: string; stack: Array<string>}
-    | {__typename: 'Schedule'; name: string; potentialTickTimestamps: Array<number | null>}
+    | {__typename: 'Schedule'; name: string; potentialTickTimestamps: Array<number>}
     | {__typename: 'ScheduleNotFoundError'};
 };
 
