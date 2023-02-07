@@ -14,7 +14,7 @@ snowflake_io_manager = build_snowflake_io_manager(
 )
 
 defs = Definitions(
-    assets=[iris_dataset, rose_dataset],
+    assets=[iris_dataset, rose_dataset],  # type: ignore  # (didactic)
     resources={
         "io_manager": snowflake_io_manager.configured(
             {

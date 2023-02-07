@@ -7,6 +7,7 @@ from typing import (
     AbstractSet,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -150,7 +151,7 @@ class ExternalRepository:
     def get_external_resource(self, resource_name: str) -> ExternalResource:
         return self._external_resources[resource_name]
 
-    def get_external_resources(self) -> Sequence[ExternalResource]:
+    def get_external_resources(self) -> Iterable[ExternalResource]:
         return self._external_resources.values()
 
     @property
