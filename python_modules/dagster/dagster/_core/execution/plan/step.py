@@ -221,7 +221,7 @@ class ExecutionStep(
         return None
 
 
-class UnresolvedMappedExecutionStep(  # type: ignore
+class UnresolvedMappedExecutionStep(
     NamedTuple(
         "_UnresolvedMappedExecutionStep",
         [
@@ -381,7 +381,7 @@ def _resolved_input(
     return step_input.resolve(map_key)
 
 
-class UnresolvedCollectExecutionStep(  # type: ignore
+class UnresolvedCollectExecutionStep(
     NamedTuple(
         "_UnresolvedCollectExecutionStep",
         [

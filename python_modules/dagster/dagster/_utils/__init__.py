@@ -229,10 +229,10 @@ class frozendict(dict):
 
     __setitem__ = __readonly__
     __delitem__ = __readonly__
-    pop = __readonly__  # type: ignore[assignment]
+    pop = __readonly__
     popitem = __readonly__
     clear = __readonly__
-    update = __readonly__  # type: ignore[assignment]
+    update = __readonly__
     setdefault = __readonly__  # type: ignore[assignment]
     del __readonly__
 
@@ -256,7 +256,7 @@ class frozenlist(list):
     def __setstate__(self, state):
         self.__init__(state)
 
-    __setitem__ = __readonly__  # type: ignore[assignment]
+    __setitem__ = __readonly__
     __delitem__ = __readonly__
     append = __readonly__
     clear = __readonly__
@@ -272,12 +272,12 @@ class frozenlist(list):
 
 
 @overload
-def make_readonly_value(value: List[T]) -> Sequence[T]:  # type: ignore
+def make_readonly_value(value: List[T]) -> Sequence[T]:
     ...
 
 
 @overload
-def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:  # type: ignore
+def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:
     ...
 
 

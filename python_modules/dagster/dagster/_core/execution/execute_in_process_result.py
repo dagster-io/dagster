@@ -47,23 +47,23 @@ class ExecuteInProcessResult(ExecutionResult):
             output_capture, "output_capture", key_type=StepOutputHandle
         )
 
-    @public  # type: ignore
+    @public
     @property
     def job_def(self) -> JobDefinition:
         return self._job_def
 
-    @public  # type: ignore
+    @public
     @property
     def dagster_run(self) -> DagsterRun:
         return self._dagster_run
 
-    @public  # type: ignore
+    @public
     @property
     def all_events(self) -> Sequence[DagsterEvent]:
         """List[DagsterEvent]: All dagster events emitted during execution."""
         return self._event_list
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> str:
         return self.dagster_run.run_id

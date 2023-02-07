@@ -76,7 +76,7 @@ def test_many_events_subset_job(executor_def):
 
 def test_sleepy_job(executor_def):
     assert (
-        lambda: sleepy.to_job(  # type: ignore
+        lambda: sleepy.to_job(
             config={
                 "ops": {"giver": {"config": [2, 2, 2, 2]}},
             },

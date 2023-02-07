@@ -184,17 +184,17 @@ class OpDefinition(NodeDefinition):
     def is_graph_job_op_node(self) -> bool:
         return True
 
-    @public  # type: ignore
+    @public
     @property
     def name(self) -> str:
         return super(OpDefinition, self).name
 
-    @public  # type: ignore
+    @public
     @property
     def ins(self) -> Mapping[str, In]:
         return {input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
 
-    @public  # type: ignore
+    @public
     @property
     def outs(self) -> Mapping[str, Out]:
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
@@ -203,28 +203,28 @@ class OpDefinition(NodeDefinition):
     def compute_fn(self) -> Union[Callable[..., Any], "DecoratedOpFunction"]:
         return self._compute_fn
 
-    @public  # type: ignore
+    @public
     @property
     def config_schema(self) -> IDefinitionConfigSchema:
         return self._config_schema
 
-    @public  # type: ignore
+    @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset(self._required_resource_keys)
 
-    @public  # type: ignore
+    @public
     @property
     def version(self) -> Optional[str]:
         deprecation_warning("`version` property on OpDefinition", "2.0")
         return self._version
 
-    @public  # type: ignore
+    @public
     @property
     def retry_policy(self) -> Optional[RetryPolicy]:
         return self._retry_policy
 
-    @public  # type: ignore
+    @public
     @property
     def tags(self) -> Mapping[str, str]:
         return super(OpDefinition, self).tags

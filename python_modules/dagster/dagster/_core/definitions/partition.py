@@ -553,10 +553,10 @@ class PartitionSetDefinition(Generic[T]):
         )
         self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
         # Type ignores workaround for mypy bug "cannot assign to a method"
-        self._user_defined_run_config_fn_for_partition = check.callable_param(  # type: ignore
+        self._user_defined_run_config_fn_for_partition = check.callable_param(
             run_config_fn_for_partition, "run_config_fn_for_partition"
         )
-        self._user_defined_tags_fn_for_partition = check.callable_param(  # type: ignore
+        self._user_defined_tags_fn_for_partition = check.callable_param(
             tags_fn_for_partition, "tags_fn_for_partition"
         )
         if partitions_def is not None:
@@ -587,7 +587,7 @@ class PartitionSetDefinition(Generic[T]):
             if not current_time:
                 current_time = pendulum.now("UTC")
 
-            check.callable_param(partition_fn, "partition_fn")  # type: ignore
+            check.callable_param(partition_fn, "partition_fn")
 
             if partition_fn_param_count == 1:
                 obj_list = cast(
@@ -631,11 +631,11 @@ class PartitionSetDefinition(Generic[T]):
         return self._partitions_def
 
     def run_config_for_partition(self, partition: Partition[T]) -> Mapping[str, Any]:
-        return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))  # type: ignore
+        return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))
 
     def tags_for_partition(self, partition: Partition[T]) -> Mapping[str, str]:
         user_tags = validate_tags(
-            self._user_defined_tags_fn_for_partition(partition), allow_reserved_tags=False  # type: ignore
+            self._user_defined_tags_fn_for_partition(partition), allow_reserved_tags=False
         )
         tags = merge_dicts(user_tags, DagsterRun.tags_for_partition_set(self, partition))
 
@@ -892,17 +892,17 @@ class PartitionedConfig(Generic[T]):
             tags_for_partition_fn, "tags_for_partition_fn"
         )
 
-    @public  # type: ignore
+    @public
     @property
     def partitions_def(self) -> PartitionsDefinition[T]:  # pylint: disable=unsubscriptable-object
         return self._partitions
 
-    @public  # type: ignore
+    @public
     @property
     def run_config_for_partition_fn(self) -> Callable[[Partition[T]], Mapping[str, Any]]:
         return self._run_config_for_partition_fn
 
-    @public  # type: ignore
+    @public
     @property
     def tags_for_partition_fn(self) -> Optional[Callable[[Partition[T]], Mapping[str, str]]]:
         return self._tags_for_partition_fn

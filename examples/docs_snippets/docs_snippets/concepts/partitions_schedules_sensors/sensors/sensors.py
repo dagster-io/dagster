@@ -223,7 +223,7 @@ def the_db_connection(init_context):
     get_the_db_connection(init_context.resources.credentials)
 
 
-@sensor(job=the_job)  # type: ignore  # (didactic)
+@sensor(job=the_job)
 def uses_db_connection():
     with build_resources(
         {"db_connection": the_db_connection, "credentials": the_credentials}

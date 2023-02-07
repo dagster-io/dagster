@@ -1005,8 +1005,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         partition_key_range = self.asset_partition_key_range_for_output(output_name)
         return TimeWindow(
             # mypy thinks partitions_def is <nothing> here because ????
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,  # type: ignore
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
     def get_input_lineage(self) -> Sequence[AssetLineageInfo]:
@@ -1084,17 +1084,17 @@ class TypeCheckContext:
         self._log = log_manager
         self._resources = scoped_resources_builder.build(dagster_type.required_resource_keys)
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> "Resources":
         return self._resources
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> str:
         return self._run_id
 
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> DagsterLogManager:
         return self._log
@@ -1106,20 +1106,20 @@ class DagsterTypeMaterializerContext(StepExecutionContext):
     Users should not construct this object directly.
     """
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> "Resources":
         """The resources available to the type materializer, specified by the `required_resource_keys` argument of the decorator.
         """
         return super(DagsterTypeMaterializerContext, self).resources
 
-    @public  # type: ignore
+    @public
     @property
     def job_def(self) -> "JobDefinition":
         """The underlying job definition being executed."""
         return super(DagsterTypeMaterializerContext, self).job_def
 
-    @public  # type: ignore
+    @public
     @property
     def op_def(self) -> "OpDefinition":
         """The op for which type materialization is occurring."""
@@ -1132,20 +1132,20 @@ class DagsterTypeLoaderContext(StepExecutionContext):
     Users should not construct this object directly.
     """
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> "Resources":
         """The resources available to the type loader, specified by the `required_resource_keys` argument of the decorator.
         """
         return super(DagsterTypeLoaderContext, self).resources
 
-    @public  # type: ignore
+    @public
     @property
     def job_def(self) -> "JobDefinition":
         """The underlying job definition being executed."""
         return super(DagsterTypeLoaderContext, self).job_def
 
-    @public  # type: ignore
+    @public
     @property
     def op_def(self) -> "OpDefinition":
         """The op for which type loading is occurring."""

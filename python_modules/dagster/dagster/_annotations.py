@@ -96,7 +96,7 @@ def experimental(obj: T_Annotatable, *, decorator: bool = False) -> T_Annotatabl
 
     if isinstance(obj, (property, staticmethod, classmethod)):
         # warning not currently supported for these cases
-        return obj  # type: ignore
+        return obj
 
     elif inspect.isfunction(target):
         warning_fn = experimental_decorator_warning if decorator else experimental_fn_warning

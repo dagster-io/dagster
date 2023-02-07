@@ -106,15 +106,15 @@ def _select_unique_ids_from_manifest_json(
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=manifest_json["child_map"]))
     manifest = Manifest(
         # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
-        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},  # type: ignore
+        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
         sources={
-            unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()  # type: ignore
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
         },
         metrics={
-            unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()  # type: ignore
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()
         },
         exposures={
-            unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()  # type: ignore
+            unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()
         },
     )
 

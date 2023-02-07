@@ -204,7 +204,7 @@ class Map(ConfigType):
             kind=ConfigTypeKind.MAP,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def key_label_name(self):
         return self.given_name

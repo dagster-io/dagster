@@ -62,22 +62,22 @@ class InitResourceContext:
         self._resources = resources
         self._dagster_run = dagster_run
 
-    @public  # type: ignore
+    @public
     @property
     def resource_config(self) -> Any:
         return self._resource_config
 
-    @public  # type: ignore
+    @public
     @property
     def resource_def(self) -> Optional[ResourceDefinition]:
         return self._resource_def
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> Resources:
         return self._resources
 
-    @public  # type: ignore
+    @public
     @property
     def instance(self) -> Optional[DagsterInstance]:
         return self._instance
@@ -86,18 +86,18 @@ class InitResourceContext:
     def dagster_run(self) -> Optional[DagsterRun]:
         return self._dagster_run
 
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> Optional[DagsterLogManager]:
         return self._log_manager
 
     # backcompat: keep around this property from when InitResourceContext used to be a NamedTuple
-    @public  # type: ignore
+    @public
     @property
     def log_manager(self) -> Optional[DagsterLogManager]:
         return self._log_manager
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> Optional[str]:
         return self.dagster_run.run_id if self.dagster_run else None
