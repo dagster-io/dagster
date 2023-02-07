@@ -77,7 +77,7 @@ class FreshnessPolicy(
 
     """
 
-    def __new__(cls, *, maximum_lag_minutes: float, cron_schedule: Optional[str] = None):
+    def __new__(cls, maximum_lag_minutes: float, cron_schedule: Optional[str] = None):
         return super(FreshnessPolicy, cls).__new__(
             cls,
             maximum_lag_minutes=float(
