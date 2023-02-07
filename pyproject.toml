@@ -86,6 +86,10 @@ reportInvalidStringEscapeSequence = false
 # for defining a public API.
 reportPrivateImportUsage = false
 
+# Since we only use pyright, there is no need to suppress type errors that pyright does not
+# recognize.
+reportUnnecessaryTypeIgnoreComment = "warning"
+
 # ########################
 # ##### PYTEST
 # ########################

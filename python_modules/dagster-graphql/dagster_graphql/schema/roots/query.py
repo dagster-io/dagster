@@ -738,7 +738,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         # Filter down to requested asset keys
         # Build mapping of asset key to the step keys required to generate the asset
-        step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {  # type: ignore
+        step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
             node.external_asset_node.asset_key: node.external_asset_node.op_names
             for node in results
             if node.assetKey in asset_keys

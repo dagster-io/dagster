@@ -283,7 +283,7 @@ def test_struct_config_nested_in_dict():
 )
 def test_struct_config_map_different_key_type(key_type: Type, keys: List[Any]):
     class AnOpConfig(Config):
-        my_dict: Dict[key_type, int]  # type: ignore
+        my_dict: Dict[key_type, int]
 
     executed = {}
 

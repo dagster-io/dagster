@@ -52,7 +52,7 @@ class AssetReconciliationScenario(NamedTuple):
     assets: Sequence[Union[SourceAsset, AssetsDefinition]]
     between_runs_delta: Optional[datetime.timedelta] = None
     evaluation_delta: Optional[datetime.timedelta] = None
-    cursor_from: Optional["AssetReconciliationScenario"] = None  # type: ignore
+    cursor_from: Optional["AssetReconciliationScenario"] = None
     current_time: Optional[datetime.datetime] = None
     asset_selection: Optional[AssetSelection] = None
 
@@ -403,9 +403,7 @@ overlapping_freshness = diamond + [
 overlapping_freshness_with_source = [
     SourceAsset("source_asset"),
     asset_def("asset1", ["source_asset"]),
-] + overlapping_freshness[
-    1:
-]  # type: ignore
+] + overlapping_freshness[1:]
 overlapping_freshness_inf = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=freshness_inf),
@@ -1059,7 +1057,7 @@ scenarios = {
         expected_run_requests=[],
     ),
     "freshness_overlapping_with_source": AssetReconciliationScenario(
-        assets=overlapping_freshness_with_source,  # type: ignore
+        assets=overlapping_freshness_with_source,
         unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
         expected_run_requests=[],
     ),

@@ -753,12 +753,12 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         self._cursor_advance_state_mutation.advance_all_cursors_called = True
         self._cursor_has_been_updated = True
 
-    @public  # type: ignore
+    @public
     @property
     def assets_defs_by_key(self) -> Mapping[AssetKey, Optional[AssetsDefinition]]:
         return self._assets_by_key
 
-    @public  # type: ignore
+    @public
     @property
     def asset_keys(self) -> Sequence[AssetKey]:
         return self._monitored_asset_keys
@@ -1176,7 +1176,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     "invocation."
                 )
 
-            result = self._raw_asset_materialization_fn()  # type: ignore [TypeGuard limitation]
+            result = self._raw_asset_materialization_fn()
 
         context.update_cursor_after_evaluation()
         return result

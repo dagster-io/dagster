@@ -7,7 +7,7 @@ from typing import Any, Mapping, Optional, cast
 # airflow 1.x and 2.x.
 import requests
 from airflow.exceptions import AirflowException
-from airflow.hooks.base_hook import BaseHook  # type: ignore  # (airflow 1 compat)
+from airflow.hooks.base_hook import BaseHook
 from airflow.models import Connection
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 

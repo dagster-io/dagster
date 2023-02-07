@@ -126,7 +126,7 @@ def build_pipeline_with_input_stubs(
                 input_value,
             )
             stub_solid_defs.append(stub_solid_def)
-            deps[_dep_key_of(solid)][input_name] = DependencyDefinition(stub_solid_def.name)  # type: ignore
+            deps[_dep_key_of(solid)][input_name] = DependencyDefinition(stub_solid_def.name)
 
     return PipelineDefinition(
         name=pipeline_def.name + "_stubbed",

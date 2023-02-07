@@ -224,7 +224,7 @@ class ReconstructablePipeline(
 
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
-    @lru_cache(maxsize=1)  # type: ignore
+    @lru_cache(maxsize=1)
     def get_definition(self) -> Union[JobDefinition, "PipelineDefinition"]:
         return self.repository.get_definition().get_maybe_subset_job_def(
             self.pipeline_name,
@@ -268,7 +268,7 @@ class ReconstructablePipeline(
                 solids_to_execute=None,
                 asset_selection=asset_selection,
             )
-        elif isinstance(pipeline_def, PipelineDefinition):  # type: ignore
+        elif isinstance(pipeline_def, PipelineDefinition):
             # when subselecting a pipeline
             # * pipeline subselection depend on solids_to_excute rather than solid_selection
             # * we resolve a list of solid selection queries to a frozenset of qualified solid names
@@ -643,7 +643,7 @@ def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition
             "Loadable attributes must be either a JobDefinition, GraphDefinition, "
             f"PipelineDefinition, AssetGroup, or RepositoryDefinition. Got {repr(definition)}."
         )
-    return definition  # type: ignore
+    return definition
 
 
 def load_def_in_module(
@@ -700,7 +700,7 @@ def def_from_pointer(
             )
         )
 
-    return _check_is_loadable(target())  # type: ignore
+    return _check_is_loadable(target())
 
 
 def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
@@ -719,7 +719,7 @@ def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
 
 @overload
 # NOTE: mypy can't handle these overloads but pyright can
-def repository_def_from_target_def(  # type: ignore
+def repository_def_from_target_def(
     target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition", "AssetGroup"],
     repository_load_data: Optional["RepositoryLoadData"] = None,
 ) -> "RepositoryDefinition":

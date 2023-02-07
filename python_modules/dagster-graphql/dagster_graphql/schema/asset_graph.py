@@ -311,7 +311,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
             self._node_definition_snap = self.get_external_pipeline().get_node_def_snap(node_key)
         # weird mypy bug causes mistyped _node_definition_snap
-        return check.not_none(self._node_definition_snap)  # type: ignore
+        return check.not_none(self._node_definition_snap)
 
     def get_partition_keys(
         self,

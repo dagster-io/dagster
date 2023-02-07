@@ -10,8 +10,6 @@ from dagster_pandas import DataFrame
 
 def check_parquet_support():
     try:
-        import pyarrow  # type: ignore  # noqa: F401
-
         return
     except ImportError:
         pass

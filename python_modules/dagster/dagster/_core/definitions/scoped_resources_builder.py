@@ -84,7 +84,9 @@ class ScopedResourcesBuilder(
         if self.contains_generator:
 
             class _ScopedResourcesContainsGenerator(
-                namedtuple("_ScopedResourcesContainsGenerator", list(resource_instance_dict.keys())),  # type: ignore[misc]
+                namedtuple(
+                    "_ScopedResourcesContainsGenerator", list(resource_instance_dict.keys())
+                ),
                 Resources,
                 IContainsGenerator,
             ):
@@ -95,7 +97,7 @@ class ScopedResourcesBuilder(
         else:
 
             class _ScopedResources(
-                namedtuple("_ScopedResources", list(resource_instance_dict.keys())),  # type: ignore[misc]
+                namedtuple("_ScopedResources", list(resource_instance_dict.keys())),
                 Resources,
             ):
                 ...

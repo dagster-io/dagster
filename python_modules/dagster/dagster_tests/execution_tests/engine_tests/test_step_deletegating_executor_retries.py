@@ -19,7 +19,7 @@ from dagster._utils.merger import merge_dicts
 class TestStepHandler(StepHandler):
     launched_first_attempt = False
     launched_second_attempt = False
-    processes = []  # type: ignore
+    processes = []
 
     @property
     def name(self):
@@ -50,7 +50,7 @@ class TestStepHandler(StepHandler):
     def check_step_health(self, step_handler_context) -> CheckStepHealthResult:
         assert step_handler_context.execute_step_args.step_keys_to_execute == ["retry_op"]
 
-        known_state = check.not_none(step_handler_context.execute_step_args.known_state)  # type: ignore  # fmt: skip
+        known_state = check.not_none(step_handler_context.execute_step_args.known_state)
         attempt_count = known_state.get_retry_state().get_attempt_count("retry_op")
         if attempt_count == 0:
             assert TestStepHandler.launched_first_attempt is True

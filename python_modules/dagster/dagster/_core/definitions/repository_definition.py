@@ -1275,12 +1275,12 @@ class RepositoryDefinition:
     def repository_load_data(self) -> Optional[RepositoryLoadData]:
         return self._repository_load_data
 
-    @public  # type: ignore
+    @public
     @property
     def name(self) -> str:
         return self._name
 
-    @public  # type: ignore
+    @public
     @property
     def description(self) -> Optional[str]:
         return self._description
@@ -1294,7 +1294,7 @@ class RepositoryDefinition:
         """List[str]: Names of all pipelines/jobs in the repository."""
         return self._repository_data.get_pipeline_names()
 
-    @public  # type: ignore
+    @public
     @property
     def job_names(self) -> Sequence[str]:
         """List[str]: Names of all jobs in the repository."""
@@ -1340,7 +1340,7 @@ class RepositoryDefinition:
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._repository_data.get_top_level_resources()
 
-    @public  # type: ignore
+    @public
     def has_job(self, name: str) -> bool:
         """Check if a job with a given name is present in the repository.
 
@@ -1352,7 +1352,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.has_job(name)
 
-    @public  # type: ignore
+    @public
     def get_job(self, name: str) -> JobDefinition:
         """Get a job by name.
 
@@ -1388,29 +1388,29 @@ class RepositoryDefinition:
     def get_partition_set_def(self, name: str) -> PartitionSetDefinition:
         return self._repository_data.get_partition_set(name)
 
-    @public  # type: ignore
+    @public
     @property
     def schedule_defs(self) -> Sequence[ScheduleDefinition]:
         return self._repository_data.get_all_schedules()
 
-    @public  # type: ignore
+    @public
     def get_schedule_def(self, name: str) -> ScheduleDefinition:
         return self._repository_data.get_schedule(name)
 
-    @public  # type: ignore
+    @public
     def has_schedule_def(self, name: str) -> bool:
         return self._repository_data.has_schedule(name)
 
-    @public  # type: ignore
+    @public
     @property
     def sensor_defs(self) -> Sequence[SensorDefinition]:
         return self._repository_data.get_all_sensors()
 
-    @public  # type: ignore
+    @public
     def get_sensor_def(self, name: str) -> SensorDefinition:
         return self._repository_data.get_sensor(name)
 
-    @public  # type: ignore
+    @public
     def has_sensor_def(self, name: str) -> bool:
         return self._repository_data.has_sensor(name)
 

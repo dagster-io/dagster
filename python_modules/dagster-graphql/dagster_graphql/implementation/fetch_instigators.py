@@ -31,10 +31,7 @@ def get_unloadable_instigator_states_or_error(graphene_info: "ResolveInfo", inst
         )
     ]
 
-    instigator_selector_ids = {
-        instigator.selector_id  # type: ignore # mypy getting confused by chain
-        for instigator in external_instigators
-    }
+    instigator_selector_ids = {instigator.selector_id for instigator in external_instigators}
     unloadable_states = [
         instigator_state
         for instigator_state in instigator_states

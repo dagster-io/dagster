@@ -132,17 +132,17 @@ def sum_job():
 
 @op
 def repeat(_, spec: Dict) -> str:
-    return spec["word"] * spec["times"]  # type: ignore
+    return spec["word"] * spec["times"]
 
 
 @op
 def set_op(_, set_input: Set[String]) -> List[String]:
-    return sorted([x for x in set_input])  # type: ignore
+    return sorted([x for x in set_input])
 
 
 @op
 def tuple_op(_, tuple_input: Tuple[String, Int, Float]) -> List:
-    return [x for x in tuple_input]  # type: ignore
+    return [x for x in tuple_input]
 
 
 @op

@@ -459,17 +459,17 @@ class AssetsDefinition(ResourceAddable):
             can_subset=can_subset,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def can_subset(self) -> bool:
         return self._can_subset
 
-    @public  # type: ignore
+    @public
     @property
     def group_names_by_key(self) -> Mapping[AssetKey, str]:
         return self._group_names_by_key
 
-    @public  # type: ignore
+    @public
     @property
     def op(self) -> OpDefinition:
         check.invariant(
@@ -478,12 +478,12 @@ class AssetsDefinition(ResourceAddable):
         )
         return cast(OpDefinition, self._node_def)
 
-    @public  # type: ignore
+    @public
     @property
     def node_def(self) -> NodeDefinition:
         return self._node_def
 
-    @public  # type: ignore
+    @public
     @property
     def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
         return self._asset_deps
@@ -492,7 +492,7 @@ class AssetsDefinition(ResourceAddable):
     def input_names(self) -> Iterable[str]:
         return self.keys_by_input_name.keys()
 
-    @public  # type: ignore
+    @public
     @property
     def key(self) -> AssetKey:
         check.invariant(
@@ -510,12 +510,12 @@ class AssetsDefinition(ResourceAddable):
         )
         return self.key
 
-    @public  # type: ignore
+    @public
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
         return dict(self._resource_defs)
 
-    @public  # type: ignore
+    @public
     @property
     def keys(self) -> AbstractSet[AssetKey]:
         return self._selected_asset_keys
@@ -527,7 +527,7 @@ class AssetsDefinition(ResourceAddable):
         )
         return self.keys
 
-    @public  # type: ignore
+    @public
     @property
     def dependency_keys(self) -> Iterable[AssetKey]:
         # the input asset keys that are directly upstream of a selected asset key
@@ -562,7 +562,7 @@ class AssetsDefinition(ResourceAddable):
     def freshness_policies_by_key(self) -> Mapping[AssetKey, FreshnessPolicy]:
         return self._freshness_policies_by_key
 
-    @public  # type: ignore
+    @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
@@ -849,7 +849,7 @@ class AssetsDefinition(ResourceAddable):
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
 
-    @public  # type: ignore
+    @public
     @property
     def required_resource_keys(self) -> Set[str]:
         return {requirement.key for requirement in self.get_resource_requirements()}

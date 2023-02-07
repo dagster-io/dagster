@@ -134,7 +134,7 @@ class ConfigScalar(ConfigType):
     ):
         self.scalar_kind = check.inst_param(scalar_kind, "scalar_kind", ConfigScalarKind)
         super(ConfigScalar, self).__init__(
-            key, kind=ConfigTypeKind.SCALAR, given_name=given_name, **kwargs  # type: ignore
+            key, kind=ConfigTypeKind.SCALAR, given_name=given_name, **kwargs
         )
 
 
@@ -231,7 +231,7 @@ class Array(ConfigType):
             kind=ConfigTypeKind.ARRAY,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def description(self):
         return "List of {inner_type}".format(inner_type=self.key)
@@ -428,7 +428,7 @@ class ScalarUnion(ConfigType):
         )
 
     def type_iterator(self) -> Iterator["ConfigType"]:
-        yield from self.scalar_type.type_iterator()  # type: ignore
+        yield from self.scalar_type.type_iterator()
         yield from self.non_scalar_type.type_iterator()
         yield from super().type_iterator()
 

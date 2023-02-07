@@ -18,7 +18,7 @@ def is_airflow_2_loaded_in_environment() -> bool:
 if is_airflow_2_loaded_in_environment():
     from airflow.utils.session import create_session
 else:
-    from airflow.utils.db import create_session  # type: ignore  # (airflow 1 compat)
+    from airflow.utils.db import create_session
 # pylint: enable=no-name-in-module,import-error
 
 

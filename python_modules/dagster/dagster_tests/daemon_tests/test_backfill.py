@@ -124,25 +124,25 @@ def config_pipeline():
 simple_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="simple_partition_set",
     pipeline_name="the_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
 )
 
 conditionally_fail_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="conditionally_fail_partition_set",
     pipeline_name="conditional_failure_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
 )
 
 partial_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="partial_partition_set",
     pipeline_name="partial_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
 )
 
 parallel_failure_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="parallel_failure_partition_set",
     pipeline_name="parallel_failure_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
 )
 
 
@@ -168,7 +168,7 @@ def _large_partition_config(_):
 large_partition_set = PartitionSetDefinition(
     name="large_partition_set",
     pipeline_name="config_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
     run_config_fn_for_partition=_large_partition_config,
 )
 

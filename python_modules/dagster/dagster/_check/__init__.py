@@ -283,7 +283,7 @@ def opt_dict_param(
 
 # pyright understands this overload but not mypy
 @overload
-def opt_nullable_dict_param(  # type: ignore
+def opt_nullable_dict_param(
     obj: None,
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = ...,
@@ -810,7 +810,7 @@ def opt_list_param(
 
 # pyright understands this overload but not mypy
 @overload
-def opt_nullable_list_param(  # type: ignore
+def opt_nullable_list_param(
     obj: None,
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
@@ -1014,7 +1014,7 @@ def opt_mapping_param(
 
 # pyright understands this overload but not mypy
 @overload
-def opt_nullable_mapping_param(  # type: ignore
+def opt_nullable_mapping_param(
     obj: None,
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = ...,
@@ -1458,7 +1458,7 @@ def tuple_param(
     defines a fixed-length tuple type-- each element must match the corresponding element in
     `of_shape`. Passing both `of_type` and `of_shape` will raise an error.
     """
-    if not isinstance(obj, tuple):  # type: ignore
+    if not isinstance(obj, tuple):
         raise _param_type_mismatch_exception(obj, tuple, param_name, additional_message)
 
     if of_type is None and of_shape is None:
@@ -1502,7 +1502,7 @@ def opt_tuple_param(
     """Ensures argument obj is a tuple or None; in the latter case, instantiates an empty tuple
     and returns it.
     """
-    if obj is not None and not isinstance(obj, tuple):  # type: ignore
+    if obj is not None and not isinstance(obj, tuple):
         raise _param_type_mismatch_exception(obj, tuple, param_name, additional_message)
 
     if obj is None:

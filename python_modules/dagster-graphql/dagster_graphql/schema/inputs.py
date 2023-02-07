@@ -45,7 +45,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
 
         if self.statuses:
             statuses = [
-                DagsterRunStatus[status.value]  # type: ignore
+                DagsterRunStatus[status.value]
                 for status in self.statuses  # pylint: disable=not-an-iterable
             ]
         else:

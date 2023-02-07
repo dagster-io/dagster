@@ -309,7 +309,7 @@ def single_resource_generation_manager(
 ) -> EventGenerationManager:
     generator = single_resource_event_generator(context, resource_name, resource_def)
     # EventGenerationManager needs to be renamed/generalized so that it doesn't only take event generators
-    return EventGenerationManager(generator, InitializedResource)  # type: ignore
+    return EventGenerationManager(generator, InitializedResource)
 
 
 def single_resource_event_generator(
@@ -325,8 +325,8 @@ def single_resource_event_generator(
             try:
                 with time_execution_scope() as timer_result:
                     resource_or_gen = (
-                        resource_def.resource_fn(context)  # type: ignore  # fmt: skip
-                        if has_at_least_one_parameter(resource_def.resource_fn)  # type: ignore  # fmt: skip
+                        resource_def.resource_fn(context)
+                        if has_at_least_one_parameter(resource_def.resource_fn)
                         else resource_def.resource_fn()  # type: ignore[call-arg]
                     )
 
