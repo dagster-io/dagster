@@ -16,7 +16,7 @@ from dagster._core.host_representation.external_data import (
     ExternalAssetDependency,
     ExternalAssetNode,
 )
-from dagster._core.instance import MutablePartitionsStore
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.scheduler.instigation import InstigatorType
 from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
@@ -331,9 +331,9 @@ class BatchMaterializationLoader:
         }
 
 
-class CachingMutablePartitionsLoader(MutablePartitionsStore):
+class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
     """
-    A batch loader that caches the partition keys for a given mutable partitions definition,
+    A batch loader that caches the partition keys for a given dynamic partitions definition,
     to avoid repeated calls to the database for the same partitions definition.
     """
 
@@ -341,8 +341,8 @@ class CachingMutablePartitionsLoader(MutablePartitionsStore):
         self._instance = instance
 
     @cached_method
-    def get_mutable_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        return self._instance.get_mutable_partitions(partitions_def_name)
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self._instance.get_dynamic_partitions(partitions_def_name)
 
 
 class CrossRepoAssetDependedByLoader:

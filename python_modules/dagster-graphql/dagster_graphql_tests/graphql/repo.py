@@ -34,7 +34,6 @@ from dagster import (
     IOManagerDefinition,
     Map,
     MetadataEntry,
-    MutablePartitionsDefinition,
     Noneable,
     Nothing,
     Output,
@@ -67,6 +66,7 @@ from dagster import (
     schedule,
     static_partitioned_config,
     usable_as_dagster_type,
+    DynamicPartitionsDefinition,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.executor_definition import in_process_executor
@@ -1558,21 +1558,21 @@ static_partitioned_assets_job = build_assets_job(
 )
 
 
-@asset(partitions_def=MutablePartitionsDefinition("foo"))
-def upstream_mutable_partitioned_asset():
+@asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
+def upstream_dynamic_partitioned_asset():
     return 1
 
 
-@asset(partitions_def=MutablePartitionsDefinition("foo"))
-def downstream_mutable_partitioned_asset(
-    upstream_mutable_partitioned_asset,
+@asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
+def downstream_dynamic_partitioned_asset(
+    upstream_dynamic_partitioned_asset,
 ):  # pylint: disable=redefined-outer-name
-    assert upstream_mutable_partitioned_asset
+    assert upstream_dynamic_partitioned_asset
 
 
-mutable_partitioned_assets_job = build_assets_job(
-    "mutable_partitioned_assets_job",
-    assets=[upstream_mutable_partitioned_asset, downstream_mutable_partitioned_asset],
+dynamic_partitioned_assets_job = build_assets_job(
+    "dynamic_partitioned_assets_job",
+    assets=[upstream_dynamic_partitioned_asset, downstream_dynamic_partitioned_asset],
 )
 
 
@@ -1880,7 +1880,7 @@ def define_pipelines():
         two_ins_job,
         two_assets_job,
         static_partitioned_assets_job,
-        mutable_partitioned_assets_job,
+        dynamic_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
         observation_job,

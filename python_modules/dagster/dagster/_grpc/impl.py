@@ -388,7 +388,7 @@ def get_partition_tags(
     instance: DagsterInstance,
 ):
     partition_set_def = repo_def.get_partition_set_def(partition_set_name)
-    partition = partition_set_def.get_partition(partition_name, mutable_partitions_store=instance)
+    partition = partition_set_def.get_partition(partition_name, dynamic_partitions_store=instance)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -444,7 +444,7 @@ def get_partition_set_execution_param_data(
             PartitionExecutionError,
             lambda: f"Error occurred during the partition generation for {_get_target_for_partition_execution_error(partition_set_def)}",
         ):
-            all_partitions = partition_set_def.get_partitions(mutable_partitions_store=instance)
+            all_partitions = partition_set_def.get_partitions(dynamic_partitions_store=instance)
         partitions = [
             partition for partition in all_partitions if partition.name in partition_names
         ]

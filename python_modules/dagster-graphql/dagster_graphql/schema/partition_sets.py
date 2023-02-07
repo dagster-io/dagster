@@ -6,7 +6,7 @@ from dagster import MultiPartitionsDefinition
 from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.host_representation.external_data import (
     ExternalMultiPartitionsDefinitionData,
-    ExternalMutablePartitionsDefinitionData,
+    ExternalDynamicPartitionsDefinitionData,
     ExternalPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
@@ -303,7 +303,7 @@ class GraphenePartitionDefinitionType(graphene.Enum):
     TIME_WINDOW = "TIME_WINDOW"
     STATIC = "STATIC"
     MULTIPARTITIONED = "MULTIPARTITIONED"
-    MUTABLE = "MUTABLE"
+    DYNAMIC = "DYNAMIC"
 
     class Meta:
         name = "PartitionDefinitionType"
@@ -317,8 +317,8 @@ class GraphenePartitionDefinitionType(graphene.Enum):
             return GraphenePartitionDefinitionType.TIME_WINDOW
         elif isinstance(partition_def_data, ExternalMultiPartitionsDefinitionData):
             return GraphenePartitionDefinitionType.MULTIPARTITIONED
-        elif isinstance(partition_def_data, ExternalMutablePartitionsDefinitionData):
-            return GraphenePartitionDefinitionType.MUTABLE
+        elif isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData):
+            return GraphenePartitionDefinitionType.DYNAMIC
         else:
             check.failed(
                 f"Invalid external partitions definition data type: {type(partition_def_data)}"

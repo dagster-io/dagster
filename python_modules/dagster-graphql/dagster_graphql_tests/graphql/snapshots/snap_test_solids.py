@@ -517,15 +517,15 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'downstream_mutable_partitioned_asset'
+                    'name': 'downstream_dynamic_partitioned_asset'
                 },
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'mutable_partitioned_assets_job'
+                            'name': 'dynamic_partitioned_assets_job'
                         },
                         'solidHandle': {
-                            'handleID': 'downstream_mutable_partitioned_asset'
+                            'handleID': 'downstream_dynamic_partitioned_asset'
                         }
                     }
                 ]
@@ -2109,15 +2109,15 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'upstream_mutable_partitioned_asset'
+                    'name': 'upstream_dynamic_partitioned_asset'
                 },
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'mutable_partitioned_assets_job'
+                            'name': 'dynamic_partitioned_assets_job'
                         },
                         'solidHandle': {
-                            'handleID': 'upstream_mutable_partitioned_asset'
+                            'handleID': 'upstream_dynamic_partitioned_asset'
                         }
                     }
                 ]

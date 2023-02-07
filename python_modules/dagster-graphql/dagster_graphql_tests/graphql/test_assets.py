@@ -1003,9 +1003,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(unmaterialized_partitions) == 2
         assert set(unmaterialized_partitions) == {"b", "d"}
 
-    def test_mutable_partitions(self, graphql_context):
+    def test_dynamic_partitions(self, graphql_context):
         traced_counter.set(Counter())
-        selector = infer_pipeline_selector(graphql_context, "mutable_partitioned_assets_job")
+        selector = infer_pipeline_selector(graphql_context, "dynamic_partitioned_assets_job")
 
         def _get_materialized_partitions():
             return execute_dagster_graphql(
@@ -1034,10 +1034,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             )
 
         counts = traced_counter.get().counts()
-        assert counts.get("DagsterInstance.get_mutable_partitions") == 1
+        assert counts.get("DagsterInstance.get_dynamic_partitions") == 1
 
         partitions = ["foo", "bar", "baz"]
-        graphql_context.instance.add_mutable_partitions("foo", partitions)
+        graphql_context.instance.add_dynamic_partitions("foo", partitions)
 
         result = _get_materialized_partitions()
         assert set(
@@ -1054,6 +1054,11 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert set(
             result.data["assetNodes"][0]["materializedPartitions"]["unmaterializedPartitions"]
         ) == set(partitions)
+
+        selector = infer_pipeline_selector(
+            graphql_context, "invalid_dynamic_partitioned_assets_job"
+        )
+        result = _get_materialized_partitions()
 
     def test_materialized_time_partitions(self, graphql_context):
         def _get_datetime_float(dt_str):

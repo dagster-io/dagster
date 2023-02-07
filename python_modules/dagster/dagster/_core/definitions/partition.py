@@ -613,7 +613,9 @@ class DynamicPartitionsDefinition(
                     " dynamic partitions"
                 )
 
-            partitions = dynamic_partitions_store.get_dynamic_partitions(self._validated_name())
+            partitions = dynamic_partitions_store.get_dynamic_partitions(
+                partitions_def_name=self._validated_name()
+            )
             return [Partition(key) for key in partitions]
 
     def add_partitions(self, partition_keys: Sequence[str], instance: DagsterInstance) -> None:

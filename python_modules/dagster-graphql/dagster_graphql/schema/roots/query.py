@@ -61,7 +61,7 @@ from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_
 from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.loader import (
     BatchMaterializationLoader,
-    CachingMutablePartitionsLoader,
+    CachingDynamicPartitionsLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -629,7 +629,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
         repo = None
 
-        mutable_partitions_loader = CachingMutablePartitionsLoader(graphene_info.context.instance)
+        dynamic_partitions_loader = CachingDynamicPartitionsLoader(graphene_info.context.instance)
         if "group" in kwargs:
             group_name = kwargs["group"].get("groupName")
             repo_sel = RepositorySelector.from_graphql_input(kwargs.get("group"))
@@ -642,7 +642,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
                         repo_loc,
                         repo,
                         asset_node,
-                        mutable_partitions_loader=mutable_partitions_loader,
+                        dynamic_partitions_loader=dynamic_partitions_loader,
                     )
                     for asset_node in external_asset_nodes
                     if asset_node.group_name == group_name
@@ -662,7 +662,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
                         repo_loc,
                         repo,
                         asset_node,
-                        mutable_partitions_loader=mutable_partitions_loader,
+                        dynamic_partitions_loader=dynamic_partitions_loader,
                     )
                     for asset_node in external_asset_nodes
                 ]
@@ -703,7 +703,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
                 materialization_loader=materialization_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
-                mutable_partitions_loader=mutable_partitions_loader,
+                dynamic_partitions_loader=dynamic_partitions_loader,
             )
             for node in results
         ]
