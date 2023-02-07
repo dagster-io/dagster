@@ -53,6 +53,7 @@ exclude = [
   "**/.tox",
   ".git",
   "**/.venv*",
+  "**/build",
 ]
 
 # These two settings point pyright to a python environment to resolve imports against. This virtual
