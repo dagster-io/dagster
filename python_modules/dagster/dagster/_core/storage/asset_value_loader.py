@@ -53,7 +53,7 @@ class AssetValueLoader:
                     instance=self._instance,
                 )
             )
-            ._asdict()  # type: ignore
+            ._asdict()
             .items()
         ):
             self._resource_instance_cache[built_resource_key] = built_resource

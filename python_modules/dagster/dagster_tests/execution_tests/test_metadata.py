@@ -223,7 +223,7 @@ def test_table_metadata_value_schema_inference():
         ),
     )
 
-    schema = table_metadata_entry.entry_data.schema  # type: ignore
+    schema = table_metadata_entry.entry_data.schema
     assert isinstance(schema, TableSchema)
     assert schema.columns == [
         TableColumn(name="name", type="string"),
@@ -252,7 +252,7 @@ bad_values = frozendict(
 
 def test_table_column_keys():
     with pytest.raises(TypeError):
-        TableColumn(bad_key="foo", description="bar", type="string")  # type: ignore
+        TableColumn(bad_key="foo", description="bar", type="string")
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_column"].items()))
@@ -270,7 +270,7 @@ def test_table_column_values(key, value):
 
 def test_table_constraints_keys():
     with pytest.raises(TypeError):
-        TableColumn(bad_key="foo")  # type: ignore
+        TableColumn(bad_key="foo")
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_constraints"].items()))
@@ -283,7 +283,7 @@ def test_table_constraints(key, value):
 
 def test_table_column_constraints_keys():
     with pytest.raises(TypeError):
-        TableColumnConstraints(bad_key="foo")  # type: ignore
+        TableColumnConstraints(bad_key="foo")
 
 
 # minimum and maximum aren't checked because they depend on the type of the column
@@ -301,7 +301,7 @@ def test_table_column_constraints_values(key, value):
 
 def test_table_schema_keys():
     with pytest.raises(TypeError):
-        TableSchema(bad_key="foo")  # type: ignore
+        TableSchema(bad_key="foo")
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_schema"].items()))

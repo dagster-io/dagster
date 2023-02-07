@@ -540,7 +540,7 @@ class In(
             default_value=default_value,
             root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
-            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),  # type: ignore  # (mypy bug)
+            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
             asset_partitions=asset_partitions,
             input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
         )

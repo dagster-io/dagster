@@ -5,6 +5,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 import boto3
+import moto
 import pytest
 from dagster import ExperimentalWarning
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
@@ -20,6 +21,19 @@ def ignore_experimental_warning():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=ExperimentalWarning)
         yield
+
+
+@pytest.fixture
+def cloudwatch_client(region):
+    with moto.mock_logs():
+        yield boto3.client("logs", region_name=region)
+
+
+@pytest.fixture
+def log_group(cloudwatch_client):
+    name = "/dagster-test/test-cloudwatch-logging"
+    cloudwatch_client.create_log_group(logGroupName=name)
+    return name
 
 
 @pytest.fixture
@@ -86,12 +100,19 @@ def task(ecs, subnet, security_group, task_definition, assign_public_ip):
 
 
 @pytest.fixture
-def stub_aws(ecs, ec2, secrets_manager, monkeypatch):
+def stub_aws(ecs, ec2, secrets_manager, cloudwatch_client, monkeypatch):
+    print("ECS:" + str(ecs))
+    print("SECRETS MANAGER: " + str(secrets_manager))
+
     def mock_client(*args, **kwargs):
         if "ecs" in args:
             return ecs
         if "secretsmanager" in args:
             return secrets_manager
+        if "logs" in args:
+            return cloudwatch_client
+        else:
+            raise Exception("Unexpected args")
 
     monkeypatch.setattr(boto3, "client", mock_client)
     monkeypatch.setattr(boto3, "resource", lambda *args, **kwargs: ec2)
@@ -134,6 +155,12 @@ def instance_cm(stub_aws, stub_ecs_metadata):
 @pytest.fixture
 def instance(instance_cm):
     with instance_cm() as dagster_instance:
+        yield dagster_instance
+
+
+@pytest.fixture
+def instance_with_log_group(instance_cm, log_group):
+    with instance_cm(config={"task_definition": {"log_group": log_group}}) as dagster_instance:
         yield dagster_instance
 
 

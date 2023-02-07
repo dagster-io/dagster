@@ -31,7 +31,7 @@ interface OpTagsProps {
   reduceText?: boolean;
 }
 
-const KNOWN_TAGS = {
+export const KNOWN_TAGS = {
   jupyter: {
     color: '#4E4E4E',
     icon: jupyter,

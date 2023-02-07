@@ -58,7 +58,7 @@ def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefi
 
 
 def test_basic_asset():
-    assert Definitions  # type: ignore
+    assert Definitions
 
     @asset
     def an_asset():
@@ -145,6 +145,10 @@ def test_with_resource_binding():
         resources={"foo": ResourceDefinition.hardcoded_resource("wrapped")},
     )
     repo = resolve_pending_repo_if_required(defs)
+
+    assert len(repo.get_top_level_resources()) == 1
+    assert "foo" in repo.get_top_level_resources()
+
     asset_job = repo.get_all_jobs()[0]
     asset_job.execute_in_process()
     assert executed["yes"]
@@ -163,6 +167,10 @@ def test_resource_coercion():
         resources={"foo": "object-to-coerce"},
     )
     repo = resolve_pending_repo_if_required(defs)
+
+    assert len(repo.get_top_level_resources()) == 1
+    assert "foo" in repo.get_top_level_resources()
+
     asset_job = repo.get_all_jobs()[0]
     asset_job.execute_in_process()
     assert executed["yes"]
@@ -254,7 +262,7 @@ def test_io_manager_coercion():
 def test_bad_executor():
     with pytest.raises(CheckError):
         # ignoring type to catch runtime error
-        Definitions(executor="not an executor")  # type: ignore
+        Definitions(executor="not an executor")
 
 
 def test_custom_executor_in_definitions():
@@ -296,13 +304,13 @@ def test_bad_logger_key():
 
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
-        Definitions(loggers={1: a_logger})  # type: ignore
+        Definitions(loggers={1: a_logger})
 
 
 def test_bad_logger_value():
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
-        Definitions(loggers={"not_a_logger": "not_a_logger"})  # type: ignore
+        Definitions(loggers={"not_a_logger": "not_a_logger"})
 
 
 def test_kitchen_sink_on_create_helper_and_definitions():
@@ -496,7 +504,7 @@ def test_implicit_global_job_with_partitioned_asset():
         [AssetKey("hourly_partition_asset"), AssetKey("unpartitioned_asset")]
     )
 
-    with pytest.raises(DagsterInvariantViolationError):  # type: ignore
+    with pytest.raises(DagsterInvariantViolationError):
         defs.get_implicit_global_asset_job_def()
 
 
@@ -558,4 +566,4 @@ def test_bare_executor():
     assert isinstance(job, JobDefinition)
 
     # ignore typecheck because we know our implementation doesn't use the context
-    assert job.executor_def.executor_creation_fn(None) is executor_inst  # type: ignore
+    assert job.executor_def.executor_creation_fn(None) is executor_inst

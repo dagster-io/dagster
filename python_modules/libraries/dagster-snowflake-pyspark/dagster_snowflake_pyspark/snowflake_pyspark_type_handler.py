@@ -26,6 +26,9 @@ def _get_snowflake_options(config, table_slice: TableSlice) -> Mapping[str, str]
         "dbtable": table_slice.table,
     }
 
+    print("THIS IS THE CONF")
+    print(conf)
+
     return conf
 
 
@@ -66,6 +69,8 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_snowflake_options(context.resource_config, table_slice)
+        print("OPTIONS")
+        print(options)
 
         with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
 

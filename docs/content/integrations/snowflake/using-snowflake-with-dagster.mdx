@@ -14,6 +14,8 @@ By the end of the tutorial, you will:
 - Make a Snowflake table available in Dagster
 - Load Snowflake tables in downstream assets
 
+This guide focuses on storing and loading Pandas DataFrames in Snowflake. Dagster also supports using PySpark DataFrames with Snowflake. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the Snowflake I/O manager with PySpark DataFrames in the [reference guide](/integrations/snowflake/reference).
+
 ---
 
 ## Prerequisites
@@ -84,9 +86,9 @@ defs = Definitions(
 
 With this configuration, if you materialized an asset called `iris_dataset`, the Snowflake I/O manager would be permissioned with the role `writer` and would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
 
-Finally, in the <PyObject object="Definitions" /> object, we assign the `snowflake_pandas_io_manager` to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
+Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_snowflake_pandas" object="snowflake_pandas_io_manager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
-For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake" object="build_snowflake_io_manager" /> API documentation.
+For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake_pandas" object="snowflake_pandas_io_manager" /> API documentation.
 
 ---
 
@@ -225,6 +227,8 @@ defs = Definitions(
 ---
 
 ## Related
+
+For more Snowflake features, refer to the [Snowflake reference](/integrations/snowflake/reference).
 
 For more information on software-defined assets, refer to the [Assets tutorial](/tutorial/assets/defining-an-asset) or the [Assets concept documentation](/concepts/assets/software-defined-assets).
 

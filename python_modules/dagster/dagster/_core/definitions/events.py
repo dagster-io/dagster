@@ -259,12 +259,12 @@ class Output(Generic[T]):
     def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
         return self._metadata_entries
 
-    @public  # type: ignore
+    @public
     @property
     def value(self) -> Any:
         return self._value
 
-    @public  # type: ignore
+    @public
     @property
     def output_name(self) -> str:
         return self._output_name
@@ -326,17 +326,17 @@ class DynamicOutput(Generic[T]):
     def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
         return self._metadata_entries
 
-    @public  # type: ignore
+    @public
     @property
     def mapping_key(self) -> str:
         return self._mapping_key
 
-    @public  # type: ignore
+    @public
     @property
     def value(self) -> T:
         return self._value
 
-    @public  # type: ignore
+    @public
     @property
     def output_name(self) -> str:
         return self._output_name
@@ -544,7 +544,7 @@ class AssetMaterialization(
             metadata={"path": MetadataValue.path(path)},
         )
 
-    @public  # type: ignore
+    @public
     @property
     def metadata(self) -> MetadataMapping:
         # PartitionMetadataEntry (unstable API) case is unhandled

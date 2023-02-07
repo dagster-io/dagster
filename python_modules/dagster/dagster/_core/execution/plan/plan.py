@@ -1135,7 +1135,7 @@ class ExecutionPlan(
                         ttype=(StepHandle, ResolvedFromDynamicStepHandle),
                     ),
                     pipeline_name,
-                    step_inputs,  # type: ignore
+                    step_inputs,
                     step_outputs,
                     step_snap.tags,
                 )
@@ -1146,7 +1146,7 @@ class ExecutionPlan(
                         ttype=UnresolvedStepHandle,
                     ),
                     pipeline_name,
-                    step_inputs,  # type: ignore
+                    step_inputs,
                     step_outputs,
                     step_snap.tags,
                 )
@@ -1154,7 +1154,7 @@ class ExecutionPlan(
                 step = UnresolvedCollectExecutionStep(
                     check.inst(cast(StepHandle, step_snap.step_handle), ttype=StepHandle),
                     pipeline_name,
-                    step_inputs,  # type: ignore
+                    step_inputs,
                     step_outputs,
                     step_snap.tags,
                 )

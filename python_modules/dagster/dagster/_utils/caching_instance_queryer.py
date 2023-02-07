@@ -81,7 +81,7 @@ class CachingInstanceQueryer:
         for asset_key in asset_keys:
             # we just prefetched all the asset records, so if it's not in the cache, there are
             # no materializations for this key
-            asset_record = self._asset_record_cache.get(asset_key)  # type: ignore
+            asset_record = self._asset_record_cache.get(asset_key)
             last_materialization_record = (
                 asset_record.asset_entry.last_materialization_record if asset_record else None
             )
@@ -404,7 +404,7 @@ class CachingInstanceQueryer:
 
             serialized_times = tags_list[0].get(USED_DATA_TAG, "{}")
             return {
-                AssetKey.from_user_string(key): tuple(value)  # type:ignore
+                AssetKey.from_user_string(key): tuple(value)
                 for key, value in json.loads(serialized_times).items()
             }
         return {}

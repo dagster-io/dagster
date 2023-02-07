@@ -21,7 +21,7 @@ class PandasCsvIOManager(IOManager):
             obj.to_csv(file_path, index=False)
 
     def load_input(self, context) -> pd.DataFrame:
-        return pd.read_csv(self._get_path(context.upstream_output))  # type: ignore
+        return pd.read_csv(self._get_path(context.upstream_output))
 
 
 @io_manager(config_schema={"base_dir": Field(Noneable(str), default_value=None, is_required=False)})
@@ -49,7 +49,7 @@ class NumpyCsvIOManager(PandasCsvIOManager):
                     "strings": ["ten", "twenty", "thirty", "forty"],
                 }
             )
-            return df.to_numpy()  # type: ignore  # fmt: skip
+            return df.to_numpy()
 
 
 @io_manager(

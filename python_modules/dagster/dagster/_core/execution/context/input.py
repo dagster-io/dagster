@@ -162,7 +162,7 @@ class InputContext:
             )
         return self._instance
 
-    @public  # type: ignore
+    @public
     @property
     def has_input_name(self) -> bool:
         """If we're the InputContext is being used to load the result of a run from outside the run,
@@ -170,7 +170,7 @@ class InputContext:
         """
         return self._name is not None
 
-    @public  # type: ignore
+    @public
     @property
     def name(self) -> str:
         if self._name is None:
@@ -204,7 +204,7 @@ class InputContext:
 
         return self._solid_def
 
-    @public  # type: ignore
+    @public
     @property
     def op_def(self) -> "OpDefinition":
         from dagster._core.definitions import OpDefinition
@@ -217,22 +217,22 @@ class InputContext:
 
         return cast(OpDefinition, self._solid_def)
 
-    @public  # type: ignore
+    @public
     @property
     def config(self) -> Any:
         return self._config
 
-    @public  # type: ignore
+    @public
     @property
     def metadata(self) -> Optional[Mapping[str, Any]]:
         return self._metadata
 
-    @public  # type: ignore
+    @public
     @property
     def upstream_output(self) -> Optional["OutputContext"]:
         return self._upstream_output
 
-    @public  # type: ignore
+    @public
     @property
     def dagster_type(self) -> "DagsterType":
         if self._dagster_type is None:
@@ -243,7 +243,7 @@ class InputContext:
 
         return self._dagster_type
 
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> "DagsterLogManager":
         if self._log is None:
@@ -254,12 +254,12 @@ class InputContext:
 
         return self._log
 
-    @public  # type: ignore
+    @public
     @property
     def resource_config(self) -> Optional[Mapping[str, Any]]:
         return self._resource_config
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> Any:
         if self._resources is None:
@@ -276,12 +276,12 @@ class InputContext:
             )
         return self._resources
 
-    @public  # type: ignore
+    @public
     @property
     def has_asset_key(self) -> bool:
         return self._asset_key is not None
 
-    @public  # type: ignore
+    @public
     @property
     def asset_key(self) -> AssetKey:
         if self._asset_key is None:
@@ -291,7 +291,7 @@ class InputContext:
 
         return self._asset_key
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
@@ -319,13 +319,13 @@ class InputContext:
 
         return self._step_context
 
-    @public  # type: ignore
+    @public
     @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run."""
         return self._partition_key is not None
 
-    @public  # type: ignore
+    @public
     @property
     def partition_key(self) -> str:
         """The partition key for the current run.
@@ -339,12 +339,12 @@ class InputContext:
 
         return self._partition_key
 
-    @public  # type: ignore
+    @public
     @property
     def has_asset_partitions(self) -> bool:
         return self._asset_partitions_subset is not None
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partition_key(self) -> str:
         """The partition key for input asset.
@@ -366,7 +366,7 @@ class InputContext:
                 f"but the number of input partitions != 1: '{subset}'."
             )
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for input asset.
@@ -391,7 +391,7 @@ class InputContext:
 
         return partition_key_ranges[0]
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partition_keys(self) -> Sequence[str]:
         """The partition keys for input asset.
@@ -405,7 +405,7 @@ class InputContext:
 
         return list(self._asset_partitions_subset.get_partition_keys())
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
         """The time window for the partitions of the input asset.

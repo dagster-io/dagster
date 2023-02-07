@@ -510,23 +510,23 @@ class DagsterEvent(
         solid_handle = cast(NodeHandle, self.solid_handle)
         return solid_handle.name
 
-    @public  # type: ignore
+    @public
     @property
     def event_type(self) -> DagsterEventType:
         """DagsterEventType: The type of this event."""
         return DagsterEventType(self.event_type_value)
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_event(self) -> bool:
         return self.event_type in STEP_EVENTS
 
-    @public  # type: ignore
+    @public
     @property
     def is_hook_event(self) -> bool:
         return self.event_type in HOOK_EVENTS
 
-    @public  # type: ignore
+    @public
     @property
     def is_alert_event(self) -> bool:
         return self.event_type in ALERT_EVENTS
@@ -537,42 +537,42 @@ class DagsterEvent(
 
         return StepKind(self.step_kind_value)
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_success(self) -> bool:
         return self.event_type == DagsterEventType.STEP_SUCCESS
 
-    @public  # type: ignore
+    @public
     @property
     def is_successful_output(self) -> bool:
         return self.event_type == DagsterEventType.STEP_OUTPUT
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_start(self) -> bool:
         return self.event_type == DagsterEventType.STEP_START
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_failure(self) -> bool:
         return self.event_type == DagsterEventType.STEP_FAILURE
 
-    @public  # type: ignore
+    @public
     @property
     def is_resource_init_failure(self) -> bool:
         return self.event_type == DagsterEventType.RESOURCE_INIT_FAILURE
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_skipped(self) -> bool:
         return self.event_type == DagsterEventType.STEP_SKIPPED
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_up_for_retry(self) -> bool:
         return self.event_type == DagsterEventType.STEP_UP_FOR_RETRY
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_restarted(self) -> bool:
         return self.event_type == DagsterEventType.STEP_RESTARTED
@@ -589,7 +589,7 @@ class DagsterEvent(
     def is_run_failure(self) -> bool:
         return self.event_type == DagsterEventType.RUN_FAILURE
 
-    @public  # type: ignore
+    @public
     @property
     def is_failure(self) -> bool:
         return self.event_type in FAILURE_EVENTS
@@ -598,42 +598,42 @@ class DagsterEvent(
     def is_pipeline_event(self) -> bool:
         return self.event_type in PIPELINE_EVENTS
 
-    @public  # type: ignore
+    @public
     @property
     def is_engine_event(self) -> bool:
         return self.event_type == DagsterEventType.ENGINE_EVENT
 
-    @public  # type: ignore
+    @public
     @property
     def is_handled_output(self) -> bool:
         return self.event_type == DagsterEventType.HANDLED_OUTPUT
 
-    @public  # type: ignore
+    @public
     @property
     def is_loaded_input(self) -> bool:
         return self.event_type == DagsterEventType.LOADED_INPUT
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_materialization(self) -> bool:
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION
 
-    @public  # type: ignore
+    @public
     @property
     def is_expectation_result(self) -> bool:
         return self.event_type == DagsterEventType.STEP_EXPECTATION_RESULT
 
-    @public  # type: ignore
+    @public
     @property
     def is_asset_observation(self) -> bool:
         return self.event_type == DagsterEventType.ASSET_OBSERVATION
 
-    @public  # type: ignore
+    @public
     @property
     def is_asset_materialization_planned(self) -> bool:
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
 
-    @public  # type: ignore
+    @public
     @property
     def asset_key(self) -> Optional[AssetKey]:
         if self.event_type == DagsterEventType.ASSET_MATERIALIZATION:
@@ -645,7 +645,7 @@ class DagsterEvent(
         else:
             return None
 
-    @public  # type: ignore
+    @public
     @property
     def partition(self) -> Optional[str]:
         if self.event_type == DagsterEventType.ASSET_MATERIALIZATION:

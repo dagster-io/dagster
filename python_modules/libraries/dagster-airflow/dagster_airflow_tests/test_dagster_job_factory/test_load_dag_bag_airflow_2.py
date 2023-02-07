@@ -66,20 +66,20 @@ def get_examples_airflow_repo_params():
     no_job_run_dags = [
         # requires k8s environment to work
         # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
-        "airflow_example_kubernetes_executor",
+        "example_kubernetes_executor",
         # requires params to be passed in to work
-        "airflow_example_passing_params_via_test_command",
+        "example_passing_params_via_test_command",
         # requires template files to exist
-        "airflow_example_python_operator",
+        "example_python_operator",
         # requires email server to work
-        "airflow_example_dag_decorator",
+        "example_dag_decorator",
         # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
-        "airflow_example_trigger_target_dag",
-        "airflow_example_trigger_controller_dag",
+        "example_trigger_target_dag",
+        "example_trigger_controller_dag",
         # runs slow
-        "airflow_example_subdag_operator",
+        "example_subdag_operator",
         # runs slow
-        "airflow_example_sensors",
+        "example_sensors",
     ]
     for job_name in repo.job_names:
         params.append(
@@ -143,7 +143,6 @@ def test_retry_conversion():
 
         job = make_dagster_job_from_airflow_dag(
             dag=retry_dag,
-            use_ephemeral_airflow_db=True,
         )
         result = job.execute_in_process()
         assert result.success

@@ -242,7 +242,7 @@ const AssetGroupSuggest: React.FC<{
   );
 };
 
-const ASSET_CATALOG_TABLE_QUERY = gql`
+export const ASSET_CATALOG_TABLE_QUERY = gql`
   query AssetCatalogTableQuery {
     assetsOrError {
       __typename
@@ -260,7 +260,7 @@ const ASSET_CATALOG_TABLE_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
+export const ASSET_CATALOG_GROUP_TABLE_QUERY = gql`
   query AssetCatalogGroupTableQuery($group: AssetGroupSelector) {
     assetNodes(group: $group) {
       id
