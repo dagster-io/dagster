@@ -16,7 +16,9 @@ To load all Airflow DAGS in a file path into a [Dagster repository](/concepts/re
 ```python file=/integrations/airflow/migrate_repo.py
 import os
 
-from dagster_airflow import make_dagster_repo_from_airflow_dags_path
+from dagster_airflow import (
+    make_dagster_repo_from_airflow_dags_path,
+)
 
 migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
     os.path.join(os.environ["AIRFLOW_HOME"], "dags"),

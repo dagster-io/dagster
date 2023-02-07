@@ -36,7 +36,9 @@ The first step to migrating is to define a Dagster repository. To do this, we'll
 ```python file=/integrations/airflow/migrate_repo.py
 import os
 
-from dagster_airflow import make_dagster_repo_from_airflow_dags_path
+from dagster_airflow import (
+    make_dagster_repo_from_airflow_dags_path,
+)
 
 migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
     os.path.join(os.environ["AIRFLOW_HOME"], "dags"),
@@ -56,7 +58,9 @@ By default, each job run of your migrated DAGs creates an ephemeral airflow meta
 import os
 
 from airflow.models import Connection
-from dagster_airflow import make_dagster_repo_from_airflow_dags_path
+from dagster_airflow import (
+    make_dagster_repo_from_airflow_dags_path,
+)
 
 migrated_airflow_repo = make_dagster_repo_from_airflow_dags_path(
     os.path.join(os.environ["AIRFLOW_HOME"], "dags"),
