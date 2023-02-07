@@ -43,7 +43,6 @@ export const AssetEventMetadataEntriesTable: React.FC<{
               <td style={{opacity: 0.7}}>{entry.description}</td>
             </tr>
           ))}
-
           {(observations || []).map((obs) => (
             <React.Fragment key={obs.timestamp}>
               {obs.metadataEntries.map((entry) => (

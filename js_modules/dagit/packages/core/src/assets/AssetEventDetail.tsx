@@ -12,6 +12,7 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
+import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
 import {
@@ -32,7 +33,7 @@ export const AssetEventDetail: React.FC<{
   const assetLineage = event.__typename === 'MaterializationEvent' ? event.assetLineage : [];
 
   return (
-    <Box padding={{horizontal: 24}} style={{flex: 1}}>
+    <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
       <Box
         padding={{vertical: 24}}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
@@ -118,14 +119,19 @@ export const AssetEventDetail: React.FC<{
 
       {event.__typename === 'MaterializationEvent' && (
         <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-          <Subheading>Source Data</Subheading>
+          <Subheading>Source data</Subheading>
           <AssetMaterializationUpstreamData timestamp={event.timestamp} assetKey={assetKey} />
         </Box>
       )}
 
+      <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
+        <Subheading>System tags</Subheading>
+        <AssetEventSystemTags event={event} collapsible />
+      </Box>
+
       {assetLineage.length > 0 && (
         <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-          <Subheading>Parent Materializations</Subheading>
+          <Subheading>Parent materializations</Subheading>
           <AssetLineageElements elements={assetLineage} timestamp={event.timestamp} />
         </Box>
       )}
