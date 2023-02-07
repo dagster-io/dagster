@@ -180,13 +180,12 @@ def execute_cli_stream(
         json_log_format=json_log_format,
         ignore_handled_error=ignore_handled_error,
     ):
-        yield event
-
-        if event.return_code is not None:
-            return_code = event.return_code
+        if isinstance(event, int):
+            return_code = event
             log.info(f"dbt exited with return code {return_code}")
             break
 
+        yield event
         if capture_logs:
             log.log(event.log_level, event.message)
 

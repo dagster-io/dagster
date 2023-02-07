@@ -137,7 +137,7 @@ def result_to_events(
                 metadata=metadata,
             )
     # can only associate tests with assets if we have manifest_json available
-    elif node_resource_type == "test" and manifest_json:
+    elif node_resource_type == "test" and manifest_json and status != "skipped":
         upstream_unique_ids = manifest_json["nodes"][unique_id]["depends_on"]["nodes"]
         # tests can apply to multiple asset keys
         for upstream_id in upstream_unique_ids:

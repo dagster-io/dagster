@@ -92,6 +92,14 @@ def _load_manifest_for_project(
         return json.load(f), cli_output
 
 
+def _can_stream_events() -> bool:
+    """Check if the installed dbt version supports streaming events."""
+    import dbt.version
+    from packaging import version
+
+    return version.parse(dbt.version.__version__) >= version.parse("1.4.0")
+
+
 def _select_unique_ids_from_manifest_json(
     manifest_json: Mapping[str, Any], select: str, exclude: str
 ) -> AbstractSet[str]:
@@ -694,7 +702,6 @@ def load_assets_from_dbt_project(
     ] = _get_node_freshness_policy,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
-    stream_events: Optional[bool] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models from a dbt project into Dagster assets.
@@ -746,10 +753,6 @@ def load_assets_from_dbt_project(
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
-        stream_events (Optional[bool]): [Experimental] A flag to indicate if events should be
-            generated as the dbt command runs, rather than waiting to produce them from the
-            run_results.json file.
-
     """
     project_dir = check.str_param(project_dir, "project_dir")
     profiles_dir = check.opt_str_param(
@@ -782,7 +785,6 @@ def load_assets_from_dbt_project(
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         display_raw_sql=display_raw_sql,
         dbt_resource_key=dbt_resource_key,
-        stream_events=stream_events,
     )
 
 
@@ -807,7 +809,6 @@ def load_assets_from_dbt_manifest(
     ] = _get_node_freshness_policy,
     display_raw_sql: Optional[bool] = None,
     dbt_resource_key: str = "dbt",
-    stream_events: Optional[bool] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -857,9 +858,6 @@ def load_assets_from_dbt_manifest(
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
-        stream_events (Optional[bool]): [Experimental] A flag to indicate if events should be
-            generated as the dbt command runs, rather than waiting to produce them from the
-            run_results.json file.
     """
     check.mapping_param(manifest_json, "manifest_json", key_type=str)
     if partitions_def:
@@ -873,10 +871,6 @@ def load_assets_from_dbt_manifest(
     if display_raw_sql is not None:
         experimental_arg_warning("display_raw_sql", "load_assets_from_dbt_manifest")
     display_raw_sql = check.opt_bool_param(display_raw_sql, "display_raw_sql", default=True)
-
-    if stream_events is not None:
-        experimental_arg_warning("stream_events", "load_assets_from_dbt_manifest")
-    stream_events = check.opt_bool_param(stream_events, "stream_events", default=False)
 
     dbt_resource_key = check.str_param(dbt_resource_key, "dbt_resource_key")
 
@@ -899,6 +893,8 @@ def load_assets_from_dbt_manifest(
         exclude = exclude if exclude is not None else ""
 
         selected_unique_ids = _select_unique_ids_from_manifest_json(manifest_json, select, exclude)
+
+    stream_events = _can_stream_events()
 
     dbt_assets_def = _dbt_nodes_to_assets(
         dbt_nodes,
