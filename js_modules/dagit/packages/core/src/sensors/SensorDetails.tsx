@@ -78,8 +78,6 @@ export const SensorDetails: React.FC<{
     [targets],
   );
 
-  console.log({targetNames});
-
   const anyPipelines = React.useMemo(() => {
     return (pipelinesAndJobs || []).some(
       (pipelineOrJob) => !pipelineOrJob.isJob && targetNames.has(pipelineOrJob.name),

@@ -18,7 +18,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
@@ -270,9 +269,7 @@ const buildBuckets = (data?: OverviewSensorsQuery): RepoBucket[] => {
     for (const repo of entry.repositories) {
       const {name, sensors} = repo;
       const repoAddress = buildRepoAddress(name, entry.name);
-      const sensorNames = sensors
-        .filter((sensor) => sensor.sensorType === SensorType.STANDARD)
-        .map(({name}) => name);
+      const sensorNames = sensors.map(({name}) => name);
 
       if (sensorNames.length > 0) {
         buckets.push({
