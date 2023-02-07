@@ -36,6 +36,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     reconcile,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -515,6 +516,16 @@ one_asset_self_dependency_hourly = [
         partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"),
         deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
     )
+]
+
+unpartitioned_after_dynamic_asset = [
+    asset_def("asset1"),
+    asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
+]
+
+two_dynamic_assets = [
+    asset_def("asset1", partitions_def=DynamicPartitionsDefinition(name="foo")),
+    asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
 ]
 
 scenarios = {

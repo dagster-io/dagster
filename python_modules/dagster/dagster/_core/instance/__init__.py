@@ -32,6 +32,7 @@ from typing import (
 )
 
 import yaml
+from typing_extensions import Protocol, runtime_checkable
 
 import dagster._check as check
 from dagster._annotations import public
@@ -236,7 +237,13 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
         self._instance_weakref = weakref.ref(instance)
 
 
-class DagsterInstance:
+@runtime_checkable
+class DynamicPartitionsStore(Protocol):
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self.get_dynamic_partitions(partitions_def_name)
+
+
+class DagsterInstance(DynamicPartitionsStore):
     """Core abstraction for managing Dagster's access to storage and other resources.
 
     Use DagsterInstance.get() to grab the current DagsterInstance which will load based on
@@ -1693,11 +1700,16 @@ class DagsterInstance:
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
+        from dagster._core.definitions.partition import (
+            raise_error_on_invalid_partition_key_substring,
+        )
+
         check.str_param(partitions_def_name, "partitions_def_name")
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
         if isinstance(partition_keys, str):
             # Guard against a single string being passed in `partition_keys`
             raise DagsterInvalidInvocationError("partition_keys must be a sequence of strings")
+        raise_error_on_invalid_partition_key_substring(partition_keys)
         return self._event_storage.add_dynamic_partitions(partitions_def_name, partition_keys)
 
     @traced

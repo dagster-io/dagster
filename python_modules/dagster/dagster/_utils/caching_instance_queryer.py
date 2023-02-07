@@ -2,7 +2,6 @@ import datetime
 import json
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Dict,
     Iterable,
@@ -21,6 +20,7 @@ from dagster._core.definitions.logical_version import get_input_event_pointer_ta
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
+from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
@@ -36,13 +36,10 @@ from dagster._core.utils import frozendict
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 
-if TYPE_CHECKING:
-    from dagster import DagsterInstance
-
 USED_DATA_TAG = ".dagster/used_data"
 
 
-class CachingInstanceQueryer:
+class CachingInstanceQueryer(DynamicPartitionsStore):
     """Provides utility functions for querying for asset-materialization related data from the
     instance which will attempt to limit redundant expensive calls.
     """
@@ -60,6 +57,8 @@ class CachingInstanceQueryer:
         self._asset_partition_count_cache: Dict[
             Optional[int], Dict[AssetKey, Mapping[str, int]]
         ] = defaultdict(dict)
+
+        self._dynamic_partitions_cache: Dict[str, Sequence[str]] = {}
 
     @property
     def instance(self) -> "DagsterInstance":
@@ -335,7 +334,9 @@ class CachingInstanceQueryer:
             return False
 
         for parent in asset_graph.get_parents_partitions(
-            asset_partition.asset_key, asset_partition.partition_key
+            self,
+            asset_partition.asset_key,
+            asset_partition.partition_key,
         ):
             if asset_graph.is_source(parent.asset_key):
                 continue
@@ -682,3 +683,10 @@ class CachingInstanceQueryer:
             return records[0].storage_id
         else:
             return None
+
+    def get_dynamic_partitions(self, name: str) -> Sequence[str]:
+        if name in self._dynamic_partitions_cache:
+            return self._dynamic_partitions_cache[name]
+
+        self._dynamic_partitions_cache[name] = self.instance.get_dynamic_partitions(name)
+        return self._dynamic_partitions_cache[name]

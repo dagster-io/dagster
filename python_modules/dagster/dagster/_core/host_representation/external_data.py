@@ -40,7 +40,11 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
+from dagster._core.definitions.partition import (
+    DynamicPartitionsDefinition,
+    PartitionScheduleDefinition,
+    ScheduleType,
+)
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
     get_builtin_partition_mapping_types,
@@ -670,6 +674,15 @@ class ExternalMultiPartitionsDefinitionData(
                 for partition_dimension in self.external_partition_dimension_definitions
             }
         )
+
+
+@whitelist_for_serdes
+class ExternalDynamicPartitionsDefinitionData(
+    ExternalPartitionsDefinitionData,
+    NamedTuple("_ExternalDynamicPartitionsDefinitionData", [("name", str)]),
+):
+    def get_partitions_definition(self):
+        return DynamicPartitionsDefinition(name=self.name)
 
 
 @whitelist_for_serdes
@@ -1336,9 +1349,12 @@ def external_partitions_definition_from_def(
         return external_static_partitions_definition_from_def(partitions_def)
     elif isinstance(partitions_def, MultiPartitionsDefinition):
         return external_multi_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, DynamicPartitionsDefinition):
+        return external_dynamic_partitions_definition_from_def(partitions_def)
     else:
         raise DagsterInvalidDefinitionError(
-            "Only static, time window, and multi-dimensional partitions are currently supported."
+            "Only static, time window, multi-dimensional partitions, and dynamic partitions"
+            " definitions with a name parameter are currently supported."
         )
 
 
@@ -1391,6 +1407,17 @@ def external_multi_partitions_definition_from_def(
             for dimension in partitions_def.partitions_defs
         ]
     )
+
+
+def external_dynamic_partitions_definition_from_def(
+    partitions_def: DynamicPartitionsDefinition,
+) -> ExternalDynamicPartitionsDefinitionData:
+    check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)
+    if partitions_def.name is None:
+        raise DagsterInvalidDefinitionError(
+            "Dagit does not support dynamic partitions definitions without a name parameter."
+        )
+    return ExternalDynamicPartitionsDefinitionData(name=partitions_def.name)
 
 
 def external_partition_set_data_from_def(
