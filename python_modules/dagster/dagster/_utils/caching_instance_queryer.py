@@ -28,6 +28,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -366,7 +367,7 @@ class CachingInstanceQueryer:
     def set_known_used_data(
         self,
         record: EventLogRecord,
-        new_known_data: Dict[AssetKey, Tuple[Optional[int], Optional[float]]],
+        new_known_data: Mapping[AssetKey, Tuple[Optional[int], Optional[float]]],
     ):
         event_log_storage = self._instance.event_log_storage
         if (
@@ -409,14 +410,41 @@ class CachingInstanceQueryer:
             }
         return {}
 
-    def _calculate_partition_data_time(
+    def _calculate_time_partitioned_asset_data_time(
         self,
         asset_key: AssetKey,
-        record_id: int,
+        asset_graph: AssetGraph,
+        cursor: int,
         partitions_def: TimeWindowPartitionsDefinition,
-        status_cache_value: "AssetStatusCacheValue",
     ) -> Optional[datetime.datetime]:
+        """Returns the time up until which all available data has been consumed for this asset
+
+        At a high level, this algorithm works as follows:
+
+        First, calculate the subset of partitions that have been materialized up until this point
+        in time (ignoring the cursor). This is done by querying the asset status cache if it is
+        available, otherwise by using a (slower) get_materialization_count_by_partition query.
+
+        Next, we calculate the set of partitions that are net-new since the cursor. This is done by
+        comparing the count of materializations before after the cursor to the total count of
+        materializations.
+
+        Finally, we calculate the minimum time window of the net-new partitions. This time window
+        did not exist at the time of the cursor, so we know that we have all data up until the
+        beginning of that time window, or all data up until the end of the first filled time window
+        in the total set, whichever is less.
+        """
+        from dagster._core.storage.partition_status_cache import (
+            get_and_update_asset_status_cache_values,
+        )
+
         if self.instance.can_cache_asset_status_data():
+            # this is the current state of the asset, not the state of the asset at the time of record_id
+            status_cache_value = get_and_update_asset_status_cache_values(
+                instance=self._instance,
+                asset_graph=asset_graph,
+                asset_key=asset_key,
+            )[asset_key]
             partition_subset = status_cache_value.deserialize_materialized_partition_subsets(
                 partitions_def=partitions_def
             )
@@ -444,13 +472,19 @@ class CachingInstanceQueryer:
         if first_available_time_window.start < first_filled_time_window.start:
             return None
 
-        # there are no events for this asset after the given record
-        if status_cache_value.latest_storage_id <= record_id:
+        # there are no events for this asset after the cursor
+        asset_record = self.get_asset_record(asset_key)
+        if (
+            asset_record is not None
+            and asset_record.asset_entry is not None
+            and asset_record.asset_entry.last_materialization_record is not None
+            and asset_record.asset_entry.last_materialization_record.storage_id <= cursor
+        ):
             return first_filled_time_window.end
 
         # get a per-partition count of the new materializations
         new_partition_counts = self.get_materialized_partition_counts(
-            asset_key, after_cursor=record_id
+            asset_key, after_cursor=cursor
         )
 
         total_partition_counts = self.get_materialized_partition_counts(asset_key)
@@ -478,37 +512,24 @@ class CachingInstanceQueryer:
             first_filled_time_window.end,
         )
 
-    def _calculate_used_data_partitioned(
+    def _calculate_used_data_time_partitioned(
         self,
         asset_graph: AssetGraph,
         asset_key: AssetKey,
-        record_id: int,
+        cursor: int,
         partitions_def: TimeWindowPartitionsDefinition,
-    ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
-        from dagster._core.storage.partition_status_cache import (
-            get_and_update_asset_status_cache_values,
-        )
+    ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
+        """Returns the data time (i.e. the time up to which the asset has incorporated all available
+        data) for a time-partitioned asset. This method takes into account all partitions that were
+        materialized for this asset up to the provided cursor."""
 
-        # return the existing upstream data times already calculated for this record (if any)
-        known_data = self.get_known_used_data(asset_key, record_id)
-        if known_data:
-            return known_data
-
-        # this is the current state of the asset, not the state of the asset at the time of record_id
-        status_cache_value = get_and_update_asset_status_cache_values(
-            instance=self._instance,
+        partition_data_time = self._calculate_time_partitioned_asset_data_time(
+            asset_key=asset_key,
             asset_graph=asset_graph,
-            asset_key=asset_key,
-        )[asset_key]
-
-        partition_data_time = self._calculate_partition_data_time(
-            asset_key=asset_key,
-            record_id=record_id,
+            cursor=cursor,
             partitions_def=partitions_def,
-            status_cache_value=status_cache_value,
         )
         partition_data_timestamp = partition_data_time.timestamp() if partition_data_time else None
-        from dagster import AssetSelection
 
         root_keys = AssetSelection.keys(asset_key).upstream().sources().resolve(asset_graph)
         return {key: (None, partition_data_timestamp) for key in root_keys}
@@ -521,7 +542,7 @@ class CachingInstanceQueryer:
         record_id: int,
         record_timestamp: Optional[float],
         record_tags: Mapping[str, str],
-    ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
+    ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
         if record_id is None:
             return {key: (None, None) for key in asset_graph.get_non_source_roots(asset_key)}
 
@@ -592,16 +613,16 @@ class CachingInstanceQueryer:
         record_id: Optional[int],
         record_timestamp: Optional[float],
         record_tags: Mapping[str, str],
-    ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
+    ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
         if record_id is None:
             return {key: (None, None) for key in asset_graph.get_non_source_roots(asset_key)}
 
         partitions_def = asset_graph.get_partitions_def(asset_key)
         if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            return self._calculate_used_data_partitioned(
+            return self._calculate_used_data_time_partitioned(
                 asset_graph=asset_graph,
                 asset_key=asset_key,
-                record_id=record_id,
+                cursor=record_id,
                 partitions_def=partitions_def,
             )
         else:
@@ -639,7 +660,9 @@ class CachingInstanceQueryer:
             record_timestamp=record.event_log_entry.timestamp,
             record_tags=frozendict(record.asset_materialization.tags or {}),
         )
-        if asset_graph.freshness_policies_by_key.get(record.asset_key) is not None:
+        if asset_graph.freshness_policies_by_key.get(
+            record.asset_key
+        ) is not None and not asset_graph.is_partitioned(record.asset_key):
             self.set_known_used_data(record, new_known_data=data)
 
         return {
