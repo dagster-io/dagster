@@ -117,6 +117,9 @@ ignore = [
   "D106",
   "D107",
 
+  # (docstring imperative mood) Overly restrictive.
+  "D401",
+
   # (module level import not at top) There are several places where we use e.g.
   # warnings.filterwarings calls before imports.
   "E402",
@@ -140,8 +143,8 @@ ignore = [
   # (no redundant alias) Allow redundant import aliases for explicit re-exports.
   "PLC0414",
 
-  # (use from for submodule imports) Sometimes it is clearer to import a submodule directly.
-  "PLR0402",
+  # (no concatenation) Existing codebase has many concatentations, no reason to disallow them.
+  "RUF005",
 
   ##### TEMPORARY DISABLES
 
@@ -192,7 +195,6 @@ select = [
   # pylint's rules)
   "PLC",
   "PLE",
-  "PLR",
   "PLW",
 
   # (no commented out code) keep commented out code blocks out of the codebase
@@ -208,7 +210,7 @@ select = [
 ]
 
 # Fail if Ruff is not running this version.
-required-version = "0.0.212"
+required-version = "0.0.241"
 
 [tool.ruff.isort]
 
