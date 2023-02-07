@@ -213,9 +213,13 @@ def run_pyright(env: str, paths: Sequence[str], rebuild: bool) -> RunResult:
         print(f"Running pyright for environment `{env}`...")
         print(f"  {shell_cmd}")
         result = subprocess.run(shell_cmd, capture_output=True, shell=True, text=True)
+        try:
+            json_result = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            raise Exception(f"Pyright output was not valid JSON. Output was:\n{result.stdout}")
     return {
         "returncode": result.returncode,
-        "output": cast(PyrightOutput, json.loads(result.stdout)),
+        "output": cast(PyrightOutput, json_result),
     }
 
 
