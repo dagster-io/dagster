@@ -6,14 +6,14 @@ import pytest
 from dagster import (
     AssetIn,
     DailyPartitionsDefinition,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     Out,
     StaticPartitionsDefinition,
     asset,
     graph,
     materialize,
     op,
-    MultiPartitionsDefinition,
-    MultiPartitionKey
 )
 from dagster._check import CheckError
 from dagster_duckdb_pandas import duckdb_pandas_io_manager
@@ -282,10 +282,7 @@ def test_static_partitioned_asset(tmp_path):
         }
     ),
     key_prefix=["my_schema"],
-    metadata={"partition_expr": {
-        "date": "DATE",
-        "color": "COLOR"
-    }},
+    metadata={"partition_expr": {"date": "DATE", "color": "COLOR"}},
     config_schema={"value": str},
 )
 def multi_partitioned(context):
@@ -294,7 +291,7 @@ def multi_partitioned(context):
     return pd.DataFrame(
         {
             "color": [partition["color"], partition["color"], partition["color"]],
-            "date":[partition["date"], partition["date"], partition["date"]],
+            "date": [partition["date"], partition["date"], partition["date"]],
             "a": [value, value, value],
         }
     )
@@ -352,7 +349,7 @@ def test_multi_partitioned_asset(tmp_path):
         run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "4"}}}},
     )
 
-    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))gi
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
     print(out_df)
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
