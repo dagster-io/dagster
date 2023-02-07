@@ -457,7 +457,9 @@ def get_freshness_constraints_by_key(
     # for each asset with a FreshnessPolicy, get all unsolved constraints for the given time window
     has_freshness_policy = False
     for key, freshness_policy in asset_graph.freshness_policies_by_key.items():
-        if freshness_policy is None:
+        # TODO: generate constraints for partitioned assets. For now, the alternative reconciliation
+        # logic will handle them.
+        if freshness_policy is None or asset_graph.is_partitioned(key):
             continue
         has_freshness_policy = True
         upstream_keys = asset_graph.get_non_source_roots(key)
