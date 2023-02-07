@@ -4,7 +4,6 @@ import {useVersion} from 'util/useVersion';
 import cx from 'classnames';
 import Icons from 'components/Icons';
 import Link from 'components/Link';
-// import Pagination from 'components/Pagination';
 import VersionDropdown from 'components/VersionDropdown';
 import MDXComponents, {SearchIndexContext} from 'components/mdx/MDXComponents';
 import SidebarNavigation from 'components/mdx/SidebarNavigation';
