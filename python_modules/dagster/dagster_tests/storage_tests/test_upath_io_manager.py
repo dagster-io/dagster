@@ -221,9 +221,11 @@ def test_upath_io_manager_static_partitions_with_dot():
         def load_from_path(self, context: InputContext, path: UPath) -> List:
             pass
 
-    @io_manager
+    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
     def tracking_io_manager(init_context: InitResourceContext):
-        base_path = UPath("memory://tmp/")
+        base_path = UPath(
+            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
+        )
         return TrackingIOManager(base_path=base_path)
 
     @asset(partitions_def=partitions_def)
@@ -238,8 +240,47 @@ def test_upath_io_manager_static_partitions_with_dot():
     my_job.execute_in_process(partition_key="0.0-to-1.0")
 
     assert dumped_path is not None
+    assert "0.0-to-1.0" == dumped_path.name
     assert "0.0-to-1.0" in str(dumped_path)
 
+
+def test_upath_io_manager_with_extension_static_partitions_with_dot():
+    partitions_def = StaticPartitionsDefinition(["0.0-to-1.0", "1.0-to-2.0"])
+
+    dumped_path: Optional[UPath] = None
+
+    class TrackingIOManager(UPathIOManager):
+        extension = ".ext"
+        def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
+            nonlocal dumped_path
+            dumped_path = path
+
+        def load_from_path(self, context: InputContext, path: UPath) -> List:
+            pass
+
+    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
+    def tracking_io_manager(init_context: InitResourceContext):
+        base_path = UPath(
+            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
+        )
+        return TrackingIOManager(base_path=base_path)
+
+    @asset(partitions_def=partitions_def)
+    def my_asset(context: OpExecutionContext) -> str:
+        return context.partition_key
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[my_asset],
+        resource_defs={"io_manager": tracking_io_manager},  # type: ignore[dict-item]
+    )
+    my_job.execute_in_process(partition_key="0.0-to-1.0")
+
+    assert dumped_path is not None
+    assert "0.0-to-1.0.ext" == dumped_path.name
+    assert ".ext" == dumped_path.suffix
+    assert "0.0-to-1.0.ext" in str(dumped_path)
+    
 
 def test_partitioned_io_manager_preserves_single_partition_dependency(
     daily: DailyPartitionsDefinition, dummy_io_manager: DummyIOManager

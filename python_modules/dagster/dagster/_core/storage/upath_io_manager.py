@@ -62,9 +62,7 @@ class UPathIOManager(MemoizableIOManager):
         # Can't just call path.with_suffix(self.extension) because if
         # self.extension is "" then this trims off any extension that
         # was in the path previously.
-        if self.extension == "":
-            return path
-        return path.with_suffix(self.extension)
+        return path.parent / (path.name + self.extension)
 
     def _get_path_without_extension(self, context: Union[InputContext, OutputContext]) -> UPath:
         if context.has_asset_key:
