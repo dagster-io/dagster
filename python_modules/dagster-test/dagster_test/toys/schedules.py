@@ -1,7 +1,7 @@
 import datetime
 
 from dagster import build_schedule_from_partitioned_job, schedule
-from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.run_request import RunRequest, SkipReason
 from dagster._core.definitions.schedule_definition import ScheduleEvaluationContext
 from dagster._core.definitions.time_window_partitions import (
     daily_partitioned_config,
@@ -38,16 +38,7 @@ def unreliable_job_test_schedule():
     tags={"dagster/priority": "-1", "some_random_tag": "testing"},
 )
 def configurable_job_schedule(context: ScheduleEvaluationContext):
-    scheduled_date = (
-        context.scheduled_execution_time.strftime("%Y-%m-%d")
-        if context.scheduled_execution_time
-        else datetime.datetime.now().strftime("%Y-%m-%d")
-    )
-    return RunRequest(
-        run_key=None,
-        run_config={"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}},
-        tags={"date": scheduled_date, "github_test": "test", "okay_t2": "okay"},
-    )
+    return SkipReason("Testing")
 
 
 def hourly_materialization_schedule():

@@ -112,7 +112,6 @@ export const ScheduleDetails: React.FC<{
               onClick={() => {
                 setShowTestTickDialog(true);
               }}
-              // disabled={running}
             >
               Preview Upcoming Ticks
             </Button>
