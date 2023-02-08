@@ -116,22 +116,13 @@ It will likely take quite of bit of trial and error to get all your airflow conf
 
 ## Step 7: Going to production
 
-Your migrated airflow DAGs should be able to on both OSS and Dagster Cloud however in this guide we'll focus on running in Cloud. To get cloud configured we'll want to create a file called `dagster_cloud.yaml` in the root of your project
+Your migrated airflow DAGs should be able to on both OSS and Dagster Cloud however in this guide we'll focus on running in Cloud. First follow the instructions in the [Dagster Cloud getting started guide](/dagster-cloud/getting-started)
 
-```yaml
-locations:
-  - location_name: dagster_migration
-    code_source:
-      python_file: dagster_migration.py
-```
+Once you have your dagster cloud organization setup you can either choose to adapt your existing airflow repository to use the Dagster Cloud CI/CD deployment or copy over your code to the quickstart repository you made.
 
-You will also need to install another python library called `dagster-cloud` to your project.
+We'd really recommend waiting to go to production till you've first got your airflow DAGs executing successfully in your local development environment.
 
-and assuming you've created a dagster cloud account and setup your dagster cloud cli correctly you can run
-
-```bash
-dagster-cloud workspace add-location --from ./dagster_cloud.yaml
-```
+---
 
 ## Step 8: Migrating Permissions
 
@@ -139,7 +130,7 @@ Your Airflow instance likely had specific IAM or Kubernetes permissions that all
 
 - **We'd recommend using [Airflow connections](https://airflow.apache.org/docs/apache-airflow/stable/howto/connection.html) or [environment variables](/dagster-cloud/developing-testing/environment-variables-and-secrets)** to define permissions whever possible.
 
-- \*\*If you're uncomfortable or unable to use Airflow connections or environment variables you can also attached permissions directly to the infrastructure you're deploying dagster onto.
+- If you're uncomfortable or unable to use Airflow connections or environment variables you can also attached permissions directly to the infrastructure you're deploying dagster onto.
 
 - **If your Airflow DAGs used [`KubernetesPodOperators`](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/operators.html)**, it's possible that you used the `in_cluster` config or loading a `kube_config` file. When migrating, we recommend switching to [using connections with a `kube_config` JSON blob](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/connections/kubernetes.html) to make things easier.
 
@@ -158,3 +149,9 @@ There are a few limitations to converting Airflow DAGs into Dagster Jobs, Assets
 Most of the current limitations are due to a locally-scoped, ephemeral Airflow database being created for each run. If your DAGs implicitly rely on Airflow database state across `DagRuns`, then the current migration tooling won't work for you.
 
 Note that we are working on extending support for these features. If interested in them, let us know in the #dagster-airflow channel of the Dagster Slack.
+
+---
+
+## Containerized Operator Considerations
+
+There are a variety of Airflow Operator types that are used to create container runs in various container execution environments, for example kubernetes or amazon ECS, when getting things working locally we'd recommend trying to execute those containers locally whenever possible and only relying on remote execution when its either unrealistic or impossible to locally emulate the cloud environment. For doing local execution it likely means that you will need to have a local kubernets cluster running, we'd recommnd docker's built in k8s environment, and to be able to pull down the container images that will be needed for execution to your local machine.
