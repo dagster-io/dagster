@@ -39,14 +39,37 @@ type DryRunInstigationTick = Extract<
   {__typename: 'DryRunInstigationTick'}
 >;
 
-export const SensorDryRun: React.FC<{
+type Props = {
   name: string;
   onClose: () => void;
   repoAddress: RepoAddress;
   currentCursor: string;
   isOpen: boolean;
   jobName: string;
-}> = ({repoAddress, name, currentCursor, onClose, jobName, isOpen}) => {
+};
+
+export const SensorDryRunDialog: React.FC<Props> = (props) => {
+  const {isOpen, onClose, name} = props;
+  return (
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      style={{width: '70vw', display: 'flex'}}
+      icon="sensors"
+      title={name}
+    >
+      <SensorDryRun {...props} />
+    </Dialog>
+  );
+};
+
+export const SensorDryRun: React.FC<Props> = ({
+  repoAddress,
+  name,
+  currentCursor,
+  onClose,
+  jobName,
+}) => {
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
   );
@@ -70,7 +93,6 @@ export const SensorDryRun: React.FC<{
   );
 
   const submitTest = React.useCallback(async () => {
-    debugger;
     setSubmitting(true);
     const result = await sensorDryRun({
       variables: {
@@ -99,8 +121,6 @@ export const SensorDryRun: React.FC<{
     }
     setSubmitting(false);
   }, [sensorDryRun, sensorSelector, cursor, name]);
-
-  console.log(repoAddress);
 
   const buttons = React.useMemo(() => {
     if (sensorExecutionData || error) {
@@ -194,7 +214,7 @@ export const SensorDryRun: React.FC<{
                     {error ? (
                       <Tag intent="danger">Failed</Tag>
                     ) : numRunRequests ? (
-                      <Tag intent="success">{numRunRequests} Run requests</Tag>
+                      <Tag intent="success">{numRunRequests} run requests</Tag>
                     ) : (
                       <Tag intent="warning">Skipped</Tag>
                     )}
@@ -203,7 +223,7 @@ export const SensorDryRun: React.FC<{
               </div>
               <div>
                 <Subheading>Used cursor value</Subheading>
-                <pre>{currentCursor?.length ? currentCursor : 'None'}</pre>
+                <pre>{cursor?.length ? cursor : 'None'}</pre>
               </div>
               <div>
                 <Subheading>Computed cursor value</Subheading>
@@ -216,7 +236,7 @@ export const SensorDryRun: React.FC<{
                 </pre>
                 {error ||
                 (currentCursor ?? '') ===
-                  (sensorExecutionData?.evaluationResult?.cursor ?? 'testing1234') ? null : (
+                  (sensorExecutionData?.evaluationResult?.cursor ?? '') ? null : (
                   <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                     <Button
                       disabled={['Persisting', 'Persisted'].includes(cursorState)}
@@ -245,7 +265,7 @@ export const SensorDryRun: React.FC<{
             ) : null}
             {didSkip ? (
               <div>
-                <Subheading>Skip Reason</Subheading>
+                <Subheading>Skip reason</Subheading>
                 <div>{sensorExecutionData?.evaluationResult?.skipReason}</div>
               </div>
             ) : null}
@@ -295,22 +315,12 @@ export const SensorDryRun: React.FC<{
   ]);
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={onClose}
-      style={{width: '70vw', display: 'flex'}}
-      title={
-        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-          <Icon name="sensors" />
-          <span>{name}</span>
-        </Box>
-      }
-    >
+    <>
       <DialogBody>
         <div style={{minHeight: '300px'}}>{content}</div>
       </DialogBody>
       <DialogFooter topBorder>{buttons}</DialogFooter>
-    </Dialog>
+    </>
   );
 };
 

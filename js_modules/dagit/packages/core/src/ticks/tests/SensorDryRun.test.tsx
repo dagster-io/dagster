@@ -49,7 +49,7 @@ describe('SensorDryRunTest', () => {
     userEvent.type(cursorInput, 'testing123');
     userEvent.click(screen.getByTestId('evaluate'));
     await waitFor(() => {
-      expect(screen.getByText(/3\sRun requests/g)).toBeVisible();
+      expect(screen.getByText(/3\srun requests/g)).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
       expect(screen.queryByText('Failed')).toBe(null);
     });

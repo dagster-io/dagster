@@ -17,7 +17,7 @@ import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {SensorDryRun} from '../ticks/SensorDryRun';
+import {SensorDryRunDialog} from '../ticks/SensorDryRun';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -129,7 +129,6 @@ export const SensorDetails: React.FC<{
                 onClick={() => {
                   setShowTestTickDialog(true);
                 }}
-                disabled={running}
               >
                 Test Sensor
               </Button>
@@ -137,8 +136,7 @@ export const SensorDetails: React.FC<{
           </Box>
         }
       />
-      <SensorDryRun
-        key={showTestTickDialog ? '1' : '0'} // This is to reset the dialog state when its opened/closed
+      <SensorDryRunDialog
         isOpen={showTestTickDialog}
         onClose={() => {
           setShowTestTickDialog(false);
