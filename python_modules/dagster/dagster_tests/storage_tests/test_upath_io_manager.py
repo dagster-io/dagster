@@ -241,7 +241,6 @@ def test_upath_io_manager_static_partitions_with_dot():
 
     assert dumped_path is not None
     assert "0.0-to-1.0" == dumped_path.name
-    assert "0.0-to-1.0" in str(dumped_path)
 
 
 def test_upath_io_manager_with_extension_static_partitions_with_dot():
@@ -279,7 +278,6 @@ def test_upath_io_manager_with_extension_static_partitions_with_dot():
     assert dumped_path is not None
     assert "0.0-to-1.0.ext" == dumped_path.name
     assert ".ext" == dumped_path.suffix
-    assert "0.0-to-1.0.ext" in str(dumped_path)
     
 
 def test_partitioned_io_manager_preserves_single_partition_dependency(
