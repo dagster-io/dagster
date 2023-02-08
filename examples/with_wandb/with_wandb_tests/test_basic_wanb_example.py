@@ -1,5 +1,8 @@
-from with_wandb.repository import dagster_with_wandb
+from with_wandb import defs
 
 
-def test_can_load():
-    assert dagster_with_wandb.get_job("simple_job_example")
+def test_defs_can_load():
+    assert defs.get_job_def("simple_job_example")
+    assert defs.get_job_def("partitioned_job_example")
+    assert defs.get_job_def("run_launch_agent_example")
+    assert defs.get_job_def("run_launch_job_example")
