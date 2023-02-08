@@ -31,8 +31,8 @@ from dagster._core.definitions.multi_dimensional_partitions import (
 )
 from dagster._core.definitions.partition import (
     DefaultPartitionsSubset,
-    PartitionsSubset,
     PartitionsDefinition,
+    PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,

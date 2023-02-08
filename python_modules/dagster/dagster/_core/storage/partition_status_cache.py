@@ -1,4 +1,4 @@
-from typing import List, Mapping, NamedTuple, Optional, Sequence, Set, cast
+from typing import List, NamedTuple, Optional, Sequence, Set, cast
 
 from dagster import (
     AssetKey,
@@ -7,7 +7,6 @@ from dagster import (
     EventRecordsFilter,
     _check as check,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
