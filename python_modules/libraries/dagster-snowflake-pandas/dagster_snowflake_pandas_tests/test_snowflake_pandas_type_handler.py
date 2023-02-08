@@ -28,6 +28,10 @@ from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler, snowflake_pandas_io_manager
+from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
+    _convert_string_to_timestamp,
+    _convert_timestamp_to_string,
+)
 from pandas import DataFrame, Timestamp
 
 resource_config = {
@@ -110,29 +114,29 @@ def test_load_input():
         assert df.equals(DataFrame([{"col1": "a", "col2": 1}]))
 
 
-# def test_type_conversions():
-#     # no timestamp data
-#     no_time = pandas.Series([1, 2, 3, 4, 5])
-#     converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time))
+def test_type_conversions():
+    # no timestamp data
+    no_time = pandas.Series([1, 2, 3, 4, 5])
+    converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time))
 
-#     assert (converted == no_time).all()
+    assert (converted == no_time).all()
 
-#     # timestamp data
-#     with_time = pandas.Series(
-#         [
-#             pandas.Timestamp("2017-01-01T12:30:45.35"),
-#             pandas.Timestamp("2017-02-01T12:30:45.35"),
-#             pandas.Timestamp("2017-03-01T12:30:45.35"),
-#         ]
-#     )
-#     time_converted = _convert_string_to_timestamp(_convert_timestamp_to_string(with_time))
+    # timestamp data
+    with_time = pandas.Series(
+        [
+            pandas.Timestamp("2017-01-01T12:30:45.35"),
+            pandas.Timestamp("2017-02-01T12:30:45.35"),
+            pandas.Timestamp("2017-03-01T12:30:45.35"),
+        ]
+    )
+    time_converted = _convert_string_to_timestamp(_convert_timestamp_to_string(with_time))
 
-#     assert (with_time == time_converted).all()
+    assert (with_time == time_converted).all()
 
-#     # string that isn't a time
-#     string_data = pandas.Series(["not", "a", "timestamp"])
+    # string that isn't a time
+    string_data = pandas.Series(["not", "a", "timestamp"])
 
-#     assert (_convert_string_to_timestamp(string_data) == string_data).all()
+    assert (_convert_string_to_timestamp(string_data) == string_data).all()
 
 
 def test_build_snowflake_pandas_io_manager():
