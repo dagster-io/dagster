@@ -212,8 +212,6 @@ def test_time_window_partitioned_asset(tmp_path):
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()
 
-    assert False
-
 
 @asset(
     partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),

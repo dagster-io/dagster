@@ -403,7 +403,7 @@ def test_multi_partitioned_asset(tmp_path):
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str=" COLOR string, A string, B int",
+        column_str=" COLOR string, TIME TIMESTAMP_NTZ(9), A string",
     ) as table_name:
 
         @asset(
