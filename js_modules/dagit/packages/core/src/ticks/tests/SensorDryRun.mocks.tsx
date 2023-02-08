@@ -1,10 +1,67 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {InstigationStatus} from '../../graphql/types';
+import {InstigationStatus, RunRequest} from '../../graphql/types';
 import {SET_CURSOR_MUTATION} from '../../sensors/EditCursorDialog';
 import {SetSensorCursorMutation} from '../../sensors/types/EditCursorDialog.types';
 import {EVALUATE_SENSOR_MUTATION} from '../SensorDryRun';
 import {SensorDryRunMutation} from '../types/SensorDryRun.types';
+
+export const runRequests: RunRequest[] = [
+  {
+    runConfigYaml:
+      'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagit/packages/core/src/ticks/tests\n      filename: SensorDryRun.mocks.tsx\n',
+    tags: [
+      {
+        key: 'dagster1',
+        value: 'test1',
+        __typename: 'PipelineTag',
+      },
+      {
+        key: 'marco2',
+        value: 'salazar2',
+        __typename: 'PipelineTag',
+      },
+    ],
+    runKey: 'SensorDryRun.mocks.tsx:1675723096.8630984',
+    __typename: 'RunRequest',
+  },
+  {
+    runConfigYaml:
+      'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagit/packages/core/src/ticks/tests\n      filename: SensorDryRun.test.tsx\n',
+    tags: [
+      {
+        key: 'dagster3',
+        value: 'test3',
+        __typename: 'PipelineTag',
+      },
+      {
+        key: 'marco4',
+        value: 'salazar4',
+        __typename: 'PipelineTag',
+      },
+    ],
+    runKey: 'SensorDryRun.test.tsx:1675722402.9114182',
+    __typename: 'RunRequest',
+  },
+  {
+    runConfigYaml:
+      'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagit/packages/core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
+    tags: [
+      {
+        key: 'dagster6',
+        value: 'test',
+        __typename: 'PipelineTag',
+      },
+      {
+        key: 'marco6',
+        value: 'salazar',
+        __typename: 'PipelineTag',
+      },
+    ],
+    runKey: 'DryRunRequestTable.test.tsx:1675705668.9931223',
+    __typename: 'RunRequest',
+  },
+];
 
 export const SensorDryRunMutationRunRequests: MockedResponse<SensorDryRunMutation> = {
   request: {
@@ -26,62 +83,7 @@ export const SensorDryRunMutationRunRequests: MockedResponse<SensorDryRunMutatio
         timestamp: null,
         evaluationResult: {
           cursor: 'a new cursor',
-          runRequests: [
-            {
-              runConfigYaml:
-                'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagit/packages/core/src/ticks/tests\n      filename: SensorDryRun.mocks.tsx\n',
-              tags: [
-                {
-                  key: 'dagster1',
-                  value: 'test1',
-                  __typename: 'PipelineTag',
-                },
-                {
-                  key: 'marco2',
-                  value: 'salazar2',
-                  __typename: 'PipelineTag',
-                },
-              ],
-              runKey: 'SensorDryRun.mocks.tsx:1675723096.8630984',
-              __typename: 'RunRequest',
-            },
-            {
-              runConfigYaml:
-                'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagit/packages/core/src/ticks/tests\n      filename: SensorDryRun.test.tsx\n',
-              tags: [
-                {
-                  key: 'dagster3',
-                  value: 'test3',
-                  __typename: 'PipelineTag',
-                },
-                {
-                  key: 'marco4',
-                  value: 'salazar4',
-                  __typename: 'PipelineTag',
-                },
-              ],
-              runKey: 'SensorDryRun.test.tsx:1675722402.9114182',
-              __typename: 'RunRequest',
-            },
-            {
-              runConfigYaml:
-                'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/dagit/packages/core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx\n',
-              tags: [
-                {
-                  key: 'dagster6',
-                  value: 'test',
-                  __typename: 'PipelineTag',
-                },
-                {
-                  key: 'marco6',
-                  value: 'salazar',
-                  __typename: 'PipelineTag',
-                },
-              ],
-              runKey: 'DryRunRequestTable.test.tsx:1675705668.9931223',
-              __typename: 'RunRequest',
-            },
-          ],
+          runRequests,
           skipReason: null,
           error: null,
           __typename: 'TickEvaluation',

@@ -2,7 +2,7 @@ import {Box, Icon, Subheading, Table, Tag} from '@dagster-io/ui';
 import qs from 'qs';
 import React from 'react';
 
-import {RunRequest} from '../graphql/graphql';
+import {RunRequest} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {testId} from '../testing/testId';
 import {AnchorButton} from '../ui/AnchorButton';
