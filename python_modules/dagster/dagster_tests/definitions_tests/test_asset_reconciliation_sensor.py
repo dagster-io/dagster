@@ -501,7 +501,11 @@ partitioned_after_non_partitioned = [
     ),
 ]
 non_partitioned_after_partitioned = [
-    asset_def("asset1", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"), freshness_policy=freshness_1d),
+    asset_def(
+        "asset1",
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        freshness_policy=freshness_1d,
+    ),
     asset_def("asset2", ["asset1"], freshness_policy=freshness_1d),
 ]
 
