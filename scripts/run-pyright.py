@@ -125,6 +125,12 @@ class EnvPathSpec(TypedDict):
 
 PYRIGHT_ENV_ROOT: Final = "pyright"
 
+# Help reduce build errors
+EXTRA_PIP_INSTALL_ARGS: Final = [
+    # find-links for M1 lookup of grpcio wheels
+    "--find-links=https://github.com/dagster-io/build-grpcio/wiki/Wheels"
+]
+
 
 def get_env_path(env: str, rel_path: Optional[str] = None) -> str:
     env_root = os.path.join(PYRIGHT_ENV_ROOT, env)
@@ -200,16 +206,24 @@ def normalize_env(env: str, rebuild: bool) -> None:
             [
                 f"python -m venv {venv_path}",
                 f"{venv_path}/bin/pip install -U pip setuptools wheel",
-                (
-                    f"{venv_path}/bin/pip install -r"
-                    # find-links for M1 lookup of grpcio wheels
-                    f" {requirements_path} --find-links=https://github.com/dagster-io/build-grpcio/wiki/Wheels"
+                " ".join(
+                    [
+                        f"{venv_path}/bin/pip",
+                        "install",
+                        "-r",
+                        requirements_path,
+                        *EXTRA_PIP_INSTALL_ARGS,
+                    ]
                 ),
             ]
         )
         try:
             shutil.copyfile(get_env_path(env, "requirements.txt"), requirements_path)
             subprocess.run(cmd, shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            subprocess.run(f"rm -rf {venv_path}", shell=True, check=True)
+            print("Partially built virtualenv for pyright environment master deleted.")
+            raise e
         finally:
             os.remove(requirements_path)
     return None

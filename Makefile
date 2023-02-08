@@ -30,7 +30,7 @@ check_black:
 pyright:
 	python scripts/run-pyright.py --all
 
-pyright_rebuild:
+rebuild_pyright:
 	python scripts/run-pyright.py --all --rebuild
 
 ruff:
