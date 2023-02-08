@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pandas
 import pytest
 from dagster import (
-    DagsterUserCodeExecutionError,
+    DagsterInvalidInvocationError,
     DailyPartitionsDefinition,
     IOManagerDefinition,
     MetadataValue,
@@ -45,6 +45,13 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
     "user": "BUILDKITE",
     "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
 }
+
+SHARED_BUILDKITE_SNOWFLAKE_CONF = {
+    "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
+    "user": "jamie@elementl.com",
+    "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
+}
+
 
 
 @contextmanager
@@ -163,11 +170,16 @@ def test_io_manager_with_snowflake_pandas():
         assert res.success
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_io_manager_with_snowflake_pandas_timestamp_data():
+    # with temporary_snowflake_table(
+    #     schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
+    #     db_name="TEST_SNOWFLAKE_IO_MANAGER",
+    #     column_str="foo string, date TIMESTAMP_NTZ(9)",
+    # ) as table_name:
     with temporary_snowflake_table(
-        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        schema_name="JAMIE",
+        db_name="SANDBOX",
         column_str="foo string, date TIMESTAMP_NTZ(9)",
     ) as table_name:
         time_df = pandas.DataFrame(
@@ -183,7 +195,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
         @op(
             out={
                 table_name: Out(
-                    io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
+                    io_manager_key="snowflake", metadata={"schema": "JAMIE"}
                 )
             }
         )
@@ -203,7 +215,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
                     "snowflake": {
                         "config": {
                             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-                            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+                            "database": "SANDBOX",
                         }
                     }
                 }
@@ -216,11 +228,16 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
         assert res.success
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_io_manager_with_snowflake_pandas_timestamp_data_error():
+    # with temporary_snowflake_table(
+    #     schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
+    #     db_name="TEST_SNOWFLAKE_IO_MANAGER",
+    #     column_str="foo string, date TIMESTAMP_NTZ(9)",
+    # ) as table_name:
     with temporary_snowflake_table(
-        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        schema_name="JAMIE",
+        db_name="SANDBOX",
         column_str="foo string, date TIMESTAMP_NTZ(9)",
     ) as table_name:
         time_df = pandas.DataFrame(
@@ -236,12 +253,18 @@ def test_io_manager_with_snowflake_pandas_timestamp_data_error():
         @op(
             out={
                 table_name: Out(
-                    io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
+                    io_manager_key="snowflake", metadata={"schema": "JAMIE"}
                 )
             }
         )
         def emit_time_df(_):
             return time_df
+
+        @op
+        def read_time_df(df: pandas.DataFrame):
+            df["date"] = df["date"].dt.tz_localize("UTC")
+            assert set(df.columns) == {"foo", "date"}
+            assert (df["date"] == time_df["date"]).all()
 
         @job(
             resource_defs={"snowflake": snowflake_pandas_io_manager},
@@ -250,26 +273,29 @@ def test_io_manager_with_snowflake_pandas_timestamp_data_error():
                     "snowflake": {
                         "config": {
                             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-                            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+                            "database": "SANDBOX",
                         }
                     }
                 }
             },
         )
         def io_manager_timestamp_test_job():
-            emit_time_df()
+            read_time_df(emit_time_df())
 
-        with pytest.raises(DagsterUserCodeExecutionError):
+        with pytest.raises(DagsterInvalidInvocationError):
             io_manager_timestamp_test_job.execute_in_process()
 
-        io_manager_timestamp_test_job.execute_in_process()
 
-
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_time_window_partitioned_asset(tmp_path):
+    # with temporary_snowflake_table(
+    #     schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
+    #     db_name="TEST_SNOWFLAKE_IO_MANAGER",
+    #     column_str="TIME TIMESTAMP_NTZ(9), A string, B int",
+    # ) as table_name:
     with temporary_snowflake_table(
-        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
-        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        schema_name="JAMIE",
+        db_name="SANDBOX",
         column_str="TIME TIMESTAMP_NTZ(9), A string, B int",
     ) as table_name:
 
@@ -277,11 +303,11 @@ def test_time_window_partitioned_asset(tmp_path):
             partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
             metadata={"partition_expr": "time"},
             config_schema={"value": str},
-            key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
+            key_prefix="JAMIE",
             name=table_name,
         )
         def daily_partitioned(context):
-            partition = Timestamp(context.asset_partition_key_for_output())
+            partition = Timestamp(context.asset_partition_key_for_output()).tz_localize("UTC")
             value = context.op_config["value"]
 
             return DataFrame(
@@ -292,12 +318,14 @@ def test_time_window_partitioned_asset(tmp_path):
                 }
             )
 
-        asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
-        snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
+        # asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
+        # snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
+        asset_full_name = f"JAMIE__{table_name}"
+        snowflake_table_path = f"JAMIE.{table_name}"
 
         snowflake_config = {
             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
-            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+            "database": "SANDBOX",
         }
         snowflake_conn = SnowflakeConnection(
             snowflake_config, logging.getLogger("temporary_snowflake_table")

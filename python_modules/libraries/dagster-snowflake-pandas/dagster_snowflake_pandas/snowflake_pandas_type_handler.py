@@ -3,7 +3,7 @@ from typing import Mapping, Union, cast
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.errors import DagsterUserCodeExecutionError
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
@@ -64,7 +64,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 )
             except InterfaceError as e:
                 if "out of range" in e.__cause__:
-                    raise DagsterUserCodeExecutionError(
+                    raise DagsterInvalidInvocationError(
                         f"Could not store output {context.name} of step {context.step_key}. If the"
                         " DataFrame includes pandas Timestamp values, ensure that they have"
                         " timezones."
@@ -85,7 +85,16 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
     def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
         with _connect_snowflake(context, table_slice) as con:
-            result = pd.read_sql(sql=SnowflakeDbClient.get_select_statement(table_slice), con=con)
+            try:
+                result = pd.read_sql(sql=SnowflakeDbClient.get_select_statement(table_slice), con=con)
+            except InterfaceError as e:
+                if "out of range" in e.__cause__.msg:
+                    raise DagsterInvalidInvocationError(
+                        f"Could not load input {context.name} of {context.op_def.name}. If the"
+                        " DataFrame includes pandas Timestamp values, ensure that they have"
+                        " timezones."
+                    ) from e
+                raise e
             result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
             return result
 
