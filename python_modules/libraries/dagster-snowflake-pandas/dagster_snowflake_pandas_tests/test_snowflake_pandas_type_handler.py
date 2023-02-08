@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pandas
 import pytest
 from dagster import (
+    DagsterUserCodeExecutionError,
     DailyPartitionsDefinition,
     IOManagerDefinition,
     MetadataValue,
@@ -162,7 +163,7 @@ def test_io_manager_with_snowflake_pandas():
         assert res.success
 
 
-# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_io_manager_with_snowflake_pandas_timestamp_data():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
@@ -213,6 +214,55 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
 
         res = io_manager_timestamp_test_job.execute_in_process()
         assert res.success
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+def test_io_manager_with_snowflake_pandas_timestamp_data_error():
+    with temporary_snowflake_table(
+        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
+        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        column_str="foo string, date TIMESTAMP_NTZ(9)",
+    ) as table_name:
+        time_df = pandas.DataFrame(
+            {
+                "foo": ["bar", "baz"],
+                "date": [
+                    pandas.Timestamp("2017-01-01T12:30:15"),
+                    pandas.Timestamp("2017-02-01T01:30:15"),
+                ],
+            }
+        )
+
+        @op(
+            out={
+                table_name: Out(
+                    io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
+                )
+            }
+        )
+        def emit_time_df(_):
+            return time_df
+
+        @job(
+            resource_defs={"snowflake": snowflake_pandas_io_manager},
+            config={
+                "resources": {
+                    "snowflake": {
+                        "config": {
+                            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
+                            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+                        }
+                    }
+                }
+            },
+        )
+        def io_manager_timestamp_test_job():
+            emit_time_df()
+
+        with pytest.raises(DagsterUserCodeExecutionError):
+            io_manager_timestamp_test_job.execute_in_process()
+
+        io_manager_timestamp_test_job.execute_in_process()
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")

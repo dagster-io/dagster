@@ -1,19 +1,15 @@
 from typing import Mapping, Union, cast
 
 import pandas as pd
-from dagster import (
-    InputContext,
-    MetadataValue,
-    OutputContext,
-    TableColumn,
-    TableSchema,
-)
+from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.errors import DagsterUserCodeExecutionError
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from snowflake.connector.pandas_tools import pd_writer
+from sqlalchemy.exc import InterfaceError
 
 
 def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice: TableSlice):
@@ -58,13 +54,22 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         with _connect_snowflake(context, table_slice) as con:
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
 
-            with_uppercase_cols.to_sql(
-                table_slice.table,
-                con=con.engine,
-                if_exists="append",
-                index=False,
-                method=pd_writer,
-            )
+            try:
+                with_uppercase_cols.to_sql(
+                    table_slice.table,
+                    con=con.engine,
+                    if_exists="append",
+                    index=False,
+                    method=pd_writer,
+                )
+            except InterfaceError as e:
+                if "out of range" in e.__cause__:
+                    raise DagsterUserCodeExecutionError(
+                        f"Could not store output {context.name} of step {context.step_key}. If the"
+                        " DataFrame includes pandas Timestamp values, ensure that they have"
+                        " timezones."
+                    ) from e
+                raise e
 
         return {
             "row_count": obj.shape[0],
