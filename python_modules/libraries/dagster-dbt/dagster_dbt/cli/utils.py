@@ -107,7 +107,7 @@ def _create_command_list(
     return prefix + full_command
 
 
-def execute_cli_stream(
+def _core_execute_cli(
     command_list: Sequence[str],
     ignore_handled_error: bool,
     json_log_format: bool,
@@ -155,6 +155,41 @@ def execute_cli_stream(
     yield return_code
 
 
+def execute_cli_stream(
+    executable: str,
+    command: str,
+    flags_dict: Mapping[str, Any],
+    log: Any,
+    warn_error: bool,
+    ignore_handled_error: bool,
+    json_log_format: bool = True,
+    capture_logs: bool = True,
+) -> Iterator[DbtCliEvent]:
+    """Executes a command on the dbt CLI in a subprocess."""
+    command_list = _create_command_list(
+        executable=executable,
+        warn_error=warn_error,
+        json_log_format=json_log_format,
+        command=command,
+        flags_dict=flags_dict,
+    )
+    log.info(f"Executing command: {' '.join(command_list)}")
+
+    for event in _core_execute_cli(
+        command_list=command_list,
+        json_log_format=json_log_format,
+        ignore_handled_error=ignore_handled_error,
+    ):
+        if isinstance(event, int):
+            return_code = event
+            log.info(f"dbt exited with return code {return_code}")
+            break
+
+        yield event
+        if capture_logs:
+            log.log(event.log_level, event.message)
+
+
 def execute_cli(
     executable: str,
     command: str,
@@ -185,7 +220,7 @@ def execute_cli(
 
     return_code = 0
     lines, parsed_json_lines = [], []
-    for event in execute_cli_stream(
+    for event in _core_execute_cli(
         command_list=command_list,
         json_log_format=json_log_format,
         ignore_handled_error=ignore_handled_error,
