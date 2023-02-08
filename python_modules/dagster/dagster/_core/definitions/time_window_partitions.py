@@ -138,7 +138,11 @@ class TimeWindowPartitionsDefinition(
             else pendulum.now(self.timezone)
         ).timestamp()
 
-    def get_num_partitions(self, current_time: Optional[datetime] = None) -> int:
+    def get_num_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> int:
         # Method added for performance reasons.
         # Fetching partition keys requires significantly more compute time to
         # string format datetimes.

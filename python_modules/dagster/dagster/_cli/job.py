@@ -826,6 +826,7 @@ def _execute_backfill_command_at_location(
                     repository_handle=repo_handle,
                     partition_set_name=partition_set_name,
                     partition_names=partition_names,
+                    instance=instance,
                 )
             )
         except Exception:

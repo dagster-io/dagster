@@ -307,8 +307,12 @@ class PartitionsDefinition(ABC, Generic[T]):
         tags = {PARTITION_NAME_TAG: partition_key}
         return tags
 
-    def get_num_partitions(self, current_time: Optional[datetime] = None) -> int:
-        return len(self.get_partition_keys(current_time))
+    def get_num_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> int:
+        return len(self.get_partition_keys(current_time, dynamic_partitions_store))
 
 
 def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]) -> None:
@@ -613,7 +617,9 @@ class DynamicPartitionsDefinition(
                     " dynamic partitions"
                 )
 
-            partitions = dynamic_partitions_store.get_dynamic_partitions(self._validated_name())
+            partitions = dynamic_partitions_store.get_dynamic_partitions(
+                partitions_def_name=self._validated_name()
+            )
             return [Partition(key) for key in partitions]
 
     def add_partitions(self, partition_keys: Sequence[str], instance: DagsterInstance) -> None:

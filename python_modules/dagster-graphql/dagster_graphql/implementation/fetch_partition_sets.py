@@ -112,6 +112,7 @@ def get_partition_config(graphene_info, repository_handle, partition_set_name, p
         repository_handle,
         partition_set_name,
         partition_name,
+        graphene_info.context.instance,
     )
 
     return GraphenePartitionRunConfig(yaml=dump_run_config_yaml(result.run_config))
@@ -127,7 +128,7 @@ def get_partition_tags(graphene_info, repository_handle, partition_set_name, par
     check.str_param(partition_name, "partition_name")
 
     result = graphene_info.context.get_external_partition_tags(
-        repository_handle, partition_set_name, partition_name
+        repository_handle, partition_set_name, partition_name, graphene_info.context.instance
     )
 
     return GraphenePartitionTags(

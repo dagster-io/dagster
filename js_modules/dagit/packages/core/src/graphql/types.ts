@@ -2162,6 +2162,7 @@ export type PartitionDefinition = {
 };
 
 export enum PartitionDefinitionType {
+  DYNAMIC = 'DYNAMIC',
   MULTIPARTITIONED = 'MULTIPARTITIONED',
   STATIC = 'STATIC',
   TIME_WINDOW = 'TIME_WINDOW',

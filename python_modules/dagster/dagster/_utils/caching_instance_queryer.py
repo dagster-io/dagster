@@ -684,9 +684,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         else:
             return None
 
-    def get_dynamic_partitions(self, name: str) -> Sequence[str]:
-        if name in self._dynamic_partitions_cache:
-            return self._dynamic_partitions_cache[name]
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        if partitions_def_name in self._dynamic_partitions_cache:
+            return self._dynamic_partitions_cache[partitions_def_name]
 
-        self._dynamic_partitions_cache[name] = self.instance.get_dynamic_partitions(name)
-        return self._dynamic_partitions_cache[name]
+        self._dynamic_partitions_cache[partitions_def_name] = self.instance.get_dynamic_partitions(
+            partitions_def_name
+        )
+        return self._dynamic_partitions_cache[partitions_def_name]
