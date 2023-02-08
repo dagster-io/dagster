@@ -17,7 +17,7 @@ from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
 )
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.scheduler.instigation import InstigatorType
+from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
 from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -242,7 +242,7 @@ class RepositoryScopedBatchLoader:
         check.invariant(self._repository.has_external_sensor(sensor_name))
         return self._get(RepositoryDataType.SENSOR_RUNS, sensor_name, limit)
 
-    def get_schedule_state(self, schedule_name: str) -> Optional[Sequence[Any]]:
+    def get_schedule_state(self, schedule_name: str) -> Optional[InstigatorState]:
         check.invariant(self._repository.has_external_schedule(schedule_name))
         states = self._get(RepositoryDataType.SCHEDULE_STATES, schedule_name, 1)
         return states[0] if states else None
