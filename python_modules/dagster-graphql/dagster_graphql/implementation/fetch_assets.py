@@ -29,7 +29,11 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsSubset,
 )
-from dagster._core.definitions.partition import DefaultPartitionsSubset, PartitionsSubset
+from dagster._core.definitions.partition import (
+    DefaultPartitionsSubset,
+    PartitionsDefinition,
+    PartitionsSubset,
+)
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -41,7 +45,7 @@ from dagster._core.host_representation.repository_location import RepositoryLoca
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.partition_status_cache import (
     CACHEABLE_PARTITION_TYPES,
-    get_and_update_asset_status_cache_values,
+    get_and_update_asset_status_cache_value,
     get_materialized_multipartitions,
     get_validated_partition_keys,
 )
@@ -320,24 +324,23 @@ def get_unique_asset_id(
 def get_materialized_partitions_subset(
     instance: DagsterInstance,
     asset_key: AssetKey,
-    asset_graph: ExternalAssetGraph,
     dynamic_partitions_loader: DynamicPartitionsStore,
+    partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Optional[PartitionsSubset]:
     """
     Returns the materialization status for each partition key. The materialization status
     is a boolean indicating whether the partition has been materialized: True if materialized,
     False if not.
     """
-    partitions_def = asset_graph.get_partitions_def(asset_key)
     if not partitions_def:
         return None
 
     if instance.can_cache_asset_status_data() and partitions_def in CACHEABLE_PARTITION_TYPES:
         # When the "cached_status_data" column exists in storage, update the column to contain
         # the latest partition status values
-        updated_cache_value = get_and_update_asset_status_cache_values(
-            instance, asset_graph, asset_key
-        ).get(asset_key)
+        updated_cache_value = get_and_update_asset_status_cache_value(
+            instance, asset_key, partitions_def
+        )
         materialized_subset = (
             updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
             if updated_cache_value
