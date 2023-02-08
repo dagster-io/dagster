@@ -23,6 +23,7 @@ def make_dagster_schedule_from_airflow_dag(
     dag: DAG,
     tags: Optional[Mapping[str, str]] = None,
     connections: Optional[List[Connection]] = None,
+    kwargs: Optional[dict] = None,
 ) -> ScheduleDefinition:
     """Construct a Dagster schedule corresponding to an Airflow DAG.
 
@@ -32,11 +33,13 @@ def make_dagster_schedule_from_airflow_dag(
             `tags={'airflow_execution_date': utc_date_string}` to specify execution_date used within
             execution of Airflow Operators.
         connections (List[Connection]): List of Airflow Connections to be created in the Airflow DB
+        kwargs (Optional[dict]): kwargs to be passed to Schedule constructor
 
     Returns:
         ScheduleDefinition
     """
     check.inst_param(dag, "dag", DAG)
+    kwargs = check.opt_dict_param(kwargs, "kwargs")
 
     cron_schedule = dag.normalized_schedule_interval
     schedule_description = dag.description
@@ -48,4 +51,5 @@ def make_dagster_schedule_from_airflow_dag(
         cron_schedule=str(cron_schedule),
         description=schedule_description,
         execution_timezone=dag.timezone.name,
+        *kwargs if kwargs else (),
     )

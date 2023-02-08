@@ -166,6 +166,7 @@ def make_dagster_job_from_airflow_dag(
     dag: DAG,
     tags: Optional[Mapping[str, str]] = None,
     connections: Optional[List[Connection]] = None,
+    kwargs: Optional[dict] = None,
 ) -> JobDefinition:
     """Construct a Dagster job corresponding to a given Airflow DAG.
 
@@ -203,8 +204,8 @@ def make_dagster_job_from_airflow_dag(
         tags (Dict[str, Field]): Job tags. Optionally include
             `tags={'airflow_execution_date': utc_date_string}` to specify execution_date used within
             execution of Airflow Operators.
-        connections (List[Connection]): List of Airflow Connections to be created in the Ephemeral
-            Airflow DB, if use_emphemeral_airflow_db is False this will be ignored.
+        connections (List[Connection]): List of Airflow Connections to be created in the Airflow DB.
+        kwargs (Optional[dict]): kwargs to be passed to the Job constructor
 
     Returns:
         JobDefinition: The generated Dagster job
@@ -213,6 +214,7 @@ def make_dagster_job_from_airflow_dag(
     check.inst_param(dag, "dag", DAG)
     tags = check.opt_mapping_param(tags, "tags")
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
+    kwargs = check.opt_dict_param(kwargs, "kwargs")
 
     mutated_tags = dict(tags)
     if IS_AIRFLOW_INGEST_PIPELINE_STR not in tags:
@@ -230,7 +232,6 @@ def make_dagster_job_from_airflow_dag(
 
     graph_def = GraphDefinition(
         name=normalized_name(dag.dag_id),
-        description="",
         node_defs=node_defs,
         dependencies=node_dependencies,
         tags=mutated_tags,
@@ -238,7 +239,6 @@ def make_dagster_job_from_airflow_dag(
 
     job_def = JobDefinition(
         name=normalized_name(dag.dag_id),
-        description="",
         resource_defs={
             "airflow_db": airflow_db_resource_def,
             "dag": dag_resource,
@@ -246,8 +246,6 @@ def make_dagster_job_from_airflow_dag(
         },
         graph_def=graph_def,
         tags=mutated_tags,
-        metadata={},
-        op_retry_policy=None,
-        version_strategy=None,
+        *kwargs if kwargs else (),
     )
     return job_def

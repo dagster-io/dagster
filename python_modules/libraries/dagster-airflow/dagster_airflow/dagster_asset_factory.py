@@ -1,4 +1,4 @@
-from typing import AbstractSet, List, Mapping, Optional, Set, Tuple
+from typing import AbstractSet, List, Mapping, Optional, Set, Tuple, Dict, Any
 
 from airflow.models.connection import Connection
 from airflow.models.dag import DAG
