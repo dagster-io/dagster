@@ -1,5 +1,4 @@
 import json
-from msilib.schema import EventMapping
 import os
 import subprocess
 from typing import Any, Iterator, List, Mapping, NamedTuple, Optional, Sequence, Union
