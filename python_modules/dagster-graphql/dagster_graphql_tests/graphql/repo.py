@@ -20,9 +20,11 @@ from dagster import (
     AssetSelection,
     Bool,
     DagsterInstance,
+    DailyPartitionsDefinition,
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOutput,
+    DynamicPartitionsDefinition,
     Enum,
     EnumValue,
     ExpectationResult,
@@ -1556,6 +1558,24 @@ static_partitioned_assets_job = build_assets_job(
 )
 
 
+@asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
+def upstream_dynamic_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
+def downstream_dynamic_partitioned_asset(
+    upstream_dynamic_partitioned_asset,
+):  # pylint: disable=redefined-outer-name
+    assert upstream_dynamic_partitioned_asset
+
+
+dynamic_partitioned_assets_job = build_assets_job(
+    "dynamic_partitioned_assets_job",
+    assets=[upstream_dynamic_partitioned_asset, downstream_dynamic_partitioned_asset],
+)
+
+
 @static_partitioned_config(partition_keys=["1", "2", "3", "4", "5"])
 def my_static_partitioned_config(_partition_key: str):
     return {}
@@ -1599,7 +1619,6 @@ time_partitioned_assets_job = build_assets_job(
 
 @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
 def yield_partition_materialization():
-    yield AssetMaterialization(asset_key=AssetKey("yield_partition_materialization"), partition="c")
     yield Output(5)
 
 
@@ -1774,8 +1793,8 @@ def fresh_diamond_bottom(fresh_diamond_left, fresh_diamond_right):
 
 multipartitions_def = MultiPartitionsDefinition(
     {
-        "12": StaticPartitionsDefinition(["1", "2"]),
-        "ab": StaticPartitionsDefinition(["a", "b"]),
+        "date": DailyPartitionsDefinition(start_date="2022-01-01"),
+        "ab": StaticPartitionsDefinition(["a", "b", "c"]),
     }
 )
 
@@ -1861,6 +1880,7 @@ def define_pipelines():
         two_ins_job,
         two_assets_job,
         static_partitioned_assets_job,
+        dynamic_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
         observation_job,

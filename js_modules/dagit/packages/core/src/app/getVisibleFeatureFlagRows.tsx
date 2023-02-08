@@ -16,4 +16,8 @@ export const getVisibleFeatureFlagRows = () => [
     key: 'Experimental schedule/sensor logging view',
     flagType: FeatureFlag.flagSensorScheduleLogging,
   },
+  {
+    key: 'Experimental resource view',
+    flagType: FeatureFlag.flagSidebarResources,
+  },
 ];

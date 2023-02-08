@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {Breadcrumbs} from '@blueprintjs/core';
-import {Checkbox, Colors, SplitPanelContainer, TextInput} from '@dagster-io/ui';
+import {Checkbox, Colors, SplitPanelContainer, TextInput, ErrorBoundary} from '@dagster-io/ui';
 import Color from 'color';
 import qs from 'qs';
 import * as React from 'react';
@@ -194,7 +194,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
       identifier="explorer"
       firstInitialPercent={70}
       first={
-        <>
+        <ErrorBoundary region="op graph">
           {solidsQueryEnabled ? (
             <QueryOverlay>
               <GraphQueryInput
@@ -281,7 +281,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
               layout={layout}
             />
           )}
-        </>
+        </ErrorBoundary>
       }
       second={
         <RightInfoPanel>

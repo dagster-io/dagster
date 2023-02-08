@@ -9,6 +9,7 @@ import {
   Tab,
   Tabs,
   Tag,
+  ErrorBoundary,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -222,7 +223,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           <Spinner purpose="page" />
         </Box>
       ) : (
-        <>
+        <ErrorBoundary region="page" resetErrorOnChange={[assetKey, params]}>
           {selectedTab === 'definition' ? (
             renderDefinitionTab()
           ) : selectedTab === 'lineage' ? (
@@ -257,7 +258,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           ) : (
             <span />
           )}
-        </>
+        </ErrorBoundary>
       )}
     </Box>
   );

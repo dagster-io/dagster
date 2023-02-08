@@ -18,7 +18,6 @@ export function mergedAssetHealth(
 ): {
   dimensions: PartitionHealthDimension[];
   stateForKey: (dimensionKeys: string[]) => PartitionState;
-  stateForPartialKey: (dimensionKeys: string[]) => PartitionState;
   stateForSingleDimension: (
     dimensionIdx: number,
     dimensionKey: string,
@@ -29,7 +28,6 @@ export function mergedAssetHealth(
     return {
       dimensions: [],
       stateForKey: () => PartitionState.MISSING,
-      stateForPartialKey: () => PartitionState.MISSING,
       stateForSingleDimension: () => PartitionState.MISSING,
     };
   }
@@ -59,8 +57,6 @@ export function mergedAssetHealth(
     })),
     stateForKey: (dimensionKeys: string[]) =>
       mergedStates(assetHealth.map((health) => health.stateForKey(dimensionKeys))),
-    stateForPartialKey: (dimensionKeys: string[]) =>
-      mergedStates(assetHealth.map((health) => health.stateForPartialKey(dimensionKeys))),
     stateForSingleDimension: (
       dimensionIdx: number,
       dimensionKey: string,

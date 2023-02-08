@@ -1,12 +1,13 @@
 from collections import defaultdict
-from typing import Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
+from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.host_representation import (
     ExternalPartitionSet,
     RepositoryHandle,
-    RepositorySelector,
 )
+from dagster._core.host_representation.external_data import ExternalPartitionNamesData
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
@@ -16,16 +17,26 @@ from dagster._core.storage.tags import (
     get_tag_type,
 )
 from dagster._utils.yaml_utils import dump_run_config_yaml
-from graphene import ResolveInfo
+
+from dagster_graphql.schema.util import ResolveInfo
 
 from .utils import capture_error
 
+if TYPE_CHECKING:
+    from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
+    from dagster_graphql.schema.partition_sets import (
+        GraphenePartitions,
+        GraphenePartitionSet,
+        GraphenePartitionSets,
+    )
+
 
 @capture_error
-def get_partition_sets_or_error(graphene_info, repository_selector, pipeline_name):
+def get_partition_sets_or_error(
+    graphene_info: ResolveInfo, repository_selector: RepositorySelector, pipeline_name: str
+) -> "GraphenePartitionSets":
     from ..schema.partition_sets import GraphenePartitionSet, GraphenePartitionSets
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
     check.str_param(pipeline_name, "pipeline_name")
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
@@ -55,10 +66,11 @@ def get_partition_sets_or_error(graphene_info, repository_selector, pipeline_nam
 
 
 @capture_error
-def get_partition_set(graphene_info, repository_selector, partition_set_name):
+def get_partition_set(
+    graphene_info: ResolveInfo, repository_selector: RepositorySelector, partition_set_name: str
+) -> Union["GraphenePartitionSet", "GraphenePartitionSetNotFoundError"]:
     from ..schema.partition_sets import GraphenePartitionSet, GraphenePartitionSetNotFoundError
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
     check.str_param(partition_set_name, "partition_set_name")
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
@@ -78,7 +90,6 @@ def get_partition_set(graphene_info, repository_selector, partition_set_name):
 def get_partition_by_name(graphene_info, repository_handle, partition_set, partition_name):
     from ..schema.partition_sets import GraphenePartition
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.inst_param(partition_set, "partition_set", ExternalPartitionSet)
     check.str_param(partition_name, "partition_name")
@@ -101,6 +112,7 @@ def get_partition_config(graphene_info, repository_handle, partition_set_name, p
         repository_handle,
         partition_set_name,
         partition_name,
+        graphene_info.context.instance,
     )
 
     return GraphenePartitionRunConfig(yaml=dump_run_config_yaml(result.run_config))
@@ -116,7 +128,7 @@ def get_partition_tags(graphene_info, repository_handle, partition_set_name, par
     check.str_param(partition_name, "partition_name")
 
     result = graphene_info.context.get_external_partition_tags(
-        repository_handle, partition_set_name, partition_name
+        repository_handle, partition_set_name, partition_name, graphene_info.context.instance
     )
 
     return GraphenePartitionTags(
@@ -130,13 +142,19 @@ def get_partition_tags(graphene_info, repository_handle, partition_set_name, par
 
 @capture_error
 def get_partitions(
-    graphene_info, repository_handle, partition_set, cursor=None, limit=None, reverse=False
-):
+    graphene_info: ResolveInfo,
+    repository_handle: RepositoryHandle,
+    partition_set: ExternalPartitionSet,
+    cursor: Optional[str] = None,
+    limit: Optional[int] = None,
+    reverse: bool = False,
+) -> "GraphenePartitions":
     from ..schema.partition_sets import GraphenePartition, GraphenePartitions
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.inst_param(partition_set, "partition_set", ExternalPartitionSet)
     result = graphene_info.context.get_external_partition_names(partition_set)
+    assert isinstance(result, ExternalPartitionNamesData)
 
     partition_names = _apply_cursor_limit_reverse(result.partition_names, cursor, limit, reverse)
 
@@ -252,11 +270,12 @@ def partition_status_counts_from_run_partition_data(run_partition_data, partitio
     return [GraphenePartitionStatusCounts(runStatus=k, count=v) for k, v in count_by_status.items()]
 
 
-def get_partition_set_partition_runs(graphene_info, partition_set):
+def get_partition_set_partition_runs(graphene_info: ResolveInfo, partition_set):
     from ..schema.partition_sets import GraphenePartitionRun
     from ..schema.pipelines.pipeline import GrapheneRun
 
     result = graphene_info.context.get_external_partition_names(partition_set)
+    assert isinstance(result, ExternalPartitionNamesData)
     run_records = graphene_info.context.instance.get_run_records(
         RunsFilter(tags={PARTITION_SET_TAG: partition_set.name})
     )

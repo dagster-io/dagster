@@ -48,7 +48,12 @@ export const Simple = () => {
 export const FlexboxContainerUsage = () => {
   return (
     <Box>
+      <em style={{display: 'block', marginBottom: 10}}>
+        Note: When testing this in Firefox, view it on both a Retina and non-Retina display. Some
+        rounding issues only seem to happen on Retina displays.
+      </em>
       {[
+        'asset_0',
         'asset1',
         'example',
         'test1234',
@@ -58,7 +63,12 @@ export const FlexboxContainerUsage = () => {
         'example_123',
         'otherstring',
         'example_1234',
+        'a_source_asset',
         'variable_width',
+        'yoyo_multidim',
+        'yoyo_multidim_other_order',
+        'activity_daily_stats',
+        'asset_that_supports_partition_ranges',
       ].map((text) => (
         <Box key={text} style={{maxWidth: '100%'}} flex={{direction: 'row', gap: 8}}>
           <Box>

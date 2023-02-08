@@ -1,6 +1,6 @@
 from typing import Iterator, List, Optional, cast
 
-import kubernetes
+import kubernetes.config
 from dagster import (
     Field,
     IntSource,

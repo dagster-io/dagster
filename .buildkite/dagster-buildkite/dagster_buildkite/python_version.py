@@ -7,10 +7,10 @@ from dagster_buildkite.utils import is_release_branch, safe_getenv
 
 class AvailablePythonVersion(str, Enum):
     # Ordering is important here, because some steps will take the highest/lowest available version.
-    V3_7 = "3.7.13"
-    V3_8 = "3.8.13"
-    V3_9 = "3.9.13"
-    V3_10 = "3.10.5"
+    V3_7 = "3.7"
+    V3_8 = "3.8"
+    V3_9 = "3.9"
+    V3_10 = "3.10"
 
     @classmethod
     def get_all(cls) -> List["AvailablePythonVersion"]:

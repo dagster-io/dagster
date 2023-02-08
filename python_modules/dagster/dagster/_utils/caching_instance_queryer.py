@@ -2,7 +2,6 @@ import datetime
 import json
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Dict,
     Iterable,
@@ -21,6 +20,7 @@ from dagster._core.definitions.logical_version import get_input_event_pointer_ta
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
+from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
@@ -36,13 +36,10 @@ from dagster._core.utils import frozendict
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 
-if TYPE_CHECKING:
-    from dagster import DagsterInstance
-
 USED_DATA_TAG = ".dagster/used_data"
 
 
-class CachingInstanceQueryer:
+class CachingInstanceQueryer(DynamicPartitionsStore):
     """Provides utility functions for querying for asset-materialization related data from the
     instance which will attempt to limit redundant expensive calls.
     """
@@ -61,6 +58,8 @@ class CachingInstanceQueryer:
             Optional[int], Dict[AssetKey, Mapping[str, int]]
         ] = defaultdict(dict)
 
+        self._dynamic_partitions_cache: Dict[str, Sequence[str]] = {}
+
     @property
     def instance(self) -> "DagsterInstance":
         return self._instance
@@ -71,25 +70,33 @@ class CachingInstanceQueryer:
         for asset_record in asset_records:
             self._asset_record_cache[asset_record.asset_entry.asset_key] = asset_record
 
-        # get the latest N materialization records. in most cases, this will hit a large portion of
-        # the latest materialization records per asset key, although a more sophisticated method
-        # of bucketing queries could be used here to guarantee that we actually get the exact set
-        # we're aiming for here.
-        latest_records = self._instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            ),
-            limit=len(asset_keys),
-            ascending=False,
-        )
-        for record in latest_records:
-            asset_partition = AssetKeyPartitionKey(
-                asset_key=check.not_none(record.asset_key), partition_key=record.partition_key
+        # based on those asset records, fill in our caches with values of the latest materailization
+        # records per key
+        for asset_key in asset_keys:
+            # we just prefetched all the asset records, so if it's not in the cache, there are
+            # no materializations for this key
+            asset_record = self._asset_record_cache.get(asset_key)
+            last_materialization_record = (
+                asset_record.asset_entry.last_materialization_record if asset_record else None
             )
-            if asset_partition not in self._latest_materialization_record_cache:
-                self._latest_materialization_record_cache[asset_partition] = record
-                self._no_materializations_after_cursor_cache[asset_partition] = record.storage_id
+            if asset_record is None or last_materialization_record is None:
+                self._no_materializations_after_cursor_cache[
+                    AssetKeyPartitionKey(asset_key=asset_key)
+                ] = -1
+            else:
+                asset_partition = AssetKeyPartitionKey(
+                    asset_key=asset_record.asset_entry.asset_key,
+                    partition_key=last_materialization_record.partition_key,
+                )
 
+                self._latest_materialization_record_cache[
+                    asset_partition
+                ] = last_materialization_record
+                self._no_materializations_after_cursor_cache[
+                    asset_partition
+                ] = last_materialization_record.storage_id
+
+        # fill in the cache for partitioned assets
         self._asset_partition_count_cache[after_cursor] = dict(
             self._instance.get_materialization_count_by_partition(
                 asset_keys=asset_keys,
@@ -327,8 +334,13 @@ class CachingInstanceQueryer:
             return False
 
         for parent in asset_graph.get_parents_partitions(
-            asset_partition.asset_key, asset_partition.partition_key
+            self,
+            asset_partition.asset_key,
+            asset_partition.partition_key,
         ):
+            if asset_graph.is_source(parent.asset_key):
+                continue
+
             if (
                 self.get_latest_materialization_record(
                     parent, after_cursor=latest_materialization_record.storage_id
@@ -383,7 +395,7 @@ class CachingInstanceQueryer:
 
             serialized_times = tags_list[0].get(USED_DATA_TAG, "{}")
             return {
-                AssetKey.from_user_string(key): tuple(value)  # type:ignore
+                AssetKey.from_user_string(key): tuple(value)
                 for key, value in json.loads(serialized_times).items()
             }
         return {}
@@ -671,3 +683,12 @@ class CachingInstanceQueryer:
             return records[0].storage_id
         else:
             return None
+
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        if partitions_def_name in self._dynamic_partitions_cache:
+            return self._dynamic_partitions_cache[partitions_def_name]
+
+        self._dynamic_partitions_cache[partitions_def_name] = self.instance.get_dynamic_partitions(
+            partitions_def_name
+        )
+        return self._dynamic_partitions_cache[partitions_def_name]

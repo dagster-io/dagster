@@ -58,12 +58,3 @@ from .repository_location import (
     RepositoryLocation as RepositoryLocation,
 )
 from .represented import RepresentedPipeline as RepresentedPipeline
-from .selector import (
-    GraphSelector as GraphSelector,
-    InstigatorSelector as InstigatorSelector,
-    JobSelector as JobSelector,
-    PipelineSelector as PipelineSelector,
-    RepositorySelector as RepositorySelector,
-    ScheduleSelector as ScheduleSelector,
-    SensorSelector as SensorSelector,
-)

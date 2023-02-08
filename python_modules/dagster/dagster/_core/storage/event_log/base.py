@@ -89,7 +89,7 @@ class AssetEntry(
         "_AssetEntry",
         [
             ("asset_key", AssetKey),
-            ("last_materialization", Optional[EventLogEntry]),
+            ("last_materialization_record", Optional[EventLogRecord]),
             ("last_run_id", Optional[str]),
             ("asset_details", Optional[AssetDetails]),
             ("cached_status", Optional["AssetStatusCacheValue"]),
@@ -99,7 +99,7 @@ class AssetEntry(
     def __new__(
         cls,
         asset_key: AssetKey,
-        last_materialization: Optional[EventLogEntry] = None,
+        last_materialization_record: Optional[EventLogRecord] = None,
         last_run_id: Optional[str] = None,
         asset_details: Optional[AssetDetails] = None,
         cached_status: Optional["AssetStatusCacheValue"] = None,
@@ -109,8 +109,8 @@ class AssetEntry(
         return super(AssetEntry, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            last_materialization=check.opt_inst_param(
-                last_materialization, "last_materialization", EventLogEntry
+            last_materialization_record=check.opt_inst_param(
+                last_materialization_record, "last_materialization_record", EventLogRecord
             ),
             last_run_id=check.opt_str_param(last_run_id, "last_run_id"),
             asset_details=check.opt_inst_param(asset_details, "asset_details", AssetDetails),
@@ -118,6 +118,12 @@ class AssetEntry(
                 cached_status, "cached_status", AssetStatusCacheValue
             ),
         )
+
+    @property
+    def last_materialization(self) -> Optional[EventLogEntry]:
+        if self.last_materialization_record is None:
+            return None
+        return self.last_materialization_record.event_log_entry
 
 
 class AssetRecord(NamedTuple):
@@ -360,6 +366,28 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         pass
+
+    @abstractmethod
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        """Get the list of partition keys for a dynamic partitions definition."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        """Check if a dynamic partition exists."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def add_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        """Add a partition for the specified dynamic partitions definition."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
+        """Delete a partition for the specified dynamic partitions definition."""
+        raise NotImplementedError()
 
     def alembic_version(self):
         return None

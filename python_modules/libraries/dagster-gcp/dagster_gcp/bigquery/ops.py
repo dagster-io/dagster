@@ -9,8 +9,9 @@ from dagster import (
     op,
 )
 from dagster_pandas import DataFrame
+from google.cloud.bigquery.encryption_configuration import EncryptionConfiguration
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
-from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
+from google.cloud.bigquery.table import TimePartitioning
 
 from .configs import (
     define_bigquery_create_dataset_config,

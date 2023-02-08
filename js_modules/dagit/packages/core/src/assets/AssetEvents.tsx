@@ -1,4 +1,4 @@
-import {Box, ButtonGroup, Colors, Spinner, Subheading} from '@dagster-io/ui';
+import {Box, ButtonGroup, Colors, Spinner, Subheading, ErrorBoundary} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {LiveDataForNode} from '../asset-graph/Utils';
@@ -158,25 +158,27 @@ export const AssetEvents: React.FC<Props> = ({
         </Box>
 
         <Box
-          style={{flex: 3, minWidth: 0}}
           flex={{direction: 'column'}}
+          style={{flex: 3, minWidth: 0, overflowY: 'auto'}}
           border={{side: 'left', color: Colors.KeylineGray, width: 1}}
         >
-          {xAxis === 'partition' ? (
-            focused ? (
-              <AssetPartitionDetail
-                group={focused}
-                hasLineage={assetHasLineage}
-                assetKey={assetKey}
-              />
+          <ErrorBoundary region="event" resetErrorOnChange={[focused]}>
+            {xAxis === 'partition' ? (
+              focused ? (
+                <AssetPartitionDetail
+                  group={focused}
+                  hasLineage={assetHasLineage}
+                  assetKey={assetKey}
+                />
+              ) : (
+                <AssetPartitionDetailEmpty />
+              )
+            ) : focused?.latest ? (
+              <AssetEventDetail assetKey={assetKey} event={focused.latest} />
             ) : (
-              <AssetPartitionDetailEmpty />
-            )
-          ) : focused?.latest ? (
-            <AssetEventDetail assetKey={assetKey} event={focused.latest} />
-          ) : (
-            <AssetEventDetailEmpty />
-          )}
+              <AssetEventDetailEmpty />
+            )}
+          </ErrorBoundary>
         </Box>
       </Box>
     </>

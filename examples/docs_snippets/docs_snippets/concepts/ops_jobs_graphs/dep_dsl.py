@@ -25,6 +25,7 @@ def subtract(left: int, right: int) -> int:
 
 def construct_graph_with_yaml(yaml_file, op_defs) -> GraphDefinition:
     yaml_data = load_yaml_from_path(yaml_file)
+    assert isinstance(yaml_data, dict)
 
     deps = {}
 

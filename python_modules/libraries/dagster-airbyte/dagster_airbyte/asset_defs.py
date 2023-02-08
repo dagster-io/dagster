@@ -82,14 +82,14 @@ def _build_airbyte_asset_defn_metadata(
 
     internal_deps: Dict[str, Set[AssetKey]] = {}
 
-    normalization_tables = (
+    metadata_encodable_normalization_tables = (
         {k: list(v) for k, v in normalization_tables.items()} if normalization_tables else {}
     )
 
     # If normalization tables are specified, we need to add a dependency from the destination table
     # to the affilitated normalization table
-    if normalization_tables:
-        for base_table, derived_tables in normalization_tables.items():
+    if len(metadata_encodable_normalization_tables) > 0:
+        for base_table, derived_tables in metadata_encodable_normalization_tables.items():
             for derived_table in derived_tables:
                 internal_deps[derived_table] = {
                     AssetKey([*asset_key_prefix, *table_to_asset_key_fn(base_table).path])
@@ -121,7 +121,7 @@ def _build_airbyte_asset_defn_metadata(
             "connection_id": connection_id,
             "group_name": group_name,
             "destination_tables": destination_tables,
-            "normalization_tables": normalization_tables,
+            "normalization_tables": metadata_encodable_normalization_tables,
             "io_manager_key": io_manager_key,
         },
     )

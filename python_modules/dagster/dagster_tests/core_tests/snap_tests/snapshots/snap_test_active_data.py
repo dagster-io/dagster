@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_external_pipeline_data 1'] = '''{
@@ -3851,6 +3852,7 @@ snapshots['test_external_repository_data 1'] = '''{
       }
     }
   ],
+  "external_resource_data": [],
   "external_schedule_datas": [
     {
       "__class__": "ExternalScheduleData",

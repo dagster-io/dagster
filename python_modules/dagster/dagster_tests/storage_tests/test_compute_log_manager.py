@@ -83,6 +83,9 @@ class BrokenCapturedLogManager(CapturedLogManager, ComputeLogManager):
     def _watch_logs(self, pipeline_run, step_key=None):
         pass
 
+    def get_local_path(self, run_id, key, io_type):
+        pass
+
     def is_watch_completed(self, run_id, key):
         return True
 
@@ -126,6 +129,9 @@ class BrokenComputeLogManager(ComputeLogManager):
     def on_watch_finish(self, pipeline_run, step_key):
         if self._fail_on_teardown:
             raise Exception("blahhh")
+
+    def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType):
+        pass
 
     def download_url(self, run_id, key, io_type):
         return None

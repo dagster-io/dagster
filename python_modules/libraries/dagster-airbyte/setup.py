@@ -46,6 +46,9 @@ setup(
     extras_require={
         "test": [
             "requests-mock",
-        ]
+        ],
+        "managed": [
+            f"dagster-managed-elements{pin}",
+        ],
     },
 )

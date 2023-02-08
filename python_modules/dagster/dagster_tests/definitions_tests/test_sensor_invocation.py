@@ -39,6 +39,7 @@ from dagster import (
     run_status_sensor,
     sensor,
 )
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 
@@ -1235,3 +1236,30 @@ def test_error_not_thrown_for_skip_reason():
             instance=instance,
         )
         test_unconsumed_events_sensor(ctx)
+
+
+def test_dynamic_partitions_sensor():
+    dynamic_partitions_def = DynamicPartitionsDefinition(name="fruits")
+
+    @asset(partitions_def=dynamic_partitions_def)
+    def fruits_asset():
+        return 1
+
+    my_job = define_asset_job("fruits_job", [fruits_asset], partitions_def=dynamic_partitions_def)
+
+    @repository
+    def my_repo():
+        return [fruits_asset]
+
+    @sensor(job=my_job)
+    def test_sensor(context):
+        dynamic_partitions_def.add_partitions(["apple"], context.instance)
+        return my_job.run_request_for_partition("apple", instance=context.instance)
+
+    with instance_for_test() as instance:
+        ctx = build_sensor_context(
+            repository_def=my_repo,
+            instance=instance,
+        )
+        run_request = test_sensor(ctx)
+        assert run_request.partition_key == "apple"

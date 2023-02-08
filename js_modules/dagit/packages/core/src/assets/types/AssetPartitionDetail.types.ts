@@ -21,6 +21,7 @@ export type AssetPartitionDetailQuery = {
           stepKey: string | null;
           label: string | null;
           description: string | null;
+          tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
           runOrError:
             | {__typename: 'PythonError'}
             | {
@@ -176,6 +177,7 @@ export type AssetPartitionDetailQuery = {
           stepKey: string | null;
           label: string | null;
           description: string | null;
+          tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
           runOrError:
             | {__typename: 'PythonError'}
             | {

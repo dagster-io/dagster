@@ -36,6 +36,7 @@ from dagster._core.definitions.dependency import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
@@ -256,27 +257,27 @@ class JobDefinition(PipelineDefinition):
     def describe_target(self):
         return f"{self.target_type} '{self.name}'"
 
-    @public  # type: ignore
+    @public
     @property
     def executor_def(self) -> ExecutorDefinition:
         return self.get_mode_definition().executor_defs[0]
 
-    @public  # type: ignore
+    @public
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
         return self.get_mode_definition().resource_defs
 
-    @public  # type: ignore
+    @public
     @property
     def partitioned_config(self) -> Optional[PartitionedConfig]:
         return self.get_mode_definition().partitioned_config
 
-    @public  # type: ignore
+    @public
     @property
     def config_mapping(self) -> Optional[ConfigMapping]:
         return self.get_mode_definition().config_mapping
 
-    @public  # type: ignore
+    @public
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         return self.get_mode_definition().loggers
@@ -387,7 +388,7 @@ class JobDefinition(PipelineDefinition):
                     " partitioned config"
                 )
 
-            partition = partition_set.get_partition(partition_key)
+            partition = partition_set.get_partition(partition_key, instance)
             run_config = (
                 run_config if run_config else partition_set.run_config_for_partition(partition)
             )
@@ -430,7 +431,7 @@ class JobDefinition(PipelineDefinition):
         self,
         op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> Self:  # type: ignore  # fmt: skip
+    ) -> Self:
         check.invariant(
             not (op_selection and asset_selection),
             (
@@ -448,7 +449,7 @@ class JobDefinition(PipelineDefinition):
     def _get_job_def_for_asset_selection(
         self,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> Self:  # type: ignore  # fmt: skip
+    ) -> Self:
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
 
         nonexistent_assets = [
@@ -494,7 +495,7 @@ class JobDefinition(PipelineDefinition):
     def _get_job_def_for_op_selection(
         self,
         op_selection: Optional[Sequence[str]] = None,
-    ) -> Self:  # type: ignore  # fmt: skip
+    ) -> Self:
         if not op_selection:
             return self
 
@@ -567,7 +568,7 @@ class JobDefinition(PipelineDefinition):
 
         return self._cached_partition_set
 
-    @public  # type: ignore
+    @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         mode = self.get_mode_definition()
@@ -584,6 +585,7 @@ class JobDefinition(PipelineDefinition):
         tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
+        instance: Optional["DagsterInstance"] = None,
     ) -> RunRequest:
         """
         Creates a RunRequest object for a run that processes the given partition.
@@ -607,7 +609,14 @@ class JobDefinition(PipelineDefinition):
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        partition = partition_set.get_partition(partition_key)
+        if isinstance(partition_set.partitions_def, DynamicPartitionsDefinition):
+            if not instance:
+                check.failed(
+                    "Must provide a dagster instance when calling run_request_for_partition on a "
+                    "dynamic partition set"
+                )
+
+        partition = partition_set.get_partition(partition_key, instance)
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags
@@ -873,7 +882,7 @@ def default_job_io_manager(init_context: "InitResourceContext"):
                 ),
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
-                return resources.io_manager  # type: ignore
+                return resources.io_manager
         except Exception as e:
             if not silence_failures:
                 raise
@@ -914,7 +923,7 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
                 ),
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
-                return resources.io_manager  # type: ignore
+                return resources.io_manager
         except Exception as e:
             if not silence_failures:
                 raise

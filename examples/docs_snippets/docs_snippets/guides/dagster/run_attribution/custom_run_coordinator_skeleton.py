@@ -8,8 +8,9 @@ from dagster._core.storage.pipeline_run import DagsterRun
 
 
 class CustomRunCoordinator(QueuedRunCoordinator):
-    def submit_run(self, context: SubmitRunContext) -> DagsterRun:
+    def submit_run(self, context: SubmitRunContext) -> DagsterRun:  # type: ignore  # (didactic)
         desired_header = context.get_request_header(CUSTOM_HEADER_NAME)
+        ...
 
 
 # end_custom_run_coordinator_marker

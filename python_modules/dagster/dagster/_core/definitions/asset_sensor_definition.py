@@ -110,7 +110,7 @@ class AssetSensorDefinition(SensorDefinition):
             default_status=default_status,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def asset_key(self):
         return self._asset_key

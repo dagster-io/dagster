@@ -116,7 +116,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def solid_config(self) -> Any:
         return self._step_execution_context.op_config
 
-    @public  # type: ignore
+    @public
     @property
     def op_config(self) -> Any:
         return self.solid_config
@@ -131,13 +131,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """DagsterRun: The current run."""
         return cast(DagsterRun, self.pipeline_run)
 
-    @public  # type: ignore
+    @public
     @property
     def instance(self) -> DagsterInstance:
         """DagsterInstance: The current Dagster instance."""
         return self._step_execution_context.instance
 
-    @public  # type: ignore
+    @public
     @property
     def pdb(self) -> ForkedPdb:
         """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the op.
@@ -165,7 +165,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             " 0.10.0. Please access it via `context.resources.file_manager` instead."
         )
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> Any:
         """Resources: The currently available resources."""
@@ -176,13 +176,13 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """Optional[StepLauncher]: The current step launcher, if any."""
         return self._step_execution_context.step_launcher
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> str:
         """str: The id of the current execution's run."""
         return self._step_execution_context.run_id
 
-    @public  # type: ignore
+    @public
     @property
     def run_config(self) -> Mapping[str, object]:
         """dict: The run config for the current execution."""
@@ -193,7 +193,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """PipelineDefinition: The currently executing pipeline."""
         return self._step_execution_context.pipeline_def
 
-    @public  # type: ignore
+    @public
     @property
     def job_def(self) -> JobDefinition:
         """JobDefinition: The currently executing job."""
@@ -211,7 +211,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """str: The name of the currently executing pipeline."""
         return self._step_execution_context.pipeline_name
 
-    @public  # type: ignore
+    @public
     @property
     def job_name(self) -> str:
         """str: The name of the currently executing job."""
@@ -222,7 +222,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """ModeDefinition: The mode of the current execution."""
         return self._step_execution_context.mode_def
 
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> DagsterLogManager:
         """DagsterLogManager: The log manager available in the execution context."""
@@ -262,19 +262,19 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self.solid
 
-    @public  # type: ignore
+    @public
     @property
     def op_def(self) -> OpDefinition:
         """OpDefinition: The current op definition."""
         return cast(OpDefinition, self.op.definition)
 
-    @public  # type: ignore
+    @public
     @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run."""
         return self._step_execution_context.has_partition_key
 
-    @public  # type: ignore
+    @public
     @property
     def partition_key(self) -> str:
         """The partition key for the current run.
@@ -283,7 +283,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.partition_key
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
         """The asset partition key for the current run.
@@ -292,7 +292,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.asset_partition_key_range
 
-    @public  # type: ignore
+    @public
     @property
     def partition_time_window(self) -> str:
         """The partition time window for the current run.
@@ -302,7 +302,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.partition_time_window
 
-    @public  # type: ignore
+    @public
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.solid_handle)
@@ -310,7 +310,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             return set()
         return assets_def.keys
 
-    @public  # type: ignore
+    @public
     @property
     def selected_output_names(self) -> AbstractSet[str]:
         # map selected asset keys to the output names they correspond to
@@ -438,7 +438,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
         """Returns a list of the partition keys for the given output."""
         return self.asset_partitions_def_for_output(output_name).get_partition_keys_in_range(
-            self._step_execution_context.asset_partition_key_range_for_output(output_name)
+            self._step_execution_context.asset_partition_key_range_for_output(output_name),
+            dynamic_partitions_store=self.instance,
         )
 
     @public
@@ -447,7 +448,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         given input.
         """
         return self.asset_partitions_def_for_input(input_name).get_partition_keys_in_range(
-            self._step_execution_context.asset_partition_key_range_for_input(input_name)
+            self._step_execution_context.asset_partition_key_range_for_input(input_name),
+            dynamic_partitions_store=self.instance,
         )
 
     @public
@@ -582,7 +584,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context
 
-    @public  # type: ignore
+    @public
     @property
     def retry_number(self) -> int:
         """

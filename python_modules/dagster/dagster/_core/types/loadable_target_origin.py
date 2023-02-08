@@ -1,3 +1,5 @@
+# pyright: strict
+
 from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
@@ -20,12 +22,12 @@ class LoadableTargetOrigin(
 ):
     def __new__(
         cls,
-        executable_path=None,
-        python_file=None,
-        module_name=None,
-        working_directory=None,
-        attribute=None,
-        package_name=None,
+        executable_path: Optional[str] = None,
+        python_file: Optional[str] = None,
+        module_name: Optional[str] = None,
+        working_directory: Optional[str] = None,
+        attribute: Optional[str] = None,
+        package_name: Optional[str] = None,
     ):
         return super(LoadableTargetOrigin, cls).__new__(
             cls,

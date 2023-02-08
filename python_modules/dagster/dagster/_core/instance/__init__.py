@@ -32,6 +32,7 @@ from typing import (
 )
 
 import yaml
+from typing_extensions import Protocol, runtime_checkable
 
 import dagster._check as check
 from dagster._annotations import public
@@ -43,6 +44,7 @@ from dagster._core.definitions.pipeline_definition import (
 )
 from dagster._core.errors import (
     DagsterHomeNotSetError,
+    DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
@@ -117,6 +119,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
     from dagster._core.storage.root import LocalArtifactStorage
     from dagster._core.storage.runs import RunStorage
+    from dagster._core.storage.runs.base import RunGroupInfo
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.workspace.workspace import IWorkspace
     from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
@@ -169,7 +172,7 @@ class _EventListenerLogHandler(logging.Handler):
                 name=record.name,
                 message=record.msg,
                 level=record.levelno,
-                meta=record.dagster_meta,  # type: ignore
+                meta=record.dagster_meta,
                 record=record,
             )
         )
@@ -234,7 +237,13 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
         self._instance_weakref = weakref.ref(instance)
 
 
-class DagsterInstance:
+@runtime_checkable
+class DynamicPartitionsStore(Protocol):
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self.get_dynamic_partitions(partitions_def_name=partitions_def_name)
+
+
+class DagsterInstance(DynamicPartitionsStore):
     """Core abstraction for managing Dagster's access to storage and other resources.
 
     Use DagsterInstance.get() to grab the current DagsterInstance which will load based on
@@ -497,7 +506,7 @@ class DagsterInstance:
             unified_storage.schedule_storage if unified_storage else instance_ref.schedule_storage
         )
 
-        return klass(  # type: ignore
+        return klass(
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=instance_ref.local_artifact_storage,
             run_storage=run_storage,
@@ -1489,7 +1498,7 @@ class DagsterInstance:
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Mapping[str, Mapping[str, Union[Iterable[DagsterRun], int]]]:
+    ) -> Mapping[str, "RunGroupInfo"]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
     @public
@@ -1681,6 +1690,39 @@ class DagsterInstance:
         self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int] = None
     ) -> Mapping[AssetKey, Mapping[str, int]]:
         return self._event_storage.get_materialization_count_by_partition(asset_keys, after_cursor)
+
+    @traced
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        return self._event_storage.get_dynamic_partitions(partitions_def_name)
+
+    @traced
+    def add_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        from dagster._core.definitions.partition import (
+            raise_error_on_invalid_partition_key_substring,
+        )
+
+        check.str_param(partitions_def_name, "partitions_def_name")
+        check.sequence_param(partition_keys, "partition_keys", of_type=str)
+        if isinstance(partition_keys, str):
+            # Guard against a single string being passed in `partition_keys`
+            raise DagsterInvalidInvocationError("partition_keys must be a sequence of strings")
+        raise_error_on_invalid_partition_key_substring(partition_keys)
+        return self._event_storage.add_dynamic_partitions(partitions_def_name, partition_keys)
+
+    @traced
+    def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        check.sequence_param(partition_key, "partition_key", of_type=str)
+        self._event_storage.delete_dynamic_partition(partitions_def_name, partition_key)
+
+    @traced
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        check.str_param(partitions_def_name, "partitions_def_name")
+        check.str_param(partition_key, "partition_key")
+        return self._event_storage.has_dynamic_partition(partitions_def_name, partition_key)
 
     # event subscriptions
 

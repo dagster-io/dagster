@@ -66,13 +66,13 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         check.str_param(key, "key")
         return self._pipeline_context.get_tag(key)
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> str:
         """str: The run_id for the context."""
         return self._pipeline_context.run_id
 
-    @public  # type: ignore
+    @public
     @property
     def run_config(self) -> Mapping[str, Any]:
         """dict: The run_config for the context."""
@@ -83,13 +83,13 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         """:class:`dagster.ResolvedRunConfig`: The resolved_run_config for the context."""
         return self._pipeline_context.resolved_run_config
 
-    @public  # type: ignore
+    @public
     @property
     def logging_tags(self) -> Mapping[str, str]:
         """dict: The logging tags for the context."""
         return self._pipeline_context.logging_tags
 
-    @public  # type: ignore
+    @public
     @property
     def job_name(self) -> str:
         return self._pipeline_context.job_name
@@ -103,7 +103,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         )
         return self.job_name
 
-    @public  # type: ignore
+    @public
     @property
     def job_def(self) -> JobDefinition:
         """:class:`dagster.JobDefinition`: The job definition for the context.
@@ -141,7 +141,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
             required_resource_keys=self._resource_keys_to_init,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def run(self) -> DagsterRun:
         """:class:`dagster.DagsterRun`: The job run for the context."""
@@ -164,7 +164,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         """
         return self._pipeline_context.log
 
-    @public  # type: ignore
+    @public
     @property
     def op_def(self) -> OpDefinition:
         """:class:`dagster.OpDefinition`: The op definition for the context.
@@ -202,7 +202,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         )
         return self.pipeline_def.get_solid(self.solid_handle)
 
-    @public  # type: ignore
+    @public
     @property
     def op_config(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
@@ -247,3 +247,7 @@ class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
             solid_handle,
             solid_config,
         )
+
+    @property
+    def step_context(self) -> StepExecutionContext:
+        return self._step_context

@@ -91,8 +91,8 @@ export const AssetPartitions: React.FC<Props> = ({
         // you have not clicked dimension 1, dimension 2 shows the merged state of all the keys
         // in that dimension (for all values of dimension 1)
         const state =
-          idx > 0 && focusedDimensionKeys.length >= idx
-            ? assetHealth.stateForPartialKey([...focusedDimensionKeys.slice(0, idx), dimensionKey])
+          idx === 1 && focusedDimensionKeys.length >= 1
+            ? assetHealth.stateForKey([focusedDimensionKeys[0], dimensionKey])
             : assetHealth.stateForSingleDimension(
                 idx,
                 dimensionKey,
@@ -201,7 +201,7 @@ export const AssetPartitions: React.FC<Props> = ({
           </Box>
         ))}
 
-        <Box style={{flex: 3, minWidth: 0}} flex={{direction: 'column'}}>
+        <Box style={{flex: 3, minWidth: 0, overflowY: 'auto'}} flex={{direction: 'column'}}>
           {params.partition && focusedDimensionKeys.length === ranges.length ? (
             <AssetPartitionDetailLoader assetKey={assetKey} partitionKey={params.partition} />
           ) : (

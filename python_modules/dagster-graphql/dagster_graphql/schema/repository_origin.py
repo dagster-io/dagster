@@ -2,7 +2,7 @@ import dagster._check as check
 import graphene
 from dagster._core.host_representation import ExternalRepositoryOrigin
 
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneRepositoryMetadata(graphene.ObjectType):
@@ -26,16 +26,16 @@ class GrapheneRepositoryOrigin(graphene.ObjectType):
         super().__init__()
         self._origin = check.inst_param(origin, "origin", ExternalRepositoryOrigin)
 
-    def resolve_id(self, _graphene_info):
+    def resolve_id(self, _graphene_info: ResolveInfo):
         return self._origin.get_id()
 
-    def resolve_repository_location_name(self, _graphene_info):
+    def resolve_repository_location_name(self, _graphene_info: ResolveInfo):
         return self._origin.repository_location_origin.location_name
 
-    def resolve_repository_name(self, _graphene_info):
+    def resolve_repository_name(self, _graphene_info: ResolveInfo):
         return self._origin.repository_name
 
-    def resolve_repository_location_metadata(self, _graphene_info):
+    def resolve_repository_location_metadata(self, _graphene_info: ResolveInfo):
         metadata = self._origin.repository_location_origin.get_display_metadata()
         return [
             GrapheneRepositoryMetadata(key=key, value=value)

@@ -4,7 +4,6 @@ import {useVersion} from 'util/useVersion';
 import cx from 'classnames';
 import Icons from 'components/Icons';
 import Link from 'components/Link';
-import Pagination from 'components/Pagination';
 import VersionDropdown from 'components/VersionDropdown';
 import MDXComponents, {SearchIndexContext} from 'components/mdx/MDXComponents';
 import SidebarNavigation from 'components/mdx/SidebarNavigation';
@@ -239,7 +238,7 @@ export const VersionedContentLayout = ({children, asPath = null}) => {
           <VersionNotice />
           <div className="py-4 px-4 sm:px-6 lg:px-8 w-full">
             {children}
-            <Pagination />
+            <div className="mt-12 mb-12 border-t border-gray-200 px-4 flex items-center justify-between sm:px-0"></div>
           </div>
           {/* End main area */}
         </div>

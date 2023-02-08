@@ -5,7 +5,7 @@ from airflow.decorators import dag, task
 
 
 @dag(
-    schedule="* * * * *",
+    schedule_interval="* * * * *",
     start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
     catchup=False,
     tags=["example"],

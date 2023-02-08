@@ -63,8 +63,9 @@ def test_descent_path():
     class Fizz(NamedTuple):
         buzz: int
 
+    # Arg is not actually a namedtuple but the function still works on it
     ser = _serialize_dagster_namedtuple(
-        {"a": {"b": [{}, {}, {"c": Fizz(1)}]}}, whitelist_map=test_map  # type: ignore
+        {"a": {"b": [{}, {}, {"c": Fizz(1)}]}}, whitelist_map=test_map
     )
 
     with pytest.raises(DeserializationError, match=re.escape("Descent path: <root:dict>.a.b[2].c")):
@@ -75,9 +76,9 @@ def test_forward_compat_serdes_new_field_with_default():
     test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
-    class Quux(namedtuple("_Quux", "foo bar")):  # type: ignore [reportGeneralTypeIssues]
+    class Quux(namedtuple("_Quux", "foo bar")):  # type: ignore
         def __new__(cls, foo, bar):
-            return super(Quux, cls).__new__(cls, foo, bar)  # type: ignore
+            return super(Quux, cls).__new__(cls, foo, bar)
 
     assert test_map.has_tuple_entry("Quux")
     klass, _, _ = test_map.get_tuple_entry("Quux")
@@ -87,13 +88,12 @@ def test_forward_compat_serdes_new_field_with_default():
 
     serialized = _serialize_dagster_namedtuple(quux, whitelist_map=test_map)
 
-    @_whitelist_for_serdes(whitelist_map=test_map)  # type: ignore [reportGeneralTypeIssues]
+    @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar baz")):
         def __new__(cls, foo, bar, baz=None):
             return super(Quux, cls).__new__(cls, foo, bar, baz=baz)
 
     assert test_map.has_tuple_entry("Quux")
-
     klass, _, _ = test_map.get_tuple_entry("Quux")
     assert klass is Quux
 
@@ -109,7 +109,7 @@ def test_forward_compat_serdes_new_enum_field():
     test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
-    class Corge(Enum):  # type: ignore [reportGeneralTypeIssues]
+    class Corge(Enum):  # type: ignore
         FOO = 1
         BAR = 2
 
@@ -176,7 +176,7 @@ def test_backward_compat_serdes():
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar baz")):  # type: ignore
         def __new__(cls, foo, bar, baz):
-            return super(Quux, cls).__new__(cls, foo, bar, baz)  # type: ignore
+            return super(Quux, cls).__new__(cls, foo, bar, baz)
 
     quux = Quux("zip", "zow", "whoopie")
 
@@ -241,7 +241,7 @@ def test_wrong_first_arg():
         @serdes_test_class
         class NotCls(namedtuple("NotCls", "field_one field_two")):
             def __new__(not_cls, field_two, field_one):  # type: ignore
-                return super(NotCls, not_cls).__new__(field_one, field_two)  # type: ignore
+                return super(NotCls, not_cls).__new__(field_one, field_two)
 
     assert (
         str(exc_info.value)
@@ -255,7 +255,7 @@ def test_incorrect_order():
         @serdes_test_class
         class WrongOrder(namedtuple("WrongOrder", "field_one field_two")):
             def __new__(cls, field_two, field_one):
-                return super(WrongOrder, cls).__new__(field_one, field_two)  # type: ignore
+                return super(WrongOrder, cls).__new__(field_one, field_two)
 
     assert (
         str(exc_info.value)
@@ -272,9 +272,7 @@ def test_missing_one_parameter():
         @serdes_test_class
         class MissingFieldInNew(namedtuple("MissingFieldInNew", "field_one field_two field_three")):
             def __new__(cls, field_one, field_two):
-                return super(MissingFieldInNew, cls).__new__(
-                    field_one, field_two, None
-                )  # type: ignore
+                return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
 
     assert (
         str(exc_info.value)
@@ -471,7 +469,7 @@ def test_skip_when_empty():
     @_whitelist_for_serdes(whitelist_map=test_map)
     class SameSnapshotTuple(namedtuple("_Tuple", "foo")):  # type: ignore
         def __new__(cls, foo):
-            return super(SameSnapshotTuple, cls).__new__(cls, foo)  # type: ignore
+            return super(SameSnapshotTuple, cls).__new__(cls, foo)
 
     old_tuple = SameSnapshotTuple(foo="A")
     old_serialized = _serialize_dagster_namedtuple(old_tuple, whitelist_map=test_map)

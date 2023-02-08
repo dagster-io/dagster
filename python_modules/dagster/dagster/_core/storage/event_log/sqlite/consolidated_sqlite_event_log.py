@@ -2,6 +2,7 @@ import logging
 import os
 from collections import defaultdict
 from contextlib import contextmanager
+from typing import Optional
 
 from sqlalchemy.pool import NullPool
 from watchdog.events import PatternMatchingEventHandler
@@ -23,7 +24,7 @@ from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
 
 from ..schema import SqlEventLogStorageMetadata
-from ..sql_event_log import SqlEventLogStorage
+from ..sql_event_log import SqlDbConnection, SqlEventLogStorage
 
 SQLITE_EVENT_LOG_FILENAME = "event_log"
 
@@ -102,7 +103,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         finally:
             conn.close()
 
-    def run_connection(self, run_id):
+    def run_connection(self, run_id: Optional[str]) -> SqlDbConnection:
         return self._connect()
 
     def index_connection(self):

@@ -14,9 +14,10 @@ import pendulum
 import dagster._check as check
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation import ExternalSchedule, PipelineSelector
+from dagster._core.host_representation import ExternalSchedule
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.instance import DagsterInstance
@@ -34,7 +35,7 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, Run
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._scheduler.stale import resolve_stale_assets
+from dagster._scheduler.stale import resolve_stale_or_unknown_assets
 from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
@@ -609,7 +610,7 @@ def _schedule_runs_at_time(
 
     for run_request in schedule_execution_data.run_requests:
         if run_request.stale_assets_only:
-            stale_assets = resolve_stale_assets(workspace_process_context, run_request, external_schedule)  # type: ignore
+            stale_assets = resolve_stale_or_unknown_assets(workspace_process_context, run_request, external_schedule)  # type: ignore
             # asset selection is empty set after filtering for stale
             if len(stale_assets) == 0:
                 continue

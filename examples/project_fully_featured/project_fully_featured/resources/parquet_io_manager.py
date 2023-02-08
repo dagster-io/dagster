@@ -3,6 +3,7 @@ from typing import Union
 
 import pandas
 import pyspark
+import pyspark.sql
 from dagster import (
     Field,
     InputContext,
@@ -59,7 +60,7 @@ class PartitionedParquetIOManager(IOManager):
         )
 
     def _get_path(self, context: Union[InputContext, OutputContext]):
-        key = context.asset_key.path[-1]  # type: ignore
+        key = context.asset_key.path[-1]
 
         if context.has_asset_partitions:
             start, end = context.asset_partitions_time_window

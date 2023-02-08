@@ -14,5 +14,7 @@ setup(
         "dagster-snowflake",
         "dagster-snowflake-pandas",
     ],
-    extras_require={"dev": ["dagit", "pytest"]},
+    extras_require={
+        "dev": ["dagit", "pytest"],
+    },
 )

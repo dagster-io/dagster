@@ -36,6 +36,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     reconcile,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -52,7 +53,7 @@ class AssetReconciliationScenario(NamedTuple):
     assets: Sequence[Union[SourceAsset, AssetsDefinition]]
     between_runs_delta: Optional[datetime.timedelta] = None
     evaluation_delta: Optional[datetime.timedelta] = None
-    cursor_from: Optional["AssetReconciliationScenario"] = None  # type: ignore
+    cursor_from: Optional["AssetReconciliationScenario"] = None
     current_time: Optional[datetime.datetime] = None
     asset_selection: Optional[AssetSelection] = None
 
@@ -403,9 +404,7 @@ overlapping_freshness = diamond + [
 overlapping_freshness_with_source = [
     SourceAsset("source_asset"),
     asset_def("asset1", ["source_asset"]),
-] + overlapping_freshness[
-    1:
-]  # type: ignore
+] + overlapping_freshness[1:]
 overlapping_freshness_inf = diamond + [
     asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
     asset_def("asset6", ["asset4"], freshness_policy=freshness_inf),
@@ -517,6 +516,16 @@ one_asset_self_dependency_hourly = [
         partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"),
         deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
     )
+]
+
+unpartitioned_after_dynamic_asset = [
+    asset_def("asset1"),
+    asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
+]
+
+two_dynamic_assets = [
+    asset_def("asset1", partitions_def=DynamicPartitionsDefinition(name="foo")),
+    asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
 ]
 
 scenarios = {
@@ -1059,7 +1068,7 @@ scenarios = {
         expected_run_requests=[],
     ),
     "freshness_overlapping_with_source": AssetReconciliationScenario(
-        assets=overlapping_freshness_with_source,  # type: ignore
+        assets=overlapping_freshness_with_source,
         unevaluated_runs=[run(["asset1", "asset3", "asset5"]), run(["asset2", "asset4", "asset6"])],
         expected_run_requests=[],
     ),

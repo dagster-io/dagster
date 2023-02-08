@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import Optional
 
 import pytest
 from dagster._core.test_utils import create_test_daemon_workspace_context, instance_for_test
@@ -24,7 +25,7 @@ def instance_fixture(instance_module_scoped):
     yield instance_module_scoped
 
 
-def create_workspace_load_target(attribute="the_repo"):
+def create_workspace_load_target(attribute: Optional[str] = "the_repo"):
     return ModuleTarget(
         module_name="dagster_tests.daemon_sensor_tests.test_sensor_run",
         attribute=attribute,
@@ -49,7 +50,7 @@ def external_repo_fixture(workspace_context):
     ).repository_location.get_repository("the_repo")
 
 
-def loadable_target_origin():
+def loadable_target_origin() -> LoadableTargetOrigin:
     return LoadableTargetOrigin(
         executable_path=sys.executable,
         module_name="dagster_tests.daemon_sensor_tests.test_sensor_run",

@@ -7,6 +7,7 @@ from typing import (
     AbstractSet,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -16,10 +17,12 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import (
     DEFAULT_SENSOR_DAEMON_INTERVAL,
     DefaultSensorStatus,
@@ -47,6 +50,7 @@ from .external_data import (
     ExternalPipelineData,
     ExternalPresetData,
     ExternalRepositoryData,
+    ExternalResourceData,
     ExternalScheduleData,
     ExternalSensorData,
     ExternalSensorMetadata,
@@ -55,7 +59,6 @@ from .external_data import (
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
-from .selector import InstigatorSelector, RepositorySelector
 
 if TYPE_CHECKING:
     from dagster._core.scheduler.instigation import InstigatorState
@@ -131,6 +134,25 @@ class ExternalRepository:
 
     def get_external_schedules(self) -> Sequence[ExternalSchedule]:
         return iter_to_list(self._external_schedules.values())
+
+    @property
+    @cached_method
+    def _external_resources(self) -> Dict[str, ExternalResource]:
+        return {
+            external_resource_data.name: ExternalResource(external_resource_data, self._handle)
+            for external_resource_data in (
+                self.external_repository_data.external_resource_data or []
+            )
+        }
+
+    def has_external_resource(self, resource_name: str) -> bool:
+        return resource_name in self._external_resources
+
+    def get_external_resource(self, resource_name: str) -> ExternalResource:
+        return self._external_resources[resource_name]
+
+    def get_external_resources(self) -> Iterable[ExternalResource]:
+        return self._external_resources.values()
 
     @property
     @cached_method
@@ -296,7 +318,7 @@ class ExternalPipeline(RepresentedPipeline):
                     self.external_pipeline_data.pipeline_snapshot,
                     self.external_pipeline_data.parent_pipeline_snapshot,
                 )
-            return self._index  # type: ignore
+            return self._index
 
     @property
     def name(self) -> str:
@@ -506,6 +528,40 @@ class ExternalExecutionPlan:
             ]
 
         return self._topological_step_levels
+
+
+class ExternalResource:
+    """
+    Represents a top-level resource in a repository, e.g. one passed through the Definitions API.
+    """
+
+    def __init__(self, external_resource_data: ExternalResourceData, handle: RepositoryHandle):
+        self._external_resource_data = check.inst_param(
+            external_resource_data, "external_resource_data", ExternalResourceData
+        )
+        self._handle = InstigatorHandle(
+            self._external_resource_data.name, check.inst_param(handle, "handle", RepositoryHandle)
+        )
+
+    @property
+    def name(self) -> str:
+        return self._external_resource_data.name
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._external_resource_data.resource_snapshot.description
+
+    @property
+    def config_field_snaps(self) -> List[ConfigFieldSnap]:
+        return self._external_resource_data.config_field_snaps
+
+    @property
+    def configured_values(self) -> Dict[str, str]:
+        return self._external_resource_data.configured_values
+
+    @property
+    def config_schema_snap(self) -> ConfigSchemaSnapshot:
+        return self._external_resource_data.config_schema_snap
 
 
 class ExternalSchedule:

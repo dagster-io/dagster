@@ -107,17 +107,17 @@ class EventLogEntry(
             check.opt_inst_param(dagster_event, "dagster_event", DagsterEvent),
         )
 
-    @public  # type: ignore
+    @public
     @property
     def is_dagster_event(self) -> bool:
         return bool(self.dagster_event)
 
-    @public  # type: ignore
+    @public
     @property
     def job_name(self) -> Optional[str]:
         return self.pipeline_name
 
-    @public  # type: ignore
+    @public
     def get_dagster_event(self) -> DagsterEvent:
         if not isinstance(self.dagster_event, DagsterEvent):
             check.failed(
@@ -133,12 +133,12 @@ class EventLogEntry(
     def from_json(json_str):
         return deserialize_json_to_dagster_namedtuple(json_str)
 
-    @public  # type: ignore
+    @public
     @property
     def dagster_event_type(self):
         return self.dagster_event.event_type if self.dagster_event else None
 
-    @public  # type: ignore
+    @public
     @property
     def message(self) -> str:
         """

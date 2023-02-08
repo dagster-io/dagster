@@ -168,6 +168,8 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         elif prefix:
             # add the trailing '/' to make sure that ['a'] does not match ['apple']
             prefix_path = "/".join([self._blob_prefix, "storage", *prefix, ""])
+        else:
+            prefix_path = None
 
         blob_list = {
             b.name for b in list(self._container_client.list_blobs(name_starts_with=prefix_path))

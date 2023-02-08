@@ -139,3 +139,41 @@ const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
     </span>
   );
 };
+
+const IGNORED_CONSOLE_ERRORS = [
+  'The above error occurred',
+  'NetworkError when attempting to fetch resource',
+  "Can't perform a React state update on an unmounted component",
+];
+
+export const setupErrorToasts = () => {
+  const original = console.error;
+  Object.defineProperty(console, 'error', {
+    value: (...args: any[]) => {
+      original.apply(console, args);
+
+      const msg = `${args[0]}`;
+      if (!IGNORED_CONSOLE_ERRORS.some((ignored) => msg.includes(ignored))) {
+        ErrorToaster.show({
+          intent: 'danger',
+          message: (
+            <div
+              style={{whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'hidden'}}
+            >{`console.error: ${msg}`}</div>
+          ),
+        });
+      }
+    },
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    ErrorToaster.show({
+      intent: 'danger',
+      message: (
+        <div
+          style={{whiteSpace: 'pre-wrap'}}
+        >{`Unhandled Rejection: ${event.reason}\nView console for details.`}</div>
+      ),
+    });
+  });
+};

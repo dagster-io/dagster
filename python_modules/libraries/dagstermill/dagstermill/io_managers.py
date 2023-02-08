@@ -73,7 +73,8 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
     def load_input(self, context) -> bytes:
         check.inst_param(context, "context", InputContext)
         # pass output notebook to downstream ops as File Object
-        with open(self._get_path(context.upstream_output), self.read_mode) as file_obj:
+        output_context = check.not_none(context.upstream_output)
+        with open(self._get_path(output_context), self.read_mode) as file_obj:
             return file_obj.read()
 
 

@@ -366,12 +366,12 @@ class PlanExecutionContext(IPlanContext):
         )
 
         tags = self._plan_data.pipeline_run.tags
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            multipartition_key = get_multipartition_key_from_tags(tags)
+            return PartitionKeyRange(multipartition_key, multipartition_key)
+
         partition_key = tags.get(PARTITION_NAME_TAG)
         if partition_key is not None:
-            return PartitionKeyRange(partition_key, partition_key)
-
-        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
-            partition_key = get_multipartition_key_from_tags(tags)
             return PartitionKeyRange(partition_key, partition_key)
 
         partition_key_range_start = tags.get(ASSET_PARTITION_RANGE_START_TAG)
@@ -901,7 +901,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
         subset = self.asset_partitions_subset_for_input(input_name)
-        partition_key_ranges = subset.get_partition_key_ranges()
+        partition_key_ranges = subset.get_partition_key_ranges(
+            dynamic_partitions_store=self.instance
+        )
 
         if len(partition_key_ranges) != 1:
             check.failed(
@@ -925,7 +927,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 partitions_def = assets_def.partitions_def
                 partitions_subset = (
                     partitions_def.empty_subset().with_partition_key_range(
-                        self.asset_partition_key_range
+                        self.asset_partition_key_range, dynamic_partitions_store=self.instance
                     )
                     if partitions_def
                     else None
@@ -939,6 +941,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 return partition_mapping.get_upstream_partitions_for_partitions(
                     partitions_subset,
                     upstream_asset_partitions_def,
+                    dynamic_partitions_store=self.instance,
                 )
 
         check.failed("The input has no asset partitions")
@@ -1005,8 +1008,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         partition_key_range = self.asset_partition_key_range_for_output(output_name)
         return TimeWindow(
             # mypy thinks partitions_def is <nothing> here because ????
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,  # type: ignore
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
     def get_input_lineage(self) -> Sequence[AssetLineageInfo]:
@@ -1084,17 +1087,17 @@ class TypeCheckContext:
         self._log = log_manager
         self._resources = scoped_resources_builder.build(dagster_type.required_resource_keys)
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> "Resources":
         return self._resources
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> str:
         return self._run_id
 
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> DagsterLogManager:
         return self._log
@@ -1106,20 +1109,20 @@ class DagsterTypeMaterializerContext(StepExecutionContext):
     Users should not construct this object directly.
     """
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> "Resources":
         """The resources available to the type materializer, specified by the `required_resource_keys` argument of the decorator.
         """
         return super(DagsterTypeMaterializerContext, self).resources
 
-    @public  # type: ignore
+    @public
     @property
     def job_def(self) -> "JobDefinition":
         """The underlying job definition being executed."""
         return super(DagsterTypeMaterializerContext, self).job_def
 
-    @public  # type: ignore
+    @public
     @property
     def op_def(self) -> "OpDefinition":
         """The op for which type materialization is occurring."""
@@ -1132,20 +1135,20 @@ class DagsterTypeLoaderContext(StepExecutionContext):
     Users should not construct this object directly.
     """
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> "Resources":
         """The resources available to the type loader, specified by the `required_resource_keys` argument of the decorator.
         """
         return super(DagsterTypeLoaderContext, self).resources
 
-    @public  # type: ignore
+    @public
     @property
     def job_def(self) -> "JobDefinition":
         """The underlying job definition being executed."""
         return super(DagsterTypeLoaderContext, self).job_def
 
-    @public  # type: ignore
+    @public
     @property
     def op_def(self) -> "OpDefinition":
         """The op for which type loading is occurring."""

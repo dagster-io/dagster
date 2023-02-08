@@ -208,7 +208,7 @@ class MetadataValue(ABC):
             )
     """
 
-    @public  # type: ignore
+    @public
     @property
     @abstractmethod
     def value(self) -> object:
@@ -571,7 +571,7 @@ class MetadataValue(ABC):
 
 
 @whitelist_for_serdes(storage_name="TextMetadataEntryData")
-class TextMetadataValue(  # type: ignore
+class TextMetadataValue(
     NamedTuple(
         "_TextMetadataValue",
         [
@@ -591,14 +591,14 @@ class TextMetadataValue(  # type: ignore
             cls, check.opt_str_param(text, "text", default="")
         )
 
-    @public  # type: ignore
+    @public
     @property
     def value(self) -> Optional[str]:
         return self.text
 
 
 @whitelist_for_serdes(storage_name="UrlMetadataEntryData")
-class UrlMetadataValue(  # type: ignore
+class UrlMetadataValue(
     NamedTuple(
         "_UrlMetadataValue",
         [
@@ -618,14 +618,14 @@ class UrlMetadataValue(  # type: ignore
             cls, check.opt_str_param(url, "url", default="")
         )
 
-    @public  # type: ignore
+    @public
     @property
     def value(self) -> Optional[str]:
         return self.url
 
 
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
-class PathMetadataValue(  # type: ignore
+class PathMetadataValue(
     NamedTuple("_PathMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue
 ):
     """Container class for path metadata entry data.
@@ -639,14 +639,14 @@ class PathMetadataValue(  # type: ignore
             cls, check.opt_path_param(path, "path", default="")
         )
 
-    @public  # type: ignore
+    @public
     @property
     def value(self) -> Optional[str]:
         return self.path
 
 
 @whitelist_for_serdes(storage_name="NotebookMetadataEntryData")
-class NotebookMetadataValue(  # type: ignore
+class NotebookMetadataValue(
     NamedTuple("_NotebookMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue
 ):
     """Container class for notebook metadata entry data.
@@ -660,7 +660,7 @@ class NotebookMetadataValue(  # type: ignore
             cls, check.opt_path_param(path, "path", default="")
         )
 
-    @public  # type: ignore
+    @public
     @property
     def value(self) -> Optional[str]:
         return self.path
@@ -691,7 +691,7 @@ class JsonMetadataValue(
             raise DagsterInvalidMetadata("Value is a dictionary but is not JSON serializable.")
         return super(JsonMetadataValue, cls).__new__(cls, data)
 
-    @public  # type: ignore
+    @public
     @property
     def value(self) -> Optional[Union[Sequence[Any], Mapping[str, Any]]]:
         return self.data
@@ -746,7 +746,7 @@ class PythonArtifactMetadataValue(
             cls, check.str_param(module, "module"), check.str_param(name, "name")
         )
 
-    @public  # type: ignore
+    @public
     @property
     def value(self) -> object:
         return self
@@ -848,7 +848,7 @@ class DagsterAssetMetadataValue(
             cls, check.inst_param(asset_key, "asset_key", AssetKey)
         )
 
-    @public  # type: ignore
+    @public
     @property
     def value(self) -> "AssetKey":
         return self.value
@@ -873,7 +873,7 @@ class TableMetadataValue(
         schema (Optional[TableSchema]): A schema for the table.
     """
 
-    @public  # type: ignore
+    @public
     @staticmethod
     def infer_column_type(value):
         if isinstance(value, bool):
@@ -910,7 +910,7 @@ class TableMetadataValue(
             schema,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def value(self):
         return self
