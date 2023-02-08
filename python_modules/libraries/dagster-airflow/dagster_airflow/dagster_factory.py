@@ -21,7 +21,7 @@ from dagster_airflow.utils import (
 def make_dagster_definitions_from_airflow_dag_bag(
     dag_bag: DagBag,
     connections: Optional[List[Connection]] = None,
-    kwargs: Optional[dict] = None,
+    definitions_kwargs: Optional[dict] = None,
 ) -> Definitions:
     """Construct a Dagster definition corresponding to Airflow DAGs in DagBag.
 
@@ -39,12 +39,12 @@ def make_dagster_definitions_from_airflow_dag_bag(
     Args:
         dag_bag (DagBag): Airflow DagBag Model
         connections (List[Connection]): List of Airflow Connections to be created in the Airflow DB
-        kwargs (Optional[dict]): kwargs to be passed to the Definitions constructor
+        definitions_kwargs (Optional[dict]): kwargs to be passed to the Definitions constructor
 
     Returns:
         Definitions
     """
-    kwargs = check.opt_dict_param(kwargs, "kwargs")
+    definitions_kwargs = check.opt_dict_param(definitions_kwargs, "definitions_kwargs")
     schedules, jobs = make_schedules_and_jobs_from_airflow_dag_bag(
         dag_bag,
         connections,
@@ -53,7 +53,7 @@ def make_dagster_definitions_from_airflow_dag_bag(
     return Definitions(
         schedules=schedules,
         jobs=jobs,
-        *kwargs if kwargs else (),
+        *definitions_kwargs if definitions_kwargs else (),
     )
 
 
@@ -61,7 +61,7 @@ def make_dagster_definitions_from_airflow_dags_path(
     dag_path: str,
     safe_mode: bool = True,
     connections: Optional[List[Connection]] = None,
-    kwargs: Optional[dict] = None,
+    definitions_kwargs: Optional[dict] = None,
 ) -> Definitions:
     """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
 
@@ -86,7 +86,7 @@ def make_dagster_definitions_from_airflow_dags_path(
         safe_mode (bool): True to use Airflow's default heuristic to find files that contain DAGs
             (ie find files that contain both b'DAG' and b'airflow') (default: True)
         connections (List[Connection]): List of Airflow Connections to be created in the Airflow DB
-        kwargs (Optional[dict]): kwargs to be passed to the Definitions constructor
+        definitions_kwargs (Optional[dict]): kwargs to be passed to the Definitions constructor
 
     Returns:
         Definitions
@@ -94,7 +94,7 @@ def make_dagster_definitions_from_airflow_dags_path(
     check.str_param(dag_path, "dag_path")
     check.bool_param(safe_mode, "safe_mode")
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
-    kwargs = check.opt_dict_param(kwargs, "kwargs")
+    definitions_kwargs = check.opt_dict_param(definitions_kwargs, "definitions_kwargs")
     # add connections to airflow so that dag evaluation works
     create_airflow_connections(connections)
     dag_bag = DagBag(
@@ -106,7 +106,7 @@ def make_dagster_definitions_from_airflow_dags_path(
     return make_dagster_definitions_from_airflow_dag_bag(
         dag_bag=dag_bag,
         connections=connections,
-        kwargs=kwargs,
+        definitions_kwargs=definitions_kwargs,
     )
 
 

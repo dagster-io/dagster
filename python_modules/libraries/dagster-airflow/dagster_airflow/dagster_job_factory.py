@@ -166,7 +166,7 @@ def make_dagster_job_from_airflow_dag(
     dag: DAG,
     tags: Optional[Mapping[str, str]] = None,
     connections: Optional[List[Connection]] = None,
-    kwargs: Optional[dict] = None,
+    job_kwargs: Optional[dict] = None,
 ) -> JobDefinition:
     """Construct a Dagster job corresponding to a given Airflow DAG.
 
@@ -205,7 +205,7 @@ def make_dagster_job_from_airflow_dag(
             `tags={'airflow_execution_date': utc_date_string}` to specify execution_date used within
             execution of Airflow Operators.
         connections (List[Connection]): List of Airflow Connections to be created in the Airflow DB.
-        kwargs (Optional[dict]): kwargs to be passed to the Job constructor
+        job_kwargs (Optional[dict]): kwargs to be passed to the Job constructor
 
     Returns:
         JobDefinition: The generated Dagster job
@@ -214,7 +214,7 @@ def make_dagster_job_from_airflow_dag(
     check.inst_param(dag, "dag", DAG)
     tags = check.opt_mapping_param(tags, "tags")
     connections = check.opt_list_param(connections, "connections", of_type=Connection)
-    kwargs = check.opt_dict_param(kwargs, "kwargs")
+    job_kwargs = check.opt_dict_param(job_kwargs, "job_kwargs")
 
     mutated_tags = dict(tags)
     if IS_AIRFLOW_INGEST_PIPELINE_STR not in tags:
@@ -246,6 +246,6 @@ def make_dagster_job_from_airflow_dag(
         },
         graph_def=graph_def,
         tags=mutated_tags,
-        *kwargs if kwargs else (),
+        *job_kwargs if job_kwargs else (),
     )
     return job_def
