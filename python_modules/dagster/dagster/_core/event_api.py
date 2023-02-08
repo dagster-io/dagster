@@ -20,6 +20,7 @@ class RunShardedEventsCursor(NamedTuple):
     run_updated_after: datetime
 
 
+@whitelist_for_serdes
 class EventLogRecord(NamedTuple):
     """Internal representation of an event record, as stored in a
     :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
@@ -126,10 +127,10 @@ class EventRecordsFilter(
             event_type=event_type,
             asset_key=check.opt_inst_param(asset_key, "asset_key", AssetKey),
             asset_partitions=asset_partitions,
-            after_cursor=check.opt_inst_param(  # type: ignore
+            after_cursor=check.opt_inst_param(
                 after_cursor, "after_cursor", (int, RunShardedEventsCursor)
             ),
-            before_cursor=check.opt_inst_param(  # type: ignore
+            before_cursor=check.opt_inst_param(
                 before_cursor, "before_cursor", (int, RunShardedEventsCursor)
             ),
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),

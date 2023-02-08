@@ -16,6 +16,7 @@ from dagster import (
     resource,
     with_resources,
 )
+from dagster._core.test_utils import instance_for_test
 
 
 def test_single_asset():
@@ -191,9 +192,10 @@ def test_partition_key():
     def repo():
         return with_resources([asset1], resource_defs={"io_manager": my_io_manager})
 
-    with repo.get_asset_value_loader() as loader:
-        value = loader.load_asset_value(AssetKey("asset1"), partition_key="2020-05-05")
-        assert value == 5
+    with instance_for_test() as instance:
+        with repo.get_asset_value_loader(instance=instance) as loader:
+            value = loader.load_asset_value(AssetKey("asset1"), partition_key="2020-05-05")
+            assert value == 5
 
 
 def test_partitions_with_fs_io_manager():

@@ -12,7 +12,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.storage.partition_status_cache import (
-    get_and_update_asset_status_cache_values,
+    get_and_update_asset_status_cache_value,
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import Counter, traced_counter
@@ -34,9 +34,9 @@ def test_get_cached_status_unpartitioned():
 
         asset_job.execute_in_process(instance=instance)
 
-        cached_status = get_and_update_asset_status_cache_values(instance, asset_graph, asset_key)[
-            asset_key
-        ]
+        cached_status = get_and_update_asset_status_cache_value(
+            instance, asset_key, asset_graph.get_partitions_def(asset_key)
+        )
 
         assert cached_status
         assert (
@@ -82,9 +82,9 @@ def test_get_cached_partition_status_by_asset():
 
         asset_job.execute_in_process(instance=created_instance, partition_key="2022-02-01")
 
-        cached_status = get_and_update_asset_status_cache_values(
-            created_instance, asset_graph, asset_key
-        )[asset_key]
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
+        )
         assert cached_status
         assert cached_status.latest_storage_id
         assert cached_status.partitions_def_id
@@ -101,9 +101,9 @@ def test_get_cached_partition_status_by_asset():
 
         asset_job.execute_in_process(instance=created_instance, partition_key="2022-02-02")
 
-        cached_status = get_and_update_asset_status_cache_values(
-            created_instance, asset_graph, asset_key
-        )[asset_key]
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
+        )
         assert cached_status
         assert cached_status.latest_storage_id
         assert cached_status.partitions_def_id
@@ -126,9 +126,9 @@ def test_get_cached_partition_status_by_asset():
             static_partitions_def, asset1, asset_graph, asset_job
         )
         asset_job.execute_in_process(instance=created_instance, partition_key="a")
-        cached_status = get_and_update_asset_status_cache_values(
-            created_instance, asset_graph, asset_key
-        )[asset_key]
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
+        )
         assert cached_status
         assert cached_status.serialized_materialized_partition_subset
         materialized_partition_subset = static_partitions_def.deserialize_subset(
@@ -170,9 +170,9 @@ def test_multipartition_get_cached_partition_status():
             instance=created_instance, partition_key=MultiPartitionKey({"ab": "a", "12": "1"})
         )
 
-        cached_status = get_and_update_asset_status_cache_values(
-            created_instance, asset_graph, asset_key
-        )[asset_key]
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
+        )
         assert cached_status
         assert cached_status.latest_storage_id
         assert cached_status.partitions_def_id
@@ -190,9 +190,9 @@ def test_multipartition_get_cached_partition_status():
             instance=created_instance, partition_key=MultiPartitionKey({"ab": "a", "12": "2"})
         )
 
-        cached_status = get_and_update_asset_status_cache_values(
-            created_instance, asset_graph, asset_key
-        )[asset_key]
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
+        )
         assert cached_status
         assert cached_status.serialized_materialized_partition_subset
         materialized_keys = partitions_def.deserialize_subset(
@@ -228,9 +228,9 @@ def test_cached_status_on_wipe():
 
         asset_job.execute_in_process(instance=created_instance, partition_key="2022-02-01")
 
-        cached_status = get_and_update_asset_status_cache_values(
-            created_instance, asset_graph, asset_key
-        )[asset_key]
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
+        )
         assert cached_status
         assert cached_status.serialized_materialized_partition_subset
         materialized_keys = list(
@@ -260,7 +260,8 @@ def test_dynamic_partitions_status_not_cached():
 
         asset_job.execute_in_process(instance=created_instance, partition_key="a_partition")
 
-        cached_status = get_and_update_asset_status_cache_values(
-            created_instance, asset_graph, asset_key
-        )[asset_key]
+        cached_status = get_and_update_asset_status_cache_value(
+            created_instance, asset_key, asset_graph.get_partitions_def(asset_key)
+        )
+        assert cached_status
         assert cached_status.serialized_materialized_partition_subset is None

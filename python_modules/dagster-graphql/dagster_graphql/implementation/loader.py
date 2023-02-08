@@ -8,9 +8,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import (
-    CachingProjectedLogicalVersionResolver,
-)
+from dagster._core.definitions.logical_version import CachingStaleStatusResolver
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -18,10 +16,12 @@ from dagster._core.host_representation.external_data import (
     ExternalAssetDependency,
     ExternalAssetNode,
 )
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.scheduler.instigation import InstigatorType
 from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._utils.cached_method import cached_method
 
 
 class RepositoryDataType(Enum):
@@ -331,6 +331,20 @@ class BatchMaterializationLoader:
         }
 
 
+class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
+    """
+    A batch loader that caches the partition keys for a given dynamic partitions definition,
+    to avoid repeated calls to the database for the same partitions definition.
+    """
+
+    def __init__(self, instance: DagsterInstance):
+        self._instance = instance
+
+    @cached_method
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self._instance.get_dynamic_partitions(partitions_def_name)
+
+
 class CrossRepoAssetDependedByLoader:
     """
     A batch loader that computes cross-repository asset dependencies. Locates source assets
@@ -442,24 +456,5 @@ class CrossRepoAssetDependedByLoader:
         )
 
 
-class ProjectedLogicalVersionLoader:
-    """
-    A batch loader that computes the projected logical version for a set of asset keys. This is
-    necessary to avoid recomputation, since each asset's logical version is a function of its
-    dependency logical versions. We use similar functionality in core, so this loader simply proxies
-    to `CachingProjectedLogicalVersionResolver` and extracts the string value of the returned
-    `LogicalVersion` objects.
-    """
-
-    def __init__(
-        self,
-        instance: DagsterInstance,
-        repositories: Sequence[ExternalRepository],
-        key_to_node_map: Optional[Mapping[AssetKey, ExternalAssetNode]],
-    ):
-        self._caching_resolver = CachingProjectedLogicalVersionResolver(
-            instance, repositories, key_to_node_map
-        )
-
-    def get(self, asset_key: AssetKey) -> str:
-        return self._caching_resolver.get(asset_key).value
+# CachingStaleStatusResolver from core can be used directly as a GQL batch loader.
+StaleStatusLoader = CachingStaleStatusResolver

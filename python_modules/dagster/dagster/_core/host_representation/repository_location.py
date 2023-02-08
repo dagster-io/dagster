@@ -19,10 +19,10 @@ from dagster._api.snapshot_partition import (
 from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
-from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeProcessError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -61,8 +61,6 @@ from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils.merger import merge_dicts
-
-from .selector import PipelineSelector
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
@@ -160,13 +158,21 @@ class RepositoryLocation(AbstractContextManager):
 
     @abstractmethod
     def get_external_partition_config(
-        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
     ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
         pass
 
     @abstractmethod
     def get_external_partition_tags(
-        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
     ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -182,6 +188,7 @@ class RepositoryLocation(AbstractContextManager):
         repository_handle: RepositoryHandle,
         partition_set_name: str,
         partition_names: Sequence[str],
+        instance: DagsterInstance,
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -404,7 +411,11 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_partition_config(
-        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
     ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
@@ -414,19 +425,26 @@ class InProcessRepositoryLocation(RepositoryLocation):
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_name=partition_name,
+            instance=instance,
         )
 
     def get_external_partition_tags(
-        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
     ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
+        check.inst_param(instance, "instance", DagsterInstance)
 
         return get_partition_tags(
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_name=partition_name,
+            instance=instance,
         )
 
     def get_external_partition_names(
@@ -451,7 +469,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time,
+        scheduled_execution_time: datetime.datetime,  # actually a pendulum datetime
     ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -465,7 +483,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             scheduled_execution_timestamp=scheduled_execution_time.timestamp()
             if scheduled_execution_time
             else None,
-            scheduled_execution_timezone=scheduled_execution_time.timezone.name
+            scheduled_execution_timezone=scheduled_execution_time.timezone.name  # type: ignore
             if scheduled_execution_time
             else None,
         )
@@ -501,6 +519,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         repository_handle: RepositoryHandle,
         partition_set_name: str,
         partition_names: Sequence[str],
+        instance: DagsterInstance,
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
@@ -510,6 +529,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
             partition_names=partition_names,
+            instance=instance,
         )
 
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
@@ -754,25 +774,33 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_partition_config(
-        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
     ) -> "ExternalPartitionConfigData":
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
 
         return sync_get_external_partition_config_grpc(
-            self.client, repository_handle, partition_set_name, partition_name
+            self.client, repository_handle, partition_set_name, partition_name, instance
         )
 
     def get_external_partition_tags(
-        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
     ) -> "ExternalPartitionTagsData":
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
 
         return sync_get_external_partition_tags_grpc(
-            self.client, repository_handle, partition_set_name, partition_name
+            self.client, repository_handle, partition_set_name, partition_name, instance
         )
 
     def get_external_partition_names(
@@ -820,6 +848,8 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         last_run_key: Optional[str],
         cursor: Optional[str],
     ) -> "SensorExecutionData":
+        from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
+
         return sync_get_external_sensor_execution_data_grpc(
             self.client,
             instance,
@@ -835,15 +865,16 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         repository_handle: RepositoryHandle,
         partition_set_name: str,
         partition_names: Sequence[str],
+        instance: DagsterInstance,
     ) -> "ExternalPartitionSetExecutionParamData":
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.sequence_param(partition_names, "partition_names", of_type=str)
 
         return sync_get_external_partition_set_execution_param_data_grpc(
-            self.client, repository_handle, partition_set_name, partition_names
+            self.client, repository_handle, partition_set_name, partition_names, instance
         )
 
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")
-        return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)  # type: ignore
+        return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)

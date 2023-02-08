@@ -22,6 +22,11 @@ export type AssetNodeLiveFragment = {
   } | null;
   freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
   assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
+  partitionStats: {
+    __typename: 'PartitionStats';
+    numMaterialized: number;
+    numPartitions: number;
+  } | null;
 };
 
 export type AssetNodeLiveFreshnessPolicyFragment = {

@@ -28,7 +28,7 @@ from dagster._utils.backcompat import deprecation_warning
 from slack_sdk.web.client import WebClient
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.selector import (
+    from dagster._core.definitions.selector import (
         CodeLocationSelector,
         JobSelector,
         RepositorySelector,

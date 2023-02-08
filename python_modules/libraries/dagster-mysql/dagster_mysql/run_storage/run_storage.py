@@ -2,6 +2,7 @@ from typing import Mapping
 
 import dagster._check as check
 import sqlalchemy as db
+import sqlalchemy.dialects.mysql as db_dialects_mysql
 from dagster._core.storage.config import mysql_config
 from dagster._core.storage.runs import (
     DaemonHeartbeatsTable,
@@ -167,7 +168,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:
             conn.execute(
-                db.dialects.mysql.insert(DaemonHeartbeatsTable)
+                db_dialects_mysql.insert(DaemonHeartbeatsTable)
                 .values(
                     timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type,
@@ -186,7 +187,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         db_values = [{"key": k, "value": v} for k, v in pairs.items()]
 
         with self.connect() as conn:
-            insert_stmt = db.dialects.mysql.insert(KeyValueStoreTable).values(db_values)
+            insert_stmt = db_dialects_mysql.insert(KeyValueStoreTable).values(db_values)
             conn.execute(
                 insert_stmt.on_duplicate_key_update(
                     value=insert_stmt.inserted.value,

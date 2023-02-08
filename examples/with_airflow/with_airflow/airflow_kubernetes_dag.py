@@ -1,4 +1,4 @@
-# pylint: disable=pointless-statement
+# pyright: reportUnusedExpression=none
 
 from airflow import models
 from airflow.operators.dummy_operator import DummyOperator

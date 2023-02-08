@@ -130,8 +130,8 @@ def compute_anomalous_events(df_prices: pd.DataFrame, df_bollinger: pd.DataFrame
     """Compute anomalous (high or low) price events for a set of stocks over time."""
     df = pd.concat([df_prices, df_bollinger.add_prefix("bol_")], axis=1)
     df["event"] = pd.Series(pd.NA, index=df.index, dtype=EVENT_TYPE)
-    df["event"][df["close"] > df["bol_upper"]] = "high"  # type: ignore
-    df["event"][df["close"] < df["bol_lower"]] = "low"  # type: ignore
+    df["event"][df["close"] > df["bol_upper"]] = "high"
+    df["event"][df["close"] < df["bol_lower"]] = "low"
     return df[df["event"].notna()][["name", "date", "event"]].reset_index()
 
 

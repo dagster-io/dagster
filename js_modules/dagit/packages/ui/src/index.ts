@@ -47,6 +47,7 @@ export * from './components/Trace';
 export * from './components/Warning';
 export * from './components/styles';
 export * from './components/useSuggestionsForString';
+export * from './components/ErrorBoundary';
 
 // Global font styles, exported as styled-component components to render in
 // your app tree root. E.g. <GlobalInconsolata />

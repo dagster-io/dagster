@@ -1,5 +1,5 @@
-# isort: skip_file
-# pylint: disable=import-error
+# pyright: reportMissingImports=false
+# isort: off
 
 from dagster import (
     load_assets_from_package_module,

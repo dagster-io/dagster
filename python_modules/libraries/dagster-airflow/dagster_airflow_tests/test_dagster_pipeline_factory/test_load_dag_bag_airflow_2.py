@@ -3,9 +3,9 @@ import tempfile
 
 import pytest
 from airflow import __version__ as airflow_version
-from dagster_airflow.dagster_pipeline_factory import (
-    make_dagster_repo_from_airflow_dags_path,
-    make_dagster_repo_from_airflow_example_dags,
+from dagster_airflow import (
+    make_dagster_definitions_from_airflow_dags_path,
+    make_dagster_definitions_from_airflow_example_dags,
 )
 
 from dagster_airflow_tests.marks import requires_airflow_db
@@ -23,25 +23,22 @@ def test_make_repo(
     fn_arg_path,
     expected_job_names,
 ):
-    repo_name = "my_repo_name"
     with tempfile.TemporaryDirectory() as tmpdir_path:
         for path, content in path_and_content_tuples:
             with open(os.path.join(tmpdir_path, path), "wb") as f:
                 f.write(bytes(content.encode("utf-8")))
 
         repo = (
-            make_dagster_repo_from_airflow_dags_path(
+            make_dagster_definitions_from_airflow_dags_path(
                 tmpdir_path,
-                repo_name,
             )
             if fn_arg_path is None
-            else make_dagster_repo_from_airflow_dags_path(
-                os.path.join(tmpdir_path, fn_arg_path), repo_name
+            else make_dagster_definitions_from_airflow_dags_path(
+                os.path.join(tmpdir_path, fn_arg_path)
             )
-        )
+        ).get_repository_def()
 
         for job_name in expected_job_names:
-            assert repo.name == repo_name
             assert repo.has_job(job_name)
 
             job = repo.get_job(job_name)
@@ -55,30 +52,29 @@ def test_make_repo(
 
 @pytest.fixture(scope="module")
 def airflow_examples_repo():
-    return make_dagster_repo_from_airflow_example_dags()
+    return make_dagster_definitions_from_airflow_example_dags().get_repository_def()
 
 
 def get_examples_airflow_repo_params():
-    repo = make_dagster_repo_from_airflow_example_dags()
-    assert repo.name == "airflow_example_dags_repo"
+    repo = make_dagster_definitions_from_airflow_example_dags().get_repository_def()
     params = []
     no_job_run_dags = [
         # requires k8s environment to work
         # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
-        "airflow_example_kubernetes_executor",
+        "example_kubernetes_executor",
         # requires params to be passed in to work
-        "airflow_example_passing_params_via_test_command",
+        "example_passing_params_via_test_command",
         # requires template files to exist
-        "airflow_example_python_operator",
+        "example_python_operator",
         # requires email server to work
-        "airflow_example_dag_decorator",
+        "example_dag_decorator",
         # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
-        "airflow_example_trigger_target_dag",
-        "airflow_example_trigger_controller_dag",
+        "example_trigger_target_dag",
+        "example_trigger_controller_dag",
         # runs slow
-        "airflow_example_subdag_operator",
+        "example_subdag_operator",
         # runs slow
-        "airflow_example_sensors",
+        "example_sensors",
     ]
     for job_name in repo.job_names:
         params.append(

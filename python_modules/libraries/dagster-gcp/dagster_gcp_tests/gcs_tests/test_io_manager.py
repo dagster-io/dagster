@@ -32,7 +32,7 @@ from dagster._legacy import AssetGroup, DagsterRun
 from dagster_gcp.gcs import FakeGCSClient
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
-from google.cloud import storage  # type: ignore
+from google.cloud import storage
 
 
 @resource

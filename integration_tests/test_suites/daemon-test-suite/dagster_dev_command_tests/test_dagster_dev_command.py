@@ -79,6 +79,8 @@ def test_dagster_dev_command_no_dagster_home():
                             os.path.dirname(__file__),
                             "repo.py",
                         ),
+                        "--working-directory",
+                        os.path.dirname(__file__),
                         "--dagit-port",
                         str(dagit_port),
                     ],

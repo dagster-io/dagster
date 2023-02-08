@@ -134,11 +134,13 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         return row[0]
 
-    def store_asset_event(self, event):
+    def store_asset_event(self, event, event_id):
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
         # See SqlEventLogStorage.store_asset_event method for more details
 
-        values = self._get_asset_entry_values(event, self.has_secondary_index(ASSET_KEY_INDEX_COLS))
+        values = self._get_asset_entry_values(
+            event, event_id, self.has_secondary_index(ASSET_KEY_INDEX_COLS)
+        )
         with self.index_connection() as conn:
             if values:
                 conn.execute(

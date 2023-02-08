@@ -94,7 +94,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             output_config_schema=self.output_config_schema,
         )
 
-    @public  # type: ignore
+    @public
     @staticmethod
     def hardcoded_io_manager(
         value: "IOManager", description: Optional[str] = None
@@ -122,7 +122,7 @@ class IOManager(InputManager, OutputManager):
     ``handle_output`` to store an object and ``load_input`` to retrieve an object.
     """
 
-    @public  # type: ignore
+    @public
     @abstractmethod
     def load_input(self, context: "InputContext") -> Any:
         """User-defined method that loads an input to an op.
@@ -135,7 +135,7 @@ class IOManager(InputManager, OutputManager):
             Any: The data object.
         """
 
-    @public  # type: ignore
+    @public
     @abstractmethod
     def handle_output(self, context: "OutputContext", obj: Any) -> None:
         """User-defined method that stores an output of an op.

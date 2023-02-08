@@ -58,7 +58,7 @@ def s3_resource(context):
                 )
 
             @job(resource_defs={'s3': s3_resource})
-            def example_job(context):
+            def example_job():
                 example_s3_op()
 
             example_job.execute_in_process(

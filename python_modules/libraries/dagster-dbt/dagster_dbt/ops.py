@@ -38,7 +38,7 @@ Examples:
 # double-splatted, so we type-ignore the below op declarations.
 
 
-@op(  # type: ignore
+@op(
     **_DEFAULT_OP_PROPS,
     config_schema={
         "yield_asset_events": Field(
@@ -71,7 +71,7 @@ def dbt_build_op(context):
     yield Output(dbt_output)
 
 
-@op(  # type: ignore
+@op(
     **_DEFAULT_OP_PROPS,
     config_schema={
         "yield_materializations": Field(
@@ -101,32 +101,32 @@ def dbt_run_op(context):
     yield Output(dbt_output)
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_compile_op(context):
     return context.resources.dbt.compile()
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_ls_op(context):
     return context.resources.dbt.ls()
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_test_op(context):
     return context.resources.dbt.test()
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_snapshot_op(context):
     return context.resources.dbt.snapshot()
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_seed_op(context):
     return context.resources.dbt.seed()
 
 
-@op(**_DEFAULT_OP_PROPS)  # type: ignore
+@op(**_DEFAULT_OP_PROPS)
 def dbt_docs_generate_op(context):
     return context.resources.dbt.generate_docs()
 

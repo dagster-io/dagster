@@ -236,7 +236,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._serializable_load_error = None
 
         self._entry_point = (
-            frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))  # type: ignore
+            frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
             if entry_point is not None
             else DEFAULT_DAGSTER_ENTRY_POINT
         )
@@ -352,22 +352,22 @@ class DagsterApiServer(DagsterApiServicer):
             )
         return loaded_repos.definitions_by_name[external_repo_origin.repository_name]
 
-    def Ping(self, request, _context) -> api_pb2.PingReply:  # type: ignore  # fmt: skip
+    def Ping(self, request, _context) -> api_pb2.PingReply:
         echo = request.echo
         return api_pb2.PingReply(echo=echo)
 
-    def StreamingPing(self, request, _context) -> Iterator[api_pb2.StreamingPingEvent]:  # type: ignore  # fmt: skip
+    def StreamingPing(self, request, _context) -> Iterator[api_pb2.StreamingPingEvent]:
         sequence_length = request.sequence_length
         echo = request.echo
         for sequence_number in range(sequence_length):
             yield api_pb2.StreamingPingEvent(sequence_number=sequence_number, echo=echo)
 
-    def Heartbeat(self, request, _context) -> api_pb2.PingReply:  # type: ignore  # fmt: skip
+    def Heartbeat(self, request, _context) -> api_pb2.PingReply:
         self.__last_heartbeat_time = time.time()
         echo = request.echo
         return api_pb2.PingReply(echo=echo)
 
-    def GetServerId(self, _request, _context) -> api_pb2.GetServerIdReply:  # type: ignore  # fmt: skip
+    def GetServerId(self, _request, _context) -> api_pb2.GetServerIdReply:
         return api_pb2.GetServerIdReply(server_id=self._server_id)
 
     def ExecutionPlanSnapshot(self, request, _context):
@@ -389,9 +389,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def ListRepositories(
-        self, request, _context
-    ) -> api_pb2.ListRepositoriesReply:  # type: ignore  # fmt: skip
+    def ListRepositories(self, request, _context) -> api_pb2.ListRepositoriesReply:
         if self._serializable_load_error:
             return api_pb2.ListRepositoriesReply(
                 serialized_list_repositories_response_or_error=serialize_dagster_namedtuple(
@@ -414,9 +412,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_list_repositories_response_or_error=serialize_dagster_namedtuple(response)
         )
 
-    def ExternalPartitionNames(
-        self, request, _context
-    ) -> api_pb2.ExternalPartitionNamesReply:  # type: ignore  # fmt: skip
+    def ExternalPartitionNames(self, request, _context) -> api_pb2.ExternalPartitionNamesReply:
         partition_names_args = deserialize_as(
             request.serialized_partition_names_args,
             PartitionNamesArgs,
@@ -430,9 +426,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def ExternalNotebookData(
-        self, request, _context
-    ) -> api_pb2.ExternalNotebookDataReply:  # type: ignore  # fmt: skip
+    def ExternalNotebookData(self, request, _context) -> api_pb2.ExternalNotebookDataReply:
         notebook_path = request.notebook_path
         check.str_param(notebook_path, "notebook_path")
         return api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))
@@ -448,6 +442,7 @@ class DagsterApiServer(DagsterApiServicer):
                 self._get_repo_for_origin(args.repository_origin),
                 partition_set_name=args.partition_set_name,
                 partition_names=args.partition_names,
+                instance=DagsterInstance.from_ref(args.instance_ref),
             )
         )
 
@@ -462,13 +457,12 @@ class DagsterApiServer(DagsterApiServicer):
                     self._get_repo_for_origin(args.repository_origin),
                     args.partition_set_name,
                     args.partition_name,
+                    DagsterInstance.from_ref(args.instance_ref),
                 )
             )
         )
 
-    def ExternalPartitionTags(
-        self, request, _context
-    ) -> api_pb2.ExternalPartitionTagsReply:  # type: ignore  # fmt: skip
+    def ExternalPartitionTags(self, request, _context) -> api_pb2.ExternalPartitionTagsReply:
         partition_args = deserialize_as(request.serialized_partition_args, PartitionArgs)
 
         return api_pb2.ExternalPartitionTagsReply(
@@ -477,13 +471,14 @@ class DagsterApiServer(DagsterApiServicer):
                     self._get_repo_for_origin(partition_args.repository_origin),
                     partition_args.partition_set_name,
                     partition_args.partition_name,
+                    DagsterInstance.from_ref(partition_args.instance_ref),
                 )
             )
         )
 
     def ExternalPipelineSubsetSnapshot(
         self, request: Any, _context
-    ) -> api_pb2.ExternalPipelineSubsetSnapshotReply:  # type: ignore  # fmt: skip
+    ) -> api_pb2.ExternalPipelineSubsetSnapshotReply:
         pipeline_subset_snapshot_args = deserialize_as(
             request.serialized_pipeline_subset_snapshot_args,
             PipelineSubsetSnapshotArgs,
@@ -526,9 +521,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_repository_data=serialized_external_repository_data,
         )
 
-    def ExternalJob(
-        self, request, _context
-    ) -> api_pb2.ExternalJobReply:  # type: ignore  # fmt: skip
+    def ExternalJob(self, request, _context) -> api_pb2.ExternalJobReply:
         try:
             repository_origin = deserialize_as(
                 request.serialized_repository_origin,
@@ -616,7 +609,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         yield from self._split_serialized_data_into_chunk_events(serialized_sensor_data)
 
-    def ShutdownServer(self, request, _context) -> api_pb2.ShutdownServerReply:  # type: ignore  # fmt: skip
+    def ShutdownServer(self, request, _context) -> api_pb2.ShutdownServerReply:
         try:
             self._shutdown_once_executions_finish_event.set()
             return api_pb2.ShutdownServerReply(
@@ -664,7 +657,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def CanCancelExecution(self, request, _context) -> api_pb2.CanCancelExecutionReply:  # type: ignore  # fmt: skip
+    def CanCancelExecution(self, request, _context) -> api_pb2.CanCancelExecutionReply:
         can_cancel_execution_request = deserialize_as(
             request.serialized_can_cancel_execution_request,
             CanCancelExecutionRequest,
@@ -681,7 +674,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def StartRun(self, request, _context) -> api_pb2.StartRunReply:  # type: ignore  # fmt: skip
+    def StartRun(self, request, _context) -> api_pb2.StartRunReply:
         if self._shutdown_once_executions_finish_event.is_set():
             return api_pb2.StartRunReply(
                 serialized_start_run_result=serialize_dagster_namedtuple(
@@ -806,7 +799,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def GetCurrentRuns(self, request, context) -> api_pb2.GetCurrentRunsReply:  # type: ignore  # fmt: skip
+    def GetCurrentRuns(self, request, context) -> api_pb2.GetCurrentRunsReply:
         with self._execution_lock:
             return api_pb2.GetCurrentRunsReply(
                 serialized_current_runs=serialize_dagster_namedtuple(
@@ -1182,7 +1175,6 @@ class GrpcServerProcess:
     ):
         self.port = None
         self.socket = None
-        self.server_process = None
 
         self.loadable_target_origin = check.opt_inst_param(
             loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
@@ -1204,7 +1196,7 @@ class GrpcServerProcess:
         )
 
         if seven.IS_WINDOWS or force_port:
-            self.server_process, self.port = _open_server_process_on_dynamic_port(
+            server_process, self.port = _open_server_process_on_dynamic_port(
                 instance_ref=instance_ref,
                 location_name=location_name,
                 max_retries=max_retries,
@@ -1221,7 +1213,7 @@ class GrpcServerProcess:
         else:
             self.socket = safe_tempfile_path_unmanaged()
 
-            self.server_process = open_server_process(
+            server_process = open_server_process(
                 instance_ref=instance_ref,
                 location_name=location_name,
                 port=None,
@@ -1237,8 +1229,10 @@ class GrpcServerProcess:
                 env=env,
             )
 
-        if self.server_process is None:
+        if server_process is None:
             raise CouldNotStartServerProcess(port=self.port, socket=self.socket)
+        else:
+            self.server_process = server_process
 
     @property
     def pid(self):

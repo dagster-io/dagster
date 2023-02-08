@@ -149,7 +149,7 @@ class ConfigurableClass(ABC):
 
     @staticmethod
     @abstractmethod
-    def from_config_value(inst_data: Any, config_value: Mapping[str, object]) -> object:
+    def from_config_value(inst_data: Any, config_value: Mapping[str, Any]) -> object:
         """New up an instance of the ConfigurableClass from a validated config value.
 
         Called by ConfigurableClassData.rehydrate.

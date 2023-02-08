@@ -18,6 +18,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.selector import PartitionSetSelector, RepositorySelector
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
@@ -29,8 +30,6 @@ from dagster._serdes import (
     whitelist_for_serdes,
 )
 from dagster._serdes.serdes import WhitelistMap, unpack_inner_value
-
-from .selector import PartitionSetSelector, RepositorySelector
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.repository_location import (
@@ -247,10 +246,10 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
     ) -> Generator["RepositoryLocation", None, None]:
         from dagster._core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
 
-        from .grpc_server_registry import ProcessGrpcServerRegistry
+        from .grpc_server_registry import GrpcServerRegistry
         from .repository_location import GrpcServerRepositoryLocation
 
-        with ProcessGrpcServerRegistry(
+        with GrpcServerRegistry(
             instance=instance,
             reload_interval=0,
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,

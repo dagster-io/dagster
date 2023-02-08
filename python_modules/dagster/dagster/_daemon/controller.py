@@ -9,7 +9,7 @@ from typing import Callable, Iterator, Sequence
 import pendulum
 
 import dagster._check as check
-from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
@@ -60,7 +60,7 @@ def create_daemons_from_instance(instance):
 
 
 def create_daemon_grpc_server_registry(instance, code_server_log_level="INFO"):
-    return ProcessGrpcServerRegistry(
+    return GrpcServerRegistry(
         instance=instance,
         reload_interval=DAEMON_GRPC_SERVER_RELOAD_INTERVAL,
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,

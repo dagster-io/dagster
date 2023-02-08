@@ -19,7 +19,7 @@ if __name__ == "__main__":
         results = list(tqdm(executor.map(client.fetch_item_by_id, ids), total=len(ids)))
 
     items = {}
-    for x in results:
+    for x in filter(None, results):
         items[int(x["id"])] = x
 
     with gzip.open(file_relative_path(__file__, "../utils/snapshot.gzip"), "w") as f:

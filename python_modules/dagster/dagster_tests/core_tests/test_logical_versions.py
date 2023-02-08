@@ -8,7 +8,7 @@ def test_logical_version_construction():
     assert ver.value == "foo"
 
     with pytest.raises(ParameterCheckError):
-        LogicalVersion(100)  # type: ignore
+        LogicalVersion(100)
 
 
 def test_logical_version_equality():

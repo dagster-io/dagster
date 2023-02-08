@@ -1,29 +1,36 @@
 import inspect
 
-from dagster._config.config_type import ConfigType
+from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType
+from dagster._config.post_process import resolve_defaults
 from dagster._config.source import BoolSource, IntSource, StringSource
-from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
+from dagster._config.validate import validate_config
+from dagster._core.definitions.definition_config_schema import (
+    DefinitionConfigSchema,
+    IDefinitionConfigSchema,
+)
+from dagster._core.errors import DagsterInvalidConfigError
 
 try:
-    from functools import cached_property
+    from functools import cached_property  # type: ignore  # (py37 compat)
 except ImportError:
 
-    class cached_property:  # type: ignore[no-redef]
+    class cached_property:
         pass
 
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Type, cast
+from typing import Any, Optional, Type
 
 from pydantic import BaseModel, Extra
-from pydantic.fields import SHAPE_SINGLETON, ModelField
+from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_MAPPING, SHAPE_SINGLETON, ModelField
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster import Field, Shape
 from dagster._config.field_utils import (
     FIELD_NO_DEFAULT_PROVIDED,
+    Map,
     Permissive,
-    config_dictionary_from_values,
     convert_potential_field,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
@@ -76,20 +83,51 @@ class PermissiveConfig(Config):
     """
 
 
+# This is from https://github.com/dagster-io/dagster/pull/11470
+def _apply_defaults_to_schema_field(field: Field, additional_default_values: Any) -> Field:
+    # This work by validating the top-level config and then
+    # just setting it at that top-level field. Config fields
+    # can actually take nested values so we only need to set it
+    # at a single level
+
+    evr = validate_config(field.config_type, additional_default_values)
+
+    if not evr.success:
+        raise DagsterInvalidConfigError(
+            "Incorrect values passed to .configured",
+            evr.errors,
+            additional_default_values,
+        )
+
+    if field.default_provided:
+        # In the case where there is already a default config value
+        # we can apply "additional" defaults by actually invoking
+        # the config machinery. Meaning we pass the new_additional_default_values
+        # and then resolve the existing defaults over them. This preserves the default
+        # values that are not specified in new_additional_default_values and then
+        # applies the new value as the default value of the field in question.
+        defaults_processed_evr = resolve_defaults(field.config_type, additional_default_values)
+        check.invariant(
+            defaults_processed_evr.success, "Since validation passed, this should always work."
+        )
+        default_to_pass = defaults_processed_evr.value
+        return copy_with_default(field, default_to_pass)
+    else:
+        return copy_with_default(field, additional_default_values)
+
+
+def copy_with_default(old_field: Field, new_config_value: Any) -> Field:
+    return Field(
+        config=old_field.config_type,
+        default_value=new_config_value,
+        is_required=False,
+        description=old_field.description,
+    )
+
+
 def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSchema:
     """Return a new config schema configured with the passed in data"""
-    # We don't do anything with this resource definition, other than
-    # use it to construct configured schema
-    inner_resource_def = ResourceDefinition(lambda _: None, schema_field)
-    configured_resource_def = inner_resource_def.configured(
-        config_dictionary_from_values(
-            data,
-            schema_field,
-        ),
-    )
-    # this cast required to make mypy happy, which does not support Self
-    configured_resource_def = cast(ResourceDefinition, configured_resource_def)
-    return configured_resource_def.config_schema
+    return DefinitionConfigSchema(_apply_defaults_to_schema_field(schema_field, data))
 
 
 class Resource(
@@ -216,26 +254,74 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
         return self
 
 
+PydanticShapeType: TypeAlias = int
+
+MAPPING_TYPES = {SHAPE_MAPPING, SHAPE_DICT}
+MAPPING_KEY_TYPE_TO_SCALAR = {
+    StringSource: str,
+    IntSource: int,
+    BoolSource: bool,
+    ConfigFloatInstance: float,
+}
+
+
+def _wrap_config_type(
+    shape_type: PydanticShapeType, key_type: Optional[ConfigType], config_type: ConfigType
+) -> ConfigType:
+    """
+    Based on a Pydantic shape type, wraps a config type in the appropriate Dagster config wrapper.
+    For example, if the shape type is a Pydantic list, the config type will be wrapped in an Array.
+    """
+    if shape_type == SHAPE_SINGLETON:
+        return config_type
+    elif shape_type == SHAPE_LIST:
+        return Array(config_type)
+    elif shape_type in MAPPING_TYPES:
+        if key_type not in MAPPING_KEY_TYPE_TO_SCALAR:
+            raise NotImplementedError(
+                f"Pydantic shape type is a mapping, but key type {key_type} is not a valid "
+                "Map key type. Valid Map key types are: "
+                f"{', '.join([str(t) for t in MAPPING_KEY_TYPE_TO_SCALAR.keys()])}."
+            )
+        return Map(MAPPING_KEY_TYPE_TO_SCALAR[key_type], config_type)
+    else:
+        raise NotImplementedError(f"Pydantic shape type {shape_type} not supported.")
+
+
 def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
     """
     Transforms a Pydantic field into a corresponding Dagster config field.
     """
+    key_type = (
+        _config_type_for_pydantic_field(pydantic_field.key_field)
+        if pydantic_field.key_field
+        else None
+    )
     if _safe_is_subclass(pydantic_field.type_, Config):
-        return infer_schema_from_config_class(
-            pydantic_field.type_, description=pydantic_field.field_info.description
+        inferred_field = infer_schema_from_config_class(
+            pydantic_field.type_,
+            description=pydantic_field.field_info.description,
+        )
+        wrapped_config_type = _wrap_config_type(
+            shape_type=pydantic_field.shape,
+            config_type=inferred_field.config_type,
+            key_type=key_type,
         )
 
-    if pydantic_field.shape != SHAPE_SINGLETON:
-        raise NotImplementedError(f"Pydantic shape {pydantic_field.shape} not supported")
-
-    return Field(
-        config=_config_type_for_pydantic_field(pydantic_field),
-        description=pydantic_field.field_info.description,
-        is_required=_is_pydantic_field_required(pydantic_field),
-        default_value=pydantic_field.default
-        if pydantic_field.default
-        else FIELD_NO_DEFAULT_PROVIDED,
-    )
+        return Field(config=wrapped_config_type, description=inferred_field.description)
+    else:
+        config_type = _config_type_for_pydantic_field(pydantic_field)
+        wrapped_config_type = _wrap_config_type(
+            shape_type=pydantic_field.shape, config_type=config_type, key_type=key_type
+        )
+        return Field(
+            config=wrapped_config_type,
+            description=pydantic_field.field_info.description,
+            is_required=_is_pydantic_field_required(pydantic_field),
+            default_value=pydantic_field.default
+            if pydantic_field.default
+            else FIELD_NO_DEFAULT_PROVIDED,
+        )
 
 
 def _config_type_for_pydantic_field(pydantic_field: ModelField) -> ConfigType:
@@ -319,7 +405,8 @@ def _safe_is_subclass(cls: Any, possible_parent_cls: Type) -> bool:
 
 
 def infer_schema_from_config_class(
-    model_cls: Type[Config], description: Optional[str] = None
+    model_cls: Type[Config],
+    description: Optional[str] = None,
 ) -> Field:
     """
     Parses a structured config class and returns a corresponding Dagster config Field.
@@ -336,4 +423,5 @@ def infer_schema_from_config_class(
     shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
 
     docstring = model_cls.__doc__.strip() if model_cls.__doc__ else None
-    return Field(config=shape_cls(fields), description=description or docstring)
+
+    return Field(shape_cls(fields), description=description or docstring)

@@ -741,7 +741,7 @@ postgresql:
   # Used by init container to check that db is running. (Even if enabled:false)
   image:
     repository: "library/postgres"
-    tag: "9.6.21"
+    tag: "14.6"
     pullPolicy: IfNotPresent
 
   # set this PostgreSQL hostname when using an external PostgreSQL database

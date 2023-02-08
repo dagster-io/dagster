@@ -17,14 +17,40 @@ export type PartitionHealthQuery = {
           name: string;
           partitionKeys: Array<string>;
         }>;
-        partitionMaterializationCounts:
+        materializedPartitions:
+          | {__typename: 'DefaultPartitions'; materializedPartitions: Array<string>}
           | {
-              __typename: 'MaterializationCountGroupedByDimension';
-              materializationCountsGrouped: Array<Array<number>>;
+              __typename: 'MultiPartitions';
+              primaryDimensionName: string;
+              ranges: Array<{
+                __typename: 'MaterializedPartitionRange2D';
+                primaryDimStartKey: string;
+                primaryDimEndKey: string;
+                primaryDimStartTime: number | null;
+                primaryDimEndTime: number | null;
+                secondaryDim:
+                  | {__typename: 'DefaultPartitions'; materializedPartitions: Array<string>}
+                  | {
+                      __typename: 'TimePartitions';
+                      ranges: Array<{
+                        __typename: 'TimePartitionRange';
+                        startTime: number;
+                        endTime: number;
+                        startKey: string;
+                        endKey: string;
+                      }>;
+                    };
+              }>;
             }
           | {
-              __typename: 'MaterializationCountSingleDimension';
-              materializationCounts: Array<number>;
+              __typename: 'TimePartitions';
+              ranges: Array<{
+                __typename: 'TimePartitionRange';
+                startTime: number;
+                endTime: number;
+                startKey: string;
+                endKey: string;
+              }>;
             };
       }
     | {__typename: 'AssetNotFoundError'};

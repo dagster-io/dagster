@@ -1,3 +1,5 @@
+# pyright: reportMissingImports=none
+
 # start
 # __init__.py
 

@@ -29,7 +29,7 @@ class FileHandle(ABC):
     such as S3.
     """
 
-    @public  # type: ignore
+    @public
     @property
     @abstractmethod
     def path_desc(self) -> str:
@@ -43,13 +43,13 @@ class LocalFileHandle(FileHandle):
     def __init__(self, path: str):
         self._path = check.str_param(path, "path")
 
-    @public  # type: ignore
+    @public
     @property
     def path(self) -> str:
         """The file's path."""
         return self._path
 
-    @public  # type: ignore
+    @public
     @property
     def path_desc(self) -> str:
         """A representation of the file path for display purposes only."""
@@ -165,7 +165,7 @@ class FileManager(ABC):  # pylint: disable=no-init
         raise NotImplementedError()
 
 
-@resource(config_schema={"base_dir": Field(StringSource, is_required=False)})  # type: ignore  # (mypy bug)
+@resource(config_schema={"base_dir": Field(StringSource, is_required=False)})
 def local_file_manager(init_context):
     """FileManager that provides abstract access to a local filesystem.
 

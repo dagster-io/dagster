@@ -78,11 +78,13 @@ export const LatestMaterializationMetadata: React.FC<{
               'No materialization events'
             )}
           </td>
+          <td />
         </tr>
         {latest?.partition ? (
           <tr>
-            <td>Latest partition</td>
+            <td>Partition</td>
             <td>{latest ? latest.partition : 'No materialization events'}</td>
+            <td />
           </tr>
         ) : null}
         <tr>
@@ -97,6 +99,7 @@ export const LatestMaterializationMetadata: React.FC<{
               {liveData && <StaleTag liveData={liveData} />}
             </Box>
           </td>
+          <td />
         </tr>
         {latestAssetLineage?.length ? (
           <tr>
@@ -107,6 +110,7 @@ export const LatestMaterializationMetadata: React.FC<{
                 timestamp={latestEvent.timestamp}
               />
             </td>
+            <td />
           </tr>
         ) : null}
         {latestEvent?.metadataEntries.map((entry) => (
@@ -141,6 +145,10 @@ const MetadataTable = styled(Table)`
 export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
   fragment LatestMaterializationMetadataFragment on MaterializationEvent {
     partition
+    tags {
+      key
+      value
+    }
     runOrError {
       ... on PipelineRun {
         id

@@ -1,8 +1,9 @@
 import logging
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Callable
+from typing import Callable, cast
 
+from sqlalchemy.engine import Engine
 from sqlalchemy.pool import NullPool
 
 from dagster._core.storage.event_log.base import EventLogCursor
@@ -62,7 +63,8 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def has_table(self, table_name: str) -> bool:
         if not self._conn:
             self._create_connection()
-        return bool(self._engine.dialect.has_table(self._conn, table_name))
+        engine = cast(Engine, self._engine)
+        return bool(engine.dialect.has_table(self._conn, table_name))
 
     @property
     def inst_data(self):

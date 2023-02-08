@@ -138,7 +138,7 @@ class UserDefinedDagsterK8sConfig(
         }
 
     @classmethod
-    def from_dict(self, config_dict):
+    def from_dict(cls, config_dict):
         return UserDefinedDagsterK8sConfig(
             container_config=config_dict.get("container_config"),
             pod_template_spec_metadata=config_dict.get("pod_template_spec_metadata"),
@@ -715,6 +715,8 @@ def construct_dagster_k8s_job(
 
     user_defined_resources = container_config.pop("resources", {})
 
+    container_name = container_config.pop("name", "dagster")
+
     volume_mounts = job_config.volume_mounts + user_defined_k8s_volume_mounts
 
     resources = user_defined_resources if user_defined_resources else job_config.resources
@@ -724,7 +726,7 @@ def construct_dagster_k8s_job(
     container_config = merge_dicts(
         container_config,
         {
-            "name": "dagster",
+            "name": container_name,
             "image": job_image,
             "image_pull_policy": job_config.image_pull_policy,
             "env": [*env, *job_config.env, *user_defined_env_vars],

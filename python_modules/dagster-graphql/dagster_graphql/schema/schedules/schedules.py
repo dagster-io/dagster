@@ -11,11 +11,11 @@ from ..errors import (
     GrapheneScheduleNotFoundError,
 )
 from ..instigation import (
-    GrapheneFutureInstigationTick,
-    GrapheneFutureInstigationTicks,
+    GrapheneDryRunInstigationTick,
+    GrapheneDryRunInstigationTicks,
     GrapheneInstigationState,
 )
-from ..util import non_null_list
+from ..util import ResolveInfo, non_null_list
 
 
 class GrapheneSchedule(graphene.ObjectType):
@@ -30,13 +30,13 @@ class GrapheneSchedule(graphene.ObjectType):
     scheduleState = graphene.NonNull(GrapheneInstigationState)
     partition_set = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     futureTicks = graphene.NonNull(
-        GrapheneFutureInstigationTicks,
+        GrapheneDryRunInstigationTicks,
         cursor=graphene.Float(),
         limit=graphene.Int(),
         until=graphene.Float(),
     )
     futureTick = graphene.NonNull(
-        GrapheneFutureInstigationTick, tick_timestamp=graphene.NonNull(graphene.Int)
+        GrapheneDryRunInstigationTick, tick_timestamp=graphene.NonNull(graphene.Int)
     )
 
     class Meta:
@@ -71,14 +71,14 @@ class GrapheneSchedule(graphene.ObjectType):
             description=external_schedule.description,
         )
 
-    def resolve_id(self, _):
+    def resolve_id(self, _graphene_info):
         return self._external_schedule.get_external_origin_id()
 
-    def resolve_scheduleState(self, _graphene_info):
+    def resolve_scheduleState(self, _graphene_info: ResolveInfo):
         # forward the batch run loader to the instigation state, which provides the schedule runs
         return GrapheneInstigationState(self._schedule_state, self._batch_loader)
 
-    def resolve_partition_set(self, graphene_info):
+    def resolve_partition_set(self, graphene_info: ResolveInfo):
         from ..partition_sets import GraphenePartitionSet
 
         if self._external_schedule.partition_set_name is None:
@@ -122,16 +122,18 @@ class GrapheneSchedule(graphene.ObjectType):
             for _ in range(limit):
                 tick_times.append(next(time_iter).timestamp())
 
+        schedule_selector = self._external_schedule.schedule_selector
         future_ticks = [
-            GrapheneFutureInstigationTick(self._schedule_state, tick_time)
-            for tick_time in tick_times
+            GrapheneDryRunInstigationTick(schedule_selector, tick_time) for tick_time in tick_times
         ]
 
         new_cursor = tick_times[-1] + 1 if tick_times else cursor
-        return GrapheneFutureInstigationTicks(results=future_ticks, cursor=new_cursor)
+        return GrapheneDryRunInstigationTicks(results=future_ticks, cursor=new_cursor)
 
-    def resolve_futureTick(self, _graphene_info, tick_timestamp):
-        return GrapheneFutureInstigationTick(self._schedule_state, float(tick_timestamp))
+    def resolve_futureTick(self, _graphene_info, tick_timestamp: int):
+        return GrapheneDryRunInstigationTick(
+            self._external_schedule.schedule_selector, float(tick_timestamp)
+        )
 
 
 class GrapheneScheduleOrError(graphene.Union):

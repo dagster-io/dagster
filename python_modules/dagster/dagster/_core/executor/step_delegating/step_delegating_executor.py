@@ -225,7 +225,7 @@ class StepDelegatingExecutor(Executor):
                 for dagster_event in self._pop_events(
                     plan_context.instance,
                     plan_context.run_id,
-                ):  # type: ignore
+                ):
                     yield dagster_event
                     # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
                     # and yields them.

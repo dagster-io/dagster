@@ -1,9 +1,14 @@
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
+from dagster._core.definitions.selector import (
+    PipelineSelector,
+    RepositorySelector,
+    ScheduleSelector,
+)
 from dagster._core.workspace.permissions import Permissions
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
-from graphene import ResolveInfo
+
+from dagster_graphql.schema.util import ResolveInfo
 
 from .loader import RepositoryScopedBatchLoader
 from .utils import (
@@ -15,11 +20,10 @@ from .utils import (
 
 
 @capture_error
-def start_schedule(graphene_info, schedule_selector):
+def start_schedule(graphene_info: ResolveInfo, schedule_selector):
     from ..schema.instigation import GrapheneInstigationState
     from ..schema.schedules import GrapheneScheduleStateResult
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
     location = graphene_info.context.get_repository_location(schedule_selector.location_name)
     repository = location.get_repository(schedule_selector.repository_name)
@@ -31,11 +35,10 @@ def start_schedule(graphene_info, schedule_selector):
 
 
 @capture_error
-def stop_schedule(graphene_info, schedule_origin_id, schedule_selector_id):
+def stop_schedule(graphene_info: ResolveInfo, schedule_origin_id, schedule_selector_id):
     from ..schema.instigation import GrapheneInstigationState
     from ..schema.schedules import GrapheneScheduleStateResult
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     instance = graphene_info.context.instance
 
     external_schedules = {
@@ -66,7 +69,7 @@ def stop_schedule(graphene_info, schedule_origin_id, schedule_selector_id):
 
 
 @capture_error
-def get_scheduler_or_error(graphene_info):
+def get_scheduler_or_error(graphene_info: ResolveInfo):
     from ..schema.errors import GrapheneSchedulerNotDefinedError
     from ..schema.schedules import GrapheneScheduler
 
@@ -79,10 +82,9 @@ def get_scheduler_or_error(graphene_info):
 
 
 @capture_error
-def get_schedules_or_error(graphene_info, repository_selector):
+def get_schedules_or_error(graphene_info: ResolveInfo, repository_selector):
     from ..schema.schedules import GrapheneSchedule, GrapheneSchedules
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
@@ -108,10 +110,9 @@ def get_schedules_or_error(graphene_info, repository_selector):
     return GrapheneSchedules(results=results)
 
 
-def get_schedules_for_pipeline(graphene_info, pipeline_selector):
+def get_schedules_for_pipeline(graphene_info: ResolveInfo, pipeline_selector):
     from ..schema.schedules import GrapheneSchedule
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
 
     location = graphene_info.context.get_repository_location(pipeline_selector.location_name)
@@ -133,11 +134,10 @@ def get_schedules_for_pipeline(graphene_info, pipeline_selector):
 
 
 @capture_error
-def get_schedule_or_error(graphene_info, schedule_selector):
+def get_schedule_or_error(graphene_info: ResolveInfo, schedule_selector):
     from ..schema.errors import GrapheneScheduleNotFoundError
     from ..schema.schedules import GrapheneSchedule
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
     location = graphene_info.context.get_repository_location(schedule_selector.location_name)
     repository = location.get_repository(schedule_selector.repository_name)
@@ -155,8 +155,8 @@ def get_schedule_or_error(graphene_info, schedule_selector):
     return GrapheneSchedule(external_schedule, schedule_state)
 
 
-def get_schedule_next_tick(graphene_info, schedule_state):
-    from ..schema.instigation import GrapheneFutureInstigationTick
+def get_schedule_next_tick(graphene_info: ResolveInfo, schedule_state):
+    from ..schema.instigation import GrapheneDryRunInstigationTick
 
     if not schedule_state.is_running:
         return None
@@ -183,4 +183,4 @@ def get_schedule_next_tick(graphene_info, schedule_state):
     )
 
     next_timestamp = next(time_iter).timestamp()
-    return GrapheneFutureInstigationTick(schedule_state, next_timestamp)
+    return GrapheneDryRunInstigationTick(external_schedule.schedule_selector, next_timestamp)

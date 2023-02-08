@@ -3,9 +3,9 @@ repos:
   rev: refs/tags/22.12.0:refs/tags/22.12.0
   hooks:
     - id: black-jupyter
+      # Make sure black reads its config from root `pyproject.toml`
+      args: ["--config", "pyproject.toml"]
 - repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: v0.0.212
+  rev: v0.0.241
   hooks:
     - id: ruff
-      # Respect `exclude` and `extend-exclude` settings.
-      args: ["--force-exclude"]

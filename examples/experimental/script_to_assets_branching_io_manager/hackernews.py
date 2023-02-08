@@ -22,7 +22,7 @@ def extract() -> pd.DataFrame:
     return hackernews_topstories
 
 
-def transform(hackernews_topstories: pd.DataFrame) -> bytes:
+def transform(hackernews_topstories: pd.DataFrame) -> str:
     stopwords = set(STOPWORDS)
     stopwords.update(["Ask", "Show", "HN"])
     titles_text = " ".join([str(item) for item in hackernews_topstories["title"]])

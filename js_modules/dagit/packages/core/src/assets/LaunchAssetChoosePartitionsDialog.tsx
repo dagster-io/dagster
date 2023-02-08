@@ -10,6 +10,8 @@ import {
   DialogHeader,
   Tooltip,
   Alert,
+  Checkbox,
+  Icon,
 } from '@dagster-io/ui';
 import reject from 'lodash/reject';
 import React from 'react';
@@ -45,14 +47,18 @@ import {
 } from '../partitions/BackfillMessaging';
 import {Section} from '../partitions/BackfillSelector';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
-import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
 import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
+import {DagsterTag} from '../runs/RunTag';
 import {RepoAddress} from '../workspace/types';
 
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
 import {explodePartitionKeysInSelection, mergedAssetHealth} from './MultipartitioningSupport';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
+import {
+  LaunchAssetChoosePartitionsQuery,
+  LaunchAssetChoosePartitionsQueryVariables,
+} from './types/LaunchAssetChoosePartitionsDialog.types';
 import {PartitionDefinitionForLaunchAssetFragment} from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
@@ -110,7 +116,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
   const [launching, setLaunching] = React.useState(false);
-
   const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
   const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
 
@@ -121,15 +126,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const mergedHealth = React.useMemo(() => mergedAssetHealth(assetHealth), [assetHealth]);
 
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
+  const [missingOnly, setMissingOnly] = React.useState(true);
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: knownDimensions.map((d) => d.name),
     modifyQueryString: false,
     assetHealth: mergedHealth,
   });
-
-  const [stateFilters, setStateFilters] = React.useState<PartitionState[]>([
-    PartitionState.MISSING,
-  ]);
 
   const keysInSelection = React.useMemo(
     () =>
@@ -147,18 +149,38 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     [selections, mergedHealth],
   );
 
+  const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = React.useState(false);
+  const canLaunchWithRangesAsTags =
+    selections.every((s) => s.selectedRanges.length === 1) &&
+    selections.some((s) => s.selectedKeys.length > 1);
+
   const keysFiltered = React.useMemo(
-    () => keysInSelection.filter((key) => stateFilters.includes(key.state)),
-    [keysInSelection, stateFilters],
+    () =>
+      missingOnly
+        ? keysInSelection.filter((key) => key.state === PartitionState.MISSING)
+        : keysInSelection,
+    [keysInSelection, missingOnly],
   );
 
   const client = useApolloClient();
   const history = useHistory();
+  const instanceResult = useQuery<
+    LaunchAssetChoosePartitionsQuery,
+    LaunchAssetChoosePartitionsQueryVariables
+  >(LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY);
+  const instance = instanceResult.data?.instance;
+
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
+  const launchAsBackfill = !launchWithRangesAsTags && keysFiltered.length !== 1;
 
-  const instanceResult = useQuery(LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY);
-  const instance = instanceResult.data?.instance;
+  React.useEffect(() => {
+    !canLaunchWithRangesAsTags && setLaunchWithRangesAsTags(false);
+  }, [canLaunchWithRangesAsTags]);
+
+  React.useEffect(() => {
+    launchWithRangesAsTags && setMissingOnly(false);
+  }, [launchWithRangesAsTags]);
 
   // Find the partition set name. This seems like a bit of a hack, unclear
   // how it would work if there were two different partition spaces in the asset job
@@ -176,106 +198,122 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       return;
     }
 
-    if (keysFiltered.length === 1) {
-      const {data: tagAndConfigData} = await client.query<
-        ConfigPartitionSelectionQuery,
-        ConfigPartitionSelectionQueryVariables
-      >({
-        query: CONFIG_PARTITION_SELECTION_QUERY,
-        fetchPolicy: 'network-only',
-        variables: {
+    if (launchAsBackfill) {
+      await onLaunchAsBackfill();
+    } else {
+      await onLaunchAsSingleRun();
+    }
+    setLaunching(false);
+  };
+
+  const onLaunchAsSingleRun = async () => {
+    const {data: tagAndConfigData} = await client.query<
+      ConfigPartitionSelectionQuery,
+      ConfigPartitionSelectionQueryVariables
+    >({
+      query: CONFIG_PARTITION_SELECTION_QUERY,
+      fetchPolicy: 'network-only',
+      variables: {
+        repositorySelector: {
+          repositoryLocationName: repoAddress.location,
+          repositoryName: repoAddress.name,
+        },
+        partitionSetName: partitionSet!.name,
+        partitionName: keysFiltered[0].partitionKey,
+      },
+    });
+
+    if (
+      !tagAndConfigData ||
+      !tagAndConfigData.partitionSetOrError ||
+      tagAndConfigData.partitionSetOrError.__typename !== 'PartitionSet' ||
+      !tagAndConfigData.partitionSetOrError.partition
+    ) {
+      return;
+    }
+
+    const {partition} = tagAndConfigData.partitionSetOrError;
+
+    if (partition.tagsOrError.__typename === 'PythonError') {
+      showCustomAlert({
+        title: 'Unable to load tags',
+        body: <PythonErrorInfo error={partition.tagsOrError} />,
+      });
+      return;
+    }
+    if (partition.runConfigOrError.__typename === 'PythonError') {
+      showCustomAlert({
+        title: 'Unable to load tags',
+        body: <PythonErrorInfo error={partition.runConfigOrError} />,
+      });
+      return;
+    }
+
+    const runConfigData = partition.runConfigOrError.yaml || '';
+    let allTags = [...partition.tagsOrError.results, ...tags];
+
+    if (launchWithRangesAsTags) {
+      allTags = allTags.filter((t) => !t.key.startsWith(DagsterTag.Partition));
+      allTags.push({
+        key: DagsterTag.AssetPartitionRangeStart,
+        value: keysInSelection[0].partitionKey,
+      });
+      allTags.push({
+        key: DagsterTag.AssetPartitionRangeEnd,
+        value: keysInSelection[keysInSelection.length - 1].partitionKey,
+      });
+    }
+
+    const result = await launchWithTelemetry(
+      {
+        executionParams: {
+          ...executionParamsForAssetJob(repoAddress, assetJobName, assets, allTags),
+          runConfigData,
+          mode: partition.mode,
+        },
+      },
+      'toast',
+    );
+
+    if (result?.__typename === 'LaunchRunSuccess') {
+      setOpen(false);
+    }
+  };
+
+  const onLaunchAsBackfill = async () => {
+    const selectorUnlessGraph:
+      | LaunchBackfillParams['selector']
+      | undefined = !isHiddenAssetGroupJob(assetJobName)
+      ? {
+          partitionSetName: partitionSet!.name,
           repositorySelector: {
             repositoryLocationName: repoAddress.location,
             repositoryName: repoAddress.name,
           },
-          partitionSetName: partitionSet.name,
-          partitionName: keysFiltered[0].partitionKey,
+        }
+      : undefined;
+
+    const {data: launchBackfillData} = await client.mutate<
+      LaunchPartitionBackfillMutation,
+      LaunchPartitionBackfillMutationVariables
+    >({
+      mutation: LAUNCH_PARTITION_BACKFILL_MUTATION,
+      variables: {
+        backfillParams: {
+          selector: selectorUnlessGraph,
+          assetSelection: assets.map((a) => ({path: a.assetKey.path})),
+          partitionNames: keysFiltered.map((k) => k.partitionKey),
+          fromFailure: false,
+          tags,
         },
-      });
+      },
+    });
 
-      if (
-        !tagAndConfigData ||
-        !tagAndConfigData.partitionSetOrError ||
-        tagAndConfigData.partitionSetOrError.__typename !== 'PartitionSet' ||
-        !tagAndConfigData.partitionSetOrError.partition
-      ) {
-        return;
-      }
-
-      const {partition} = tagAndConfigData.partitionSetOrError;
-
-      if (partition.tagsOrError.__typename === 'PythonError') {
-        setLaunching(false);
-        showCustomAlert({
-          title: 'Unable to load tags',
-          body: <PythonErrorInfo error={partition.tagsOrError} />,
-        });
-        return;
-      }
-      if (partition.runConfigOrError.__typename === 'PythonError') {
-        setLaunching(false);
-        showCustomAlert({
-          title: 'Unable to load tags',
-          body: <PythonErrorInfo error={partition.runConfigOrError} />,
-        });
-        return;
-      }
-
-      const allTags = [...partition.tagsOrError.results, ...tags];
-      const runConfigData = partition.runConfigOrError.yaml || '';
-
-      const result = await launchWithTelemetry(
-        {
-          executionParams: {
-            ...executionParamsForAssetJob(repoAddress, assetJobName, assets, allTags),
-            runConfigData,
-            mode: partition.mode,
-          },
-        },
-        'toast',
-      );
-
-      setLaunching(false);
-      if (result?.__typename === 'LaunchRunSuccess') {
-        setOpen(false);
-      }
+    if (launchBackfillData?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
+      showBackfillSuccessToast(history, launchBackfillData?.launchPartitionBackfill.backfillId);
+      setOpen(false);
     } else {
-      const selectorUnlessGraph:
-        | LaunchBackfillParams['selector']
-        | undefined = !isHiddenAssetGroupJob(assetJobName)
-        ? {
-            partitionSetName: partitionSet.name,
-            repositorySelector: {
-              repositoryLocationName: repoAddress.location,
-              repositoryName: repoAddress.name,
-            },
-          }
-        : undefined;
-
-      const {data: launchBackfillData} = await client.mutate<
-        LaunchPartitionBackfillMutation,
-        LaunchPartitionBackfillMutationVariables
-      >({
-        mutation: LAUNCH_PARTITION_BACKFILL_MUTATION,
-        variables: {
-          backfillParams: {
-            selector: selectorUnlessGraph,
-            assetSelection: assets.map((a) => ({path: a.assetKey.path})),
-            partitionNames: keysFiltered.map((k) => k.partitionKey),
-            fromFailure: false,
-            tags,
-          },
-        },
-      });
-
-      setLaunching(false);
-
-      if (launchBackfillData?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
-        showBackfillSuccessToast(history, launchBackfillData?.launchPartitionBackfill.backfillId);
-        setOpen(false);
-      } else {
-        showBackfillErrorToast(launchBackfillData);
-      }
+      showBackfillErrorToast(launchBackfillData);
     }
   };
 
@@ -308,12 +346,37 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               }
             />
           ))}
-          <PartitionStateCheckboxes
-            partitionKeysForCounts={keysInSelection}
-            allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
-            value={stateFilters}
-            onChange={setStateFilters}
-          />
+          <Box flex={{justifyContent: 'space-between'}}>
+            <Checkbox
+              label="Missing partitions only"
+              checked={missingOnly}
+              disabled={launchWithRangesAsTags}
+              onChange={() => setMissingOnly(!missingOnly)}
+            />
+
+            <Checkbox
+              label={
+                <Box flex={{alignItems: 'center', gap: 4}}>
+                  Pass partition ranges to single run
+                  <Tooltip
+                    position="top-left"
+                    content={
+                      <div style={{maxWidth: 300}}>
+                        This option requires that your assets are written to operate on a partition
+                        key range via context.asset_partition_key_range_for_output or
+                        context.asset_partitions_time_window_for_output.
+                      </div>
+                    }
+                  >
+                    <Icon name="info" color={Colors.Gray500} />
+                  </Tooltip>
+                </Box>
+              }
+              checked={launchWithRangesAsTags}
+              disabled={!canLaunchWithRangesAsTags}
+              onChange={() => setLaunchWithRangesAsTags(!launchWithRangesAsTags)}
+            />
+          </Box>
         </Box>
 
         {previewCount > 0 && (
@@ -379,15 +442,15 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             ) : (
               <div>
                 <Button onClick={() => setTagEditorOpen(true)}>
-                  {keysFiltered.length > 1 ? 'Add tags to backfill runs' : 'Add tags'}
+                  {launchAsBackfill ? 'Add tags to backfill runs' : 'Add tags'}
                 </Button>
               </div>
             )}
           </Section>
 
-          {instance && keysFiltered.length > 1 && <DaemonNotRunningAlert instance={instance} />}
+          {instance && launchAsBackfill && <DaemonNotRunningAlert instance={instance} />}
 
-          {instance && keysFiltered.length > 1 && <UsingDefaultLauncherAlert instance={instance} />}
+          {instance && launchAsBackfill && <UsingDefaultLauncherAlert instance={instance} />}
         </Box>
       </DialogBody>
 
@@ -397,7 +460,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         <Button intent="none" onClick={() => setOpen(false)}>
           Cancel
         </Button>
-        {keysFiltered.length !== 1 && !canLaunchPartitionBackfill.enabled ? (
+        {launchAsBackfill && !canLaunchPartitionBackfill.enabled ? (
           <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
             <Button disabled>{`Launch ${keysFiltered.length}-Run Backfill`}</Button>
           </Tooltip>
@@ -410,7 +473,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           >
             {launching
               ? 'Launching...'
-              : keysFiltered.length !== 1
+              : launchAsBackfill
               ? `Launch ${keysFiltered.length}-Run Backfill`
               : `Launch 1 Run`}
           </Button>

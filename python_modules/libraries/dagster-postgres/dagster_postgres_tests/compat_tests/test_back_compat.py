@@ -774,3 +774,34 @@ def test_add_cached_status_data_column(hostname, conn_string):
             instance.upgrade()
             assert instance.can_cache_asset_status_data() is True
             assert {"cached_status_data"} <= get_columns(instance, "asset_keys")
+
+
+def test_add_dynamic_partitions_table(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__,
+            "snapshot_1_0_17_pre_add_cached_status_data_column/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "dynamic_partitions" not in get_tables(instance)
+
+            instance.wipe()
+
+            with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
+                instance.get_dynamic_partitions("foo")
+
+            instance.upgrade()
+            assert "dynamic_partitions" in get_tables(instance)
+            assert instance.get_dynamic_partitions("foo") == []

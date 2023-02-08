@@ -229,6 +229,7 @@ export const getAssetNodeDimensions = (def: {
   opNames: string[];
   isSource: boolean;
   isObservable: boolean;
+  isPartitioned: boolean;
   graphName: string | null;
   description?: string | null;
   computeKind: string | null;
@@ -236,14 +237,14 @@ export const getAssetNodeDimensions = (def: {
   const width = 255;
 
   if (def.isSource && !def.isObservable) {
-    return {width, height: 40};
+    return {width, height: 72};
   } else {
-    let height = 60; // name + description
+    let height = 70; // name + description
 
     if (def.isSource) {
-      height += 36; // observed
+      height += 30; // observed
     } else {
-      height += 36; // status row
+      height += 26; // status row
     }
     if (def.computeKind) {
       height += 30; // tag
