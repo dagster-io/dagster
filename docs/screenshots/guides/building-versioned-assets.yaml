@@ -1,0 +1,45 @@
+- id: simple-asset-in-catalog.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/building_versioned_assets/vanilla_asset.py
+  route: /workspace
+  vetted: false
+  steps:
+    - materialize `a_number`
+    - go to asset catalog
+    - expand "System tags"
+
+- id: simple-asset-with-code-version-in-catalog.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/building_versioned_assets/vanilla_asset_with_code_version.py
+  route: /workspace
+  vetted: false
+  steps:
+    - materialize `versioned_number`
+    - go to asset catalog
+    - expand "System tags"
+
+- id: simple-asset-with-code-version-in-catalog-v2.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/building_versioned_assets/vanilla_asset_with_code_version.py
+  route: /workspace
+  vetted: false
+  steps:
+    - materialize `versioned_number`
+    - change the `code_version` of `vanilla_asset_with_code_version`
+    - reload code location
+    - (change `code_version` back after screenshot)
+
+- id: dependencies-code-version-only.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/building_versioned_assets/dependencies_code_version_only.py
+  route: /workspace
+  vetted: false
+  steps:
+    - materialize both assets
+    - change the `code_version` of `versioned_number`
+    - reload code location
+    - (change `code_version` back after screenshot)
+
+- id: source-asset-in-catalog.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/building_versioned_assets/observable_source_asset_path_with_non_argument_deps.py
+  route: /workspace
+  vetted: false
+  steps:
+    - observe source assets
+    - view asset catalog entry for `input_number`

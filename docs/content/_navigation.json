@@ -721,6 +721,10 @@
           {
             "title": "Airbyte ingestion as code",
             "path": "/guides/dagster/airbyte-ingestion-as-code"
+          },
+          {
+            "title": "Building and memoizing versioned assets",
+            "path": "/guides/dagster/building-and-memoizing-versioned-assets"
           }
         ]
       }
