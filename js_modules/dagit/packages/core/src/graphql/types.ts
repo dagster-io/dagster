@@ -436,6 +436,7 @@ export type DagitMutation = {
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   resumePartitionBackfill: ResumeBackfillResult;
+  sensorDryRun: SensorDryRunResult;
   setNuxSeen: Scalars['Boolean'];
   setSensorCursor: SensorOrError;
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
@@ -495,6 +496,11 @@ export type DagitMutationReloadRepositoryLocationArgs = {
 
 export type DagitMutationResumePartitionBackfillArgs = {
   backfillId: Scalars['String'];
+};
+
+export type DagitMutationSensorDryRunArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  selectorData: SensorSelector;
 };
 
 export type DagitMutationSetSensorCursorArgs = {
@@ -3272,6 +3278,8 @@ export type SensorData = {
   lastRunKey: Maybe<Scalars['String']>;
   lastTickTimestamp: Maybe<Scalars['Float']>;
 };
+
+export type SensorDryRunResult = DryRunInstigationTick | PythonError | SensorNotFoundError;
 
 export type SensorMetadata = {
   __typename: 'SensorMetadata';
