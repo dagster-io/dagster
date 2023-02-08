@@ -212,6 +212,8 @@ def test_time_window_partitioned_asset(tmp_path):
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()
 
+    assert False
+
 
 @asset(
     partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),
@@ -277,14 +279,14 @@ def test_static_partitioned_asset(tmp_path):
 @asset(
     partitions_def=MultiPartitionsDefinition(
         {
-            "date": DailyPartitionsDefinition(start_date="2022-01-01"),
+            "time": DailyPartitionsDefinition(start_date="2022-01-01"),
             "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
         }
     ),
     key_prefix=["my_schema"],
     metadata={"partition_expr": {
-        "date": "DATE",
-        "color": "COLOR"
+        "time": "time",
+        "color": "color"
     }},
     config_schema={"value": str},
 )
@@ -294,7 +296,7 @@ def multi_partitioned(context):
     return pd.DataFrame(
         {
             "color": [partition["color"], partition["color"], partition["color"]],
-            "date":[partition["date"], partition["date"], partition["date"]],
+            "time":[partition["time"], partition["time"], partition["time"]],
             "a": [value, value, value],
         }
     )
@@ -308,52 +310,63 @@ def test_multi_partitioned_asset(tmp_path):
 
     materialize(
         [multi_partitioned],
-        partition_key=MultiPartitionKey({"date": "2022-01-01", "color": "red"}),
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
         resources=resource_defs,
         run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    print("AFTER MATERIALIZING")
     print(out_df)
     assert out_df["a"].tolist() == ["1", "1", "1"]
     duckdb_conn.close()
 
     materialize(
         [multi_partitioned],
-        partition_key=MultiPartitionKey({"date": "2022-01-01", "color": "blue"}),
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
         resources=resource_defs,
         run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "2"}}}},
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    print("AFTER MATERIALIZING")
     print(out_df)
     assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
     duckdb_conn.close()
 
     materialize(
         [multi_partitioned],
-        partition_key=MultiPartitionKey({"date": "2022-01-02", "color": "red"}),
+        partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "red"}),
         resources=resource_defs,
         run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "3"}}}},
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    print("AFTER MATERIALIZING")
     print(out_df)
     assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()
 
     materialize(
         [multi_partitioned],
-        partition_key=MultiPartitionKey({"date": "2022-01-01", "color": "red"}),
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
         resources=resource_defs,
         run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "4"}}}},
     )
 
-    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))gi
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    print("AFTER MATERIALIZING")
     print(out_df)
+
+    print("RANDOM")
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned WHERE time >= '2022-01-01 00:00:00' AND time < '2022-01-02 00:00:00'").fetch_df()
+    print(out_df)
+
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
     duckdb_conn.close()
+
+    assert False

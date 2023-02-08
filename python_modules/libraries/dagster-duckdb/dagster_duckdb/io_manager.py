@@ -107,6 +107,9 @@ class DuckDbClient(DbClient):
         conn = _connect_duckdb(context).cursor()
         try:
             conn.execute(_get_cleanup_statement(table_slice))
+            df = conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+            print("JUST DELETED")
+            print(df)
         except duckdb.CatalogException:
             # table doesn't exist yet, so ignore the error
             pass
