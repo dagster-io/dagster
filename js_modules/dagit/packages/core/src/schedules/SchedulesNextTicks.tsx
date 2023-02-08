@@ -85,14 +85,14 @@ export const SchedulesNextTicks: React.FC<{
     const minMaxTimestamp = Math.min(
       ...futureTickSchedules.map(
         (schedule) =>
-          schedule.futureTicks.results[schedule.futureTicks.results.length - 1].timestamp,
+          schedule.futureTicks.results[schedule.futureTicks.results.length - 1].timestamp!,
       ),
     );
 
     futureTickSchedules.forEach((schedule) => {
       schedule.futureTicks.results.forEach((tick) => {
-        if (tick.timestamp <= minMaxTimestamp) {
-          nextTicks.push({schedule, timestamp: tick.timestamp, repoAddress});
+        if (tick.timestamp! <= minMaxTimestamp) {
+          nextTicks.push({schedule, timestamp: tick.timestamp!, repoAddress});
         }
       });
     });

@@ -29,6 +29,7 @@ from dagster._core.workspace.workspace import (
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import (
+    CachingDynamicPartitionsLoader,
     RepositoryScopedBatchLoader,
     StaleStatusLoader,
 )
@@ -235,6 +236,7 @@ class GrapheneRepository(graphene.ObjectType):
             instance=instance,
             asset_graph=lambda: ExternalAssetGraph.from_external_repository(repository),
         )
+        self._dynamic_partitions_loader = CachingDynamicPartitionsLoader(instance)
         super().__init__(name=repository.name)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
@@ -317,6 +319,7 @@ class GrapheneRepository(graphene.ObjectType):
                 self._repository,
                 external_asset_node,
                 stale_status_loader=self._stale_status_loader,
+                dynamic_partitions_loader=self._dynamic_partitions_loader,
             )
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]

@@ -112,7 +112,7 @@ export const SensorDetails: React.FC<{
             </Tag>
             {sensor.nextTick && daemonHealth && status === InstigationStatus.RUNNING ? (
               <Tag icon="timer">
-                Next tick: <TimestampDisplay timestamp={sensor.nextTick.timestamp} />
+                Next tick: <TimestampDisplay timestamp={sensor.nextTick.timestamp!} />
               </Tag>
             ) : null}
           </>

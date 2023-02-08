@@ -24,6 +24,7 @@ from dagster import (
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOutput,
+    DynamicPartitionsDefinition,
     Enum,
     EnumValue,
     ExpectationResult,
@@ -1303,6 +1304,15 @@ def define_sensors():
         raise Exception("OOPS")
 
     @sensor(job_name="no_config_pipeline")
+    def update_cursor_sensor(context):
+        if not context.cursor:
+            cursor = 0
+        else:
+            cursor = int(context.cursor)
+        cursor += 1
+        context.update_cursor(str(cursor))
+
+    @sensor(job_name="no_config_pipeline")
     def once_no_config_sensor(_):
         return RunRequest(
             run_key="once",
@@ -1346,6 +1356,7 @@ def define_sensors():
         custom_interval_sensor,
         running_in_code_sensor,
         logging_sensor,
+        update_cursor_sensor,
     ]
 
 
@@ -1554,6 +1565,24 @@ def downstream_static_partitioned_asset(
 static_partitioned_assets_job = build_assets_job(
     "static_partitioned_assets_job",
     assets=[upstream_static_partitioned_asset, downstream_static_partitioned_asset],
+)
+
+
+@asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
+def upstream_dynamic_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
+def downstream_dynamic_partitioned_asset(
+    upstream_dynamic_partitioned_asset,
+):  # pylint: disable=redefined-outer-name
+    assert upstream_dynamic_partitioned_asset
+
+
+dynamic_partitioned_assets_job = build_assets_job(
+    "dynamic_partitioned_assets_job",
+    assets=[upstream_dynamic_partitioned_asset, downstream_dynamic_partitioned_asset],
 )
 
 
@@ -1861,6 +1890,7 @@ def define_pipelines():
         two_ins_job,
         two_assets_job,
         static_partitioned_assets_job,
+        dynamic_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
         observation_job,

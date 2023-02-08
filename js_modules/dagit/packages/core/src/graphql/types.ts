@@ -436,6 +436,7 @@ export type DagitMutation = {
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   resumePartitionBackfill: ResumeBackfillResult;
+  sensorDryRun: SensorDryRunResult;
   setNuxSeen: Scalars['Boolean'];
   setSensorCursor: SensorOrError;
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
@@ -495,6 +496,11 @@ export type DagitMutationReloadRepositoryLocationArgs = {
 
 export type DagitMutationResumePartitionBackfillArgs = {
   backfillId: Scalars['String'];
+};
+
+export type DagitMutationSensorDryRunArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  selectorData: SensorSelector;
 };
 
 export type DagitMutationSetSensorCursorArgs = {
@@ -931,6 +937,18 @@ export type DisplayableEvent = {
   metadataEntries: Array<MetadataEntry>;
 };
 
+export type DryRunInstigationTick = {
+  __typename: 'DryRunInstigationTick';
+  evaluationResult: Maybe<TickEvaluation>;
+  timestamp: Maybe<Scalars['Float']>;
+};
+
+export type DryRunInstigationTicks = {
+  __typename: 'DryRunInstigationTicks';
+  cursor: Scalars['Float'];
+  results: Array<DryRunInstigationTick>;
+};
+
 export type EngineEvent = DisplayableEvent &
   ErrorEvent &
   MarkerEvent &
@@ -1258,18 +1276,6 @@ export type FreshnessPolicy = {
   maximumLagMinutes: Scalars['Float'];
 };
 
-export type FutureInstigationTick = {
-  __typename: 'FutureInstigationTick';
-  evaluationResult: Maybe<TickEvaluation>;
-  timestamp: Scalars['Float'];
-};
-
-export type FutureInstigationTicks = {
-  __typename: 'FutureInstigationTicks';
-  cursor: Scalars['Float'];
-  results: Array<FutureInstigationTick>;
-};
-
 export type Graph = SolidContainer & {
   __typename: 'Graph';
   description: Maybe<Scalars['String']>;
@@ -1470,7 +1476,7 @@ export type InstigationState = {
   id: Scalars['ID'];
   instigationType: InstigationType;
   name: Scalars['String'];
-  nextTick: Maybe<FutureInstigationTick>;
+  nextTick: Maybe<DryRunInstigationTick>;
   repositoryLocationName: Scalars['String'];
   repositoryName: Scalars['String'];
   repositoryOrigin: RepositoryOrigin;
@@ -2162,6 +2168,7 @@ export type PartitionDefinition = {
 };
 
 export enum PartitionDefinitionType {
+  DYNAMIC = 'DYNAMIC',
   MULTIPARTITIONED = 'MULTIPARTITIONED',
   STATIC = 'STATIC',
   TIME_WINDOW = 'TIME_WINDOW',
@@ -3150,8 +3157,8 @@ export type Schedule = {
   cronSchedule: Scalars['String'];
   description: Maybe<Scalars['String']>;
   executionTimezone: Maybe<Scalars['String']>;
-  futureTick: FutureInstigationTick;
-  futureTicks: FutureInstigationTicks;
+  futureTick: DryRunInstigationTick;
+  futureTicks: DryRunInstigationTicks;
   id: Scalars['ID'];
   mode: Scalars['String'];
   name: Scalars['String'];
@@ -3260,7 +3267,7 @@ export type Sensor = {
   metadata: SensorMetadata;
   minIntervalSeconds: Scalars['Int'];
   name: Scalars['String'];
-  nextTick: Maybe<FutureInstigationTick>;
+  nextTick: Maybe<DryRunInstigationTick>;
   sensorState: InstigationState;
   targets: Maybe<Array<Target>>;
 };
@@ -3271,6 +3278,8 @@ export type SensorData = {
   lastRunKey: Maybe<Scalars['String']>;
   lastTickTimestamp: Maybe<Scalars['Float']>;
 };
+
+export type SensorDryRunResult = DryRunInstigationTick | PythonError | SensorNotFoundError;
 
 export type SensorMetadata = {
   __typename: 'SensorMetadata';
@@ -3586,8 +3595,9 @@ export type TextMetadataEntry = MetadataEntry & {
 
 export type TickEvaluation = {
   __typename: 'TickEvaluation';
+  cursor: Maybe<Scalars['String']>;
   error: Maybe<PythonError>;
-  runRequests: Maybe<Array<Maybe<RunRequest>>>;
+  runRequests: Maybe<Array<RunRequest>>;
   skipReason: Maybe<Scalars['String']>;
 };
 

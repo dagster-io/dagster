@@ -755,6 +755,7 @@ enum PartitionDefinitionType {
   TIME_WINDOW
   STATIC
   MULTIPARTITIONED
+  DYNAMIC
 }
 
 type DimensionDefinitionType {
@@ -1369,8 +1370,8 @@ type Schedule {
   description: String
   scheduleState: InstigationState!
   partitionSet: PartitionSet
-  futureTicks(cursor: Float, limit: Int, until: Float): FutureInstigationTicks!
-  futureTick(tickTimestamp: Int!): FutureInstigationTick!
+  futureTicks(cursor: Float, limit: Int, until: Float): DryRunInstigationTicks!
+  futureTick(tickTimestamp: Int!): DryRunInstigationTick!
 }
 
 union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
@@ -2047,15 +2048,16 @@ type RunLauncher {
   name: String!
 }
 
-type FutureInstigationTick {
-  timestamp: Float!
+type DryRunInstigationTick {
+  timestamp: Float
   evaluationResult: TickEvaluation
 }
 
 type TickEvaluation {
-  runRequests: [RunRequest]
+  runRequests: [RunRequest!]
   skipReason: String
   error: PythonError
+  cursor: String
 }
 
 type RunRequest {
@@ -2064,8 +2066,8 @@ type RunRequest {
   runConfigYaml: String!
 }
 
-type FutureInstigationTicks {
-  results: [FutureInstigationTick!]!
+type DryRunInstigationTicks {
+  results: [DryRunInstigationTick!]!
   cursor: Float!
 }
 
@@ -2091,7 +2093,7 @@ type InstigationState {
     cursor: String
     statuses: [InstigationTickStatus!]
   ): [InstigationTick!]!
-  nextTick: FutureInstigationTick
+  nextTick: DryRunInstigationTick
   runningCount: Int!
 }
 
@@ -2459,7 +2461,7 @@ type Sensor {
   sensorState: InstigationState!
   minIntervalSeconds: Int!
   description: String
-  nextTick: FutureInstigationTick
+  nextTick: DryRunInstigationTick
   metadata: SensorMetadata!
 }
 
@@ -2834,6 +2836,7 @@ type DagitMutation {
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
   stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
+  sensorDryRun(cursor: String, selectorData: SensorSelector!): SensorDryRunResult!
   terminatePipelineExecution(
     runId: String!
     terminatePolicy: TerminateRunPolicy
@@ -2868,6 +2871,8 @@ enum ReexecutionStrategy {
   FROM_FAILURE
   ALL_STEPS
 }
+
+union SensorDryRunResult = PythonError | SensorNotFoundError | DryRunInstigationTick
 
 union AssetWipeMutationResult =
     AssetNotFoundError

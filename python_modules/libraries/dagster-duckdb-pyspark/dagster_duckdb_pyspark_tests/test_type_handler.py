@@ -3,7 +3,15 @@ import os
 import duckdb
 import pandas as pd
 import pytest
-from dagster import DailyPartitionsDefinition, Out, asset, graph, materialize, op
+from dagster import (
+    DailyPartitionsDefinition,
+    Out,
+    StaticPartitionsDefinition,
+    asset,
+    graph,
+    materialize,
+    op,
+)
 from dagster._check import CheckError
 from dagster_duckdb_pyspark import duckdb_pyspark_io_manager
 from pyspark.sql import (
@@ -176,5 +184,69 @@ def test_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
+    assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+    duckdb_conn.close()
+
+
+@asset(
+    partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": "color"},
+    config_schema={"value": str},
+)
+def static_partitioned(context):
+    partition = context.asset_partition_key_for_output()
+    value = context.op_config["value"]
+    pd_df = pd.DataFrame(
+        {
+            "color": [partition, partition, partition],
+            "a": [value, value, value],
+            "b": [4, 5, 6],
+        }
+    )
+
+    spark = SparkSession.builder.getOrCreate()
+    return spark.createDataFrame(pd_df)
+
+
+def test_static_partitioned_asset(tmp_path):
+    duckdb_io_manager = duckdb_pyspark_io_manager.configured(
+        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    )
+    resource_defs = {"io_manager": duckdb_io_manager}
+
+    materialize(
+        [static_partitioned],
+        partition_key="red",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__static_partitioned": {"config": {"value": "1"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").fetch_df()
+    assert out_df["a"].tolist() == ["1", "1", "1"]
+    duckdb_conn.close()
+
+    materialize(
+        [static_partitioned],
+        partition_key="blue",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__static_partitioned": {"config": {"value": "2"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").fetch_df()
+    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+    duckdb_conn.close()
+
+    materialize(
+        [static_partitioned],
+        partition_key="red",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__static_partitioned": {"config": {"value": "3"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").fetch_df()
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()

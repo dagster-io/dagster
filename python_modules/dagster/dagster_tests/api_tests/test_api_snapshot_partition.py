@@ -45,10 +45,7 @@ def test_external_partitions_config_grpc(instance):
         repository_handle = repository_location.get_repository("bar_repo").handle
 
         data = sync_get_external_partition_config_grpc(
-            repository_location.client,
-            repository_handle,
-            "baz_partitions",
-            "c",
+            repository_location.client, repository_handle, "baz_partitions", "c", instance
         )
         assert isinstance(data, ExternalPartitionConfigData)
         assert data.run_config
@@ -65,6 +62,7 @@ def test_external_partitions_config_error_grpc(instance):
                 repository_handle,
                 "error_partition_config",
                 "c",
+                instance,
             )
 
 
@@ -73,10 +71,7 @@ def test_external_partitions_tags_grpc(instance):
         repository_handle = repository_location.get_repository("bar_repo").handle
 
         data = sync_get_external_partition_tags_grpc(
-            repository_location.client,
-            repository_handle,
-            "baz_partitions",
-            "c",
+            repository_location.client, repository_handle, "baz_partitions", "c", instance=instance
         )
         assert isinstance(data, ExternalPartitionTagsData)
         assert data.tags
@@ -89,10 +84,7 @@ def test_external_partitions_tags_error_grpc(instance):
 
         with pytest.raises(DagsterUserCodeProcessError):
             sync_get_external_partition_tags_grpc(
-                repository_location.client,
-                repository_handle,
-                "error_partition_tags",
-                "c",
+                repository_location.client, repository_handle, "error_partition_tags", "c", instance
             )
 
 
@@ -105,6 +97,7 @@ def test_external_partition_set_execution_params_grpc(instance):
             repository_handle,
             "baz_partitions",
             ["a", "b", "c"],
+            instance=instance,
         )
         assert isinstance(data, ExternalPartitionSetExecutionParamData)
         assert len(data.partition_data) == 3

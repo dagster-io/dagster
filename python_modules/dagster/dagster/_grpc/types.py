@@ -368,6 +368,7 @@ class PartitionArgs(
             ("repository_origin", ExternalRepositoryOrigin),
             ("partition_set_name", str),
             ("partition_name", str),
+            ("instance_ref", InstanceRef),
         ],
     )
 ):
@@ -376,6 +377,7 @@ class PartitionArgs(
         repository_origin: ExternalRepositoryOrigin,
         partition_set_name: str,
         partition_name: str,
+        instance_ref: InstanceRef,
     ):
         return super(PartitionArgs, cls).__new__(
             cls,
@@ -386,6 +388,7 @@ class PartitionArgs(
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
             partition_name=check.str_param(partition_name, "partition_name"),
+            instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
         )
 
 
@@ -414,6 +417,7 @@ class PartitionSetExecutionParamArgs(
             ("repository_origin", ExternalRepositoryOrigin),
             ("partition_set_name", str),
             ("partition_names", Sequence[str]),
+            ("instance_ref", InstanceRef),
         ],
     )
 ):
@@ -422,6 +426,7 @@ class PartitionSetExecutionParamArgs(
         repository_origin: ExternalRepositoryOrigin,
         partition_set_name: str,
         partition_names: Sequence[str],
+        instance_ref: InstanceRef,
     ):
         return super(PartitionSetExecutionParamArgs, cls).__new__(
             cls,
@@ -430,6 +435,7 @@ class PartitionSetExecutionParamArgs(
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
             partition_names=check.sequence_param(partition_names, "partition_names", of_type=str),
+            instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
         )
 
 

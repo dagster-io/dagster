@@ -12,7 +12,7 @@ from itertools import groupby
 from typing import Dict, Iterator, List, Mapping, Optional, Sequence, cast
 
 import tomli
-from typing_extensions import Final, NotRequired, TypedDict
+from typing_extensions import Final, Literal, NotRequired, TypedDict
 
 parser = argparse.ArgumentParser(
     prog="run-pyright",
@@ -27,6 +27,13 @@ parser.add_argument(
         "Run pyright for all environments. Environments are discovered by looking for directories"
         " at `pyright/envs/*`."
     ),
+)
+
+parser.add_argument(
+    "--diff",
+    action="store_true",
+    default=False,
+    help="Run pyright on the diff between the working tree and master.",
 )
 
 parser.add_argument(
@@ -68,10 +75,10 @@ parser.add_argument(
 # ########################
 
 
-class Args(TypedDict):
-    envs: Sequence[str]
+class Params(TypedDict):
+    mode: Literal["env", "path"]
+    targets: Sequence[str]
     json: bool
-    paths: Sequence[str]
     rebuild: bool
 
 
@@ -125,6 +132,12 @@ class EnvPathSpec(TypedDict):
 
 PYRIGHT_ENV_ROOT: Final = "pyright"
 
+# Help reduce build errors
+EXTRA_PIP_INSTALL_ARGS: Final = [
+    # find-links for M1 lookup of grpcio wheels
+    "--find-links=https://github.com/dagster-io/build-grpcio/wiki/Wheels"
+]
+
 
 def get_env_path(env: str, rel_path: Optional[str] = None) -> str:
     env_root = os.path.join(PYRIGHT_ENV_ROOT, env)
@@ -136,20 +149,37 @@ def load_path_file(path: str) -> Sequence[str]:
         return [line.strip() for line in f.readlines() if line.strip() and not line.startswith("#")]
 
 
-def normalize_args(args: argparse.Namespace) -> Args:
-    if args.all and (args.env or args.paths):
-        raise Exception("Cannot target specific environments or paths simultaneously with --all.")
+def get_params(args: argparse.Namespace) -> Params:
+    if args.all and (args.diff or args.env or args.paths):
+        raise Exception(
+            "Cannot target specific environments, paths, or diff simultaneously with --all."
+        )
+    elif args.diff and (args.env or args.paths):
+        raise Exception("Cannot target specific environments or paths, simultaneously with --diff.")
     elif len(args.paths) >= 1 and len(args.env) >= 1:
         raise Exception("Cannot pass both paths and environments.")
-    use_all = args.all or not args.env and not args.paths
+    use_all = args.all or not (args.diff or args.env or args.paths)
+    mode: Literal["env", "path"]
     if args.env or use_all:
-        envs = os.listdir(PYRIGHT_ENV_ROOT) if use_all else args.env or ["master"]
-        for env in envs:
+        mode = "env"
+        targets = os.listdir(PYRIGHT_ENV_ROOT) if use_all else args.env or ["master"]
+        for env in targets:
             if not os.path.exists(get_env_path(env)):
                 raise Exception(f"Environment {env} not found in {PYRIGHT_ENV_ROOT}.")
+    elif args.diff:
+        mode = "path"
+        targets = (
+            subprocess.check_output(["git", "diff", "--name-only", "master"])
+            .decode("utf-8")
+            .splitlines()
+        )
+        if not targets:
+            print("No paths changed in diff.")
+            sys.exit(0)
     else:
-        envs = []
-    return Args(envs=envs, paths=args.paths, json=args.json, rebuild=args.rebuild)
+        mode = "path"
+        targets = args.paths
+    return Params(mode=mode, targets=targets, json=args.json, rebuild=args.rebuild)
 
 
 def match_path(path: str, path_spec: EnvPathSpec) -> bool:
@@ -174,17 +204,18 @@ def map_paths_to_envs(paths: Sequence[str]) -> Mapping[str, Sequence[str]]:
         )
     env_path_map: Dict[str, List[str]] = {}
     for path in paths:
-        try:
-            env = next(
-                (
-                    env_path_spec["env"]
-                    for env_path_spec in env_path_specs
-                    if match_path(path, env_path_spec)
+        if path.endswith(".py") or path.endswith(".pyi"):
+            try:
+                env = next(
+                    (
+                        env_path_spec["env"]
+                        for env_path_spec in env_path_specs
+                        if match_path(path, env_path_spec)
+                    )
                 )
-            )
-        except StopIteration:
-            raise Exception(f"Could not find environment that matched path: {path}.")
-        env_path_map.setdefault(env, []).append(path)
+            except StopIteration:
+                raise Exception(f"Could not find environment that matched path: {path}.")
+            env_path_map.setdefault(env, []).append(path)
     return env_path_map
 
 
@@ -200,28 +231,41 @@ def normalize_env(env: str, rebuild: bool) -> None:
             [
                 f"python -m venv {venv_path}",
                 f"{venv_path}/bin/pip install -U pip setuptools wheel",
-                (
-                    f"{venv_path}/bin/pip install -r"
-                    # find-links for M1 lookup of grpcio wheels
-                    f" {requirements_path} --find-links=https://github.com/dagster-io/build-grpcio/wiki/Wheels"
+                " ".join(
+                    [
+                        f"{venv_path}/bin/pip",
+                        "install",
+                        "-r",
+                        requirements_path,
+                        *EXTRA_PIP_INSTALL_ARGS,
+                    ]
                 ),
             ]
         )
         try:
             shutil.copyfile(get_env_path(env, "requirements.txt"), requirements_path)
             subprocess.run(cmd, shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            subprocess.run(f"rm -rf {venv_path}", shell=True, check=True)
+            print(f"Partially built virtualenv for pyright environment {env} deleted.")
+            raise e
         finally:
             os.remove(requirements_path)
     return None
 
 
-def run_pyright(env: str, paths: Sequence[str], rebuild: bool) -> RunResult:
+def run_pyright(env: str, paths: Optional[Sequence[str]], rebuild: bool) -> RunResult:
     normalize_env(env, rebuild)
     with temp_pyright_config_file(env) as config_path:
-        pyright_cmd = " ".join(
-            ["pyright", f"--project={config_path}", "--outputjson", "--level=warning", *paths]
+        base_pyright_cmd = " ".join(
+            [
+                "pyright",
+                f"--project={config_path}",
+                "--outputjson",
+                "--level=warning",
+            ]
         )
-        shell_cmd = pyright_cmd
+        shell_cmd = " \\\n".join([base_pyright_cmd, *[f"    {p}" for p in paths or []]])
         print(f"Running pyright for environment `{env}`...")
         print(f"  {shell_cmd}")
         result = subprocess.run(shell_cmd, capture_output=True, shell=True, text=True)
@@ -309,15 +353,14 @@ def print_report(result: RunResult) -> None:
 if __name__ == "__main__":
     assert os.path.exists(".git"), "Must be run from the root of the repository"
     args = parser.parse_args()
-    norm_args = normalize_args(args)
-    if norm_args["paths"]:
-        env_path_map = map_paths_to_envs(norm_args["paths"])
+    params = get_params(args)
+    if params["mode"] == "path":
+        env_path_map = map_paths_to_envs(params["targets"])
     else:
-        env_path_map = {env: [] for env in norm_args["envs"]}
+        env_path_map = {env: None for env in params["targets"]}
     run_results = [
-        run_pyright(env, paths=env_path_map[env], rebuild=norm_args["rebuild"])
-        for env in env_path_map
+        run_pyright(env, paths=env_path_map[env], rebuild=params["rebuild"]) for env in env_path_map
     ]
     merged_result = reduce(merge_pyright_results, run_results)
-    print_output(merged_result, norm_args["json"])
+    print_output(merged_result, params["json"])
     sys.exit(merged_result["returncode"])

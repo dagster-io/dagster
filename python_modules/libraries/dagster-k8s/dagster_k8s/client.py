@@ -78,6 +78,8 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
     503,  # Service unavailable
     504,  # Gateway timeout
     500,  # Internal server error
+    # typically not transient, but some k8s clusters raise it transiently: https://github.com/aws/containers-roadmap/issues/1810
+    401,  # Authorization Failure
 ]
 
 

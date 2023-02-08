@@ -374,7 +374,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
         id
         instigationType
         nextTick {
-          ...NextTickForHistoy
+          ...NextTickForHistory
         }
         ticks(dayRange: $dayRange, limit: $limit, cursor: $cursor, statuses: $statuses) {
           id
@@ -385,7 +385,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
     }
   }
 
-  fragment NextTickForHistoy on FutureInstigationTick {
+  fragment NextTickForHistory on DryRunInstigationTick {
     timestamp
   }
 

@@ -16,10 +16,12 @@ from dagster._core.host_representation.external_data import (
     ExternalAssetDependency,
     ExternalAssetNode,
 )
-from dagster._core.scheduler.instigation import InstigatorType
+from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
 from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._utils.cached_method import cached_method
 
 
 class RepositoryDataType(Enum):
@@ -240,7 +242,7 @@ class RepositoryScopedBatchLoader:
         check.invariant(self._repository.has_external_sensor(sensor_name))
         return self._get(RepositoryDataType.SENSOR_RUNS, sensor_name, limit)
 
-    def get_schedule_state(self, schedule_name: str) -> Optional[Sequence[Any]]:
+    def get_schedule_state(self, schedule_name: str) -> Optional[InstigatorState]:
         check.invariant(self._repository.has_external_schedule(schedule_name))
         states = self._get(RepositoryDataType.SCHEDULE_STATES, schedule_name, 1)
         return states[0] if states else None
@@ -327,6 +329,20 @@ class BatchMaterializationLoader:
             record.asset_entry.asset_key: record.asset_entry.last_materialization
             for record in self._instance.get_asset_records(self._asset_keys)
         }
+
+
+class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
+    """
+    A batch loader that caches the partition keys for a given dynamic partitions definition,
+    to avoid repeated calls to the database for the same partitions definition.
+    """
+
+    def __init__(self, instance: DagsterInstance):
+        self._instance = instance
+
+    @cached_method
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        return self._instance.get_dynamic_partitions(partitions_def_name)
 
 
 class CrossRepoAssetDependedByLoader:

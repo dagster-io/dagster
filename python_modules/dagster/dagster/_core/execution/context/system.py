@@ -901,7 +901,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
         subset = self.asset_partitions_subset_for_input(input_name)
-        partition_key_ranges = subset.get_partition_key_ranges()
+        partition_key_ranges = subset.get_partition_key_ranges(
+            dynamic_partitions_store=self.instance
+        )
 
         if len(partition_key_ranges) != 1:
             check.failed(
@@ -925,7 +927,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 partitions_def = assets_def.partitions_def
                 partitions_subset = (
                     partitions_def.empty_subset().with_partition_key_range(
-                        self.asset_partition_key_range
+                        self.asset_partition_key_range, dynamic_partitions_store=self.instance
                     )
                     if partitions_def
                     else None
@@ -939,6 +941,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 return partition_mapping.get_upstream_partitions_for_partitions(
                     partitions_subset,
                     upstream_asset_partitions_def,
+                    dynamic_partitions_store=self.instance,
                 )
 
         check.failed("The input has no asset partitions")

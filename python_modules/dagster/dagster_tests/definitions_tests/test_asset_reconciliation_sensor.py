@@ -36,6 +36,7 @@ from dagster._core.definitions.asset_reconciliation_sensor import (
     reconcile,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._seven.compat.pendulum import create_pendulum_time
@@ -329,6 +330,7 @@ fanned_out_partitions_def = StaticPartitionsDefinition(["a_1", "a_2", "a_3"])
 
 freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
 freshness_60m = FreshnessPolicy(maximum_lag_minutes=60)
+freshness_1d = FreshnessPolicy(maximum_lag_minutes=24 * 60)
 freshness_inf = FreshnessPolicy(maximum_lag_minutes=99999)
 
 # basics
@@ -493,12 +495,19 @@ hourly_to_daily_partitions = [
 partitioned_after_non_partitioned = [
     asset_def("asset1"),
     asset_def(
-        "asset2", ["asset1"], partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")
+        "asset2",
+        ["asset1"],
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        freshness_policy=freshness_1d,
     ),
 ]
 non_partitioned_after_partitioned = [
-    asset_def("asset1", partitions_def=DailyPartitionsDefinition(start_date="2020-01-01")),
-    asset_def("asset2", ["asset1"]),
+    asset_def(
+        "asset1",
+        partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+        freshness_policy=freshness_1d,
+    ),
+    asset_def("asset2", ["asset1"], freshness_policy=freshness_1d),
 ]
 
 one_asset_self_dependency = [
@@ -506,6 +515,7 @@ one_asset_self_dependency = [
         "asset1",
         partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
         deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
+        freshness_policy=freshness_1d,
     )
 ]
 
@@ -515,6 +525,16 @@ one_asset_self_dependency_hourly = [
         partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"),
         deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
     )
+]
+
+unpartitioned_after_dynamic_asset = [
+    asset_def("asset1"),
+    asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
+]
+
+two_dynamic_assets = [
+    asset_def("asset1", partitions_def=DynamicPartitionsDefinition(name="foo")),
+    asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
 ]
 
 scenarios = {

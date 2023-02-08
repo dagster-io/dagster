@@ -117,7 +117,7 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
         # check remote storage
         return self.cloud_storage_has_logs(log_key, ComputeIOType.STDERR)
 
-    def _log_data_for_type(self, log_key, io_type, offset, max_bytes):
+    def log_data_for_type(self, log_key, io_type, offset, max_bytes):
         if self._has_local_file(log_key, io_type):
             local_path = self.local_manager.get_captured_local_path(
                 log_key, IO_TYPE_EXTENSION[io_type]
@@ -145,10 +145,10 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
         max_bytes: Optional[int] = None,
     ) -> CapturedLogData:
         stdout_offset, stderr_offset = self.local_manager.parse_cursor(cursor)
-        stdout, new_stdout_offset = self._log_data_for_type(
+        stdout, new_stdout_offset = self.log_data_for_type(
             log_key, ComputeIOType.STDOUT, stdout_offset, max_bytes
         )
-        stderr, new_stderr_offset = self._log_data_for_type(
+        stderr, new_stderr_offset = self.log_data_for_type(
             log_key, ComputeIOType.STDERR, stderr_offset, max_bytes
         )
         return CapturedLogData(
@@ -242,7 +242,7 @@ class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
 
     def download_url(self, run_id, key, io_type):
         if not self.is_watch_completed(run_id, key):
-            return self.local_manager.download_url(run_id, key, io_type)
+            return None
 
         log_key = self.local_manager.build_log_key_for_run(run_id, key)
         return self.download_url_for_type(log_key, io_type)
