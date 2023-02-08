@@ -1,10 +1,11 @@
 import os
 import tempfile
+from dagster_airflow.dagster_asset_factory import make_resources_for_airflow_dag
 
 import pytest
 from airflow import __version__ as airflow_version
 from airflow.models import DagBag
-from dagster import AssetKey, asset, materialize
+from dagster import AssetKey, asset, materialize, Definitions
 from dagster_airflow import (
     load_assets_from_airflow_dag,
 )
@@ -68,8 +69,15 @@ def test_load_assets_from_airflow_dag():
             },
         )
 
-        result = materialize(
-            [*assets, new_upstream_asset],
-            partition_key="2023-02-01T00:00:00",
+        defs = Definitions(
+            assets=[new_upstream_asset, *assets],
+            resources=make_resources_for_airflow_dag(asset_dag),
         )
-        assert result.success
+
+        assert defs.get_implicit_global_job_def().execute_in_process().success
+
+        # result = materialize(
+        #     [*assets, new_upstream_asset],
+        #     partition_key="2023-02-01T00:00:00",
+        # )
+        # assert result.success

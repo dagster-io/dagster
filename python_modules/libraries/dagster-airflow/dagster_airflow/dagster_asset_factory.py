@@ -98,6 +98,14 @@ def _build_asset_dependencies(
     return (output_mappings, keys_by_output_name, internal_asset_deps)
 
 
+def make_resources_for_airflow_dag(
+    dag: DAG,
+    connections: Optional[List[Connection]] = None,
+):
+    job = make_dagster_job_from_airflow_dag(dag, connections=connections)
+    return job.resource_defs
+
+
 def load_assets_from_airflow_dag(
     dag: DAG,
     task_ids_by_asset_key: Mapping[AssetKey, AbstractSet[str]] = {},
@@ -178,7 +186,7 @@ def load_assets_from_airflow_dag(
         )
         if cron_schedule is not None
         else None,
-        resource_defs=job.resource_defs,
+        resource_defs=make_resources_for_airflow_dag(dag, connections=connections),
         group_name=dag.dag_id,
         keys_by_output_name=keys_by_output_name,
         internal_asset_deps=internal_asset_deps,
