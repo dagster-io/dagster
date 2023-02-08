@@ -75,7 +75,7 @@ def test_handle_output():
                 schema="my_schema",
                 database="my_db",
                 columns=None,
-                partition=None,
+                partition=[],
             ),
             df,
         )
@@ -103,7 +103,7 @@ def test_load_input():
                 schema="my_schema",
                 database="my_db",
                 columns=None,
-                partition=None,
+                partition=[],
             ),
         )
         assert mock_read_sql.call_args_list[0][1]["sql"] == "SELECT * FROM my_db.my_schema.my_table"
@@ -409,7 +409,7 @@ def test_multi_partitioned_asset(tmp_path):
                     "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
                 }
             ),
-            key_prefix=["JAMIE"],
+            key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
             metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
             config_schema={"value": str},
             name=table_name,
