@@ -63,7 +63,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                     method=pd_writer,
                 )
             except InterfaceError as e:
-                if "out of range" in e.__cause__:
+                if "out of range" in e.orig.msg:
                     raise DagsterInvalidInvocationError(
                         f"Could not store output {context.name} of step {context.step_key}. If the"
                         " DataFrame includes pandas Timestamp values, ensure that they have"
@@ -86,9 +86,11 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
         with _connect_snowflake(context, table_slice) as con:
             try:
-                result = pd.read_sql(sql=SnowflakeDbClient.get_select_statement(table_slice), con=con)
+                result = pd.read_sql(
+                    sql=SnowflakeDbClient.get_select_statement(table_slice), con=con
+                )
             except InterfaceError as e:
-                if "out of range" in e.__cause__.msg:
+                if "out of range" in e.orig.msg:
                     raise DagsterInvalidInvocationError(
                         f"Could not load input {context.name} of {context.op_def.name}. If the"
                         " DataFrame includes pandas Timestamp values, ensure that they have"

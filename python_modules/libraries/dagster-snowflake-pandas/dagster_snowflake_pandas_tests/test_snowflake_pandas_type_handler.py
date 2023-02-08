@@ -46,13 +46,6 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
     "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
 }
 
-# SHARED_BUILDKITE_SNOWFLAKE_CONF = {
-#     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
-#     "user": "jamie@elementl.com",
-#     "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
-# }
-
-
 
 @contextmanager
 def temporary_snowflake_table(schema_name: str, db_name: str, column_str: str) -> Iterator[str]:
@@ -65,7 +58,6 @@ def temporary_snowflake_table(schema_name: str, db_name: str, column_str: str) -
         try:
             yield table_name
         finally:
-            # pass
             conn.cursor().execute(f"drop table {schema_name}.{table_name}")
 
 
@@ -177,11 +169,6 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str="foo string, date TIMESTAMP_NTZ(9)",
     ) as table_name:
-    # with temporary_snowflake_table(
-    #     schema_name="JAMIE",
-    #     db_name="SANDBOX",
-    #     column_str="foo string, date TIMESTAMP_NTZ(9)",
-    # ) as table_name:
         time_df = pandas.DataFrame(
             {
                 "foo": ["bar", "baz"],
@@ -235,11 +222,6 @@ def test_io_manager_with_snowflake_pandas_timestamp_data_error():
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str="foo string, date TIMESTAMP_NTZ(9)",
     ) as table_name:
-    # with temporary_snowflake_table(
-    #     schema_name="JAMIE",
-    #     db_name="SANDBOX",
-    #     column_str="foo string, date TIMESTAMP_NTZ(9)",
-    # ) as table_name:
         time_df = pandas.DataFrame(
             {
                 "foo": ["bar", "baz"],
@@ -293,11 +275,6 @@ def test_time_window_partitioned_asset(tmp_path):
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str="TIME TIMESTAMP_NTZ(9), A string, B int",
     ) as table_name:
-    # with temporary_snowflake_table(
-    #     schema_name="JAMIE",
-    #     db_name="SANDBOX",
-    #     column_str="TIME TIMESTAMP_NTZ(9), A string, B int",
-    # ) as table_name:
 
         @asset(
             partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
@@ -320,8 +297,6 @@ def test_time_window_partitioned_asset(tmp_path):
 
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
-        # asset_full_name = f"JAMIE__{table_name}"
-        # snowflake_table_path = f"JAMIE.{table_name}"
 
         snowflake_config = {
             **SHARED_BUILDKITE_SNOWFLAKE_CONF,
