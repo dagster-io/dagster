@@ -98,13 +98,18 @@ def execute_cli(
     # json dictionaries for each line (if applicable)
     json_lines = []
 
+    # run dbt with unbuffered output
+    passenv = os.environ.copy()
+    passenv["PYTHONUNBUFFERED"] = "1"
+
     process = subprocess.Popen(
         command_list,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        env=passenv,
     )
     for raw_line in process.stdout or []:
-        line = raw_line.decode("utf-8").rstrip()
+        line = raw_line.decode().strip()
 
         log_level = "info"
         message = line
@@ -119,8 +124,26 @@ def execute_cli(
             else:
                 # in rare cases, the loaded json line may be a string rather than a dictionary
                 if isinstance(json_line, dict):
-                    message = json_line.get("message", json_line.get("msg", message))
-                    log_level = json_line.get("levelname", json_line.get("level", "debug"))
+                    message = json_line.get(
+                        # Attempt to get the message from the dbt-core==1.3.* format
+                        "msg",
+                        # Otherwise, try to get the message from the dbt-core==1.4.* format
+                        json_line.get("info", {}).get(
+                            "msg",
+                            # If all else fails, default to the whole line
+                            message,
+                        ),
+                    )
+                    log_level = json_line.get(
+                        # Attempt to get the log level from the dbt-core==1.3.* format
+                        "level",
+                        # Otherwise, try to get the message from the dbt-core==1.4.* format
+                        json_line.get("info", {}).get(
+                            "level",
+                            # If all else fails, default to the `debug` level
+                            "debug",
+                        ),
+                    )
         elif "Done." not in line:
             # attempt to parse a log level out of the line
             if "ERROR" in line:
