@@ -308,17 +308,26 @@ def get_external_sensor_execution(
     sensor_def = repo_def.get_sensor_def(sensor_name)
 
     with ExitStack() as stack:
-        sensor_context = stack.enter_context(
-            SensorEvaluationContext(
-                instance_ref,
-                last_completion_time=last_completion_timestamp,
-                last_run_key=last_run_key,
-                cursor=cursor,
-                repository_name=repo_def.name,
-                repository_def=repo_def,
-                sensor_name=sensor_name,
+        from dagster._core.execution.build_resources import build_resources
+
+        resources_to_build = {
+            k: v
+            for k, v in repo_def.get_top_level_resources().items()
+            if k in sensor_def.required_resource_keys
+        }
+        with build_resources(resources_to_build) as resources:
+            sensor_context = stack.enter_context(
+                SensorEvaluationContext(
+                    instance_ref,
+                    last_completion_time=last_completion_timestamp,
+                    last_run_key=last_run_key,
+                    cursor=cursor,
+                    repository_name=repo_def.name,
+                    repository_def=repo_def,
+                    sensor_name=sensor_name,
+                    resources=resources,
+                )
             )
-        )
 
         try:
             with user_code_error_boundary(

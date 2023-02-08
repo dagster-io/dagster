@@ -10,6 +10,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Union,
     cast,
 )
@@ -19,6 +20,11 @@ import pendulum
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.resource_definition import (
+    Resources,
+)
+from dagster._core.definitions.resource_output import get_resource_args
+from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -101,6 +107,7 @@ class SensorEvaluationContext:
         repository_def: Optional["RepositoryDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
         sensor_name: Optional[str] = None,
+        resources: Optional[Resources] = None,
     ):
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -113,6 +120,7 @@ class SensorEvaluationContext:
         self._repository_def = repository_def
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         self._sensor_name = sensor_name
+        self._resources = resources or ScopedResourcesBuilder().build(None)
         self._log_key = (
             [
                 repository_name,
@@ -130,6 +138,11 @@ class SensorEvaluationContext:
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._exit_stack.close()
         self._logger = None
+
+    @public
+    @property
+    def resources(self) -> Resources:
+        return self._resources
 
     @public
     @property
@@ -273,6 +286,7 @@ class SensorDefinition:
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         asset_selection: Optional[AssetSelection] = None,
+        required_resource_keys: Optional[Set[str]] = None,
     ):
         if evaluation_fn is None:
             raise DagsterInvalidDefinitionError("Must provide evaluation_fn to SensorDefinition.")
@@ -337,6 +351,12 @@ class SensorDefinition:
         self._asset_selection = check.opt_inst_param(
             asset_selection, "asset_selection", AssetSelection
         )
+        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
+
+        self._required_resource_keys = (
+            check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
+            | resource_arg_names
+        )
 
     def __call__(self, *args, **kwargs):
         if has_at_least_one_parameter(self._raw_fn):
@@ -376,6 +396,11 @@ class SensorDefinition:
                 )
 
             return self._raw_fn()
+
+    @public
+    @property
+    def required_resource_keys(self) -> Set[str]:
+        return self._required_resource_keys
 
     @public
     @property
@@ -587,9 +612,16 @@ def wrap_sensor_evaluation(
     sensor_name: str,
     fn: RawSensorEvaluationFunction,
 ) -> SensorEvaluationFunction:
+    resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
+
     def _wrapped_fn(context: SensorEvaluationContext):
+        resource_args_populated = {
+            resource_name: getattr(context.resources, resource_name)
+            for resource_name in resource_arg_names
+        }
+
         if has_at_least_one_parameter(fn):
-            result = fn(context)
+            result = fn(context, **resource_args_populated)
         else:
             result = fn()  # type: ignore
 
@@ -640,16 +672,32 @@ def build_sensor_context(
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
-    return SensorEvaluationContext(
-        instance_ref=None,
-        last_completion_time=None,
-        last_run_key=None,
-        cursor=cursor,
-        repository_name=repository_name,
-        instance=instance,
-        repository_def=repository_def,
-        sensor_name=sensor_name,
+
+    from dagster._core.execution.build_resources import build_resources
+
+    required_resource_keys = None
+    if repository_def and sensor_name:
+        sensor_def = repository_def.get_sensor_def(sensor_name)
+        required_resource_keys = sensor_def.required_resource_keys
+
+    top_level_resources = repository_def.get_top_level_resources() if repository_def else {}
+    resources_to_build = (
+        {k: v for k, v in top_level_resources.items() if k in required_resource_keys}
+        if required_resource_keys
+        else top_level_resources
     )
+    with build_resources(resources_to_build) as resources:
+        return SensorEvaluationContext(
+            instance_ref=None,
+            last_completion_time=None,
+            last_run_key=None,
+            cursor=cursor,
+            repository_name=repository_name,
+            instance=instance,
+            repository_def=repository_def,
+            sensor_name=sensor_name,
+            resources=resources,
+        )
 
 
 def _run_requests_with_base_asset_jobs(
