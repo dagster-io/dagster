@@ -33,6 +33,9 @@ pyright:
 rebuild_pyright:
 	python scripts/run-pyright.py --all --rebuild
 
+quick_pyright:
+	python scripts/run-pyright.py --diff
+
 ruff:
 	ruff --fix .
 
