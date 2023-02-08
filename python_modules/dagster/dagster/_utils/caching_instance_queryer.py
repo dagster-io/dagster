@@ -15,8 +15,13 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.logical_version import get_input_event_pointer_tag_key
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
@@ -292,9 +297,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         )
 
-    def get_materialized_partitions(
+    def get_materialized_partition_counts(
         self, asset_key: AssetKey, after_cursor: Optional[int] = None
-    ) -> Iterable[str]:
+    ) -> Mapping[str, int]:
         if (
             after_cursor not in self._asset_partition_count_cache
             or asset_key not in self._asset_partition_count_cache[after_cursor]
@@ -306,11 +311,16 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )[
                 asset_key
             ]
+        return self._asset_partition_count_cache[after_cursor][asset_key]
+
+    def get_materialized_partitions(
+        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+    ) -> Iterable[str]:
         return [
             partition_key
-            for partition_key, count in self._asset_partition_count_cache[after_cursor][
-                asset_key
-            ].items()
+            for partition_key, count in self.get_materialized_partition_counts(
+                asset_key, after_cursor
+            ).items()
             if count > 0
         ]
 
@@ -357,7 +367,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def set_known_used_data(
         self,
         record: EventLogRecord,
-        new_known_data: Dict[AssetKey, Tuple[Optional[int], Optional[float]]],
+        new_known_data: Mapping[AssetKey, Tuple[Optional[int], Optional[float]]],
     ):
         event_log_storage = self._instance.event_log_storage
         if (
@@ -400,15 +410,139 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             }
         return {}
 
-    @cached_method
-    def _calculate_used_data(
+    def _calculate_time_partitioned_asset_data_time(
+        self,
+        asset_key: AssetKey,
+        asset_graph: AssetGraph,
+        cursor: int,
+        partitions_def: TimeWindowPartitionsDefinition,
+    ) -> Optional[datetime.datetime]:
+        """Returns the time up until which all available data has been consumed for this asset
+
+        At a high level, this algorithm works as follows:
+
+        First, calculate the subset of partitions that have been materialized up until this point
+        in time (ignoring the cursor). This is done by querying the asset status cache if it is
+        available, otherwise by using a (slower) get_materialization_count_by_partition query.
+
+        Next, we calculate the set of partitions that are net-new since the cursor. This is done by
+        comparing the count of materializations before after the cursor to the total count of
+        materializations.
+
+        Finally, we calculate the minimum time window of the net-new partitions. This time window
+        did not exist at the time of the cursor, so we know that we have all data up until the
+        beginning of that time window, or all data up until the end of the first filled time window
+        in the total set, whichever is less.
+        """
+        from dagster._core.storage.partition_status_cache import (
+            get_and_update_asset_status_cache_values,
+        )
+
+        if self.instance.can_cache_asset_status_data():
+            # this is the current state of the asset, not the state of the asset at the time of record_id
+            status_cache_value = get_and_update_asset_status_cache_values(
+                instance=self._instance,
+                asset_graph=asset_graph,
+                asset_key=asset_key,
+            )[asset_key]
+            partition_subset = status_cache_value.deserialize_materialized_partition_subsets(
+                partitions_def=partitions_def
+            )
+        else:
+            # if we can't use the asset status cache, then we get the subset by querying for the
+            # existing partitions
+            partition_subset = partitions_def.empty_subset().with_partition_keys(
+                self.get_materialized_partitions(asset_key)
+            )
+
+        if not isinstance(partition_subset, TimeWindowPartitionsSubset):
+            check.failed(f"Invalid partition subset {type(partition_subset)}")
+
+        sorted_time_windows = sorted(partition_subset.included_time_windows)
+        # no time windows, no data
+        if len(sorted_time_windows) == 0:
+            return None
+        first_filled_time_window = sorted_time_windows[0]
+
+        first_available_time_window = partitions_def.get_first_partition_window()
+        if first_available_time_window is None:
+            return None
+
+        # if the first partition has not been filled
+        if first_available_time_window.start < first_filled_time_window.start:
+            return None
+
+        # there are no events for this asset after the cursor
+        asset_record = self.get_asset_record(asset_key)
+        if (
+            asset_record is not None
+            and asset_record.asset_entry is not None
+            and asset_record.asset_entry.last_materialization_record is not None
+            and asset_record.asset_entry.last_materialization_record.storage_id <= cursor
+        ):
+            return first_filled_time_window.end
+
+        # get a per-partition count of the new materializations
+        new_partition_counts = self.get_materialized_partition_counts(
+            asset_key, after_cursor=cursor
+        )
+
+        total_partition_counts = self.get_materialized_partition_counts(asset_key)
+
+        # these are the partitions that did not exist before this record was created
+        net_new_partitions = {
+            partition_key
+            for partition_key, new_count in new_partition_counts.items()
+            if new_count == total_partition_counts.get(partition_key)
+        }
+
+        # there are new materializations, but they don't fill any new partitions
+        if not net_new_partitions:
+            return first_filled_time_window.end
+
+        # the oldest time window that was newly filled
+        oldest_net_new_time_window = min(
+            partitions_def.time_window_for_partition_key(partition_key)
+            for partition_key in net_new_partitions
+        )
+
+        # only factor in the oldest net new time window if it breaks the current first filled time window
+        return min(
+            oldest_net_new_time_window.start,
+            first_filled_time_window.end,
+        )
+
+    def _calculate_used_data_time_partitioned(
         self,
         asset_graph: AssetGraph,
         asset_key: AssetKey,
-        record_id: Optional[int],
+        cursor: int,
+        partitions_def: TimeWindowPartitionsDefinition,
+    ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
+        """Returns the data time (i.e. the time up to which the asset has incorporated all available
+        data) for a time-partitioned asset. This method takes into account all partitions that were
+        materialized for this asset up to the provided cursor.
+        """
+        partition_data_time = self._calculate_time_partitioned_asset_data_time(
+            asset_key=asset_key,
+            asset_graph=asset_graph,
+            cursor=cursor,
+            partitions_def=partitions_def,
+        )
+        partition_data_timestamp = partition_data_time.timestamp() if partition_data_time else None
+
+        root_keys = AssetSelection.keys(asset_key).upstream().sources().resolve(asset_graph)
+        return {key: (None, partition_data_timestamp) for key in root_keys}
+
+    @cached_method
+    def _calculate_used_data_unpartitioned(
+        self,
+        asset_graph: AssetGraph,
+        asset_key: AssetKey,
+        record_id: int,
         record_timestamp: Optional[float],
         record_tags: Mapping[str, str],
-    ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
+    ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
         if record_id is None:
             return {key: (None, None) for key in asset_graph.get_non_source_roots(asset_key)}
 
@@ -471,6 +605,35 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         return known_data
 
+    @cached_method
+    def _calculate_used_data(
+        self,
+        asset_graph: AssetGraph,
+        asset_key: AssetKey,
+        record_id: Optional[int],
+        record_timestamp: Optional[float],
+        record_tags: Mapping[str, str],
+    ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
+        if record_id is None:
+            return {key: (None, None) for key in asset_graph.get_non_source_roots(asset_key)}
+
+        partitions_def = asset_graph.get_partitions_def(asset_key)
+        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            return self._calculate_used_data_time_partitioned(
+                asset_graph=asset_graph,
+                asset_key=asset_key,
+                cursor=record_id,
+                partitions_def=partitions_def,
+            )
+        else:
+            return self._calculate_used_data_unpartitioned(
+                asset_graph=asset_graph,
+                asset_key=asset_key,
+                record_id=record_id,
+                record_timestamp=record_timestamp,
+                record_tags=record_tags,
+            )
+
     def get_used_data_times_for_record(
         self,
         asset_graph: AssetGraph,
@@ -497,7 +660,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             record_timestamp=record.event_log_entry.timestamp,
             record_tags=frozendict(record.asset_materialization.tags or {}),
         )
-        if asset_graph.freshness_policies_by_key.get(record.asset_key) is not None:
+        if asset_graph.freshness_policies_by_key.get(
+            record.asset_key
+        ) is not None and not asset_graph.is_partitioned(record.asset_key):
             self.set_known_used_data(record, new_known_data=data)
 
         return {
