@@ -5,6 +5,8 @@ import pandas as pd
 import pytest
 from dagster import (
     DailyPartitionsDefinition,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     Out,
     StaticPartitionsDefinition,
     asset,
@@ -249,4 +251,85 @@ def test_static_partitioned_asset(tmp_path):
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").fetch_df()
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+    duckdb_conn.close()
+
+
+@asset(
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "time": DailyPartitionsDefinition(start_date="2022-01-01"),
+            "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+        }
+    ),
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
+    config_schema={"value": str},
+)
+def multi_partitioned(context):
+    partition = context.partition_key.keys_by_dimension
+    value = context.op_config["value"]
+    pd_df = pd.DataFrame(
+        {
+            "color": [partition["color"], partition["color"], partition["color"]],
+            "time": [partition["time"], partition["time"], partition["time"]],
+            "a": [value, value, value],
+        }
+    )
+
+    spark = SparkSession.builder.getOrCreate()
+    return spark.createDataFrame(pd_df)
+
+
+def test_multi_partitioned_asset(tmp_path):
+    duckdb_io_manager = duckdb_pyspark_io_manager.configured(
+        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    )
+    resource_defs = {"io_manager": duckdb_io_manager}
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    assert out_df["a"].tolist() == ["1", "1", "1"]
+    duckdb_conn.close()
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "2"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+    duckdb_conn.close()
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "3"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
+    duckdb_conn.close()
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "4"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
     duckdb_conn.close()
