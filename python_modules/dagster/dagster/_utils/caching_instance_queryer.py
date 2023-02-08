@@ -435,18 +435,22 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         in the total set, whichever is less.
         """
         from dagster._core.storage.partition_status_cache import (
-            get_and_update_asset_status_cache_values,
+            get_and_update_asset_status_cache_value,
         )
 
         if self.instance.can_cache_asset_status_data():
             # this is the current state of the asset, not the state of the asset at the time of record_id
-            status_cache_value = get_and_update_asset_status_cache_values(
+            status_cache_value = get_and_update_asset_status_cache_value(
                 instance=self._instance,
-                asset_graph=asset_graph,
                 asset_key=asset_key,
-            )[asset_key]
-            partition_subset = status_cache_value.deserialize_materialized_partition_subsets(
-                partitions_def=partitions_def
+                partitions_def=partitions_def,
+            )
+            partition_subset = (
+                status_cache_value.deserialize_materialized_partition_subsets(
+                    partitions_def=partitions_def
+                )
+                if status_cache_value
+                else partitions_def.empty_subset()
             )
         else:
             # if we can't use the asset status cache, then we get the subset by querying for the
