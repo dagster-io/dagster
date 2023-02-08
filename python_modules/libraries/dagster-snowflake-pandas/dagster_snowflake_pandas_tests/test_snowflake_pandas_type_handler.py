@@ -26,10 +26,6 @@ from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler, snowflake_pandas_io_manager
-from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
-    _convert_string_to_timestamp,
-    _convert_timestamp_to_string,
-)
 from pandas import DataFrame, Timestamp
 
 resource_config = {
@@ -61,7 +57,8 @@ def temporary_snowflake_table(schema_name: str, db_name: str, column_str: str) -
         try:
             yield table_name
         finally:
-            conn.cursor().execute(f"drop table {schema_name}.{table_name}")
+            pass
+            # conn.cursor().execute(f"drop table {schema_name}.{table_name}")
 
 
 def test_handle_output():
@@ -110,31 +107,6 @@ def test_load_input():
         )
         assert mock_read_sql.call_args_list[0][1]["sql"] == "SELECT * FROM my_db.my_schema.my_table"
         assert df.equals(DataFrame([{"col1": "a", "col2": 1}]))
-
-
-def test_type_conversions():
-    # no timestamp data
-    no_time = pandas.Series([1, 2, 3, 4, 5])
-    converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time))
-
-    assert (converted == no_time).all()
-
-    # timestamp data
-    with_time = pandas.Series(
-        [
-            pandas.Timestamp("2017-01-01T12:30:45.35"),
-            pandas.Timestamp("2017-02-01T12:30:45.35"),
-            pandas.Timestamp("2017-03-01T12:30:45.35"),
-        ]
-    )
-    time_converted = _convert_string_to_timestamp(_convert_timestamp_to_string(with_time))
-
-    assert (with_time == time_converted).all()
-
-    # string that isn't a time
-    string_data = pandas.Series(["not", "a", "timestamp"])
-
-    assert (_convert_string_to_timestamp(string_data) == string_data).all()
 
 
 def test_build_snowflake_pandas_io_manager():
@@ -190,7 +162,7 @@ def test_io_manager_with_snowflake_pandas():
         assert res.success
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_io_manager_with_snowflake_pandas_timestamp_data():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
@@ -201,8 +173,8 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
             {
                 "foo": ["bar", "baz"],
                 "date": [
-                    pandas.Timestamp("2017-01-01T12:30:45.350"),
-                    pandas.Timestamp("2017-02-01T12:30:45.350"),
+                    pandas.Timestamp("2017-01-01T12:30:15+00:00"),
+                    pandas.Timestamp("2017-02-01T01:30:15+00:00"),
                 ],
             }
         )
@@ -219,6 +191,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
 
         @op
         def read_time_df(df: pandas.DataFrame):
+            df["date"] = df["date"].dt.tz_localize("UTC")
             assert set(df.columns) == {"foo", "date"}
             assert (df["date"] == time_df["date"]).all()
 

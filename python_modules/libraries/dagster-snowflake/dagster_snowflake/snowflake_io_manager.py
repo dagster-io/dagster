@@ -150,7 +150,6 @@ class SnowflakeDbClient(DbClient):
             dict(schema=table_slice.schema, **no_schema_config), context.log
         ).get_connection() as con:
             try:
-                print("DELETING DATA")
                 con.execute_string(_get_cleanup_statement(table_slice))
             except ProgrammingError:
                 # table doesn't exist yet, so ignore the error
