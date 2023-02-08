@@ -10,6 +10,7 @@ setup(
         "skl2onnx",
         "joblib",
         "torch",
+        "torchvision",
     ],
     extras_require={"dev": ["dagit", "pytest"]},
 )

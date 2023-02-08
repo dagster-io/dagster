@@ -402,7 +402,7 @@ class ArtifactsIOManager(IOManager):
                                 pickle.dump(
                                     obj,
                                     file,
-                                    **serialization_module_parameters_with_protocol,  # type: ignore
+                                    **serialization_module_parameters_with_protocol,
                                 )
                                 context.log.info(
                                     "Output serialized using pickle with"
@@ -459,7 +459,7 @@ class ArtifactsIOManager(IOManager):
                 "wandb_artifact_version": MetadataValue.text(artifact.version),
                 "wandb_artifact_size": MetadataValue.int(artifact.size),
                 "wandb_artifact_url": MetadataValue.url(
-                    f"{artifacts_base_url}/{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.id}/{artifact.version}"  # type: ignore
+                    f"{artifacts_base_url}/{run.entity}/{run.project}/artifacts/{artifact.type}/{artifact.id}/{artifact.version}"
                 ),
                 "wandb_entity": MetadataValue.text(run.entity),
                 "wandb_project": MetadataValue.text(run.project),
@@ -468,7 +468,7 @@ class ArtifactsIOManager(IOManager):
                 "wandb_run_path": MetadataValue.text(run.path),
                 "wandb_run_url": MetadataValue.url(run.url),
             }
-            context.add_output_metadata(output_metadata)  # type: ignore
+            context.add_output_metadata(output_metadata)
 
     def _download_artifact(self, context: InputContext):
         with self.wandb_run() as run:
@@ -718,7 +718,7 @@ def wandb_artifacts_io_manager(context: InitResourceContext):
     if "PYTEST_CURRENT_TEST" in os.environ:
         dagster_run_id = "unit-testing"
     else:
-        dagster_run_id = context.run_id  # type: ignore
+        dagster_run_id = context.run_id
 
     config: Config = {
         "dagster_run_id": dagster_run_id or "",
