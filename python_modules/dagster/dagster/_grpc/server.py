@@ -244,6 +244,15 @@ class DagsterApiServer(DagsterApiServicer):
         self._container_image = check.opt_str_param(container_image, "container_image")
         self._container_context = check.opt_dict_param(container_context, "container_context")
 
+        # When will this be set in a gRPC server?
+        #  - When running `dagster dev` (or `dagit`) in the gRPC server subprocesses that are spun up
+        #  - When running code in Dagster Cloud on 1.1 or later
+        # When will it not be set?
+        #  - When running your own grpc server with `dagster api grpc`
+        #  - When using an integration that spins up gRPC servers (for example, the Dagster Helm
+        #    chart or the deploy_docker example)
+        self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
+
         try:
             if inject_env_vars_from_instance:
                 # If arguments indicate it wants to load env vars, use the passed-in instance
