@@ -34,7 +34,7 @@ setup(
     packages=find_packages(exclude=["dagster_dbt_tests*"]),
     install_requires=[
         f"dagster{pin}",
-        "dbt-core<1.4.0",
+        "dbt-core",
         "requests",
         "typer[all]",
     ],

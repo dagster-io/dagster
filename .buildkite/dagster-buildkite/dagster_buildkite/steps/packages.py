@@ -366,6 +366,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_extra_cmds=dbt_extra_cmds,
+        # dbt-core does not yet support python 3.10
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_10,
+        ],
+        pytest_tox_factors=[
+            "dbt_13X",
+            "dbt_14X",
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airbyte",
