@@ -8,14 +8,17 @@ from typing import (
     Callable,
     Dict,
     FrozenSet,
+    Iterator,
     List,
     Mapping,
     Optional,
     Sequence,
     Set,
     Tuple,
+    Union,
 )
 
+import dateutil
 from dagster import (
     AssetKey,
     AssetsDefinition,
@@ -33,7 +36,12 @@ from dagster import (
 )
 from dagster._config.field import Field
 from dagster._config.field_utils import Permissive
-from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.events import (
+    AssetMaterialization,
+    AssetObservation,
+    CoercibleToAssetKeyPrefix,
+    Output,
+)
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
@@ -41,10 +49,16 @@ from dagster._legacy import OpExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
 from dagster._utils.merger import deep_merge_dicts
 
+from dagster_dbt.cli.resources import DbtCliResource
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
 from dagster_dbt.types import DbtOutput
-from dagster_dbt.utils import _get_input_name, _get_output_name, result_to_events
+from dagster_dbt.utils import (
+    ASSET_RESOURCE_TYPES,
+    _get_input_name,
+    _get_output_name,
+    result_to_events,
+)
 
 
 def _load_manifest_for_project(
@@ -76,6 +90,17 @@ def _load_manifest_for_project(
     manifest_path = os.path.join(target_dir, "manifest.json")
     with open(manifest_path, "r", encoding="utf8") as f:
         return json.load(f), cli_output
+
+
+def _can_stream_events(dbt_resource: DbtCliResource) -> bool:
+    """Check if the installed dbt version supports streaming events."""
+    import dbt.version
+    from packaging import version
+
+    return (
+        version.parse(dbt.version.__version__) >= version.parse("1.4.0")
+        and dbt_resource._json_log_format
+    )
 
 
 def _select_unique_ids_from_manifest_json(
@@ -350,6 +375,144 @@ def _get_asset_deps(
     )
 
 
+def _batch_event_iterator(
+    context: OpExecutionContext,
+    dbt_resource: DbtCliResource,
+    use_build_command: bool,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
+    runtime_metadata_fn: Optional[
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
+    ],
+    kwargs: Dict[str, Any],
+) -> Iterator[Union[AssetObservation, AssetMaterialization, Output]]:
+    """Yields events for a dbt cli invocation. Waits until the entire command has completed before
+    emitting outputs.
+    """
+    dbt_output: Optional[DbtOutput] = None
+    try:
+        if use_build_command:
+            dbt_output = dbt_resource.build(**kwargs)
+        else:
+            dbt_output = dbt_resource.run(**kwargs)
+    finally:
+        # in the case that the project only partially runs successfully, still attempt to generate
+        # events for the parts that were successful
+        if dbt_output is None:
+            dbt_output = DbtOutput(result=check.not_none(dbt_resource.get_run_results_json()))
+
+        manifest_json = check.not_none(dbt_resource.get_manifest_json())
+
+        dbt_output = check.not_none(dbt_output)
+        for result in dbt_output.result["results"]:
+            extra_metadata: Optional[Mapping[str, RawMetadataValue]] = None
+            if runtime_metadata_fn:
+                node_info = manifest_json["nodes"][result["unique_id"]]
+                extra_metadata = runtime_metadata_fn(context, node_info)
+            yield from result_to_events(
+                result=result,
+                docs_url=dbt_output.docs_url,
+                node_info_to_asset_key=node_info_to_asset_key,
+                manifest_json=manifest_json,
+                extra_metadata=extra_metadata,
+                generate_asset_outputs=True,
+            )
+
+
+def _events_for_structured_json_line(
+    json_line: Mapping[str, Any],
+    context: OpExecutionContext,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
+    runtime_metadata_fn: Optional[
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
+    ],
+    manifest_json: Mapping[str, Any],
+) -> Iterator[Union[AssetObservation, Output]]:
+    """Parses a json line into a Dagster event. Attempts to replicate the behavior of result_to_events
+    as closely as possible.
+    """
+    runtime_node_info = json_line.get("data", {}).get("node_info", {})
+    if not runtime_node_info:
+        return
+
+    node_resource_type = runtime_node_info.get("resource_type")
+    node_status = runtime_node_info.get("node_status")
+    unique_id = runtime_node_info.get("unique_id")
+
+    if not node_resource_type or not unique_id:
+        return
+
+    compiled_node_info = manifest_json["nodes"][unique_id]
+
+    if node_resource_type in ASSET_RESOURCE_TYPES and node_status == "success":
+        metadata = dict(
+            runtime_metadata_fn(context, compiled_node_info) if runtime_metadata_fn else {}
+        )
+        started_at_str = runtime_node_info.get("node_started_at")
+        finished_at_str = runtime_node_info.get("node_finished_at")
+        if started_at_str is None or finished_at_str is None:
+            return
+
+        started_at = dateutil.parser.isoparse(started_at_str)  # type: ignore
+        completed_at = dateutil.parser.isoparse(finished_at_str)  # type: ignore
+        duration = completed_at - started_at
+        metadata.update(
+            {
+                "Execution Started At": started_at.isoformat(timespec="seconds"),
+                "Execution Completed At": completed_at.isoformat(timespec="seconds"),
+                "Execution Duration": duration.total_seconds(),
+            }
+        )
+        yield Output(
+            value=None,
+            output_name=_get_output_name(compiled_node_info),
+            metadata=metadata,
+        )
+    elif node_resource_type == "test" and runtime_node_info.get("node_finished_at") is not None:
+        upstream_unique_ids = (
+            manifest_json["nodes"][unique_id].get("depends_on", {}).get("nodes", [])
+        )
+        # tests can apply to multiple asset keys
+        for upstream_id in upstream_unique_ids:
+            # the upstream id can reference a node or a source
+            upstream_node_info = manifest_json["nodes"].get(upstream_id) or manifest_json[
+                "sources"
+            ].get(upstream_id)
+            if upstream_node_info is None:
+                continue
+            upstream_asset_key = node_info_to_asset_key(upstream_node_info)
+            yield AssetObservation(
+                asset_key=upstream_asset_key,
+                metadata={
+                    "Test ID": unique_id,
+                    "Test Status": node_status,
+                },
+            )
+
+
+def _stream_event_iterator(
+    context: OpExecutionContext,
+    dbt_resource: DbtCliResource,
+    use_build_command: bool,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
+    runtime_metadata_fn: Optional[
+        Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
+    ],
+    kwargs: Dict[str, Any],
+) -> Iterator[Union[AssetObservation, Output]]:
+    """Yields events for a dbt cli invocation. Emits outputs as soon as the relevant dbt logs are
+    emitted.
+    """
+    manifest_json = check.not_none(dbt_resource.get_manifest_json())
+
+    for parsed_json_line in dbt_resource.cli_stream_json(
+        command="build" if use_build_command else "run",
+        **kwargs,
+    ):
+        yield from _events_for_structured_json_line(
+            parsed_json_line, context, node_info_to_asset_key, runtime_metadata_fn, manifest_json
+        )
+
+
 def _get_dbt_op(
     op_name: str,
     ins: Mapping[str, In],
@@ -390,59 +553,46 @@ def _get_dbt_op(
         ),
     )
     def _dbt_op(context):
-        dbt_output = None
-
         dbt_resource = getattr(context.resources, dbt_resource_key)
         # clean up any run results from the last run
         dbt_resource.remove_run_results_json()
 
+        kwargs: Dict[str, Any] = {}
         # in the case that we're running everything, opt for the cleaner selection string
         if len(context.selected_output_names) == len(outs):
-            kwargs = {"select": select, "exclude": exclude}
+            kwargs["select"] = select
+            kwargs["exclude"] = exclude
         else:
             # for each output that we want to emit, translate to a dbt select string by converting
             # the out to its corresponding fqn
-            kwargs = {
-                "select": [
-                    ".".join(fqns_by_output_name[output_name])
-                    for output_name in context.selected_output_names
-                ]
-            }
+            kwargs["select"] = [
+                ".".join(fqns_by_output_name[output_name])
+                for output_name in context.selected_output_names
+            ]
+        # variables to pass into the command
+        if partition_key_to_vars_fn:
+            kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
+        # merge in any additional kwargs from the config
+        kwargs = deep_merge_dicts(kwargs, context.op_config)
 
-        try:
-            # variables to pass into the command
-            if partition_key_to_vars_fn:
-                kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
-
-            # merge in any additional kwargs from the config
-            kwargs = deep_merge_dicts(kwargs, context.op_config)
-
-            if use_build_command:
-                dbt_output = dbt_resource.build(**kwargs)
-            else:
-                dbt_output = dbt_resource.run(**kwargs)
-        finally:
-            # in the case that the project only partially runs successfully, still attempt to generate
-            # events for the parts that were successful
-            if dbt_output is None:
-                dbt_output = DbtOutput(result=dbt_resource.get_run_results_json())
-
-            manifest_json = dbt_resource.get_manifest_json()
-
-            for result in dbt_output.result["results"]:
-                if runtime_metadata_fn:
-                    node_info = manifest_json["nodes"][result["unique_id"]]
-                    extra_metadata = runtime_metadata_fn(context, node_info)
-                else:
-                    extra_metadata = None
-                yield from result_to_events(
-                    result=result,
-                    docs_url=dbt_output.docs_url,
-                    node_info_to_asset_key=node_info_to_asset_key,
-                    manifest_json=manifest_json,
-                    extra_metadata=extra_metadata,
-                    generate_asset_outputs=True,
-                )
+        if _can_stream_events(dbt_resource):
+            yield from _stream_event_iterator(
+                context,
+                dbt_resource,
+                use_build_command,
+                node_info_to_asset_key,
+                runtime_metadata_fn,
+                kwargs,
+            )
+        else:
+            yield from _batch_event_iterator(
+                context,
+                dbt_resource,
+                use_build_command,
+                node_info_to_asset_key,
+                runtime_metadata_fn,
+                kwargs,
+            )
 
     return _dbt_op
 
@@ -603,7 +753,6 @@ def load_assets_from_dbt_project(
         display_raw_sql (Optional[bool]): [Experimental] A flag to indicate if the raw sql associated
             with each model should be included in the asset description. For large projects, setting
             this flag to False is advised to reduce the size of the resulting snapshot.
-
     """
     project_dir = check.str_param(project_dir, "project_dir")
     profiles_dir = check.opt_str_param(
@@ -722,6 +871,7 @@ def load_assets_from_dbt_manifest(
     if display_raw_sql is not None:
         experimental_arg_warning("display_raw_sql", "load_assets_from_dbt_manifest")
     display_raw_sql = check.opt_bool_param(display_raw_sql, "display_raw_sql", default=True)
+
     dbt_resource_key = check.str_param(dbt_resource_key, "dbt_resource_key")
 
     dbt_nodes = {
