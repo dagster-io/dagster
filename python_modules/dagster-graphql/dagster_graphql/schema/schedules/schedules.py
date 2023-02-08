@@ -11,8 +11,8 @@ from ..errors import (
     GrapheneScheduleNotFoundError,
 )
 from ..instigation import (
-    GrapheneFutureInstigationTick,
-    GrapheneFutureInstigationTicks,
+    GrapheneDryRunInstigationTick,
+    GrapheneDryRunInstigationTicks,
     GrapheneInstigationState,
 )
 from ..util import ResolveInfo, non_null_list
@@ -30,13 +30,13 @@ class GrapheneSchedule(graphene.ObjectType):
     scheduleState = graphene.NonNull(GrapheneInstigationState)
     partition_set = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     futureTicks = graphene.NonNull(
-        GrapheneFutureInstigationTicks,
+        GrapheneDryRunInstigationTicks,
         cursor=graphene.Float(),
         limit=graphene.Int(),
         until=graphene.Float(),
     )
     futureTick = graphene.NonNull(
-        GrapheneFutureInstigationTick, tick_timestamp=graphene.NonNull(graphene.Int)
+        GrapheneDryRunInstigationTick, tick_timestamp=graphene.NonNull(graphene.Int)
     )
 
     class Meta:
@@ -123,15 +123,15 @@ class GrapheneSchedule(graphene.ObjectType):
                 tick_times.append(next(time_iter).timestamp())
 
         future_ticks = [
-            GrapheneFutureInstigationTick(self._schedule_state, tick_time)
+            GrapheneDryRunInstigationTick(self._schedule_state, tick_time)
             for tick_time in tick_times
         ]
 
         new_cursor = tick_times[-1] + 1 if tick_times else cursor
-        return GrapheneFutureInstigationTicks(results=future_ticks, cursor=new_cursor)
+        return GrapheneDryRunInstigationTicks(results=future_ticks, cursor=new_cursor)
 
     def resolve_futureTick(self, _graphene_info, tick_timestamp: int):
-        return GrapheneFutureInstigationTick(self._schedule_state, float(tick_timestamp))
+        return GrapheneDryRunInstigationTick(self._schedule_state, float(tick_timestamp))
 
 
 class GrapheneScheduleOrError(graphene.Union):

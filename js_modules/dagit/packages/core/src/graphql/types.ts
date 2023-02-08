@@ -931,6 +931,18 @@ export type DisplayableEvent = {
   metadataEntries: Array<MetadataEntry>;
 };
 
+export type DryRunInstigationTick = {
+  __typename: 'DryRunInstigationTick';
+  evaluationResult: Maybe<TickEvaluation>;
+  timestamp: Scalars['Float'];
+};
+
+export type DryRunInstigationTicks = {
+  __typename: 'DryRunInstigationTicks';
+  cursor: Scalars['Float'];
+  results: Array<DryRunInstigationTick>;
+};
+
 export type EngineEvent = DisplayableEvent &
   ErrorEvent &
   MarkerEvent &
@@ -1258,18 +1270,6 @@ export type FreshnessPolicy = {
   maximumLagMinutes: Scalars['Float'];
 };
 
-export type FutureInstigationTick = {
-  __typename: 'FutureInstigationTick';
-  evaluationResult: Maybe<TickEvaluation>;
-  timestamp: Scalars['Float'];
-};
-
-export type FutureInstigationTicks = {
-  __typename: 'FutureInstigationTicks';
-  cursor: Scalars['Float'];
-  results: Array<FutureInstigationTick>;
-};
-
 export type Graph = SolidContainer & {
   __typename: 'Graph';
   description: Maybe<Scalars['String']>;
@@ -1470,7 +1470,7 @@ export type InstigationState = {
   id: Scalars['ID'];
   instigationType: InstigationType;
   name: Scalars['String'];
-  nextTick: Maybe<FutureInstigationTick>;
+  nextTick: Maybe<DryRunInstigationTick>;
   repositoryLocationName: Scalars['String'];
   repositoryName: Scalars['String'];
   repositoryOrigin: RepositoryOrigin;
@@ -3150,8 +3150,8 @@ export type Schedule = {
   cronSchedule: Scalars['String'];
   description: Maybe<Scalars['String']>;
   executionTimezone: Maybe<Scalars['String']>;
-  futureTick: FutureInstigationTick;
-  futureTicks: FutureInstigationTicks;
+  futureTick: DryRunInstigationTick;
+  futureTicks: DryRunInstigationTicks;
   id: Scalars['ID'];
   mode: Scalars['String'];
   name: Scalars['String'];
@@ -3260,7 +3260,7 @@ export type Sensor = {
   metadata: SensorMetadata;
   minIntervalSeconds: Scalars['Int'];
   name: Scalars['String'];
-  nextTick: Maybe<FutureInstigationTick>;
+  nextTick: Maybe<DryRunInstigationTick>;
   sensorState: InstigationState;
   targets: Maybe<Array<Target>>;
 };

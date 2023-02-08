@@ -1369,8 +1369,8 @@ type Schedule {
   description: String
   scheduleState: InstigationState!
   partitionSet: PartitionSet
-  futureTicks(cursor: Float, limit: Int, until: Float): FutureInstigationTicks!
-  futureTick(tickTimestamp: Int!): FutureInstigationTick!
+  futureTicks(cursor: Float, limit: Int, until: Float): DryRunInstigationTicks!
+  futureTick(tickTimestamp: Int!): DryRunInstigationTick!
 }
 
 union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
@@ -2047,7 +2047,7 @@ type RunLauncher {
   name: String!
 }
 
-type FutureInstigationTick {
+type DryRunInstigationTick {
   timestamp: Float!
   evaluationResult: TickEvaluation
 }
@@ -2064,8 +2064,8 @@ type RunRequest {
   runConfigYaml: String!
 }
 
-type FutureInstigationTicks {
-  results: [FutureInstigationTick!]!
+type DryRunInstigationTicks {
+  results: [DryRunInstigationTick!]!
   cursor: Float!
 }
 
@@ -2091,7 +2091,7 @@ type InstigationState {
     cursor: String
     statuses: [InstigationTickStatus!]
   ): [InstigationTick!]!
-  nextTick: FutureInstigationTick
+  nextTick: DryRunInstigationTick
   runningCount: Int!
 }
 
@@ -2459,7 +2459,7 @@ type Sensor {
   sensorState: InstigationState!
   minIntervalSeconds: Int!
   description: String
-  nextTick: FutureInstigationTick
+  nextTick: DryRunInstigationTick
   metadata: SensorMetadata!
 }
 
