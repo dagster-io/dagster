@@ -92,12 +92,15 @@ def _load_manifest_for_project(
         return json.load(f), cli_output
 
 
-def _can_stream_events() -> bool:
+def _can_stream_events(dbt_resource: DbtCliResource) -> bool:
     """Check if the installed dbt version supports streaming events."""
     import dbt.version
     from packaging import version
 
-    return version.parse(dbt.version.__version__) >= version.parse("1.4.0")
+    return (
+        version.parse(dbt.version.__version__) >= version.parse("1.4.0")
+        and dbt_resource._json_log_format
+    )
 
 
 def _select_unique_ids_from_manifest_json(
@@ -524,7 +527,6 @@ def _get_dbt_op(
     runtime_metadata_fn: Optional[
         Callable[[OpExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
     ],
-    stream_events: bool,
 ):
     @op(
         name=op_name,
@@ -573,7 +575,7 @@ def _get_dbt_op(
         # merge in any additional kwargs from the config
         kwargs = deep_merge_dicts(kwargs, context.op_config)
 
-        if stream_events:
+        if _can_stream_events(dbt_resource):
             yield from _stream_event_iterator(
                 context,
                 dbt_resource,
@@ -615,7 +617,6 @@ def _dbt_nodes_to_assets(
         [Mapping[str, Any]], Optional[FreshnessPolicy]
     ] = _get_node_freshness_policy,
     display_raw_sql: bool = True,
-    stream_events: bool = False,
 ) -> AssetsDefinition:
     if use_build_command:
         deps = _get_deps(
@@ -661,7 +662,6 @@ def _dbt_nodes_to_assets(
         node_info_to_asset_key=node_info_to_asset_key,
         partition_key_to_vars_fn=partition_key_to_vars_fn,
         runtime_metadata_fn=runtime_metadata_fn,
-        stream_events=stream_events,
     )
 
     return AssetsDefinition(
@@ -894,8 +894,6 @@ def load_assets_from_dbt_manifest(
 
         selected_unique_ids = _select_unique_ids_from_manifest_json(manifest_json, select, exclude)
 
-    stream_events = _can_stream_events()
-
     dbt_assets_def = _dbt_nodes_to_assets(
         dbt_nodes,
         runtime_metadata_fn=runtime_metadata_fn,
@@ -912,7 +910,6 @@ def load_assets_from_dbt_manifest(
         node_info_to_group_fn=node_info_to_group_fn,
         node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         display_raw_sql=display_raw_sql,
-        stream_events=stream_events,
     )
     dbt_assets: Sequence[AssetsDefinition]
     if source_key_prefix:

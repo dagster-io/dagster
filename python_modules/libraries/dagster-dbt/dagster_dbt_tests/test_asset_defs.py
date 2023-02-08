@@ -82,14 +82,15 @@ def test_load_from_manifest_json(prefix):
     assert assets_job.execute_in_process().success
 
 
-def test_runtime_metadata_fn():
+def test_runtime_metadata_fn(
+    dbt_seed,
+    conn_string,
+    test_project_dir,
+    dbt_config_dir,
+):
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
     with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
-
-    run_results_path = file_relative_path(__file__, "sample_run_results.json")
-    with open(run_results_path, "r", encoding="utf8") as f:
-        run_results_json = json.load(f)
 
     def runtime_metadata_fn(context, node_info):
         return {"op_name": context.op_def.name, "dbt_model": node_info["name"]}
@@ -99,14 +100,17 @@ def test_runtime_metadata_fn():
     )
     assert_assets_match_project(dbt_assets)
 
-    dbt = MagicMock()
-    dbt.run.return_value = DbtOutput(run_results_json)
-    dbt.build.return_value = DbtOutput(run_results_json)
-    dbt.get_manifest_json.return_value = manifest_json
     assets_job = build_assets_job(
         "assets_job",
         dbt_assets,
-        resource_defs={"dbt": ResourceDefinition.hardcoded_resource(dbt)},
+        resource_defs={
+            "dbt": dbt_cli_resource.configured(
+                {
+                    "project_dir": test_project_dir,
+                    "profiles_dir": dbt_config_dir,
+                }
+            )
+        },
     )
     result = assets_job.execute_in_process()
     assert result.success
@@ -168,7 +172,10 @@ def test_fail_immediately(
     assert len(materializations) == 0
 
 
-@pytest.mark.parametrize("use_build, fail_test", [(True, False), (True, True), (False, False)])
+@pytest.mark.parametrize(
+    "use_build, fail_test, json_log_format",
+    [(True, False, True), (True, True, True), (False, False, True), (True, True, False)],
+)
 def test_basic(
     capsys,
     dbt_seed,
@@ -177,6 +184,7 @@ def test_basic(
     dbt_config_dir,
     use_build,
     fail_test,
+    json_log_format,
 ):  # pylint: disable=unused-argument
     # expected to emit json-formatted messages
     with capsys.disabled():
@@ -197,6 +205,7 @@ def test_basic(
                     "project_dir": test_project_dir,
                     "profiles_dir": dbt_config_dir,
                     "vars": {"fail_test": fail_test},
+                    "json_log_format": json_log_format,
                 }
             )
         },
