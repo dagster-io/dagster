@@ -29,6 +29,7 @@ from dagster._core.workspace.workspace import (
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import (
+    CachingDynamicPartitionsLoader,
     RepositoryScopedBatchLoader,
     StaleStatusLoader,
 )
@@ -39,6 +40,7 @@ from .partition_sets import GraphenePartitionSet
 from .permissions import GraphenePermission
 from .pipelines.pipeline import GrapheneJob, GraphenePipeline
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
+from .resources import GrapheneResourceDetails
 from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
 from .used_solid import GrapheneUsedSolid
@@ -213,6 +215,7 @@ class GrapheneRepository(graphene.ObjectType):
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     assetGroups = non_null_list(GrapheneAssetGroup)
+    allTopLevelResourceDetails = non_null_list(GrapheneResourceDetails)
 
     class Meta:
         name = "Repository"
@@ -233,6 +236,7 @@ class GrapheneRepository(graphene.ObjectType):
             instance=instance,
             asset_graph=lambda: ExternalAssetGraph.from_external_repository(repository),
         )
+        self._dynamic_partitions_loader = CachingDynamicPartitionsLoader(instance)
         super().__init__(name=repository.name)
 
     def resolve_id(self, _graphene_info: ResolveInfo):
@@ -315,6 +319,7 @@ class GrapheneRepository(graphene.ObjectType):
                 self._repository,
                 external_asset_node,
                 stale_status_loader=self._stale_status_loader,
+                dynamic_partitions_loader=self._dynamic_partitions_loader,
             )
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]
@@ -332,6 +337,14 @@ class GrapheneRepository(graphene.ObjectType):
                 group_name, [external_node.asset_key for external_node in external_nodes]
             )
             for group_name, external_nodes in groups.items()
+        ]
+
+    def resolve_allTopLevelResourceDetails(self, _graphene_info):
+        return [
+            GrapheneResourceDetails(resource)
+            for resource in sorted(
+                self._repository.get_external_resources(), key=lambda resource: resource.name
+            )
         ]
 
 

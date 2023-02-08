@@ -20,7 +20,7 @@ from dagster._core.storage.local_compute_log_manager import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir, ensure_file
-from google.cloud import storage  # type: ignore
+from google.cloud import storage
 
 
 class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):

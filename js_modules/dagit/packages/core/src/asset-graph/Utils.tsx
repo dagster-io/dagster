@@ -136,6 +136,7 @@ export interface LiveDataForNode {
   lastObservation: AssetNodeLiveObservationFragment | null;
   currentLogicalVersion: string | null;
   projectedLogicalVersion: string | null;
+  partitionStats: {numMaterialized: number; numPartitions: number} | null;
 }
 
 export const MISSING_LIVE_DATA: LiveDataForNode = {
@@ -149,6 +150,7 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   lastObservation: null,
   currentLogicalVersion: null,
   projectedLogicalVersion: null,
+  partitionStats: null,
   stepKey: '',
 };
 
@@ -211,6 +213,7 @@ export const buildLiveDataForNode = (
     freshnessPolicy: assetNode.freshnessPolicy,
     inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
     unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
+    partitionStats: assetNode.partitionStats || null,
     runWhichFailedToMaterialize,
   };
 };

@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional, Type
 
 import pytest
 from dagster import job, op
@@ -102,7 +102,6 @@ def test_struct_config_persmissive_cached_method():
     assert calls["plus"] == 1
 
 
-@pytest.mark.skip(reason="not yet supported")
 def test_struct_config_array():
     class AnOpConfig(Config):
         a_string_list: List[str]
@@ -129,7 +128,6 @@ def test_struct_config_array():
         )
 
 
-@pytest.mark.skip(reason="not yet supported")
 def test_struct_config_map():
     class AnOpConfig(Config):
         a_string_to_int_dict: Dict[str, int]
@@ -167,6 +165,31 @@ def test_struct_config_map():
         )
 
 
+def test_struct_config_mapping():
+    class AnOpConfig(Config):
+        a_string_to_int_mapping: Mapping[str, int]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.a_string_to_int_mapping == {"foo": 1, "bar": 2}
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {
+            "ops": {
+                "a_struct_config_op": {"config": {"a_string_to_int_mapping": {"foo": 1, "bar": 2}}}
+            }
+        }
+    )
+    assert executed["yes"]
+
+
 @pytest.mark.skip(reason="not yet supported")
 def test_struct_config_optional_nested():
     class ANestedConfig(Config):
@@ -190,7 +213,6 @@ def test_struct_config_optional_nested():
     assert executed["yes"]
 
 
-@pytest.mark.skip(reason="not yet supported")
 def test_struct_config_nested_in_list():
     class ANestedConfig(Config):
         a_str: str
@@ -222,7 +244,6 @@ def test_struct_config_nested_in_list():
     assert executed["yes"]
 
 
-@pytest.mark.skip(reason="not yet supported")
 def test_struct_config_nested_in_dict():
     class ANestedConfig(Config):
         a_str: str
@@ -252,5 +273,30 @@ def test_struct_config_nested_in_dict():
                 }
             }
         }
+    )
+    assert executed["yes"]
+
+
+@pytest.mark.parametrize(
+    "key_type, keys",
+    [(str, ["foo", "bar"]), (int, [1, 2]), (float, [1.0, 2.0]), (bool, [True, False])],
+)
+def test_struct_config_map_different_key_type(key_type: Type, keys: List[Any]):
+    class AnOpConfig(Config):
+        my_dict: Dict[key_type, int]
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        executed["yes"] = True
+        assert config.my_dict == {keys[0]: 1, keys[1]: 2}
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"my_dict": {keys[0]: 1, keys[1]: 2}}}}}
     )
     assert executed["yes"]

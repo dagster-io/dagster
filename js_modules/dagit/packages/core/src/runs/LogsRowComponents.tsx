@@ -1,4 +1,5 @@
 import {Colors, FontFamily, MetadataTable, Tooltip} from '@dagster-io/ui';
+import memoize from 'lodash/memoize';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
@@ -113,6 +114,23 @@ const OpColumnTooltipStyle = JSON.stringify({
   left: 1,
 });
 
+const timestampFormat = memoize((timezone: string) => {
+  return new Intl.DateTimeFormat(navigator.language, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+    timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
+  });
+});
+
+const fractionalSecondFormat = memoize((locale: string) => {
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  });
+});
+
 // Timestamp Column
 
 export const TimestampColumn: React.FC<{
@@ -129,21 +147,9 @@ export const TimestampColumn: React.FC<{
   const timeString = () => {
     if (time) {
       const timeNumber = Number(time);
-      const locale = navigator.language;
-      const main = new Date(timeNumber).toLocaleTimeString(locale, {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hourCycle: 'h23',
-        timeZone: timezone === 'Automatic' ? browserTimezone() : timezone,
-      });
+      const main = timestampFormat(timezone).format(new Date(timeNumber));
       const fractionalSec = (timeNumber % 1000) / 1000;
-      return `${main}${fractionalSec
-        .toLocaleString(locale, {
-          minimumFractionDigits: 3,
-          maximumFractionDigits: 3,
-        })
-        .slice(1)}`;
+      return `${main}${fractionalSecondFormat(navigator.language).format(fractionalSec).slice(1)}`;
     }
     return '';
   };

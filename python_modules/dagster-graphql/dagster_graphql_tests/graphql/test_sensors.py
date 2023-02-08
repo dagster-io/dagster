@@ -476,7 +476,7 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
             variables={"selectorData": selector, "cursor": None},
         )
         assert result.data
-        assert result.data["sensorDryRun"]["__typename"] == "SensorExecutionData"
+        assert result.data["sensorDryRun"]["__typename"] == "DryRunInstigationTick"
         evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
         assert evaluation_result["cursor"] == "1"
         result = execute_dagster_graphql(

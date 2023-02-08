@@ -132,7 +132,7 @@ class SensorEvaluationContext:
         self._exit_stack.close()
         self._logger = None
 
-    @public  # type: ignore
+    @public
     @property
     def instance(self) -> DagsterInstance:
         # self._instance_ref should only ever be None when this SensorEvaluationContext was
@@ -152,17 +152,17 @@ class SensorEvaluationContext:
     def instance_ref(self) -> Optional[InstanceRef]:
         return self._instance_ref
 
-    @public  # type: ignore
+    @public
     @property
     def last_completion_time(self) -> Optional[float]:
         return self._last_completion_time
 
-    @public  # type: ignore
+    @public
     @property
     def last_run_key(self) -> Optional[str]:
         return self._last_run_key
 
-    @public  # type: ignore
+    @public
     @property
     def cursor(self) -> Optional[str]:
         """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
@@ -181,12 +181,12 @@ class SensorEvaluationContext:
         """
         self._cursor = check.opt_str_param(cursor, "cursor")
 
-    @public  # type: ignore
+    @public
     @property
     def repository_name(self) -> Optional[str]:
         return self._repository_name
 
-    @public  # type: ignore
+    @public
     @property
     def repository_def(self) -> Optional["RepositoryDefinition"]:
         return self._repository_def
@@ -378,17 +378,17 @@ class SensorDefinition:
 
             return self._raw_fn()
 
-    @public  # type: ignore
+    @public
     @property
     def name(self) -> str:
         return self._name
 
-    @public  # type: ignore
+    @public
     @property
     def description(self) -> Optional[str]:
         return self._description
 
-    @public  # type: ignore
+    @public
     @property
     def minimum_interval_seconds(self) -> Optional[int]:
         return self._min_interval
@@ -397,7 +397,7 @@ class SensorDefinition:
     def targets(self) -> Sequence[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets
 
-    @public  # type: ignore
+    @public
     @property
     def job(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
         if self._targets:
@@ -523,7 +523,7 @@ class SensorDefinition:
     def _target(self) -> Optional[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets[0] if self._targets else None
 
-    @public  # type: ignore
+    @public
     @property
     def job_name(self) -> Optional[str]:
         if len(self._targets) > 1:
@@ -533,7 +533,7 @@ class SensorDefinition:
             )
         return self._targets[0].pipeline_name
 
-    @public  # type: ignore
+    @public
     @property
     def default_status(self) -> DefaultSensorStatus:
         return self._default_status
@@ -589,8 +589,8 @@ def wrap_sensor_evaluation(
     fn: RawSensorEvaluationFunction,
 ) -> SensorEvaluationFunction:
     def _wrapped_fn(context: SensorEvaluationContext):
-        if has_at_least_one_parameter(fn):  # type: ignore  # fmt: skip
-            result = fn(context)  # type: ignore  # fmt: skip
+        if has_at_least_one_parameter(fn):
+            result = fn(context)
         else:
             result = fn()  # type: ignore
 

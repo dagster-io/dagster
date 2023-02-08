@@ -4,6 +4,7 @@ import {Route, Switch, useParams} from 'react-router-dom';
 
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
+import {ResourceRoot} from '../resources/ResourceRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
 
@@ -115,6 +116,9 @@ const RepoRouteContainer = () => {
       </Route>
       <Route path="/locations/:repoPath/sensors/:sensorName">
         <SensorRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/locations/:repoPath/resources/:resourceName">
+        <ResourceRoot repoAddress={addressForPath} />
       </Route>
       <Route path={['/locations/:repoPath/asset-groups/:groupName/list(/?.*)']}>
         <AssetGroupRoot repoAddress={addressForPath} tab="list" />

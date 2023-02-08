@@ -53,6 +53,11 @@ export type SingleAssetQuery = {
             timestamp: string;
             runId: string;
           }>;
+          partitionStats: {
+            __typename: 'PartitionStats';
+            numMaterialized: number;
+            numPartitions: number;
+          } | null;
           partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
         } | null;
         key: {__typename: 'AssetKey'; path: Array<string>};

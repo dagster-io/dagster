@@ -22,7 +22,7 @@ from dagster_gcp import (
     import_gcs_paths_to_bq,
 )
 from dagster_pandas import DataFrame
-from google.cloud import bigquery  # type: ignore
+from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
 
 

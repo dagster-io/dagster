@@ -114,17 +114,17 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     def config_schema(self) -> IDefinitionConfigSchema:
         return self._config_schema
 
-    @public  # type: ignore
+    @public
     @property
     def description(self) -> Optional[str]:
         return self._description
 
-    @public  # type: ignore
+    @public
     @property
     def version(self) -> Optional[str]:
         return self._version
 
-    @public  # type: ignore
+    @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
@@ -265,7 +265,7 @@ class _ResourceDecoratorCallable:
     def __call__(self, resource_fn: ResourceFunction) -> ResourceDefinition:
         check.callable_param(resource_fn, "resource_fn")
 
-        any_name = ["*"] if has_at_least_one_parameter(resource_fn) else []  # type: ignore  # fmt: skip
+        any_name = ["*"] if has_at_least_one_parameter(resource_fn) else []
 
         params = get_function_params(resource_fn)
 
@@ -343,7 +343,7 @@ def resource(
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
-        return _ResourceDecoratorCallable()(config_schema)  # type: ignore
+        return _ResourceDecoratorCallable()(config_schema)
 
     def _wrap(resource_fn: ResourceFunction) -> "ResourceDefinition":
         return _ResourceDecoratorCallable(
@@ -383,5 +383,5 @@ def make_values_resource(**kwargs: Any) -> ResourceDefinition:
     """
     return ResourceDefinition(
         resource_fn=lambda init_context: init_context.resource_config,
-        config_schema=kwargs or Any,  # type: ignore
+        config_schema=kwargs or Any,
     )

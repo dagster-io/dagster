@@ -182,7 +182,7 @@ class OutputContext:
         ):
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
-    @public  # type: ignore
+    @public
     @property
     def step_key(self) -> str:
         if self._step_key is None:
@@ -193,7 +193,7 @@ class OutputContext:
 
         return self._step_key
 
-    @public  # type: ignore
+    @public
     @property
     def name(self) -> str:
         if self._name is None:
@@ -214,7 +214,7 @@ class OutputContext:
 
         return self._pipeline_name
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> str:
         if self._run_id is None:
@@ -225,22 +225,22 @@ class OutputContext:
 
         return self._run_id
 
-    @public  # type: ignore
+    @public
     @property
     def metadata(self) -> Optional[Mapping[str, object]]:
         return self._metadata
 
-    @public  # type: ignore
+    @public
     @property
     def mapping_key(self) -> Optional[str]:
         return self._mapping_key
 
-    @public  # type: ignore
+    @public
     @property
     def config(self) -> Any:
         return self._config
 
-    @public  # type: ignore
+    @public
     @property
     def op_def(self) -> "OpDefinition":
         from dagster._core.definitions import OpDefinition
@@ -253,7 +253,7 @@ class OutputContext:
 
         return cast(OpDefinition, self._op_def)
 
-    @public  # type: ignore
+    @public
     @property
     def dagster_type(self) -> "DagsterType":
         if self._dagster_type is None:
@@ -264,7 +264,7 @@ class OutputContext:
 
         return self._dagster_type
 
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> "DagsterLogManager":
         if self._log is None:
@@ -275,17 +275,17 @@ class OutputContext:
 
         return self._log
 
-    @public  # type: ignore
+    @public
     @property
     def version(self) -> Optional[str]:
         return self._version
 
-    @public  # type: ignore
+    @public
     @property
     def resource_config(self) -> Optional[Mapping[str, object]]:
         return self._resource_config
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> Any:
         if self._resources is None:
@@ -306,12 +306,12 @@ class OutputContext:
     def asset_info(self) -> Optional[AssetOutputInfo]:
         return self._asset_info
 
-    @public  # type: ignore
+    @public
     @property
     def has_asset_key(self) -> bool:
         return self._asset_info is not None
 
-    @public  # type: ignore
+    @public
     @property
     def asset_key(self) -> AssetKey:
         if self._asset_info is None:
@@ -322,7 +322,7 @@ class OutputContext:
 
         return self._asset_info.key
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the asset corresponding to this output."""
@@ -354,7 +354,7 @@ class OutputContext:
 
         return self._step_context
 
-    @public  # type: ignore
+    @public
     @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run."""
@@ -368,7 +368,7 @@ class OutputContext:
 
         return self._partition_key is not None
 
-    @public  # type: ignore
+    @public
     @property
     def partition_key(self) -> str:
         """The partition key for the current run.
@@ -390,7 +390,7 @@ class OutputContext:
 
         return self._partition_key
 
-    @public  # type: ignore
+    @public
     @property
     def has_asset_partitions(self) -> bool:
         if self._warn_on_step_context_use:
@@ -406,7 +406,7 @@ class OutputContext:
         else:
             return False
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partition_key(self) -> str:
         """The partition key for output asset.
@@ -424,7 +424,7 @@ class OutputContext:
 
         return self.step_context.asset_partition_key_for_output(self.name)
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for output asset.
@@ -441,7 +441,7 @@ class OutputContext:
 
         return self.step_context.asset_partition_key_range_for_output(self.name)
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partition_keys(self) -> Sequence[str]:
         """The partition keys for the output asset.
@@ -457,10 +457,11 @@ class OutputContext:
             )
 
         return self.asset_partitions_def.get_partition_keys_in_range(
-            self.step_context.asset_partition_key_range_for_output(self.name)
+            self.step_context.asset_partition_key_range_for_output(self.name),
+            dynamic_partitions_store=self.step_context.instance,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
         """The time window for the partitions of the output asset.

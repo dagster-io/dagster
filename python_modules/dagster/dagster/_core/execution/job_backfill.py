@@ -190,7 +190,7 @@ def submit_backfill_runs(
     partition_set_name = origin.partition_set_name
     external_partition_set = external_repo.get_external_partition_set(partition_set_name)
     result = repo_location.get_external_partition_set_execution_param_data(
-        external_repo.handle, partition_set_name, partition_names
+        external_repo.handle, partition_set_name, partition_names, instance
     )
 
     assert isinstance(result, ExternalPartitionSetExecutionParamData)

@@ -43,7 +43,7 @@ class GrapheneExecutionStepInput(graphene.ObjectType):
         return self._step_input_snap.name
 
     def resolve_dependsOn(self, _graphene_info: ResolveInfo):
-        return [  # type: ignore  # fmt: skip
+        return [
             GrapheneExecutionStep(
                 self._external_execution_plan,
                 self._external_execution_plan.get_step_by_key(key),

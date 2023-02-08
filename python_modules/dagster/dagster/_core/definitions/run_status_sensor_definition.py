@@ -137,27 +137,27 @@ class RunStatusSensorContext:
             context=self._context,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def sensor_name(self) -> str:
         return self._sensor_name
 
-    @public  # type: ignore
+    @public
     @property
     def dagster_run(self) -> DagsterRun:
         return self._dagster_run
 
-    @public  # type: ignore
+    @public
     @property
     def dagster_event(self) -> DagsterEvent:
         return self._dagster_event
 
-    @public  # type: ignore
+    @public
     @property
     def instance(self) -> DagsterInstance:
         return self._instance
 
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> logging.Logger:
         if self._context:
@@ -622,7 +622,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                         lambda: f'Error occurred during the execution sensor "{name}".',
                     ):
                         # one user code invocation maps to one failure event
-                        sensor_return = run_status_sensor_fn(  # type: ignore  # fmt: skip
+                        sensor_return = run_status_sensor_fn(
                             RunStatusSensorContext(  # type: ignore
                                 sensor_name=name,
                                 dagster_run=pipeline_run,

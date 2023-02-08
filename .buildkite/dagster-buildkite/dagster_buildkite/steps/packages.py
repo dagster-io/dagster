@@ -306,7 +306,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/docs_snippets",
         pytest_extra_cmds=docs_snippets_extra_cmds,
-        run_mypy=False,
         unsupported_python_versions=[
             # dependency on 3.9-incompatible extension libs
             AvailablePythonVersion.V3_9,
@@ -367,6 +366,14 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_extra_cmds=dbt_extra_cmds,
+        # dbt-core does not yet support python 3.10
+        unsupported_python_versions=[
+            AvailablePythonVersion.V3_10,
+        ],
+        pytest_tox_factors=[
+            "dbt_13X",
+            "dbt_14X",
+        ],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-airbyte",
@@ -476,5 +483,4 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ".buildkite/dagster-buildkite",
         run_pytest=False,
     ),
-    PackageSpec("scripts", run_pytest=False),
 ]

@@ -483,7 +483,7 @@ def remove_none_recursively(obj):
         return obj
 
 
-default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})  # type: ignore[has-type]
+default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
 
 def strip_ansi(input_str):

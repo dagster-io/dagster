@@ -181,7 +181,7 @@ def schedule_execution_time_iterator(
     start_timestamp: float,
     cron_schedule: Union[str, Sequence[str]],
     execution_timezone: Optional[str],
-    ascending: bool,
+    ascending: bool = True,
 ) -> Iterator[datetime.datetime]:
     """Generator of execution datetimes >= start_timestamp for the given schedule.
 

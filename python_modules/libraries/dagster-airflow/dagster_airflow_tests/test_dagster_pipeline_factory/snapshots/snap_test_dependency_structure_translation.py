@@ -4,11 +4,10 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
-snapshots[
-    "test_complex_dag 1"
-] = """{
+snapshots['test_complex_dag 1'] = '''{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -22,14 +21,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_group"
+              "solid_name": "complex_dag__create_entry_group"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_entry_gcs",
-      "solid_name": "airflow_create_entry_gcs",
+      "solid_def_name": "complex_dag__create_entry_gcs",
+      "solid_name": "complex_dag__create_entry_gcs",
       "tags": {}
     },
     {
@@ -43,14 +42,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_gcs"
+              "solid_name": "complex_dag__create_entry_gcs"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_entry_gcs_result",
-      "solid_name": "airflow_create_entry_gcs_result",
+      "solid_def_name": "complex_dag__create_entry_gcs_result",
+      "solid_name": "complex_dag__create_entry_gcs_result",
       "tags": {}
     },
     {
@@ -64,14 +63,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_gcs"
+              "solid_name": "complex_dag__create_entry_gcs"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_entry_gcs_result2",
-      "solid_name": "airflow_create_entry_gcs_result2",
+      "solid_def_name": "complex_dag__create_entry_gcs_result2",
+      "solid_name": "complex_dag__create_entry_gcs_result2",
       "tags": {}
     },
     {
@@ -85,8 +84,8 @@ snapshots[
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_entry_group",
-      "solid_name": "airflow_create_entry_group",
+      "solid_def_name": "complex_dag__create_entry_group",
+      "solid_name": "complex_dag__create_entry_group",
       "tags": {}
     },
     {
@@ -100,14 +99,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_group"
+              "solid_name": "complex_dag__create_entry_group"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_entry_group_result",
-      "solid_name": "airflow_create_entry_group_result",
+      "solid_def_name": "complex_dag__create_entry_group_result",
+      "solid_name": "complex_dag__create_entry_group_result",
       "tags": {}
     },
     {
@@ -121,14 +120,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_group"
+              "solid_name": "complex_dag__create_entry_group"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_entry_group_result2",
-      "solid_name": "airflow_create_entry_group_result2",
+      "solid_def_name": "complex_dag__create_entry_group_result2",
+      "solid_name": "complex_dag__create_entry_group_result2",
       "tags": {}
     },
     {
@@ -142,14 +141,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template_field"
+              "solid_name": "complex_dag__create_tag_template_field"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_tag",
-      "solid_name": "airflow_create_tag",
+      "solid_def_name": "complex_dag__create_tag",
+      "solid_name": "complex_dag__create_tag",
       "tags": {}
     },
     {
@@ -163,14 +162,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag"
+              "solid_name": "complex_dag__create_tag"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_tag_result",
-      "solid_name": "airflow_create_tag_result",
+      "solid_def_name": "complex_dag__create_tag_result",
+      "solid_name": "complex_dag__create_tag_result",
       "tags": {}
     },
     {
@@ -184,14 +183,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag"
+              "solid_name": "complex_dag__create_tag"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_tag_result2",
-      "solid_name": "airflow_create_tag_result2",
+      "solid_def_name": "complex_dag__create_tag_result2",
+      "solid_name": "complex_dag__create_tag_result2",
       "tags": {}
     },
     {
@@ -205,14 +204,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_gcs"
+              "solid_name": "complex_dag__create_entry_gcs"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_tag_template",
-      "solid_name": "airflow_create_tag_template",
+      "solid_def_name": "complex_dag__create_tag_template",
+      "solid_name": "complex_dag__create_tag_template",
       "tags": {}
     },
     {
@@ -226,14 +225,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template"
+              "solid_name": "complex_dag__create_tag_template"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_tag_template_field",
-      "solid_name": "airflow_create_tag_template_field",
+      "solid_def_name": "complex_dag__create_tag_template_field",
+      "solid_name": "complex_dag__create_tag_template_field",
       "tags": {}
     },
     {
@@ -247,14 +246,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template_field"
+              "solid_name": "complex_dag__create_tag_template_field"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_tag_template_field_result",
-      "solid_name": "airflow_create_tag_template_field_result",
+      "solid_def_name": "complex_dag__create_tag_template_field_result",
+      "solid_name": "complex_dag__create_tag_template_field_result",
       "tags": {}
     },
     {
@@ -268,14 +267,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template"
+              "solid_name": "complex_dag__create_tag_template"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_tag_template_result",
-      "solid_name": "airflow_create_tag_template_result",
+      "solid_def_name": "complex_dag__create_tag_template_result",
+      "solid_name": "complex_dag__create_tag_template_result",
       "tags": {}
     },
     {
@@ -289,14 +288,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template"
+              "solid_name": "complex_dag__create_tag_template"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_create_tag_template_result2",
-      "solid_name": "airflow_create_tag_template_result2",
+      "solid_def_name": "complex_dag__create_tag_template_result2",
+      "solid_name": "complex_dag__create_tag_template_result2",
       "tags": {}
     },
     {
@@ -310,39 +309,39 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_gcs"
+              "solid_name": "complex_dag__create_entry_gcs"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_delete_entry_group"
+              "solid_name": "complex_dag__delete_entry_group"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_get_entry"
+              "solid_name": "complex_dag__get_entry"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_lookup_entry"
+              "solid_name": "complex_dag__lookup_entry"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_search_catalog"
+              "solid_name": "complex_dag__search_catalog"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_update_entry"
+              "solid_name": "complex_dag__update_entry"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_delete_entry",
-      "solid_name": "airflow_delete_entry",
+      "solid_def_name": "complex_dag__delete_entry",
+      "solid_name": "complex_dag__delete_entry",
       "tags": {}
     },
     {
@@ -356,29 +355,29 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_group"
+              "solid_name": "complex_dag__create_entry_group"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_delete_tag_template"
+              "solid_name": "complex_dag__delete_tag_template"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_get_entry_group"
+              "solid_name": "complex_dag__get_entry_group"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_search_catalog"
+              "solid_name": "complex_dag__search_catalog"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_delete_entry_group",
-      "solid_name": "airflow_delete_entry_group",
+      "solid_def_name": "complex_dag__delete_entry_group",
+      "solid_name": "complex_dag__delete_entry_group",
       "tags": {}
     },
     {
@@ -392,29 +391,29 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag"
+              "solid_name": "complex_dag__create_tag"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_list_tags"
+              "solid_name": "complex_dag__list_tags"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_search_catalog"
+              "solid_name": "complex_dag__search_catalog"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_update_tag"
+              "solid_name": "complex_dag__update_tag"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_delete_tag",
-      "solid_name": "airflow_delete_tag",
+      "solid_def_name": "complex_dag__delete_tag",
+      "solid_name": "complex_dag__delete_tag",
       "tags": {}
     },
     {
@@ -428,29 +427,29 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_delete_tag_template_field"
+              "solid_name": "complex_dag__delete_tag_template_field"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_get_tag_template"
+              "solid_name": "complex_dag__get_tag_template"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_search_catalog"
+              "solid_name": "complex_dag__search_catalog"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_update_tag_template"
+              "solid_name": "complex_dag__update_tag_template"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_delete_tag_template",
-      "solid_name": "airflow_delete_tag_template",
+      "solid_def_name": "complex_dag__delete_tag_template",
+      "solid_name": "complex_dag__delete_tag_template",
       "tags": {}
     },
     {
@@ -464,34 +463,34 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template"
+              "solid_name": "complex_dag__create_tag_template"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template_field"
+              "solid_name": "complex_dag__create_tag_template_field"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_delete_tag"
+              "solid_name": "complex_dag__delete_tag"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_rename_tag_template_field"
+              "solid_name": "complex_dag__rename_tag_template_field"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_search_catalog"
+              "solid_name": "complex_dag__search_catalog"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_delete_tag_template_field",
-      "solid_name": "airflow_delete_tag_template_field",
+      "solid_def_name": "complex_dag__delete_tag_template_field",
+      "solid_name": "complex_dag__delete_tag_template_field",
       "tags": {}
     },
     {
@@ -505,14 +504,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_gcs"
+              "solid_name": "complex_dag__create_entry_gcs"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_get_entry",
-      "solid_name": "airflow_get_entry",
+      "solid_def_name": "complex_dag__get_entry",
+      "solid_name": "complex_dag__get_entry",
       "tags": {}
     },
     {
@@ -526,14 +525,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_group"
+              "solid_name": "complex_dag__create_entry_group"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_get_entry_group",
-      "solid_name": "airflow_get_entry_group",
+      "solid_def_name": "complex_dag__get_entry_group",
+      "solid_name": "complex_dag__get_entry_group",
       "tags": {}
     },
     {
@@ -547,14 +546,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_get_entry_group"
+              "solid_name": "complex_dag__get_entry_group"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_get_entry_group_result",
-      "solid_name": "airflow_get_entry_group_result",
+      "solid_def_name": "complex_dag__get_entry_group_result",
+      "solid_name": "complex_dag__get_entry_group_result",
       "tags": {}
     },
     {
@@ -568,14 +567,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_get_entry"
+              "solid_name": "complex_dag__get_entry"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_get_entry_result",
-      "solid_name": "airflow_get_entry_result",
+      "solid_def_name": "complex_dag__get_entry_result",
+      "solid_name": "complex_dag__get_entry_result",
       "tags": {}
     },
     {
@@ -589,14 +588,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template"
+              "solid_name": "complex_dag__create_tag_template"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_get_tag_template",
-      "solid_name": "airflow_get_tag_template",
+      "solid_def_name": "complex_dag__get_tag_template",
+      "solid_name": "complex_dag__get_tag_template",
       "tags": {}
     },
     {
@@ -610,14 +609,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_get_tag_template"
+              "solid_name": "complex_dag__get_tag_template"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_get_tag_template_result",
-      "solid_name": "airflow_get_tag_template_result",
+      "solid_def_name": "complex_dag__get_tag_template_result",
+      "solid_name": "complex_dag__get_tag_template_result",
       "tags": {}
     },
     {
@@ -631,14 +630,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag"
+              "solid_name": "complex_dag__create_tag"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_list_tags",
-      "solid_name": "airflow_list_tags",
+      "solid_def_name": "complex_dag__list_tags",
+      "solid_name": "complex_dag__list_tags",
       "tags": {}
     },
     {
@@ -652,14 +651,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_list_tags"
+              "solid_name": "complex_dag__list_tags"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_list_tags_result",
-      "solid_name": "airflow_list_tags_result",
+      "solid_def_name": "complex_dag__list_tags_result",
+      "solid_name": "complex_dag__list_tags_result",
       "tags": {}
     },
     {
@@ -673,14 +672,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_gcs"
+              "solid_name": "complex_dag__create_entry_gcs"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_lookup_entry",
-      "solid_name": "airflow_lookup_entry",
+      "solid_def_name": "complex_dag__lookup_entry",
+      "solid_name": "complex_dag__lookup_entry",
       "tags": {}
     },
     {
@@ -694,14 +693,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_lookup_entry"
+              "solid_name": "complex_dag__lookup_entry"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_lookup_entry_result",
-      "solid_name": "airflow_lookup_entry_result",
+      "solid_def_name": "complex_dag__lookup_entry_result",
+      "solid_name": "complex_dag__lookup_entry_result",
       "tags": {}
     },
     {
@@ -715,19 +714,19 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template_field"
+              "solid_name": "complex_dag__create_tag_template_field"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_update_tag_template_field"
+              "solid_name": "complex_dag__update_tag_template_field"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_rename_tag_template_field",
-      "solid_name": "airflow_rename_tag_template_field",
+      "solid_def_name": "complex_dag__rename_tag_template_field",
+      "solid_name": "complex_dag__rename_tag_template_field",
       "tags": {}
     },
     {
@@ -741,34 +740,34 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_gcs"
+              "solid_name": "complex_dag__create_entry_gcs"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_group"
+              "solid_name": "complex_dag__create_entry_group"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag"
+              "solid_name": "complex_dag__create_tag"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template"
+              "solid_name": "complex_dag__create_tag_template"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template_field"
+              "solid_name": "complex_dag__create_tag_template_field"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_search_catalog",
-      "solid_name": "airflow_search_catalog",
+      "solid_def_name": "complex_dag__search_catalog",
+      "solid_name": "complex_dag__search_catalog",
       "tags": {}
     },
     {
@@ -782,14 +781,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_search_catalog"
+              "solid_name": "complex_dag__search_catalog"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_search_catalog_result",
-      "solid_name": "airflow_search_catalog_result",
+      "solid_def_name": "complex_dag__search_catalog_result",
+      "solid_name": "complex_dag__search_catalog_result",
       "tags": {}
     },
     {
@@ -803,14 +802,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_entry_gcs"
+              "solid_name": "complex_dag__create_entry_gcs"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_update_entry",
-      "solid_name": "airflow_update_entry",
+      "solid_def_name": "complex_dag__update_entry",
+      "solid_name": "complex_dag__update_entry",
       "tags": {}
     },
     {
@@ -824,14 +823,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag"
+              "solid_name": "complex_dag__create_tag"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_update_tag",
-      "solid_name": "airflow_update_tag",
+      "solid_def_name": "complex_dag__update_tag",
+      "solid_name": "complex_dag__update_tag",
       "tags": {}
     },
     {
@@ -845,14 +844,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template"
+              "solid_name": "complex_dag__create_tag_template"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_update_tag_template",
-      "solid_name": "airflow_update_tag_template",
+      "solid_def_name": "complex_dag__update_tag_template",
+      "solid_name": "complex_dag__update_tag_template",
       "tags": {}
     },
     {
@@ -866,22 +865,20 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_create_tag_template_field"
+              "solid_name": "complex_dag__create_tag_template_field"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_update_tag_template_field",
-      "solid_name": "airflow_update_tag_template_field",
+      "solid_def_name": "complex_dag__update_tag_template_field",
+      "solid_name": "complex_dag__update_tag_template_field",
       "tags": {}
     }
   ]
-}"""
+}'''
 
-snapshots[
-    "test_diamond_task_dag 1"
-] = """{
+snapshots['test_diamond_task_dag 1'] = '''{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -895,8 +892,8 @@ snapshots[
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_1",
-      "solid_name": "airflow_dummy_operator_1",
+      "solid_def_name": "diamond_task_dag__dummy_operator_1",
+      "solid_name": "diamond_task_dag__dummy_operator_1",
       "tags": {}
     },
     {
@@ -910,14 +907,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
+              "solid_name": "diamond_task_dag__dummy_operator_1"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_2",
-      "solid_name": "airflow_dummy_operator_2",
+      "solid_def_name": "diamond_task_dag__dummy_operator_2",
+      "solid_name": "diamond_task_dag__dummy_operator_2",
       "tags": {}
     },
     {
@@ -931,14 +928,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
+              "solid_name": "diamond_task_dag__dummy_operator_1"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_3",
-      "solid_name": "airflow_dummy_operator_3",
+      "solid_def_name": "diamond_task_dag__dummy_operator_3",
+      "solid_name": "diamond_task_dag__dummy_operator_3",
       "tags": {}
     },
     {
@@ -952,27 +949,25 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_2"
+              "solid_name": "diamond_task_dag__dummy_operator_2"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_3"
+              "solid_name": "diamond_task_dag__dummy_operator_3"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_4",
-      "solid_name": "airflow_dummy_operator_4",
+      "solid_def_name": "diamond_task_dag__dummy_operator_4",
+      "solid_name": "diamond_task_dag__dummy_operator_4",
       "tags": {}
     }
   ]
-}"""
+}'''
 
-snapshots[
-    "test_multi_leaf_dag 1"
-] = """{
+snapshots['test_multi_leaf_dag 1'] = '''{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -986,8 +981,8 @@ snapshots[
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_1",
-      "solid_name": "airflow_dummy_operator_1",
+      "solid_def_name": "multi_leaf_dag__dummy_operator_1",
+      "solid_name": "multi_leaf_dag__dummy_operator_1",
       "tags": {}
     },
     {
@@ -1001,14 +996,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
+              "solid_name": "multi_leaf_dag__dummy_operator_1"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_2",
-      "solid_name": "airflow_dummy_operator_2",
+      "solid_def_name": "multi_leaf_dag__dummy_operator_2",
+      "solid_name": "multi_leaf_dag__dummy_operator_2",
       "tags": {}
     },
     {
@@ -1022,14 +1017,14 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
+              "solid_name": "multi_leaf_dag__dummy_operator_1"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_3",
-      "solid_name": "airflow_dummy_operator_3",
+      "solid_def_name": "multi_leaf_dag__dummy_operator_3",
+      "solid_name": "multi_leaf_dag__dummy_operator_3",
       "tags": {}
     },
     {
@@ -1043,22 +1038,20 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
+              "solid_name": "multi_leaf_dag__dummy_operator_1"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_4",
-      "solid_name": "airflow_dummy_operator_4",
+      "solid_def_name": "multi_leaf_dag__dummy_operator_4",
+      "solid_name": "multi_leaf_dag__dummy_operator_4",
       "tags": {}
     }
   ]
-}"""
+}'''
 
-snapshots[
-    "test_multi_root_dag 1"
-] = """{
+snapshots['test_multi_root_dag 1'] = '''{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -1072,8 +1065,8 @@ snapshots[
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_1",
-      "solid_name": "airflow_dummy_operator_1",
+      "solid_def_name": "multi_root_dag__dummy_operator_1",
+      "solid_name": "multi_root_dag__dummy_operator_1",
       "tags": {}
     },
     {
@@ -1087,8 +1080,8 @@ snapshots[
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_2",
-      "solid_name": "airflow_dummy_operator_2",
+      "solid_def_name": "multi_root_dag__dummy_operator_2",
+      "solid_name": "multi_root_dag__dummy_operator_2",
       "tags": {}
     },
     {
@@ -1102,8 +1095,8 @@ snapshots[
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_3",
-      "solid_name": "airflow_dummy_operator_3",
+      "solid_def_name": "multi_root_dag__dummy_operator_3",
+      "solid_name": "multi_root_dag__dummy_operator_3",
       "tags": {}
     },
     {
@@ -1117,32 +1110,30 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
+              "solid_name": "multi_root_dag__dummy_operator_1"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_2"
+              "solid_name": "multi_root_dag__dummy_operator_2"
             },
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_3"
+              "solid_name": "multi_root_dag__dummy_operator_3"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_4",
-      "solid_name": "airflow_dummy_operator_4",
+      "solid_def_name": "multi_root_dag__dummy_operator_4",
+      "solid_name": "multi_root_dag__dummy_operator_4",
       "tags": {}
     }
   ]
-}"""
+}'''
 
-snapshots[
-    "test_one_task_dag 1"
-] = """{
+snapshots['test_one_task_dag 1'] = '''{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -1156,16 +1147,14 @@ snapshots[
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator",
-      "solid_name": "airflow_dummy_operator",
+      "solid_def_name": "one_task_dag__dummy_operator",
+      "solid_name": "one_task_dag__dummy_operator",
       "tags": {}
     }
   ]
-}"""
+}'''
 
-snapshots[
-    "test_two_task_dag_no_dep 1"
-] = """{
+snapshots['test_two_task_dag_no_dep 1'] = '''{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -1179,8 +1168,8 @@ snapshots[
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_1",
-      "solid_name": "airflow_dummy_operator_1",
+      "solid_def_name": "two_task_dag_no_dep__dummy_operator_1",
+      "solid_name": "two_task_dag_no_dep__dummy_operator_1",
       "tags": {}
     },
     {
@@ -1194,16 +1183,14 @@ snapshots[
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_2",
-      "solid_name": "airflow_dummy_operator_2",
+      "solid_def_name": "two_task_dag_no_dep__dummy_operator_2",
+      "solid_name": "two_task_dag_no_dep__dummy_operator_2",
       "tags": {}
     }
   ]
-}"""
+}'''
 
-snapshots[
-    "test_two_task_dag_with_dep 1"
-] = """{
+snapshots['test_two_task_dag_with_dep 1'] = '''{
   "__class__": "DependencyStructureSnapshot",
   "solid_invocation_snaps": [
     {
@@ -1217,8 +1204,8 @@ snapshots[
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_1",
-      "solid_name": "airflow_dummy_operator_1",
+      "solid_def_name": "two_task_dag_with_dep__dummy_operator_1",
+      "solid_name": "two_task_dag_with_dep__dummy_operator_1",
       "tags": {}
     },
     {
@@ -1232,15 +1219,15 @@ snapshots[
             {
               "__class__": "OutputHandleSnap",
               "output_name": "airflow_task_complete",
-              "solid_name": "airflow_dummy_operator_1"
+              "solid_name": "two_task_dag_with_dep__dummy_operator_1"
             }
           ]
         }
       ],
       "is_dynamic_mapped": false,
-      "solid_def_name": "airflow_dummy_operator_2",
-      "solid_name": "airflow_dummy_operator_2",
+      "solid_def_name": "two_task_dag_with_dep__dummy_operator_2",
+      "solid_name": "two_task_dag_with_dep__dummy_operator_2",
       "tags": {}
     }
   ]
-}"""
+}'''

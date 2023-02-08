@@ -91,10 +91,10 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             )
             with_uppercase_cols.to_sql(
                 table_slice.table,
-                con=con.engine,  # type: ignore  # (bad stubs)
+                con=con.engine,
                 if_exists="append",
                 index=False,
-                method=pd_writer,  # pyright: ignore (bad stubs)
+                method=pd_writer,
             )
 
         return {

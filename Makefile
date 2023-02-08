@@ -1,3 +1,5 @@
+.PHONY: pyright
+
 # Makefile oddities:
 # - Commands must start with literal tab characters (\t), not spaces.
 # - Multi-command rules (like `black` below) by default terminate as soon as a command has a non-0
@@ -24,6 +26,15 @@ check_black:
     examples integration_tests helm python_modules .buildkite
 	black --check --fast \
     examples/docs_snippets
+
+pyright:
+	python scripts/run-pyright.py --all
+
+rebuild_pyright:
+	python scripts/run-pyright.py --all --rebuild
+
+quick_pyright:
+	python scripts/run-pyright.py --diff
 
 ruff:
 	ruff --fix .

@@ -120,8 +120,8 @@ class SourceAsset(ResourceAddable):
             metadata, [], allow_invalid=True
         )
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
-        self._io_manager_def = check.opt_inst_param(  # type: ignore
-            io_manager_def, "io_manager_def", IOManagerDefinition  # type: ignore
+        self._io_manager_def = check.opt_inst_param(
+            io_manager_def, "io_manager_def", IOManagerDefinition
         )
         if self._io_manager_def:
             if not io_manager_key:
@@ -147,7 +147,7 @@ class SourceAsset(ResourceAddable):
         self.observe_fn = check.opt_callable_param(observe_fn, "observe_fn")
         self._node_def = None
 
-    @public  # type: ignore
+    @public
     @property
     def metadata(self) -> MetadataMapping:
         # PartitionMetadataEntry (unstable API) case is unhandled
@@ -164,7 +164,7 @@ class SourceAsset(ResourceAddable):
             self.resource_defs.get(io_manager_key) if io_manager_key else None,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def op(self) -> OpDefinition:
         check.invariant(
@@ -173,7 +173,7 @@ class SourceAsset(ResourceAddable):
         )
         return cast(OpDefinition, self.node_def)
 
-    @public  # type: ignore
+    @public
     @property
     def is_observable(self) -> bool:
         return self.node_def is not None
@@ -181,7 +181,7 @@ class SourceAsset(ResourceAddable):
     def _get_op_def_compute_fn(self, observe_fn: SourceAssetObserveFunction):
         from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
 
-        observe_fn_has_context = has_at_least_one_parameter(observe_fn)  # type: ignore # mypy-only error
+        observe_fn_has_context = has_at_least_one_parameter(observe_fn)
 
         def fn(context: OpExecutionContext):
             logical_version = observe_fn(context) if observe_fn_has_context else observe_fn()  # type: ignore

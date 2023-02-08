@@ -409,7 +409,7 @@ class TestEventLogStorage:
         # Whether the storage is allowed to watch the event log
         return True
 
-    def can_write_to_asset_key_table(self):
+    def can_write_to_asset_key_table_or_partition_table(self):
         return True
 
     def test_event_log_storage_store_events_and_wipe(self, test_run_id, storage):
@@ -1966,7 +1966,9 @@ class TestEventLogStorage:
                 assert len(materialization_count_by_key_after_run1.get(c)) == 2
 
                 materialization_count_by_key_after_everything = (
-                    storage.get_materialization_count_by_partition([a, b, c], after_cursor=9999999)
+                    storage.get_materialization_count_by_partition(
+                        [a, b, c], after_cursor=9999999999
+                    )
                 )
                 assert materialization_count_by_key_after_everything.get(a) == {}
                 assert materialization_count_by_key_after_everything.get(b) == {}
@@ -1996,7 +1998,7 @@ class TestEventLogStorage:
                         _fetch_counts(storage, after_cursor=cursor_run1)
                         == materialization_count_by_partition
                     )
-                    assert _fetch_counts(storage, after_cursor=9999999) == {c: {}, d: {}}
+                    assert _fetch_counts(storage, after_cursor=9999999999) == {c: {}, d: {}}
 
     def test_get_observation(self, storage, test_run_id):
         a = AssetKey(["key_a"])
@@ -2848,7 +2850,7 @@ class TestEventLogStorage:
             )
 
     def test_store_and_wipe_cached_status(self, storage, instance):
-        if not self.can_write_to_asset_key_table():
+        if not self.can_write_to_asset_key_table_or_partition_table():
             return
 
         asset_key = AssetKey("yay")
@@ -2890,3 +2892,71 @@ class TestEventLogStorage:
                     storage.store_event(event)
 
                 assert _get_cached_status_for_asset(storage, asset_key) is None
+
+    def test_add_dynamic_partitions(self, storage):
+        if not self.can_write_to_asset_key_table_or_partition_table():
+            return
+
+        assert storage
+
+        assert storage.get_dynamic_partitions("foo") == []
+
+        storage.add_dynamic_partitions(
+            partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
+        )
+        partitions = storage.get_dynamic_partitions("foo")
+        assert len(partitions) == 3
+        assert set(partitions) == {"foo", "bar", "baz"}
+
+        # Test for idempotency
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo"])
+        partitions = storage.get_dynamic_partitions("foo")
+        assert len(partitions) == 3
+        assert set(partitions) == {"foo", "bar", "baz"}
+
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo", "qux"])
+        partitions = storage.get_dynamic_partitions("foo")
+        assert len(partitions) == 4
+        assert set(partitions) == {"foo", "bar", "baz", "qux"}
+
+        assert set(storage.get_dynamic_partitions("baz")) == set()
+
+    def test_delete_dynamic_partitions(self, storage):
+        if not self.can_write_to_asset_key_table_or_partition_table():
+            return
+
+        assert storage
+
+        assert storage.get_dynamic_partitions("foo") == []
+
+        storage.add_dynamic_partitions(
+            partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
+        )
+        assert set(storage.get_dynamic_partitions("foo")) == {"foo", "bar", "baz"}
+
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="foo")
+        assert set(storage.get_dynamic_partitions("foo")) == {"bar", "baz"}
+
+        # Test for idempotency
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="foo")
+        assert set(storage.get_dynamic_partitions("foo")) == {"bar", "baz"}
+
+        storage.delete_dynamic_partition(partitions_def_name="bar", partition_key="foo")
+        assert set(storage.get_dynamic_partitions("baz")) == set()
+
+    def test_has_dynamic_partition(self, storage):
+        assert storage
+        assert storage.get_dynamic_partitions("foo") == []
+        assert (
+            storage.has_dynamic_partition(partitions_def_name="foo", partition_key="foo") is False
+        )
+
+        if not self.can_write_to_asset_key_table_or_partition_table():
+            return
+
+        storage.add_dynamic_partitions(
+            partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
+        )
+        assert storage.has_dynamic_partition(partitions_def_name="foo", partition_key="foo")
+        assert not storage.has_dynamic_partition(partitions_def_name="foo", partition_key="qux")
+        assert not storage.has_dynamic_partition(partitions_def_name="bar", partition_key="foo")

@@ -56,6 +56,7 @@ from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DA
 from .schema import (
     AssetEventTagsTable,
     AssetKeyTable,
+    DynamicPartitionsTable,
     SecondaryIndexMigrationTable,
     SqlEventLogStorageTable,
 )
@@ -611,9 +612,25 @@ class SqlEventLogStorage(EventLogStorage):
             conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
 
+            if self.has_table("asset_event_tags"):
+                conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
+
+            if self.has_table("dynamic_partitions"):
+                conn.execute(
+                    DynamicPartitionsTable.delete()
+                )  # pylint: disable=no-value-for-parameter
+
         with self.index_connection() as conn:
             conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
+
+            if self.has_table("asset_event_tags"):
+                conn.execute(AssetEventTagsTable.delete())  # pylint: disable=no-value-for-parameter
+
+            if self.has_table("dynamic_partitions"):
+                conn.execute(
+                    DynamicPartitionsTable.delete()
+                )  # pylint: disable=no-value-for-parameter
 
     def delete_events(self, run_id):
         with self.run_connection(run_id) as conn:
@@ -1651,6 +1668,74 @@ class SqlEventLogStorage(EventLogStorage):
                 materialization_count_by_partition[asset_key][row[1]] = row[2]
 
         return materialization_count_by_partition
+
+    def _check_partitions_table(self):
+        # Guards against cases where the user is not running the latest migration for
+        # partitions storage. Should be updated when the partitions storage schema changes.
+        if not self.has_table("dynamic_partitions"):
+            raise DagsterInvalidInvocationError(
+                "Using dynamic partitions definitions requires the dynamic partitions table, which"
+                " currently does not exist. Add this table by running `dagster"
+                " instance migrate`."
+            )
+
+    def _fetch_partition_keys_for_partition_def(self, partitions_def_name: str) -> Sequence[str]:
+        columns = [
+            DynamicPartitionsTable.c.partitions_def_name,
+            DynamicPartitionsTable.c.partition,
+        ]
+        query = db.select(columns).where(
+            DynamicPartitionsTable.c.partitions_def_name == partitions_def_name
+        )
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+
+        return [row[1] for row in rows]
+
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        """Get the list of partition keys for a partition definition."""
+        self._check_partitions_table()
+        return self._fetch_partition_keys_for_partition_def(partitions_def_name)
+
+    def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
+        self._check_partitions_table()
+        return partition_key in self._fetch_partition_keys_for_partition_def(partitions_def_name)
+
+    def add_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> None:
+        self._check_partitions_table()
+        with self.index_connection() as conn:
+            existing_rows = conn.execute(
+                db.select([DynamicPartitionsTable.c.partition]).where(
+                    db.and_(
+                        DynamicPartitionsTable.c.partition.in_(partition_keys),
+                        DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                    )
+                )
+            ).fetchall()
+            new_keys = set(partition_keys) - set([row[0] for row in existing_rows])
+
+            if new_keys:
+                conn.execute(
+                    DynamicPartitionsTable.insert(),
+                    [
+                        dict(partitions_def_name=partitions_def_name, partition=partition_key)
+                        for partition_key in new_keys
+                    ],
+                )
+
+    def delete_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> None:
+        self._check_partitions_table()
+        with self.index_connection() as conn:
+            conn.execute(
+                DynamicPartitionsTable.delete().where(
+                    db.and_(
+                        DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                        DynamicPartitionsTable.c.partition == partition_key,
+                    )
+                )
+            )
 
 
 def _get_from_row(row, column):

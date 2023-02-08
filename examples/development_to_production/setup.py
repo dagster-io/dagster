@@ -1,4 +1,4 @@
-from setuptools import setup  # type: ignore
+from setuptools import setup
 
 setup(
     name="development_to_production",

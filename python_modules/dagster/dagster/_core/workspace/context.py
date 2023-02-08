@@ -202,7 +202,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def shutdown_repository_location(self, name: str):
         self.process_context.shutdown_repository_location(name)
 
-    def reload_workspace(self) -> Self:  # type: ignore  # fmt: skip
+    def reload_workspace(self) -> Self:
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
@@ -243,7 +243,11 @@ class BaseWorkspaceRequestContext(IWorkspace):
         )
 
     def get_external_partition_config(
-        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
     ) -> Union["ExternalPartitionConfigData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
             repository_handle.location_name
@@ -251,10 +255,15 @@ class BaseWorkspaceRequestContext(IWorkspace):
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
             partition_name=partition_name,
+            instance=instance,
         )
 
     def get_external_partition_tags(
-        self, repository_handle: RepositoryHandle, partition_set_name: str, partition_name: str
+        self,
+        repository_handle: RepositoryHandle,
+        partition_set_name: str,
+        partition_name: str,
+        instance: DagsterInstance,
     ) -> Union["ExternalPartitionTagsData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
             repository_handle.location_name
@@ -262,6 +271,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
             partition_name=partition_name,
+            instance=instance,
         )
 
     def get_external_partition_names(
@@ -276,6 +286,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         repository_handle: RepositoryHandle,
         partition_set_name: str,
         partition_names: Sequence[str],
+        instance: DagsterInstance,
     ) -> Union["ExternalPartitionSetExecutionParamData", "ExternalPartitionExecutionErrorData"]:
         return self.get_repository_location(
             repository_handle.location_name
@@ -283,6 +294,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
             repository_handle=repository_handle,
             partition_set_name=partition_set_name,
             partition_names=partition_names,
+            instance=instance,
         )
 
     def get_external_notebook_data(
@@ -410,7 +422,7 @@ class IWorkspaceProcessContext(ABC):
     def instance(self) -> DagsterInstance:
         pass
 
-    def __enter__(self) -> Self:  # type: ignore  # fmt: skip
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
