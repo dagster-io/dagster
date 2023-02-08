@@ -1,13 +1,15 @@
 import json
 import pickle
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PosixPath
 from typing import Any, Dict, List, cast
+from unittest.mock import MagicMock
 
 import pytest
 from dagster import (
     AllPartitionMapping,
     AssetIn,
+    AssetKey,
     DagsterType,
     DailyPartitionsDefinition,
     Field,
@@ -347,3 +349,35 @@ def test_upath_io_manager_custom_metadata(tmp_path: Path, json_data: Any):
     ].entry_data.value == get_length(
         json_data
     )
+
+
+def test_get_path():
+    class MyIOManager(UPathIOManager):
+        def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
+            ...
+
+        def load_from_path(self, context: InputContext, path: UPath) -> Any:
+            ...
+
+    io_manager = MyIOManager(UPath("base_path"))
+
+    asset_output_context = MagicMock(asset_key=AssetKey(["foo", "bar"]))
+    assert io_manager._get_path(asset_output_context) == PosixPath("base_path/foo/bar")
+
+    partitioned_asset_output_context = MagicMock(
+        asset_key=AssetKey(["foo", "bar"]),
+        has_asset_partitions=True,
+        asset_partition_keys=["baz"],
+    )
+    assert io_manager._get_paths_for_partitions(partitioned_asset_output_context) == {
+        "baz": PosixPath("base_path/foo/bar/baz")
+    }
+
+    period_partitioned_asset_output_context = MagicMock(
+        asset_key=AssetKey(["foo", "bar"]),
+        has_asset_partitions=True,
+        asset_partition_keys=["apple.banana.orange"],
+    )
+    assert io_manager._get_paths_for_partitions(period_partitioned_asset_output_context) == {
+        "apple.banana.orange": PosixPath("base_path/foo/bar/apple.banana.orange")
+    }

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 from abc import abstractmethod
+from pathlib import Path
 from typing import Any, Dict, Union
 
 from upath import UPath
@@ -75,7 +76,7 @@ class UPathIOManager(MemoizableIOManager):
         Returns the I/O path for a given context.
         Should not be used with partitions (use `_get_paths_for_partitions` instead).
         """
-        return self._get_path_without_extension(context).with_suffix(self.extension)
+        return _append_suffix(self._get_path_without_extension(context), self.extension)
 
     def _get_paths_for_partitions(
         self, context: Union[InputContext, OutputContext]
@@ -83,16 +84,12 @@ class UPathIOManager(MemoizableIOManager):
         """
         Returns a dict of partition_keys into I/O paths for a given context.
         """
-        if not context.has_asset_partitions:
-            raise TypeError(
-                f"Detected {context.dagster_type.typing_type} input type "
-                "but the asset is not partitioned"
-            )
+        check.invariant(context.has_asset_partitions, "The asset is not partitioned")
 
         partition_keys = context.asset_partition_keys
         asset_path = self._get_path_without_extension(context)
         return {
-            partition_key: (asset_path / partition_key).with_suffix(self.extension)
+            partition_key: _append_suffix(asset_path / partition_key, self.extension)
             for partition_key in partition_keys
         }
 
@@ -230,3 +227,7 @@ class UPathIOManager(MemoizableIOManager):
         metadata.update(custom_metadata)  # type: ignore
 
         context.add_output_metadata(metadata)
+
+
+def _append_suffix(path: Path, suffix: str) -> Path:
+    return path.with_suffix(path.suffix + suffix)
