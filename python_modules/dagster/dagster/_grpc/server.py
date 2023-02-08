@@ -446,43 +446,77 @@ class DagsterApiServer(DagsterApiServicer):
             PartitionSetExecutionParamArgs,
         )
 
-        serialized_data = serialize_dagster_namedtuple(
-            get_partition_set_execution_param_data(
-                self._get_repo_for_origin(args.repository_origin),
-                partition_set_name=args.partition_set_name,
-                partition_names=args.partition_names,
-                instance=DagsterInstance.from_ref(args.instance_ref),
+        if args.instance_ref:
+            with DagsterInstance.from_ref(args.instance_ref) as instance:
+                serialized_data = serialize_dagster_namedtuple(
+                    get_partition_set_execution_param_data(
+                        self._get_repo_for_origin(args.repository_origin),
+                        partition_set_name=args.partition_set_name,
+                        partition_names=args.partition_names,
+                        instance=instance,
+                    )
+                )
+        else:
+            serialized_data = serialize_dagster_namedtuple(
+                get_partition_set_execution_param_data(
+                    self._get_repo_for_origin(args.repository_origin),
+                    partition_set_name=args.partition_set_name,
+                    partition_names=args.partition_names,
+                )
             )
-        )
 
         yield from self._split_serialized_data_into_chunk_events(serialized_data)
 
     def ExternalPartitionConfig(self, request, _context):
         args = deserialize_as(request.serialized_partition_args, PartitionArgs)
 
-        return api_pb2.ExternalPartitionConfigReply(
-            serialized_external_partition_config_or_external_partition_execution_error=serialize_dagster_namedtuple(
+        if args.instance_ref:
+            with DagsterInstance.from_ref(args.instance_ref) as instance:
+                serialized_data = serialize_dagster_namedtuple(
+                    get_partition_config(
+                        self._get_repo_for_origin(args.repository_origin),
+                        args.partition_set_name,
+                        args.partition_name,
+                        instance,
+                    )
+                )
+        else:
+            serialized_data = serialize_dagster_namedtuple(
                 get_partition_config(
                     self._get_repo_for_origin(args.repository_origin),
                     args.partition_set_name,
                     args.partition_name,
-                    DagsterInstance.from_ref(args.instance_ref),
                 )
             )
+
+        return api_pb2.ExternalPartitionConfigReply(
+            serialized_external_partition_config_or_external_partition_execution_error=serialized_data
         )
 
     def ExternalPartitionTags(self, request, _context) -> api_pb2.ExternalPartitionTagsReply:
         partition_args = deserialize_as(request.serialized_partition_args, PartitionArgs)
 
-        return api_pb2.ExternalPartitionTagsReply(
-            serialized_external_partition_tags_or_external_partition_execution_error=serialize_dagster_namedtuple(
+        if partition_args.instance_ref:
+            with DagsterInstance.from_ref(partition_args.instance_ref) as instance:
+                serialized_data = serialize_dagster_namedtuple(
+                    get_partition_tags(
+                        self._get_repo_for_origin(partition_args.repository_origin),
+                        partition_args.partition_set_name,
+                        partition_args.partition_name,
+                        instance,
+                    )
+                )
+        else:
+            serialized_data = serialize_dagster_namedtuple(
                 get_partition_tags(
                     self._get_repo_for_origin(partition_args.repository_origin),
                     partition_args.partition_set_name,
                     partition_args.partition_name,
-                    DagsterInstance.from_ref(partition_args.instance_ref),
                 )
             )
+
+        return api_pb2.ExternalPartitionTagsReply(
+            serialized_external_partition_tags_or_external_partition_execution_error=serialized_data
         )
 
     def ExternalPipelineSubsetSnapshot(
