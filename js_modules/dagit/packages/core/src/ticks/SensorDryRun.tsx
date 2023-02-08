@@ -9,6 +9,7 @@ import {
   DialogFooter,
   Group,
   Icon,
+  NonIdealState,
   Spinner,
   Subheading,
   Tag,
@@ -298,6 +299,23 @@ export const SensorDryRun: React.FC<Props> = ({
             onChange={(e) => setCursor(e.target.value)}
             data-testid={testId('cursor-input')}
           />
+          {currentCursor === '' || !currentCursor ? (
+            <Box padding={{top: 16, bottom: 32}} flex={{justifyContent: 'center'}}>
+              <NonIdealState
+                icon="no-results"
+                title="You're not using a cursor"
+                description={
+                  <span>
+                    Check our{' '}
+                    <a href="https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors#idempotence-and-cursors">
+                      sensor documentation
+                    </a>{' '}
+                    to learn how to use cursors
+                  </span>
+                }
+              />
+            </Box>
+          ) : null}
         </Box>
       );
     }
