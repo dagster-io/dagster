@@ -41,6 +41,12 @@ class GrapheneSchedule(graphene.ObjectType):
     futureTick = graphene.NonNull(
         GrapheneDryRunInstigationTick, tick_timestamp=graphene.NonNull(graphene.Int)
     )
+    potentialTickTimestamps = graphene.NonNull(
+        graphene.List(graphene.Float),
+        start_timestamp=graphene.Float(),
+        upper_limit=graphene.Int(),
+        lower_limit=graphene.Int(),
+    )
 
     class Meta:
         name = "Schedule"
@@ -143,6 +149,49 @@ class GrapheneSchedule(graphene.ObjectType):
         return GrapheneDryRunInstigationTick(
             self._external_schedule.schedule_selector, float(tick_timestamp)
         )
+
+    def resolve_potentialTickTimestamps(
+        self, _graphene_info: ResolveInfo, **kwargs: Dict[str, object]
+    ):
+        """Get timestamps when ticks will occur before and after a given timestamp.
+
+        upper_limit defines how many ticks will be retrieved after the current timestamp, and lower_limit defines how many ticks will be retrieved before the current timestamp.
+        """
+        start_timestamp = cast(
+            float,
+            kwargs.get(
+                "start_timestamp", get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+            ),
+        )
+        tick_times = []
+        ascending_tick_iterator = self._external_schedule.execution_time_iterator(start_timestamp)
+        descending_tick_iterator = self._external_schedule.execution_time_iterator(
+            start_timestamp, ascending=False
+        )
+
+        upper_limit = cast(int, kwargs.get("upper_limit", 10))
+        lower_limit = cast(int, kwargs.get("lower_limit", 10))
+
+        tick_times_below_timestamp = []
+        first_past_tick = next(descending_tick_iterator)
+
+        # execution_time_iterator starts at first tick <= timestamp (or >= timestamp in
+        # ascending case), so we need to make sure not to double count start_timestamp
+        # if it falls on a tick time.
+        if first_past_tick.timestamp() < start_timestamp:
+            tick_times_below_timestamp.append(first_past_tick.timestamp())
+            lower_limit -= 1
+
+        for _ in range(lower_limit):
+            tick_times_below_timestamp.append(next(descending_tick_iterator).timestamp())
+
+        # Combine tick times < start_timestamp to tick times >= timestamp to get full
+        # list. We reverse timestamp range because ticks should be in ascending order when we give the full list.
+        tick_times = tick_times_below_timestamp[::-1] + [
+            next(ascending_tick_iterator).timestamp() for _ in range(upper_limit)
+        ]
+
+        return tick_times
 
 
 class GrapheneScheduleOrError(graphene.Union):

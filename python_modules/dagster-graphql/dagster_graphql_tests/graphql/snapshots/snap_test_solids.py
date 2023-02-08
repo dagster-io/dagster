@@ -1973,6 +1973,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'the_op'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'req_config_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'the_op'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'throw_a_thing'
                 },
                 'invocations': [

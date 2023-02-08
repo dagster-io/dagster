@@ -1372,6 +1372,7 @@ type Schedule {
   partitionSet: PartitionSet
   futureTicks(cursor: Float, limit: Int, until: Float): DryRunInstigationTicks!
   futureTick(tickTimestamp: Int!): DryRunInstigationTick!
+  potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float]!
 }
 
 union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
@@ -2847,6 +2848,7 @@ type DagitMutation {
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
   stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
   sensorDryRun(cursor: String, selectorData: SensorSelector!): SensorDryRunResult!
+  scheduleDryRun(selectorData: ScheduleSelector!, timestamp: Float): ScheduleDryRunResult!
   terminatePipelineExecution(
     runId: String!
     terminatePolicy: TerminateRunPolicy
@@ -2883,6 +2885,8 @@ enum ReexecutionStrategy {
 }
 
 union SensorDryRunResult = PythonError | SensorNotFoundError | DryRunInstigationTick
+
+union ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError
 
 union AssetWipeMutationResult =
     AssetNotFoundError
