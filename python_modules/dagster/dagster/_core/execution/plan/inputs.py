@@ -464,12 +464,16 @@ class FromStepOutput(
         input_def: InputDefinition,
         io_manager_key: Optional[str] = None,
     ) -> "InputContext":
-        if io_manager_key is None:
-            io_manager_key = step_context.execution_plan.get_manager_key(
+        resolved_io_manager_key = (
+            step_context.execution_plan.get_manager_key(
                 self.step_output_handle, step_context.pipeline_def
             )
-        resource_config = step_context.resolved_run_config.resources[io_manager_key].config
-        resources = build_resources_for_manager(io_manager_key, step_context)
+            if io_manager_key is None
+            else io_manager_key
+        )
+
+        resource_config = step_context.resolved_run_config.resources[resolved_io_manager_key].config
+        resources = build_resources_for_manager(resolved_io_manager_key, step_context)
 
         solid_config = step_context.resolved_run_config.solids.get(str(step_context.solid_handle))
         config_data = solid_config.inputs.get(input_def.name) if solid_config else None
