@@ -238,6 +238,7 @@ def make_dagster_job_from_airflow_dag(
     )
 
     job_def = JobDefinition(
+        *job_kwargs if job_kwargs else (),
         name=normalized_name(dag.dag_id),
         resource_defs={
             "airflow_db": airflow_db_resource_def,
@@ -246,6 +247,5 @@ def make_dagster_job_from_airflow_dag(
         },
         graph_def=graph_def,
         tags=mutated_tags,
-        *job_kwargs if job_kwargs else (),
     )
     return job_def

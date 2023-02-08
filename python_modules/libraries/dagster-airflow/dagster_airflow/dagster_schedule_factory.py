@@ -47,9 +47,9 @@ def make_dagster_schedule_from_airflow_dag(
     job_def = make_dagster_job_from_airflow_dag(dag=dag, tags=tags, connections=connections)
 
     return ScheduleDefinition(
+        *schedule_kwargs if schedule_kwargs else (),
         job=job_def,
         cron_schedule=str(cron_schedule),
         description=schedule_description,
         execution_timezone=dag.timezone.name,
-        *schedule_kwargs if schedule_kwargs else (),
     )

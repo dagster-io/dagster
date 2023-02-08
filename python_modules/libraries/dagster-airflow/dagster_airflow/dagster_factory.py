@@ -51,9 +51,9 @@ def make_dagster_definitions_from_airflow_dag_bag(
     )
 
     return Definitions(
+        *definitions_kwargs if definitions_kwargs else (),
         schedules=schedules,
         jobs=jobs,
-        *definitions_kwargs if definitions_kwargs else (),
     )
 
 
