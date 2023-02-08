@@ -49,6 +49,16 @@ class DefaultSensorStatus(Enum):
     STOPPED = "STOPPED"
 
 
+@whitelist_for_serdes
+class SensorType(Enum):
+    STANDARD = "STANDARD"
+    RUN_STATUS = "RUN_STATUS"
+    ASSET = "ASSET"
+    MULTI_ASSET = "MULTI_ASSET"
+    FRESHNESS_POLICY = "FRESHNESS_POLICY"
+    UNKNOWN = "UNKNOWN"
+
+
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
 
@@ -398,6 +408,10 @@ class SensorDefinition:
                     "Job property not available when SensorDefinition has multiple jobs."
                 )
         raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
+
+    @property
+    def sensor_type(self) -> SensorType:
+        return SensorType.STANDARD
 
     def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
         """Evaluate sensor using the provided context.

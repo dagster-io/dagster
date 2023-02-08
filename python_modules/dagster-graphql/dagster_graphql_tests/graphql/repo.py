@@ -53,17 +53,22 @@ from dagster import (
     TableSchema,
     _check as check,
     asset,
+    asset_sensor,
     dagster_type_loader,
     dagster_type_materializer,
     daily_partitioned_config,
     define_asset_job,
+    freshness_policy_sensor,
     graph,
     job,
     logger,
     multi_asset,
+    multi_asset_sensor,
     op,
     repository,
     resource,
+    run_failure_sensor,
+    run_status_sensor,
     schedule,
     static_partitioned_config,
     usable_as_dagster_type,
@@ -1347,6 +1352,26 @@ def define_sensors():
         context.log.info("hello hello")
         return SkipReason()
 
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=no_config_pipeline)
+    def run_status(_):
+        return SkipReason("always skip")
+
+    @asset_sensor(asset_key=AssetKey("foo"), job=single_asset_pipeline)
+    def single_asset_sensor():
+        pass
+
+    @multi_asset_sensor(monitored_assets=[], job=single_asset_pipeline)
+    def many_asset_sensor(_):
+        pass
+
+    @freshness_policy_sensor(asset_selection=AssetSelection.all())
+    def fresh_sensor(_):
+        pass
+
+    @run_failure_sensor
+    def the_failure_sensor():
+        pass
+
     return [
         always_no_config_sensor,
         always_error_sensor,
@@ -1357,6 +1382,11 @@ def define_sensors():
         running_in_code_sensor,
         logging_sensor,
         update_cursor_sensor,
+        run_status,
+        single_asset_sensor,
+        many_asset_sensor,
+        fresh_sensor,
+        the_failure_sensor,
     ]
 
 
