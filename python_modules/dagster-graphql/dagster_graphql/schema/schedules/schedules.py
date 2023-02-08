@@ -1,4 +1,4 @@
-from typing import Dict, Optional, cast
+from typing import Dict, Optional, cast, Sequence
 
 import dagster._check as check
 import graphene
@@ -109,7 +109,7 @@ class GrapheneSchedule(graphene.ObjectType):
             float,
             kwargs.get("cursor", get_timestamp_from_utc_datetime(get_current_datetime_in_utc())),
         )
-        tick_times = []
+        tick_times: Sequence[float] = []
         time_iter = self._external_schedule.execution_time_iterator(cursor)
 
         until = float(cast(str, kwargs.get("until"))) if kwargs.get("until") else None
