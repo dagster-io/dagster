@@ -66,7 +66,10 @@ export const AssetEventMetadataEntriesTable: React.FC<{
                       </span>
                     </Box>
                     <Caption style={{marginLeft: 24}}>
-                      {`(${dayjs(obs.timestamp).from(timestamp, true /* withoutSuffix */)} later)`}
+                      {`(${dayjs(Number(obs.timestamp)).from(
+                        Number(timestamp),
+                        true /* withoutSuffix */,
+                      )} later)`}
                     </Caption>
                     {entry.description}
                   </td>
@@ -101,6 +104,3 @@ const AssetEventMetadataTable = styled.table`
     vertical-align: top;
   }
 `;
-
-export const AssetEventDetailEmpty = () => <Box />;
-export const AssetPartitionDetailEmpty = () => <Box />;
