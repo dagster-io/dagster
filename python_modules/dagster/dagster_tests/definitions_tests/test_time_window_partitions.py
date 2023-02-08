@@ -590,6 +590,17 @@ def test_time_window_partitions_contains():
     assert "2015-01-11" not in subset
 
 
+def test_time_window_partitions_invalid_keys():
+    partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
+    valid_keys = ["2015-01-06", "2015-01-07", "2015-01-08", "2015-01-10"]
+    invalid_keys = ["abc", "2015-01-01T00:00", "12345-67-89"]
+    subset = partitions_def.empty_subset().with_partition_keys(valid_keys + invalid_keys)
+    for key in valid_keys:
+        assert key in subset
+    for key in invalid_keys:
+        assert key not in subset
+
+
 def test_unique_identifier():
     assert (
         DailyPartitionsDefinition(start_date="2015-01-01").serializable_unique_identifier
