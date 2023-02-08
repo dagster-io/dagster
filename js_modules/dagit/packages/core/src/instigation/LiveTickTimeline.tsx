@@ -36,12 +36,12 @@ export const LiveTickTimeline: React.FC<{
   });
 
   React.useEffect(() => {
-    if (!isPaused && (!nextTick || now < 1000 * nextTick.timestamp)) {
+    if (!isPaused && (!nextTick || now < 1000 * nextTick.timestamp!)) {
       setGraphNow(now);
     }
   }, [isPaused, nextTick, now]);
 
-  const isAtFutureTick = nextTick && 1000 * nextTick.timestamp <= now;
+  const isAtFutureTick = nextTick && 1000 * nextTick.timestamp! <= now;
   const PULSE_DURATION = 2000;
   const nextTickRadius = isAtFutureTick
     ? 4 + Math.sin((2 * Math.PI * (now % PULSE_DURATION)) / PULSE_DURATION)
@@ -52,7 +52,7 @@ export const LiveTickTimeline: React.FC<{
   const tickRadii = Array(ticks.length).fill(3);
 
   if (nextTick) {
-    tickData.push({x: 1000 * nextTick.timestamp, y: 0});
+    tickData.push({x: 1000 * nextTick.timestamp!, y: 0});
     tickColors.push(Colors.Gray200);
     tickRadii.push(nextTickRadius);
   }

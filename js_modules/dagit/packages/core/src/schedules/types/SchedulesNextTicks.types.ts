@@ -13,7 +13,7 @@ export type ScheduleNextFiveTicksFragment = {
   scheduleState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
   futureTicks: {
     __typename: 'DryRunInstigationTicks';
-    results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
+    results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
   };
 };
 
@@ -33,7 +33,7 @@ export type RepositoryForNextTicksFragment = {
     scheduleState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
     futureTicks: {
       __typename: 'DryRunInstigationTicks';
-      results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number}>;
+      results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
     };
   }>;
 };
@@ -60,7 +60,7 @@ export type ScheduleTickConfigQuery = {
               runKey: string | null;
               runConfigYaml: string;
               tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-            } | null> | null;
+            }> | null;
             error: {
               __typename: 'PythonError';
               message: string;
@@ -85,7 +85,7 @@ export type ScheduleFutureTickEvaluationResultFragment = {
     runKey: string | null;
     runConfigYaml: string;
     tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-  } | null> | null;
+  }> | null;
   error: {
     __typename: 'PythonError';
     message: string;

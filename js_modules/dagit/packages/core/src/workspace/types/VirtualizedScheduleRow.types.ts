@@ -52,7 +52,7 @@ export type SingleScheduleQuery = {
             endTime: number | null;
             updateTime: number | null;
           }>;
-          nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number} | null;
+          nextTick: {__typename: 'DryRunInstigationTick'; timestamp: number | null} | null;
         };
         partitionSet: {__typename: 'PartitionSet'; id: string; name: string} | null;
       }
