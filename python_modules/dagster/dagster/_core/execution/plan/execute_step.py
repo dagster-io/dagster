@@ -6,12 +6,15 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
     Union,
     cast,
 )
+
+from typing_extensions import TypedDict
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -474,9 +477,20 @@ def _get_output_asset_materializations(
         step_context.is_external_input_asset_records_loaded
         and asset_key in step_context.pipeline_def.asset_layer.asset_keys
     ):
-        tags = _build_logical_version_tags(asset_key, step_context)
-        logical_version = LogicalVersion(tags[LOGICAL_VERSION_TAG_KEY])
-        step_context.record_logical_version(asset_key, logical_version)
+        code_version = _get_code_version(asset_key, step_context)
+        input_metadata = _get_input_metadata(asset_key, step_context)
+        logical_version = (
+            compute_logical_version(
+                code_version,
+                {k: meta["logical_version"] for k, meta in input_metadata.items()},
+            )
+            if not step_context.has_logical_version(asset_key)
+            else step_context.get_logical_version(asset_key)
+        )
+        tags = _build_logical_version_tags(logical_version, code_version, input_metadata)
+        if not step_context.has_logical_version(asset_key):
+            logical_version = LogicalVersion(tags[LOGICAL_VERSION_TAG_KEY])
+            step_context.set_logical_version(asset_key, logical_version)
     else:
         tags = {}
 
@@ -538,14 +552,22 @@ def _get_output_asset_materializations(
             )
 
 
-def _build_logical_version_tags(
+def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
+    return (
+        step_context.pipeline_def.asset_layer.code_version_for_asset(asset_key)
+        or step_context.pipeline_run.run_id
+    )
+
+
+class _InputMetadata(TypedDict):
+    logical_version: LogicalVersion
+    storage_id: Optional[int]
+
+
+def _get_input_metadata(
     asset_key: AssetKey, step_context: StepExecutionContext
-) -> Dict[str, str]:
-    asset_layer = step_context.pipeline_def.asset_layer
-    code_version = asset_layer.code_version_for_asset(asset_key) or step_context.dagster_run.run_id
-    input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
-    tags: Dict[str, str] = {}
-    tags[CODE_VERSION_TAG_KEY] = code_version
+) -> Mapping[AssetKey, _InputMetadata]:
+    input_logical_versions: Dict[AssetKey, _InputMetadata] = {}
     deps = step_context.pipeline_def.asset_layer.upstream_assets_for_asset(asset_key)
     for key in deps:
         # For deps external to this step, this will retrieve the cached record that was stored prior
@@ -560,11 +582,25 @@ def _build_logical_version_tags(
             )
         else:
             logical_version = DEFAULT_LOGICAL_VERSION
-        input_logical_versions[key] = logical_version
-        tags[get_input_logical_version_tag_key(key)] = logical_version.value
-        tags[get_input_event_pointer_tag_key(key)] = str(event.storage_id) if event else "NULL"
+        input_logical_versions[key] = {
+            "logical_version": logical_version,
+            "storage_id": event.storage_id if event else None,
+        }
+    return input_logical_versions
 
-    logical_version = compute_logical_version(code_version, input_logical_versions)
+
+def _build_logical_version_tags(
+    logical_version: LogicalVersion,
+    code_version: str,
+    input_metadata: Mapping[AssetKey, _InputMetadata],
+) -> Dict[str, str]:
+    tags: Dict[str, str] = {}
+    tags[CODE_VERSION_TAG_KEY] = code_version
+    for key, meta in input_metadata.items():
+        tags[get_input_logical_version_tag_key(key)] = meta["logical_version"].value
+        tags[get_input_event_pointer_tag_key(key)] = (
+            str(meta["storage_id"]) if meta["storage_id"] else "NULL"
+        )
     tags[LOGICAL_VERSION_TAG_KEY] = logical_version.value
     return tags
 
