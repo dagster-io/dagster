@@ -1,3 +1,10 @@
+---
+requiredEnvVars:
+- "AWS_ACCESS_KEY_ID"
+- "AWS_SECRET_ACCESS_KEY"
+- "S3_BUCKET"
+---
+
 # Dagster + AWS starter kit
 
 This example builds a daily ETL pipeline that stores data in S3. At a high level, this project shows how to ingest data from external sources to S3, explore and transform the data, and materialize outputs that help visualize the data.
