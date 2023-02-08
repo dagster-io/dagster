@@ -20,7 +20,6 @@ from dagster._core.errors import (
     ScheduleExecutionError,
     SensorExecutionError,
     user_code_error_boundary,
-    DagsterInvalidInvocationError,
 )
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator

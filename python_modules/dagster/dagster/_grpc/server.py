@@ -9,6 +9,7 @@ import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from multiprocessing.synchronize import Event as MPEvent
 from subprocess import Popen
 from threading import Event as ThreadingEventType
@@ -18,7 +19,6 @@ from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Seq
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
-from contextlib import nullcontext
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.code_pointer import CodePointer
