@@ -1,12 +1,11 @@
 import asyncio
-from typing import Dict, List, cast
+from typing import Dict, List
 
 import graphene
 from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.host_representation import (
     ExternalRepository,
@@ -255,7 +254,7 @@ class GrapheneRepository(graphene.ObjectType):
             [
                 GrapheneSchedule(
                     schedule,
-                    cast(InstigatorState, self._batch_loader.get_schedule_state(schedule.name)),
+                    self._batch_loader.get_schedule_state(schedule.name),
                     self._batch_loader,
                 )
                 for schedule in self._repository.get_external_schedules()

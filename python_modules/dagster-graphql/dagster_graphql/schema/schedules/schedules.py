@@ -1,4 +1,4 @@
-from typing import Dict, Optional, cast, Sequence
+from typing import Dict, Optional, Sequence, cast
 
 import dagster._check as check
 import graphene
@@ -48,7 +48,7 @@ class GrapheneSchedule(graphene.ObjectType):
     def __init__(
         self,
         external_schedule: ExternalSchedule,
-        schedule_state: InstigatorState,
+        schedule_state: Optional[InstigatorState],
         batch_loader: Optional[RepositoryScopedBatchLoader] = None,
     ):
         self._external_schedule = check.inst_param(

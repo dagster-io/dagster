@@ -102,7 +102,7 @@ def get_schedules_or_error(graphene_info: ResolveInfo, repository_selector):
 
     results = [
         GrapheneSchedule(
-            external_schedule, schedule_states_by_name[external_schedule.name], batch_loader
+            external_schedule, schedule_states_by_name.get(external_schedule.name), batch_loader
         )
         for external_schedule in external_schedules
     ]
@@ -128,11 +128,6 @@ def get_schedules_for_pipeline(graphene_info: ResolveInfo, pipeline_selector):
             external_schedule.get_external_origin_id(),
             external_schedule.selector_id,
         )
-        if not schedule_state:
-            raise Exception(
-                "No schedule state found for schedule with origin id"
-                f" {external_schedule.get_external_origin()}"
-            )
         results.append(GrapheneSchedule(external_schedule, schedule_state))
 
     return results
@@ -157,11 +152,6 @@ def get_schedule_or_error(graphene_info: ResolveInfo, schedule_selector):
     schedule_state = graphene_info.context.instance.get_instigator_state(
         external_schedule.get_external_origin_id(), external_schedule.selector_id
     )
-    if not schedule_state:
-        raise Exception(
-            "No schedule state found for schedule with origin id"
-            f" {external_schedule.get_external_origin()}"
-        )
     return GrapheneSchedule(external_schedule, schedule_state)
 
 
