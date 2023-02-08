@@ -36,7 +36,7 @@ from dagster._core.host_representation.external_data import (
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
 )
-from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
@@ -52,19 +52,6 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 
 from .types import ExecuteExternalPipelineArgs
-
-
-class ErrorOnMissingInstance(DynamicPartitionsStore):
-    """
-    This is a DynamicPartitionsStore that raises an error if the instance is not available.
-    """
-
-    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        raise DagsterInvalidInvocationError(
-            "The instance is not available to load partitions. You may be seeing this error when"
-            " using dynamic partitions with a version of dagit or dagster-cloud that is older than"
-            " 1.1.18."
-        )
 
 
 class RunInSubprocessComplete:
@@ -353,9 +340,7 @@ def get_partition_config(
     instance: Optional[DagsterInstance] = None,
 ):
     partition_set_def = repo_def.get_partition_set_def(partition_set_name)
-    partition = partition_set_def.get_partition(
-        partition_name, instance if instance else ErrorOnMissingInstance()
-    )
+    partition = partition_set_def.get_partition(partition_name, instance)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -405,9 +390,7 @@ def get_partition_tags(
 ):
     partition_set_def = repo_def.get_partition_set_def(partition_set_name)
 
-    partition = partition_set_def.get_partition(
-        partition_name, dynamic_partitions_store=instance if instance else ErrorOnMissingInstance()
-    )
+    partition = partition_set_def.get_partition(partition_name, dynamic_partitions_store=instance)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -463,9 +446,7 @@ def get_partition_set_execution_param_data(
             PartitionExecutionError,
             lambda: f"Error occurred during the partition generation for {_get_target_for_partition_execution_error(partition_set_def)}",
         ):
-            all_partitions = partition_set_def.get_partitions(
-                dynamic_partitions_store=instance if instance else ErrorOnMissingInstance()
-            )
+            all_partitions = partition_set_def.get_partitions(dynamic_partitions_store=instance)
         partitions = [
             partition for partition in all_partitions if partition.name in partition_names
         ]

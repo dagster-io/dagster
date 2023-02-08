@@ -18,6 +18,7 @@ from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Seq
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
+from contextlib import nullcontext
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.code_pointer import CodePointer
@@ -446,22 +447,15 @@ class DagsterApiServer(DagsterApiServicer):
             PartitionSetExecutionParamArgs,
         )
 
-        if args.instance_ref:
-            with DagsterInstance.from_ref(args.instance_ref) as instance:
-                serialized_data = serialize_dagster_namedtuple(
-                    get_partition_set_execution_param_data(
-                        self._get_repo_for_origin(args.repository_origin),
-                        partition_set_name=args.partition_set_name,
-                        partition_names=args.partition_names,
-                        instance=instance,
-                    )
-                )
-        else:
+        instance_ref = args.instance_ref if args.instance_ref else self._instance_ref
+
+        with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
             serialized_data = serialize_dagster_namedtuple(
                 get_partition_set_execution_param_data(
                     self._get_repo_for_origin(args.repository_origin),
                     partition_set_name=args.partition_set_name,
                     partition_names=args.partition_names,
+                    instance=instance,
                 )
             )
 
@@ -470,22 +464,15 @@ class DagsterApiServer(DagsterApiServicer):
     def ExternalPartitionConfig(self, request, _context):
         args = deserialize_as(request.serialized_partition_args, PartitionArgs)
 
-        if args.instance_ref:
-            with DagsterInstance.from_ref(args.instance_ref) as instance:
-                serialized_data = serialize_dagster_namedtuple(
-                    get_partition_config(
-                        self._get_repo_for_origin(args.repository_origin),
-                        args.partition_set_name,
-                        args.partition_name,
-                        instance,
-                    )
-                )
-        else:
+        instance_ref = args.instance_ref if args.instance_ref else self._instance_ref
+
+        with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
             serialized_data = serialize_dagster_namedtuple(
                 get_partition_config(
                     self._get_repo_for_origin(args.repository_origin),
                     args.partition_set_name,
                     args.partition_name,
+                    instance=instance,
                 )
             )
 
@@ -496,22 +483,17 @@ class DagsterApiServer(DagsterApiServicer):
     def ExternalPartitionTags(self, request, _context) -> api_pb2.ExternalPartitionTagsReply:
         partition_args = deserialize_as(request.serialized_partition_args, PartitionArgs)
 
-        if partition_args.instance_ref:
-            with DagsterInstance.from_ref(partition_args.instance_ref) as instance:
-                serialized_data = serialize_dagster_namedtuple(
-                    get_partition_tags(
-                        self._get_repo_for_origin(partition_args.repository_origin),
-                        partition_args.partition_set_name,
-                        partition_args.partition_name,
-                        instance,
-                    )
-                )
-        else:
+        instance_ref = (
+            partition_args.instance_ref if partition_args.instance_ref else self._instance_ref
+        )
+
+        with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
             serialized_data = serialize_dagster_namedtuple(
                 get_partition_tags(
                     self._get_repo_for_origin(partition_args.repository_origin),
                     partition_args.partition_set_name,
                     partition_args.partition_name,
+                    instance=instance,
                 )
             )
 

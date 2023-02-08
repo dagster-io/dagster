@@ -613,8 +613,9 @@ class DynamicPartitionsDefinition(
 
             if dynamic_partitions_store is None:
                 check.failed(
-                    "Must provide a dagster instance object or dynamic partitions store to fetch"
-                    " dynamic partitions"
+                    "The instance is not available to load partitions. You may be seeing this error"
+                    " when using dynamic partitions with a version of dagit or dagster-cloud that"
+                    " is older than 1.1.18."
                 )
 
             partitions = dynamic_partitions_store.get_dynamic_partitions(
