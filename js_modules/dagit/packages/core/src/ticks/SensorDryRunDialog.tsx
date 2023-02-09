@@ -64,13 +64,7 @@ export const SensorDryRunDialog: React.FC<Props> = (props) => {
   );
 };
 
-export const SensorDryRun: React.FC<Props> = ({
-  repoAddress,
-  name,
-  currentCursor,
-  onClose,
-  jobName,
-}) => {
+const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClose, jobName}) => {
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
   );

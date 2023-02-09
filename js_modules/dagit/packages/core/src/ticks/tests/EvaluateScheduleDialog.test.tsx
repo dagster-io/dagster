@@ -4,7 +4,7 @@ import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
-import {EvaluateSchedule} from '../EvaluateSchedule';
+import {EvaluateScheduleDialog} from '../EvaluateSchedule';
 
 import {
   GetScheduleQueryMock,
@@ -25,7 +25,7 @@ const onCloseMock = jest.fn();
 function Test({mocks, resolvers}: {mocks?: MockedResponse[]; resolvers?: Resolvers}) {
   return (
     <MockedProvider mocks={mocks} resolvers={resolvers}>
-      <EvaluateSchedule
+      <EvaluateScheduleDialog
         name="test"
         onClose={onCloseMock}
         isOpen={true}

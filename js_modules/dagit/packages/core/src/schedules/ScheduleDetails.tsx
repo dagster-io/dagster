@@ -20,7 +20,7 @@ import {InstigationStatus, InstigationType} from '../graphql/types';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {EvaluateSchedule} from '../ticks/EvaluateSchedule';
+import {EvaluateScheduleDialog} from '../ticks/EvaluateSchedule';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -118,7 +118,7 @@ export const ScheduleDetails: React.FC<{
           </Box>
         }
       />
-      <EvaluateSchedule
+      <EvaluateScheduleDialog
         key={showTestTickDialog ? '1' : '0'} // change key to reset dialog state
         isOpen={showTestTickDialog}
         onClose={() => {
