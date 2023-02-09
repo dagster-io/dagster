@@ -14,31 +14,6 @@
 #
 # NOTE: Paths are relative to repo root.
 
-### EXAMPLES
-
--e examples/assets_dbt_python
--e examples/assets_modern_data_stack
--e examples/assets_pandas_pyspark
-# -e examples/assets_pandas_type_metadata
-# -e examples/assets_smoke_test
--r examples/deploy_docker/requirements.txt
-# -r examples/deploy_ecs/requirements.txt  # (no reqs)
-# -r examples/deploy_k8s/requirements.txt  # (no reqs)
--e examples/development_to_production
--e examples/docs_snippets
-# -e examples/experimental/project_fully_featured_v2_resources
--e examples/feature_graph_backed_assets
-# -e examples/project_fully_featured
-# -e examples/quickstart_aws  # (analyzed but not installed)
-# -e examples/quickstart_etl  # (analyzed but not installed)
-# -e examples/quickstart_gcp  # (analyzed but not installed)
-# -e examples/quickstart_snowflake  # (analyzed but not installed)
--e examples/tutorial_dbt_dagster
--e examples/tutorial_notebook_assets
--e examples/with_airflow
--e examples/with_great_expectations
--e examples/with_pyspark
-
 ### HELM
 -e helm/dagster/schema
 
@@ -104,6 +79,28 @@
 pandas_gbq  # (quickstart_gcp)
 wordcloud  # (quickstart-*)
 
+### EXAMPLES
 
-### EXAMPLES that depend on the above editable installs
+-e examples/assets_dbt_python
+-e examples/assets_modern_data_stack
+-e examples/assets_pandas_pyspark
+# -e examples/assets_pandas_type_metadata
+# -e examples/assets_smoke_test
+# -r examples/deploy_docker/requirements.txt
+# -r examples/deploy_ecs/requirements.txt  # (no reqs)
+# -r examples/deploy_k8s/requirements.txt  # (no reqs)
+-e examples/development_to_production
+-e examples/docs_snippets
+# -e examples/experimental/project_fully_featured_v2_resources
+-e examples/feature_graph_backed_assets
+# -e examples/project_fully_featured
+# -e examples/quickstart_aws  # (analyzed but not installed)
+# -e examples/quickstart_etl  # (analyzed but not installed)
+# -e examples/quickstart_gcp  # (analyzed but not installed)
+# -e examples/quickstart_snowflake  # (analyzed but not installed)
+-e examples/tutorial_dbt_dagster
+-e examples/tutorial_notebook_assets
+-e examples/with_airflow
+-e examples/with_great_expectations
+-e examples/with_pyspark
 -e examples/with_wandb
