@@ -1,6 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {GET_SCHEDULE_QUERY, SCHEDULE_DRY_RUN_MUTATION} from '../EvaluateSchedule';
+import {GET_SCHEDULE_QUERY, SCHEDULE_DRY_RUN_MUTATION} from '../EvaluateScheduleDialog';
 import {GetScheduleQuery, ScheduleDryRunMutation} from '../types/EvaluateSchedule.types';
 
 export const GetScheduleQueryMock: MockedResponse<GetScheduleQuery> = {
