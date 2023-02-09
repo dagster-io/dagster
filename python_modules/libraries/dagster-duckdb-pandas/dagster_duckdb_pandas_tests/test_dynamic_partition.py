@@ -29,12 +29,12 @@ dynamic_regions = DynamicPartitionsDefinition(name="dynamic_regions")
 @asset(
     partitions_def=dynamic_regions,
     key_prefix=["vehicles"],
+    metadata={"partition_expr": "region"}
 )
 def plant_data(context) -> pd.DataFrame:
     """
     Raw data is read from directory, with each new file
     creating a new partition
-
     """
 
     file = f"{context.asset_partition_key_for_output()}.csv"
