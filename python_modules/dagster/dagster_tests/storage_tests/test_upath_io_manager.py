@@ -250,6 +250,7 @@ def test_upath_io_manager_with_extension_static_partitions_with_dot():
 
     class TrackingIOManager(UPathIOManager):
         extension = ".ext"
+
         def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
             nonlocal dumped_path
             dumped_path = path
@@ -278,7 +279,7 @@ def test_upath_io_manager_with_extension_static_partitions_with_dot():
     assert dumped_path is not None
     assert "0.0-to-1.0.ext" == dumped_path.name
     assert ".ext" == dumped_path.suffix
-    
+
 
 def test_partitioned_io_manager_preserves_single_partition_dependency(
     daily: DailyPartitionsDefinition, dummy_io_manager: DummyIOManager
