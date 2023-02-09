@@ -7,7 +7,6 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -33,7 +32,7 @@ from dagster._utils.backcompat import (
 from dagster._utils.merger import merge_dicts
 
 from .dependency import NodeHandle
-from .events import AssetKey, CoercibleToAssetKeyPrefix
+from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
@@ -828,28 +827,67 @@ class AssetsDefinition(ResourceAddable):
             )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
-        result: List[SourceAsset] = []
+        return [
+            self._output_to_source_asset(output_name)
+            for output_name in self.keys_by_output_name.keys()
+        ]
+
+    @public
+    def to_source_asset(self, key: Optional[CoercibleToAssetKey] = None) -> SourceAsset:
+        """
+        Returns a representation of this asset as a :py:class:`SourceAsset`.
+
+        If this is a multi-asset, the "key" argument allows selecting which asset to return a
+        SourceAsset representation of.
+
+        Args:
+            key (Optional[Union[str, Sequence[str], AssetKey]]]): If this is a multi-asset, select
+                which asset to return a SourceAsset representation of. If not a multi-asset, this
+                can be left as None.
+
+        Returns:
+            SourceAsset
+        """
+        if len(self.keys) > 1:
+            check.invariant(
+                key is not None,
+                "The 'key' argument is required when there are multiple assets to choose from",
+            )
+
+        if key is not None:
+            resolved_key = AssetKey.from_coerceable(key)
+            check.invariant(
+                resolved_key in self.keys, f"Key {resolved_key} not found in AssetsDefinition"
+            )
+        else:
+            resolved_key = self.key
+
+        output_names = [
+            output_name
+            for output_name, ak in self.keys_by_output_name.items()
+            if ak == resolved_key
+        ]
+        check.invariant(len(output_names) == 1)
+        return self._output_to_source_asset(output_names[0])
+
+    def _output_to_source_asset(self, output_name: str) -> SourceAsset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            for output_name, asset_key in self.keys_by_output_name.items():
-                # This could maybe be sped up by batching
-                output_def = self.node_def.resolve_output_to_origin(
-                    output_name, NodeHandle(self.node_def.name, parent=None)
-                )[0]
-                result.append(
-                    SourceAsset(
-                        key=asset_key,
-                        metadata=output_def.metadata,
-                        io_manager_key=output_def.io_manager_key,
-                        description=output_def.description,
-                        resource_defs=self.resource_defs,
-                        partitions_def=self.partitions_def,
-                        group_name=self.group_names_by_key[asset_key],
-                    )
-                )
+            output_def = self.node_def.resolve_output_to_origin(
+                output_name, NodeHandle(self.node_def.name, parent=None)
+            )[0]
+            key = self._keys_by_output_name[output_name]
 
-            return result
+            return SourceAsset(
+                key=key,
+                metadata=output_def.metadata,
+                io_manager_key=output_def.io_manager_key,
+                description=output_def.description,
+                resource_defs=self.resource_defs,
+                partitions_def=self.partitions_def,
+                group_name=self.group_names_by_key[key],
+            )
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
         output_name = self.get_output_name_for_asset_key(key)
