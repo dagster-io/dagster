@@ -166,7 +166,7 @@ class _Repository:
                 description=self.description,
                 default_executor_def=self.default_executor_def,
                 default_logger_defs=self.default_logger_defs,
-                top_level_resources=self.top_level_resources,
+                _top_level_resources=self.top_level_resources,
             )
         else:
             repository_def = RepositoryDefinition(
@@ -191,7 +191,7 @@ def repository(
     description: Optional[str] = ...,
     default_executor_def: Optional[ExecutorDefinition] = ...,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
-    top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
+    _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = ...,
 ) -> _Repository:
     ...
 
@@ -203,7 +203,7 @@ def repository(
     description: Optional[str] = None,
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-    top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+    _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition, _Repository]:
     """Create a repository from the decorated function.
 
@@ -340,5 +340,5 @@ def repository(
         description=description,
         default_executor_def=default_executor_def,
         default_logger_defs=default_logger_defs,
-        top_level_resources=top_level_resources,
+        top_level_resources=_top_level_resources,
     )
