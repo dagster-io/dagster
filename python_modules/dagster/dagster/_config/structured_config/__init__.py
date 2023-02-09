@@ -170,7 +170,7 @@ def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSch
 ResValue = TypeVar("ResValue")
 
 
-class Resource(
+class ConfigurableResource(
     Generic[ResValue],
     ResourceDefinition,
     Config,
@@ -226,9 +226,9 @@ class Resource(
 
 class PartialResource(Generic[ResValue], ResourceDefinition, MakeConfigCacheable):
     data: Dict[str, Any]
-    resource_cls: Type[Resource[ResValue]]
+    resource_cls: Type[ConfigurableResource[ResValue]]
 
-    def __init__(self, resource_cls: Type[Resource[ResValue]], data: Dict[str, Any]):
+    def __init__(self, resource_cls: Type[ConfigurableResource[ResValue]], data: Dict[str, Any]):
         check.invariant(data == {}, "PartialResource currently does not support config fields")
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
@@ -249,10 +249,10 @@ class PartialResource(Generic[ResValue], ResourceDefinition, MakeConfigCacheable
         )
 
 
-ResourceOrPartial: TypeAlias = Union[Resource[ResValue], PartialResource[ResValue]]
+ResourceOrPartial: TypeAlias = Union[ConfigurableResource[ResValue], PartialResource[ResValue]]
 
 
-class StructuredResourceAdapter(Resource, ABC):
+class ConfigurableResourceAdapter(ConfigurableResource, ABC):
     """
     Adapter base class for wrapping a decorated, function-style resource
     with structured config.
@@ -272,7 +272,7 @@ class StructuredResourceAdapter(Resource, ABC):
 
             return output
 
-        class WriterResource(StructuredResourceAdapter):
+        class WriterResource(ConfigurableResourceAdapter):
             prefix: str
 
             @property
@@ -293,7 +293,7 @@ class StructuredResourceAdapter(Resource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
+class ConfigurableIOManagerBase(ConfigurableResource[IOManager], IOManagerDefinition):
     """
     Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
@@ -306,7 +306,9 @@ class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
 
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
-        Resource.__init__(self, **_process_config_values(schema, data, self.__class__.__name__))
+        ConfigurableResource.__init__(
+            self, **_process_config_values(schema, data, self.__class__.__name__)
+        )
         IOManagerDefinition.__init__(
             self,
             resource_fn=self.create_io_manager_to_pass_to_user_code,
@@ -331,7 +333,7 @@ class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
         return PartialIOManager(cls, data=kwargs)
 
 
-class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
+class ConfigurableIOManager(ConfigurableIOManagerBase, IOManager):
     """
     Base class for Dagster IO managers that utilize structured config.
 
@@ -379,7 +381,7 @@ def _wrap_config_type(
 
 
 class PartialIOManager(PartialResource[IOManager], IOManagerDefinition):
-    def __init__(self, resource_cls: Type[StructuredConfigIOManagerBase], data: Dict[str, Any]):
+    def __init__(self, resource_cls: Type[ConfigurableIOManagerBase], data: Dict[str, Any]):
         PartialResource.__init__(self, resource_cls, data)
         IOManagerDefinition.__init__(
             self,
@@ -453,7 +455,7 @@ def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
     )
 
 
-class StructuredIOManagerAdapter(StructuredConfigIOManagerBase):
+class ConfigurableIOManagerAdapter(ConfigurableIOManagerBase):
     @property
     @abstractmethod
     def wrapped_io_manager(self) -> IOManagerDefinition:

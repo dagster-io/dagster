@@ -1,11 +1,11 @@
 from dagster import Definitions, asset, job, op, repository
-from dagster._config.structured_config import Resource
+from dagster._config.structured_config import ConfigurableResource
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
+from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.resource_output import ResourceOutput
 from dagster._core.host_representation import (
     ExternalPipelineData,
     external_repository_data_from_def,
@@ -50,7 +50,7 @@ def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefi
 
 def test_repository_snap_definitions_resources_basic():
     @asset
-    def my_asset(foo: ResourceOutput[str]):
+    def my_asset(foo: Resource[str]):
         pass
 
     defs = Definitions(
@@ -69,7 +69,7 @@ def test_repository_snap_definitions_resources_basic():
 
 
 def test_repository_snap_definitions_resources_complex():
-    class MyStringResource(Resource):
+    class MyStringResource(ConfigurableResource):
         """my description"""
 
         my_string: str = "bar"

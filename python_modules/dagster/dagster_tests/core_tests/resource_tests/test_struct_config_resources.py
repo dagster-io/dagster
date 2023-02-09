@@ -7,15 +7,15 @@ import pytest
 from dagster import IOManager, asset, job, op, resource
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import (
-    Resource,
-    StructuredConfigIOManagerBase,
-    StructuredIOManagerAdapter,
-    StructuredResourceAdapter,
+    ConfigurableIOManagerAdapter,
+    ConfigurableIOManagerBase,
+    ConfigurableResource,
+    ConfigurableResourceAdapter,
 )
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.resource_output import ResourceOutput
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
@@ -27,7 +27,7 @@ from dagster._utils.cached_method import cached_method
 def test_basic_structured_resource():
     out_txt = []
 
-    class WriterResource(Resource):
+    class WriterResource(ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -55,7 +55,7 @@ def test_basic_structured_resource():
 
 
 def test_invalid_config():
-    class MyResource(Resource):
+    class MyResource(ConfigurableResource):
         foo: int
 
     with pytest.raises(
@@ -70,7 +70,7 @@ def test_caching_within_resource():
 
     from functools import cached_property
 
-    class GreetingResource(Resource):
+    class GreetingResource(ConfigurableResource):
         name: str
 
         @cached_property
@@ -140,7 +140,7 @@ def test_caching_within_resource():
 def test_abc_resource():
     out_txt = []
 
-    class WriterResource(Resource, ABC):
+    class WriterResource(ConfigurableResource, ABC):
         @abstractmethod
         def output(self, text: str) -> None:
             pass
@@ -185,7 +185,7 @@ def test_abc_resource():
 def test_yield_in_resource_function():
     called = []
 
-    class ResourceWithCleanup(Resource):
+    class ResourceWithCleanup(ConfigurableResource):
         idx: int
 
         def create_object_to_pass_to_user_code(self, context):
@@ -195,7 +195,7 @@ def test_yield_in_resource_function():
 
     @op
     def check_resource_created(
-        resource_with_cleanup_1: ResourceOutput[bool], resource_with_cleanup_2: ResourceOutput[bool]
+        resource_with_cleanup_1: Resource[bool], resource_with_cleanup_2: Resource[bool]
     ):
         assert resource_with_cleanup_1 is True
         assert resource_with_cleanup_2 is True
@@ -227,7 +227,7 @@ def test_wrapping_function_resource():
 
         return output
 
-    class WriterResource(StructuredResourceAdapter):
+    class WriterResource(ConfigurableResourceAdapter):
         prefix: str
 
         @property
@@ -235,7 +235,7 @@ def test_wrapping_function_resource():
             return writer_resource
 
     @op
-    def hello_world_op(writer: ResourceOutput[Callable[[str], None]]):
+    def hello_world_op(writer: Resource[Callable[[str], None]]):
         writer("hello, world!")
 
     @job(resource_defs={"writer": WriterResource(prefix="")})
@@ -271,7 +271,7 @@ def test_io_manager_adapter():
     def an_io_manager(context: InitResourceContext) -> AnIOManagerImplementation:
         return AnIOManagerImplementation(context.resource_config["a_config_value"])
 
-    class AdapterForIOManager(StructuredIOManagerAdapter):
+    class AdapterForIOManager(ConfigurableIOManagerAdapter):
         a_config_value: str
 
         @property
@@ -296,7 +296,7 @@ def test_io_manager_adapter():
 
 def test_io_manager_factory_class():
     # now test without the adapter
-    class AnIOManagerFactory(StructuredConfigIOManagerBase):
+    class AnIOManagerFactory(ConfigurableIOManagerBase):
         a_config_value: str
 
         def create_io_manager_to_pass_to_user_code(self, _) -> IOManager:
@@ -322,7 +322,7 @@ def test_io_manager_factory_class():
 def test_structured_resource_runtime_config():
     out_txt = []
 
-    class WriterResource(Resource):
+    class WriterResource(ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
