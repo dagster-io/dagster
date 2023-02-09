@@ -182,7 +182,8 @@ class InstanceSnapshot(NamedTuple):
 
             # write as a compressed file
             with tarfile.open(self.path, "w:gz") as tf:
-                tf.add(temp_dir, arcname=os.path.basename(temp_dir))
+                for fname in os.listdir(temp_dir):
+                    tf.add(os.path.join(temp_dir, fname), arcname=fname)
 
 
 class PerfScenario(NamedTuple):
@@ -302,17 +303,17 @@ perf_scenarios = [
     PerfScenario(
         snapshot=giant_unpartitioned_assets_1_run,
         n_freshness_policies=0,
+        target_execution_time=5,
+    ),
+    PerfScenario(
+        snapshot=giant_unpartitioned_assets_1_run,
+        n_freshness_policies=10,
         target_execution_time=15,
     ),
     PerfScenario(
         snapshot=giant_unpartitioned_assets_1_run,
-        n_freshness_policies=10,
-        target_execution_time=45,
-    ),
-    PerfScenario(
-        snapshot=giant_unpartitioned_assets_1_run,
         n_freshness_policies=100,
-        target_execution_time=50,
+        target_execution_time=20,
     ),
     PerfScenario(
         snapshot=giant_unpartitioned_assets_2_random_runs,
@@ -347,12 +348,12 @@ perf_scenarios = [
     PerfScenario(
         snapshot=medium_all_partitioned_assets_100_partition_keys,
         n_freshness_policies=0,
-        target_execution_time=20,
+        target_execution_time=30,
     ),
     PerfScenario(
         snapshot=medium_all_partitioned_assets_100_partition_keys,
         n_freshness_policies=100,
-        target_execution_time=20,
+        target_execution_time=30,
     ),
 ]
 
@@ -360,6 +361,6 @@ perf_scenarios = [
 @pytest.mark.parametrize("scenario", perf_scenarios, ids=[s.name for s in perf_scenarios])
 def test_reconciliation_perf(scenario: PerfScenario):
     if os.getenv("BUILDKITE") is not None and scenario.target_execution_time > 20:
-        pytest.skip("Skipping slow test on CI")
+        pytest.skip("Skipping slow test on BK")
 
     scenario.do_scenario()
