@@ -245,7 +245,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_time_window_partitioned_asset(tmp_path):
+def test_time_window_partitioned_asset():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
@@ -323,7 +323,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_static_partitioned_asset(tmp_path):
+def test_static_partitioned_asset():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
@@ -399,7 +399,7 @@ def test_static_partitioned_asset(tmp_path):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_multi_partitioned_asset(tmp_path):
+def test_multi_partitioned_asset():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
