@@ -20,7 +20,7 @@ import {InstigationStatus, InstigationType} from '../graphql/types';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {EvaluateScheduleDialog} from '../ticks/EvaluateSchedule';
+import {EvaluateScheduleDialog} from '../ticks/EvaluateScheduleDialog';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -90,7 +90,7 @@ export const ScheduleDetails: React.FC<{
               <Tag icon="timer">
                 Next tick:{' '}
                 <TimestampDisplay
-                  timestamp={futureTicks.results[0].timestamp}
+                  timestamp={futureTicks.results[0].timestamp!}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}
                 />
