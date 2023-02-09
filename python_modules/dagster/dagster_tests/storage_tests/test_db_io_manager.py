@@ -88,7 +88,9 @@ def test_asset_out():
     assert manager.load_input(input_context) == 7
 
     assert len(handler.handle_output_calls) == 1
-    table_slice = TableSlice(database="database_abc", schema="schema1", table="table1")
+    table_slice = TableSlice(
+        database="database_abc", schema="schema1", table="table1", partition=[]
+    )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
 
@@ -114,13 +116,19 @@ def test_asset_out_columns():
     assert manager.load_input(input_context) == 7
 
     assert len(handler.handle_output_calls) == 1
-    table_slice = TableSlice(database="database_abc", schema="schema1", table="table1")
+    table_slice = TableSlice(
+        database="database_abc", schema="schema1", table="table1", partition=[]
+    )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
 
     assert len(handler.handle_input_calls) == 1
     assert handler.handle_input_calls[0][1] == TableSlice(
-        database="database_abc", schema="schema1", table="table1", columns=["apple", "banana"]
+        database="database_abc",
+        schema="schema1",
+        table="table1",
+        columns=["apple", "banana"],
+        partition=[],
     )
 
 
@@ -129,12 +137,17 @@ def test_asset_out_partitioned():
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
+    partitions_def = MagicMock()
+    partitions_def.time_window_for_partition_key = MagicMock(
+        return_value=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3))
+    )
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,
         asset_partition_key="2020-01-02",
         asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
         metadata={"partition_expr": "abc"},
+        asset_partitions_def=partitions_def,
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -145,6 +158,7 @@ def test_asset_out_partitioned():
         asset_partition_key="2020-01-02",
         asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
         metadata=None,
+        asset_partitions_def=partitions_def,
     )
     assert manager.load_input(input_context) == 7
 
@@ -153,9 +167,12 @@ def test_asset_out_partitioned():
         database="database_abc",
         schema="schema1",
         table="table1",
-        partition=TablePartition(
-            partition=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)), partition_expr="abc"
-        ),
+        partition=[
+            TablePartition(
+                partition=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
+                partition_expr="abc",
+            )
+        ],
     )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
@@ -174,7 +191,9 @@ def test_different_output_and_input_types():
     manager.handle_output(output_context, 5)
     assert len(int_handler.handle_output_calls) == 1
     assert len(str_handler.handle_output_calls) == 0
-    table_slice = TableSlice(database="database_abc", schema="schema1", table="table1")
+    table_slice = TableSlice(
+        database="database_abc", schema="schema1", table="table1", partition=[]
+    )
     assert int_handler.handle_output_calls[0][1:] == (table_slice, 5)
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
 
@@ -212,7 +231,9 @@ def test_non_asset_out():
     assert manager.load_input(input_context) == 7
 
     assert len(handler.handle_output_calls) == 1
-    table_slice = TableSlice(database="database_abc", schema="schema1", table="table1")
+    table_slice = TableSlice(
+        database="database_abc", schema="schema1", table="table1", partition=[]
+    )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
 
