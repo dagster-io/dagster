@@ -145,7 +145,7 @@ In this step, you'll spin up Dagit, Dagster's web-based UI, and verify that your
 
 Repeat these steps as needed until the jobs run successfully.
 
-#### Containerized Operator Considerations
+### Containerized operator considerations
 
 There are a variety of Airflow Operator types that are used to launch compute in various external execution environments, for example Kubernetes or Amazon ECS. When getting things working locally we'd recommend trying to execute those containers locally unless it's either unrealistic or impossible to emulate the cloud environment. For example if you use the K8sPodOperator, it likely means that you will need to have a local Kubernetes cluster running, and in that case we recommend docker's built-in Kubernetes environment. You also need to be able to pull down the container images that will be needed for execution to your local machine.
 
