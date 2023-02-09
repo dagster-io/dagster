@@ -19,6 +19,7 @@ from .operators.dagster_operator import (
     DagsterCloudOperator as DagsterCloudOperator,
     DagsterOperator as DagsterOperator,
 )
+from .resources import make_ephemeral_airflow_db_resource as make_ephemeral_airflow_db_resource
 from .version import __version__ as __version__
 
 check_dagster_package_version("dagster-airflow", __version__)
@@ -29,6 +30,7 @@ __all__ = [
     "make_schedules_and_jobs_from_airflow_dag_bag",
     "make_dagster_job_from_airflow_dag",
     "load_assets_from_airflow_dag",
+    "make_ephemeral_airflow_db_resource",
     "DagsterHook",
     "DagsterLink",
     "DagsterOperator",
@@ -45,7 +47,7 @@ class DagsterAirflowPlugin(AirflowPlugin):
     ]
 
 
-def get_provider_info():
+def get_provider_info() -> dict:
     return {
         "package-name": "dagster-airflow",
         "name": "Dagster Airflow",

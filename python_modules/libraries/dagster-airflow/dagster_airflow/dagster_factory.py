@@ -1,9 +1,11 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from airflow.models.connection import Connection
 from airflow.models.dagbag import DagBag
 from dagster import (
     Definitions,
+    JobDefinition,
+    ScheduleDefinition,
     _check as check,
 )
 
@@ -13,6 +15,9 @@ from dagster_airflow.dagster_schedule_factory import (
     make_dagster_schedule_from_airflow_dag,
 )
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
+from dagster_airflow.resources import (
+    make_ephemeral_airflow_db_resource as make_ephemeral_airflow_db_resource,
+)
 from dagster_airflow.utils import (
     create_airflow_connections,
 )
@@ -21,7 +26,7 @@ from dagster_airflow.utils import (
 def make_dagster_definitions_from_airflow_dag_bag(
     dag_bag: DagBag,
     connections: Optional[List[Connection]] = None,
-):
+) -> Definitions:
     """Construct a Dagster definition corresponding to Airflow DAGs in DagBag.
 
     Usage:
@@ -42,14 +47,19 @@ def make_dagster_definitions_from_airflow_dag_bag(
     Returns:
         Definitions
     """
+    check.inst_param(dag_bag, "dag_bag", DagBag)
+    connections = check.opt_list_param(connections, "connections", of_type=Connection)
     schedules, jobs = make_schedules_and_jobs_from_airflow_dag_bag(
         dag_bag,
         connections,
     )
 
+    airflow_database_resource = make_ephemeral_airflow_db_resource(connections=connections)
+
     return Definitions(
         schedules=schedules,
         jobs=jobs,
+        resources={"airflow_db": airflow_database_resource},
     )
 
 
@@ -57,7 +67,7 @@ def make_dagster_definitions_from_airflow_dags_path(
     dag_path: str,
     safe_mode: bool = True,
     connections: Optional[List[Connection]] = None,
-):
+) -> Definitions:
     """Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
 
     Usage:
@@ -102,7 +112,7 @@ def make_dagster_definitions_from_airflow_dags_path(
     )
 
 
-def make_dagster_definitions_from_airflow_example_dags():
+def make_dagster_definitions_from_airflow_example_dags() -> Definitions:
     """Construct a Dagster repository for Airflow's example DAGs.
 
     Usage:
@@ -136,7 +146,7 @@ def make_dagster_definitions_from_airflow_example_dags():
 def make_schedules_and_jobs_from_airflow_dag_bag(
     dag_bag: DagBag,
     connections: Optional[List[Connection]] = None,
-):
+) -> Tuple[List[ScheduleDefinition], List[JobDefinition]]:
     """Construct Dagster Schedules and Jobs corresponding to Airflow DagBag.
 
     Args:
