@@ -55,7 +55,7 @@ describe('EvaluateScheduleTest', () => {
     userEvent.click(screen.getByTestId('tick-5'));
     userEvent.click(screen.getByTestId('evaluate'));
     await waitFor(() => {
-      expect(screen.getByText(/1\s+Run request/g)).toBeVisible();
+      expect(screen.getByText(/1\s+run request/gi)).toBeVisible();
     });
   });
 
