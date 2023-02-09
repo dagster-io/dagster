@@ -1,5 +1,4 @@
-from dagster import AssetKey, asset, repository
-
+from dagster import AssetKey, Definitions, asset
 from dagster_airflow import load_assets_from_airflow_dag, make_ephemeral_airflow_db_resource
 
 from with_airflow.airflow_simple_dag import simple_dag
@@ -39,8 +38,7 @@ simple_assets = load_assets_from_airflow_dag(
 )
 
 
-@repository(
-    top_level_resources={"airflow_db": make_ephemeral_airflow_db_resource()},
+assets = Definitions(
+    assets=[*simple_assets, new_upstream_asset_1, new_upstream_asset_2],
+    resources={"airflow_db": make_ephemeral_airflow_db_resource()},
 )
-def sda_examples():
-    return [*simple_assets, new_upstream_asset_1, new_upstream_asset_2]
