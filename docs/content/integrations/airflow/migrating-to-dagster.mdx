@@ -158,13 +158,13 @@ Iterate as needed until all configuration is correctly ported to your local envi
 <Note>
   This step is applicable to Dagster Cloud. If deploying to your infrastructure,
   refer to the <a href="/deployment">Deployment guides</a> for more info.
+  <br /><br />
+  Additionally, until your Airflow DAGs execute successfully in your local environment, we recommend waiting to move to production.
 </Note>
 
 In this step, you'll set up your project for use with Dagster Cloud.
 
-Your migrated airflow DAGs should be able to on both OSS and Dagster Cloud however in this guide we'll focus on running in Cloud. First follow the instructions in the [Dagster Cloud getting started guide](/dagster-cloud/getting-started)
-
-Once you have your dagster cloud organization setup you can either choose to adapt your existing airflow repository to use the Dagster Cloud CI/CD deployment or copy over your code to the quickstart repository you made.
+<!-- Once you have your dagster cloud organization setup you can either choose to adapt your existing airflow repository to use the Dagster Cloud CI/CD deployment or copy over your code to the quickstart repository you made. -->
 
 We'd really recommend waiting to go to production till you've first got your airflow DAGs executing successfully in your local development environment.
 
