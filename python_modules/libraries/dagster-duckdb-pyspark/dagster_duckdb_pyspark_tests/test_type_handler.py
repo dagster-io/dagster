@@ -13,6 +13,8 @@ from dagster import (
     graph,
     materialize,
     op,
+    DynamicPartitionsDefinition,
+    instance_for_test
 )
 from dagster._check import CheckError
 from dagster_duckdb_pyspark import duckdb_pyspark_io_manager
@@ -333,3 +335,76 @@ def test_multi_partitioned_asset(tmp_path):
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
     duckdb_conn.close()
+
+
+dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
+
+@asset(
+    partitions_def=dynamic_fruits,
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": "fruit"},
+    config_schema={"value": str},
+)
+def dynamic_partitioned(context) -> SparkDF:
+    partition = context.asset_partition_key_for_output()
+    value = context.op_config["value"]
+    pd_df = pd.DataFrame(
+        {
+            "fruit": [partition, partition, partition],
+            "a": [value, value, value],
+        }
+    )
+
+    spark = SparkSession.builder.getOrCreate()
+    return spark.createDataFrame(pd_df)
+
+
+def test_dynamic_partition(tmp_path):
+    with instance_for_test() as instance:
+        duckdb_io_manager = duckdb_pyspark_io_manager.configured(
+            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+        )
+        resource_defs = {"io_manager": duckdb_io_manager}
+
+        dynamic_fruits.add_partitions(["apple"], instance)
+
+        materialize(
+            [dynamic_partitioned],
+            partition_key="apple",
+            resources=resource_defs,
+            instance=instance,
+            run_config={"ops": {"my_schema__dynamic_partitioned": {"config": {"value": "1"}}}},
+        )
+
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+        out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
+        assert out_df["a"].tolist() == ["1", "1", "1"]
+        duckdb_conn.close()
+
+        dynamic_fruits.add_partitions(["orange"], instance)
+
+        materialize(
+            [dynamic_partitioned],
+            partition_key="orange",
+            resources=resource_defs,
+            instance=instance,
+            run_config={"ops": {"my_schema__dynamic_partitioned": {"config": {"value": "2"}}}},
+        )
+
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+        out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
+        assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+        duckdb_conn.close()
+
+        materialize(
+            [dynamic_partitioned],
+            partition_key="apple",
+            resources=resource_defs,
+            instance=instance,
+            run_config={"ops": {"my_schema__dynamic_partitioned": {"config": {"value": "3"}}}},
+        )
+
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+        out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
+        assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+        duckdb_conn.close()
