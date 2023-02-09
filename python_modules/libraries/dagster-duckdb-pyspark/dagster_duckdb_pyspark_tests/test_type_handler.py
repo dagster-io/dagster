@@ -196,7 +196,7 @@ def test_partitioned_asset(tmp_path):
     metadata={"partition_expr": "color"},
     config_schema={"value": str},
 )
-def static_partitioned(context):
+def static_partitioned(context) -> SparkDF:
     partition = context.asset_partition_key_for_output()
     value = context.op_config["value"]
     pd_df = pd.DataFrame(
@@ -265,7 +265,7 @@ def test_static_partitioned_asset(tmp_path):
     metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
     config_schema={"value": str},
 )
-def multi_partitioned(context):
+def multi_partitioned(context) -> SparkDF:
     partition = context.partition_key.keys_by_dimension
     value = context.op_config["value"]
     pd_df = pd.DataFrame(

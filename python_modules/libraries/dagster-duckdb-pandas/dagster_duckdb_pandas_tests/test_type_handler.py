@@ -65,7 +65,7 @@ def b_df() -> pd.DataFrame:
 
 
 @asset(key_prefix=["my_schema"])
-def b_plus_one(b_df: pd.DataFrame):
+def b_plus_one(b_df: pd.DataFrame) -> pd.DataFrame:
     return b_df + 1
 
 
@@ -93,7 +93,7 @@ def test_duckdb_io_manager_with_assets(tmp_path):
 
 
 @asset(key_prefix=["my_schema"], ins={"b_df": AssetIn("b_df", metadata={"columns": ["a"]})})
-def b_plus_one_columns(b_df: pd.DataFrame):
+def b_plus_one_columns(b_df: pd.DataFrame) -> pd.DataFrame:
     return b_df + 1
 
 
@@ -154,7 +154,7 @@ def test_not_supported_type(tmp_path):
     metadata={"partition_expr": "time"},
     config_schema={"value": str},
 )
-def daily_partitioned(context):
+def daily_partitioned(context) -> pd.DataFrame:
     partition = pd.Timestamp(context.asset_partition_key_for_output())
     value = context.op_config["value"]
 
@@ -219,7 +219,7 @@ def test_time_window_partitioned_asset(tmp_path):
     metadata={"partition_expr": "color"},
     config_schema={"value": str},
 )
-def static_partitioned(context):
+def static_partitioned(context) -> pd.DataFrame:
     partition = context.asset_partition_key_for_output()
     value = context.op_config["value"]
     return pd.DataFrame(
@@ -285,7 +285,7 @@ def test_static_partitioned_asset(tmp_path):
     metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
     config_schema={"value": str},
 )
-def multi_partitioned(context):
+def multi_partitioned(context) -> pd.DataFrame:
     partition = context.partition_key.keys_by_dimension
     value = context.op_config["value"]
     return pd.DataFrame(

@@ -259,7 +259,7 @@ def test_time_window_partitioned_asset(tmp_path):
             key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
             name=table_name,
         )
-        def daily_partitioned(context):
+        def daily_partitioned(context) -> DataFrame:
             partition = Timestamp(context.asset_partition_key_for_output())
             value = context.op_config["value"]
 
@@ -337,7 +337,7 @@ def test_static_partitioned_asset(tmp_path):
             config_schema={"value": str},
             name=table_name,
         )
-        def static_partitioned(context):
+        def static_partitioned(context) -> DataFrame:
             partition = context.asset_partition_key_for_output()
             value = context.op_config["value"]
             return DataFrame(
@@ -418,7 +418,7 @@ def test_multi_partitioned_asset(tmp_path):
             config_schema={"value": str},
             name=table_name,
         )
-        def multi_partitioned(context):
+        def multi_partitioned(context) -> DataFrame:
             partition = context.partition_key.keys_by_dimension
             value = context.op_config["value"]
             return DataFrame(
