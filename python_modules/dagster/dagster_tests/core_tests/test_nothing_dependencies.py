@@ -323,7 +323,7 @@ def test_nothing_infer():
     ):
 
         @op
-        def _bad(_previous_steps_complete: Nothing):
+        def _bad(_previous_steps_complete: Nothing):  # type: ignore
             pass
 
 

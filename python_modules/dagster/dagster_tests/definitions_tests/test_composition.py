@@ -677,7 +677,7 @@ def test_compose_nothing():
         pass
 
     @graph(ins={"start": GraphIn()})
-    def _compose(start: Nothing):
+    def _compose(start: Nothing):  # type: ignore
         go(start)  # pylint: disable=too-many-function-args
 
 
