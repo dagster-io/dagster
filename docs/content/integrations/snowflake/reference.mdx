@@ -5,10 +5,11 @@ description: Store your Dagster assets in Snowflake
 
 # dagster-snowflake integration reference
 
-This reference page provides information for working with [`dagster-snowflake`](/\_apidocs/libraries/dagster-snowflake) features that are not covered as part of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
+This reference page provides information for working with [`dagster-snowflake`](/_apidocs/libraries/dagster-snowflake) features that are not covered as part of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
 - [Authenticating using a private key](#authenticating-using-a-private-key)
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
+- [Storing partitioned assets](#storing-partitioned-assets)
 - [Storing tables in multiple schemas](#storing-tables-in-multiple-schemas)
 - [Using the Snowflake I/O manager with other I/O managers](#using-the-snowflake-io-manager-with-other-io-managers)
 - [Storing and loading PySpark DataFrames in Snowflake](#storing-and-loading-pyspark-dataframes-in-snowflake)
@@ -107,6 +108,101 @@ def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
 In this example, we only use the columns containing sepal data from the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
 When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `Sepal length (cm)` and `Sepal width (cm)` columns of the `FLOWERS.IRIS.IRIS_DATASET` table and pass them to `sepal_data` as a Pandas DataFrame.
+
+---
+
+## Storing partitioned assets
+
+The Snowflake IO manager supports storing a loading partitioned data.
+
+### Storing static partitioned assets
+
+In order to store static partitioned assets in Snowflake, you must specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
+
+```python file=/integrations/snowflake/static_partition.py
+from dagster import asset, StaticPartitionDefinition
+import pandas as pd
+
+@asset(
+    partitions_def=StaticPartitionDefinition(["Iris-setosa", "Iris-virginica", "Iris-versicolor"]),
+    metadata={"partition_expr": "SPECIES"}
+)
+def iris_dataset_partitioned(context) -> pd.DataFrame:
+    species = context.asset_partition_key_for_output()
+
+    full_df = pd.read_csv(
+        "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
+        names=[
+            "Sepal length (cm)",
+            "Sepal width (cm)",
+            "Petal length (cm)",
+            "Petal width (cm)",
+            "Species",
+        ],
+    )
+
+    return full_df[full_df["Species"] == species]
+```
+
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a static partition, the statement `SELECT * WHERE <partition_expr> = <selected partition>` is used, so when materializing the **Iris-setosa** partition of the above asset, the query is `SELECT * WHERE SPECIES = 'Iris-setosa'`.
+
+### Storing time partitioned assets
+
+Like static partitioned assets, you can must specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
+
+```python file=/integrations/snowflake/time_partition.py startafter=start_example endbefore=end_example
+from dagster import asset, DailyPartitionsDefinition
+import pandas as pd
+
+@asset(
+    partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
+    metadata={"partition_expr": "DATE"}
+)
+def iris_data_per_day(context) -> pd.DataFrame:
+    partition = context.asset_partition_key_for_output()
+
+    # get_iris_data_for_date fetches all of the iris data for a given date,
+    # the returned dataframe contains a column named 'date' with date data in the
+    # form YYYY-MM-DD
+    return get_iris_data_for_date(partition)
+```
+
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a dynamic partition, the statement `SELECT * WHERE <partition_expr> >= <partition_start> AND <partition_expr> < <partition_end>` is used. The `<partition_start>` and `<partition_end>` bounds are of the form `YYYY-MM-DD HH:MM:SS`. So when materializing the **2023-01-02** partition the bound query is `SELECT * WHERE DATE >= '2023-01-02 00:00:00' AND DATE < '2023-01-03 00:00:00'`. If the data in your partition column cannot be directly compared to the time bounds generated by the Snowflake I/O manager, you can include a conversion in your `partition_expr` to convert the data in your column to the expected format.
+
+### Storing multi-partitioned assets
+
+The Snowflake I/O manager can also store data partitioned on multiple dimensions. To do this, you must specify the column for each partition as a dictionary of `partition_expr` metadata:
+
+```python file=/integrations/snowflake/multi_partition.py startafter=start_example endbefore=end_example
+from dagster import asset, StaticPartitionDefinition, MultiPartitionsDefinition, DailyPartitionsDefinition
+import pandas as pd
+
+@asset(
+    partitions_def=MultiPartitionsDefinition(
+                {
+                    "date": DailyPartitionsDefinition(start_date="2023-01-01"),
+                    "species": StaticPartitionDefinition(["Iris-setosa", "Iris-virginica", "Iris-versicolor"]),
+                }
+            ),
+    metadata={"partition_expr": {
+        "species": "SPECIES",
+        "date": "DATE"
+    }}
+)
+def iris_dataset_partitioned(context) -> pd.DataFrame:
+    partition = partition = context.partition_key.keys_by_dimension
+    species = partition["species"]
+    date = partition["date"]
+
+    # get_iris_data_for_date fetches all of the iris data for a given date,
+    # the returned dataframe contains a column named 'date' with date data in the
+    # form YYYY-MM-DD
+    full_df = get_iris_data_for_date(date)
+
+    return full_df[full_df["Species"] == species]
+```
+
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement. For example, when materializing the **2023-01-02|Iris-setosa** partition, the query `SELECT * WHERE SPECIES = 'Iris-setosa' AND DATE >= '2023-01-02 00:00:00' AND DATE < '2023-01-03 00:00:00'` will be used.
 
 ---
 
@@ -453,4 +549,4 @@ defs = Definitions(
 
 In this example, we attach the Snowflake resource to the `small_petals` asset. In the body of the asset function, we use the `execute_query` method of the resource to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2: Create tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster#store-a-dagster-asset-as-a-table-in-snowflake) of the [Using Dagster with Snowflake tutorial](/integrations/snowflake/using-snowflake-with-dagster).
 
-For more information on the Snowflake resource, including additional configuration settings, see the [Snowflake resource API docs](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource).
+For more information on the Snowflake resource, including additional configuration settings, see the [Snowflake resource API docs](/_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource).
