@@ -48,6 +48,18 @@
     - reload code location
     - (change `code_version` back after screenshot)
 
+- id: source-asset-in-graph.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/observable_source_asset_path_with_non_argument_deps.py
+  route: /workspace
+  vetted: false
+  steps:
+    - comment out `input_number` in `observable_source_asset_path_with_non_argument_deps`
+    - remove `non_argument_deps` of `versioned_number`
+    - reload code location
+    - materialize all
+    - uncomment `input_number` and restore `non_argument_deps` of `versioned_number`
+    - reload code location
+
 - id: source-asset-in-catalog.png
   workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/observable_source_asset_path_with_non_argument_deps.py
   route: /workspace

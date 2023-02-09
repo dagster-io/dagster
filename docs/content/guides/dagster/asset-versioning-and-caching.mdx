@@ -10,14 +10,21 @@ This guide demonstrates how to build memoizable graphs of assets. Memoizable ass
 
 # Context
 
-The core abstraction of Dagster a software-defined asset which, in its idealized form, is a side-effect-free ("pure") function that produces an output asset from input assets.
+There's no reason to spend time materializing an asset if the result is going to be the same as the result of its last materialization.
 
-Pure functions can be made more efficient with a technique called "memoization". A memoized function has an outer layer in which previously computed outputs are cached and indexed by their corresponding inputs. When a memoized function is called twice with identical inputs, the cached result can be returned on the second call.
+Dagster's versioning system helps you determine ahead of time whether materializing an asset will produce a different result. It's based on the idea that the result of an asset materialization shouldn't change as long as:
 
-In computationally expensive data pipelining, this approach can yield tremendous benefits. Dagster offers support for memoized assets via a versioning system. Because both code and input values can affect the output of a function, Dagster has two kinds of versions:
+- The code used is the same code as the last time the asset was materialized.
+- The input data is the same input data as the last time the asset was materialized.
+
+Dagster has two versioning concepts to represent the the code and input data used for each materialization:
 
 1. Code version. A string that represents the version of the code that computes an asset. This is the `code_version` argument of <PyObject object="asset" decorator="true" />.
 2. Logical version. A string that represents the version of the value of the asset. This is represented as a <PyObject object="LogicalVersion" /> object.
+
+By keeping track of code and logical versions, Dagster can predict whether a materialization will actually change the underlying value. This allows it to skip redundant materializations and instead return the previously-computed value. In more technical terms, Dagster offers a limited form of [memoization](https://en.wikipedia.org/wiki/Memoization) for assets-- the last-computed asset value is always cached.
+
+In computationally expensive data pipelining, this approach can yield tremendous benefits.
 
 ---
 
@@ -44,7 +51,6 @@ src="/images/guides/asset-versioning-and-caching/simple-asset-in-catalog.png"
 width={4064}
 height={2488}
 />
-
 
 You'll notice a logical version in the "System tags" section in the materialization details. This is the hash dagster has automatically computed. In this case, since there are no inputs, the logical version is a hash of the code version only, which is also visible in "System tags".
 
@@ -116,6 +122,8 @@ def multipled_number(versioned_number):
 
 Reload the location in dagit and you'll notice that `multipled_number` is marked as "Never Materalized". Now click on the "Materialize" disclosure triangle and then "Materialize stale and missing" (the plain "Materialize" button ignores versioning) to materialize.
 
+Note that in the created run, _only_ the step associated with `multipled_number` is run. The system knows that `versioned_number` is up to date and therefore can safely skip that computation. You can see this on the details page for the run:
+
 <Image
 alt="Materialize stale event log"
 src="/images/guides/asset-versioning-and-caching/materialize-stale-event-log.png"
@@ -123,9 +131,23 @@ width={2662}
 height={1748}
 />
 
-Note that in the created run, _only_ the step associated with `multipled_number` is run. The system knows that `versioned_number` is up to date and therefore can safely skip that computation.
+Now let's update the `versioned_number` asset-- we'll change its return value and code version:
 
-Now let's update the `versioned_number` asset-- change its return value and code version. As we saw previously, this will cause `versioned_number` to become stale. But since `multipled_number` depends on `versioned_number`, it must be recomputed as well, and so is also marked stale:
+```python file=/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only_v2.py
+from dagster import asset
+
+
+@asset(code_version="v3")
+def versioned_number():
+    return 15
+
+
+@asset(code_version="v1")
+def multipled_number(versioned_number):
+    return versioned_number * 2
+```
+
+As we saw previously, this will cause `versioned_number` to become stale. But since `multipled_number` depends on `versioned_number`, it must be recomputed as well, and so is also marked stale:
 
 <Image
 alt="Dependencies code version only"
@@ -133,7 +155,6 @@ src="/images/guides/asset-versioning-and-caching/dependencies-code-version-only.
 width={2662}
 height={1748}
 />
-
 
 Click "Materialize stale and missing" to get both assets up-to-date again.
 
@@ -145,12 +166,19 @@ In the real world, data pipelines depend on external upstream data. So far in th
 
 External data sources in Dagster are modeled by <PyObject object="SourceAsset" displayText="SourceAssets" />. We can add versioning to a `SourceAsset` by making it _observable_. An observable source asset has a user-defined function that computes a logical version.
 
-Let's add an <PyObject object="observable_source_asset" decorator="true" /> called `input_number`. This will represent a file written by an external process, upstream of our pipeline. The body of the `input_number` function computes a hash of the file contents and returns it as a `LogicalVersion`. We'll set `input_number` as an upstream dependency of `versioned_number`.
+Let's add an <PyObject object="observable_source_asset" decorator="true" /> called `input_number`. This will represent a file written by an external process, upstream of our pipeline:
+
+```python file=/guides/dagster/asset_versioning_and_caching/input_number.txt
+29034
+```
+
+The body of the `input_number` function computes a hash of the file contents and returns it as a `LogicalVersion`. We'll set `input_number` as an upstream dependency of `versioned_number`.
 
 ```python file=/guides/dagster/asset_versioning_and_caching/observable_source_asset_path_with_non_argument_deps.py
 from hashlib import sha256
 
 from dagster import LogicalVersion, asset, file_relative_path, observable_source_asset
+
 
 def sha256_digest_from_str(string: str) -> str:
     hash_sig = sha256()
@@ -178,7 +206,16 @@ def multipled_number(versioned_number):
     return versioned_number * 2
 ```
 
-Adding an observable source asset to our graph has revealed a new button labeled "Observe Sources". We click this button to kick off a run that executes the observation function of `input_number`. Let's look at the entry in the asset catalog for `input_number`:
+Adding an observable source asset to our graph has revealed a new button labeled "Observe Sources":
+
+<Image
+alt="Source asset in graph"
+src="/images/guides/asset-versioning-and-caching/source-asset-in-graph.png"
+width={2662}
+height={1748}
+/>
+
+We click this button to kick off a run that executes the observation function of `input_number`. Let's look at the entry in the asset catalog for `input_number`:
 
 <Image
 alt="Source asset in catalog"
@@ -194,5 +231,6 @@ If we return to the asset graph, we see that `versioned_number` and `multiplied_
 Finally, let's manually alter the file to simulate the activity of an external process. If we click the "Observe Sources" button again, the downstream assets are again marked stale-- the observation run generated a new logical version for `input_number`, because its content changed.
 
 <Note>
-  Asset memoization is under very active development. This guide will be updated as we roll out new features in the coming weeks.
+  Asset memoization is under very active development. This guide will be updated
+  as we roll out new features in the coming weeks.
 </Note>
