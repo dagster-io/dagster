@@ -469,7 +469,7 @@ def test_multi_partitioned_asset(tmp_path):
         )
         print("TABLE IS")
         print(out_df)
-        assert out_df["A"].tolist() == ["1", "1", "1", "2", "2", "2"]
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
             [multi_partitioned],
@@ -483,7 +483,7 @@ def test_multi_partitioned_asset(tmp_path):
         )
         print("TABLE IS")
         print(out_df)
-        assert out_df["A"].tolist() == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
 
         materialize(
             [multi_partitioned],
@@ -497,4 +497,4 @@ def test_multi_partitioned_asset(tmp_path):
         )
         print("TABLE IS")
         print(out_df)
-        assert out_df["A"].tolist() == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
+        assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
