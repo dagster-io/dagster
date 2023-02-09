@@ -6,16 +6,16 @@ import pytest
 from dagster import (
     AssetIn,
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
     StaticPartitionsDefinition,
     asset,
     graph,
+    instance_for_test,
     materialize,
     op,
-    DynamicPartitionsDefinition,
-    instance_for_test
 )
 from dagster._check import CheckError
 from dagster_duckdb_pandas import duckdb_pandas_io_manager
@@ -355,6 +355,7 @@ def test_multi_partitioned_asset(tmp_path):
 
 
 dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
+
 
 @asset(
     partitions_def=dynamic_fruits,
