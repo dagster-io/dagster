@@ -1,7 +1,3 @@
----
-requiredEnvVars: null
----
-
 # Dagster + dbt starter kit
 
 This starter demonstrates using Python alongside a medium-sized dbt project. It uses dbt's [`jaffle_shop`](https://github.com/dbt-labs/jaffle_shop), [`dagster-dbt`](https://docs.dagster.io/_apidocs/libraries/dagster-dbt), and [DuckDB](https://duckdb.org/).
