@@ -290,9 +290,7 @@ const EvaluateScheduleContent: React.FC<{
       return (
         <div>
           <Subheading>Skip Reason</Subheading>
-          <div>
-            {sensorExecutionData?.evaluationResult?.skipReason || 'No skip reason was output'}
-          </div>
+          <div>{evaluationResult?.skipReason || 'No skip reason was output'}</div>
         </div>
       );
     } else {

@@ -1,4 +1,4 @@
-import {Box, Icon, Subheading, Table, Tag} from '@dagster-io/ui';
+import {Box, Icon, Table, Tag} from '@dagster-io/ui';
 import qs from 'qs';
 import React from 'react';
 
