@@ -189,7 +189,7 @@ class InstanceSnapshot(NamedTuple):
 class PerfScenario(NamedTuple):
     snapshot: InstanceSnapshot
     n_freshness_policies: int
-    target_execution_time: int
+    max_execution_time_seconds: int
 
     @property
     def name(self) -> str:
@@ -232,7 +232,7 @@ class PerfScenario(NamedTuple):
                 )
                 end = time.time()
                 execution_time_seconds = end - start
-                assert execution_time_seconds < self.target_execution_time
+                assert execution_time_seconds < self.max_execution_time_seconds
 
 
 # ==============================================
@@ -313,64 +313,64 @@ perf_scenarios = [
     PerfScenario(
         snapshot=giant_unpartitioned_assets_1_run,
         n_freshness_policies=0,
-        target_execution_time=5,
+        max_execution_time_seconds=5,
     ),
     PerfScenario(
         snapshot=giant_unpartitioned_assets_1_run,
         n_freshness_policies=10,
-        target_execution_time=15,
+        max_execution_time_seconds=15,
     ),
     PerfScenario(
         snapshot=giant_unpartitioned_assets_1_run,
         n_freshness_policies=100,
-        target_execution_time=20,
+        max_execution_time_seconds=20,
     ),
     PerfScenario(
         snapshot=giant_unpartitioned_assets_2_random_runs,
         n_freshness_policies=0,
-        target_execution_time=20,
+        max_execution_time_seconds=20,
     ),
     PerfScenario(
         snapshot=giant_unpartitioned_assets_2_random_runs,
         n_freshness_policies=10,
-        target_execution_time=45,
+        max_execution_time_seconds=45,
     ),
     PerfScenario(
         snapshot=large_unpartitioned_assets_2_random_runs,
         n_freshness_policies=0,
-        target_execution_time=30,
+        max_execution_time_seconds=30,
     ),
     PerfScenario(
         snapshot=large_unpartitioned_assets_2_random_runs,
         n_freshness_policies=100,
-        target_execution_time=30,
+        max_execution_time_seconds=30,
     ),
     PerfScenario(
         snapshot=large_all_partitioned_assets_2_partition_keys,
         n_freshness_policies=100,
-        target_execution_time=30,
+        max_execution_time_seconds=30,
     ),
     PerfScenario(
         snapshot=large_all_partitioned_assets_20_partition_keys,
         n_freshness_policies=100,
-        target_execution_time=30,
+        max_execution_time_seconds=30,
     ),
     PerfScenario(
         snapshot=medium_all_partitioned_assets_2_partition_keys,
         n_freshness_policies=100,
-        target_execution_time=30,
+        max_execution_time_seconds=30,
     ),
     PerfScenario(
         snapshot=medium_all_partitioned_assets_100_partition_keys,
         n_freshness_policies=100,
-        target_execution_time=30,
+        max_execution_time_seconds=30,
     ),
 ]
 
 
 @pytest.mark.parametrize("scenario", perf_scenarios, ids=[s.name for s in perf_scenarios])
 def test_reconciliation_perf(scenario: PerfScenario):
-    if os.getenv("BUILDKITE") is not None and scenario.target_execution_time > 20:
+    if os.getenv("BUILDKITE") is not None and scenario.max_execution_time_seconds > 20:
         pytest.skip("Skipping slow test on BK")
     if len(scenario.snapshot.partition_keys_to_backfill or []) > 2:
         pytest.skip("Skipping test that would require a large snapshot")
