@@ -126,7 +126,7 @@ setup(
             "mypy==0.991",
         ],
         "pyright": [
-            "pyright==1.1.292",
+            "pyright==1.1.293",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports

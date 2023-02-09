@@ -12,11 +12,12 @@ import * as React from 'react';
 
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AssetLink} from '../assets/AssetLink';
-import {InstigationStatus, InstigationType} from '../graphql/types';
+import {InstigationStatus, InstigationType, SensorType} from '../graphql/types';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {SensorDryRunDialog} from '../ticks/SensorDryRun';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -95,6 +96,9 @@ export const SensorDetails: React.FC<{
     sensor.sensorState.typeSpecificData.__typename === 'SensorData' &&
     sensor.sensorState.typeSpecificData.lastCursor;
 
+  const [showTestTickDialog, setShowTestTickDialog] = React.useState(false);
+  const running = status === InstigationStatus.RUNNING;
+
   return (
     <>
       <PageHeader
@@ -110,7 +114,7 @@ export const SensorDetails: React.FC<{
             <Tag icon="sensors">
               Sensor in <RepositoryLink repoAddress={repoAddress} />
             </Tag>
-            {sensor.nextTick && daemonHealth && status === InstigationStatus.RUNNING ? (
+            {sensor.nextTick && daemonHealth && running ? (
               <Tag icon="timer">
                 Next tick: <TimestampDisplay timestamp={sensor.nextTick.timestamp!} />
               </Tag>
@@ -118,10 +122,29 @@ export const SensorDetails: React.FC<{
           </>
         }
         right={
-          <Box margin={{top: 4}}>
+          <Box margin={{top: 4}} flex={{direction: 'row', alignItems: 'center', gap: 8}}>
             <QueryRefreshCountdown refreshState={refreshState} />
+            {sensor.sensorType === SensorType.STANDARD ? (
+              <Button
+                onClick={() => {
+                  setShowTestTickDialog(true);
+                }}
+              >
+                Test Sensor
+              </Button>
+            ) : null}
           </Box>
         }
+      />
+      <SensorDryRunDialog
+        isOpen={showTestTickDialog}
+        onClose={() => {
+          setShowTestTickDialog(false);
+        }}
+        currentCursor={cursor || ''}
+        name={sensor.name}
+        repoAddress={repoAddress}
+        jobName={sensor.targets?.[0].pipelineName || ''}
       />
       <MetadataTableWIP>
         <tbody>

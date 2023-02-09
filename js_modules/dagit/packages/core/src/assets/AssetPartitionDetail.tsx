@@ -73,7 +73,7 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
   );
 };
 
-const ASSET_PARTITION_DETAIL_QUERY = gql`
+export const ASSET_PARTITION_DETAIL_QUERY = gql`
   query AssetPartitionDetailQuery($assetKey: AssetKeyInput!, $partitionKey: String!) {
     assetNodeOrError(assetKey: $assetKey) {
       __typename

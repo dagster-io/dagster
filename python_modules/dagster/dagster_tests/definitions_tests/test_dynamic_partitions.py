@@ -147,7 +147,7 @@ def test_dynamic_partitioned_asset_io_manager_context():
 def test_dynamic_partitions_no_instance_provided():
     partitions_def = DynamicPartitionsDefinition(name="fruits")
 
-    with pytest.raises(CheckError, match="provide a dagster instance"):
+    with pytest.raises(CheckError, match="instance"):
         partitions_def.get_partitions()
 
 

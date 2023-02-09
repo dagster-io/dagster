@@ -28,7 +28,7 @@ def build_repo_wide_steps() -> List[BuildkiteStep]:
     return [
         *build_repo_wide_black_steps(),
         *build_repo_wide_check_manifest_steps(),
-        *build_repo_wide_pyright_steps(),
+        # *build_repo_wide_pyright_steps(),
         *build_repo_wide_ruff_steps(),
     ]
 

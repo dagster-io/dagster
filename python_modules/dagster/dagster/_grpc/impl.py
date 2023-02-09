@@ -336,7 +336,7 @@ def get_partition_config(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
     partition_name: str,
-    instance: DagsterInstance,
+    instance: Optional[DagsterInstance] = None,
 ):
     partition_set_def = repo_def.get_partition_set_def(partition_set_name)
     partition = partition_set_def.get_partition(partition_name, instance)
@@ -385,9 +385,10 @@ def get_partition_tags(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
     partition_name: str,
-    instance: DagsterInstance,
+    instance: Optional[DagsterInstance] = None,
 ):
     partition_set_def = repo_def.get_partition_set_def(partition_set_name)
+
     partition = partition_set_def.get_partition(partition_name, dynamic_partitions_store=instance)
     try:
         with user_code_error_boundary(
@@ -436,7 +437,7 @@ def get_partition_set_execution_param_data(
     repo_definition: RepositoryDefinition,
     partition_set_name: str,
     partition_names: Sequence[str],
-    instance: DagsterInstance,
+    instance: Optional[DagsterInstance] = None,
 ) -> Union[ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData]:
     partition_set_def = repo_definition.get_partition_set_def(partition_set_name)
     try:

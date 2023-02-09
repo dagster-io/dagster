@@ -721,6 +721,10 @@
           {
             "title": "Airbyte ingestion as code",
             "path": "/guides/dagster/airbyte-ingestion-as-code"
+          },
+          {
+            "title": "Asset versioning and caching",
+            "path": "/guides/dagster/asset-versioning-and-caching"
           }
         ]
       }
@@ -982,6 +986,10 @@
           {
             "title": "Twilio (dagster-twilio)",
             "path": "/_apidocs/libraries/dagster-twilio"
+          },
+          {
+            "title": "Weights & Biases (dagster-wandb)",
+            "path": "/_apidocs/libraries/dagster-wandb"
           }
         ]
       }

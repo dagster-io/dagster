@@ -84,6 +84,7 @@ def main(
         "-e python_modules/libraries/dagster-duckdb-pandas",
         "-e python_modules/libraries/dagster-duckdb-polars",
         "-e python_modules/libraries/dagster-duckdb-pyspark",
+        "-e python_modules/libraries/dagster-wandb",
         "-e helm/dagster/schema[test]",
         "-e .buildkite/dagster-buildkite",
     ]
