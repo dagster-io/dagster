@@ -176,7 +176,7 @@ In this step, you'll set up your project for use with Dagster Cloud.
 
 1. Complete the steps in the [Dagster Cloud Getting Started guide](/dagster-cloud/getting-started), if you haven't already. Proceed to the next step when your account is set up and you have the `dagster-cloud` CLI installed.
 
-2. In the root of your project, create a `dagster_cloud.yaml` file with the following code:
+2. In the root of your project, create or modify the `dagster_cloud.yaml` file with the following code:
 
    ```yaml
    locations:
@@ -185,11 +185,7 @@ In this step, you'll set up your project for use with Dagster Cloud.
          python_file: dagster_migration.py
    ```
 
-3. Run the following to add the project to your Dagster Cloud deployment as a code location:
-
-   ```bash
-   dagster-cloud workspace add-location --from ./dagster_cloud.yaml
-   ```
+3. Push your code and let Dagster Cloud's CI/CD run out a deployment of your migrated dags to cloud.
 
 ---
 
