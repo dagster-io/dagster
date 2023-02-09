@@ -162,6 +162,12 @@ Iterate as needed until all configuration is correctly ported to your local envi
 
 In this step, you'll set up your project for use with Dagster Cloud.
 
+Your migrated airflow DAGs should be able to on both OSS and Dagster Cloud however in this guide we'll focus on running in Cloud. First follow the instructions in the [Dagster Cloud getting started guide](/dagster-cloud/getting-started)
+
+Once you have your dagster cloud organization setup you can either choose to adapt your existing airflow repository to use the Dagster Cloud CI/CD deployment or copy over your code to the quickstart repository you made.
+
+We'd really recommend waiting to go to production till you've first got your airflow DAGs executing successfully in your local development environment.
+
 1. Complete the steps in the [Dagster Cloud Getting Started guide](/dagster-cloud/getting-started), if you haven't already. Proceed to the next step when your account is set up and you have the `dagster-cloud` CLI installed.
 
 2. In the root of your project, create a `dagster_cloud.yaml` file with the following code:
@@ -190,3 +196,9 @@ Your Airflow instance likely had specific IAM or Kubernetes permissions that all
 - **If you're unable to use Airflow connections or environment variables,** you can attach permissions directly to the infrastructure where you're deploying Dagster.
 
 - **If your Airflow DAGs used [`KubernetesPodOperators`](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/operators.html)**, it's possible that you loaded a `kube_config` file or used the `in_cluster` config. When migrating, we recommend switching to [using connections with a `kube_config` JSON blob](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/connections/kubernetes.html) to make things easier.
+
+---
+
+## Containerized Operator Considerations
+
+There are a variety of Airflow Operator types that are used to create container runs in various container execution environments, for example kubernetes or amazon ECS, when getting things working locally we'd recommend trying to execute those containers locally whenever possible and only relying on remote execution when its either unrealistic or impossible to locally emulate the cloud environment. For doing local execution it likely means that you will need to have a local kubernets cluster running, we'd recommnd docker's built in k8s environment, and to be able to pull down the container images that will be needed for execution to your local machine.
