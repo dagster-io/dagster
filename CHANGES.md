@@ -1,5 +1,52 @@
 # Changelog
 
+# 1.1.18 (core) / 0.17.18 (libraries)
+
+### New
+
+- Assets with time-window `PartitionsDefinition`s (e.g. `HourlyPartitionsDefinition`, `DailyPartitionsDefinition`) may now have a `FreshnessPolicy`.
+- [dagster-dbt] When using `load_assets_from_dbt_project` or `load_assets_from_dbt_manifest` with `dbt-core>=1.4`, `AssetMaterialization` events will be emitted as the dbt command executes, rather than waiting for dbt to complete before emitting events.
+- [dagster-aws] When [run monitoring](https://docs.dagster.io/deployment/run-monitoring#run-monitoring) detects that a run unexpectedly crashed or failed to start, an error message in the run’s event log will include log messages from the ECS task for that run to help diagnose the cause of the failure.
+- [dagster-airflow] added `make_ephemeral_airflow_db_resource` which returns a `ResourceDefinition` for a local only airflow database for use in migrated airflow DAGs
+- Made some performance improvements for job run queries which can be applied by running `dagster instance migrate`.
+- [dagit] System tags (code + logical versions) are now shown in the asset sidebar and on the asset details page.
+- [dagit] Source assets that have never been observed are presented more clearly on the asset graph.
+- [dagit] The number of materialized and missing partitions are shown on the asset graph and in the asset catalog for partitioned assets.
+- [dagit] Databricks-backed assets are now shown on the asset graph with a small “Databricks” logo.
+
+### Bugfixes
+
+- Fixed a bug where materializations of part of the asset graph did not construct required resource keys correctly.
+- Fixed an issue where `observable_source_asset` incorrectly required its function to have a `context` argument.
+- Fixed an issue with serialization of freshness policies, which affected cacheable assets that included these policies such as those from `dagster-airbyte`
+- [dagster-dbt] Previously, the `dagster-dbt` integration was incompatible with `dbt-core>=1.4`. This has been fixed.
+- [dagster-dbt] `load_assets_from_dbt_cloud_job` will now avoid unnecessarily generating docs when compiling a manifest for the job. Compile runs will no longer be kicked off for jobs not managed by this integration.
+- Previously for multipartitioned assets, `context.asset_partition_key` returned a string instead of a `MultiPartitionKey`. This has been fixed.
+- [dagster-k8s] Fixed an issue where pods launched by the `k8s_job_executor` would sometimes unexpectedly fail due to transient 401 errors in certain kubernetes clusters.
+- Fix a bug with nth-weekday-of-the-month handling in cron schedules.
+
+### Breaking Changes
+
+- [dagster-airflow] `load_assets_from_airflow_dag` no longer creates airflow db resource definitions, as a user you will need to provide them on `Definitions` directly
+
+### Deprecations
+
+- The `partitions_fn` argument of the `DynamicPartitionsDefinition` class is now deprecated and will be removed in 2.0.0.
+
+### Community Contributions
+
+- [dagster-wandb] A new integration with [Weights & Biases](https://wandb.ai/site) allows you to orchestrate your MLOps pipelines and maintain ML assets with Dagster.
+- Postgres has been updated to 14.6 for Dagster’s helm chart. Thanks [@DustyShap](https://github.com/DustyShap)!
+- Typo fixed in docs. Thanks [@C0DK](https://github.com/C0DK)!
+- You can now pass a callable directly to `asset` (rather than using `@asset` in decorator form) to create an asset. Thanks [@ns-finkelstein](https://github.com/nsfinkelstein)!
+
+### Documentation
+
+- New “Asset versioning and caching” guide
+- [dagster-snowflake] The Snowflake guide has been updated to include PySpark dataframes
+- [dagster-snowflake] The Snowflake guide has been updated to include private key authentication
+- [dagster-airflow] The Airflow migration guide has been update to include more detailed instructions and considerations for making a migration
+
 # 1.1.17 (core) / 0.17.17 (libraries)
 
 ### New
