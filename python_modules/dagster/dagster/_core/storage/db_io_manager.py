@@ -18,6 +18,7 @@ import dagster._check as check
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.context.input import InputContext
@@ -132,7 +133,9 @@ class DbIOManager(IOManager):
             context, self._get_table_slice(context, cast(OutputContext, context.upstream_output))
         )
 
-    def _get_partition_value(self, partition_def, partition_key):
+    def _get_partition_value(
+        self, partition_def: PartitionsDefinition, partition_key: str
+    ) -> Union[TimeWindow, str]:
         try:
             return partition_def.time_window_for_partition_key(partition_key)
         except (ValueError, AttributeError):
@@ -175,14 +178,14 @@ class DbIOManager(IOManager):
                     )
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
-                    multi_partition_key_mapping = context.asset_partition_key.keys_by_dimension
+                    multi_partition_key_mapping = context.asset_partitions_def.keys_by_dimension
                     for part in context.asset_partitions_def.partitions_defs:
                         partition_key = multi_partition_key_mapping.get(part.name)
                         partition_value = self._get_partition_value(
                             part.partitions_def, partition_key
                         )
 
-                        partition_expr_str = partition_expr.get(part.name)
+                        partition_expr_str = cast(Mapping[str, str], partition_expr.get(part.name))
                         if partition_expr is None:
                             raise ValueError(
                                 f"Asset '{context.asset_key}' has partition {part.name}, but the"
