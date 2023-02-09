@@ -1569,7 +1569,7 @@ class PendingRepositoryDefinition:
         description: Optional[str] = None,
         default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         default_executor_def: Optional[ExecutorDefinition] = None,
-        top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
+        _top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
     ):
         self._repository_definitions = check.list_param(
             repository_definitions,
@@ -1582,7 +1582,7 @@ class PendingRepositoryDefinition:
         self._description = description
         self._default_logger_defs = default_logger_defs
         self._default_executor_def = default_executor_def
-        self._top_level_resources = top_level_resources
+        self._top_level_resources = _top_level_resources
 
     @property
     def name(self) -> str:
