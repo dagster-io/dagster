@@ -1,13 +1,3 @@
----
-requiredEnvVars:
-- "SNOWFLAKE_ACCOUNT"
-- "SNOWFLAKE_USER"
-- "SNOWFLAKE_PASSWORD"
-- "SNOWFLAKE_WAREHOUSE"
-- "SNOWFLAKE_DATABASE"
-- "SNOWFLAKE_SCHEMA"
----
-
 # Dagster + Snowflake starter kit
 
 This example builds a daily ETL pipeline that materializes tables in Snowflake. At a high level, this project shows how to ingest data from external sources to Snowflake, explore and transform the data, and materialize outputs that help visualize the data.
