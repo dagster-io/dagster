@@ -1,5 +1,5 @@
 - id: simple-asset-in-catalog.png
-  workspace: examples/docs_snippets/docs_snippets/guides/dagster/building_versioned_assets/vanilla_asset.py
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset.py
   route: /workspace
   vetted: false
   steps:
@@ -8,7 +8,7 @@
     - expand "System tags"
 
 - id: simple-asset-with-code-version-in-catalog.png
-  workspace: examples/docs_snippets/docs_snippets/guides/dagster/building_versioned_assets/vanilla_asset_with_code_version.py
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version.py
   route: /workspace
   vetted: false
   steps:
@@ -17,7 +17,7 @@
     - expand "System tags"
 
 - id: simple-asset-with-code-version-in-catalog-v2.png
-  workspace: examples/docs_snippets/docs_snippets/guides/dagster/building_versioned_assets/vanilla_asset_with_code_version.py
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version.py
   route: /workspace
   vetted: false
   steps:
@@ -26,8 +26,20 @@
     - reload code location
     - (change `code_version` back after screenshot)
 
+- id: materialize-stale-event-log.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only.py
+  route: /workspace
+  vetted: false
+  steps:
+    - comment out `multiplied_number` in `dependencies_code_version_only`
+    - reload code location
+    - materialize `versioned_number`
+    - reload code location
+    - click "Materialize stale and missing"
+    - go to Runs and select the top run
+
 - id: dependencies-code-version-only.png
-  workspace: examples/docs_snippets/docs_snippets/guides/dagster/building_versioned_assets/dependencies_code_version_only.py
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only.py
   route: /workspace
   vetted: false
   steps:
@@ -37,7 +49,7 @@
     - (change `code_version` back after screenshot)
 
 - id: source-asset-in-catalog.png
-  workspace: examples/docs_snippets/docs_snippets/guides/dagster/building_versioned_assets/observable_source_asset_path_with_non_argument_deps.py
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/observable_source_asset_path_with_non_argument_deps.py
   route: /workspace
   vetted: false
   steps:

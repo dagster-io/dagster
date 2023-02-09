@@ -10,14 +10,14 @@ This guide demonstrates how to build memoizable graphs of assets. Memoizable ass
 
 # Context
 
-Dagster embraces functional programming principles. The core abstraction is a software-defined asset which, in its idealized form, is a side-effect-free ("pure") function that produces an output asset from input assets.
+The core abstraction of Dagster a software-defined asset which, in its idealized form, is a side-effect-free ("pure") function that produces an output asset from input assets.
 
 Pure functions can be made more efficient with a technique called "memoization". A memoized function has an outer layer in which previously computed outputs are cached and indexed by their corresponding inputs. When a memoized function is called twice with identical inputs, the cached result can be returned on the second call.
 
 In computationally expensive data pipelining, this approach can yield tremendous benefits. Dagster offers support for memoized assets via a versioning system. Because both code and input values can affect the output of a function, Dagster has two kinds of versions:
 
 1. Code version. A string that represents the version of the code that computes an asset. This is the `code_version` argument of <PyObject object="asset" decorator="true" />.
-2. Data version. A string that represents the version of the value of the asset. This is represented as a <PyObject object="LogicalVersion" /> object.
+2. Logical version. A string that represents the version of the value of the asset. This is represented as a <PyObject object="LogicalVersion" /> object.
 
 ---
 
@@ -92,7 +92,7 @@ height={1748}
 
 Note that the asset is now marked as stale. That is because it has not been materialized since the code was changed. Because of the explicit `code_version` argument, Dagster knows this. It must be materialized again to become up-to-date.
 
-Because there is at least one stale/missing asset, the "Materialize stale and missing" button is no longer disabled. You can use it to rematerialize `versioned_number`. If we view the latest asset materialization in the asset catalog, the `code_version` is now "v2" and the asset is marked as up-to-date.
+If we click on the disclosure triangle on the right side of the "Materialize" button, a "Materialize stale and missing" button appears. Clicking this button will materialize all stale and missing assets in the asset graph. We can use it now to rematerialize `versioned_number`. If we view the latest asset materialization in the asset catalog, the `code_version` is now "v2" and the asset is marked as up-to-date.
 
 ---
 
@@ -114,7 +114,14 @@ def multipled_number(versioned_number):
     return versioned_number * 2
 ```
 
-Reload the location in dagit and you'll notice that `multipled_number` is marked as "Never Materalized". Now click on "Materialize stale and missing" (the plain "Materialize" button ignores versioning) to materialize.
+Reload the location in dagit and you'll notice that `multipled_number` is marked as "Never Materalized". Now click on the "Materialize" disclosure triangle and then "Materialize stale and missing" (the plain "Materialize" button ignores versioning) to materialize.
+
+<Image
+alt="Materialize stale event log"
+src="/images/guides/asset-versioning-and-caching/materialize-stale-event-log.png"
+width={2662}
+height={1748}
+/>
 
 Note that in the created run, _only_ the step associated with `multipled_number` is run. The system knows that `versioned_number` is up to date and therefore can safely skip that computation.
 
