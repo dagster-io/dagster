@@ -178,7 +178,7 @@ def get_params(args: argparse.Namespace) -> Params:
     elif args.diff:
         mode = "path"
         targets = (
-            subprocess.check_output(["git", "diff", "--name-only", "master"])
+            subprocess.check_output(["git", "diff", "--name-only", "origin/master"])
             .decode("utf-8")
             .splitlines()
         )
