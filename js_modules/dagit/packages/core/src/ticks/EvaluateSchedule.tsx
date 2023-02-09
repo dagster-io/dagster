@@ -2,7 +2,6 @@ import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
-  Code,
   Colors,
   Dialog,
   DialogBody,
@@ -39,13 +38,32 @@ import {
 
 const locale = navigator.language;
 
-export const EvaluateSchedule: React.FC<{
+type Props = {
   repoAddress: RepoAddress;
   name: string;
   onClose: () => void;
   isOpen: boolean;
   jobName: string;
-}> = ({repoAddress, name, isOpen, onClose, jobName}) => {
+};
+
+export const EvaluateScheduleDialog: React.FC<Props> = (props) => {
+  return (
+    <Dialog
+      {...props}
+      style={{width: '70vw', display: 'flex'}}
+      title={
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          <Icon name="schedule" />
+          <span>{props.name}</span>
+        </Box>
+      }
+    >
+      <EvaluateSchedule {...props} />
+    </Dialog>
+  );
+};
+
+const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, isOpen, onClose, jobName}) => {
   const [_selectedTimestamp, setSelectedTimestamp] = React.useState<{ts: number; label: string}>();
   const {data} = useQuery<GetScheduleQuery, GetScheduleQueryVariables>(GET_SCHEDULE_QUERY, {
     variables: {
@@ -166,22 +184,12 @@ export const EvaluateSchedule: React.FC<{
   }, [onClose, shouldEvaluate]);
 
   return (
-    <Dialog
-      isOpen={isOpen}
-      onClose={onClose}
-      style={{width: '70vw', display: 'flex'}}
-      title={
-        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-          <Icon name="schedule" />
-          <span>{name}</span>
-        </Box>
-      }
-    >
+    <>
       <DialogBody>
         <div style={{minHeight: '300px'}}>{content}</div>
       </DialogBody>
       {buttons ? <DialogFooter topBorder>{buttons}</DialogFooter> : null}
-    </Dialog>
+    </>
   );
 };
 
@@ -370,12 +378,6 @@ export const SCHEDULE_DRY_RUN_MUTATION = gql`
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const SkipWrapper = styled.div`
-  background-color: ${Colors.Olive50};
-  border: 1px solid ${Colors.Yellow500};
-  border-radius: 3px;
 `;
 
 const SelectWrapper = styled.div`
