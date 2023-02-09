@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from contextlib import contextmanager
+from typing import Generator, List, Mapping, Optional
 
 from airflow import __version__ as airflow_version
 from airflow.models.connection import Connection
@@ -26,7 +27,7 @@ class DagsterAirflowError(Exception):
     pass
 
 
-def create_airflow_connections(connections):
+def create_airflow_connections(connections: List[Connection] = []) -> None:
     with create_session() as session:
         for connection in connections:
             if session.query(Connection).filter(Connection.conn_id == connection.conn_id).first():
@@ -43,7 +44,7 @@ def create_airflow_connections(connections):
 # Airflow DAG ids and Task ids allow a larger valid character set (alphanumeric characters,
 # dashes, dots and underscores) than Dagster's naming conventions (alphanumeric characters,
 # underscores), so Dagster will strip invalid characters and replace with '_'
-def normalized_name(dag_name, task_name=None):
+def normalized_name(dag_name, task_name=None) -> str:
     base_name = "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in dag_name)
     if task_name:
         base_name += "__"
@@ -52,7 +53,7 @@ def normalized_name(dag_name, task_name=None):
 
 
 @contextmanager
-def replace_airflow_logger_handlers():
+def replace_airflow_logger_handlers() -> Generator[None, None, None]:
     prev_airflow_handlers = logging.getLogger("airflow.task").handlers
     try:
         # Redirect airflow handlers to stdout / compute logs
@@ -66,7 +67,7 @@ def replace_airflow_logger_handlers():
         logging.getLogger("airflow.task").handlers = prev_airflow_handlers
 
 
-def serialize_connections(connections):
+def serialize_connections(connections: List[Connection] = []) -> List[Mapping[str, Optional[str]]]:
     serialized_connections = []
     for c in connections:
         serialized_connection = {
