@@ -63,7 +63,7 @@ export const EvaluateScheduleDialog: React.FC<Props> = (props) => {
   );
 };
 
-const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, isOpen, onClose, jobName}) => {
+const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, onClose, jobName}) => {
   const [_selectedTimestamp, setSelectedTimestamp] = React.useState<{ts: number; label: string}>();
   const {data} = useQuery<GetScheduleQuery, GetScheduleQueryVariables>(GET_SCHEDULE_QUERY, {
     variables: {
@@ -207,6 +207,7 @@ export const GET_SCHEDULE_QUERY = gql`
         stack
       }
       ... on Schedule {
+        id
         name
         potentialTickTimestamps(
           startTimestamp: $startTimestamp
