@@ -409,7 +409,7 @@ class TestEventLogStorage:
         # Whether the storage is allowed to watch the event log
         return True
 
-    def can_write_to_asset_key_table_or_partition_table(self):
+    def can_write_to_asset_key_table(self):
         return True
 
     def test_event_log_storage_store_events_and_wipe(self, test_run_id, storage):
@@ -2850,7 +2850,7 @@ class TestEventLogStorage:
             )
 
     def test_store_and_wipe_cached_status(self, storage, instance):
-        if not self.can_write_to_asset_key_table_or_partition_table():
+        if not self.can_write_to_asset_key_table():
             return
 
         asset_key = AssetKey("yay")
@@ -2894,9 +2894,6 @@ class TestEventLogStorage:
                 assert _get_cached_status_for_asset(storage, asset_key) is None
 
     def test_add_dynamic_partitions(self, storage):
-        if not self.can_write_to_asset_key_table_or_partition_table():
-            return
-
         assert storage
 
         assert storage.get_dynamic_partitions("foo") == []
@@ -2922,9 +2919,6 @@ class TestEventLogStorage:
         assert set(storage.get_dynamic_partitions("baz")) == set()
 
     def test_delete_dynamic_partitions(self, storage):
-        if not self.can_write_to_asset_key_table_or_partition_table():
-            return
-
         assert storage
 
         assert storage.get_dynamic_partitions("foo") == []
@@ -2950,9 +2944,6 @@ class TestEventLogStorage:
         assert (
             storage.has_dynamic_partition(partitions_def_name="foo", partition_key="foo") is False
         )
-
-        if not self.can_write_to_asset_key_table_or_partition_table():
-            return
 
         storage.add_dynamic_partitions(
             partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
