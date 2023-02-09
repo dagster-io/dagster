@@ -218,11 +218,12 @@ def test_upath_io_manager_static_partitions_with_dot():
             nonlocal dumped_path
             dumped_path = path
 
-        def load_from_path(self, context: InputContext, path: UPath) -> List:
+        def load_from_path(self, context: InputContext, path: UPath):
             pass
 
     @io_manager(config_schema={"base_path": Field(str, is_required=False)})
     def tracking_io_manager(init_context: InitResourceContext):
+        assert init_context.instance is not None
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
@@ -235,7 +236,7 @@ def test_upath_io_manager_static_partitions_with_dot():
     my_job = build_assets_job(
         "my_job",
         assets=[my_asset],
-        resource_defs={"io_manager": tracking_io_manager},  # type: ignore[dict-item]
+        resource_defs={"io_manager": tracking_io_manager},
     )
     my_job.execute_in_process(partition_key="0.0-to-1.0")
 
@@ -255,11 +256,12 @@ def test_upath_io_manager_with_extension_static_partitions_with_dot():
             nonlocal dumped_path
             dumped_path = path
 
-        def load_from_path(self, context: InputContext, path: UPath) -> List:
+        def load_from_path(self, context: InputContext, path: UPath):
             pass
 
     @io_manager(config_schema={"base_path": Field(str, is_required=False)})
     def tracking_io_manager(init_context: InitResourceContext):
+        assert init_context.instance is not None
         base_path = UPath(
             init_context.resource_config.get("base_path", init_context.instance.storage_directory())
         )
@@ -272,7 +274,7 @@ def test_upath_io_manager_with_extension_static_partitions_with_dot():
     my_job = build_assets_job(
         "my_job",
         assets=[my_asset],
-        resource_defs={"io_manager": tracking_io_manager},  # type: ignore[dict-item]
+        resource_defs={"io_manager": tracking_io_manager},
     )
     my_job.execute_in_process(partition_key="0.0-to-1.0")
 
