@@ -1,8 +1,8 @@
 ---
-title: Building and memoizing versioned assets | Dagster Docs
+title: Asset versioning and caching | Dagster Docs
 ---
 
-# Building and memoizing versioned assets
+# Asset versioning and caching
 
 This guide demonstrates how to build memoizable graphs of assets. Memoizable assets help avoid unnecessary recomputation, speed up the developer workflow, and save computational resources.
 
@@ -27,7 +27,7 @@ Dagster automatically computes the logical version of software-defined assets. I
 
 Let's start with a trivial asset that returns a hardcoded number:
 
-```python file=/guides/dagster/building_versioned_assets/vanilla_asset.py
+```python file=/guides/dagster/asset_versioning_and_caching/vanilla_asset.py
 from dagster import asset
 
 
@@ -40,7 +40,7 @@ We materialize it and look at the entry in the Asset Catalog:
 
 <Image
 alt="Simple asset logical version"
-src="/images/guides/building-versioned-assets/simple-asset-in-catalog.png"
+src="/images/guides/asset-versioning-and-caching/simple-asset-in-catalog.png"
 width={4064}
 height={2488}
 />
@@ -52,7 +52,7 @@ If we materialize the asset again, you'll notice that both the code version and 
 
 We can improve this situation by introducing explicit code versions. Let's add a `code_version` on our asset:
 
-```python file=/guides/dagster/building_versioned_assets/vanilla_asset_with_code_version.py
+```python file=/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version.py
 from dagster import asset
 
 
@@ -65,14 +65,14 @@ Let's materialize this asset. Now the the user-defined code version, v1, is in t
 
 <Image
 alt="Simple asset logical version with code version"
-src="/images/guides/building-versioned-assets/simple-asset-with-code-version-in-catalog.png"
+src="/images/guides/asset-versioning-and-caching/simple-asset-with-code-version-in-catalog.png"
 width={2662}
 height={1748}
 />
 
 Now let's update the code _and_ inform dagster that the code has changed. Do this by changing the code version argument:
 
-```python file=/guides/dagster/building_versioned_assets/vanilla_asset_with_code_version_v2.py
+```python file=/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version_v2.py
 from dagster import asset
 
 
@@ -85,7 +85,7 @@ Now we reload our definitions:
 
 <Image
 alt="Simple asset logical version with code version (v2)"
-src="/images/guides/building-versioned-assets/simple-asset-with-code-version-in-catalog-v2.png"
+src="/images/guides/asset-versioning-and-caching/simple-asset-with-code-version-in-catalog-v2.png"
 width={2662}
 height={1748}
 />
@@ -100,7 +100,7 @@ Because there is at least one stale/missing asset, the "Materialize stale and mi
 
 Staleness computation becomes more powerful and useful when there are dependencies in play. Let's add an asset downstream of our first asset.
 
-```python file=/guides/dagster/building_versioned_assets/dependencies_code_version_only.py
+```python file=/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only.py
 from dagster import asset
 
 
@@ -122,7 +122,7 @@ Now let's update the `versioned_number` asset-- change its return value and code
 
 <Image
 alt="Dependencies code version only"
-src="/images/guides/building-versioned-assets/dependencies-code-version-only.png"
+src="/images/guides/asset-versioning-and-caching/dependencies-code-version-only.png"
 width={2662}
 height={1748}
 />
@@ -140,7 +140,7 @@ External data sources in Dagster are modeled by <PyObject object="SourceAsset" d
 
 Let's add an <PyObject object="observable_source_asset" decorator="true" /> called `input_number`. This will represent a file written by an external process, upstream of our pipeline. The body of the `input_number` function computes a hash of the file contents and returns it as a `LogicalVersion`. We'll set `input_number` as an upstream dependency of `versioned_number`.
 
-```python file=/guides/dagster/building_versioned_assets/observable_source_asset_path_with_non_argument_deps.py
+```python file=/guides/dagster/asset_versioning_and_caching/observable_source_asset_path_with_non_argument_deps.py
 from hashlib import sha256
 
 from dagster import LogicalVersion, asset, file_relative_path, observable_source_asset
@@ -175,7 +175,7 @@ Adding an observable source asset to our graph has revealed a new button labeled
 
 <Image
 alt="Source asset in catalog"
-src="/images/guides/building-versioned-assets/source-asset-in-catalog.png"
+src="/images/guides/asset-versioning-and-caching/source-asset-in-catalog.png"
 width={2662}
 height={1748}
 />
