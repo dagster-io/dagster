@@ -639,6 +639,13 @@ class TimeWindowPartitionsDefinition(
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return TimeWindowPartitionsSubset.from_serialized(self, serialized)
 
+    def is_valid_partition_key(self, partition_key: str) -> bool:
+        try:
+            datetime.strptime(partition_key, self.fmt)
+        except ValueError:
+            return False
+        return True
+
     @property
     def serializable_unique_identifier(self) -> str:
         return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
@@ -1337,14 +1344,6 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return result_windows, num_added_partitions
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "TimeWindowPartitionsSubset":
-        def _is_valid_key(key: str) -> bool:
-            try:
-                datetime.strptime(key, self._partitions_def.fmt)
-            except ValueError:
-                return False
-            return True
-
-        partition_keys = [key for key in partition_keys if _is_valid_key(key)]
 
         # if we are representing things as a static set of keys, continue doing so
         if self._included_partition_keys is not None:
