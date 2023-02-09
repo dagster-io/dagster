@@ -8,6 +8,7 @@ from dagster import (
     In,
     MultiDependencyDefinition,
     Nothing,
+    OpDefinition,
     OpExecutionContext,
     Out,
     RetryPolicy,
@@ -90,13 +91,13 @@ def _traverse_airflow_dag(dag, task, seen_tasks, dependencies, node_defs):
 def make_dagster_op_from_airflow_task(
     dag,
     task,
-):
+) -> OpDefinition:
     check.inst_param(dag, "dag", DAG)
     check.inst_param(task, "task", BaseOperator)
 
     @op(
         name=normalized_name(dag.dag_id, task.task_id),
-        required_resource_keys={"airflow_db", "dagrun", "dag"},
+        required_resource_keys={"airflow_db"},
         ins={"airflow_task_ready": In(Nothing)},
         out={"airflow_task_complete": Out(Nothing)},
         retry_policy=RetryPolicy(
@@ -115,8 +116,7 @@ def make_dagster_op_from_airflow_task(
         context.log.info("Running Airflow task: {task_id}".format(task_id=task.task_id))
 
         with replace_airflow_logger_handlers():
-            dag = context.resources.dag
-            dagrun = context.resources.dagrun
+            dagrun = context.resources.airflow_db.get_dagrun(dag=dag)
             ti = dagrun.get_task_instance(task_id=task.task_id)
             ti.task = dag.get_task(task_id=task.task_id)
             ti.run(ignore_ti_state=True)

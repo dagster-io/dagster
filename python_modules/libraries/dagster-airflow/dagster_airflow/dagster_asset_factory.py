@@ -178,7 +178,6 @@ def load_assets_from_airflow_dag(
         )
         if cron_schedule is not None
         else None,
-        resource_defs=job.resource_defs,
         group_name=dag.dag_id,
         keys_by_output_name=keys_by_output_name,
         internal_asset_deps=internal_asset_deps,
