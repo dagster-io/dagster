@@ -21,9 +21,7 @@ This guide will walk you through the steps of performing this migration.
 
 ## Prerequisites
 
-Migrations are complicated as there are lots of moving pieces. It's important for you to go in knowing exactly how much scope and complexity you'll be tackling.
-
-To complete the migration, you'll need:
+Before beginning a migration it is important for you to do some upfront analysis:
 
 - **To understand the complexity of undertaking a migration**. Refer to the [previous section](#before-you-begin) for more detail.
 
@@ -34,8 +32,6 @@ To complete the migration, you'll need:
   - What Airflow variables you've set
   - What Airflow secrets backend you use
   - Where the permissions that your DAGs depend on are defined
-
-  If you're unsure where to find these things, you're likely not the right person to make the migration. We recommend looping a teammate in before continuing.
 
 - **If using Dagster Cloud**, an existing [Dagster Cloud](/dagster-cloud) account. While your migrated Airflow DAGs will work with Dagster Open Source, this guide includes setup specific to Dagster Cloud.
 
@@ -57,7 +53,7 @@ Some concrete examples:
 - If you have standardized on a small set or even a single operator type (e.g. the `K8sPodOperator`), migration will be easier. If you use a large number of operator types with a wide range of infrastructure requirements, migration will be more work.
 - If you dynamically generate your Airflow DAGs from a higher-level API or DSL (e.g. yaml), the migration will be more straightforward than all your stakeholders directly creating Airflow DAGs.
 
-Even in the case that requires some infrastructure investment, `dagster-airflow` dramatically eases migration, typically by orders of magnitude. The cost can be borne by a single or small set of infrastructure-oriented engineers, as it dramatically reduces coordination costs: You do not have to move all of your stakeholders over to new APIs simultaneously. In our experience, practitioners welcome the change, because of the immediate improvement in tooling, stability, and development speed.
+Even in the case that requires some infrastructure investment, `dagster-airflow` dramatically eases migration, typically by orders of magnitude. The cost can be borne by a single or small set of infrastructure-oriented engineers, which dramatically reduces coordination costs. You do not have to move all of your stakeholders over to new APIs simultaneously. In our experience, practitioners welcome the change, because of the immediate improvement in tooling, stability, and development speed.
 
 ---
 
@@ -71,7 +67,7 @@ Before kicking off a migration, note that there are some limitations to converti
 - Airflow Datasets
 - Airflow Pools
 
-Most of the current limitations are due to a locally-scoped, ephemeral Airflow database being created for each run. If your DAGs implicitly rely on Airflow database state across `DagRuns`, then the current migration tooling won't work for you.
+Most of the current limitations are [due to a locally-scoped, ephemeral Airflow database being created for each run](https://github.com/dagster-io/dagster/issues/12209). If your DAGs implicitly rely on Airflow database state across `DagRuns`, then the current migration tooling won't work for you.
 
 Note that we are working on extending support for these features. If interested in them, let us know in the `#dagster-airflow` channel of the Dagster Slack.
 
@@ -133,7 +129,7 @@ migrated_airflow_definitions = make_dagster_definitions_from_airflow_dags_path(
 
 ## Step 4: Verify the DAGs are loading
 
-In this step, you'll spin up Dagit, Dagster's web-based UI, and verify that your migrated DAGs are loading. **Note**: Unless the migrated DAGs are very, very simple, it's unlikely they'll execute correctly at this point. That's okay - we'll fix it in a bit. Starting Dagit is the first step in our development loop, allowing you to make a local change, view it in Dagit, and debug any errors.
+In this step, you'll spin up Dagit, Dagster's web-based UI, and verify that your migrated DAGs are loading. **Note**: Unless the migrated DAGs depend on no Airflow configuration state or permissions, it's unlikely they'll execute correctly at this point. That's okay - we'll fix it in a bit. Starting Dagit is the first step in our development loop, allowing you to make a local change, view it in Dagit, and debug any errors.
 
 1. Run the following to start Dagit:
 
@@ -151,7 +147,9 @@ Repeat these steps as needed until the jobs run successfully.
 
 #### Containerized Operator Considerations
 
-There are a variety of Airflow Operator types that are used to create container runs in various container execution environments, for example kubernetes or amazon ECS, when getting things working locally we'd recommend trying to execute those containers locally whenever possible and only relying on remote execution when its either unrealistic or impossible to locally emulate the cloud environment. For doing local execution it likely means that you will need to have a local kubernets cluster running, we'd recommnd docker's built in k8s environment, and to be able to pull down the container images that will be needed for execution to your local machine.
+There are a variety of Airflow Operator types that are used to launch compute in various external execution environments, for example Kubernetes or Amazon ECS. When getting things working locally we'd recommend trying to execute those containers locally unless it's either unrealistic or impossible to emulate the cloud environment. For example if you use the K8sPodOperator, it likely means that you will need to have a local Kubernetes cluster running, and in that case we recommend docker's built-in Kubernetes environment. You also need to be able to pull down the container images that will be needed for execution to your local machine.
+
+If local execution is impossible, we recommend using Branch Deployments in Dagster Cloud, which is a well-supported workflow for cloud-native development.
 
 ---
 
