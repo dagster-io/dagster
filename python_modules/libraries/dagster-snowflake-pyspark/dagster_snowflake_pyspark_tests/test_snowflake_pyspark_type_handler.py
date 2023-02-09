@@ -10,6 +10,8 @@ from dagster import (
     DailyPartitionsDefinition,
     IOManagerDefinition,
     MetadataValue,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     Out,
     StaticPartitionsDefinition,
     TableColumn,
@@ -27,12 +29,7 @@ from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler, snowflake_pyspark_io_manager
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, to_date
-from pyspark.sql.types import (
-    LongType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql.types import LongType, StringType, StructField, StructType
 
 resource_config = {
     "database": "database_abc",
@@ -361,3 +358,120 @@ def test_static_partitioned_asset(tmp_path):
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+def test_multi_partitioned_asset(tmp_path):
+    with temporary_snowflake_table(
+        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
+        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        column_str="COLOR string, RAW_TIME string, A string, TIME TIMESTAMP_NTZ(9)",
+    ) as table_name:
+
+        @asset(
+            partitions_def=MultiPartitionsDefinition(
+                {
+                    "time": DailyPartitionsDefinition(start_date="2022-01-01"),
+                    "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+                }
+            ),
+            key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
+            metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
+            config_schema={"value": str},
+            name=table_name,
+        )
+        def multi_partitioned(context):
+            partition = context.partition_key.keys_by_dimension
+            value = context.op_config["value"]
+
+            spark = SparkSession.builder.config(
+                key="spark.jars.packages",
+                value=SNOWFLAKE_JARS,
+            ).getOrCreate()
+
+            schema = StructType(
+                [
+                    StructField("COLOR", StringType()),
+                    StructField("RAW_TIME", StringType()),
+                    StructField("A", StringType()),
+                ]
+            )
+            data = [
+                (partition["color"], partition["time"], value),
+                (partition["color"], partition["time"], value),
+                (partition["color"], partition["time"], value),
+            ]
+            df = spark.createDataFrame(data, schema=schema)
+            df = df.withColumn("TIME", to_date(col("RAW_TIME")))
+
+            return df
+
+        asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
+        snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
+
+        snowflake_config = {
+            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
+            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+        }
+        snowflake_conn = SnowflakeConnection(
+            snowflake_config, logging.getLogger("temporary_snowflake_table")
+        )
+
+        snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
+        resource_defs = {"io_manager": snowflake_io_manager}
+
+        materialize(
+            [multi_partitioned],
+            partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+            resources=resource_defs,
+            run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
+        )
+
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        print("TABLE IS")
+        print(out_df)
+        assert out_df["A"].tolist() == ["1", "1", "1"]
+
+        materialize(
+            [multi_partitioned],
+            partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
+            resources=resource_defs,
+            run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
+        )
+
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        print("TABLE IS")
+        print(out_df)
+        assert out_df["A"].tolist() == ["1", "1", "1", "2", "2", "2"]
+
+        materialize(
+            [multi_partitioned],
+            partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "red"}),
+            resources=resource_defs,
+            run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
+        )
+
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        print("TABLE IS")
+        print(out_df)
+        assert out_df["A"].tolist() == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
+
+        materialize(
+            [multi_partitioned],
+            partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+            resources=resource_defs,
+            run_config={"ops": {asset_full_name: {"config": {"value": "4"}}}},
+        )
+
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        print("TABLE IS")
+        print(out_df)
+        assert out_df["A"].tolist() == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
