@@ -1344,7 +1344,6 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return result_windows, num_added_partitions
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "TimeWindowPartitionsSubset":
-
         # if we are representing things as a static set of keys, continue doing so
         if self._included_partition_keys is not None:
             new_partitions = {*self._included_partition_keys, *partition_keys}
