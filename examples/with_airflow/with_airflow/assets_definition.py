@@ -1,7 +1,7 @@
 from dagster import AssetKey, Definitions, asset
 from dagster_airflow import load_assets_from_airflow_dag, make_ephemeral_airflow_db_resource
 
-from with_airflow.airflow_simple_dag import simple_dag
+from with_airflow.airflow_dags.airflow_simple_dag import simple_dag
 
 
 @asset(group_name="simple_dag")
