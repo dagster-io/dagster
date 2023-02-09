@@ -52,6 +52,8 @@ Partitions Definitions
 .. autoclass:: MultiPartitionKey
     :members:
 
+.. autoclass:: DynamicPartitionsDefinition
+    :members:
 
 Partitioned Schedules
 =====================
