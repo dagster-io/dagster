@@ -1,0 +1,120 @@
+---
+title: How software-defined assets relate to ops and graphs | Dagster
+description: Dagster’s main abstraction for building data pipelines is the software-defined asset. However, Dagster also has ops and graphs. How do these relate?
+---
+
+# How software-defined assets relate to ops and graphs
+
+Dagster’s main abstraction for building data pipelines is the _software-defined asset_. However, Dagster also has abstractions called _ops_ and _graphs_. When should you use each of them? How do these relate? Why does Dagster need all of them?
+
+## When to use software-defined assets vs. ops and graphs
+
+Dagster is mainly used to build data pipelines, and most data pipelines can be expressed in Dagster as sets of software-defined assets. If you’re a new Dagster user, and your goal is to build a data pipeline, we recommend starting with software-defined assets and not worrying about ops or graphs. This is because most of the code you’ll be writing will directly relate to producing data assets.
+
+However, there are a set of situations where you want to run code without thinking about data assets that the code is producing. These are the situations where it’s appropriate to directly use ops and graphs. These kinds of situations come in a few flavors:
+
+### Flavor 1: You’re not building a data pipeline
+
+Instead, you want to schedule a workflow whose goal is **not** to a keep a set of data assets up-to-date. It might do something like:
+
+- Send emails to a set of users
+- Scan a data warehouse for tables that haven't been used in months and delete them
+- Record metadata about a set of data assets
+
+In these cases, you should define your workflow in terms ops and graphs, not software-defined assets. The ["intro to ops and jobs" guide](/guides/dagster/intro-to-ops-jobs) is a good place to start learning how to do this.
+
+A single Dagster deployment can contain software-defined assets and op/graph-based jobs side-by-side, which means that you’re not bound to one particular choice. If your workflow reads from software-defined assets, you might wish to model that explicitly in Dagster, which is discussed in a [section below](#defining-an-op-graph-that-reads-from-software-defined-assets).
+
+### Flavor 2: You want to break up one of your software-defined assets into multiple steps
+
+If computing a particular asset requires multiple steps, and some of those steps don’t produce assets of their own, and you want to be able to restart from the middle, you might want to use a _graph-backed asset_. Read more about that in the [section below](#graph-backed-assets).
+
+### Flavor 3: You’re anchored in task-based workflows
+
+Task-based workflows have been a popular way of defining data pipelines for a long time. While we believe that software-defined assets provide a superior way of writing and operating data pipelines, we acknowledge that teams often have existing codebases or existing mindsets that are heavily anchored in task-based workflows.
+
+Op-based graphs resemble task-based workflows very closely, so they’re a natural choice for data pipelines that want to stick to that paradigm, either permanently, or temporarily while migrating to software-defined assets.
+
+## How assets relate to ops and graphs
+
+A software-defined asset is a description of how to compute the contents of a particular data asset.
+
+Under the covers, every software-defined asset contains an op (or graph of ops - more on this later), which is the function that’s invoked to compute its contents. In most cases, the underlying op is invisible to the user.
+
+<!-- ![Op and software-defined asset](/images/guides/assets_ops_graphs/op-software-defined-asset.png) -->
+
+<Image
+alt="Op and software-defined asset"
+src="/images/guides/assets_ops_graphs/op-software-defined-asset.png"
+width={1828}
+height={594}
+/>
+
+When you use the <PyObject object="multi_asset" decorator /> decorator, you’re defining a single op that produces multiple assets:
+
+<!-- ![Multi- software-defined asset](/images/guides/assets_ops_graphs/multi-software-defined-asset.png) -->
+
+<Image
+alt="Multi- software-defined asset"
+src="/images/guides/assets_ops_graphs/multi-software-defined-asset.png"
+width={1006}
+height={596}
+/>
+
+### Graph-backed assets
+
+Dagster allows composing a set of ops into an op graph, usually by using the <PyObject object="graph" decorator /> decorator. A software-defined asset can be backed by an op graph, instead of an op.
+
+<!-- ![Op graph and graph-backed asset](/images/guides/assets_ops_graphs/op-graph-graph-backed-asset.png) -->
+
+<Image
+alt="Op graph and graph-backed asset"
+src="/images/guides/assets_ops_graphs/op-graph-graph-backed-asset.png"
+width={1918}
+height={714}
+/>
+
+Graph-backed assets are useful when you want to execute multiple separate steps to compute an asset, and some of those steps don’t produce assets of their own.
+
+For example, maybe to compute the contents of a particular table, you need to fetch data from an API and then perform a heavy data transformation on it. You don’t care about writing the fetched, pre-transformed data to any known location, but you want the fetching and transforming to happen in two separate steps that can run in different processes. If there’s a failure, you’d like to be able to re-execute the transformation step without re-executing fetching step.
+
+The [graph-backed asset concept page](/concepts/assets/graph-backed-assets#graph-backed-assets) contains code examples and details on how to define and use graph-backed assets.
+
+### Defining an op-graph that reads from software-defined assets
+
+You might want to build a job that doesn’t produce any assets, but does read from some assets.
+
+For example, maybe you have a table that represents a list of emails that you want to send. You have a job that reads from the table and sends out the emails.
+
+Dagster facilitates this by allowing you to designate assets as inputs to ops within a graph or graph-based job. Here’s an example:
+
+```python file=/guides/dagster/assets_ops_graphs/op_graph_asset_input.py
+from dagster import asset, job, op
+
+
+@asset
+def emails_to_send():
+    ...
+
+
+@op
+def send_emails(emails) -> None:
+    ...
+
+
+@job
+def send_emails_job():
+    send_emails(emails_to_send.to_source_asset())
+```
+
+In this case, the asset is just used as a data source for the job - it’s not materialized when the graph is run.
+
+<!-- ![Op graph with source asset](/images/guides/assets_ops_graphs/op-graph-source-asset.png) -->
+
+<Image
+alt="Op graph with source asset"
+src="/images/guides/assets_ops_graphs/op-graph-source-asset.png"
+width={918}
+height={630}
+/>
+
