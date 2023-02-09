@@ -56,7 +56,8 @@ export const LogRowStructuredContentTable: React.FC<{
 
 export const MetadataEntries: React.FC<{
   entries?: MetadataEntryFragment[];
-}> = ({entries}) => {
+  expandSmallValues?: boolean;
+}> = ({entries, expandSmallValues}) => {
   if (!entries || !entries.length) {
     return null;
   }
@@ -64,7 +65,7 @@ export const MetadataEntries: React.FC<{
     <LogRowStructuredContentTable
       rows={entries.map((entry) => ({
         label: entry.label,
-        item: <MetadataEntry entry={entry} />,
+        item: <MetadataEntry entry={entry} expandSmallValues={expandSmallValues} />,
       }))}
     />
   );
