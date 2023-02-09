@@ -25,6 +25,7 @@ Migrations are complicated as there are lots of moving pieces. It's important fo
 
 To complete the migration, you'll need:
 
+- **To understand the complexity of undertaking a migration**. Refer to the [previous section](#before-you-begin) for more detail.
 - **To know the following about your Airflow setup**:
 
   - What operator types are used in the DAGs you're migrating
@@ -41,21 +42,7 @@ To complete the migration, you'll need:
 
 ---
 
-## Limitations
-
-Before kicking off a migration, note that there are some limitations to converting Airflow DAGs into Dagster jobs, assets, and schedules. The following features are currently unsupported:
-
-- `retry-from-failure` in Dagster
-- Using `prev_execution_date` in Airflow-templated DAGs
-- `SubDAGOperators`
-- Airflow Datasets
-- Airflow Pools
-
-Most of the current limitations are due to a locally-scoped, ephemeral Airflow database being created for each run. If your DAGs implicitly rely on Airflow database state across `DagRuns`, then the current migration tooling won't work for you.
-
-Note that we are working on extending support for these features. If interested in them, let us know in the `#dagster-airflow` channel of the Dagster Slack.
-
-### How easy is this going to be, really?
+### Before you begin
 
 You may be coming to this document/library in a skeptical frame of mind, having previously been burned by projects that claim to have 100% foolproof, automated migration tools. We want to assure you that we are _not_ making that claim.
 
@@ -70,6 +57,22 @@ Some concrete examples:
 - If you dynamically generate your Airflow DAGs from a higher-level API or DSL (e.g. yaml), the migration will be more straightforward than all your stakeholders directly creating Airflow DAGs.
 
 Even in the case that requires some infrastructure investment, `dagster-airflow` dramatically eases migration, typically by orders of magnitude. The cost can be borne by a single or small set of infrastructure-oriented engineers, as it dramatically reduces coordination costs: You do not have to move all of your stakeholders over to new APIs simultaneously. In our experience, practitioners welcome the change, because of the immediate improvement in tooling, stability, and development speed.
+
+---
+
+## Limitations
+
+Before kicking off a migration, note that there are some limitations to converting Airflow DAGs into Dagster jobs, assets, and schedules. The following features are currently unsupported:
+
+- `retry-from-failure` in Dagster
+- Using `prev_execution_date` in Airflow-templated DAGs
+- `SubDAGOperators`
+- Airflow Datasets
+- Airflow Pools
+
+Most of the current limitations are due to a locally-scoped, ephemeral Airflow database being created for each run. If your DAGs implicitly rely on Airflow database state across `DagRuns`, then the current migration tooling won't work for you.
+
+Note that we are working on extending support for these features. If interested in them, let us know in the `#dagster-airflow` channel of the Dagster Slack.
 
 ---
 
