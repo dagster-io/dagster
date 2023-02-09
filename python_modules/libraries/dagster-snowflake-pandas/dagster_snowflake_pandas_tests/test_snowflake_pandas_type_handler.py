@@ -520,6 +520,7 @@ def test_dynamic_partitions():
                 }
             )
 
+        asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
 
         snowflake_config = {
@@ -541,7 +542,7 @@ def test_dynamic_partitions():
                 partition_key="apple",
                 resources=resource_defs,
                 instance=instance,
-                run_config={"ops": {"my_schema__dynamic_partitioned": {"config": {"value": "1"}}}},
+                run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
             )
 
             out_df = snowflake_conn.execute_query(
@@ -556,7 +557,7 @@ def test_dynamic_partitions():
                 partition_key="orange",
                 resources=resource_defs,
                 instance=instance,
-                run_config={"ops": {"my_schema__dynamic_partitioned": {"config": {"value": "1"}}}},
+                run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
             )
 
             out_df = snowflake_conn.execute_query(
@@ -569,7 +570,7 @@ def test_dynamic_partitions():
                 partition_key="apple",
                 resources=resource_defs,
                 instance=instance,
-                run_config={"ops": {"my_schema__dynamic_partitioned": {"config": {"value": "3"}}}},
+                run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
             )
 
             out_df = snowflake_conn.execute_query(
