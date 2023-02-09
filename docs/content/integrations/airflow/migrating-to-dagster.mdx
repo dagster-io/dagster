@@ -125,9 +125,13 @@ In this step, you'll spin up Dagit, Dagster's web-based UI, and verify that your
 
 3. Run one of the simpler jobs, ideally one where you're familiar with the business logic. Note that it's likely to fail due to a configuration or permissions issue.
 
-4. Using `stdout/stderr`, identify and address the cause of the failure.
+4. Using logs to identify and making configuration changes to fix the cause of the failure.
 
 Repeat these steps as needed until the jobs run successfully.
+
+#### Containerized Operator Considerations
+
+There are a variety of Airflow Operator types that are used to create container runs in various container execution environments, for example kubernetes or amazon ECS, when getting things working locally we'd recommend trying to execute those containers locally whenever possible and only relying on remote execution when its either unrealistic or impossible to locally emulate the cloud environment. For doing local execution it likely means that you will need to have a local kubernets cluster running, we'd recommnd docker's built in k8s environment, and to be able to pull down the container images that will be needed for execution to your local machine.
 
 ---
 
@@ -158,13 +162,15 @@ Iterate as needed until all configuration is correctly ported to your local envi
 <Note>
   This step is applicable to Dagster Cloud. If deploying to your infrastructure,
   refer to the <a href="/deployment">Deployment guides</a> for more info.
-  <br /><br />
-  Additionally, until your Airflow DAGs execute successfully in your local environment, we recommend waiting to move to production.
+  <br />
+  <br />
+  Additionally, until your Airflow DAGs execute successfully in your local environment,
+  we recommend waiting to move to production.
 </Note>
 
 In this step, you'll set up your project for use with Dagster Cloud.
 
-<!-- Once you have your dagster cloud organization setup you can either choose to adapt your existing airflow repository to use the Dagster Cloud CI/CD deployment or copy over your code to the quickstart repository you made. -->
+<!-- Once you have your dagster cloud organization setup you can either choose to adapt your existing airflow repository to use the Dagster Cloud CI/CD deployment or copy over your code to the quickstart repository you made as part of the Dagster Cloud onboarding. -->
 
 1. Complete the steps in the [Dagster Cloud Getting Started guide](/dagster-cloud/getting-started), if you haven't already. Proceed to the next step when your account is set up and you have the `dagster-cloud` CLI installed.
 
@@ -194,9 +200,3 @@ Your Airflow instance likely had specific IAM or Kubernetes permissions that all
 - **If you're unable to use Airflow connections or environment variables,** you can attach permissions directly to the infrastructure where you're deploying Dagster.
 
 - **If your Airflow DAGs used [`KubernetesPodOperators`](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/operators.html)**, it's possible that you loaded a `kube_config` file or used the `in_cluster` config. When migrating, we recommend switching to [using connections with a `kube_config` JSON blob](https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/connections/kubernetes.html) to make things easier.
-
----
-
-## Containerized Operator Considerations
-
-There are a variety of Airflow Operator types that are used to create container runs in various container execution environments, for example kubernetes or amazon ECS, when getting things working locally we'd recommend trying to execute those containers locally whenever possible and only relying on remote execution when its either unrealistic or impossible to locally emulate the cloud environment. For doing local execution it likely means that you will need to have a local kubernets cluster running, we'd recommnd docker's built in k8s environment, and to be able to pull down the container images that will be needed for execution to your local machine.
