@@ -98,7 +98,7 @@ const RemoveExtraConfigButton = ({
           </p>
           {Object.entries(knownKeyExtraPaths).length > 0 &&
             Object.entries(knownKeyExtraPaths).map(([key, value]) => (
-              <>
+              <React.Fragment key={key}>
                 <p>Extra {key}:</p>
                 <ul>
                   {value.map((v) => (
@@ -107,7 +107,7 @@ const RemoveExtraConfigButton = ({
                     </li>
                   ))}
                 </ul>
-              </>
+              </React.Fragment>
             ))}
           {otherPaths.length > 0 && (
             <>

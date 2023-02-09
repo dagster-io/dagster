@@ -240,9 +240,9 @@ export const TicksTable = ({
                 <td>
                   {tick.runIds.length ? (
                     tick.runs.map((run) => (
-                      <>
-                        <RunStatusLink key={run.id} run={run} />
-                      </>
+                      <React.Fragment key={run.id}>
+                        <RunStatusLink run={run} />
+                      </React.Fragment>
                     ))
                   ) : (
                     <>&mdash;</>
