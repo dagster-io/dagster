@@ -55,6 +55,22 @@ Most of the current limitations are due to a locally-scoped, ephemeral Airflow d
 
 Note that we are working on extending support for these features. If interested in them, let us know in the `#dagster-airflow` channel of the Dagster Slack.
 
+### How easy is this going to be, really?
+
+You may be coming to this document/library in a skeptical frame of mind, having previously been burned by projects that claim to have 100% foolproof, automated migration tools. We want to assure you that we are _not_ making that claim.
+
+The `dagster-airflow` migration library should be viewed as a powerful _accelerant_ of migration, rather than guaranteeing completely _automated_ migration. The amount of work required is proportional to the complexity of your installation. Smaller implementations of less complexity can be trivial to migrate, making it appear virtually automatic; larger, more complicated, or customized implementations require more investment.
+
+For larger installations, teams that already adopt devops practices and/or have standardized usage of Airflow will have a smoother transition.
+
+Some concrete examples:
+
+- If you rely on the usage of the Airflow UI to set production connections or variables, this will require a change of workflow as you will no longer have the Airflow UI at the end of this migration. If instead you rely on code-as-infrastructure patterns to set connections or variables, migration is more straightforward.
+- If you have standardized on a small set or even a single operator type (e.g. the `K8sPodOperator`), migration will be easier. If you use a large number of operator types with a wide range of infrastructure requirements, migration will be more work.
+- If you dynamically generate your Airflow DAGs from a higher-level API or DSL (e.g. yaml), the migration will be more straightforward than all your stakeholders directly creating Airflow DAGs.
+
+Even in the case that requires some infrastructure investment, `dagster-airflow` dramatically eases migration, typically by orders of magnitude. The cost can be borne by a single or small set of infrastructure-oriented engineers, as it dramatically reduces coordination costs: You do not have to move all of your stakeholders over to new APIs simultaneously. In our experience, practitioners welcome the change, because of the immediate improvement in tooling, stability, and development speed.
+
 ---
 
 ## Step 1: Prepare your project for a new Dagster Python module
