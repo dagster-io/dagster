@@ -178,7 +178,7 @@ class DbIOManager(IOManager):
                     )
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
-                    multi_partition_key_mapping = context.asset_partitions_def.keys_by_dimension
+                    multi_partition_key_mapping = context.asset_partition_key.keys_by_dimension
                     for part in context.asset_partitions_def.partitions_defs:
                         partition_key = multi_partition_key_mapping.get(part.name)
                         partition_value = self._get_partition_value(
