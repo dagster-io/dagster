@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -27,6 +28,13 @@ parser.add_argument(
         "Run pyright for all environments. Environments are discovered by looking for directories"
         " at `pyright/envs/*`."
     ),
+)
+
+parser.add_argument(
+    "--unannotated",
+    action="store_true",
+    default=False,
+    help="Analyze unannotated functions. This is not currently used in CI.",
 )
 
 parser.add_argument(
@@ -76,6 +84,7 @@ parser.add_argument(
 
 
 class Params(TypedDict):
+    unannotated: bool
     mode: Literal["env", "path"]
     targets: Sequence[str]
     json: bool
@@ -179,7 +188,13 @@ def get_params(args: argparse.Namespace) -> Params:
     else:
         mode = "path"
         targets = args.paths
-    return Params(mode=mode, targets=targets, json=args.json, rebuild=args.rebuild)
+    return Params(
+        mode=mode,
+        targets=targets,
+        json=args.json,
+        rebuild=args.rebuild,
+        unannotated=args.unannotated,
+    )
 
 
 def match_path(path: str, path_spec: EnvPathSpec) -> bool:
@@ -204,7 +219,7 @@ def map_paths_to_envs(paths: Sequence[str]) -> Mapping[str, Sequence[str]]:
         )
     env_path_map: Dict[str, List[str]] = {}
     for path in paths:
-        if path.endswith(".py") or path.endswith(".pyi"):
+        if os.path.isdir(path) or os.path.splitext(path)[1] in [".py", ".pyi"]:
             try:
                 env = next(
                     (
@@ -254,9 +269,11 @@ def normalize_env(env: str, rebuild: bool) -> None:
     return None
 
 
-def run_pyright(env: str, paths: Optional[Sequence[str]], rebuild: bool) -> RunResult:
+def run_pyright(
+    env: str, paths: Optional[Sequence[str]], rebuild: bool, unannotated: bool
+) -> RunResult:
     normalize_env(env, rebuild)
-    with temp_pyright_config_file(env) as config_path:
+    with temp_pyright_config_file(env, unannotated) as config_path:
         base_pyright_cmd = " ".join(
             [
                 "pyright",
@@ -272,7 +289,8 @@ def run_pyright(env: str, paths: Optional[Sequence[str]], rebuild: bool) -> RunR
         try:
             json_result = json.loads(result.stdout)
         except json.JSONDecodeError:
-            raise Exception(f"Pyright output was not valid JSON. Output was:\n{result.stdout}")
+            output = result.stdout == "" and result.stderr or result.stdout
+            raise Exception(f"Pyright output was not valid JSON. Output was:\n\n{output}")
     return {
         "returncode": result.returncode,
         "output": cast(PyrightOutput, json_result),
@@ -280,7 +298,7 @@ def run_pyright(env: str, paths: Optional[Sequence[str]], rebuild: bool) -> RunR
 
 
 @contextmanager
-def temp_pyright_config_file(env: str) -> Iterator[str]:
+def temp_pyright_config_file(env: str, unannotated: bool) -> Iterator[str]:
     with open("pyproject.toml", "r", encoding="utf-8") as f:
         toml = tomli.loads(f.read())
     config = toml["tool"]["pyright"]
@@ -290,6 +308,7 @@ def temp_pyright_config_file(env: str) -> Iterator[str]:
     config["include"] = load_path_file(include_path)
     if os.path.exists(exclude_path):
         config["exclude"] += load_path_file(exclude_path)
+    config["analyzeUnannotatedFunctions"] = unannotated
     temp_config_path = f"pyrightconfig-{env}.json"
     print("Creating temporary pyright config file at", temp_config_path)
     try:
@@ -325,6 +344,15 @@ def print_output(result: RunResult, output_json: bool) -> None:
         print_report(result)
 
 
+def get_dagster_pyright_version() -> str:
+    dagster_setup = os.path.abspath(os.path.join(__file__, "../../python_modules/dagster/setup.py"))
+    with open(dagster_setup, "r", encoding="utf-8") as f:
+        content = f.read()
+    m = re.search('"pyright==([^"]+)"', content)
+    assert m is not None, "Could not find pyright version in python_modules/dagster/setup.py"
+    return m.group(1)
+
+
 def print_report(result: RunResult) -> None:
     output = result["output"]
     diags = sorted(output["generalDiagnostics"], key=lambda diag: diag["file"])
@@ -349,6 +377,15 @@ def print_report(result: RunResult) -> None:
     print(f"Found {summary['errorCount']} errors")
     print(f"Found {summary['warningCount']} warnings")
 
+    dagster_pyright_version = get_dagster_pyright_version()
+    if dagster_pyright_version != output["version"]:
+        print()
+        print(
+            f'Your local version of pyright is {output["version"]}, which does not match Dagster\'s'
+            f" pinned version of {dagster_pyright_version}. Please run `make install_pyright` to"
+            " install the correct version."
+        )
+
 
 if __name__ == "__main__":
     assert os.path.exists(".git"), "Must be run from the root of the repository"
@@ -359,7 +396,13 @@ if __name__ == "__main__":
     else:
         env_path_map = {env: None for env in params["targets"]}
     run_results = [
-        run_pyright(env, paths=env_path_map[env], rebuild=params["rebuild"]) for env in env_path_map
+        run_pyright(
+            env,
+            paths=env_path_map[env],
+            rebuild=params["rebuild"],
+            unannotated=params["unannotated"],
+        )
+        for env in env_path_map
     ]
     merged_result = reduce(merge_pyright_results, run_results)
     print_output(merged_result, params["json"])

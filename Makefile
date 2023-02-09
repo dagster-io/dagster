@@ -30,11 +30,17 @@ check_black:
 pyright:
 	python scripts/run-pyright.py --all
 
+install_pyright:
+	pip install -e 'python_modules/dagster[pyright]'
+
 rebuild_pyright:
 	python scripts/run-pyright.py --all --rebuild
 
 quick_pyright:
 	python scripts/run-pyright.py --diff
+
+unannotated_pyright:
+	python scripts/run-pyright.py --unannotated
 
 ruff:
 	ruff --fix .
