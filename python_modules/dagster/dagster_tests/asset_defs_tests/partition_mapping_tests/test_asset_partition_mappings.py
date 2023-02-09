@@ -6,12 +6,12 @@ from dagster import (
     AllPartitionMapping,
     AssetIn,
     AssetMaterialization,
+    AssetOut,
     AssetsDefinition,
     DailyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
     LastPartitionMapping,
-    Out,
     Output,
     PartitionsDefinition,
     StaticPartitionsDefinition,
@@ -282,8 +282,8 @@ def test_multi_asset_non_identity_partition_mapping():
 
     @multi_asset(
         outs={
-            "out1": Out(asset_key=AssetKey("upstream_asset_1")),
-            "out2": Out(asset_key=AssetKey("upstream_asset_2")),
+            "out1": AssetOut(key=AssetKey("upstream_asset_1")),
+            "out2": AssetOut(key=AssetKey("upstream_asset_2")),
         },
         partitions_def=upstream_partitions_def,
     )
@@ -408,7 +408,7 @@ def test_from_graph():
     )
     assert my_job.execute_in_process(partition_key="a").success
     assert partition_mapping.downstream_calls == 0
-    assert partition_mapping.upstream_calls == 3
+    assert partition_mapping.upstream_calls == 2
 
 
 def test_non_partitioned_depends_on_last_partition():

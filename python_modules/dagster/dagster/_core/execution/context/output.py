@@ -612,13 +612,7 @@ class OutputContext:
 
         if isinstance(event, (AssetMaterialization, Materialization)):
             if self._step_context:
-                self._events.append(
-                    DagsterEvent.asset_materialization(
-                        self._step_context,
-                        event,
-                        self._step_context.get_input_lineage(),
-                    )
-                )
+                self._events.append(DagsterEvent.asset_materialization(self._step_context, event))
             self._user_events.append(event)
         elif isinstance(event, AssetObservation):
             if self._step_context:

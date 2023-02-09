@@ -4,15 +4,14 @@ import pendulum
 import pytest
 from dagster import (
     AssetKey,
+    AssetOut,
     AssetsDefinition,
     DailyPartitionsDefinition,
     GraphOut,
-    In,
     Out,
     StaticPartitionsDefinition,
     define_asset_job,
     graph,
-    job,
     op,
 )
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
@@ -176,7 +175,10 @@ def test_input_name_matches_output_name():
 def test_assets_excluded_from_subset_not_in_job():
     out_metadata = {"a": 1, "b": "c", "d": None}
 
-    @multi_asset(outs={"a": Out(metadata=out_metadata), "b": Out(), "c": Out()}, can_subset=True)
+    @multi_asset(
+        outs={"a": AssetOut(metadata=out_metadata), "b": AssetOut(), "c": AssetOut()},
+        can_subset=True,
+    )
     def abc():
         pass
 
@@ -365,7 +367,7 @@ def test_same_asset_in_multiple_pipelines():
 def test_basic_multi_asset():
     @multi_asset(
         outs={
-            f"out{i}": Out(description=f"foo: {i}", asset_key=AssetKey(f"asset{i}"))
+            f"out{i}": AssetOut(description=f"foo: {i}", key=AssetKey(f"asset{i}"))
             for i in range(10)
         }
     )
@@ -411,7 +413,7 @@ def test_inter_op_dependency():
         pass
 
     @multi_asset(
-        outs={"only_in": Out(), "mixed": Out(), "only_out": Out()},
+        outs={"only_in": AssetOut(), "mixed": AssetOut(), "only_out": AssetOut()},
         internal_asset_deps={
             "only_in": {AssetKey("in1"), AssetKey("in2")},
             "mixed": {AssetKey("in1"), AssetKey("only_in")},
@@ -543,53 +545,6 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="only_out",
-            group_name=DEFAULT_GROUP_NAME,
-        ),
-    ]
-
-
-def test_explicit_asset_keys():
-    @op(out={"a": Out(asset_key=AssetKey("a"))})
-    def a_op():
-        return 1
-
-    @op(
-        ins={"a": In(asset_key=AssetKey("a"))},
-        out={"b": Out(asset_key=AssetKey("b"))},
-    )
-    def b_op(a):
-        return a + 1
-
-    @job
-    def assets_job():
-        b_op(a_op())
-
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
-    assert external_asset_nodes == [
-        ExternalAssetNode(
-            asset_key=AssetKey("a"),
-            op_name="a_op",
-            node_definition_name="a_op",
-            graph_name=None,
-            op_names=["a_op"],
-            op_description=None,
-            dependencies=[],
-            depended_by=[ExternalAssetDependedBy(AssetKey("b"))],
-            job_names=["assets_job"],
-            output_name="a",
-            group_name=DEFAULT_GROUP_NAME,
-        ),
-        ExternalAssetNode(
-            asset_key=AssetKey("b"),
-            op_name="b_op",
-            node_definition_name="b_op",
-            graph_name=None,
-            op_names=["b_op"],
-            op_description=None,
-            dependencies=[ExternalAssetDependency(AssetKey("a"))],
-            depended_by=[],
-            job_names=["assets_job"],
-            output_name="b",
             group_name=DEFAULT_GROUP_NAME,
         ),
     ]

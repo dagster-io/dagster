@@ -509,11 +509,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """
         if isinstance(event, (AssetMaterialization, Materialization)):
             self._events.append(
-                DagsterEvent.asset_materialization(
-                    self._step_execution_context,
-                    event,
-                    self._step_execution_context.get_input_lineage(),
-                )
+                DagsterEvent.asset_materialization(self._step_execution_context, event)
             )
         elif isinstance(event, AssetObservation):
             self._events.append(DagsterEvent.asset_observation(self._step_execution_context, event))

@@ -264,17 +264,6 @@ def tag_asset_solid(_):
     yield Output(1)
 
 
-def lineage_solid_factory(solid_name_prefix, key, partitions=None):
-    @solid(
-        name=f"{solid_name_prefix}_{key}",
-        output_defs=[OutputDefinition(asset_key=AssetKey(key), asset_partitions=partitions)],
-    )
-    def _solid(_, _in1):
-        yield Output(1)
-
-    return _solid
-
-
 @pipeline
 def single_asset_pipeline():
     solid_asset_a()
@@ -293,18 +282,6 @@ def partitioned_asset_pipeline():
 @pipeline
 def asset_tag_pipeline():
     tag_asset_solid()
-
-
-@pipeline
-def asset_lineage_pipeline():
-    lineage_solid_factory("alp", "b")(lineage_solid_factory("alp", "a")(noop_solid()))
-
-
-@pipeline
-def partitioned_asset_lineage_pipeline():
-    lineage_solid_factory("palp", "b", set("1"))(
-        lineage_solid_factory("palp", "a", set("1"))(noop_solid())
-    )
 
 
 @pipeline
@@ -1941,8 +1918,6 @@ def define_pipelines():
         tagged_pipeline,
         chained_failure_pipeline,
         dynamic_pipeline,
-        asset_lineage_pipeline,
-        partitioned_asset_lineage_pipeline,
         backcompat_materialization_pipeline,
         simple_graph.to_job("simple_job_a"),
         simple_graph.to_job("simple_job_b"),

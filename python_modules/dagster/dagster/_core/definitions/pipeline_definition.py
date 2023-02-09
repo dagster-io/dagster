@@ -269,7 +269,7 @@ class PipelineDefinition:
             self._preset_dict[preset.name] = preset
 
         self._asset_layer = check.opt_inst_param(
-            asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
+            asset_layer, "asset_layer", AssetLayer, default=AssetLayer()
         )
 
         resource_requirements = {}
