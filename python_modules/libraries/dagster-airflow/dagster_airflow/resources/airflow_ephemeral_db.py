@@ -2,7 +2,7 @@ import datetime
 import importlib
 import os
 import tempfile
-from typing import Generator, List, Mapping, Optional
+from typing import List, Mapping, Optional
 
 import airflow
 import pytz
@@ -19,6 +19,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
+from dagster._core.storage.pipeline_run import DagsterRun
 from dateutil.parser import parse
 
 from dagster_airflow.utils import (
@@ -44,15 +45,18 @@ class AirflowEphemeralDatabase:
 
     """
 
-    def __init__(self, context: InitResourceContext):
-        self.airflow_home_path = os.path.join(
-            tempfile.gettempdir(), f"dagster_airflow_{context.run_id}"
-        )
-        self.context = context
-        os.environ["AIRFLOW_HOME"] = self.airflow_home_path
-        os.makedirs(self.airflow_home_path, exist_ok=True)
-        with Locker(self.airflow_home_path):
-            airflow_initialized = os.path.exists(f"{self.airflow_home_path}/airflow.db")
+    def __init__(self, airflow_home_path: str, dagster_run: DagsterRun):
+        self.airflow_home_path = airflow_home_path
+        self.dagster_run = dagster_run
+
+    @staticmethod
+    def from_resource_context(context: InitResourceContext) -> "AirflowEphemeralDatabase":
+        airflow_home_path = os.path.join(tempfile.gettempdir(), f"dagster_airflow_{context.run_id}")
+        # self.context = context
+        os.environ["AIRFLOW_HOME"] = airflow_home_path
+        os.makedirs(airflow_home_path, exist_ok=True)
+        with Locker(airflow_home_path):
+            airflow_initialized = os.path.exists(f"{airflow_home_path}/airflow.db")
             # because AIRFLOW_HOME has been overriden airflow needs to be reloaded
             if is_airflow_2_loaded_in_environment():
                 importlib.reload(airflow.configuration)
@@ -65,6 +69,11 @@ class AirflowEphemeralDatabase:
                 create_airflow_connections(
                     [Connection(**c) for c in context.resource_config["connections"]]
                 )
+
+        return AirflowEphemeralDatabase(
+            airflow_home_path=airflow_home_path,
+            dagster_run=check.not_none(context.dagster_run, "Context must have run"),
+        )
 
     def _parse_execution_date_for_job(
         self, dag: DAG, run_tags: Mapping[str, str]
@@ -106,11 +115,11 @@ class AirflowEphemeralDatabase:
 
     def get_dagrun(self, dag: DAG) -> DagRun:
         airflow_home_path = os.path.join(
-            tempfile.gettempdir(), f"dagster_airflow_{self.context.run_id}"
+            tempfile.gettempdir(), f"dagster_airflow_{self.dagster_run.ru}"
         )
         os.makedirs(airflow_home_path, exist_ok=True)
         with Locker(airflow_home_path):
-            run_tags = self.context.dagster_run.tags if self.context.dagster_run else {}
+            run_tags = self.dagster_run.tags if self.dagster_run else {}
             if AIRFLOW_EXECUTION_DATE_STR in run_tags:
                 execution_date = self._parse_execution_date_for_job(dag, run_tags)
             elif "dagster/partition" in run_tags:
@@ -140,12 +149,6 @@ class AirflowEphemeralDatabase:
             return dagrun
 
 
-def airflow_ephemeral_db(
-    context: InitResourceContext,
-) -> Generator[AirflowEphemeralDatabase, None, None]:
-    yield AirflowEphemeralDatabase(context)
-
-
 def make_ephemeral_airflow_db_resource(connections: List[Connection] = []) -> ResourceDefinition:
     """
     Creates a Dagster resource that provides an ephemeral Airflow database.
@@ -159,7 +162,7 @@ def make_ephemeral_airflow_db_resource(connections: List[Connection] = []) -> Re
     """
     serialized_connections = serialize_connections(connections)
     airflow_db_resource_def = ResourceDefinition(
-        resource_fn=airflow_ephemeral_db,
+        resource_fn=AirflowEphemeralDatabase.from_resource_context,
         config_schema={
             "connections": Field(
                 Array(inner_type=dict),
