@@ -151,34 +151,139 @@ def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSch
 ResValue = TypeVar("ResValue")
 IOManagerValue = TypeVar("IOManagerValue", bound=IOManager)
 
+ResourceId: TypeAlias = int
+
+
+def _resolve_required_resource_keys_for_resource(
+    resource: ResourceDefinition, resource_id_to_key_mapping: Mapping[ResourceId, str]
+) -> AbstractSet[str]:
+    """
+    Gets the required resource keys for the provided resource, with the assistance of the passed
+    resource-id-to-key mapping. For resources which may hold nested partial resources,
+    this mapping is used to obtain the top-level resource keys to depend on.
+    """
+    if isinstance(resource, AllowDelayedDependencies):
+        return resource._resolve_required_resource_keys(resource_id_to_key_mapping)
+    return resource.required_resource_keys
+
 
 class AllowDelayedDependencies:
-    _resource_pointers: Mapping[str, ResourceDefinition] = {}
+    _nested_partial_resources: Mapping[str, ResourceDefinition] = {}
 
-    def _resolve_required_resource_keys(self) -> AbstractSet[str]:
+    def _resolve_required_resource_keys(
+        self, resource_mapping: Mapping[int, str]
+    ) -> AbstractSet[str]:
         # All dependent resources which are not fully configured
         # must be specified to the Definitions object so that the
         # resource can be configured at runtime by the user
-        pointer_keys = {k: v.top_level_key for k, v in self._resource_pointers.items()}
+        nested_partial_resource_keys = {
+            attr_name: resource_mapping.get(id(resource_def))
+            for attr_name, resource_def in self._nested_partial_resources.items()
+        }
         check.invariant(
-            all(pointer_key is not None for pointer_key in pointer_keys.values()),
+            all(pointer_key is not None for pointer_key in nested_partial_resource_keys.values()),
             (
                 "Any partially configured, nested resources must be specified to Definitions"
-                f" object: {pointer_keys}"
+                f" object: {nested_partial_resource_keys}"
             ),
         )
 
         # Recursively get all nested resource keys
-        nested_pointer_keys: Set[str] = set()
-        for v in self._resource_pointers.values():
-            nested_pointer_keys.update(v.required_resource_keys)
+        nested_resource_required_keys: Set[str] = set()
+        for v in self._nested_partial_resources.values():
+            nested_resource_required_keys.update(
+                _resolve_required_resource_keys_for_resource(v, resource_mapping)
+            )
 
         resources, _ = _separate_resource_params(self.__dict__)
         for v in resources.values():
-            nested_pointer_keys.update(v.required_resource_keys)
+            nested_resource_required_keys.update(
+                _resolve_required_resource_keys_for_resource(v, resource_mapping)
+            )
 
-        out = set(cast(Set[str], pointer_keys.values())).union(nested_pointer_keys)
+        out = set(cast(Set[str], nested_partial_resource_keys.values())).union(
+            nested_resource_required_keys
+        )
         return out
+
+
+class ResourceWithKeyMapping(ResourceDefinition):
+    """
+    Wrapper around a ResourceDefinition which helps the inner resource resolve its required
+    resource keys. This is useful for resources which may hold nested resources. At construction
+    time, they are unaware of the resource keys of their nested resources - the resource id to
+    key mapping is used to resolve this.
+    """
+
+    def __init__(
+        self, resource: ResourceDefinition, resource_id_to_key_mapping: Dict[ResourceId, str]
+    ):
+        self._resource = resource
+        self._resource_id_to_key_mapping = resource_id_to_key_mapping
+
+        ResourceDefinition.__init__(
+            self,
+            resource_fn=self.setup_context_resources_and_call,
+            config_schema=resource.config_schema,
+        )
+
+    def setup_context_resources_and_call(self, context: InitResourceContext):
+        """
+        Wrapper around the wrapped resource's resource_fn which sets up the context.resources
+        to include resources by their ID, and then calls the nested resource's resource_fn.
+        """
+        for resource_id, resource_key in self._resource_id_to_key_mapping.items():
+            # Wrapped resource only knows about its nested resources by ID, so we need to
+            # set up the context.resources to include resources by their ID as well.
+            setattr(
+                context.resources,
+                f"id_{resource_id}",
+                getattr(context.resources, resource_key, None),
+            )
+
+        if has_at_least_one_parameter(self._resource.resource_fn):
+            return self._resource.resource_fn(context)
+        else:
+            return cast(ResourceFunctionWithoutContext, self._resource.resource_fn)()
+
+    @property
+    def required_resource_keys(self) -> AbstractSet[str]:
+        return _resolve_required_resource_keys_for_resource(
+            self._resource, self._resource_id_to_key_mapping
+        )
+
+
+class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
+    """
+    Version of ResourceWithKeyMapping wrapper that also implements IOManagerDefinition.
+    """
+
+    def __init__(
+        self, resource: ResourceDefinition, resource_id_to_key_mapping: Dict[ResourceId, str]
+    ):
+        ResourceWithKeyMapping.__init__(self, resource, resource_id_to_key_mapping)
+        IOManagerDefinition.__init__(
+            self, resource_fn=self.resource_fn, config_schema=resource.config_schema
+        )
+
+
+def attach_resource_id_to_key_mapping(
+    resource_def: ResourceDefinition, resource_id_to_key_mapping: Dict[ResourceId, str]
+):
+    return (
+        IOManagerWithKeyMapping(resource_def, resource_id_to_key_mapping)
+        if isinstance(resource_def, IOManagerDefinition)
+        else ResourceWithKeyMapping(resource_def, resource_id_to_key_mapping)
+    )
+
+
+def _get_resource_by_id(context: InitResourceContext, resource_id: ResourceId) -> Any:
+    """
+    Retrieves a resource's value from the resource context object from the ResourceDefinition's ID.
+    This is used to retrieve the value of nested resources which are not fully configured, since the
+    resource key is not known by the nested resource's parent.
+    """
+    return getattr(context.resources, f"id_{resource_id}", None)
 
 
 class Resource(
@@ -219,7 +324,7 @@ class Resource(
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
-        self._resource_pointers: Mapping[str, ResourceDefinition] = {
+        self._nested_partial_resources: Mapping[str, ResourceDefinition] = {
             k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
         }
 
@@ -238,32 +343,28 @@ class Resource(
         """
         return PartialResource(cls, data=kwargs)
 
-    @property
-    def required_resource_keys(self) -> AbstractSet[str]:
-        return self._resolve_required_resource_keys()
-
     def initialize_and_run(self, context: InitResourceContext) -> ResValue:
         # If we have any partially configured resources, we need to update them
         # with the fully configured resources from the context
 
-        _, config_to_update = _separate_resource_params(context.resource_config)
+        _, config_to_update = _separate_resource_params(context.resource_config or {})
 
         partial_resources_to_update = {
-            k: getattr(context.resources, cast(str, v.top_level_key))
-            for k, v in self._resource_pointers.items()
+            attr_name: _get_resource_by_id(context, id(resource_def))
+            for attr_name, resource_def in self._nested_partial_resources.items()
         }
 
         resources_to_update, _ = _separate_resource_params(self.__dict__)
         resources_to_update = {
-            k: _call_resource_fn_with_default(v, context)
-            for k, v in resources_to_update.items()
-            if k not in partial_resources_to_update
+            attr_name: _call_resource_fn_with_default(resource_def, context)
+            for attr_name, resource_def in resources_to_update.items()
+            if attr_name not in partial_resources_to_update
         }
 
         to_update = {**resources_to_update, **partial_resources_to_update, **config_to_update}
 
-        for k, v in to_update.items():
-            object.__setattr__(self, k, v)
+        for attr_name, value in to_update.items():
+            object.__setattr__(self, attr_name, value)
 
         return self._create_object_fn(context)
 
@@ -312,7 +413,7 @@ class PartialResource(
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
-        self._resource_pointers: Dict[str, ResourceDefinition] = {
+        self._nested_partial_resources: Dict[str, ResourceDefinition] = {
             k: v for k, v in resource_pointers.items() if (not _is_fully_configured(v))
         }
 
@@ -330,10 +431,6 @@ class PartialResource(
             config_schema=schema,
             description=resource_cls.__doc__,
         )
-
-    @property
-    def required_resource_keys(self) -> AbstractSet[str]:
-        return self._resolve_required_resource_keys()
 
 
 ResourceOrPartial: TypeAlias = Union[Resource[ResValue], PartialResource[ResValue]]
