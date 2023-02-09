@@ -92,7 +92,7 @@ export const EditCursorDialog: React.FC<{
   );
 };
 
-const SET_CURSOR_MUTATION = gql`
+export const SET_CURSOR_MUTATION = gql`
   mutation SetSensorCursorMutation($sensorSelector: SensorSelector!, $cursor: String) {
     setSensorCursor(sensorSelector: $sensorSelector, cursor: $cursor) {
       ... on Sensor {
