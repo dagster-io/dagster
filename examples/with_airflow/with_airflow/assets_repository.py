@@ -38,7 +38,7 @@ simple_assets = load_assets_from_airflow_dag(
 )
 
 
-assets = Definitions(
+sda_examples = Definitions(
     assets=[*simple_assets, new_upstream_asset_1, new_upstream_asset_2],
     resources={"airflow_db": make_ephemeral_airflow_db_resource()},
 )
