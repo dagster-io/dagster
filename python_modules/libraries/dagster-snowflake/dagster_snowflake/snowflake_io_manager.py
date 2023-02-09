@@ -150,11 +150,9 @@ class SnowflakeDbClient(DbClient):
             dict(schema=table_slice.schema, **no_schema_config), context.log
         ).get_connection() as con:
             try:
-                print("DELETING DATA")
                 con.execute_string(_get_cleanup_statement(table_slice))
-            except ProgrammingError as e:
+            except ProgrammingError:
                 # table doesn't exist yet, so ignore the error
-                print(e)
                 pass
 
     @staticmethod
@@ -202,8 +200,6 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
 
             if i < len(table_slice.partition) - 1:
                 query += " AND\n"
-        print("DELETE STATEMENT")
-        print(query)
         return query
     else:
         return f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"

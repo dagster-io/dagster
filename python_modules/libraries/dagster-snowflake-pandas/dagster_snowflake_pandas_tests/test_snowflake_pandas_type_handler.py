@@ -453,8 +453,6 @@ def test_multi_partitioned_asset(tmp_path):
         out_df = snowflake_conn.execute_query(
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
-        print("TABLE IS")
-        print(out_df)
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
@@ -467,8 +465,6 @@ def test_multi_partitioned_asset(tmp_path):
         out_df = snowflake_conn.execute_query(
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
-        print("TABLE IS")
-        print(out_df)
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
@@ -481,8 +477,6 @@ def test_multi_partitioned_asset(tmp_path):
         out_df = snowflake_conn.execute_query(
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
-        print("TABLE IS")
-        print(out_df)
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
 
         materialize(
@@ -495,6 +489,4 @@ def test_multi_partitioned_asset(tmp_path):
         out_df = snowflake_conn.execute_query(
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
-        print("TABLE IS")
-        print(out_df)
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]

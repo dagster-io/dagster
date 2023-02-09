@@ -182,7 +182,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
-    print(out_df)
+
     assert out_df["a"].tolist() == ["1", "1", "1"]
     duckdb_conn.close()
 
@@ -195,7 +195,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
-    print(out_df)
+
     assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
     duckdb_conn.close()
 
@@ -208,7 +208,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
-    print(out_df)
+
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()
 
