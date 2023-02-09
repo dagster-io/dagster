@@ -54,7 +54,8 @@ def dev_command_options(f):
     ),
 )
 @click.option("--dagit-port", help="Port to use for the Dagit UI.", required=False)
-def dev_command(code_server_log_level, dagit_port, **kwargs):
+@click.option("--dagit-host", help="Host to use for the Dagit UI.", required=False)
+def dev_command(code_server_log_level, dagit_port, dagit_host, **kwargs):
     # check if dagit installed, crash if not
     try:
         import dagit  #  # noqa: F401
@@ -111,7 +112,10 @@ def dev_command(code_server_log_level, dagit_port, **kwargs):
             args.extend(["--working-directory", check.str_elem(kwargs, "working_directory")])
 
         dagit_process = open_ipc_subprocess(
-            [sys.executable, "-m", "dagit"] + (["--port", dagit_port] if dagit_port else []) + args
+            [sys.executable, "-m", "dagit"]
+            + (["--port", dagit_port] if dagit_port else [])
+            + (["--host", dagit_host] if dagit_host else [])
+            + args
         )
         daemon_process = open_ipc_subprocess(
             [sys.executable, "-m", "dagster._daemon", "run"] + args
