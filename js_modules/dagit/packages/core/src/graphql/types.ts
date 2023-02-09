@@ -3170,7 +3170,7 @@ export type Schedule = {
   name: Scalars['String'];
   partitionSet: Maybe<PartitionSet>;
   pipelineName: Scalars['String'];
-  potentialTickTimestamps: Array<Maybe<Scalars['Float']>>;
+  potentialTickTimestamps: Array<Scalars['Float']>;
   scheduleState: InstigationState;
   solidSelection: Maybe<Array<Maybe<Scalars['String']>>>;
 };

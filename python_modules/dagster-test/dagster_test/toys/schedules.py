@@ -1,6 +1,8 @@
 import datetime
 
-from dagster import build_schedule_from_partitioned_job
+from dagster import build_schedule_from_partitioned_job, schedule
+from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.schedule_definition import ScheduleEvaluationContext
 from dagster._core.definitions.time_window_partitions import (
     daily_partitioned_config,
     hourly_partitioned_config,
@@ -28,6 +30,24 @@ def unreliable_job_test_schedule():
     unreliable_weekly_schedule = build_schedule_from_partitioned_job(unreliable_weekly_job)
 
     return unreliable_weekly_schedule
+
+
+@schedule(
+    job=many_events,
+    cron_schedule="0 0 * * *",
+    tags={"dagster/priority": "-1", "some_random_tag": "testing"},
+)
+def configurable_job_schedule(context: ScheduleEvaluationContext):
+    scheduled_date = (
+        context.scheduled_execution_time.strftime("%Y-%m-%d")
+        if context.scheduled_execution_time
+        else datetime.datetime.now().strftime("%Y-%m-%d")
+    )
+    return RunRequest(
+        run_key=None,
+        run_config={"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}},
+        tags={"date": scheduled_date, "github_test": "test", "okay_t2": "okay"},
+    )
 
 
 def hourly_materialization_schedule():
@@ -94,4 +114,5 @@ def get_toys_schedules():
         weekly_materialization_schedule(),
         monthly_materialization_schedule(),
         longitudinal_schedule(),
+        configurable_job_schedule,
     ]

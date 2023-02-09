@@ -435,3 +435,5 @@ const CopyButton = styled.button`
     background-color: ${Colors.Link};
   }
 `;
+
+export type Test = React.SyntheticEvent<HTMLElement>;
