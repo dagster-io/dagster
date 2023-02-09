@@ -547,7 +547,7 @@ def test_dynamic_partitions():
                 partition_key="orange",
                 resources=resource_defs,
                 instance=instance,
-                run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
+                run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
             )
 
             out_df = snowflake_conn.execute_query(
