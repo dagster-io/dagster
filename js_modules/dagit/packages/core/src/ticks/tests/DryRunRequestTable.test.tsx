@@ -1,25 +1,13 @@
-import {Resolvers} from '@apollo/client';
-import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {act, getByText, queryAllByRole, render, screen, waitFor} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import {act, render, screen} from '@testing-library/react';
 import * as React from 'react';
-import {BrowserRouter, Router} from 'react-router-dom';
+import {BrowserRouter} from 'react-router-dom';
 
-import {RunRequest} from '../../graphql/types';
-import {TestProvider} from '../../testing/TestProvider';
 import {RunRequestTable} from '../DryRunRequestTable';
 
 import {mockRepository} from './DryRunRequestTable.mocks';
-import {SensorDryRunMutationRunRequests} from './SensorDryRun.mocks';
+import {runRequests} from './SensorDryRun.mocks';
 
 jest.mock('../../workspace/WorkspaceContext', () => ({useRepository: () => mockRepository}));
-
-// Not sure how to better handle this. Since we typed our mock with MockedResponse typescript thinks
-// these fields are nullable but they're not.
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-const runRequests = SensorDryRunMutationRunRequests!.result!.data.sensorDryRun.evaluationResult
-  .runRequests as RunRequest[];
 
 function TestComponent() {
   return (
@@ -48,7 +36,7 @@ describe('RunRequestTableTest', () => {
       req.tags.forEach(({key, value}) => {
         expect(screen.getByText(`${key}: ${value}`)).toBeVisible();
       });
-      expect(screen.getByTestId(req.runKey)).toBeVisible();
+      expect(screen.getByTestId(req.runKey!)).toBeVisible();
     });
   });
 });

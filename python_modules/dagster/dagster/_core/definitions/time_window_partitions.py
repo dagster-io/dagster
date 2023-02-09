@@ -639,6 +639,13 @@ class TimeWindowPartitionsDefinition(
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return TimeWindowPartitionsSubset.from_serialized(self, serialized)
 
+    def is_valid_partition_key(self, partition_key: str) -> bool:
+        try:
+            datetime.strptime(partition_key, self.fmt)
+        except ValueError:
+            return False
+        return True
+
     @property
     def serializable_unique_identifier(self) -> str:
         return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()

@@ -36,17 +36,39 @@ def create_repository_using_definitions_args(
     assets: Optional[
         Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
     ] = None,
-    schedules: Optional[Iterable[ScheduleDefinition]] = None,
+    schedules: Optional[
+        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    ] = None,
     sensors: Optional[Iterable[SensorDefinition]] = None,
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
     resources: Optional[Mapping[str, Any]] = None,
-    executor: Optional[ExecutorDefinition] = None,
+    executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
     """
-    For users who, for the time being, want to continue to use multiple named repositories in
-    a single code location, you can use this function. The behavior (e.g. applying resources to
-    all assets) are identical to :py:class:`Definitions` but this returns a named repository.
+    Create a named repository using the same arguments as :py:class:`Definitions`. In older
+    versions of Dagster, repositories were the mechanism for organizing assets, schedules, sensors,
+    and jobs. There could be many repositories per code location. This was a complicated ontology but
+    gave users a way to organize code locations that contained large numbers of heterogenous definitions.
+
+    As a stopgap for those who both want to 1) use the new :py:class:`Definitions` API and 2) but still
+    want multiple logical groups of assets in the same code location, we have introduced this function.
+
+    Example usage:
+
+    .. code-block:: python
+
+        named_repo = create_repository_using_definitions_args(
+            name="a_repo",
+            assets=[asset_one, asset_two],
+            schedules=[a_schedule],
+            sensors=[a_sensor],
+            jobs=[a_job],
+            resources={
+                "a_resource": some_resource,
+            }
+        )
+
     """
     return _create_repository_using_definitions_args(
         name=name,
@@ -148,14 +170,11 @@ class Definitions:
             override this dictionary.
 
         executor (Optional[Union[ExecutorDefinition, Executor]]):
-            Default executor for jobs. Individual jobs
-            can override this and define their own executors by setting the executor
-            on :py:func:`@job <job>` or :py:func:`define_asset_job <define_asset_job>`
+            Default executor for jobs. Individual jobs can override this and define their own executors
+            by setting the executor on :py:func:`@job <job>` or :py:func:`define_asset_job <define_asset_job>`
             explicitly. This executor will also be used for materializing assets directly
-            outside of the context of jobs.
-
-            If an Executor is passed, it is coerced into an ExecutorDefinition.
-
+            outside of the context of jobs. If an :py:class:`Executor` is passed, it is coerced into
+            an :py:class:`ExecutorDefinition`.
 
         loggers (Optional[Mapping[str, LoggerDefinition]):
             Default loggers for jobs. Individual jobs

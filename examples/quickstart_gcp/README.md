@@ -1,3 +1,9 @@
+---
+requiredEnvVars:
+- "BIGQUERY_SERVICE_ACCOUNT_CREDENTIALS"
+- "BIGQUERY_PROJECT_ID"
+---
+
 # Dagster + GCP starter kit
 
 This example builds a daily ETL pipeline that interacts with Google Cloud Platform (GCP). At a high level, this project shows how to ingest data from external sources to BigQuery, explore and transform the data, and materialize outputs that help visualize the data.

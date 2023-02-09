@@ -441,9 +441,6 @@ snapshots["TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
             {"mode": "default", "pipelineName": "no_config_pipeline", "solidSelection": None}
         ],
     },
-]
-
-snapshots["TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_location] 1"] = [
     {
         "description": None,
         "minIntervalSeconds": 60,
@@ -527,7 +524,7 @@ snapshots["TestSensors.test_get_sensors[non_launchable_sqlite_instance_multi_loc
         "description": None,
         "minIntervalSeconds": 30,
         "name": "single_asset_sensor",
-        "sensorState": {"runs": [], "runsCount": 0, "status": "RUNNING", "ticks": []},
+        "sensorState": {"runs": [], "runsCount": 0, "status": "STOPPED", "ticks": []},
         "targets": [
             {"mode": "default", "pipelineName": "single_asset_pipeline", "solidSelection": None}
         ],
