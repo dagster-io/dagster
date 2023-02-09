@@ -406,6 +406,7 @@ def get_partition_tags(
 def get_external_execution_plan_snapshot(
     repo_def: RepositoryDefinition,
     job_name: str,
+    instance_ref: Optional[InstanceRef],
     args: ExecutionPlanSnapshotArgs,
 ):
     try:
@@ -422,7 +423,7 @@ def get_external_execution_plan_snapshot(
                 mode=args.mode,
                 step_keys_to_execute=args.step_keys_to_execute,
                 known_state=args.known_state,
-                instance_ref=args.instance_ref,
+                instance_ref=instance_ref,
                 repository_load_data=repo_def.repository_load_data,
             ),
             args.pipeline_snapshot_id,

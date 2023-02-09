@@ -391,6 +391,7 @@ class DagsterApiServer(DagsterApiServicer):
                 execution_plan_args.pipeline_origin.external_repository_origin
             ),
             execution_plan_args.pipeline_origin.pipeline_name,
+            execution_plan_args.instance_ref or self._instance_ref,
             execution_plan_args,
         )
         return api_pb2.ExecutionPlanSnapshotReply(
@@ -447,7 +448,7 @@ class DagsterApiServer(DagsterApiServicer):
             PartitionSetExecutionParamArgs,
         )
 
-        instance_ref = args.instance_ref if args.instance_ref else self._instance_ref
+        instance_ref = args.instance_ref or self._instance_ref
 
         with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
             serialized_data = serialize_dagster_namedtuple(
@@ -464,7 +465,7 @@ class DagsterApiServer(DagsterApiServicer):
     def ExternalPartitionConfig(self, request, _context):
         args = deserialize_as(request.serialized_partition_args, PartitionArgs)
 
-        instance_ref = args.instance_ref if args.instance_ref else self._instance_ref
+        instance_ref = args.instance_ref or self._instance_ref
 
         with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
             serialized_data = serialize_dagster_namedtuple(
@@ -483,9 +484,7 @@ class DagsterApiServer(DagsterApiServicer):
     def ExternalPartitionTags(self, request, _context) -> api_pb2.ExternalPartitionTagsReply:
         partition_args = deserialize_as(request.serialized_partition_args, PartitionArgs)
 
-        instance_ref = (
-            partition_args.instance_ref if partition_args.instance_ref else self._instance_ref
-        )
+        instance_ref = partition_args.instance_ref or self._instance_ref
 
         with DagsterInstance.from_ref(instance_ref) if instance_ref else nullcontext() as instance:
             serialized_data = serialize_dagster_namedtuple(
@@ -606,7 +605,7 @@ class DagsterApiServer(DagsterApiServicer):
         serialized_schedule_data = serialize_dagster_namedtuple(
             get_external_schedule_execution(
                 self._get_repo_for_origin(args.repository_origin),
-                args.instance_ref,
+                args.instance_ref or self._instance_ref,
                 args.schedule_name,
                 args.scheduled_execution_timestamp,
                 args.scheduled_execution_timezone,
@@ -624,7 +623,7 @@ class DagsterApiServer(DagsterApiServicer):
         serialized_sensor_data = serialize_dagster_namedtuple(
             get_external_sensor_execution(
                 self._get_repo_for_origin(args.repository_origin),
-                args.instance_ref,
+                args.instance_ref or self._instance_ref,
                 args.sensor_name,
                 args.last_completion_time,
                 args.last_run_key,
@@ -757,7 +756,7 @@ class DagsterApiServer(DagsterApiServicer):
                 # Cast here to convert `SpawnProcess` from event into regular `Process`-- not sure
                 # why not recognized as subclass, multiprocessing typing is a little rough.
                 cast(multiprocessing.Process, execution_process),
-                check.not_none(execute_external_pipeline_args.instance_ref),
+                check.not_none(execute_external_pipeline_args.instance_ref or self._instance_ref),
             )
             self._termination_events[run_id] = termination_event
 
