@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from dagster._core.storage.db_io_manager import PartitionDimension, TableSlice
+from dagster._core.storage.db_io_manager import TablePartitionDimension, TableSlice
 from dagster_duckdb.io_manager import DuckDbClient, _get_cleanup_statement
 
 
@@ -31,7 +31,7 @@ def test_get_select_statement_partitioned():
                 schema="schema1",
                 table="table1",
                 partition=[
-                    PartitionDimension(
+                    TablePartitionDimension(
                         partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
                         partition_expr="my_timestamp_col",
                     )
@@ -50,7 +50,9 @@ def test_get_select_statement_static_partitioned():
             TableSlice(
                 schema="schema1",
                 table="table1",
-                partition=[PartitionDimension(partition_expr="my_fruit_col", partition="apple")],
+                partition=[
+                    TablePartitionDimension(partition_expr="my_fruit_col", partition="apple")
+                ],
                 columns=["apple", "banana"],
             )
         )
@@ -65,8 +67,8 @@ def test_get_select_statement_multi_partitioned():
                 schema="schema1",
                 table="table1",
                 partition=[
-                    PartitionDimension(partition_expr="my_fruit_col", partition="apple"),
-                    PartitionDimension(
+                    TablePartitionDimension(partition_expr="my_fruit_col", partition="apple"),
+                    TablePartitionDimension(
                         partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
                         partition_expr="my_timestamp_col",
                     ),
@@ -92,7 +94,7 @@ def test_get_cleanup_statement_partitioned():
                 schema="schema1",
                 table="table1",
                 partition=[
-                    PartitionDimension(
+                    TablePartitionDimension(
                         partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
                         partition_expr="my_timestamp_col",
                     )
@@ -110,7 +112,9 @@ def test_get_cleanup_statement_static_partitioned():
             TableSlice(
                 schema="schema1",
                 table="table1",
-                partition=[PartitionDimension(partition_expr="my_fruit_col", partition="apple")],
+                partition=[
+                    TablePartitionDimension(partition_expr="my_fruit_col", partition="apple")
+                ],
             )
         )
         == "DELETE FROM schema1.table1 WHERE\nmy_fruit_col = 'apple'"
@@ -124,8 +128,8 @@ def test_get_cleanup_statement_multi_partitioned():
                 schema="schema1",
                 table="table1",
                 partition=[
-                    PartitionDimension(partition_expr="my_fruit_col", partition="apple"),
-                    PartitionDimension(
+                    TablePartitionDimension(partition_expr="my_fruit_col", partition="apple"),
+                    TablePartitionDimension(
                         partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
                         partition_expr="my_timestamp_col",
                     ),

@@ -19,7 +19,10 @@ from dagster._check import CheckError
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
@@ -28,7 +31,7 @@ from dagster._core.storage.io_manager import IOManager
 T = TypeVar("T")
 
 
-class PartitionDimension(NamedTuple):
+class TablePartitionDimension(NamedTuple):
     partition_expr: str
     partition: Union[TimeWindow, str]
 
@@ -38,7 +41,7 @@ class TableSlice(NamedTuple):
     schema: str
     database: Optional[str] = None
     columns: Optional[Sequence[str]] = None
-    partition: Optional[Sequence[PartitionDimension]] = None
+    partition: Optional[Sequence[TablePartitionDimension]] = None
 
 
 class DbTypeHandler(ABC, Generic[T]):
@@ -136,9 +139,9 @@ class DbIOManager(IOManager):
     def _get_partition_value(
         self, partition_def: PartitionsDefinition, partition_key: str
     ) -> Union[TimeWindow, str]:
-        try:
+        if isinstance(partition_def, TimeWindowPartitionsDefinition):
             return partition_def.time_window_for_partition_key(partition_key)
-        except (ValueError, AttributeError):
+        else:
             # partition is static
             return partition_key
 
@@ -150,7 +153,7 @@ class DbIOManager(IOManager):
         schema: str
         table: str
         partition_value: Optional[Union[TimeWindow, str]] = None
-        partitions: List[PartitionDimension] = []
+        partitions: List[TablePartitionDimension] = []
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
@@ -195,7 +198,7 @@ class DbIOManager(IOManager):
                                 f" {part.name} partition."
                             )
                         partitions.append(
-                            PartitionDimension(
+                            TablePartitionDimension(
                                 partition_expr=partition_expr_str, partition=partition_value
                             )
                         )
@@ -207,7 +210,7 @@ class DbIOManager(IOManager):
                     )
 
                     partitions.append(
-                        PartitionDimension(
+                        TablePartitionDimension(
                             partition_expr=partition_expr_str, partition=partition_value
                         )
                     )

@@ -6,7 +6,7 @@ from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
-    PartitionDimension,
+    TablePartitionDimension,
     TableSlice,
 )
 from snowflake.connector import ProgrammingError
@@ -205,7 +205,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
         return f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
 
 
-def _time_window_where_clause(table_partition: PartitionDimension) -> str:
+def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
     partition = cast(TimeWindow, table_partition.partition)
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
@@ -215,5 +215,5 @@ def _time_window_where_clause(table_partition: PartitionDimension) -> str:
     return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
 
 
-def _static_where_clause(table_partition: PartitionDimension) -> str:
+def _static_where_clause(table_partition: TablePartitionDimension) -> str:
     return f"""{table_partition.partition_expr} = '{table_partition.partition}'"""
