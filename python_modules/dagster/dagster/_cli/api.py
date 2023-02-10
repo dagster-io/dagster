@@ -499,7 +499,8 @@ def _execute_step_command_body(
     envvar="DAGSTER_GRPC_HOST",
 )
 @click.option(
-    "--max_workers",
+    "--max-workers",
+    "--max_workers",  # for backwards compatibility
     "-n",
     type=click.INT,
     required=False,
