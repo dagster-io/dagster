@@ -91,12 +91,13 @@ You can view the tags that have been attached to runs by going to the Runs page 
 
 Dagster will automatically add tags to your runs in some cases including:
 
-- The op selection for the run, if applicable
-- The partition set and partition of the run, if applicable
-- The schedule that triggered the run, if applicable
-- The backfill ID, if applicable
-- The parent run of a re-executed run
-- The docker image tag
+- `dagster/op_selection` - the op selection for the run, if applicable
+- `dagster/partition` - the partition of the run, if applicable
+- `dagster/schedule` - the schedule that triggered the run, if applicable
+- `dagster/sensor` - the sensor that triggered the run, if applicable
+- `dagster/backfill` - the backfill ID, if applicable
+- `dagster/parent_run_id` - the parent run of a re-executed run
+- `dagster/image` - the docker image tag
 
 ### Using tags to affect run execution
 
