@@ -140,6 +140,18 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
 class SnowflakeDbClient(DbClient):
     @staticmethod
+    def create_schema(context: OutputContext, table_slice: TableSlice) -> None:
+        no_schema_config = (
+            {k: v for k, v in context.resource_config.items() if k != "schema"}
+            if context.resource_config
+            else {}
+        )
+        with SnowflakeConnection(
+            dict(schema=table_slice.schema, **no_schema_config), context.log
+        ).get_connection() as con:
+            con.execute(f"create schema if not exists {table_slice.schema};")
+
+    @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
         no_schema_config = (
             {k: v for k, v in context.resource_config.items() if k != "schema"}

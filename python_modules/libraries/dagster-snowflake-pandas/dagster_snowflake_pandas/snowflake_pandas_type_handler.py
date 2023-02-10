@@ -85,8 +85,6 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
         connector.paramstyle = "pyformat"
         with _connect_snowflake(context, table_slice) as con:
-            con.execute(f"create schema if not exists {table_slice.schema};")
-
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
             with_uppercase_cols = with_uppercase_cols.apply(
                 _convert_timestamp_to_string, axis="index"
