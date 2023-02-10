@@ -1,11 +1,11 @@
 import datetime
 from typing import AbstractSet, FrozenSet, Mapping, NamedTuple, Optional
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 import pendulum
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -113,7 +113,7 @@ class FreshnessPolicy(
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
                     "Invalid schedule timezone '{schedule_timezone}'.   "
-                )
+                ) from e
         return super(FreshnessPolicy, cls).__new__(
             cls,
             maximum_lag_minutes=float(
