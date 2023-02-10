@@ -728,33 +728,24 @@ def test_output_identifier_dynamic_memoization():
 
 
 def test_asset_key():
-    in_asset_key = AssetKey(["a", "b"])
-    out_asset_key = AssetKey(["c", "d"])
-
-    @op(out=Out(asset_key=out_asset_key))
+    @asset
     def before():
         pass
 
-    @op(ins={"a": In(asset_key=in_asset_key)}, out={})
-    def after(a):
-        assert a
+    @asset
+    def after(before):
+        assert before
 
     class MyIOManager(IOManager):
         def load_input(self, context):
-            assert context.asset_key == in_asset_key
-            assert context.upstream_output.asset_key == out_asset_key
+            assert context.asset_key == before.asset_key
+            assert context.upstream_output.asset_key == before.asset_key
             return 1
 
         def handle_output(self, context, obj):
-            assert context.asset_key == out_asset_key
+            assert context.asset_key in {before.asset_key, after.asset_key}
 
-    @graph
-    def my_graph():
-        after(before())
-
-    result = my_graph.to_job(
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())}
-    ).execute_in_process()
+    result = materialize([before, after], resources={"io_manager": MyIOManager()})
     assert result.success
 
 
@@ -864,15 +855,11 @@ def test_context_logging_metadata():
                 keys = tuple(context.upstream_output.get_identifier())
                 return self.values[keys]
 
-        @op(out=Out(asset_key=AssetKey("key_on_out")))
-        def the_op():
+        @asset
+        def key_on_out():
             return 5
 
-        @graph
-        def the_graph():
-            the_op()
-
-        return the_graph.execute_in_process(resources={"io_manager": DummyIOManager()})
+        return materialize([key_on_out], resources={"io_manager": DummyIOManager()})
 
     result = build_for_materialization(AssetMaterialization("no_metadata"))
     assert result.success
@@ -900,7 +887,7 @@ def test_context_logging_metadata():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "When handling output 'result' of op 'the_op', received a materialization with"
+            "When handling output 'result' of op 'key_on_out', received a materialization with"
             " metadata, while context.add_output_metadata was used within the same call to"
             " handle_output. Due to potential conflicts, this is not allowed. Please specify"
             " metadata in one place within the `handle_output` function."
@@ -955,7 +942,7 @@ def test_metadata_dynamic_outputs():
             keys = tuple(context.upstream_output.get_identifier())
             return self.values[keys]
 
-    @op(out=DynamicOut(asset_key=AssetKey(["foo"])))
+    @op(out=DynamicOut())
     def the_op():
         yield DynamicOutput(1, mapping_key="one", metadata={"one": "blah"})
         yield DynamicOutput(2, mapping_key="two", metadata={"two": "blah"})
@@ -964,15 +951,7 @@ def test_metadata_dynamic_outputs():
     def the_graph():
         the_op()
 
-    result = the_graph.execute_in_process(resources={"io_manager": DummyIOManager()})
-    materializations = result.asset_materializations_for_node("the_op")
-    assert len(materializations) == 2
-    for materialization in materializations:
-        assert materialization.metadata_entries[1].label == "handle_output"
-        assert materialization.metadata_entries[1].entry_data.text == "I come from handle_output"
-
-    assert materializations[0].metadata_entries[0].label == "one"
-    assert materializations[1].metadata_entries[0].label == "two"
+    assert the_graph.execute_in_process(resources={"io_manager": DummyIOManager()}).success
 
 
 def test_nothing_output_nothing_input():

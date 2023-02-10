@@ -516,8 +516,8 @@ def test_multi_asset_resources_execution():
 
     @multi_asset(
         outs={
-            "key1": Out(asset_key=AssetKey("key1"), io_manager_key="foo"),
-            "key2": Out(asset_key=AssetKey("key2"), io_manager_key="bar"),
+            "key1": AssetOut(key=AssetKey("key1"), io_manager_key="foo"),
+            "key2": AssetOut(key=AssetKey("key2"), io_manager_key="bar"),
         },
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )

@@ -4,7 +4,6 @@ from typing import Dict, Generator, List, Tuple
 
 import pytest
 from dagster import (
-    AssetKey,
     AssetMaterialization,
     AssetObservation,
     DagsterInvalidDefinitionError,
@@ -20,7 +19,6 @@ from dagster import (
     Out,
     Output,
     build_op_context,
-    fs_io_manager,
     graph,
     job,
     mem_io_manager,
@@ -29,13 +27,6 @@ from dagster import (
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import Int, String
 from dagster._legacy import Materialization
-
-
-def some_fn(a):
-    return a
-
-
-the_lambda = lambda a: a
 
 
 def execute_op_in_graph(an_op, instance=None, resources=None):
@@ -682,31 +673,6 @@ def test_log_metadata_after_dynamic_output():
         ),
     ):
         execute_op_in_graph(the_op)
-
-
-def test_log_metadata_asset_materialization():
-    key = AssetKey(["foo"])
-
-    @op(out=Out(asset_key=key))
-    def the_op(context):
-        context.add_output_metadata({"bar": "baz"})
-        return 5
-
-    result = execute_op_in_graph(the_op, resources={"io_manager": fs_io_manager})
-    materialization = result.asset_materializations_for_node("the_op")[0]
-    assert len(materialization.metadata_entries) == 2
-    assert materialization.metadata_entries[0].label == "bar"
-    assert materialization.metadata_entries[0].entry_data.text == "baz"
-
-
-def test_implicit_op_output_with_asset_key():
-    @op(out=Out(asset_key=AssetKey("my_dataset")))
-    def my_constant_asset_op():
-        return 5
-
-    result = execute_op_in_graph(my_constant_asset_op)
-    assert result.success
-    assert len(result.asset_materializations_for_node(my_constant_asset_op.name)) == 1
 
 
 def test_args_kwargs_op():

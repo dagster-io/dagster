@@ -189,38 +189,6 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'alp_a'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'asset_lineage_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'alp_a'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'alp_b'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'asset_lineage_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'alp_b'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
                     'name': 'always_succeed'
                 },
                 'invocations': [
@@ -1242,14 +1210,6 @@ snapshots['test_query_all_solids 1'] = {
                 'invocations': [
                     {
                         'pipeline': {
-                            'name': 'asset_lineage_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'noop_solid'
-                        }
-                    },
-                    {
-                        'pipeline': {
                             'name': 'config_with_map'
                         },
                         'solidHandle': {
@@ -1267,14 +1227,6 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': 'noop_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'noop_solid'
-                        }
-                    },
-                    {
-                        'pipeline': {
-                            'name': 'partitioned_asset_lineage_pipeline'
                         },
                         'solidHandle': {
                             'handleID': 'noop_solid'
@@ -1382,38 +1334,6 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'op_with_2_ins'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'palp_a'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'partitioned_asset_lineage_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'palp_a'
-                        }
-                    }
-                ]
-            },
-            {
-                '__typename': 'UsedSolid',
-                'definition': {
-                    'name': 'palp_b'
-                },
-                'invocations': [
-                    {
-                        'pipeline': {
-                            'name': 'partitioned_asset_lineage_pipeline'
-                        },
-                        'solidHandle': {
-                            'handleID': 'palp_b'
                         }
                     }
                 ]

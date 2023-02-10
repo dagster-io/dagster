@@ -896,12 +896,11 @@ class DagsterEvent(
     def asset_materialization(
         step_context: IStepContext,
         materialization: Union[AssetMaterialization, Materialization],
-        asset_lineage: Optional[Sequence[AssetLineageInfo]] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
             step_context=step_context,
-            event_specific_data=StepMaterializationData(materialization, asset_lineage),
+            event_specific_data=StepMaterializationData(materialization),
             message=materialization.description
             if materialization.description
             else "Materialized value{label_clause}.".format(

@@ -383,73 +383,6 @@ def asset_key_to_dep_node_handles(
     return dep_node_set_by_asset_key, dep_node_outputs_by_asset_key
 
 
-def _asset_mappings_for_node(
-    node_def: NodeDefinition, node_handle: Optional[NodeHandle]
-) -> Tuple[
-    Mapping[NodeInputHandle, AssetKey],
-    Mapping[NodeOutputHandle, AssetOutputInfo],
-    Mapping[AssetKey, AbstractSet[AssetKey]],
-    Mapping[AssetKey, str],
-]:
-    """
-    Recursively iterate through all the sub-nodes of a Node to find any ops with asset info
-    encoded on their inputs/outputs.
-    """
-    check.inst_param(node_def, "node_def", NodeDefinition)
-    check.opt_inst_param(node_handle, "node_handle", NodeHandle)
-
-    asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
-    asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
-    asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
-    io_manager_by_asset: Dict[AssetKey, str] = {}
-    if not isinstance(node_def, GraphDefinition):
-        # must be in an op (or solid)
-        if node_handle is None:
-            check.failed("Must have node_handle for non-graph NodeDefinition")
-
-        input_asset_keys: Set[AssetKey] = set()
-
-        for input_def in node_def.input_defs:
-            input_key = input_def.hardcoded_asset_key
-            if input_key:
-                input_asset_keys.add(input_key)
-                input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_def.name)
-                asset_key_by_input[input_handle] = input_key
-
-        for output_def in node_def.output_defs:
-            output_key = output_def.hardcoded_asset_key
-            if output_key:
-                output_handle = NodeOutputHandle(node_handle, output_def.name)
-                asset_info_by_output[output_handle] = AssetOutputInfo(
-                    key=output_key,
-                    partitions_fn=output_def.get_asset_partitions,
-                    partitions_def=output_def.asset_partitions_def,
-                    code_version=output_def.code_version,
-                )
-                # assume output depends on all inputs
-                asset_deps[output_key] = input_asset_keys
-
-                io_manager_by_asset[output_key] = output_def.io_manager_key
-    else:
-        # keep recursing through structure
-        for sub_node_name, sub_node in node_def.node_dict.items():
-            (
-                n_asset_key_by_input,
-                n_asset_info_by_output,
-                n_asset_deps,
-                n_io_manager_by_asset,
-            ) = _asset_mappings_for_node(
-                node_def=sub_node.definition,
-                node_handle=NodeHandle(sub_node_name, parent=node_handle),
-            )
-            asset_key_by_input.update(n_asset_key_by_input)
-            asset_info_by_output.update(n_asset_info_by_output)
-            asset_deps.update(n_asset_deps)
-            io_manager_by_asset.update(n_io_manager_by_asset)
-
-    return asset_key_by_input, asset_info_by_output, asset_deps, io_manager_by_asset
-
-
 class AssetLayer:
     """
     Stores all of the asset-related information for a Dagster job / pipeline. Maps each
@@ -551,20 +484,6 @@ class AssetLayer:
         )
 
         self._partition_mappings_by_asset_dep = partition_mappings_by_asset_dep or {}
-
-    @staticmethod
-    def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
-        """Legacy: scrape asset info off of InputDefinition/OutputDefinition instances."""
-        check.inst_param(graph_def, "graph_def", GraphDefinition)
-        asset_by_input, asset_by_output, asset_deps, io_manager_by_asset = _asset_mappings_for_node(
-            graph_def, None
-        )
-        return AssetLayer(
-            asset_keys_by_node_input_handle=asset_by_input,
-            asset_info_by_node_output_handle=asset_by_output,
-            asset_deps=asset_deps,
-            io_manager_keys_by_asset_key=io_manager_by_asset,
-        )
 
     @staticmethod
     def from_graph_and_assets_node_mapping(

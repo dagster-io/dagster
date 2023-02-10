@@ -1,8 +1,8 @@
 from dagster import (
     AssetKey,
+    AssetOut,
     DagsterEventType,
     EventRecordsFilter,
-    Out,
     Output,
     asset,
     job,
@@ -64,8 +64,8 @@ def test_non_assets_job_no_register_event():
 def test_multi_asset_asset_materialization_planned_events():
     @multi_asset(
         outs={
-            "my_out_name": Out(asset_key=AssetKey("my_asset_name")),
-            "my_other_out_name": Out(asset_key=AssetKey("my_other_asset")),
+            "my_out_name": AssetOut(key=AssetKey("my_asset_name")),
+            "my_other_out_name": AssetOut(key=AssetKey("my_other_asset")),
         }
     )
     def my_asset():
