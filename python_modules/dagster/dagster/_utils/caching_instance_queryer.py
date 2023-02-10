@@ -112,7 +112,6 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     AssetKeyPartitionKey(asset_key=asset_key)
                 ] = last_materialization_record.storage_id
 
-
         # fill in the cache for partitioned assets
         self._asset_partition_count_cache[after_cursor] = dict(
             self._instance.get_materialization_count_by_partition(
@@ -250,9 +249,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             else:
                 return None
         elif asset_partition in self._no_materializations_after_cursor_cache:
-            if (
-                (after_cursor or 0) >= self._no_materializations_after_cursor_cache[asset_partition]
-            ):
+            if (after_cursor or 0) >= self._no_materializations_after_cursor_cache[asset_partition]:
                 return None
 
         record = self._get_materialization_record(

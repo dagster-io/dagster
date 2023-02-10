@@ -28,7 +28,6 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._utils.cached_method import cached_method
 
 from .asset_selection import AssetGraph, AssetSelection
 from .decorators.sensor_decorator import sensor
@@ -313,7 +312,6 @@ def find_never_materialized_or_requested_root_asset_partitions(
     )
 
 
-@cached_method
 def allowable_time_window_for_partitions_def(
     partitions_def: TimeWindowPartitionsDefinition,
 ) -> Optional[TimeWindow]:
