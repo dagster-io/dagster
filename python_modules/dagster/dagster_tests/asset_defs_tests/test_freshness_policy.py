@@ -1,3 +1,5 @@
+from dagster._check import ParameterCheckError
+from dagster._core.errors import DagsterInvalidDefinitionError
 import pytest
 from dagster import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -75,6 +77,41 @@ from dagster._seven.compat.pendulum import create_pendulum_time
             # have data from 1:15, so we're 45 minutes late
             45,
         ),
+        # timezone tests
+        (
+            FreshnessPolicy(
+                cron_schedule="0 3 * * *",
+                schedule_timezone="America/Los_Angeles",
+                maximum_lag_minutes=60,
+            ),
+            create_pendulum_time(2022, 1, 1, 1, 0, tz="America/Los_Angeles"),
+            create_pendulum_time(2022, 1, 1, 3, 15, tz="America/Los_Angeles"),
+            # only have data up to 1AM in this timezone, but we need up to 2AM, so we're 1hr late
+            60,
+        ),
+        (
+            # same as above, but specifying the input to the function in UTC
+            FreshnessPolicy(
+                cron_schedule="0 3 * * *",
+                schedule_timezone="America/Los_Angeles",
+                maximum_lag_minutes=60,
+            ),
+            create_pendulum_time(2022, 1, 1, 1, 0, tz="America/Los_Angeles").in_tz("UTC"),
+            create_pendulum_time(2022, 1, 1, 3, 15, tz="America/Los_Angeles").in_tz("UTC"),
+            # only have data up to 1AM in this timezone, but we need up to 2AM, so we're 1hr late
+            60,
+        ),
+        (
+            FreshnessPolicy(
+                cron_schedule="0 3 * * *",
+                schedule_timezone="America/Los_Angeles",
+                maximum_lag_minutes=60,
+            ),
+            create_pendulum_time(2022, 1, 1, 0, 0, tz="America/Los_Angeles"),
+            create_pendulum_time(2022, 1, 1, 2, 15, tz="America/Los_Angeles"),
+            # it's not yet 3AM in this timezone, so we're not late
+            0,
+        ),
     ],
 )
 def test_policies_available_equals_evaluation_time(
@@ -91,3 +128,16 @@ def test_policies_available_equals_evaluation_time(
     )
 
     assert minutes_late == expected_minutes_late
+
+
+def test_invalid_freshness_policies():
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid cron schedule"):
+        FreshnessPolicy(cron_schedule="xyz-123-bad-schedule", maximum_lag_minutes=60)
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid schedule timezone"):
+        FreshnessPolicy(
+            cron_schedule="0 1 * * *", maximum_lag_minutes=60, schedule_timezone="Not/ATimezone"
+        )
+
+    with pytest.raises(ParameterCheckError, match="without a cron_schedule"):
+        FreshnessPolicy(maximum_lag_minutes=0, schedule_timezone="America/Los_Angeles")

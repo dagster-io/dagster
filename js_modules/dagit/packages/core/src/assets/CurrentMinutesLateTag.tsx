@@ -76,9 +76,9 @@ export const freshnessPolicyDescription = (
     return '';
   }
 
-  const {cronSchedule, maximumLagMinutes} = freshnessPolicy;
+  const {cronSchedule, maximumLagMinutes, scheduleTimezone} = freshnessPolicy;
   const nbsp = '\xa0';
-  const cronDesc = cronSchedule ? humanCronString(cronSchedule, 'UTC').replace(/^At /, '') : '';
+  const cronDesc = cronSchedule ? humanCronString(cronSchedule, scheduleTimezone ? scheduleTimezone : 'UTC').replace(/^At /, '') : '';
   const lagDesc =
     maximumLagMinutes % 30 === 0
       ? `${maximumLagMinutes / 60} hour${maximumLagMinutes / 60 !== 1 ? 's' : ''}`
