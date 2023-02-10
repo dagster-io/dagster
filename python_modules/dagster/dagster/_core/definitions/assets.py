@@ -1104,14 +1104,13 @@ def _build_invocation_context_with_included_resources(
     all_resources = merge_dicts(resource_defs, invocation_resources)
 
     if isinstance(context, UnboundOpExecutionContext):
-        # pylint: disable=protected-access
         return build_op_context(
             resources=all_resources,
             config=context.op_config,
-            resources_config=context._resources_config,
-            instance=context._instance,
-            partition_key=context._partition_key,
-            mapping_key=context._mapping_key,
+            resources_config=context._resources_config,  # noqa: SLF001
+            instance=context._instance,  # noqa: SLF001
+            partition_key=context._partition_key,  # noqa: SLF001
+            mapping_key=context._mapping_key,  # noqa: SLF001
         )
     else:
         # If user is mocking OpExecutionContext, send it through (we don't know

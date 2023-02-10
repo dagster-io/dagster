@@ -256,8 +256,8 @@ def test_storage_download_url_fallback(gcs_bucket):
         time_str = pendulum.now("UTC").strftime("%Y_%m_%d__%H_%M_%S")
         log_key = ["arbitrary", "log", "key", time_str]
 
-        orig_blob_fn = manager._bucket.blob
-        with mock.patch.object(manager._bucket, "blob") as blob_fn:
+        orig_blob_fn = manager._bucket.blob  # noqa: SLF001
+        with mock.patch.object(manager._bucket, "blob") as blob_fn:  # noqa: SLF001
 
             def _return_mocked_blob(*args, **kwargs):
                 blob = orig_blob_fn(*args, **kwargs)

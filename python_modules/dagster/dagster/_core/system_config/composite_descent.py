@@ -84,7 +84,7 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
             pipeline_def,
             solids_config,
             resource_defs,
-            pipeline_def.is_job,  # pylint: disable=protected-access
+            pipeline_def.is_job,
         )
 
     return {
@@ -93,7 +93,7 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
             parent_stack=DescentStack(pipeline_def, None),
             solids_config_dict=solids_config,
             resource_defs=resource_defs,
-            is_using_graph_job_op_apis=pipeline_def.is_job,  # pylint: disable=protected-access
+            is_using_graph_job_op_apis=pipeline_def.is_job,
             asset_layer=pipeline_def.asset_layer,
         )
     }

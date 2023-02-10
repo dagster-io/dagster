@@ -55,17 +55,16 @@ class TestPostgresRunStorage(TestRunStorage):
                 hostname=hostname
             )
 
-            # pylint: disable=protected-access
             with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
                 with instance_for_test(
                     overrides=yaml.safe_load(explicit_cfg)
                 ) as from_explicit_instance:
                     assert (
-                        from_url_instance._run_storage.postgres_url
-                        == from_explicit_instance._run_storage.postgres_url
+                        from_url_instance._run_storage.postgres_url  # noqa: SLF001
+                        == from_explicit_instance._run_storage.postgres_url  # noqa: SLF001
                     )
                 with instance_for_test(overrides=yaml.safe_load(env_cfg)) as from_env_instance:
                     assert (
-                        from_url_instance._run_storage.postgres_url
-                        == from_env_instance._run_storage.postgres_url
+                        from_url_instance._run_storage.postgres_url  # noqa: SLF001
+                        == from_env_instance._run_storage.postgres_url  # noqa: SLF001
                     )

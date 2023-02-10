@@ -140,10 +140,7 @@ def test_celery_queue_inherit_config_source(
         ),
     ]
 
-    assert (
-        dagster_container_spec.liveness_probe._exec.command  # pylint: disable=protected-access
-        == liveness_command
-    )
+    assert dagster_container_spec.liveness_probe._exec.command == liveness_command  # noqa: SLF001
 
     extra_queue_container_spec = celery_queue_deployments[1].spec.template.spec.containers[0]
     assert extra_queue_container_spec.command == ["dagster-celery"]
@@ -159,8 +156,7 @@ def test_celery_queue_inherit_config_source(
     ]
 
     assert (
-        extra_queue_container_spec.liveness_probe._exec.command  # pylint: disable=protected-access
-        == liveness_command
+        extra_queue_container_spec.liveness_probe._exec.command == liveness_command  # noqa: SLF001
     )
 
     dagster_celery = yaml.full_load(celery_queue_configmaps[0].data["celery.yaml"])

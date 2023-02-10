@@ -19,7 +19,7 @@ def test_url(client):
 @pytest.mark.parametrize("method", ["status", "poll", "kill", "cli_args"])
 def test_default_request(client, method):
     expected = {"jsonrpc": client.jsonrpc_version, "method": method, "params": {}}
-    resp = client._default_request(method=method)  # pylint: disable=protected-access
+    resp = client._default_request(method=method)  # noqa: SLF001
     assert resp["jsonrpc"] == expected["jsonrpc"]
     assert resp["method"] == expected["method"]
     assert resp["params"] == expected["params"]
@@ -31,7 +31,7 @@ def test_format_params(client):
         "select": "snapshot_1 snapshot_2 snapshot_3",
         "exclude": "model_4+",
     }
-    data = client._format_params(  # pylint: disable=protected-access
+    data = client._format_params(  # noqa: SLF001
         dict(
             models=["@model_1", "+model_2+", "model_3+", "model_3+"],
             select=["snapshot_1", "snapshot_2", "snapshot_3"],

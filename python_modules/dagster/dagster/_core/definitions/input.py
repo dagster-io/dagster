@@ -537,11 +537,11 @@ class In(
         return In(
             dagster_type=input_def.dagster_type,
             description=input_def.description,
-            default_value=input_def._default_value,  # pylint: disable=protected-access
+            default_value=input_def._default_value,  # noqa: SLF001
             root_manager_key=input_def.root_manager_key,
             metadata=input_def.metadata,
-            asset_key=input_def._asset_key,  # pylint: disable=protected-access
-            asset_partitions=input_def._asset_partitions_fn,  # pylint: disable=protected-access
+            asset_key=input_def._asset_key,  # noqa: SLF001
+            asset_partitions=input_def._asset_partitions_fn,  # noqa: SLF001
             input_manager_key=input_def.input_manager_key,
         )
 

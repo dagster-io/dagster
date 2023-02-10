@@ -340,7 +340,7 @@ class Manager:
             )
 
         # pass output value cross process boundary using io manager
-        step_context = self.context._step_context  # pylint: disable=protected-access
+        step_context = self.context._step_context  # noqa: SLF001
         # Note: yield_result currently does not support DynamicOutput
 
         # dagstermill assets do not support yielding additional results within the notebook:
@@ -407,7 +407,7 @@ class Manager:
         dm_context = check.not_none(self.context)
         if not isinstance(dm_context, DagstermillRuntimeExecutionContext):
             check.failed("Expected DagstermillRuntimeExecutionContext")
-        step_context = dm_context.step_context  # pylint: disable=protected-access
+        step_context = dm_context.step_context
         step_input = step_context.step.step_input_named(input_name)
         input_def = step_context.op_def.input_def_named(input_name)
         for event_or_input_value in step_input.source.load_input_object(step_context, input_def):

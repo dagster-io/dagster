@@ -54,9 +54,9 @@ def cleanup_memoized_results(pipeline_def, mode_str, instance, run_config):
                 name=step_output_handle.output_name,
                 version=version,
             )
-            # pylint: disable=protected-access
-            key = io_manager._get_path(output_context)
-            io_manager._rm_object(key)
+
+            key = io_manager._get_path(output_context)  # noqa: SLF001
+            io_manager._rm_object(key)  # noqa: SLF001
 
 
 def get_test_repo_path():
@@ -222,7 +222,7 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
     ):
         self._container_image = container_image
         super(ReOriginatedExternalScheduleForTest, self).__init__(
-            external_schedule._external_schedule_data,
+            external_schedule._external_schedule_data,  # noqa: SLF001
             external_schedule.handle.repository_handle,
         )
 

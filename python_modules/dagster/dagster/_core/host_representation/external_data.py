@@ -1383,8 +1383,8 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
         pipeline_name=schedule_def.job_name,
-        solid_selection=schedule_def._target.solid_selection,  # pylint: disable=protected-access
-        mode=schedule_def._target.mode,  # pylint: disable=protected-access
+        solid_selection=schedule_def._target.solid_selection,  # noqa: SLF001
+        mode=schedule_def._target.mode,  # noqa: SLF001
         environment_vars=schedule_def.environment_vars,
         partition_set_name=schedule_def.get_partition_set().name
         if isinstance(schedule_def, PartitionScheduleDefinition)
@@ -1480,7 +1480,7 @@ def external_partition_set_data_from_def(
 ) -> ExternalPartitionSetData:
     check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
 
-    partitions_def = partition_set_def._partitions_def  # pylint: disable=protected-access
+    partitions_def = partition_set_def._partitions_def  # noqa: SLF001
 
     partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None
     if isinstance(partitions_def, TimeWindowPartitionsDefinition):

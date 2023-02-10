@@ -1092,7 +1092,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
 
                 if (
                     runs_yielded
-                    and not multi_asset_sensor_context._cursor_has_been_updated  # pylint: disable=protected-access
+                    and not multi_asset_sensor_context._cursor_has_been_updated  # pylint: disable=protected-access  # noqa: SLF001
                 ):
                     raise DagsterInvalidDefinitionError(
                         "Asset materializations have been handled in this sensor, but the cursor"

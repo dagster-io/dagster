@@ -112,5 +112,5 @@ def cleanup_test_instance(instance: DagsterInstance) -> None:
     # that might be accessing the run history DB.
 
     # Since launcher is lazy loaded, we don't need to do anyting if it's None
-    if instance._run_launcher:  # pylint: disable=protected-access
-        instance._run_launcher.join()  # pylint: disable=protected-access
+    if instance._run_launcher:  # noqa: SLF001
+        instance._run_launcher.join()  # noqa: SLF001

@@ -125,7 +125,7 @@ def load_assets_from_airflow_dag(
         )
 
     job = make_dagster_job_from_airflow_dag(dag, connections=connections)
-    graph = job._graph_def
+    graph = job._graph_def  # noqa: SLF001
     start_date = dag.start_date if dag.start_date else dag.default_args.get("start_date")
     if start_date is None:
         raise DagsterAirflowError("Invalid start_date: {} in DAG {}".format(start_date, dag.dag_id))

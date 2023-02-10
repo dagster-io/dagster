@@ -2234,10 +2234,11 @@ def test_status_in_code_schedule(instance, executor):
         # Now try with an error workspace - the job state should not be deleted
         # since its associated with an errored out location
         with pendulum.test(freeze_datetime):
-            # pylint: disable=protected-access
-            workspace_context._location_entry_dict[
+            workspace_context._location_entry_dict[  # noqa: SLF001
                 "test_location"
-            ] = workspace_context._location_entry_dict["test_location"]._replace(
+            ] = workspace_context._location_entry_dict[  # noqa: SLF001
+                "test_location"
+            ]._replace(
                 repository_location=None,
                 load_error=SerializableErrorInfo("error", [], "error"),
             )

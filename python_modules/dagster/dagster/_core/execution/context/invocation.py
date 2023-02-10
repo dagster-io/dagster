@@ -471,7 +471,10 @@ class BoundOpExecutionContext(OpExecutionContext):
     def for_type(self, dagster_type: DagsterType) -> TypeCheckContext:
         resources = cast(NamedTuple, self.resources)
         return TypeCheckContext(
-            self.run_id, self.log, ScopedResourcesBuilder(resources._asdict()), dagster_type
+            self.run_id,
+            self.log,
+            ScopedResourcesBuilder(resources._asdict()),
+            dagster_type,
         )
 
     def get_mapping_key(self) -> Optional[str]:

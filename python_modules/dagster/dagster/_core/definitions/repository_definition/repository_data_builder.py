@@ -284,12 +284,16 @@ def build_caching_repository_data_from_list(
 
     if default_executor_def:
         for name, job_def in jobs.items():
-            if not job_def._executor_def_specified:  # pylint: disable=protected-access
+            if (
+                not job_def._executor_def_specified  # noqa: SLF001
+            ):  # pylint: disable=protected-access
                 jobs[name] = job_def.with_executor_def(default_executor_def)
 
     if default_logger_defs:
         for name, job_def in jobs.items():
-            if not job_def._logger_defs_specified:  # pylint: disable=protected-access
+            if (
+                not job_def._logger_defs_specified  # noqa: SLF001
+            ):  # pylint: disable=protected-access
                 jobs[name] = job_def.with_logger_defs(default_logger_defs)
 
     top_level_resources = top_level_resources or {}

@@ -148,7 +148,7 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
             run_id,
         ]
     )
-    io_manager._rm_object(recursive_path)  # pylint: disable=protected-access
+    io_manager._rm_object(recursive_path)  # noqa: SLF001
 
 
 @pytest.mark.nettest

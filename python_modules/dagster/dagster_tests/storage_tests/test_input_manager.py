@@ -409,10 +409,7 @@ def test_input_manager_with_assets():
         resources={"special_io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
 
-    assert (
-        output._get_output_for_handle("downstream", "result")  # pylint: disable=protected-access
-        == 3
-    )
+    assert output._get_output_for_handle("downstream", "result") == 3  # noqa: SLF001
 
 
 def test_input_manager_with_assets_no_default_io_manager():

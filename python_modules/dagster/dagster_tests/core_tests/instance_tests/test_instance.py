@@ -116,25 +116,20 @@ def test_unified_storage_env_var(tmpdir):
                 }
             }
         ) as instance:
-            assert (
-                _runs_directory(str(tmpdir))
-                in instance.run_storage._conn_string  # pylint: disable=protected-access
-            )
+            assert _runs_directory(str(tmpdir)) in instance.run_storage._conn_string  # noqa: SLF001
             assert (
                 _event_logs_directory(str(tmpdir))
-                == instance.event_log_storage._base_dir + "/"  # pylint: disable=protected-access
+                == instance.event_log_storage._base_dir + "/"  # noqa: SLF001
             )
             assert (
                 _schedule_directory(str(tmpdir))
-                in instance.schedule_storage._conn_string  # pylint: disable=protected-access
+                in instance.schedule_storage._conn_string  # noqa: SLF001
             )
 
 
 def test_custom_secrets_manager():
     with instance_for_test() as instance:
-        assert isinstance(
-            instance._secrets_loader, EnvFileLoader  # pylint:disable=protected-access
-        )
+        assert isinstance(instance._secrets_loader, EnvFileLoader)  # noqa: SLF001
 
     with instance_for_test(
         overrides={
@@ -147,12 +142,8 @@ def test_custom_secrets_manager():
             }
         }
     ) as instance:
-        assert isinstance(
-            instance._secrets_loader, TestSecretsLoader  # pylint:disable=protected-access
-        )
-        assert instance._secrets_loader.env_vars == {  # pylint:disable=protected-access
-            "FOO": "BAR"
-        }
+        assert isinstance(instance._secrets_loader, TestSecretsLoader)  # noqa: SLF001
+        assert instance._secrets_loader.env_vars == {"FOO": "BAR"}  # noqa: SLF001
 
 
 def test_in_memory_persist_one_run():

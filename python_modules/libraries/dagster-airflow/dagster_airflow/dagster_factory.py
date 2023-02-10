@@ -117,12 +117,12 @@ def make_dagster_definitions_from_airflow_dags_path(
         resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]
         == "AirflowEphemeralDatabase"
     ):
-        AirflowEphemeralDatabase._initialize_database(connections=connections)
+        AirflowEphemeralDatabase._initialize_database(connections=connections)  # noqa: SLF001
     elif (
         resource_defs["airflow_db"].resource_fn.__qualname__.split(".")[0]
         == "AirflowPersistentDatabase"
     ):
-        AirflowPersistentDatabase._initialize_database(
+        AirflowPersistentDatabase._initialize_database(  # noqa: SLF001
             uri=os.getenv("AIRFLOW__DATABASE__SQL_ALCHEMY_CONN", "")
             if is_airflow_2_loaded_in_environment()
             else os.getenv("AIRFLOW__CORE__SQL_ALCHEMY_CONN", ""),

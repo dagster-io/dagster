@@ -254,7 +254,7 @@ def test_recovery(aws_env):
 
             time.sleep(3)
 
-            instance.run_launcher._get_container(  # pylint:disable=protected-access
+            instance.run_launcher._get_container(  # noqa: SLF001
                 instance.get_run_by_id(run.run_id)
             ).stop()
             instance.resume_run(run.run_id, workspace, attempt_number=1)

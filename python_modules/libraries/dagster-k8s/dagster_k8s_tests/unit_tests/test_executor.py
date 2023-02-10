@@ -222,9 +222,11 @@ def test_executor_init(k8s_run_launcher_instance):
     )
 
     # env vars from both launcher and the executor
-    # pylint: disable=protected-access
+
     assert sorted(
-        executor._step_handler._get_container_context(step_handler_context).env_vars
+        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
+            step_handler_context
+        ).env_vars
     ) == sorted(
         [
             "FOO_TEST",
@@ -233,11 +235,15 @@ def test_executor_init(k8s_run_launcher_instance):
     )
 
     assert sorted(
-        executor._step_handler._get_container_context(step_handler_context).resources
+        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
+            step_handler_context
+        ).resources
     ) == sorted(resources)
 
     assert (
-        executor._step_handler._get_container_context(step_handler_context).scheduler_name
+        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
+            step_handler_context
+        ).scheduler_name
         == "my-scheduler"
     )
 
@@ -265,9 +271,11 @@ def test_executor_init_container_context(
     )
 
     # env vars from both launcher and the executor
-    # pylint: disable=protected-access
+
     assert sorted(
-        executor._step_handler._get_container_context(step_handler_context).env_vars
+        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
+            step_handler_context
+        ).env_vars
     ) == sorted(
         [
             "BAR_TEST",
@@ -275,15 +283,19 @@ def test_executor_init_container_context(
             "BAZ_TEST",
         ]
     )
-    assert executor._max_concurrent == 4
+    assert executor._max_concurrent == 4  # noqa: SLF001
     assert sorted(
-        executor._step_handler._get_container_context(step_handler_context).resources
+        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
+            step_handler_context
+        ).resources
     ) == sorted(
         python_origin_with_container_context.repository_origin.container_context["k8s"]["resources"]
     )
 
     assert (
-        executor._step_handler._get_container_context(step_handler_context).scheduler_name
+        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001
+            step_handler_context
+        ).scheduler_name
         == "my-other-scheduler"
     )
 
@@ -527,7 +539,9 @@ def test_step_raw_k8s_config_inheritance(
         executor=executor,
     )
 
-    container_context = executor._step_handler._get_container_context(step_handler_context)
+    container_context = executor._step_handler._get_container_context(  # noqa: SLF001
+        step_handler_context
+    )
 
     raw_k8s_config = container_context.get_run_user_defined_k8s_config()
 

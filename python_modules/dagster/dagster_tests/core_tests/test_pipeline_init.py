@@ -106,7 +106,7 @@ def test_clean_event_generator_exit():
     next(generator)
     generator.close()
 
-    generator = PlanExecutionContextManager(  # pylint: disable=protected-access
+    generator = PlanExecutionContextManager(
         pipeline=InMemoryPipeline(pipeline_def),
         execution_plan=execution_plan,
         run_config={},
