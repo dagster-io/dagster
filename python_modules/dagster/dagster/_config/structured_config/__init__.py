@@ -414,7 +414,11 @@ class Resource(
                 check.inst(
                     context,
                     InitResourceContextWithKeyMapping,
-                    "ConfiguredResource should only be used with InitResourceContextWithKeyMapping",
+                    (
+                        "This ConfiguredResource contains unresolved partially-specified nested"
+                        " resources, and so can only be initialized using a"
+                        " InitResourceContextWithKeyMapping"
+                    ),
                 ),
             )
             partial_resources_to_update = {
