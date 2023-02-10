@@ -1,0 +1,3 @@
+locations:
+  toys:
+    python_file: repo.py
