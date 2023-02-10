@@ -18,8 +18,8 @@ def my_asset():
 class MyResource(Resource):
     """my description"""
 
-    a_string: str = "baz"
     a_bool: bool
+    a_string: str = "baz"
     an_unset_string: str = "defaulted"
 
 
