@@ -17,7 +17,10 @@ from typing import (
 import dagster._check as check
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.multi_dimensional_partitions import (
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+)
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
@@ -181,14 +184,16 @@ class DbIOManager(IOManager):
                     )
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
-                    multi_partition_key_mapping = context.asset_partition_key.keys_by_dimension
+                    multi_partition_key_mapping = cast(
+                        MultiPartitionKey, context.asset_partition_key
+                    ).keys_by_dimension
                     for part in context.asset_partitions_def.partitions_defs:
-                        partition_key = multi_partition_key_mapping.get(part.name)
+                        partition_key = multi_partition_key_mapping[part.name]
                         partition_value = self._get_partition_value(
                             part.partitions_def, partition_key
                         )
 
-                        partition_expr_str = cast(Mapping[str, str], partition_expr.get(part.name))
+                        partition_expr_str = cast(Mapping[str, str], partition_expr).get(part.name)
                         if partition_expr is None:
                             raise ValueError(
                                 f"Asset '{context.asset_key}' has partition {part.name}, but the"
@@ -199,7 +204,8 @@ class DbIOManager(IOManager):
                             )
                         partitions.append(
                             TablePartitionDimension(
-                                partition_expr=partition_expr_str, partition=partition_value
+                                partition_expr=cast(str, partition_expr_str),
+                                partition=partition_value,
                             )
                         )
                 else:
