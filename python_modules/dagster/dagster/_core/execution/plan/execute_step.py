@@ -1,3 +1,4 @@
+import functools
 import inspect
 import warnings
 from collections import defaultdict
@@ -66,7 +67,7 @@ from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandl
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
 from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
-from dagster._utils import ensure_gen, iterate_with_context
+from dagster._utils import ensure_gen, iterate_with_context, sha256_digest_from_str
 from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
 from dagster._utils.timing import time_execution_scope
 
@@ -566,11 +567,18 @@ def _get_output_asset_materializations(
             )
 
 
+@functools.lru_cache
+def build_default_code_version(run_id: str) -> str:
+    return sha256_digest_from_str(run_id)
+
+
 def _build_logical_version_tags(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Dict[str, str]:
     asset_layer = step_context.pipeline_def.asset_layer
-    code_version = asset_layer.code_version_for_asset(asset_key) or step_context.pipeline_run.run_id
+    code_version = asset_layer.code_version_for_asset(asset_key) or build_default_code_version(
+        step_context.pipeline_run.run_id
+    )
     input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
     tags: Dict[str, str] = {}
     tags[CODE_VERSION_TAG_KEY] = code_version

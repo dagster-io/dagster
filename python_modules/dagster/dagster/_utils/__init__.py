@@ -17,6 +17,7 @@ import threading
 from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
+from hashlib import sha256
 from signal import Signals
 from typing import (
     TYPE_CHECKING,
@@ -736,3 +737,8 @@ def iter_to_list(iterable: Iterable[T]) -> List[T]:
     if isinstance(iterable, List):
         return iterable
     return list(iterable)
+
+def sha256_digest_from_str(string: str) -> str:
+    hash_sig = sha256()
+    hash_sig.update(bytearray(string, "utf8"))
+    return hash_sig.hexdigest()
