@@ -21,7 +21,7 @@ from dagster import (
             ),
         }
     ),
-    metadata={"partition_expr": {"species": "SPECIES", "date": "DATE"}},
+    metadata={"partition_expr": {"date": "TO_TIMESTAMP(time::INT)", "species": "SPECIES"}},
 )
 def iris_dataset_partitioned(context) -> pd.DataFrame:
     partition = partition = context.partition_key.keys_by_dimension
@@ -29,8 +29,8 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     date = partition["date"]
 
     # get_iris_data_for_date fetches all of the iris data for a given date,
-    # the returned dataframe contains a column named 'date' with date data in the
-    # form YYYY-MM-DD
+    # the returned dataframe contains a column named 'time' with that stores
+    # the time of the row as an integer of seconds since epoch
     full_df = get_iris_data_for_date(date)
 
     return full_df[full_df["Species"] == species]
