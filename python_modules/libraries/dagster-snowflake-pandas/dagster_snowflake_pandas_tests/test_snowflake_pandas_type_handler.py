@@ -3,7 +3,7 @@ import os
 import uuid
 from contextlib import contextmanager
 from typing import Iterator
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pandas
 import pytest
@@ -69,35 +69,37 @@ def temporary_snowflake_table(schema_name: str, db_name: str, column_str: str) -
 
 
 def test_handle_output():
-    with patch("dagster_snowflake_pandas.snowflake_pandas_type_handler._connect_snowflake"):
-        handler = SnowflakePandasTypeHandler()
-        df = DataFrame([{"col1": "a", "col2": 1}])
-        output_context = build_output_context(resource_config=resource_config)
+    handler = SnowflakePandasTypeHandler()
+    connection = MagicMock()
+    df = DataFrame([{"col1": "a", "col2": 1}])
+    output_context = build_output_context(resource_config=resource_config)
 
-        metadata = handler.handle_output(
-            output_context,
-            TableSlice(
-                table="my_table",
-                schema="my_schema",
-                database="my_db",
-                columns=None,
-                partition_dimensions=[],
-            ),
-            df,
-        )
+    metadata = handler.handle_output(
+        output_context,
+        TableSlice(
+            table="my_table",
+            schema="my_schema",
+            database="my_db",
+            columns=None,
+            partition_dimensions=[],
+        ),
+        df,
+        connection
+    )
 
-        assert metadata == {
-            "dataframe_columns": MetadataValue.table_schema(
-                TableSchema(columns=[TableColumn("col1", "object"), TableColumn("col2", "int64")])
-            ),
-            "row_count": 1,
-        }
+    assert metadata == {
+        "dataframe_columns": MetadataValue.table_schema(
+            TableSchema(columns=[TableColumn("col1", "object"), TableColumn("col2", "int64")])
+        ),
+        "row_count": 1,
+    }
 
 
 def test_load_input():
-    with patch("dagster_snowflake_pandas.snowflake_pandas_type_handler._connect_snowflake"), patch(
+    with patch(
         "dagster_snowflake_pandas.snowflake_pandas_type_handler.pd.read_sql"
     ) as mock_read_sql:
+        connection = MagicMock()
         mock_read_sql.return_value = DataFrame([{"COL1": "a", "COL2": 1}])
 
         handler = SnowflakePandasTypeHandler()
@@ -111,6 +113,7 @@ def test_load_input():
                 columns=None,
                 partition_dimensions=[],
             ),
+            connection,
         )
         assert mock_read_sql.call_args_list[0][1]["sql"] == "SELECT * FROM my_db.my_schema.my_table"
         assert df.equals(DataFrame([{"col1": "a", "col2": 1}]))

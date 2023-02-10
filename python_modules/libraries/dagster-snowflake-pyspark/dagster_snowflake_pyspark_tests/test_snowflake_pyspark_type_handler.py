@@ -94,6 +94,7 @@ def test_handle_output():
                 partition_dimensions=None,
             ),
             df,
+            None,
         )
 
         assert metadata == {
@@ -127,6 +128,7 @@ def test_load_input():
                 columns=None,
                 partition_dimensions=None,
             ),
+            None,
         )
         assert mock_read.called
 
