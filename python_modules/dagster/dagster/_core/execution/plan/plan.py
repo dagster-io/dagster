@@ -502,9 +502,7 @@ def get_step_input_source(
         not solid.container_maps_input(input_handle.input_name)
     ):
         # can only load from source asset if assets defs are available
-        if asset_layer.has_assets_defs and asset_layer.asset_key_for_input(
-            handle, input_handle.input_name
-        ):
+        if asset_layer.asset_key_for_input(handle, input_handle.input_name):
             return FromSourceAsset(solid_handle=handle, input_name=input_name)
         elif input_def.root_manager_key or input_def.input_manager_key:
             return FromRootInputManager(solid_handle=handle, input_name=input_name)

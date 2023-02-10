@@ -84,29 +84,6 @@ class AssetOutputInfo(
         )
 
 
-def _resolve_input_to_destinations(
-    name: str, node_def: NodeDefinition, handle: NodeHandle
-) -> Sequence[NodeInputHandle]:
-    """
-    Recursively follow input mappings to find all op inputs for a graph input.
-    """
-    if not isinstance(node_def, GraphDefinition):
-        # must be in the op definition
-        return [NodeInputHandle(node_handle=handle, input_name=name)]
-    all_destinations: List[NodeInputHandle] = []
-    for mapping in node_def.input_mappings:
-        if mapping.graph_input_name != name:
-            continue
-        # recurse into graph structure
-        all_destinations += _resolve_input_to_destinations(
-            # update name to be the mapped input name
-            name=mapping.maps_to.input_name,
-            node_def=node_def.solid_named(mapping.maps_to.solid_name).definition,
-            handle=NodeHandle(mapping.maps_to.solid_name, parent=handle),
-        )
-    return all_destinations
-
-
 def _resolve_output_to_destinations(
     output_name: str, node_def: NodeDefinition, handle: NodeHandle
 ) -> Sequence[NodeInputHandle]:
@@ -529,11 +506,10 @@ class AssetLayer:
                 resolved_asset_key = resolved_asset_deps.get_resolved_asset_key_for_input(
                     assets_def, input_name
                 )
-                asset_key_by_input[NodeInputHandle(node_handle, input_name)] = resolved_asset_key
+                input_handle = NodeInputHandle(node_handle, input_name)
+                asset_key_by_input[input_handle] = resolved_asset_key
                 # resolve graph input to list of op inputs that consume it
-                node_input_handles = _resolve_input_to_destinations(
-                    input_name, assets_def.node_def, node_handle
-                )
+                node_input_handles = assets_def.node_def.resolve_input_to_destinations(input_handle)
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = resolved_asset_key
 

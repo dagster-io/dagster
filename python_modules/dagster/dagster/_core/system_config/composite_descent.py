@@ -210,6 +210,7 @@ def _apply_top_level_config_mapping(
             resource_defs=resource_defs,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
             asset_layer=pipeline_def.asset_layer,
+            node_input_source_assets=graph_def.node_input_source_assets,
         )
 
         # process against that new type
@@ -274,6 +275,7 @@ def _get_mapped_solids_dict(
         resource_defs=resource_defs,
         is_using_graph_job_op_apis=is_using_graph_job_op_apis,
         asset_layer=asset_layer,
+        node_input_source_assets=graph_def.node_input_source_assets,
     )
 
     # process against that new type

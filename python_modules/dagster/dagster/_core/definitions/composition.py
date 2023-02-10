@@ -1,5 +1,5 @@
 import warnings
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -55,6 +55,7 @@ if TYPE_CHECKING:
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
+    from .source_asset import SourceAsset
 
 
 _composition_stack: List["InProgressCompositionContext"] = []
@@ -145,6 +146,7 @@ InputSource = Union[
     InvokedNodeOutputHandle,
     InputMappingNode,
     DynamicFanIn,
+    "SourceAsset",
     List[Union[InvokedNodeOutputHandle, InputMappingNode]],
 ]
 
@@ -289,6 +291,7 @@ class CompleteCompositionContext(NamedTuple):
     dependencies: Mapping[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
     input_mappings: Sequence[InputMapping]
     output_mapping_dict: Mapping[str, OutputMapping]
+    node_input_source_assets: Mapping[str, Mapping[str, "SourceAsset"]]
 
     @staticmethod
     def create(
@@ -298,9 +301,12 @@ class CompleteCompositionContext(NamedTuple):
         output_mapping_dict: Mapping[str, OutputMapping],
         pending_invocations: Mapping[str, "PendingNodeInvocation"],
     ):
+        from .source_asset import SourceAsset
+
         dep_dict: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
         node_def_dict: Dict[str, NodeDefinition] = {}
         input_mappings = []
+        node_input_source_assets: Dict[str, Dict[str, "SourceAsset"]] = defaultdict(dict)
 
         for solid in pending_invocations.values():
             _not_invoked_warning(solid, source, name)
@@ -323,6 +329,8 @@ class CompleteCompositionContext(NamedTuple):
                     input_mappings.append(
                         node.input_def.mapping_to(invocation.node_name, input_name)
                     )
+                elif isinstance(node, SourceAsset):
+                    node_input_source_assets[invocation.node_name][input_name] = node
                 elif isinstance(node, list):
                     entries: List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]] = []
                     for idx, fanned_in_node in enumerate(node):
@@ -366,6 +374,7 @@ class CompleteCompositionContext(NamedTuple):
             dep_dict,
             input_mappings,
             output_mapping_dict,
+            node_input_source_assets=node_input_source_assets,
         )
 
 
@@ -556,7 +565,11 @@ class PendingNodeInvocation:
         return f"{self.node_def.node_type_str} '{node_name}'"
 
     def _process_argument_node(self, node_name, output_node, input_name, input_bindings, arg_desc):
-        if isinstance(output_node, (InvokedNodeOutputHandle, InputMappingNode, DynamicFanIn)):
+        from .source_asset import SourceAsset
+
+        if isinstance(
+            output_node, (InvokedNodeOutputHandle, InputMappingNode, DynamicFanIn, SourceAsset)
+        ):
             input_bindings[input_name] = output_node
 
         elif isinstance(output_node, list):
@@ -1019,6 +1032,7 @@ def do_composition(
     Sequence[NodeDefinition],
     Optional[ConfigMapping],
     Sequence[str],
+    Mapping[str, Mapping[str, "SourceAsset"]],
 ]:
     """
     This a function used by both @pipeline and @composite_solid to implement their composition
@@ -1152,6 +1166,7 @@ def do_composition(
         context.solid_defs,
         config_mapping,
         compute_fn.positional_inputs(),
+        context.node_input_source_assets,
     )
 
 

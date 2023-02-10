@@ -75,6 +75,7 @@ class _Graph:
             solid_defs,
             config_mapping,
             positional_inputs,
+            node_input_source_assets,
         ) = do_composition(
             decorator_name="@graph",
             graph_name=self.name,
@@ -95,6 +96,7 @@ class _Graph:
             config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
+            node_input_source_assets=node_input_source_assets,
         )
         update_wrapper(graph_def, fn)
         return graph_def
