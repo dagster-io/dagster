@@ -1893,6 +1893,12 @@ type RepositoryLocation {
   environmentPath: String
   repositories: [Repository!]!
   serverId: String
+  dagsterLibraryVersions: [DagsterLibraryVersion!]
+}
+
+type DagsterLibraryVersion {
+  name: String!
+  version: String!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError

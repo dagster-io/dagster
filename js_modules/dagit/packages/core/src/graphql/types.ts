@@ -836,6 +836,12 @@ export enum DagsterEventType {
   STEP_WORKER_STARTING = 'STEP_WORKER_STARTING',
 }
 
+export type DagsterLibraryVersion = {
+  __typename: 'DagsterLibraryVersion';
+  name: Scalars['String'];
+  version: Scalars['String'];
+};
+
 export type DagsterRunEvent =
   | AlertFailureEvent
   | AlertStartEvent
@@ -2686,6 +2692,7 @@ export type RepositoryConnection = {
 
 export type RepositoryLocation = {
   __typename: 'RepositoryLocation';
+  dagsterLibraryVersions: Maybe<Array<DagsterLibraryVersion>>;
   environmentPath: Maybe<Scalars['String']>;
   id: Scalars['ID'];
   isReloadSupported: Scalars['Boolean'];

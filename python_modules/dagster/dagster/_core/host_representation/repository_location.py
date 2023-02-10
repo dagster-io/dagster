@@ -46,6 +46,7 @@ from dagster._core.host_representation.origin import (
     RepositoryLocationOrigin,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._grpc.impl import (
@@ -281,6 +282,10 @@ class RepositoryLocation(AbstractContextManager):
             entry_point=self.entry_point,
             container_context=self.container_context,
         )
+
+    @abstractmethod
+    def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]:
+        ...
 
 
 class InProcessRepositoryLocation(RepositoryLocation):
@@ -536,6 +541,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.str_param(notebook_path, "notebook_path")
         return get_notebook_data(notebook_path)
 
+    def get_dagster_library_versions(self) -> Mapping[str, str]:
+        return DagsterLibraryRegistry.get()
+
 
 class GrpcServerRepositoryLocation(RepositoryLocation):
     def __init__(
@@ -618,7 +626,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
                 list_repositories_response.repository_code_pointer_dict
             )
             self._entry_point = list_repositories_response.entry_point
-
+            self._dagster_library_versions = list_repositories_response.dagster_library_versions
             self._container_image = (
                 list_repositories_response.container_image
                 or self._reload_current_image()  # Back-compat for older gRPC servers that did not include container_image in ListRepositoriesResponse
@@ -878,3 +886,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")
         return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)
+
+    def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]:
+        return self._dagster_library_versions

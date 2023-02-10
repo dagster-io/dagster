@@ -49,6 +49,14 @@ from .util import ResolveInfo, non_null_list
 GrapheneLocationStateChangeEventType = graphene.Enum.from_enum(LocationStateChangeEventType)
 
 
+class GrapheneDagsterLibraryVersion(graphene.ObjectType):
+    name = graphene.NonNull(graphene.String)
+    version = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "DagsterLibraryVersion"
+
+
 class GrapheneRepositoryLocationLoadStatus(graphene.Enum):
     LOADING = "LOADING"
     LOADED = "LOADED"
@@ -74,11 +82,12 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
     environment_path = graphene.String()
     repositories = non_null_list(lambda: GrapheneRepository)
     server_id = graphene.String()
+    dagsterLibraryVersions = graphene.List(graphene.NonNull(GrapheneDagsterLibraryVersion))
 
     class Meta:
         name = "RepositoryLocation"
 
-    def __init__(self, location):
+    def __init__(self, location: RepositoryLocation):
         self._location = check.inst_param(location, "location", RepositoryLocation)
         environment_path = (
             location.origin.loadable_target_origin.executable_path
@@ -99,7 +108,7 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
             server_id=server_id,
         )
 
-    def resolve_id(self, _):
+    def resolve_id(self, _) -> str:
         return self.name
 
     def resolve_repositories(self, graphene_info: ResolveInfo):
@@ -107,6 +116,13 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
             GrapheneRepository(graphene_info.context.instance, repository, self._location)
             for repository in self._location.get_repositories().values()
         ]
+
+    def resolve_dagsterLibraryVersions(self, _: ResolveInfo):
+        libs = self._location.get_dagster_library_versions()
+        if libs is None:
+            return None
+
+        return [GrapheneDagsterLibraryVersion(name, ver) for name, ver in libs.items()]
 
 
 class GrapheneRepositoryLocationOrLoadError(graphene.Union):
