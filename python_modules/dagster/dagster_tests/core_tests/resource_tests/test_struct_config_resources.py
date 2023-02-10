@@ -869,7 +869,7 @@ def test_nested_function_resource_runtime_config():
 
     with pytest.raises(
         CheckError,
-        match="Any partially configured, nested resources must be specified to Definitions",
+        match="Any partially configured, nested resources must be provided to Definitions",
     ):
         # errors b/c writer_resource is not configured
         # and not provided as a top-level resource to Definitions
