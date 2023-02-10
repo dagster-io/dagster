@@ -27,7 +27,6 @@ from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
@@ -352,32 +351,12 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         else:
             return key
 
-    def output_asset_partition_key(self, output_name: str = "result") -> str:
-        deprecation_warning(
-            "OpExecutionContext.output_asset_partition_key",
-            "1.0.0",
-            additional_warn_txt="Use OpExecutionContext.asset_partition_key_for_output instead.",
-        )
-
-        return self.asset_partition_key_for_output(output_name)
-
     @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         """Returns the asset partition key for the given output. Defaults to "result", which is the
         name of the default output.
         """
         return self._step_execution_context.asset_partition_key_for_output(output_name)
-
-    def output_asset_partitions_time_window(self, output_name: str = "result") -> TimeWindow:
-        deprecation_warning(
-            "OpExecutionContext.output_asset_partitions_time_window",
-            "1.0.0",
-            additional_warn_txt=(
-                "Use OpExecutionContext.asset_partitions_time_window_for_output instead."
-            ),
-        )
-
-        return self.asset_partitions_time_window_for_output(output_name)
 
     @public
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
