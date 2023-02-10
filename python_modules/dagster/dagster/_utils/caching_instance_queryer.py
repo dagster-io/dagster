@@ -109,7 +109,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     AssetKeyPartitionKey(asset_key=asset_key)
                 ] = last_materialization_record
                 self._no_materializations_after_cursor_cache[
-                    asset_partition
+                    AssetKeyPartitionKey(asset_key=asset_key)
                 ] = last_materialization_record.storage_id
 
 
