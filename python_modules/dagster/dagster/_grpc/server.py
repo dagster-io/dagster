@@ -32,6 +32,7 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.autodiscovery import LoadableTarget
@@ -416,6 +417,7 @@ class DagsterApiServer(DagsterApiServicer):
             entry_point=self._entry_point,
             container_image=self._container_image,
             container_context=self._container_context,
+            dagster_library_versions=DagsterLibraryRegistry.get(),
         )
 
         return api_pb2.ListRepositoriesReply(
