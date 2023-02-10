@@ -28,7 +28,7 @@ from dagster._core.storage.io_manager import IOManager
 T = TypeVar("T")
 
 
-class TablePartition(NamedTuple):
+class PartitionDimension(NamedTuple):
     partition_expr: str
     partition: Union[TimeWindow, str]
 
@@ -38,7 +38,7 @@ class TableSlice(NamedTuple):
     schema: str
     database: Optional[str] = None
     columns: Optional[Sequence[str]] = None
-    partition: Optional[Sequence[TablePartition]] = None
+    partition: Optional[Sequence[PartitionDimension]] = None
 
 
 class DbTypeHandler(ABC, Generic[T]):
@@ -150,7 +150,7 @@ class DbIOManager(IOManager):
         schema: str
         table: str
         partition_value: Optional[Union[TimeWindow, str]] = None
-        partitions: List[TablePartition] = []
+        partitions: List[PartitionDimension] = []
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
@@ -195,7 +195,7 @@ class DbIOManager(IOManager):
                                 f" {part.name} partition."
                             )
                         partitions.append(
-                            TablePartition(
+                            PartitionDimension(
                                 partition_expr=partition_expr_str, partition=partition_value
                             )
                         )
@@ -207,7 +207,9 @@ class DbIOManager(IOManager):
                     )
 
                     partitions.append(
-                        TablePartition(partition_expr=partition_expr_str, partition=partition_value)
+                        PartitionDimension(
+                            partition_expr=partition_expr_str, partition=partition_value
+                        )
                     )
         else:
             table = output_context.name

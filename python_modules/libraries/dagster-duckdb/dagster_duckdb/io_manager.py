@@ -7,7 +7,7 @@ from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
-    TablePartition,
+    PartitionDimension,
     TableSlice,
 )
 from dagster._utils.backoff import backoff
@@ -167,7 +167,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
         return f"DELETE FROM {table_slice.schema}.{table_slice.table}"
 
 
-def _time_window_where_clause(table_partition: TablePartition) -> str:
+def _time_window_where_clause(table_partition: PartitionDimension) -> str:
     partition = cast(TimeWindow, table_partition.partition)
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(DUCKDB_DATETIME_FORMAT)
@@ -175,5 +175,5 @@ def _time_window_where_clause(table_partition: TablePartition) -> str:
     return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
 
 
-def _static_where_clause(table_partition: TablePartition) -> str:
+def _static_where_clause(table_partition: PartitionDimension) -> str:
     return f"""{table_partition.partition_expr} = '{table_partition.partition}'"""

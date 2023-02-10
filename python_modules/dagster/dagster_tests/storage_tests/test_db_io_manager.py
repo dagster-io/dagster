@@ -10,7 +10,7 @@ from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
-    TablePartition,
+    PartitionDimension,
     TableSlice,
 )
 from dagster._core.types.dagster_type import resolve_dagster_type
@@ -168,7 +168,7 @@ def test_asset_out_partitioned():
         schema="schema1",
         table="table1",
         partition=[
-            TablePartition(
+            PartitionDimension(
                 partition=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
                 partition_expr="abc",
             )
