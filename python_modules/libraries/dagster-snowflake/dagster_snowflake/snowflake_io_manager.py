@@ -149,7 +149,7 @@ class SnowflakeDbClient(DbClient):
         with SnowflakeConnection(
             dict(schema=table_slice.schema, **no_schema_config), context.log
         ).get_connection() as con:
-            con.execute(f"create schema if not exists {table_slice.schema};")
+            con.execute_string(f"create schema if not exists {table_slice.schema};")
 
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
