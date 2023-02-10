@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Sequence, cast
+from typing import List, Optional
 
 import dagster._check as check
 import graphene
@@ -110,20 +110,22 @@ class GrapheneSchedule(graphene.ObjectType):
             external_partition_set=external_partition_set,
         )
 
-    def resolve_futureTicks(self, _graphene_info: ResolveInfo, **kwargs: Dict[str, object]):
-        cursor = cast(
-            float,
-            kwargs.get("cursor", get_timestamp_from_utc_datetime(get_current_datetime_in_utc())),
-        )
-        tick_times: Sequence[float] = []
-        time_iter = self._external_schedule.execution_time_iterator(cursor)
+    def resolve_futureTicks(
+        self,
+        _graphene_info: ResolveInfo,
+        cursor: Optional[float] = None,
+        limit: Optional[int] = None,
+        until: Optional[float] = None,
+    ):
+        cursor = cursor or get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
 
-        until = float(cast(str, kwargs.get("until"))) if kwargs.get("until") else None
+        tick_times: List[float] = []
+        time_iter = self._external_schedule.execution_time_iterator(cursor)
 
         if until:
             currentTime = None
             while (not currentTime or currentTime < until) and (
-                not kwargs.get("limit") or len(tick_times) < cast(int, kwargs.get("limit"))
+                limit is None or len(tick_times) < limit
             ):
                 try:
                     currentTime = next(time_iter).timestamp()
@@ -132,8 +134,7 @@ class GrapheneSchedule(graphene.ObjectType):
                 except StopIteration:
                     break
         else:
-            limit = cast(int, kwargs.get("limit", 10))
-
+            limit = limit or 10
             for _ in range(limit):
                 tick_times.append(next(time_iter).timestamp())
 
@@ -151,28 +152,29 @@ class GrapheneSchedule(graphene.ObjectType):
         )
 
     def resolve_potentialTickTimestamps(
-        self, _graphene_info: ResolveInfo, **kwargs: Dict[str, object]
+        self,
+        _graphene_info: ResolveInfo,
+        start_timestamp: Optional[float] = None,
+        upper_limit: Optional[int] = None,
+        lower_limit: Optional[int] = None,
     ):
         """Get timestamps when ticks will occur before and after a given timestamp.
 
         upper_limit defines how many ticks will be retrieved after the current timestamp, and lower_limit defines how many ticks will be retrieved before the current timestamp.
         """
-        start_timestamp = cast(
-            float,
-            kwargs.get(
-                "start_timestamp", get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
-            ),
+        start_timestamp = start_timestamp or get_timestamp_from_utc_datetime(
+            get_current_datetime_in_utc()
         )
-        tick_times = []
+        upper_limit = upper_limit or 10
+        lower_limit = lower_limit or 10
+
+        tick_times: List[float] = []
         ascending_tick_iterator = self._external_schedule.execution_time_iterator(start_timestamp)
         descending_tick_iterator = self._external_schedule.execution_time_iterator(
             start_timestamp, ascending=False
         )
 
-        upper_limit = cast(int, kwargs.get("upper_limit", 10))
-        lower_limit = cast(int, kwargs.get("lower_limit", 10))
-
-        tick_times_below_timestamp = []
+        tick_times_below_timestamp: List[float] = []
         first_past_tick = next(descending_tick_iterator)
 
         # execution_time_iterator starts at first tick <= timestamp (or >= timestamp in
