@@ -16,7 +16,7 @@ from dagster import (
     TypeCheckContext,
 )
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .version import __version__
 
@@ -36,7 +36,7 @@ from .version import __version__
 if TYPE_CHECKING:
     ValidatableDataFrame = pd.DataFrame
 
-check_dagster_package_version("dagster-pandera", __version__)
+DagsterLibraryRegistry.register("dagster-pandera", __version__)
 
 # ########################
 # ##### VALID DATAFRAME CLASSES
