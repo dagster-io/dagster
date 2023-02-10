@@ -212,6 +212,9 @@ select = [
   # functionality from an existing linter).
   "RUF",
 
+  # (private member access) Flag access to `_`-prefixed symbols
+  "SLF001",
+
   # (disallow print statements) keep debugging statements out of the codebase
   "T20",
 
