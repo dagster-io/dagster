@@ -148,14 +148,15 @@ class SnowflakeDbClient(DbClient):
             if context.resource_config
             else {}
         )
-        yield SnowflakeConnection(
+        with SnowflakeConnection(
             dict(
                 schema=table_slice.schema,
                 connector="sqlalchemy",
                 **cast(Mapping[str, str], no_schema_config),
             ),
             context.log,
-        ).get_connection(raw_conn=False)
+        ).get_connection(raw_conn=False) as conn:
+            yield conn
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
