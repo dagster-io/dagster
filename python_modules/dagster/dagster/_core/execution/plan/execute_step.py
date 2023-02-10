@@ -567,7 +567,7 @@ def _get_output_asset_materializations(
             )
 
 
-@functools.lru_cache
+@functools.lru_cache()
 def build_default_code_version(run_id: str) -> str:
     return sha256_digest_from_str(run_id)
 
