@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from typing import Sequence, cast
 
 import duckdb
@@ -103,20 +104,16 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
 
 class DuckDbClient(DbClient):
     @staticmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
-        conn = _connect_duckdb(context).cursor()
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
-            conn.execute(_get_cleanup_statement(table_slice))
+            connection.execute(_get_cleanup_statement(table_slice))
         except duckdb.CatalogException:
             # table doesn't exist yet, so ignore the error
             pass
-        conn.close()
 
     @staticmethod
-    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
-        conn = _connect_duckdb(context).cursor()
-        conn.execute(f"create schema if not exists {table_slice.schema};")
-        conn.close()
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        connection.execute(f"create schema if not exists {table_slice.schema};")
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
@@ -134,14 +131,19 @@ class DuckDbClient(DbClient):
         else:
             return f"""SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}"""
 
+    @staticmethod
+    @contextmanager
+    def connect(context, _):
+        conn = backoff(
+            fn=duckdb.connect,
+            retry_on=(RuntimeError, duckdb.IOException),
+            kwargs={"database": context.resource_config["database"], "read_only": False},
+            max_retries=10,
+        )
 
-def _connect_duckdb(context):
-    return backoff(
-        fn=duckdb.connect,
-        retry_on=(RuntimeError, duckdb.IOException),
-        kwargs={"database": context.resource_config["database"], "read_only": False},
-        max_retries=10,
-    )
+        yield conn
+
+        conn.close()
 
 
 def _get_cleanup_statement(table_slice: TableSlice) -> str:
