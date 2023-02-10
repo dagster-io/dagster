@@ -214,7 +214,7 @@ class AllowDelayedDependencies:
         check.invariant(
             all(pointer_key is not None for pointer_key in nested_partial_resource_keys.values()),
             (
-                "Any partially configured, nested resources must be specified to Definitions"
+                "Any partially configured, nested resources must be provided to Definitions"
                 f" object: {nested_partial_resource_keys}"
             ),
         )
@@ -236,6 +236,42 @@ class AllowDelayedDependencies:
             nested_resource_required_keys
         )
         return out
+
+
+class InitResourceContextWithKeyMapping(InitResourceContext):
+    """
+    Passes along a mapping from ResourceDefinition id to resource key alongside the
+    InitResourceContext. This is used to resolve the required resource keys for
+    resources which may hold nested partial resources.
+    """
+
+    def __init__(
+        self,
+        context: InitResourceContext,
+        resource_id_to_key_mapping: Mapping[ResourceId, str],
+    ):
+        super().__init__(
+            resource_config=context.resource_config,
+            resources=context.resources,
+            instance=context.instance,
+            resource_def=context.resource_def,
+            dagster_run=context.dagster_run,
+            log_manager=context.log,
+        )
+        self._resource_id_to_key_mapping = resource_id_to_key_mapping
+        self._resources_by_id = {
+            resource_id: getattr(context.resources, resource_key, None)
+            for resource_id, resource_key in resource_id_to_key_mapping.items()
+        }
+
+    @property
+    def resources_by_id(self) -> Mapping[ResourceId, Any]:
+        return self._resources_by_id
+
+    def replace_config(self, config: Any) -> "InitResourceContext":
+        return InitResourceContextWithKeyMapping(
+            super().replace_config(config), self._resource_id_to_key_mapping
+        )
 
 
 class ResourceWithKeyMapping(ResourceDefinition):
@@ -262,20 +298,15 @@ class ResourceWithKeyMapping(ResourceDefinition):
 
     def setup_context_resources_and_call(self, context: InitResourceContext):
         """
-        Wrapper around the wrapped resource's resource_fn which sets up the context.resources
-        to include resources by their ID, and then calls the nested resource's resource_fn.
+        Wrapper around the wrapped resource's resource_fn which attaches its
+        resource id to key mapping to the context, and then calls the nested resource's resource_fn.
         """
-        for resource_id, resource_key in self._resource_id_to_key_mapping.items():
-            # Wrapped resource only knows about its nested resources by ID, so we need to
-            # set up the context.resources to include resources by their ID as well.
-            setattr(
-                context.resources,
-                f"id_{resource_id}",
-                getattr(context.resources, resource_key, None),
-            )
+        context_with_key_mapping = InitResourceContextWithKeyMapping(
+            context, self._resource_id_to_key_mapping
+        )
 
         if has_at_least_one_parameter(self._resource.resource_fn):
-            return self._resource.resource_fn(context)
+            return self._resource.resource_fn(context_with_key_mapping)
         else:
             return cast(ResourceFunctionWithoutContext, self._resource.resource_fn)()
 
@@ -310,15 +341,6 @@ def attach_resource_id_to_key_mapping(
             else ResourceWithKeyMapping(resource_def, resource_id_to_key_mapping)
         )
     return resource_def
-
-
-def _get_resource_by_id(context: InitResourceContext, resource_id: ResourceId) -> Any:
-    """
-    Retrieves a resource's value from the resource context object from the ResourceDefinition's ID.
-    This is used to retrieve the value of nested resources which are not fully configured, since the
-    resource key is not known by the nested resource's parent.
-    """
-    return getattr(context.resources, f"id_{resource_id}", None)
 
 
 class Resource(
@@ -384,10 +406,21 @@ class Resource(
     def initialize_and_run(self, context: InitResourceContext) -> ResValue:
         # If we have any partially configured resources, we need to update them
         # with the fully configured resources from the context
-        partial_resources_to_update = {
-            attr_name: _get_resource_by_id(context, id(resource_def))
-            for attr_name, resource_def in self._nested_partial_resources.items()
-        }
+
+        partial_resources_to_update: Dict[str, Any] = {}
+        if self._nested_partial_resources:
+            context_with_mapping = cast(
+                InitResourceContextWithKeyMapping,
+                check.inst(
+                    context,
+                    InitResourceContextWithKeyMapping,
+                    "ConfiguredResource should only be used with InitResourceContextWithKeyMapping",
+                ),
+            )
+            partial_resources_to_update = {
+                attr_name: context_with_mapping.resources_by_id[id(resource_def)]
+                for attr_name, resource_def in self._nested_partial_resources.items()
+            }
 
         # Also evaluate any resources that are not partial
         resources_to_update, _ = _separate_resource_params(self.__dict__)
