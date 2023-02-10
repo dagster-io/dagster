@@ -180,6 +180,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<SingleAsse
           freshnessPolicy: {
             maximumLagMinutes: 2,
             cronSchedule: null,
+            scheduleTimezone: null,
             __typename: 'FreshnessPolicy',
           },
           freshnessInfo: {
