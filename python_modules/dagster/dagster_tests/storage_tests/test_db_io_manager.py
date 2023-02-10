@@ -31,10 +31,10 @@ class IntHandler(DbTypeHandler[int]):
         self.handle_input_calls = []
         self.handle_output_calls = []
 
-    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: int):
+    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: int, connection):
         self.handle_output_calls.append((context, table_slice, obj))
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> int:
+    def load_input(self, context: InputContext, table_slice: TableSlice, connection) -> int:
         self.handle_input_calls.append((context, table_slice))
         return 7
 
@@ -48,10 +48,10 @@ class StringHandler(DbTypeHandler[str]):
         self.handle_input_calls = []
         self.handle_output_calls = []
 
-    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: str):
+    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: str, connection):
         self.handle_output_calls.append((context, table_slice, obj))
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> str:
+    def load_input(self, context: InputContext, table_slice: TableSlice, connection) -> str:
         self.handle_input_calls.append((context, table_slice))
         return "8"
 
