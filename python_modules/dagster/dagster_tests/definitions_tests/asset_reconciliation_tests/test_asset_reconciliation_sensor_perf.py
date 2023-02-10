@@ -328,7 +328,7 @@ perf_scenarios = [
     PerfScenario(
         snapshot=giant_unpartitioned_assets_2_random_runs,
         n_freshness_policies=0,
-        max_execution_time_seconds=20,
+        max_execution_time_seconds=5,
     ),
     PerfScenario(
         snapshot=giant_unpartitioned_assets_2_random_runs,
@@ -343,37 +343,37 @@ perf_scenarios = [
     PerfScenario(
         snapshot=large_unpartitioned_assets_2_random_runs,
         n_freshness_policies=0,
-        max_execution_time_seconds=5,
+        max_execution_time_seconds=2,
     ),
     PerfScenario(
         snapshot=large_unpartitioned_assets_2_random_runs,
         n_freshness_policies=100,
-        target_execution_time=10,
+        max_execution_time_seconds=10,
     ),
     PerfScenario(
         snapshot=large_unpartitioned_assets_2_random_runs,
         n_freshness_policies=500,
-        target_execution_time=25,
+        max_execution_time_seconds=20,
     ),
     PerfScenario(
         snapshot=large_all_partitioned_assets_20_partition_keys,
         n_freshness_policies=0,
-        target_execution_time=15,
+        max_execution_time_seconds=15,
     ),
     PerfScenario(
         snapshot=large_all_partitioned_assets_20_partition_keys,
         n_freshness_policies=100,
-        target_execution_time=15,
+        max_execution_time_seconds=15,
     ),
     PerfScenario(
         snapshot=medium_all_partitioned_assets_100_partition_keys,
         n_freshness_policies=0,
-        target_execution_time=15,
+        max_execution_time_seconds=15,
     ),
     PerfScenario(
         snapshot=medium_all_partitioned_assets_100_partition_keys,
         n_freshness_policies=100,
-        target_execution_time=15,
+        max_execution_time_seconds=15,
     ),
 ]
 
