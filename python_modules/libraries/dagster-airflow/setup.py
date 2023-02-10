@@ -68,7 +68,6 @@ setup(
         ],
     },
     entry_points={
-        "console_scripts": ["dagster-airflow = dagster_airflow.cli:main"],
         # airflow 1.0/2.0 plugin format
         "airflow.plugins": ["dagster_airflow = dagster_airflow.__init__:DagsterAirflowPlugin"],
         # airflow 2.0 provider format
