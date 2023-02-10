@@ -31,7 +31,12 @@ export type ResourceRootQuery = {
           isRequired: boolean;
           defaultValueAsJson: string | null;
         }>;
-        configuredValues: Array<{__typename: 'ConfiguredValue'; key: string; value: string}>;
+        configuredValues: Array<{
+          __typename: 'ConfiguredValue';
+          key: string;
+          value: string;
+          type: Types.ConfiguredValueType;
+        }>;
       }
     | {__typename: 'ResourceNotFoundError'};
 };

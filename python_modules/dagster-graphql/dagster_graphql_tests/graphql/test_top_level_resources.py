@@ -30,6 +30,7 @@ query ResourceDetailsListQuery($selector: RepositorySelector!) {
         configuredValues {
             key
             value
+            type
         }
       }
     }
@@ -62,6 +63,7 @@ query ResourceDetailsQuery($selector: ResourceSelector!) {
         configuredValues {
             key
             value
+            type
         }
     }
   }
@@ -82,7 +84,7 @@ def test_fetch_top_level_resources(definitions_graphql_context, snapshot):
     assert result.data["allTopLevelResourceDetailsOrError"]
     assert result.data["allTopLevelResourceDetailsOrError"]["results"]
 
-    assert len(result.data["allTopLevelResourceDetailsOrError"]["results"]) == 2
+    assert len(result.data["allTopLevelResourceDetailsOrError"]["results"]) == 3
 
     snapshot.assert_match(result.data)
 
@@ -106,10 +108,43 @@ def test_fetch_top_level_resource(definitions_graphql_context, snapshot):
         {
             "key": "a_bool",
             "value": "true",
+            "type": "VALUE",
         },
         {
             "key": "a_string",
             "value": '"foo"',
+            "type": "VALUE",
+        },
+    ]
+
+    snapshot.assert_match(result.data)
+
+
+def test_fetch_top_level_resource_env_var(definitions_graphql_context, snapshot):
+    selector = infer_resource_selector(definitions_graphql_context, name="my_resource_env_vars")
+    result = execute_dagster_graphql(
+        definitions_graphql_context,
+        TOP_LEVEL_RESOURCE_QUERY,
+        {"selector": selector},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data["topLevelResourceDetailsOrError"]
+    my_resource = result.data["topLevelResourceDetailsOrError"]
+
+    assert my_resource["description"] == "my description"
+    assert len(my_resource["configFields"]) == 3
+    assert sorted(my_resource["configuredValues"], key=lambda cv: cv["key"]) == [
+        {
+            "key": "a_bool",
+            "value": "MY_BOOL",
+            "type": "ENV_VAR",
+        },
+        {
+            "key": "a_string",
+            "value": "MY_STRING",
+            "type": "ENV_VAR",
         },
     ]
 
