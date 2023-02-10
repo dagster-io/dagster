@@ -83,6 +83,7 @@ export const BackfillRow = ({
     if (data?.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {counts: null, statuses: null};
     }
+    // here is the tsx
     if ('partitionStatusCounts' in data.partitionBackfillOrError) {
       const counts = Object.fromEntries(
         data.partitionBackfillOrError.partitionStatusCounts.map((e) => [e.runStatus, e.count]),
@@ -131,10 +132,14 @@ export const BackfillRow = ({
         )}
       </td>
       <td>
-        {counts ? (
-          <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
+        {backfill.isValidSerialization ? (
+          counts ? (
+            <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
+          ) : (
+            <LoadingOrNone queryResult={queryResult} />
+          )
         ) : (
-          <LoadingOrNone queryResult={queryResult} />
+          <p>The partitions targetted by this backfill no longer exist.</p>
         )}
       </td>
       <td>

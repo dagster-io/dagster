@@ -639,6 +639,9 @@ class TimeWindowPartitionsDefinition(
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return TimeWindowPartitionsSubset.from_serialized(self, serialized)
 
+    def can_deserialize(self, serialized: str, serializable_unique_id: Optional[str]) -> bool:
+        return TimeWindowPartitionsSubset.can_deserialize(self, serialized, serializable_unique_id)
+
     def is_valid_partition_key(self, partition_key: str) -> bool:
         try:
             datetime.strptime(partition_key, self.fmt)
@@ -1407,6 +1410,23 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
 
         return TimeWindowPartitionsSubset(
             partitions_def, num_partitions=num_partitions, included_time_windows=time_windows
+        )
+
+    @classmethod
+    def can_deserialize(
+        cls,
+        partitions_def: PartitionsDefinition,
+        serialized: str,
+        serializable_unique_id: Optional[str],
+    ) -> bool:
+        if serializable_unique_id:
+            return partitions_def.serializable_unique_identifier == serializable_unique_id
+
+        data = json.loads(serialized)
+        return isinstance(data, list) or (
+            isinstance(data, dict)
+            and data.get("time_windows") is not None
+            and data.get("num_partitions") is not None
         )
 
     def serialize(self) -> str:

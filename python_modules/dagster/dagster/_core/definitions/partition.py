@@ -299,6 +299,9 @@ class PartitionsDefinition(ABC, Generic[T]):
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return DefaultPartitionsSubset.from_serialized(self, serialized)
 
+    def can_deserialize_subset(self, serialized: str, serializable_unique_id: Optional[str]) -> bool:
+        return DefaultPartitionsSubset.can_deserialize(self, serialized, serializable_unique_id)
+
     @property
     def serializable_unique_identifier(self) -> str:
         return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
@@ -594,6 +597,12 @@ class DynamicPartitionsDefinition(
             return f"Dynamic partitions definition {self._validated_name()}"
         else:
             return super().__str__()
+
+    @property
+    def serializable_unique_identifier(self) -> str:
+        if not self.name:
+            return super().serializable_unique_identifier
+        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
     def get_partitions(
         self,
@@ -1290,6 +1299,16 @@ class PartitionsSubset(ABC):
     ) -> "PartitionsSubset":
         raise NotImplementedError()
 
+    @classmethod
+    @abstractmethod
+    def can_deserialize(
+        cls,
+        partitions_def: PartitionsDefinition,
+        serialized: str,
+        serializable_unique_id: Optional[str],
+    ) -> bool:
+        pass
+
     @property
     @abstractmethod
     def partitions_def(self) -> PartitionsDefinition:
@@ -1385,6 +1404,21 @@ class DefaultPartitionsSubset(PartitionsSubset):
                     f" but only version {cls.SERIALIZATION_VERSION} is supported."
                 )
             return cls(subset=set(data.get("subset")), partitions_def=partitions_def)
+
+    @classmethod
+    def can_deserialize(
+        cls,
+        partitions_def: PartitionsDefinition,
+        serialized: str,
+        serializable_unique_id: Optional[str],
+    ) -> bool:
+        if serializable_unique_id:
+            return partitions_def.serializable_unique_identifier == serializable_unique_id
+
+        data = json.loads(serialized)
+        return isinstance(data, list) or (
+            data.get("subset") is not None and data.get("version") == cls.SERIALIZATION_VERSION
+        )
 
     @property
     def partitions_def(self) -> PartitionsDefinition:

@@ -22,6 +22,7 @@ export type JobBackfillsQuery = {
           status: Types.BulkActionStatus;
           numCancelable: number;
           partitionNames: Array<string>;
+          isValidSerialization: boolean;
           numPartitions: number;
           timestamp: number;
           partitionSetName: string | null;
