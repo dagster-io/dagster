@@ -1,8 +1,6 @@
-import warnings
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.merger import merge_dicts
 
 from ..errors import DagsterInvariantViolationError
@@ -62,23 +60,18 @@ def materialize(
         {DEFAULT_IO_MANAGER_KEY: default_job_io_manager_with_fs_io_manager_schema}, resource_defs
     )
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", category=ExperimentalWarning, message=".*build_assets_job.*"
-        )
-
-        return build_assets_job(
-            "in_process_materialization_job",
-            assets=assets_defs,
-            source_assets=source_assets,
-            resource_defs=resource_defs,
-        ).execute_in_process(
-            run_config=run_config,
-            instance=instance,
-            partition_key=partition_key,
-            raise_on_error=raise_on_error,
-            tags=tags,
-        )
+    return build_assets_job(
+        "in_process_materialization_job",
+        assets=assets_defs,
+        source_assets=source_assets,
+        resource_defs=resource_defs,
+    ).execute_in_process(
+        run_config=run_config,
+        instance=instance,
+        partition_key=partition_key,
+        raise_on_error=raise_on_error,
+        tags=tags,
+    )
 
 
 def materialize_to_memory(
@@ -139,23 +132,18 @@ def materialize_to_memory(
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     partition_key = check.opt_str_param(partition_key, "partition_key")
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", category=ExperimentalWarning, message=".*build_assets_job.*"
-        )
-
-        return build_assets_job(
-            "in_process_materialization_job",
-            assets=assets_defs,
-            source_assets=source_assets,
-            resource_defs=resource_defs,
-        ).execute_in_process(
-            run_config=run_config,
-            instance=instance,
-            partition_key=partition_key,
-            raise_on_error=raise_on_error,
-            tags=tags,
-        )
+    return build_assets_job(
+        "in_process_materialization_job",
+        assets=assets_defs,
+        source_assets=source_assets,
+        resource_defs=resource_defs,
+    ).execute_in_process(
+        run_config=run_config,
+        instance=instance,
+        partition_key=partition_key,
+        raise_on_error=raise_on_error,
+        tags=tags,
+    )
 
 
 def _get_required_io_manager_keys(

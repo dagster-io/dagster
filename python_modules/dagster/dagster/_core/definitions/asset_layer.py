@@ -1,4 +1,3 @@
-import warnings
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -21,7 +20,6 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidSubsetError
 from .config import ConfigMapping
@@ -784,33 +782,31 @@ def build_asset_selection_job(
     # We should disallow simultaneous selection of assets and source assets (but for
     # backcompat we will simply ignore the source asset selection if any regular assets are
     # selected).
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
-        if len(included_assets) > 0:
-            asset_job = build_assets_job(
-                name=name,
-                assets=included_assets,
-                config=config,
-                source_assets=[*source_assets, *excluded_assets],
-                resource_defs=resource_defs,
-                executor_def=executor_def,
-                partitions_def=partitions_def,
-                description=description,
-                tags=tags,
-                _asset_selection_data=asset_selection_data,
-            )
-        else:
-            asset_job = build_source_asset_observation_job(
-                name=name,
-                source_assets=included_source_assets,
-                config=config,
-                resource_defs=resource_defs,
-                executor_def=executor_def,
-                partitions_def=partitions_def,
-                description=description,
-                tags=tags,
-                _asset_selection_data=asset_selection_data,
-            )
+    if len(included_assets) > 0:
+        asset_job = build_assets_job(
+            name=name,
+            assets=included_assets,
+            config=config,
+            source_assets=[*source_assets, *excluded_assets],
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            partitions_def=partitions_def,
+            description=description,
+            tags=tags,
+            _asset_selection_data=asset_selection_data,
+        )
+    else:
+        asset_job = build_source_asset_observation_job(
+            name=name,
+            source_assets=included_source_assets,
+            config=config,
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            partitions_def=partitions_def,
+            description=description,
+            tags=tags,
+            _asset_selection_data=asset_selection_data,
+        )
 
     return asset_job
 
