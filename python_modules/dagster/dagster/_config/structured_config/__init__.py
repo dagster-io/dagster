@@ -780,7 +780,7 @@ def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourc
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
         context = context.replace_config(obj.config_schema.default_value)
-    if has_at_least_one_parameter(obj.resource_fn):  # type: ignore  # fmt: skip
+    if has_at_least_one_parameter(obj.resource_fn):
         return cast(ResourceFunctionWithContext, obj.resource_fn)(context)
     else:
         return cast(ResourceFunctionWithoutContext, obj.resource_fn)()
