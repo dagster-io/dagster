@@ -100,9 +100,9 @@ Jobs are the main unit of execution and monitoring in Dagster. The core of a job
 
 ---
 
-## Schedules
+## Schedules and sensors
 
-Schedules launch runs on a fixed interval, while sensors allow you to do so based on an external state change. These features also support partitioning and backfilling.
+Schedules launch runs on a fixed interval, while sensors allow you to do so based on an external state change.
 
 <ArticleList>
   <ArticleListItem
@@ -113,6 +113,15 @@ Schedules launch runs on a fixed interval, while sensors allow you to do so base
     title="Sensors"
     href="/concepts/partitions-schedules-sensors/sensors"
   ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Partitions and backfills
+
+A software-defined asset or job can represent a collection of _partitions_ that can be tracked and executed independently.
+
+<ArticleList>
   <ArticleListItem
     title="Partitions"
     href="/concepts/partitions-schedules-sensors/partitions"
