@@ -173,7 +173,7 @@ class AssetGraphSubset:
 
             return partitions_def.can_deserialize_subset(
                 value,
-                serializable_unique_id=serializable_partitions_ids.get(asset_key)
+                serializable_unique_id=serializable_partitions_ids.get(key)
                 if serializable_partitions_ids
                 else None,
             )

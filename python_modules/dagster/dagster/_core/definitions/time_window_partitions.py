@@ -633,14 +633,12 @@ class TimeWindowPartitionsDefinition(
             partition_key1
         ) < self.start_time_for_partition_key(partition_key2)
 
+    @property
+    def partitions_subset_class(self):
+        return TimeWindowPartitionsSubset
+
     def empty_subset(self) -> "TimeWindowPartitionsSubset":
         return TimeWindowPartitionsSubset(self, num_partitions=0, included_partition_keys=set())
-
-    def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
-        return TimeWindowPartitionsSubset.from_serialized(self, serialized)
-
-    def can_deserialize(self, serialized: str, serializable_unique_id: Optional[str]) -> bool:
-        return TimeWindowPartitionsSubset.can_deserialize(self, serialized, serializable_unique_id)
 
     def is_valid_partition_key(self, partition_key: str) -> bool:
         try:
@@ -651,7 +649,8 @@ class TimeWindowPartitionsDefinition(
 
     @property
     def serializable_unique_identifier(self) -> str:
-        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
+        contents = hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
+        return json.dumps({"type": type(self).__name__, "contents": contents})
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
@@ -1420,7 +1419,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         serializable_unique_id: Optional[str],
     ) -> bool:
         if serializable_unique_id:
-            return partitions_def.serializable_unique_identifier == serializable_unique_id
+            return partitions_def.is_serializable_unique_identifier_type(serializable_unique_id)
 
         data = json.loads(serialized)
         return isinstance(data, list) or (

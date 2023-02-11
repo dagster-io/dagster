@@ -218,6 +218,10 @@ class ScheduleType(Enum):
 
 
 class PartitionsDefinition(ABC, Generic[T]):
+    @property
+    def partitions_subset_class(self):
+        return DefaultPartitionsSubset
+
     @abstractmethod
     def get_partitions(
         self,
@@ -294,17 +298,34 @@ class PartitionsDefinition(ABC, Generic[T]):
         ]
 
     def empty_subset(self) -> "PartitionsSubset":
-        return DefaultPartitionsSubset(self, set())
+        return self.partitions_subset_class(self, set())
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
-        return DefaultPartitionsSubset.from_serialized(self, serialized)
+        return self.partitions_subset_class.from_serialized(self, serialized)
 
-    def can_deserialize_subset(self, serialized: str, serializable_unique_id: Optional[str]) -> bool:
-        return DefaultPartitionsSubset.can_deserialize(self, serialized, serializable_unique_id)
+    def can_deserialize_subset(
+        self, serialized: str, serializable_unique_id: Optional[str]
+    ) -> bool:
+        return self.partitions_subset_class.can_deserialize(
+            self, serialized, serializable_unique_id
+        )
 
     @property
     def serializable_unique_identifier(self) -> str:
-        return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
+        partition_key_identifier = hashlib.sha1(
+            json.dumps(self.get_partition_keys()).encode("utf-8")
+        ).hexdigest()
+        return json.dumps(
+            {"type": type(self.empty_subset()).__name__, "contents": partition_key_identifier}
+        )
+
+    def is_serializable_unique_identifier_type(self, serializable_unique_identifier: str) -> bool:
+        """
+        Given a serializable unique identifier for a partitions subset, return True if this
+        partition set can deserialize it.
+        """
+        data = json.loads(serializable_unique_identifier)
+        return data.get("type") == type(self).__name__
 
     def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
         tags = {PARTITION_NAME_TAG: partition_key}
@@ -602,7 +623,8 @@ class DynamicPartitionsDefinition(
     def serializable_unique_identifier(self) -> str:
         if not self.name:
             return super().serializable_unique_identifier
-        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
+
+        return json.dumps({"type": type(self).__name__, "contents": self.__repr__()})
 
     def get_partitions(
         self,
@@ -1413,7 +1435,7 @@ class DefaultPartitionsSubset(PartitionsSubset):
         serializable_unique_id: Optional[str],
     ) -> bool:
         if serializable_unique_id:
-            return partitions_def.serializable_unique_identifier == serializable_unique_id
+            return partitions_def.is_serializable_unique_identifier_type(serializable_unique_id)
 
         data = json.loads(serialized)
         return isinstance(data, list) or (

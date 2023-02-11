@@ -139,7 +139,7 @@ export const BackfillRow = ({
             <LoadingOrNone queryResult={queryResult} />
           )
         ) : (
-          <p>The partitions targetted by this backfill no longer exist.</p>
+          <p>The partitions definition has changed since this backfill ran.</p>
         )}
       </td>
       <td>

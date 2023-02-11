@@ -182,6 +182,10 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         )
 
     @property
+    def partitions_subset_class(self):
+        return MultiPartitionsSubset
+
+    @property
     def partition_dimension_names(self) -> List[str]:
         return [dim_def.name for dim_def in self._partitions_defs]
 
@@ -271,15 +275,6 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         return MultiPartitionKey(
             {dim.name: partition_key_strs[i] for i, dim in enumerate(self._partitions_defs)}
         )
-
-    def empty_subset(self) -> "MultiPartitionsSubset":
-        return MultiPartitionsSubset(self, set())
-
-    def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
-        return MultiPartitionsSubset.from_serialized(self, serialized)
-
-    def can_deserialize(self, serialized: str, serializable_unique_id: Optional[str]) -> bool:
-        return MultiPartitionsSubset.can_deserialize(self, serialized, serializable_unique_id)
 
     def _get_primary_and_secondary_dimension(
         self,
