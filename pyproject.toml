@@ -186,6 +186,9 @@ select = [
   "A001",
   "A002",
 
+  # (useless expression): Expressions that aren't assigned to anything are typically bugs.
+  "B018",
+
   # (pydocstyle) Docstring-related rules. A large subset of these are ignored by the
   # "convention=google" setting, we set under tool.ruff.pydocstyle.
   "D",
