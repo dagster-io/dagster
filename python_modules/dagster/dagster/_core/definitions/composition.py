@@ -80,8 +80,8 @@ class InvokedNodeOutputHandle:
     def __iter__(self) -> NoReturn:
         raise DagsterInvariantViolationError(
             'Attempted to iterate over an {cls}. This object represents the output "{out}" '
-            'from the solid "{solid}". Consider defining multiple Outs if you seek to pass '
-            "different parts of this output to different solids.".format(
+            'from the op/graph "{solid}". Consider defining multiple Outs if you seek to pass '
+            "different parts of this output to different op/graph.".format(
                 cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
             )
         )
@@ -200,15 +200,9 @@ def is_in_composition() -> bool:
 def assert_in_composition(name: str, node_def: NodeDefinition) -> None:
     if len(_composition_stack) < 1:
         node_label = node_def.node_type_str
-        if node_def.is_graph_job_op_node:
-            correction = (
-                f"Invoking {node_label}s is only valid in a function decorated with @job or @graph."
-            )
-        else:
-            correction = (
-                f"Invoking {node_label}s is only valid in a function decorated with "
-                "@pipeline or @composite_solid."
-            )
+        correction = (
+            f"Invoking {node_label}s is only valid in a function decorated with @job or @graph."
+        )
         raise DagsterInvariantViolationError(
             f"Attempted to call {node_label} '{name}' outside of a composition function."
             f" {correction}"
@@ -217,7 +211,7 @@ def assert_in_composition(name: str, node_def: NodeDefinition) -> None:
 
 class InProgressCompositionContext:
     """This context captures invocations of solids within a
-    composition function such as @composite_solid or @pipeline.
+    composition function such as @job or @graph.
     """
 
     name: str
@@ -1035,12 +1029,11 @@ def do_composition(
     Mapping[str, Mapping[str, "SourceAsset"]],
 ]:
     """
-    This a function used by both @pipeline and @composite_solid to implement their composition
+    This a function used by both @job and @graph to implement their composition
     function which is our DSL for constructing a dependency graph.
 
     Args:
-        decorator_name (str): Name of the calling decorator. e.g. "@pipeline",
-            "@composite_solid", "@graph"
+        decorator_name (str): Name of the calling decorator. e.g. "@graph" or "@job"
         graph_name (str): User-defined name of the definition being constructed
         fn (Callable): The composition function to be called.
         provided_input_defs(List[InputDefinition]): List of input definitions
@@ -1123,17 +1116,12 @@ def do_composition(
         ]
 
         if len(mappings) == 0:
-            if decorator_name in {"@op", "@graph"}:
-                invocation_name = "op/graph"
-            else:
-                invocation_name = "solid"
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{graph_name}' has unmapped input '{input_name}'. "
-                "Remove it or pass it to the appropriate {invocation_name} invocation.".format(
+                "Remove it or pass it to the appropriate op/graph invocation.".format(
                     decorator_name=decorator_name,
                     graph_name=graph_name,
                     input_name=defn.name,
-                    invocation_name=invocation_name,
                 )
             )
 
@@ -1153,7 +1141,7 @@ def do_composition(
 
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{graph_name}' has unmapped output '{output_name}'. "
-                "Remove it or return a value from the appropriate solid invocation.".format(
+                "Remove it or return a value from the appropriate op/graph invocation.".format(
                     decorator_name=decorator_name, graph_name=graph_name, output_name=defn.name
                 )
             )
