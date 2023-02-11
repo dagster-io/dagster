@@ -14,6 +14,8 @@ from dagster import (
     Shape,
     _check as check,
     fs_io_manager,
+    job,
+    op,
 )
 from dagster._config import Array, Field
 from dagster._core.definitions.decorators.graph_decorator import graph
@@ -29,7 +31,7 @@ from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
-from dagster._legacy import ModeDefinition, pipeline, solid
+from dagster._legacy import ModeDefinition
 from dagster._serdes import ConfigurableClass
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
@@ -76,7 +78,7 @@ def nesting_graph_pipeline(depth, num_children, *args, **kwargs):
     Total number of solids will be num_children ^ depth
     """
 
-    @solid
+    @op
     def leaf_node(_):
         return 1
 
@@ -89,7 +91,7 @@ def nesting_graph_pipeline(depth, num_children, *args, **kwargs):
 
         return wrap
 
-    @pipeline(*args, **kwargs)
+    @job(*args, **kwargs)
     def nested_pipeline():
         comp_solid = create_wrap(leaf_node, "layer_%d" % depth)
 

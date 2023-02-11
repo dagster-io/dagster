@@ -201,30 +201,6 @@ def test_graph_with_no_output_mappings():
     assert len(res.node_result_list) == 5
 
 
-def test_execute_nested_graphs():
-    nested_graph_pipeline = nesting_graph_pipeline(2, 2)
-    nested_composite_solid = nested_graph_pipeline.solids[0].definition
-
-    res = execute_solid(nested_composite_solid)
-
-    assert res.success
-    assert res.node.name == "layer_0"
-
-    assert res.output_values == {}
-
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match=re.escape(
-            "Output 'result' not defined in graph 'layer_0': no output mappings were "
-            "defined. If you were expecting this output to be present, you may be missing an "
-            "output_mapping from an inner solid to its enclosing graph."
-        ),
-    ):
-        _ = res.output_value()
-
-    assert len(res.node_result_list) == 2
-
-
 def test_single_solid_with_bad_inputs():
     @lambda_solid(input_defs=[InputDefinition("num_one", int), InputDefinition("num_two", int)])
     def add_solid(num_one, num_two):
