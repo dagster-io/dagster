@@ -3,13 +3,14 @@ import pickle
 import sys
 import tempfile
 import uuid
-from typing import Any, Mapping, Optional, Set, Union
+from typing import Any, Callable, Iterable, Mapping, Optional, Set, Union
 
 import dagster._check as check
 import papermill
 from dagster import (
     AssetIn,
     AssetKey,
+    AssetsDefinition,
     Failure,
     Output,
     PartitionsDefinition,
@@ -37,16 +38,12 @@ from dagstermill.factory import (
 from .engine import DagstermillEngine
 
 
-def _dm_compute(
+def _make_dagstermill_asset_compute_fn(
     name: str,
     notebook_path: str,
     save_notebook_on_failure: bool,
-):
-    check.str_param(name, "name")
-    check.str_param(notebook_path, "notebook_path")
-
-    def _t_fn(context, **inputs):
-        check.inst_param(context, "context", OpExecutionContext)
+) -> Callable:
+    def _t_fn(context: OpExecutionContext, **inputs) -> Iterable:
         check.param_invariant(
             isinstance(context.run_config, dict),
             "context",
@@ -158,7 +155,7 @@ def define_dagstermill_asset(
     io_manager_key: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     save_notebook_on_failure: bool = False,
-):
+) -> AssetsDefinition:
     """Creates a Dagster asset for a Jupyter notebook.
 
     Arguments:
@@ -279,7 +276,7 @@ def define_dagstermill_asset(
         io_manager_key=io_mgr_key,
         retry_policy=retry_policy,
     )(
-        _dm_compute(
+        _make_dagstermill_asset_compute_fn(
             name=name,
             notebook_path=notebook_path,
             save_notebook_on_failure=save_notebook_on_failure,
