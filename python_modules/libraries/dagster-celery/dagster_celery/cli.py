@@ -1,6 +1,7 @@
 import os
 import subprocess
 import uuid
+from typing import Any, Mapping, Optional
 
 import click
 import dagster._check as check
@@ -23,15 +24,16 @@ def create_worker_cli_group():
     return group
 
 
-def get_config_value_from_yaml(yaml_path):
+def get_config_value_from_yaml(yaml_path: Optional[str]) -> Mapping[str, Any]:
     if yaml_path is None:
         return {}
     parsed_yaml = load_yaml_from_path(yaml_path) or {}
+    assert isinstance(parsed_yaml, dict)
     # Would be better not to hardcode this path
     return parsed_yaml.get("execution", {}).get("celery", {}) or {}
 
 
-def get_app(config_yaml=None):
+def get_app(config_yaml: Optional[str] = None) -> CeleryExecutor:
     return make_app(
         CeleryExecutor.for_cli(**get_config_value_from_yaml(config_yaml)).app_args()
         if config_yaml
@@ -39,7 +41,7 @@ def get_app(config_yaml=None):
     )
 
 
-def get_worker_name(name=None):
+def get_worker_name(name: Optional[str] = None) -> str:
     return (
         name + "@%h"
         if name is not None
@@ -47,7 +49,7 @@ def get_worker_name(name=None):
     )
 
 
-def get_validated_config(config_yaml=None):
+def get_validated_config(config_yaml: Optional[str] = None) -> Any:
     config_type = celery_executor.config_schema.config_type
     config_value = get_config_value_from_yaml(config_yaml)
     config = validate_config(config_type, config_value)
@@ -57,7 +59,7 @@ def get_validated_config(config_yaml=None):
             config.errors,
             config_value,
         )
-    return post_process_config(config_type, config_value).value
+    return post_process_config(config_type, config_value).value  # type: ignore  # (possible none)
 
 
 def get_config_dir(config_yaml=None):

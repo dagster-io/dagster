@@ -15,7 +15,7 @@ from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._serdes import deserialize_as
+from dagster._serdes import deserialize_value
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.log import configure_loggers
 
@@ -159,7 +159,7 @@ def dagit(
 
     with get_instance_for_service(
         "dagit",
-        instance_ref=deserialize_as(instance_ref, InstanceRef) if instance_ref else None,
+        instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
         logger_fn=logger.info,
     ) as instance:
         # Allow the instance components to change behavior in the context of a long running server process

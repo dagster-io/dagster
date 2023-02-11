@@ -17,7 +17,7 @@ from dagster._core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
 from sqlalchemy.engine import Connection
 
 from ..utils import (
@@ -159,14 +159,14 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 repository_selector_id=state.repository_selector_id,
                 status=state.status.value,
                 instigator_type=state.instigator_type.value,
-                instigator_body=serialize_dagster_namedtuple(state),
+                instigator_body=serialize_value(state),
             )
             .on_conflict_do_update(
                 index_elements=[InstigatorsTable.c.selector_id],
                 set_={
                     "status": state.status.value,
                     "instigator_type": state.instigator_type.value,
-                    "instigator_body": serialize_dagster_namedtuple(state),
+                    "instigator_body": serialize_value(state),
                     "update_timestamp": pendulum.now("UTC"),
                 },
             )

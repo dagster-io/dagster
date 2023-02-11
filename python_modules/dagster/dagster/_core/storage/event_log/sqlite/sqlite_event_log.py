@@ -40,8 +40,9 @@ from dagster._core.storage.sqlite import create_db_conn_string
 from dagster._serdes import (
     ConfigurableClass,
     ConfigurableClassData,
-    deserialize_json_to_dagster_namedtuple,
 )
+from dagster._serdes.errors import DeserializationError
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils import mkdir_p
 
 from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
@@ -341,18 +342,16 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
             for row_id, json_str in results:
                 try:
-                    event_record = deserialize_json_to_dagster_namedtuple(json_str)
-                    if not isinstance(event_record, EventLogEntry):
-                        logging.warning(
-                            "Could not resolve event record as EventLogEntry for id `%s`.", row_id
-                        )
-                        continue
-                    else:
-                        event_records.append(
-                            EventLogRecord(storage_id=row_id, event_log_entry=event_record)
-                        )
+                    event_record = deserialize_value(json_str, EventLogEntry)
+                    event_records.append(
+                        EventLogRecord(storage_id=row_id, event_log_entry=event_record)
+                    )
                     if limit and len(event_records) >= limit:
                         break
+                except DeserializationError:
+                    logging.warning(
+                        "Could not resolve event record as EventLogEntry for id `%s`.", row_id
+                    )
                 except seven.JSONDecodeError:
                     logging.warning("Could not parse event record id `%s`.", row_id)
 
