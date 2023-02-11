@@ -61,8 +61,7 @@ from dagster._core.definitions.resource_definition import (
 )
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 
-from . import typing_utils
-from .typing_utils import BaseResourceMeta
+from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 from .utils import safe_is_subclass
 
 Self = TypeVar("Self", bound="Resource")
@@ -823,6 +822,9 @@ def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourc
         return cast(ResourceFunctionWithoutContext, obj.resource_fn)()
 
 
-typing_utils._Resource = Resource
-typing_utils._PartialResource = PartialResource
-typing_utils._ResourceDep = ResourceDependency
+
+LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(
+    resource_dep_type=ResourceDependency,
+    resource_type=Resource,
+    partial_resource_type=PartialResource,
+)
