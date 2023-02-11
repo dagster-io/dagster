@@ -228,7 +228,7 @@ def _execute_notebook(
     return executed_notebook_path
 
 
-def _handle_events_from_notebook(
+def handle_events_from_notebook(
     step_context: StepExecutionContext, executed_notebook_path: str
 ) -> Iterable:
     # deferred import for perf
@@ -336,7 +336,7 @@ def _make_dagstermill_compute_fn(
                 if output_notebook is not None:
                     yield Output(executed_notebook_file_handle, output_notebook)
 
-            yield from _handle_events_from_notebook(step_context, executed_notebook_path)
+            yield from handle_events_from_notebook(step_context, executed_notebook_path)
 
     return _t_fn
 

@@ -1,5 +1,4 @@
 import os
-import pickle
 import sys
 import tempfile
 import uuid
@@ -10,14 +9,13 @@ import papermill
 from dagster import (
     AssetIn,
     AssetKey,
+    AssetOut,
     AssetsDefinition,
-    Failure,
     Output,
     PartitionsDefinition,
     ResourceDefinition,
     RetryPolicy,
-    RetryRequested,
-    asset,
+    multi_asset,
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import validate_tags
@@ -32,6 +30,7 @@ from dagstermill.compat import ExecutionError
 from dagstermill.factory import (
     _clean_path_for_windows,
     get_papermill_parameters,
+    handle_events_from_notebook,
     replace_parameters,
 )
 
@@ -121,19 +120,7 @@ def _make_dagstermill_asset_compute_fn(
             with open(executed_notebook_path, "rb") as fd:
                 yield Output(fd.read())
 
-            # deferred import for perf
-            import scrapbook
-
-            output_nb = scrapbook.read_notebook(executed_notebook_path)
-
-            for key, value in output_nb.scraps.items():
-                if key.startswith("event-"):
-                    with open(value.data, "rb") as fd:
-                        event = pickle.loads(fd.read())
-                        if isinstance(event, (Failure, RetryRequested)):
-                            raise event
-                        else:
-                            yield event
+            yield from handle_events_from_notebook(step_execution_context, executed_notebook_path)
 
     return _t_fn
 
@@ -143,6 +130,7 @@ def define_dagstermill_asset(
     notebook_path: str,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
+    outs: Optional[Mapping[str, AssetOut]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
@@ -166,7 +154,11 @@ def define_dagstermill_asset(
             the decorated function. Each item in key_prefix must be a valid name in dagster (ie only
             contains letters, numbers, and _) and may not contain python reserved keywords.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
-            about the input.
+            about the input. Inputs can be accessed from within the notebook by invoking
+            load_input_parameter.
+        outs (Optional[Mapping[str, AssetOut]]): Assets that are produced in addition to the
+            notebook itself when the notebook is executed. Each will typically correspond to a
+            yield_result invocation inside the notebook.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
             upstream dependencies, but do not pass an input to the asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
@@ -259,10 +251,11 @@ def define_dagstermill_asset(
 
     default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
 
-    return asset(
+    return multi_asset(
         name=name,
         key_prefix=key_prefix,
         ins=ins,
+        outs={"result": AssetOut(), **(outs or {})},
         non_argument_deps=non_argument_deps,
         metadata=metadata,
         description=description,
