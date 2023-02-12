@@ -445,15 +445,23 @@ class ToposortedPriorityQueue:
         partition_sort_key: Optional[float]
         multi_asset_partition: Iterable[AssetKeyPartitionKey]
 
-        def __eq__(self, other):
-            return self.level == other.level and self.partition_sort_key == other.partition_sort_key
+        def __eq__(self, other: object) -> bool:
+            if isinstance(other, ToposortedPriorityQueue.QueueItem):
+                return (
+                    self.level == other.level
+                    and self.partition_sort_key == other.partition_sort_key
+                )
+            return False
 
-        def __lt__(self, other):
-            return self.level < other.level or (
-                self.level == other.level
-                and self.partition_sort_key is not None
-                and self.partition_sort_key < other.partition_sort_key
-            )
+        def __lt__(self, other: object) -> bool:
+            if isinstance(other, ToposortedPriorityQueue.QueueItem):
+                return self.level < other.level or (
+                    self.level == other.level
+                    and self.partition_sort_key is not None
+                    and other.partition_sort_key is not None
+                    and self.partition_sort_key < other.partition_sort_key
+                )
+            raise TypeError()
 
     def __init__(self, asset_graph: AssetGraph, items: Iterable[AssetKeyPartitionKey]):
         self._asset_graph = asset_graph
