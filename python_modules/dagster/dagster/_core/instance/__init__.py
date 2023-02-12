@@ -48,6 +48,8 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster._core.host_representation.external import ExternalSchedule
+from dagster._core.log_manager import DagsterLogRecord
 from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -95,7 +97,7 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.run_request import InstigatorType
-    from dagster._core.events import DagsterEvent, DagsterEventType
+    from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import PartitionBackfill
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -110,7 +112,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.launcher import RunLauncher
     from dagster._core.run_coordinator import RunCoordinator
-    from dagster._core.scheduler import Scheduler
+    from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
     from dagster._core.scheduler.instigation import (
         InstigatorState,
         InstigatorTick,
@@ -165,11 +167,11 @@ def _format_field_diff(field_diff: Mapping[str, Tuple[Any, Any]]) -> str:
 
 
 class _EventListenerLogHandler(logging.Handler):
-    def __init__(self, instance):
+    def __init__(self, instance: "DagsterInstance"):
         self._instance = instance
         super(_EventListenerLogHandler, self).__init__()
 
-    def emit(self, record):
+    def emit(self, record: DagsterLogRecord) -> None:
         from dagster._core.events import EngineEventData
         from dagster._core.events.log import StructuredLoggerMessage, construct_event_record
 
@@ -178,7 +180,7 @@ class _EventListenerLogHandler(logging.Handler):
                 name=record.name,
                 message=record.msg,
                 level=record.levelno,
-                meta=record.dagster_meta,
+                meta=record.dagster_meta,  # type: ignore
                 record=record,
             )
         )
@@ -225,7 +227,7 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
         return hasattr(self, "_instance_weakref") and (self._instance_weakref is not None)
 
     @property
-    def _instance(self) -> T_DagsterInstance:
+    def _instance(self) -> Optional[T_DagsterInstance]:
         instance = (
             self._instance_weakref()
             # Backcompat with custom subclasses that don't call super().__init__()
@@ -240,7 +242,7 @@ class MayHaveInstanceWeakref(Generic[T_DagsterInstance]):
         else:
             return instance
 
-    def register_instance(self, instance: T_DagsterInstance):
+    def register_instance(self, instance: T_DagsterInstance) -> None:
         check.invariant(
             # Backcompat with custom subclasses that don't call super().__init__()
             # in their own __init__ implementations
@@ -1631,10 +1633,10 @@ class DagsterInstance(DynamicPartitionsStore):
     ):
         return self._event_storage.get_records_for_run(run_id, cursor, of_type, limit)
 
-    def watch_event_logs(self, run_id, cursor, cb):
+    def watch_event_logs(self, run_id: str, cursor: str, cb):
         return self._event_storage.watch(run_id, cursor, cb)
 
-    def end_watch_event_logs(self, run_id, cb):
+    def end_watch_event_logs(self, run_id: str, cb):
         return self._event_storage.end_watch(run_id, cb)
 
     # asset storage
@@ -1849,9 +1851,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def report_engine_event(
         self,
-        message,
-        pipeline_run=None,
-        engine_event_data=None,
+        message: str,
+        pipeline_run: Optional[DagsterRun] = None,
+        engine_event_data: Optional[EngineEventData] = None,
         cls=None,
         step_key=None,
         pipeline_name=None,
@@ -1873,8 +1875,8 @@ class DagsterInstance(DynamicPartitionsStore):
             "Must include either pipeline_run or pipeline_name and run_id",
         )
 
-        run_id = run_id if run_id else pipeline_run.run_id
-        pipeline_name = pipeline_name if pipeline_name else pipeline_run.pipeline_name
+        run_id = run_id if run_id else pipeline_run.run_id  # type: ignore
+        pipeline_name = pipeline_name if pipeline_name else pipeline_run.pipeline_name  # type: ignore
 
         engine_event_data = check.opt_inst_param(
             engine_event_data,
@@ -1905,7 +1907,7 @@ class DagsterInstance(DynamicPartitionsStore):
         dagster_event: "DagsterEvent",
         run_id: str,
         log_level: Union[str, int] = logging.INFO,
-    ):
+    ) -> None:
         """
         Takes a DagsterEvent and stores it in persistent storage for the corresponding PipelineRun.
         """
@@ -1923,7 +1925,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
         self.handle_new_event(event_record)
 
-    def report_run_canceling(self, run, message=None):
+    def report_run_canceling(self, run: DagsterRun, message: Optional[str] = None):
         from dagster._core.events import DagsterEvent, DagsterEventType
 
         check.inst_param(run, "run", DagsterRun)
@@ -1941,9 +1943,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def report_run_canceled(
         self,
-        pipeline_run,
-        message=None,
-    ):
+        pipeline_run: DagsterRun,
+        message: Optional[str] = None,
+    ) -> DagsterEvent:
         from dagster._core.events import DagsterEvent, DagsterEventType
 
         check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
@@ -1964,7 +1966,9 @@ class DagsterInstance(DynamicPartitionsStore):
         )
         return dagster_event
 
-    def report_run_failed(self, pipeline_run, message=None):
+    def report_run_failed(
+        self, pipeline_run: DagsterRun, message: Optional[str] = None
+    ) -> DagsterEvent:
         from dagster._core.events import DagsterEvent, DagsterEventType
 
         check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
@@ -1987,13 +1991,13 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # directories
 
-    def file_manager_directory(self, run_id: str):
+    def file_manager_directory(self, run_id: str) -> str:
         return self._local_artifact_storage.file_manager_dir(run_id)
 
-    def storage_directory(self):
+    def storage_directory(self) -> str:
         return self._local_artifact_storage.storage_dir
 
-    def schedules_directory(self):
+    def schedules_directory(self) -> str:
         return self._local_artifact_storage.schedules_dir
 
     # Runs coordinator
@@ -2051,7 +2055,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Run launcher
 
-    def launch_run(self, run_id: str, workspace: "IWorkspace"):
+    def launch_run(self, run_id: str, workspace: "IWorkspace") -> DagsterRun:
         """Launch a pipeline run.
 
         This method is typically called using `instance.submit_run` rather than being invoked
@@ -2098,7 +2102,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return run
 
-    def resume_run(self, run_id: str, workspace: "IWorkspace", attempt_number: int):
+    def resume_run(self, run_id: str, workspace: "IWorkspace", attempt_number: int) -> DagsterRun:
         """Resume a pipeline run.
 
         This method should be called on runs which have already been launched, but whose run workers
@@ -2146,27 +2150,32 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return run
 
-    def count_resume_run_attempts(self, run_id: str):
+    def count_resume_run_attempts(self, run_id: str) -> int:
         from dagster._daemon.monitoring import count_resume_run_attempts
 
         return count_resume_run_attempts(self, run_id)
 
-    def run_will_resume(self, run_id: str):
+    def run_will_resume(self, run_id: str) -> bool:
         if not self.run_monitoring_enabled:
             return False
         return self.count_resume_run_attempts(run_id) < self.run_monitoring_max_resume_run_attempts
 
     # Scheduler
 
-    def start_schedule(self, external_schedule):
-        return self._scheduler.start_schedule(self, external_schedule)
+    def start_schedule(self, external_schedule: ExternalSchedule) -> InstigatorState:
+        return self._scheduler.start_schedule(self, external_schedule)  # type: ignore
 
-    def stop_schedule(self, schedule_origin_id, schedule_selector_id, external_schedule):
-        return self._scheduler.stop_schedule(
+    def stop_schedule(
+        self,
+        schedule_origin_id: str,
+        schedule_selector_id: str,
+        external_schedule: ExternalSchedule,
+    ) -> InstigatorState:
+        return self._scheduler.stop_schedule(  # type: ignore
             self, schedule_origin_id, schedule_selector_id, external_schedule
         )
 
-    def scheduler_debug_info(self):
+    def scheduler_debug_info(self) -> "SchedulerDebugInfo":
         from dagster._core.definitions.run_request import InstigatorType
         from dagster._core.scheduler import SchedulerDebugInfo
 
@@ -2187,7 +2196,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return SchedulerDebugInfo(
             scheduler_config_info=self._info_str_for_component("Scheduler", self.scheduler),
-            scheduler_info=self.scheduler.debug_info(),
+            scheduler_info=self.scheduler.debug_info(),  # type: ignore
             schedule_storage=schedules,
             errors=errors,
         )
