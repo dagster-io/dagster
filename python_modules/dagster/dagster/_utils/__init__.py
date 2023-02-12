@@ -450,24 +450,6 @@ def datetime_as_float(dt: datetime.datetime) -> float:
     return float((dt - EPOCH).total_seconds())
 
 
-# hashable frozen string to string dict
-class frozentags(frozendict, Mapping[str, str]):
-    def __init__(self, *args, **kwargs):
-        super(frozentags, self).__init__(*args, **kwargs)
-        check.dict_param(self, "self", key_type=str, value_type=str)
-
-    def __hash__(self):
-        return hash(tuple(sorted(self.items())))
-
-    def updated_with(self, new_tags):
-        check.dict_param(new_tags, "new_tags", key_type=str, value_type=str)
-        updated = dict(self)
-        for key, value in new_tags.items():
-            updated[key] = value
-
-        return frozentags(updated)
-
-
 T_GeneratedContext = TypeVar("T_GeneratedContext")
 
 

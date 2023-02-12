@@ -30,7 +30,6 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
-from dagster._utils import frozentags
 
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -98,7 +97,7 @@ class NodeInvocation(
             cls,
             name=check.str_param(name, "name"),
             alias=check.opt_str_param(alias, "alias"),
-            tags=frozentags(check.opt_mapping_param(tags, "tags", value_type=str, key_type=str)),
+            tags=check.opt_mapping_param(tags, "tags", value_type=str, key_type=str),
             hook_defs=frozenset(
                 check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
             ),
@@ -185,7 +184,7 @@ class Node(ABC):
         return self.definition.output_dict
 
     @property
-    def tags(self) -> frozentags:
+    def tags(self) -> Mapping[str, str]:
         # Type-ignore temporarily pending assessment of right data structure for `tags`
         return self.definition.tags.updated_with(self._additional_tags)  # type: ignore
 

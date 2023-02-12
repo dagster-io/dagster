@@ -10,7 +10,6 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import check_reserved_tags
-from dagster._utils import frozentags
 from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
@@ -92,40 +91,44 @@ def struct_to_string(name: str, **kwargs: object) -> str:
     return "{name}({props_str})".format(name=name, props_str=props_str)
 
 
-def validate_tags(tags: Optional[Mapping[str, Any]], allow_reserved_tags=True) -> frozentags:
-    valid_tags = {}
+def validate_tags(
+    tags: Optional[Mapping[str, object]], allow_reserved_tags=True
+) -> Mapping[str, str]:
+    valid_tags: Dict[str, str] = {}
     for key, value in check.opt_mapping_param(tags, "tags", key_type=str).items():
         if not isinstance(value, str):
-            valid = False
-            err_reason = 'Could not JSON encode value "{}"'.format(value)
-            str_val = None
             try:
                 str_val = seven.json.dumps(value)
-                err_reason = (
-                    'JSON encoding "{json}" of value "{val}" is not equivalent to original value'
-                    .format(json=str_val, val=value)
-                )
-
                 valid = seven.json.loads(str_val) == value
-            except Exception:
-                pass
-
-            if not valid:
-                raise DagsterInvalidDefinitionError(
-                    'Invalid value for tag "{key}", {err_reason}. Tag values must be strings '
-                    "or meet the constraint that json.loads(json.dumps(value)) == value.".format(
-                        key=key, err_reason=err_reason
+                if not valid:
+                    raise DagsterInvalidDefinitionError(
+                        _get_tags_error_msg(
+                            key,
+                            (
+                                f'JSON encoding "{str_val}" of value "{value}" is not equivalent to'
+                                " original value"
+                            ),
+                        )
                     )
+                valid_tags[key] = str_val
+            except TypeError:  # thrown for unencodable json
+                raise DagsterInvalidDefinitionError(
+                    _get_tags_error_msg(key, f'Could not JSON encode value "{value}"')
                 )
-
-            valid_tags[key] = str_val
         else:
             valid_tags[key] = value
 
     if not allow_reserved_tags:
         check_reserved_tags(valid_tags)
 
-    return frozentags(valid_tags)
+    return valid_tags
+
+
+def _get_tags_error_msg(key: str, error_reason: str) -> str:
+    return (
+        f'Invalid value for tag "{key}", {error_reason}. Tag values must be strings or meet the'
+        " constraint that json.loads(json.dumps(value)) == value."
+    )
 
 
 def validate_group_name(group_name: Optional[str]) -> str:

@@ -27,7 +27,6 @@ from dagster._core.errors import (
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
-from dagster._utils import frozentags
 from dagster._utils.backcompat import experimental_class_warning
 from dagster._utils.merger import merge_dicts
 
@@ -357,7 +356,7 @@ class PipelineDefinition:
 
     @property
     def tags(self) -> Mapping[str, str]:
-        return frozentags(**merge_dicts(self._graph_def.tags, self._tags))
+        return merge_dicts(self._graph_def.tags, self._tags)
 
     @property
     def metadata(self) -> Sequence[MetadataEntry]:

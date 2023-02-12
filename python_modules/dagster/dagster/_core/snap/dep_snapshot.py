@@ -217,7 +217,7 @@ class SolidInvocationSnap(
         [
             ("solid_name", str),
             ("solid_def_name", str),
-            ("tags", Mapping[object, object]),
+            ("tags", Mapping[str, str]),
             ("input_dep_snaps", Sequence[InputDependencySnap]),
             ("is_dynamic_mapped", bool),
         ],
@@ -227,7 +227,7 @@ class SolidInvocationSnap(
         cls,
         solid_name: str,
         solid_def_name: str,
-        tags: Mapping[object, object],
+        tags: Mapping[str, str],
         input_dep_snaps: Sequence[InputDependencySnap],
         is_dynamic_mapped: bool = False,
     ):

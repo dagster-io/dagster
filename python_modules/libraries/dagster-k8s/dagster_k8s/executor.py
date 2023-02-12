@@ -21,7 +21,6 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
     StepHandlerContext,
 )
-from dagster._utils import frozentags
 from dagster._utils.merger import merge_dicts
 
 from dagster_k8s.launcher import K8sRunLauncher

@@ -8,7 +8,7 @@ from dagster._core.container_context import process_shared_container_context_con
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.utils import parse_env_var
-from dagster._utils import frozentags, make_readonly_value
+from dagster._utils import make_readonly_value
 
 if TYPE_CHECKING:
     from . import K8sRunLauncher
@@ -185,7 +185,7 @@ class K8sContainerContext(
                 )
 
         if include_run_tags:
-            user_defined_k8s_config = get_user_defined_k8s_config(frozentags(pipeline_run.tags))
+            user_defined_k8s_config = get_user_defined_k8s_config(pipeline_run.tags)
 
             context = context.merge(
                 K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict())
