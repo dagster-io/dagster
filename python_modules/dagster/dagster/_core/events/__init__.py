@@ -893,9 +893,7 @@ class DagsterEvent(
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_START,
             step_context=step_context,
-            message='Started execution of step "{step_key}".'.format(
-                step_key=step_context.step.key
-            ),
+            message=f'Started execution of step "{step_context.step_key}".',
         )
 
     @staticmethod
@@ -1753,7 +1751,7 @@ class ComputeLogsCaptureData(
         return super(ComputeLogsCaptureData, cls).__new__(
             cls,
             file_key=check.str_param(file_key, "file_key"),
-            step_keys=check.opt_list_param(step_keys, "step_keys", of_type=str),
+            step_keys=check.opt_sequence_param(step_keys, "step_keys", of_type=str),
             external_url=check.opt_str_param(external_url, "external_url"),
             external_stdout_url=check.opt_str_param(external_stdout_url, "external_stdout_url"),
             external_stderr_url=check.opt_str_param(external_stderr_url, "external_stderr_url"),

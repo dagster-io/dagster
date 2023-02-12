@@ -17,7 +17,7 @@ def filter_dagster_events_from_cli_logs(log_lines: Sequence[str]) -> Sequence[Da
     TODO: replace with reading event logs from the DB
 
     """
-    check.list_param(log_lines, "log_lines", str)
+    check.sequence_param(log_lines, "log_lines", str)
 
     coalesced_lines = []
     buffer = []

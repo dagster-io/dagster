@@ -210,7 +210,7 @@ DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
 class AssetLineageInfo(
     NamedTuple("_AssetLineageInfo", [("asset_key", AssetKey), ("partitions", AbstractSet[str])])
 ):
-    def __new__(cls, asset_key: AssetKey, partitions: Optional[AbstractSet[str]]=None):
+    def __new__(cls, asset_key: AssetKey, partitions: Optional[AbstractSet[str]] = None):
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
         partitions = check.opt_set_param(partitions, "partitions", str)
         return super(AssetLineageInfo, cls).__new__(cls, asset_key=asset_key, partitions=partitions)
@@ -795,19 +795,15 @@ class ObjectStoreOperation(
     @classmethod
     def serializable(cls, inst, **kwargs):
         return cls(
-            **dict(
-                {
-                    "op": inst.op.value,
-                    "key": inst.key,
-                    "dest_key": inst.dest_key,
-                    "obj": None,
-                    "serialization_strategy_name": inst.serialization_strategy_name,
-                    "object_store_name": inst.object_store_name,
-                    "value_name": inst.value_name,
-                    "version": inst.version,
-                },
-                **kwargs,
-            )
+            op=inst.op.value,
+            key=inst.key,
+            dest_key=inst.dest_key,
+            obj=None,
+            serialization_strategy_name=inst.serialization_strategy_name,
+            object_store_name=inst.object_store_name,
+            value_name=inst.value_name,
+            version=inst.version,
+            **kwargs,
         )
 
 
