@@ -48,8 +48,9 @@ from dagster._core.errors import (
 )
 from dagster._core.selector.subset_selector import (
     AssetSelectionData,
-    LeafNodeSelection,
     OpSelectionData,
+    SelectionTreeBranch,
+    SelectionTreeLeaf,
     parse_op_selection,
 )
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
@@ -757,7 +758,7 @@ def _dep_key_of(node: Node) -> NodeInvocation:
 
 def get_subselected_graph_definition(
     graph: GraphDefinition,
-    resolved_op_selection_dict: Mapping,
+    resolved_op_selection_dict: SelectionTreeBranch,
     parent_handle: Optional[NodeHandle] = None,
 ) -> SubselectedGraphDefinition:
     deps: Dict[
@@ -775,13 +776,11 @@ def get_subselected_graph_definition(
 
         # rebuild graph if any nodes inside the graph are selected
         definition: Union[SubselectedGraphDefinition, NodeDefinition]
-        if (
-            isinstance(node, GraphNode)
-            and resolved_op_selection_dict[node.name] is not LeafNodeSelection
-        ):
+        selection_node = resolved_op_selection_dict[node.name]
+        if isinstance(node, GraphNode) and not isinstance(selection_node, SelectionTreeLeaf):
             definition = get_subselected_graph_definition(
                 node.definition,
-                resolved_op_selection_dict[node.name],
+                selection_node,
                 parent_handle=node_handle,
             )
         # use definition if the node as a whole is selected. this includes selecting the entire graph

@@ -25,6 +25,7 @@ from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.selector.subset_selector import SelectionTree
 from dagster._utils.backcompat import (
     ExperimentalWarning,
     deprecation_warning,
@@ -707,7 +708,9 @@ class AssetsDefinition(ResourceAddable):
         selected_asset_keys: AbstractSet[AssetKey],
     ):
         from dagster._core.definitions.graph_definition import GraphDefinition
-        from dagster._core.selector.subset_selector import convert_dot_seperated_string_to_dict
+        from dagster._core.selector.subset_selector import (
+            convert_dot_separated_string_to_selection_tree,
+        )
 
         from .job_definition import get_subselected_graph_definition
 
@@ -720,7 +723,7 @@ class AssetsDefinition(ResourceAddable):
         dep_node_handles_by_asset_key = get_dep_node_handles_of_graph_backed_asset(
             self.node_def, self
         )
-        op_selection = []
+        op_selection: List[str] = []
         for asset_key in selected_asset_keys:
             dep_node_handles = dep_node_handles_by_asset_key[asset_key]
             for dep_node_handle in dep_node_handles:
@@ -731,11 +734,13 @@ class AssetsDefinition(ResourceAddable):
         # generate the selected assets. The ops should all be nested within a top-level graph
         # node in the original job.
 
-        resolved_op_selection_dict: Dict = {}
+        op_selection_tree: SelectionTree = {}
         for item in op_selection:
-            convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
+            convert_dot_separated_string_to_selection_tree(
+                op_selection_tree, splits=item.split(".")
+            )
 
-        return get_subselected_graph_definition(self.node_def, resolved_op_selection_dict)
+        return get_subselected_graph_definition(self.node_def, op_selection_tree)
 
     def subset_for(
         self,
