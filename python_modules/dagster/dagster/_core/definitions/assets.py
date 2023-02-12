@@ -586,6 +586,10 @@ class AssetsDefinition(ResourceAddable):
     def code_versions_by_key(self) -> Mapping[AssetKey, Optional[str]]:
         return self._code_versions_by_key
 
+    @property
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+        return self._partition_mappings
+
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(in_asset_key)
