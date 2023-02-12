@@ -1,4 +1,5 @@
 from json import JSONDecodeError
+from typing import Any, List, Sequence
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent
@@ -6,7 +7,7 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 
 
-def filter_dagster_events_from_cli_logs(log_lines):
+def filter_dagster_events_from_cli_logs(log_lines: Sequence[str]) -> Sequence[DagsterEvent[Any]]:
     """Filters the raw log lines from a dagster-cli invocation to return only the lines containing json.
 
     - Log lines don't necessarily come back in order
@@ -36,7 +37,7 @@ def filter_dagster_events_from_cli_logs(log_lines):
                 buffer = []
                 in_split_line = False
 
-    events = []
+    events: List[DagsterEvent[Any]] = []
     for line in coalesced_lines:
         try:
             events.append(deserialize_value(line, DagsterEvent))

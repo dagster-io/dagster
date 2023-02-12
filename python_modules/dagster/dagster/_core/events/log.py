@@ -1,9 +1,11 @@
 from typing import Mapping, NamedTuple, Optional, Union
+from typing import Any, Dict, Generic, Mapping, NamedTuple, Optional, TypeVar, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.events import DagsterEvent, DagsterEventType, EventSpecificData
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import (
     deserialize_value,
@@ -18,6 +20,8 @@ from dagster._utils.log import (
     construct_single_handler_logger,
 )
 
+
+T_EventSpecificData = TypeVar("T_EventSpecificData", bound="EventSpecificData")
 
 @whitelist_for_serdes(
     # These were originally distinguished from each other but ended up being empty subclasses
@@ -41,7 +45,8 @@ class EventLogEntry(
             ("job_name", PublicAttr[Optional[str]]),
             ("dagster_event", PublicAttr[Optional[DagsterEvent]]),
         ],
-    )
+    ),
+    Generic[T_EventSpecificData],
 ):
     """Entries in the event log.
 

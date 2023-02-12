@@ -8,11 +8,13 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    Generic,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
     Union,
     cast,
 )
@@ -72,8 +74,10 @@ EventSpecificData = Union[
     "HandledOutputData",
     "LoadedInputData",
     "ComputeLogsCaptureData",
+    "AssetStoreOperationData",
     "AssetObservationData",
     "AssetMaterializationPlannedData",
+    None,
 ]
 
 
@@ -285,7 +289,7 @@ def _validate_event_specific_data(
     return event_specific_data
 
 
-def log_step_event(step_context: IStepContext, event: "DagsterEvent") -> None:
+def log_step_event(step_context: IStepContext, event: "DagsterEvent[Any]") -> None:
     event_type = DagsterEventType(event.event_type_value)
     log_level = logging.ERROR if event_type in FAILURE_EVENTS else logging.DEBUG
 
@@ -296,7 +300,7 @@ def log_step_event(step_context: IStepContext, event: "DagsterEvent") -> None:
     )
 
 
-def log_job_event(job_context: IPlanContext, event: "DagsterEvent") -> None:
+def log_job_event(job_context: IPlanContext, event: "DagsterEvent[Any]") -> None:
     event_type = DagsterEventType(event.event_type_value)
     log_level = logging.ERROR if event_type in FAILURE_EVENTS else logging.DEBUG
 
@@ -307,7 +311,7 @@ def log_job_event(job_context: IPlanContext, event: "DagsterEvent") -> None:
     )
 
 
-def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") -> None:
+def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent[Any]") -> None:
     event_specific_data = cast(EngineEventData, event.event_specific_data)
 
     log_level = logging.ERROR if event_specific_data.error else logging.DEBUG
@@ -350,6 +354,7 @@ class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
             ),
         )
 
+T_EventSpecificData = TypeVar("T_EventSpecificData", bound="EventSpecificData")
 
 @whitelist_for_serdes(
     serializer=DagsterEventSerializer,
@@ -368,12 +373,13 @@ class DagsterEvent(
             ("node_handle", Optional[NodeHandle]),
             ("step_kind_value", Optional[str]),
             ("logging_tags", Optional[Mapping[str, str]]),
-            ("event_specific_data", Optional["EventSpecificData"]),
+            ("event_specific_data", T_EventSpecificData),
             ("message", Optional[str]),
             ("pid", Optional[int]),
             ("step_key", Optional[str]),
         ],
-    )
+    ),
+    Generic[T_EventSpecificData],
 ):
     """Events yielded by op and job execution.
 
@@ -391,13 +397,52 @@ class DagsterEvent(
         step_key (Optional[str]): DEPRECATED
     """
 
+    # @staticmethod
+    # def is_step_output(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[StepOutputData]"]:
+    #     return event.event_type == DagsterEventType.STEP_OUTPUT
+    #
+    # @staticmethod
+    # def is_step_failure(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[StepFailureData]"]:
+    #     return event.event_type == DagsterEventType.STEP_FAILURE
+    #
+    # @staticmethod
+    # def is_step_success(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[StepSuccessData]"]:
+    #     return event.event_type == DagsterEventType.STEP_SUCCESS
+    #
+    # @staticmethod
+    # def is_step_materialization(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[StepMaterializationData]"]:
+    #     return event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+    #
+    # @staticmethod
+    # def is_step_expectation_result(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[StepExpectationResultData]"]:
+    #     return event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT
+    #
+    # @staticmethod
+    # def is_engine(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[EngineEventData]"]:
+    #     return event.event_type in (
+    #         DagsterEventType.ENGINE_EVENT,
+    #         DagsterEventType.STEP_WORKER_STARTING,
+    #         DagsterEventType.STEP_WORKER_STARTED,
+    #         DagsterEventType.RESOURCE_INIT_STARTED,
+    #         DagsterEventType.RESOURCE_INIT_SUCCESS,
+    #         DagsterEventType.RESOURCE_INIT_FAILURE,
+    #     )
+    #
+    # @staticmethod
+    # def is_hook_errored(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[HookErroredData]"]:
+    #     return event.event_type == DagsterEventType.HOOK_ERRORED
+    #
+    # @staticmethod
+    # def is_asset_materialization_planned(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[AssetMaterializationPlannedData]"]:
+    #     return event.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+
     @staticmethod
     def from_step(
         event_type: "DagsterEventType",
         step_context: IStepContext,
-        event_specific_data: Optional["EventSpecificData"] = None,
+        event_specific_data: Optional[T_EventSpecificData] = None,
         message: Optional[str] = None,
-    ) -> "DagsterEvent":
+    ) -> "DagsterEvent[T_EventSpecificData]":
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
             job_name=step_context.job_name,
@@ -419,9 +464,9 @@ class DagsterEvent(
         event_type: DagsterEventType,
         job_context: IPlanContext,
         message: Optional[str] = None,
-        event_specific_data: Optional["EventSpecificData"] = None,
+        event_specific_data: Optional[T_EventSpecificData] = None,
         step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
-    ) -> "DagsterEvent":
+    ) -> "DagsterEvent[T_EventSpecificData]":
         check.opt_inst_param(
             step_handle, "step_handle", (StepHandle, ResolvedFromDynamicStepHandle)
         )
@@ -446,8 +491,8 @@ class DagsterEvent(
         execution_plan: "ExecutionPlan",
         log_manager: DagsterLogManager,
         message: Optional[str] = None,
-        event_specific_data: Optional["EngineEventData"] = None,
-    ) -> "DagsterEvent":
+        event_specific_data: Optional[T_EventSpecificData] = None,
+    ) -> "DagsterEvent[T_EventSpecificData]":
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
             job_name=job_name,
@@ -759,7 +804,7 @@ class DagsterEvent(
     @staticmethod
     def step_output_event(
         step_context: StepExecutionContext, step_output_data: StepOutputData
-    ) -> "DagsterEvent":
+    ) -> "DagsterEvent[StepOutputData]":
         output_def = step_context.op.output_def_named(
             step_output_data.step_output_handle.output_name
         )
@@ -793,8 +838,8 @@ class DagsterEvent(
     def step_failure_event(
         step_context: IStepContext,
         step_failure_data: "StepFailureData",
-        message=None,
-    ) -> "DagsterEvent":
+        message: Optional[str] = None,
+    ) -> "DagsterEvent[StepFailureData]":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_FAILURE,
             step_context=step_context,
@@ -805,7 +850,7 @@ class DagsterEvent(
     @staticmethod
     def step_retry_event(
         step_context: IStepContext, step_retry_data: "StepRetryData"
-    ) -> "DagsterEvent":
+    ) -> "DagsterEvent[StepRetryData]":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_UP_FOR_RETRY,
             step_context=step_context,
@@ -823,7 +868,7 @@ class DagsterEvent(
     @staticmethod
     def step_input_event(
         step_context: StepExecutionContext, step_input_data: "StepInputData"
-    ) -> "DagsterEvent":
+    ) -> "DagsterEvent[StepInputData]":
         input_def = step_context.op_def.input_def_named(step_input_data.input_name)
 
         return DagsterEvent.from_step(
@@ -844,7 +889,7 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def step_start_event(step_context: IStepContext) -> "DagsterEvent":
+    def step_start_event(step_context: IStepContext) -> "DagsterEvent[None]":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_START,
             step_context=step_context,

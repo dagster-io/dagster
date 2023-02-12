@@ -395,7 +395,7 @@ class DagsterLogManager(logging.Logger):
             logger.removeHandler(self._dagster_handler)
 
     def log_dagster_event(
-        self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent"
+        self, level: Union[str, int], msg: str, dagster_event: "DagsterEvent[Any]"
     ) -> None:
         """Log a DagsterEvent at the given level. Attributes about the context it was logged in
         (such as the solid name or pipeline name) will be automatically attached to the created record.

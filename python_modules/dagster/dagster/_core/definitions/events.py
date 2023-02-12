@@ -11,6 +11,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -99,7 +100,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
     def __hash__(self):
         return hash(tuple(self.path))
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, AssetKey):
             return False
         if len(self.path) != len(other.path):
@@ -209,7 +210,7 @@ DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
 class AssetLineageInfo(
     NamedTuple("_AssetLineageInfo", [("asset_key", AssetKey), ("partitions", AbstractSet[str])])
 ):
-    def __new__(cls, asset_key: AssetKey, partitions: Optional[AbstractSet[str]] = None):
+    def __new__(cls, asset_key: AssetKey, partitions: Optional[AbstractSet[str]]=None):
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
         partitions = check.opt_set_param(partitions, "partitions", str)
         return super(AssetLineageInfo, cls).__new__(cls, asset_key=asset_key, partitions=partitions)
@@ -825,7 +826,7 @@ class HookExecutionResult(
         return super(HookExecutionResult, cls).__new__(
             cls,
             hook_name=check.str_param(hook_name, "hook_name"),
-            is_skipped=cast(bool, check.opt_bool_param(is_skipped, "is_skipped", default=False)),
+            is_skipped=check.opt_bool_param(is_skipped, "is_skipped", default=False),
         )
 
 
