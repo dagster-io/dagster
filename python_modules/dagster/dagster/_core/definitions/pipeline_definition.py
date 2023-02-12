@@ -466,7 +466,7 @@ class PipelineDefinition:
         return self._graph_def.solid_named(name)
 
     @property
-    def solids(self):
+    def solids(self) -> Sequence[Node]:
         return self._graph_def.solids
 
     @property

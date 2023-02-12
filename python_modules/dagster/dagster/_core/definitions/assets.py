@@ -1,3 +1,5 @@
+# pyright: strict reportPrivateUsage=off
+
 import hashlib
 import json
 import warnings
@@ -7,6 +9,7 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -409,7 +412,7 @@ class AssetsDefinition(ResourceAddable):
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
 
-        transformed_internal_asset_deps = {}
+        transformed_internal_asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         if internal_asset_deps:
             for output_name, asset_keys in internal_asset_deps.items():
                 check.invariant(
@@ -576,11 +579,11 @@ class AssetsDefinition(ResourceAddable):
         return self._partitions_def
 
     @property
-    def metadata_by_key(self):
+    def metadata_by_key(self) -> Mapping[AssetKey, MetadataUserInput]:
         return self._metadata_by_key
 
     @property
-    def code_versions_by_key(self):
+    def code_versions_by_key(self) -> Mapping[AssetKey, Optional[str]]:
         return self._code_versions_by_key
 
     @public
@@ -610,7 +613,7 @@ class AssetsDefinition(ResourceAddable):
         returns the op def within the graph that produces the given asset key.
         """
         output_name = self.get_output_name_for_asset_key(key)
-        return cast(OpDefinition, self.node_def.resolve_output_to_origin_op_def(output_name))
+        return self.node_def.resolve_output_to_origin_op_def(output_name)
 
     def with_prefix_or_group(
         self,
@@ -823,7 +826,7 @@ class AssetsDefinition(ResourceAddable):
             )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
-        result = []
+        result: List[SourceAsset] = []
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 

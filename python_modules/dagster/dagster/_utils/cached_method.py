@@ -1,11 +1,19 @@
 from functools import wraps
+from typing import AbstractSet, Callable, Dict, Hashable, Mapping, Tuple, Type, TypeVar
+
+from typing_extensions import Concatenate, Final, ParamSpec
 
 from dagster import _check as check
 
-NO_VALUE_IN_CACHE_SENTINEL = object()
+NO_VALUE_IN_CACHE_SENTINEL: Final = object()
+
+S = TypeVar("S")
+T = TypeVar("T")
+T_Callable = TypeVar("T_Callable", bound=Callable)
+P = ParamSpec("P")
 
 
-def cached_method(method):
+def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenate[S, P], T]:
     """
     Caches the results of a method call.
 
@@ -43,10 +51,10 @@ def cached_method(method):
     """
 
     @wraps(method)
-    def helper(self, *args, **kwargs):
+    def helper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
         cache_attr_name = method.__name__ + "_cache"
         if not hasattr(self, cache_attr_name):
-            cache = {}
+            cache: Dict[Hashable, T] = {}
             setattr(self, cache_attr_name, cache)
         else:
             cache = getattr(self, cache_attr_name)
@@ -54,7 +62,7 @@ def cached_method(method):
         key = _make_key(args, kwargs)
         cached_result = cache.get(key, NO_VALUE_IN_CACHE_SENTINEL)
         if cached_result is not NO_VALUE_IN_CACHE_SENTINEL:
-            return cached_result
+            return cached_result  # type: ignore
         else:
             result = method(self, *args, **kwargs)
             cache[key] = result
@@ -74,15 +82,19 @@ class _HashedSeq(list):
 
     __slots__ = "hashvalue"
 
-    def __init__(self, tup):  # pylint: disable=super-init-not-called
+    def __init__(self, tup: Tuple[object, ...]):  # pylint: disable=super-init-not-called
         self[:] = tup
         self.hashvalue = hash(tup)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self.hashvalue
 
 
-def _make_key(args, kwds, fasttypes={int, str}):  # pylint: disable=dangerous-default-value
+def _make_key(
+    args: Tuple[object, ...],
+    kwds: Mapping[str, object],
+    fasttypes: AbstractSet[Type[object]] = {int, str},
+) -> Hashable:
     """
     Adapted from https://github.com/python/cpython/blob/f9433fff476aa13af9cb314fcc6962055faa4085/Lib/functools.py#L448.
 

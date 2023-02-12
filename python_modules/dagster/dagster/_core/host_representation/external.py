@@ -253,7 +253,9 @@ class ExternalRepository:
         """
         return self.get_external_origin().get_id()
 
-    def get_external_asset_nodes(self, job_name=None) -> Sequence[ExternalAssetNode]:
+    def get_external_asset_nodes(
+        self, job_name: Optional[str] = None
+    ) -> Sequence[ExternalAssetNode]:
         return (
             self.external_repository_data.external_asset_graph_data
             if job_name is None
