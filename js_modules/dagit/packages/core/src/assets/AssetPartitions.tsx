@@ -128,9 +128,7 @@ export const AssetPartitions: React.FC<Props> = ({
         >
           <DimensionRangeWizard
             partitionKeys={timeRange.dimension.partitionKeys}
-            partitionStateForKey={(dimensionKey) =>
-              assetHealth.stateForSingleDimension(timeRangeIdx, dimensionKey)
-            }
+            ranges={assetHealth.rangesForSingleDimension(timeRangeIdx)}
             selected={timeRange.selectedKeys}
             setSelected={(selectedKeys) =>
               setRanges(ranges.map((r) => (r === timeRange ? {...r, selectedKeys} : r)))

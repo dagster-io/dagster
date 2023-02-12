@@ -2,6 +2,7 @@ import {Box, Tooltip, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {Range} from '../assets/usePartitionHealthData';
 import {useViewport} from '../gantt/useViewport';
 import {RunStatus} from '../graphql/types';
 
@@ -41,9 +42,33 @@ export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
   }
 };
 
+type PartitionStateRange = {
+  start: {idx: number; key: string};
+  end: {idx: number; key: string};
+  value: PartitionState;
+};
+
+export function assembleIntoPartitionStateRanges(
+  keys: string[],
+  keyTestFn: (key: string, idx: number) => RunStatus,
+) {
+  const result: PartitionStateRange[] = [];
+
+  for (let idx = 0; idx < keys.length; idx++) {
+    const value = runStatusToPartitionState(keyTestFn(keys[idx], idx));
+    if (!result.length || result[result.length - 1].value !== value) {
+      result.push({start: {idx, key: keys[idx]}, end: {idx, key: keys[idx]}, value});
+    } else {
+      result[result.length - 1].end = {key: keys[idx], idx};
+    }
+  }
+
+  return result;
+}
+
 export const PartitionStatus: React.FC<{
   partitionNames: string[];
-  partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState;
+  ranges: Range[] | PartitionStateRange[];
   selected?: string[];
   small?: boolean;
   onClick?: (partitionName: string) => void;
@@ -54,7 +79,7 @@ export const PartitionStatus: React.FC<{
   selectionWindowSize?: number;
 }> = ({
   partitionNames,
-  partitionStateForKey,
+  ranges,
   selected,
   onSelect,
   onClick,
@@ -140,19 +165,7 @@ export const PartitionStatus: React.FC<{
     [selectedSet, partitionNames],
   );
 
-  const spans = React.useMemo(
-    () =>
-      splitPartitions
-        ? partitionNames.map((name, idx) => ({
-            startIdx: idx,
-            endIdx: idx,
-            status: partitionStateForKey(name, idx),
-          }))
-        : assembleIntoSpans(partitionNames, partitionStateForKey),
-    [splitPartitions, partitionNames, partitionStateForKey],
-  );
-
-  const highestIndex = spans.map((s) => s.endIdx).reduce((prev, cur) => Math.max(prev, cur), 0);
+  const highestIndex = ranges.map((s) => s.end.idx).reduce((prev, cur) => Math.max(prev, cur), 0);
   const indexToPct = (idx: number) => `${((idx * 100) / partitionNames.length).toFixed(3)}%`;
   const showSeparators =
     splitPartitions && viewport.width > MIN_SPAN_WIDTH * (partitionNames.length + 1);
@@ -197,27 +210,22 @@ export const PartitionStatus: React.FC<{
         onClick={_onClick}
         onMouseDown={_onMouseDown}
       >
-        {spans.map((s) => (
+        {ranges.map((s) => (
           <div
-            key={s.startIdx}
+            key={s.start.idx}
             style={{
-              left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
-              width: indexToPct(s.endIdx - s.startIdx + 1),
-              minWidth: s.status && s.status !== PartitionState.MISSING ? 2 : undefined,
+              left: `min(calc(100% - 2px), ${indexToPct(s.start.idx)})`,
+              width: indexToPct(s.end.idx - s.start.idx + 1),
+              minWidth: s.value ? 2 : undefined,
               position: 'absolute',
-              zIndex:
-                s.startIdx === 0 || s.endIdx === highestIndex
-                  ? 3
-                  : s.status && s.status !== PartitionState.MISSING
-                  ? 2
-                  : 1, //End-caps, then statuses, then missing
+              zIndex: s.start.idx === 0 || s.end.idx === highestIndex ? 3 : 2,
               top: 0,
             }}
           >
             {hideStatusTooltip || tooltipMessage ? (
               <div
                 className="color-span"
-                style={partitionStateToStyle(s.status)}
+                style={partitionStateToStyle(s.value)}
                 title={tooltipMessage}
               />
             ) : (
@@ -227,27 +235,27 @@ export const PartitionStatus: React.FC<{
                 content={
                   tooltipMessage
                     ? tooltipMessage
-                    : s.startIdx === s.endIdx
-                    ? `Partition ${partitionNames[s.startIdx]} is ${partitionStatusToText(
-                        s.status,
+                    : s.start.idx === s.end.idx
+                    ? `Partition ${partitionNames[s.start.idx]} is ${partitionStatusToText(
+                        s.value,
                       ).toLowerCase()}`
-                    : `Partitions ${partitionNames[s.startIdx]} through ${
-                        partitionNames[s.endIdx]
-                      } are ${partitionStatusToText(s.status).toLowerCase()}`
+                    : `Partitions ${partitionNames[s.start.idx]} through ${
+                        partitionNames[s.end.idx]
+                      } are ${partitionStatusToText(s.value).toLowerCase()}`
                 }
               >
-                <div className="color-span" style={partitionStateToStyle(s.status)} />
+                <div className="color-span" style={partitionStateToStyle(s.value)} />
               </Tooltip>
             )}
           </div>
         ))}
         {showSeparators
-          ? spans.slice(1).map((s) => (
+          ? ranges.slice(1).map((s) => (
               <div
                 className="separator"
-                key={`separator_${s.startIdx}`}
+                key={`separator_${s.start.idx}`}
                 style={{
-                  left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
+                  left: `min(calc(100% - 2px), ${indexToPct(s.start.idx)})`,
                   height: small ? 14 : 24,
                 }}
               />

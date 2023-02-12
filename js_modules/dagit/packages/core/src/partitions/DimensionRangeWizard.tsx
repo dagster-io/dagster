@@ -2,16 +2,17 @@ import {Box, Button} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
+import {Range} from '../assets/usePartitionHealthData';
 
 import {DimensionRangeInput} from './DimensionRangeInput';
-import {PartitionState, PartitionStatus} from './PartitionStatus';
+import {PartitionStatus} from './PartitionStatus';
 
 export const DimensionRangeWizard: React.FC<{
   selected: string[];
   setSelected: (selected: string[]) => void;
   partitionKeys: string[];
-  partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState;
-}> = ({selected, setSelected, partitionKeys, partitionStateForKey}) => {
+  ranges: Range[];
+}> = ({selected, setSelected, partitionKeys, ranges}) => {
   const isTimeseries = isTimeseriesPartition(partitionKeys[0]);
 
   return (
@@ -37,7 +38,7 @@ export const DimensionRangeWizard: React.FC<{
       <Box margin={{bottom: 8}}>
         <PartitionStatus
           partitionNames={partitionKeys}
-          partitionStateForKey={partitionStateForKey}
+          ranges={ranges}
           splitPartitions={!isTimeseries}
           selected={selected}
           onSelect={setSelected}

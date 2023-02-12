@@ -115,7 +115,7 @@ export const AssetJobPartitionsView: React.FC<{
           <PartitionStatus
             partitionNames={dimensionKeys}
             splitPartitions={dimension ? !isTimeseriesDimension(dimension) : false}
-            partitionStateForKey={(key) => merged.stateForSingleDimension(dimensionIdx, key)}
+            ranges={merged.rangesForSingleDimension(dimensionIdx)}
             selected={selectedDimensionKeys}
             selectionWindowSize={pageSize}
             tooltipMessage="Click to view per-asset status"

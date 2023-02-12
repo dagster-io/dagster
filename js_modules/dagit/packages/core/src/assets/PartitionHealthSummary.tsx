@@ -54,13 +54,10 @@ export const PartitionHealthSummary: React.FC<{
             partitionNames={dimension.partitionKeys}
             splitPartitions={!isTimeseriesDimension(dimension)}
             selected={selections ? selections[dimensionIdx].selectedKeys : undefined}
-            partitionStateForKey={(key) =>
-              assetData.stateForSingleDimension(
-                dimensionIdx,
-                key,
-                selections?.length === 2 ? selections[1 - dimensionIdx].selectedKeys : undefined,
-              )
-            }
+            ranges={assetData.rangesForSingleDimension(
+              dimensionIdx,
+              selections?.length === 2 ? selections[1 - dimensionIdx].selectedRanges : undefined,
+            )}
           />
         </Box>
       ))}

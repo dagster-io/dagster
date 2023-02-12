@@ -34,6 +34,10 @@ export interface PartitionHealthData {
     dimensionKey: string,
     otherDimensionSelectedKeys?: string[],
   ) => PartitionState;
+  rangesForSingleDimension: (
+    dimensionIdx: number,
+    otherDimensionSelectedRanges?: PartitionDimensionSelectionRange[] | undefined,
+  ) => Range[];
 }
 
 export interface PartitionHealthDimension {
@@ -156,11 +160,32 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
     throw new Error('stateForSingleDimension asked for third dimension');
   };
 
+  const rangesForSingleDimension = (
+    dimensionIdx: number,
+    otherDimensionSelectedRanges?: PartitionDimensionSelectionRange[] | undefined,
+  ): Range[] => {
+    if (dimensions.length === 0) {
+      return [];
+    }
+
+    if (isRangeDataInverted) {
+      dimensionIdx = 1 - dimensionIdx;
+    }
+    if (dimensionIdx === 0 && !otherDimensionSelectedRanges) {
+      return ranges;
+    } else if (dimensionIdx === 0 && otherDimensionSelectedRanges) {
+      return ranges; // BG TODO .filter((r) => r.subranges?.some((k) => k));
+    } else {
+      return ranges; /// BG TODO
+    }
+  };
+
   const result: PartitionHealthData = {
     assetKey: loadKey,
     dimensions: __dims.map((d) => ({name: d.name, partitionKeys: d.partitionKeys})),
     stateForKey,
     stateForSingleDimension,
+    rangesForSingleDimension,
   };
 
   return result;
@@ -169,7 +194,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
 // Add indexes to the materializedPartitions data so that we can find specific keys in
 // the range structures without having to indexOf the start and end key of every range.
 //
-type Range = {
+export type Range = {
   start: {key: string; idx: number};
   end: {key: string; idx: number};
   value: PartitionState.SUCCESS | PartitionState.SUCCESS_MISSING;
@@ -186,21 +211,7 @@ function addKeyIndexesToMaterializedRanges(
   }
   if (materializedPartitions.__typename === 'DefaultPartitions') {
     const dim = dimensions[0];
-    const count = dim.partitionKeys.length;
-    if (materializedPartitions.materializedPartitions.length === count) {
-      return [
-        {
-          start: {key: dim.partitionKeys[0], idx: 0},
-          end: {key: dim.partitionKeys[count - 1], idx: count - 1},
-          value: PartitionState.SUCCESS as const,
-        },
-      ];
-    } else {
-      return materializedPartitions.materializedPartitions.map<Range>((key) => {
-        const idx = dim.partitionKeys.indexOf(key);
-        return {start: {key, idx}, end: {key, idx}, value: PartitionState.SUCCESS};
-      });
-    }
+    return rangesForKeys(materializedPartitions.materializedPartitions, dim.partitionKeys);
   }
 
   for (const range of materializedPartitions.ranges) {
@@ -239,6 +250,45 @@ function addKeyIndexesToMaterializedRanges(
   return result;
 }
 
+export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
+  // If you gave us two arrays of equal length, we don't need to iterate - this is the entire range
+  if (keys.length === allKeys.length) {
+    return [
+      {
+        start: {key: allKeys[0], idx: 0},
+        end: {key: allKeys[allKeys.length - 1], idx: allKeys.length - 1},
+        value: PartitionState.SUCCESS as const,
+      },
+    ];
+  }
+
+  if (keys.length === 0) {
+    return [];
+  }
+
+  // Ok - we want to convert keys=[A,B,C,F] in allKeys=[A,B,C,D,E,F,G], into ranges. We could do the "bad"
+  // thing and give you a separate range for every key, but this has downstream implications (like creating
+  // one <div /> for every key in <PartitionHealthSummary />). Instead, we do index lookups on keys, sort
+  // them, and then walk the sorted list assembling them into ranges when they're contiguous.
+  const keysIdxs = keys.map((k) => allKeys.indexOf(k)).sort();
+  const ranges: Range[] = [];
+  for (const idx of keysIdxs) {
+    if (ranges.length && idx === ranges[ranges.length - 1].end.idx + 1) {
+      ranges[ranges.length - 1].end = {idx, key: allKeys[idx]};
+    } else if (!ranges.length) {
+      ranges.push({
+        start: {idx, key: allKeys[idx]},
+        end: {idx, key: allKeys[idx]},
+        value: PartitionState.SUCCESS,
+      });
+    }
+  }
+
+  return ranges;
+}
+
+// Returns true if the provided ranges span keyCount keys, indicating that they cover the entire key space.
+//
 function rangesCoverAll(ranges: Range[], keyCount: number) {
   let last = 0;
   for (const range of ranges) {
@@ -249,10 +299,11 @@ function rangesCoverAll(ranges: Range[], keyCount: number) {
   }
   return last === keyCount;
 }
+
 // Note: assetLastMaterializedAt is used as a "hint" - if the input value changes, it's
 // a sign that we should invalidate and reload previously loaded health stats. We don't
 // clear them immediately to avoid an empty state.
-
+//
 export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMaterializedAt = '') {
   const [result, setResult] = React.useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
   const client = useApolloClient();
