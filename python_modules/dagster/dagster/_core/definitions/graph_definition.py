@@ -94,7 +94,7 @@ def _check_node_defs_arg(
     return node_defs
 
 
-def _create_adjacency_lists(
+def create_adjacency_lists(
     nodes: Sequence[Node],
     dep_structure: DependencyStructure,
 ) -> Tuple[Mapping[str, Set[str]], Mapping[str, Set[str]]]:
@@ -251,7 +251,7 @@ class GraphDefinition(NodeDefinition):
         )
 
     def _get_nodes_in_topological_order(self) -> Sequence[Node]:
-        _forward_edges, backward_edges = _create_adjacency_lists(
+        _forward_edges, backward_edges = create_adjacency_lists(
             self.solids, self.dependency_structure
         )
 

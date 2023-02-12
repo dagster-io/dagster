@@ -1023,7 +1023,7 @@ def _build_invocation_context_with_included_resources(
 
 def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[str]] = None):
     """Ensure that all leaf nodes are mapped to graph outputs."""
-    from dagster._core.definitions.graph_definition import GraphDefinition, _create_adjacency_lists
+    from dagster._core.definitions.graph_definition import GraphDefinition, create_adjacency_lists
 
     prefix = check.opt_sequence_param(prefix, "prefix")
 
@@ -1033,7 +1033,7 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
             _validate_graph_def(inner_node_def, prefix=[*prefix, graph_def.name])
 
     # leaf nodes have no downstream nodes
-    forward_edges, _ = _create_adjacency_lists(graph_def.solids, graph_def.dependency_structure)
+    forward_edges, _ = create_adjacency_lists(graph_def.solids, graph_def.dependency_structure)
     leaf_nodes = {
         node_name for node_name, downstream_nodes in forward_edges.items() if not downstream_nodes
     }
