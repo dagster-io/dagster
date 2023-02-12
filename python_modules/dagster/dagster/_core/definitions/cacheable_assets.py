@@ -14,7 +14,7 @@ from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozendict, make_readonly_value
+from dagster._utils import make_readonly_value
 
 
 @whitelist_for_serdes
@@ -84,11 +84,9 @@ class AssetsDefinitionCacheableData(
 
         return super().__new__(
             cls,
-            keys_by_input_name=frozendict(keys_by_input_name) if keys_by_input_name else None,
-            keys_by_output_name=frozendict(keys_by_output_name) if keys_by_output_name else None,
-            internal_asset_deps=frozendict(
-                {k: frozenset(v) for k, v in internal_asset_deps.items()}
-            )
+            keys_by_input_name=dict(keys_by_input_name) if keys_by_input_name else None,
+            keys_by_output_name=dict(keys_by_output_name) if keys_by_output_name else None,
+            internal_asset_deps=dict({k: frozenset(v) for k, v in internal_asset_deps.items()})
             if internal_asset_deps
             else None,
             group_name=check.opt_str_param(group_name, "group_name"),
@@ -98,7 +96,7 @@ class AssetsDefinitionCacheableData(
             key_prefix=tuple(key_prefix) if key_prefix else None,
             can_subset=check.opt_bool_param(can_subset, "can_subset", default=False),
             extra_metadata=make_readonly_value(extra_metadata) if extra_metadata else None,
-            freshness_policies_by_output_name=frozendict(freshness_policies_by_output_name)
+            freshness_policies_by_output_name=dict(freshness_policies_by_output_name)
             if freshness_policies_by_output_name
             else None,
         )

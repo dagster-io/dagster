@@ -247,11 +247,9 @@ def dict_param(
     """Ensures argument obj is a native Python dictionary, raises an exception if not, and otherwise
     returns obj.
     """
-    from dagster._utils import frozendict
-
-    if not isinstance(obj, (frozendict, dict)):
+    if not isinstance(obj, dict):
         raise _param_type_mismatch_exception(
-            obj, (frozendict, dict), param_name, additional_message=additional_message
+            obj, dict, param_name, additional_message=additional_message
         )
 
     if not (key_type or value_type):
@@ -270,12 +268,8 @@ def opt_dict_param(
     """Ensures argument obj is either a dictionary or None; if the latter, instantiates an empty
     dictionary.
     """
-    from dagster._utils import frozendict
-
-    if obj is not None and not isinstance(obj, (frozendict, dict)):
-        raise _param_type_mismatch_exception(
-            obj, (frozendict, dict), param_name, additional_message
-        )
+    if obj is not None and not isinstance(obj, dict):
+        raise _param_type_mismatch_exception(obj, dict, param_name, additional_message)
 
     if not obj:
         return {}
@@ -314,12 +308,8 @@ def opt_nullable_dict_param(
     additional_message: Optional[str] = None,
 ) -> Optional[Dict]:
     """Ensures argument obj is either a dictionary or None."""
-    from dagster._utils import frozendict
-
-    if obj is not None and not isinstance(obj, (frozendict, dict)):
-        raise _param_type_mismatch_exception(
-            obj, (frozendict, dict), param_name, additional_message
-        )
+    if obj is not None and not isinstance(obj, dict):
+        raise _param_type_mismatch_exception(obj, dict, param_name, additional_message)
 
     if not obj:
         return None if obj is None else {}
@@ -363,8 +353,6 @@ def dict_elem(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Dict:
-    from dagster._utils import frozendict
-
     dict_param(obj, "obj")
     str_param(key, "key")
 
@@ -372,8 +360,8 @@ def dict_elem(
         raise CheckError(f"{key} not present in dictionary {obj}")
 
     value = obj[key]
-    if not isinstance(value, (frozendict, dict)):
-        raise _element_check_error(key, value, obj, (frozendict, dict), additional_message)
+    if not isinstance(value, dict):
+        raise _element_check_error(key, value, obj, dict, additional_message)
     else:
         return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
 
@@ -385,8 +373,6 @@ def opt_dict_elem(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Dict:
-    from dagster._utils import frozendict
-
     dict_param(obj, "obj")
     str_param(key, "key")
 
@@ -394,7 +380,7 @@ def opt_dict_elem(
 
     if value is None:
         return {}
-    elif not isinstance(value, (frozendict, dict)):
+    elif not isinstance(value, dict):
         raise _element_check_error(key, value, obj, dict, additional_message)
     else:
         return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
@@ -407,8 +393,6 @@ def opt_nullable_dict_elem(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Optional[Dict]:
-    from dagster._utils import frozendict
-
     dict_param(obj, "obj")
     str_param(key, "key")
 
@@ -416,7 +400,7 @@ def opt_nullable_dict_elem(
 
     if value is None:
         return None
-    elif not isinstance(value, (frozendict, dict)):
+    elif not isinstance(value, dict):
         raise _element_check_error(key, value, obj, dict, additional_message)
     else:
         return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
@@ -448,10 +432,8 @@ def is_dict(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Dict:
-    from dagster._utils import frozendict
-
-    if not isinstance(obj, (frozendict, dict)):
-        raise _type_mismatch_error(obj, (frozendict, dict), additional_message)
+    if not isinstance(obj, dict):
+        raise _type_mismatch_error(obj, dict, additional_message)
 
     if not (key_type or value_type):
         return obj

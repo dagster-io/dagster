@@ -211,37 +211,6 @@ def mkdir_p(path: str) -> str:
             raise
 
 
-# TODO: Make frozendict generic for type annotations
-# https://github.com/dagster-io/dagster/issues/3641
-class frozendict(dict):
-    def __readonly__(self, *args, **kwargs):
-        raise RuntimeError("Cannot modify ReadOnlyDict")
-
-    # https://docs.python.org/3/library/pickle.html#object.__reduce__
-    #
-    # For a dict, the default behavior for pickle is to iteratively call __setitem__ (see 5th item
-    #  in __reduce__ tuple). Since we want to disable __setitem__ and still inherit dict, we
-    # override this behavior by defining __reduce__. We return the 3rd item in the tuple, which is
-    # passed to __setstate__, allowing us to restore the frozendict.
-
-    def __reduce__(self):
-        return (frozendict, (), dict(self))
-
-    def __setstate__(self, state):
-        self.__init__(state)
-
-    __setitem__ = __readonly__
-    __delitem__ = __readonly__
-    pop = __readonly__
-    popitem = __readonly__
-    clear = __readonly__
-    update = __readonly__
-    setdefault = __readonly__  # type: ignore[assignment]
-    del __readonly__
-
-    def __hash__(self):
-        return hash(tuple(sorted(self.items())))
-
 
 @overload
 def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:
@@ -261,8 +230,6 @@ def make_readonly_value(value: T) -> T:
 def make_readonly_value(value: object) -> object:
     if isinstance(value, list):
         return tuple(map(make_readonly_value, value))
-    elif isinstance(value, dict):
-        return frozendict({key: make_readonly_value(value) for key, value in value.items()})
     elif isinstance(value, set):
         return frozenset(map(make_readonly_value, value))
     else:
