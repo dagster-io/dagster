@@ -8,9 +8,10 @@ These should only be invoked from contexts where we know this
 to be the case.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence
 
 import dagster._check as check
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.host_representation import ExternalPipeline, ExternalRepository
 from dagster._core.host_representation.external_data import (
@@ -48,8 +49,11 @@ def external_repo_from_def(
 
 
 def external_pipeline_from_recon_pipeline(
-    recon_pipeline, solid_selection, repository_handle, asset_selection=None
-):
+    recon_pipeline: ReconstructablePipeline,
+    solid_selection: Optional[Sequence[str]],
+    repository_handle: "RepositoryHandle",
+    asset_selection: Optional[AbstractSet[AssetKey]] = None,
+) -> ExternalPipeline:
     if solid_selection or asset_selection:
         sub_pipeline = recon_pipeline.subset_for_execution(
             solid_selection=solid_selection, asset_selection=asset_selection
