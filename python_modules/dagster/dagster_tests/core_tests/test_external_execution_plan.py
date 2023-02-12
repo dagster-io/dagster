@@ -1,6 +1,7 @@
 import os
 import pickle
 import re
+from typing import Sequence
 
 import pytest
 from dagster import (
@@ -25,6 +26,9 @@ from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    PendingRepositoryListDefinition,
+)
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
@@ -362,5 +366,5 @@ def bar(foo):
 
 
 @repository
-def pending_repo():
+def pending_repo() -> Sequence[PendingRepositoryListDefinition]:
     return [bar, MyCacheableAssetsDefinition("xyz"), define_asset_job("all_asset_job")]
