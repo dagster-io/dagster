@@ -98,7 +98,7 @@ class AssetGraph:
                 source_assets.append(asset)
                 partitions_defs_by_key[asset.key] = asset.partitions_def
                 group_names_by_key[asset.key] = asset.group_name
-            elif isinstance(asset, AssetsDefinition):
+            else:  # AssetsDefinition
                 assets_defs.append(asset)
                 partition_mappings_by_key.update(
                     {key: asset.partition_mappings for key in asset.keys}
@@ -111,8 +111,6 @@ class AssetGraph:
                         required_multi_asset_sets_by_key[key] = asset.keys
                 code_versions_by_key.update(asset.code_versions_by_key)
 
-            else:
-                check.failed(f"Expected SourceAsset or AssetsDefinition, got {type(asset)}")
         return InternalAssetGraph(
             asset_dep_graph=generate_asset_dep_graph(assets_defs, source_assets),
             source_asset_keys={source_asset.key for source_asset in source_assets},
