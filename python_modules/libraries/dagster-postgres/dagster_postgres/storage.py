@@ -1,8 +1,9 @@
 from typing import Optional
 
 from dagster import _check as check
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.storage.base_storage import DagsterStorage
-from dagster._core.storage.config import pg_config
+from dagster._core.storage.config import PostgresStorageConfig, pg_config
 from dagster._core.storage.event_log import EventLogStorage
 from dagster._core.storage.runs import RunStorage
 from dagster._core.storage.schedules import ScheduleStorage
@@ -45,15 +46,17 @@ class DagsterPostgresStorage(DagsterStorage, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return pg_config()
 
     @staticmethod
-    def from_config_value(inst_data, config_value):
+    def from_config_value(
+        inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
+    ) -> "DagsterPostgresStorage":
         return DagsterPostgresStorage(
             inst_data=inst_data,
             postgres_url=pg_url_from_config(config_value),

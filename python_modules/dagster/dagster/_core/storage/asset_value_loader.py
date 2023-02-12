@@ -63,7 +63,7 @@ class AssetValueLoader:
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[Type] = None,
+        python_type: Optional[Type[object]] = None,
         partition_key: Optional[str] = None,
     ) -> object:
         """

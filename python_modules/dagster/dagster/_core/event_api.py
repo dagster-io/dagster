@@ -1,5 +1,7 @@
 from datetime import datetime
-from typing import Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Callable, Mapping, NamedTuple, Optional, Sequence, Union
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -8,6 +10,8 @@ from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes
+
+EventHandlerFn: TypeAlias = Callable[[EventLogEntry, str], None]
 
 
 class RunShardedEventsCursor(NamedTuple):

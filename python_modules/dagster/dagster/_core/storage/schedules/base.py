@@ -1,5 +1,5 @@
 import abc
-from typing import Callable, Iterable, Mapping, Optional, Sequence
+from typing import Iterable, Mapping, Optional, Sequence
 
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref
@@ -9,13 +9,15 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
+from dagster._core.storage.sql import AlembicVersion
+from dagster._utils import PrintFn
 
 
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
     """Abstract class for managing persistance of scheduler artifacts."""
 
     @abc.abstractmethod
-    def wipe(self):
+    def wipe(self) -> None:
         """Delete all schedules from storage."""
 
     @abc.abstractmethod
@@ -59,7 +61,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def delete_instigator_state(self, origin_id: str, selector_id: str):
+    def delete_instigator_state(self, origin_id: str, selector_id: str) -> None:
         """Delete a state in storage.
 
         Args:
@@ -68,7 +70,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @property
-    def supports_batch_queries(self):
+    def supports_batch_queries(self) -> bool:
         return False
 
     def get_batch_ticks(
@@ -97,7 +99,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def create_tick(self, tick_data: TickData):
+    def create_tick(self, tick_data: TickData) -> InstigatorTick:
         """Add a tick to storage.
 
         Args:
@@ -105,7 +107,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def update_tick(self, tick: InstigatorTick):
+    def update_tick(self, tick: InstigatorTick) -> InstigatorTick:
         """Update a tick already in storage.
 
         Args:
@@ -119,7 +121,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         selector_id: str,
         before: float,
         tick_statuses: Optional[Sequence[TickStatus]] = None,
-    ):
+    ) -> None:
         """Wipe ticks for an instigator for a certain status and timestamp.
 
         Args:
@@ -130,21 +132,21 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def upgrade(self):
+    def upgrade(self) -> None:
         """Perform any needed migrations."""
 
-    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any required data migrations."""
 
-    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any optional data migrations for optimized reads."""
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
         """Allows for optimizing database connection / use in the context of a long lived dagit process.
         """
 
-    def alembic_version(self):
+    def alembic_version(self) -> Optional[AlembicVersion]:
         return None
 
-    def dispose(self):
+    def dispose(self) -> None:
         """Explicit lifecycle management."""

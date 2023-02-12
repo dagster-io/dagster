@@ -52,7 +52,7 @@ class DbTypeHandler(ABC, Generic[T]):
 
     @property
     @abstractmethod
-    def supported_types(self) -> Sequence[Type]:
+    def supported_types(self) -> Sequence[Type[object]]:
         pass
 
 

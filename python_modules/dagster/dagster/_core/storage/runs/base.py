@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from typing_extensions import TypedDict
 
@@ -15,7 +15,9 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
     TagBucket,
 )
+from dagster._core.storage.sql import AlembicVersion
 from dagster._daemon.types import DaemonHeartbeat
+from dagster._utils import PrintFn
 
 if TYPE_CHECKING:
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
@@ -50,7 +52,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def handle_run_event(self, run_id: str, event: DagsterEvent):
+    def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
         """Update run storage in accordance to a pipeline run related DagsterEvent.
 
         Args:
@@ -179,7 +181,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]):
+    def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
         """Add additional tags for a pipeline run.
 
         Args:
@@ -202,7 +204,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         self,
         snapshot: Union[PipelineSnapshot, ExecutionPlanSnapshot],
         snapshot_id: Optional[str] = None,
-    ):
+    ) -> None:
         """Add a snapshot to the storage.
 
         Args:
@@ -311,31 +313,31 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def wipe(self):
+    def wipe(self) -> None:
         """Clears the run storage."""
 
     @abstractmethod
-    def delete_run(self, run_id: str):
+    def delete_run(self, run_id: str) -> None:
         """Remove a run from storage."""
 
     @property
-    def supports_bucket_queries(self):
+    def supports_bucket_queries(self) -> bool:
         return True
 
     @abstractmethod
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
 
-    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any required data migrations."""
 
-    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         """Call this method to run any optional data migrations for optimized reads."""
 
-    def dispose(self):
+    def dispose(self) -> None:
         """Explicit lifecycle management."""
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
         """Allows for optimizing database connection / use in the context of a long lived dagit process.
         """
 
@@ -347,7 +349,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     # should be split out once all metadata storages are configured together.
 
     @abstractmethod
-    def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat):
+    def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat) -> None:
         """Called on a regular interval by the daemon."""
 
     @abstractmethod
@@ -355,7 +357,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """Latest heartbeats of all daemon types."""
 
     @abstractmethod
-    def wipe_daemon_heartbeats(self):
+    def wipe_daemon_heartbeats(self) -> None:
         """Wipe all daemon heartbeats."""
 
     # Backfill storage
@@ -380,7 +382,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     def update_backfill(self, partition_backfill: PartitionBackfill):
         """Update a partition backfill in run storage."""
 
-    def alembic_version(self):
+    def alembic_version(self) -> Optional[AlembicVersion]:
         return None
 
     # Key Value Storage
@@ -388,7 +390,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     # Stores arbitrary key-value pairs. Currently used for the cursor for the auto-reexecution
     # deamon. Bundled into run storage for convenience.
 
-    def supports_kvs(self):
+    def supports_kvs(self) -> bool:
         return True
 
     @abstractmethod
@@ -400,5 +402,5 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """Set the value for a given key in the current deployment."""
 
     @abstractmethod
-    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalPipelineOrigin"):
+    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalPipelineOrigin") -> None:
         ...

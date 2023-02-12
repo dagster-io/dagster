@@ -1,8 +1,11 @@
 from contextlib import contextmanager
+from typing import Iterator, Optional, Sequence
 
 import sqlalchemy as db
+from sqlalchemy.engine import Connection
 from sqlalchemy.pool import NullPool
 
+from dagster._core.debug import DebugRunPayload
 from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
 from dagster._core.storage.sqlite import create_in_memory_conn_string
 
@@ -17,7 +20,7 @@ class InMemoryRunStorage(SqlRunStorage):
     WARNING: Dagit and other core functionality will not work if this is used on a real DagsterInstance
     """
 
-    def __init__(self, preload=None):
+    def __init__(self, preload: Optional[Sequence[DebugRunPayload]] = None):
         self._engine = None
         self._conn = None
         if preload:
@@ -30,7 +33,7 @@ class InMemoryRunStorage(SqlRunStorage):
                 )
                 self.add_run(payload.pipeline_run)
 
-    def _create_connection(self):
+    def _create_connection(self) -> None:
         engine = create_engine(create_in_memory_conn_string("runs"), poolclass=NullPool)
         conn = engine.connect()
 
@@ -50,16 +53,16 @@ class InMemoryRunStorage(SqlRunStorage):
         self.optimize()
 
     @contextmanager
-    def connect(self):
+    def connect(self) -> Iterator[Connection]:
         if not self._conn:
             self._create_connection()
 
-        yield self._conn
+        yield self._conn  # type: ignore
 
-    def upgrade(self):
+    def upgrade(self) -> None:
         pass
 
-    def dispose(self):
+    def dispose(self) -> None:
         if self._conn:
             self._conn.close()
             self._conn = None
