@@ -70,20 +70,20 @@ from .utils import check_valid_name, validate_tags
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
-T = TypeVar("T")
+T_cov = TypeVar("T_cov", covariant=True)
 
 
 RawPartitionFunction: TypeAlias = Union[
-    Callable[[Optional[datetime]], Sequence[Union[str, "Partition[T]"]]],
-    Callable[[], Sequence[Union[str, "Partition[T]"]]],
+    Callable[[Optional[datetime]], Sequence[Union[str, "Partition[T_cov]"]]],
+    Callable[[], Sequence[Union[str, "Partition[T_cov]"]]],
 ]
 
 PartitionFunction: TypeAlias = Callable[[Optional[datetime]], Sequence["Partition[Any]"]]
 PartitionTagsFunction: TypeAlias = Callable[["Partition[object]"], Mapping[str, str]]
 PartitionScheduleFunction: TypeAlias = Callable[[datetime], Mapping[str, Any]]
 PartitionSelectorFunction: TypeAlias = Callable[
-    [ScheduleEvaluationContext, "PartitionSetDefinition[T]"],
-    Union["Partition[T]", Sequence["Partition[T]"], SkipReason],
+    [ScheduleEvaluationContext, "PartitionSetDefinition[T_cov]"],
+    Union["Partition[T_cov]", Sequence["Partition[T_cov]"], SkipReason],
 ]
 
 # Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
@@ -92,7 +92,7 @@ PartitionSelectorFunction: TypeAlias = Callable[
 INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v", "\0"]
 
 
-class Partition(Generic[T]):
+class Partition(Generic[T_cov]):
     """
     A Partition represents a single slice of the entire set of a job's possible work. It consists
     of a value, which is an object that represents that partition, and an optional name, which is
@@ -103,12 +103,12 @@ class Partition(Generic[T]):
         name (str): Name for this partition
     """
 
-    def __init__(self, value: T, name: Optional[str] = None):
+    def __init__(self, value: T_cov, name: Optional[str] = None):
         self._value = value
         self._name = check.str_param(name or str(value), "name")
 
     @property
-    def value(self) -> T:
+    def value(self) -> T_cov:
         return self._value
 
     @property
@@ -222,7 +222,7 @@ class ScheduleType(Enum):
         return self.ordinal < other.ordinal
 
 
-class PartitionsDefinition(ABC, Generic[T]):
+class PartitionsDefinition(ABC, Generic[T_cov]):
     """
     Defines a set of partitions, which can be attached to a software-defined asset or job.
 
@@ -238,7 +238,7 @@ class PartitionsDefinition(ABC, Generic[T]):
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[Partition[T]]:
+    ) -> Sequence[Partition[T_cov]]:
         ...
 
     def get_partition(
@@ -246,7 +246,7 @@ class PartitionsDefinition(ABC, Generic[T]):
         partition_key: str,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Partition:
+    ) -> Partition[T_cov]:
         for partition in self.get_partitions(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         ):
@@ -317,21 +317,23 @@ class PartitionsDefinition(ABC, Generic[T]):
             + 1
         ]
 
-    def empty_subset(self) -> "PartitionsSubset":
+    def empty_subset(self) -> "PartitionsSubset[T_cov]":
         return self.partitions_subset_class.empty_subset(self)
 
-    def subset_with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
+    def subset_with_partition_keys(
+        self, partition_keys: Iterable[str]
+    ) -> "PartitionsSubset[T_cov]":
         return self.empty_subset().with_partition_keys(partition_keys)
 
     def subset_with_all_partitions(
         self,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> "PartitionsSubset":
+    ) -> "PartitionsSubset[T_cov]":
         return self.subset_with_partition_keys(
             self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
         )
 
-    def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
+    def deserialize_subset(self, serialized: str) -> "PartitionsSubset[T_cov]":
         return self.partitions_subset_class.from_serialized(self, serialized)
 
     def can_deserialize_subset(
@@ -723,7 +725,7 @@ class DynamicPartitionsDefinition(
         instance.delete_dynamic_partition(self._validated_name(), partition_key)
 
 
-class PartitionSetDefinition(Generic[T]):
+class PartitionSetDefinition(Generic[T_cov]):
     """
     Defines a partition set, representing the set of slices making up an axis of a pipeline.
 
@@ -762,13 +764,13 @@ class PartitionSetDefinition(Generic[T]):
         solid_selection: Optional[Sequence[str]] = None,
         mode: Optional[str] = None,
         run_config_fn_for_partition: Callable[
-            [Partition[T]], Mapping[str, Any]
+            [Partition[T_cov]], Mapping[str, Any]
         ] = lambda _partition: {},
         tags_fn_for_partition: Callable[
-            [Partition[T]], Optional[Mapping[str, str]]
+            [Partition[T_cov]], Optional[Mapping[str, str]]
         ] = lambda _partition: {},
         partitions_def: Optional[
-            PartitionsDefinition[T]  # pylint: disable=unsubscriptable-object
+            PartitionsDefinition[T_cov]  # pylint: disable=unsubscriptable-object
         ] = None,
         job_name: Optional[str] = None,
     ):
@@ -827,7 +829,7 @@ class PartitionSetDefinition(Generic[T]):
 
             if partition_fn_param_count == 1:
                 obj_list = cast(
-                    Callable[..., Sequence[Union[Partition[T], str]]],
+                    Callable[..., Sequence[Union[Partition[T_cov], str]]],
                     partition_fn,
                 )(current_time)
             else:
@@ -866,10 +868,10 @@ class PartitionSetDefinition(Generic[T]):
     def partitions_def(self) -> PartitionsDefinition:
         return self._partitions_def
 
-    def run_config_for_partition(self, partition: Partition[T]) -> Mapping[str, Any]:
+    def run_config_for_partition(self, partition: Partition[T_cov]) -> Mapping[str, Any]:
         return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))
 
-    def tags_for_partition(self, partition: Partition[T]) -> Mapping[str, str]:
+    def tags_for_partition(self, partition: Partition[T_cov]) -> Mapping[str, str]:
         user_tags = validate_tags(
             self._user_defined_tags_fn_for_partition(partition), allow_reserved_tags=False
         )
@@ -881,7 +883,7 @@ class PartitionSetDefinition(Generic[T]):
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[Partition[T]]:
+    ) -> Sequence[Partition[T_cov]]:
         """Return the set of known partitions.
 
         Arguments:
@@ -899,7 +901,7 @@ class PartitionSetDefinition(Generic[T]):
         name: str,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
         current_time: Optional[datetime] = None,
-    ) -> Partition[T]:
+    ) -> Partition[T_cov]:
         return self._partitions_def.get_partition(
             name, current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
@@ -1118,7 +1120,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         return self._partition_set
 
 
-class PartitionedConfig(Generic[T]):
+class PartitionedConfig(Generic[T_cov]):
     """Defines a way of configuring a job where the job can be run on one of a discrete set of
     partitions, and each partition corresponds to run configuration for the job.
 
@@ -1128,10 +1130,10 @@ class PartitionedConfig(Generic[T]):
 
     def __init__(
         self,
-        partitions_def: PartitionsDefinition[T],  # pylint: disable=unsubscriptable-object
-        run_config_for_partition_fn: Callable[[Partition[T]], Mapping[str, Any]],
+        partitions_def: PartitionsDefinition[T_cov],  # pylint: disable=unsubscriptable-object
+        run_config_for_partition_fn: Callable[[Partition[T_cov]], Mapping[str, Any]],
         decorated_fn: Optional[Callable[..., Mapping[str, Any]]] = None,
-        tags_for_partition_fn: Optional[Callable[[Partition[T]], Mapping[str, str]]] = None,
+        tags_for_partition_fn: Optional[Callable[[Partition[T_cov]], Mapping[str, str]]] = None,
     ):
         self._partitions = check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
         self._run_config_for_partition_fn = check.callable_param(
@@ -1144,17 +1146,19 @@ class PartitionedConfig(Generic[T]):
 
     @public
     @property
-    def partitions_def(self) -> PartitionsDefinition[T]:  # pylint: disable=unsubscriptable-object
+    def partitions_def(
+        self,
+    ) -> PartitionsDefinition[T_cov]:  # pylint: disable=unsubscriptable-object
         return self._partitions
 
     @public
     @property
-    def run_config_for_partition_fn(self) -> Callable[[Partition[T]], Mapping[str, Any]]:
+    def run_config_for_partition_fn(self) -> Callable[[Partition[T_cov]], Mapping[str, Any]]:
         return self._run_config_for_partition_fn
 
     @public
     @property
-    def tags_for_partition_fn(self) -> Optional[Callable[[Partition[T]], Mapping[str, str]]]:
+    def tags_for_partition_fn(self) -> Optional[Callable[[Partition[T_cov]], Mapping[str, str]]]:
         return self._tags_for_partition_fn
 
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
@@ -1314,7 +1318,7 @@ def cron_schedule_from_schedule_type_and_offsets(
         check.assert_never(schedule_type)
 
 
-class PartitionsSubset(ABC):
+class PartitionsSubset(ABC, Generic[T_cov]):
     """Represents a subset of the partitions within a PartitionsDefinition."""
 
     @abstractmethod
@@ -1323,11 +1327,11 @@ class PartitionsSubset(ABC):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Iterable[str]:
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def get_partition_key_ranges(
@@ -1335,38 +1339,38 @@ class PartitionsSubset(ABC):
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
-    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
-        raise NotImplementedError()
+    def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_cov]":
+        ...
 
     def with_partition_key_range(
         self,
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> "PartitionsSubset":
+    ) -> "PartitionsSubset[T_cov]":
         return self.with_partition_keys(
             self.partitions_def.get_partition_keys_in_range(
                 partition_key_range, dynamic_partitions_store=dynamic_partitions_store
             )
         )
 
-    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset[T_cov]":
         if self is other:
             return self
         return self.with_partition_keys(other.get_partition_keys())
 
     @abstractmethod
     def serialize(self) -> str:
-        raise NotImplementedError()
+        ...
 
     @classmethod
     @abstractmethod
     def from_serialized(
         cls, partitions_def: PartitionsDefinition, serialized: str
     ) -> "PartitionsSubset":
-        raise NotImplementedError()
+        ...
 
     @classmethod
     @abstractmethod
@@ -1377,33 +1381,35 @@ class PartitionsSubset(ABC):
         serialized_partitions_def_unique_id: Optional[str],
         serialized_partitions_def_class_name: Optional[str],
     ) -> bool:
-        raise NotImplementedError()
+        ...
 
     @property
     @abstractmethod
-    def partitions_def(self) -> PartitionsDefinition:
-        raise NotImplementedError()
+    def partitions_def(self) -> PartitionsDefinition[T_cov]:
+        ...
 
     @abstractmethod
     def __len__(self) -> int:
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def __contains__(self, value) -> bool:
-        raise NotImplementedError()
+        ...
 
     @classmethod
     @abstractmethod
-    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
-        raise NotImplementedError()
+    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset[T_cov]":
+        ...
 
 
-class DefaultPartitionsSubset(PartitionsSubset):
+class DefaultPartitionsSubset(PartitionsSubset[T_cov]):
     # Every time we change the serialization format, we should increment the version number.
     # This will ensure that we can gracefully degrade when deserializing old data.
     SERIALIZATION_VERSION = 1
 
-    def __init__(self, partitions_def: PartitionsDefinition, subset: Optional[Set[str]] = None):
+    def __init__(
+        self, partitions_def: PartitionsDefinition[T_cov], subset: Optional[Set[str]] = None
+    ):
         check.opt_set_param(subset, "subset")
         self._partitions_def = partitions_def
         self._subset = subset or set()
@@ -1451,7 +1457,9 @@ class DefaultPartitionsSubset(PartitionsSubset):
 
         return result
 
-    def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
+    def with_partition_keys(
+        self, partition_keys: Iterable[str]
+    ) -> "DefaultPartitionsSubset[T_cov]":
         return DefaultPartitionsSubset(
             self._partitions_def,
             self._subset | set(partition_keys),
@@ -1464,8 +1472,8 @@ class DefaultPartitionsSubset(PartitionsSubset):
 
     @classmethod
     def from_serialized(
-        cls, partitions_def: PartitionsDefinition, serialized: str
-    ) -> "PartitionsSubset":
+        cls, partitions_def: PartitionsDefinition[T_cov], serialized: str
+    ) -> "PartitionsSubset[T_cov]":
         # Check the version number, so only valid versions can be deserialized.
         data = json.loads(serialized)
 
@@ -1483,7 +1491,7 @@ class DefaultPartitionsSubset(PartitionsSubset):
     @classmethod
     def can_deserialize(
         cls,
-        partitions_def: PartitionsDefinition,
+        partitions_def: PartitionsDefinition[T_cov],
         serialized: str,
         serialized_partitions_def_unique_id: Optional[str],
         serialized_partitions_def_class_name: Optional[str],
@@ -1497,10 +1505,10 @@ class DefaultPartitionsSubset(PartitionsSubset):
         )
 
     @property
-    def partitions_def(self) -> PartitionsDefinition:
+    def partitions_def(self) -> PartitionsDefinition[T_cov]:
         return self._partitions_def
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, DefaultPartitionsSubset)
             and self._partitions_def == other._partitions_def
@@ -1519,5 +1527,5 @@ class DefaultPartitionsSubset(PartitionsSubset):
         )
 
     @classmethod
-    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
+    def empty_subset(cls, partitions_def: PartitionsDefinition[T_cov]) -> "PartitionsSubset[T_cov]":
         return cls(partitions_def=partitions_def)
