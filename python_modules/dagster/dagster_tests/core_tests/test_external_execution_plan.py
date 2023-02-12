@@ -343,7 +343,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     def build_definitions(self, data):
         assert len(data) == 1
-        assert data == [self._cacheable_data]
+        assert data == (self._cacheable_data,)
 
         # used for tracking how many times this function gets called over an execution
         instance = DagsterInstance.get()

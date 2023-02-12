@@ -4,13 +4,13 @@ import os
 import sys
 from abc import ABC, abstractmethod
 from types import ModuleType
-from typing import Callable, List, NamedTuple, Optional, Sequence, cast
+from typing import Callable, List, NamedTuple, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterImportError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven import get_import_error_message, import_module_from_path
-from dagster._utils import alter_sys_path, frozenlist
+from dagster._utils import alter_sys_path
 
 
 class CodePointer(ABC):
@@ -269,8 +269,8 @@ class CustomPointer(
         "_CustomPointer",
         [
             ("reconstructor_pointer", ModuleCodePointer),
-            ("reconstructable_args", Sequence[object]),
-            ("reconstructable_kwargs", Sequence[Sequence]),
+            ("reconstructable_args", Tuple[object, ...]),
+            ("reconstructable_kwargs", Tuple[Tuple[str, object], ...]),
         ],
     ),
     CodePointer,
@@ -298,9 +298,9 @@ class CustomPointer(
 
         # These are frozenlists, rather than lists, so that they can be hashed and the pointer
         # stored in the lru_cache on the repository and pipeline get_definition methods
-        reconstructable_args = frozenlist(reconstructable_args)
-        reconstructable_kwargs = frozenlist(
-            [frozenlist(reconstructable_kwarg) for reconstructable_kwarg in reconstructable_kwargs]
+        reconstructable_args = tuple(reconstructable_args)
+        reconstructable_kwargs = tuple(
+            tuple(reconstructable_kwarg) for reconstructable_kwarg in reconstructable_kwargs
         )
 
         return super(CustomPointer, cls).__new__(

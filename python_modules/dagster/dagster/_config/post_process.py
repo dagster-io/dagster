@@ -2,7 +2,7 @@ import sys
 from typing import Any, Dict, List, Mapping, Optional, cast
 
 import dagster._check as check
-from dagster._utils import ensure_single_item, frozendict, frozenlist
+from dagster._utils import ensure_single_item, frozendict
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .config_type import ConfigType, ConfigTypeKind
@@ -210,7 +210,7 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
     if errors:
         return EvaluateValueResult.for_errors(errors)
 
-    return EvaluateValueResult.for_value(frozenlist([result.value for result in results]))
+    return EvaluateValueResult.for_value([result.value for result in results])
 
 
 def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:

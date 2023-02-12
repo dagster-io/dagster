@@ -2,7 +2,7 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Tuple
 
 import dagster._check as check
 import dagster._seven as seven
@@ -14,7 +14,7 @@ from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import frozendict, frozenlist, make_readonly_value
+from dagster._utils import frozendict, make_readonly_value
 
 
 @whitelist_for_serdes
@@ -27,7 +27,7 @@ class AssetsDefinitionCacheableData(
             ("internal_asset_deps", Optional[Mapping[str, AbstractSet[AssetKey]]]),
             ("group_name", Optional[str]),
             ("metadata_by_output_name", Optional[Mapping[str, MetadataUserInput]]),
-            ("key_prefix", Optional[CoercibleToAssetKeyPrefix]),
+            ("key_prefix", Optional[Tuple[str, ...]]),
             ("can_subset", bool),
             ("extra_metadata", Optional[Mapping[Any, Any]]),
             ("freshness_policies_by_output_name", Optional[Mapping[str, FreshnessPolicy]]),
@@ -95,7 +95,7 @@ class AssetsDefinitionCacheableData(
             metadata_by_output_name=make_readonly_value(metadata_by_output_name)
             if metadata_by_output_name
             else None,
-            key_prefix=frozenlist(key_prefix) if key_prefix else None,
+            key_prefix=tuple(key_prefix) if key_prefix else None,
             can_subset=check.opt_bool_param(can_subset, "can_subset", default=False),
             extra_metadata=make_readonly_value(extra_metadata) if extra_metadata else None,
             freshness_policies_by_output_name=frozendict(freshness_policies_by_output_name)

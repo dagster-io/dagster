@@ -22,6 +22,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import Literal
+
 TypeOrTupleOfTypes = Union[type, Tuple[type, ...]]
 Numeric = Union[int, float]
 T = TypeVar("T")
@@ -768,12 +770,8 @@ def list_param(
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> List[Any]:
-    from dagster._utils import frozenlist
-
-    if not isinstance(obj, (frozenlist, list)):
-        raise _param_type_mismatch_exception(
-            obj, (frozenlist, list), param_name, additional_message
-        )
+    if not isinstance(obj, list):
+        raise _param_type_mismatch_exception(obj, list, param_name, additional_message)
 
     if not of_type:
         return obj
@@ -793,12 +791,8 @@ def opt_list_param(
     If the of_type argument is provided, also ensures that list items conform to the type specified
     by of_type.
     """
-    from dagster._utils import frozenlist
-
-    if obj is not None and not isinstance(obj, (frozenlist, list)):
-        raise _param_type_mismatch_exception(
-            obj, (frozenlist, list), param_name, additional_message
-        )
+    if obj is not None and not isinstance(obj, list):
+        raise _param_type_mismatch_exception(obj, list, param_name, additional_message)
 
     if not obj:
         return []
@@ -840,12 +834,8 @@ def opt_nullable_list_param(
     If the of_type argument is provided, also ensures that list items conform to the type specified
     by of_type.
     """
-    from dagster._utils import frozenlist
-
-    if obj is not None and not isinstance(obj, (frozenlist, list)):
-        raise _param_type_mismatch_exception(
-            obj, (frozenlist, list), param_name, additional_message
-        )
+    if obj is not None and not isinstance(obj, list):
+        raise _param_type_mismatch_exception(obj, list, param_name, additional_message)
 
     if not obj:
         return None if obj is None else []
@@ -1180,21 +1170,67 @@ def opt_path_param(
 # ########################
 
 
+@overload
+def sequence_param(
+    obj: Sequence[T],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+    as_tuple: Literal[True] = ...,
+) -> Tuple[T, ...]:
+    ...
+
+
+@overload
 def sequence_param(
     obj: Sequence[T],
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
+    as_tuple: bool = ...,
 ) -> Sequence[T]:
+    ...
+
+
+def sequence_param(
+    obj: Sequence[T],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+    as_tuple: bool = False,
+) -> Union[Sequence[T], Tuple[T, ...]]:
     if not isinstance(obj, collections.abc.Sequence):
         raise _param_type_mismatch_exception(
             obj, (collections.abc.Sequence,), param_name, additional_message
         )
 
+    norm_obj = tuple(obj) if as_tuple else obj
     if not of_type:
-        return obj
+        return norm_obj
 
-    return _check_iterable_items(obj, of_type, "sequence")
+    return _check_iterable_items(norm_obj, of_type, "sequence")
+
+
+@overload
+def opt_sequence_param(
+    obj: Optional[Sequence[T]],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+    as_tuple: Literal[True] = ...,
+) -> Tuple[T, ...]:
+    ...
+
+
+@overload
+def opt_sequence_param(
+    obj: Optional[Sequence[T]],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+    as_tuple: bool = ...,
+) -> Sequence[T]:
+    ...
 
 
 def opt_sequence_param(
@@ -1202,17 +1238,20 @@ def opt_sequence_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Sequence[T]:
+    as_tuple: bool = False,
+) -> Union[Sequence[T], Tuple[T, ...]]:
     if obj is None:
-        return []
+        return tuple() if as_tuple else []
     elif not isinstance(obj, collections.abc.Sequence):
         raise _param_type_mismatch_exception(
             obj, (collections.abc.Sequence,), param_name, additional_message
         )
-    elif of_type is not None:
-        return _check_iterable_items(obj, of_type, "sequence")
+
+    norm_obj = tuple(obj) if as_tuple else obj
+    if of_type is not None:
+        return _check_iterable_items(norm_obj, of_type, "sequence")
     else:
-        return obj
+        return norm_obj
 
 
 @overload
@@ -1221,7 +1260,19 @@ def opt_nullable_sequence_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
     additional_message: Optional[str] = ...,
+    as_tuple: bool = ...,
 ) -> None:
+    ...
+
+
+@overload
+def opt_nullable_sequence_param(
+    obj: Sequence[T],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+    as_tuple: Literal[True] = ...,
+) -> Tuple[T, ...]:
     ...
 
 
@@ -1231,6 +1282,7 @@ def opt_nullable_sequence_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = ...,
+    as_tuple: bool = ...,
 ) -> Sequence[T]:
     ...
 
@@ -1240,11 +1292,12 @@ def opt_nullable_sequence_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
+    as_tuple: bool = False,
 ) -> Optional[Sequence[T]]:
     if obj is None:
         return None
     else:
-        return opt_sequence_param(obj, param_name, of_type, additional_message)
+        return opt_sequence_param(obj, param_name, of_type, additional_message, as_tuple)
 
 
 # ########################

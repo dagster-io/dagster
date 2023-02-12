@@ -243,44 +243,13 @@ class frozendict(dict):
         return hash(tuple(sorted(self.items())))
 
 
-class frozenlist(list):
-    def __readonly__(self, *args, **kwargs):
-        raise RuntimeError("Cannot modify ReadOnlyList")
-
-    # https://docs.python.org/3/library/pickle.html#object.__reduce__
-    #
-    # Like frozendict, implement __reduce__ and __setstate__ to handle pickling.
-    # Otherwise, __setstate__ will be called to restore the frozenlist, causing
-    # a RuntimeError because frozenlist is not mutable.
-
-    def __reduce__(self):
-        return (frozenlist, (), list(self))
-
-    def __setstate__(self, state):
-        self.__init__(state)
-
-    __setitem__ = __readonly__
-    __delitem__ = __readonly__
-    append = __readonly__
-    clear = __readonly__
-    extend = __readonly__
-    insert = __readonly__
-    pop = __readonly__
-    remove = __readonly__
-    reverse = __readonly__
-    sort = __readonly__  # type: ignore[assignment]
-
-    def __hash__(self):
-        return hash(tuple(self))
-
-
 @overload
-def make_readonly_value(value: List[T]) -> Sequence[T]:
+def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:
     ...
 
 
 @overload
-def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:
+def make_readonly_value(value: List[T]) -> Tuple[T, ...]:
     ...
 
 
@@ -289,9 +258,9 @@ def make_readonly_value(value: T) -> T:
     ...
 
 
-def make_readonly_value(value: Any) -> Any:
+def make_readonly_value(value: object) -> object:
     if isinstance(value, list):
-        return frozenlist(list(map(make_readonly_value, value)))
+        return tuple(map(make_readonly_value, value))
     elif isinstance(value, dict):
         return frozendict({key: make_readonly_value(value) for key, value in value.items()})
     elif isinstance(value, set):

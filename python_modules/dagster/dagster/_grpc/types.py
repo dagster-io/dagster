@@ -1,6 +1,6 @@
 import base64
 import zlib
-from typing import Any, FrozenSet, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, FrozenSet, Mapping, NamedTuple, Optional, Sequence, Tuple
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -15,7 +15,6 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import PipelinePythonOrigin, get_python_environment_entry_point
 from dagster._serdes import serialize_value, whitelist_for_serdes
-from dagster._utils import frozenlist
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -70,7 +69,7 @@ class ExecutionPlanSnapshotArgs(
         )
 
 
-def _get_entry_point(origin: PipelinePythonOrigin):
+def _get_entry_point(origin: PipelinePythonOrigin) -> Tuple[str, ...]:
     return (
         origin.repository_origin.entry_point
         if origin.repository_origin.entry_point
@@ -116,7 +115,8 @@ class ExecuteRunArgs(
         )
 
     def get_command_args(self) -> Sequence[str]:
-        return _get_entry_point(self.pipeline_origin) + [
+        return [
+            *_get_entry_point(self.pipeline_origin),
             "api",
             "execute_run",
             serialize_value(self),
@@ -161,7 +161,8 @@ class ResumeRunArgs(
         )
 
     def get_command_args(self) -> Sequence[str]:
-        return _get_entry_point(self.pipeline_origin) + [
+        return [
+            *_get_entry_point(self.pipeline_origin),
             "api",
             "resume_run",
             serialize_value(self),
@@ -248,15 +249,16 @@ class ExecuteStepArgs(
         """Get the command args to run this step. If skip_serialized_namedtuple is True, then get_command_env should
         be used to pass the args to Click using an env var.
         """
-        return (
-            _get_entry_point(self.pipeline_origin)
-            + ["api", "execute_step"]
-            + (
+        return [
+            *_get_entry_point(self.pipeline_origin),
+            "api",
+            "execute_step",
+            *(
                 ["--compressed-input-json", self._get_compressed_args()]
                 if not skip_serialized_namedtuple
                 else []
-            )
-        )
+            ),
+        ]
 
     def get_command_env(self) -> Sequence[Mapping[str, str]]:
         """Get the env vars for overriding the Click args of this step. Used in conjuction with
@@ -317,7 +319,7 @@ class ListRepositoriesResponse(
                 value_type=CodePointer,
             ),
             entry_point=(
-                frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
+                list(check.sequence_param(entry_point, "entry_point", of_type=str))
                 if entry_point is not None
                 else None
             ),

@@ -5,7 +5,6 @@ from dagster._annotations import PublicAttr, experimental, public
 from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
-from dagster._utils import frozenlist
 
 # ########################
 # ##### TABLE RECORD
@@ -109,7 +108,7 @@ class TableSchema(
     ):
         return super(TableSchema, cls).__new__(
             cls,
-            columns=frozenlist(check.sequence_param(columns, "columns", of_type=TableColumn)),
+            columns=check.sequence_param(columns, "columns", of_type=TableColumn),
             constraints=check.opt_inst_param(
                 constraints, "constraints", TableConstraints, default=_DEFAULT_TABLE_CONSTRAINTS
             ),
@@ -157,7 +156,7 @@ class TableConstraints(
     ):
         return super(TableConstraints, cls).__new__(
             cls,
-            other=frozenlist(check.sequence_param(other, "other", of_type=str)),
+            other=check.sequence_param(other, "other", of_type=str),
         )
 
 
@@ -255,7 +254,7 @@ class TableColumnConstraints(
             cls,
             nullable=check.bool_param(nullable, "nullable"),
             unique=check.bool_param(unique, "unique"),
-            other=frozenlist(check.opt_sequence_param(other, "other")),
+            other=check.opt_sequence_param(other, "other"),
         )
 
 

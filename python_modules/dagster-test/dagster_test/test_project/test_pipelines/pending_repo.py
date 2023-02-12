@@ -25,7 +25,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     def build_definitions(self, data):
         assert len(data) == 1
-        assert data == [self._cacheable_data]
+        assert data == (self._cacheable_data,)
 
         @op
         def _op(foo):

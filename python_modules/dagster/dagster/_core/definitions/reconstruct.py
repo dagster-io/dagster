@@ -40,7 +40,7 @@ from dagster._core.origin import (
 )
 from dagster._core.selector import parse_solid_selection
 from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
-from dagster._utils import frozenlist, make_readonly_value
+from dagster._utils import make_readonly_value
 
 from .events import AssetKey
 from .pipeline_base import IPipeline
@@ -71,7 +71,7 @@ class ReconstructableRepository(
             ("pointer", CodePointer),
             ("container_image", Optional[str]),
             ("executable_path", Optional[str]),
-            ("entry_point", Sequence[str]),
+            ("entry_point", Tuple[str, ...]),
             ("container_context", Optional[Mapping[str, Any]]),
             ("repository_load_data", Optional["RepositoryLoadData"]),
         ],
@@ -94,7 +94,7 @@ class ReconstructableRepository(
             container_image=check.opt_str_param(container_image, "container_image"),
             executable_path=check.opt_str_param(executable_path, "executable_path"),
             entry_point=(
-                frozenlist(check.sequence_param(entry_point, "entry_point", of_type=str))
+                tuple(check.sequence_param(entry_point, "entry_point", of_type=str))
                 if entry_point is not None
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
