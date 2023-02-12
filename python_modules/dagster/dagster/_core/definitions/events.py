@@ -110,12 +110,10 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
                 return False
         return True
 
-    def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
+    def to_string(self, legacy: Optional[bool] = False) -> str:
         """
         E.g. '["first_component", "second_component"]'.
         """
-        if not self.path:
-            return None
         if legacy:
             return ASSET_KEY_LEGACY_DELIMITER.join(self.path)
         return seven.json.dumps(self.path)
