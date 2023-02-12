@@ -7,9 +7,11 @@ import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
-from typing import Dict, Generator, List, Mapping, NamedTuple, Optional, Sequence, Union
+from types import TracebackType
+from typing import Dict, Generator, List, Mapping, NamedTuple, Optional, Sequence, Type, Union, cast
 
 import pendulum
+from typing_extensions import Self
 
 import dagster._check as check
 import dagster._seven as seven
@@ -49,16 +51,11 @@ class DagsterSensorDaemonError(DagsterError):
     """Error when running the SensorDaemon."""
 
 
-class SkippedSensorRun(
-    NamedTuple(
-        "SkippedSensorRun",
-        [
-            ("run_key", Optional[str]),
-            ("existing_run", DagsterRun),
-        ],
-    )
-):
+class SkippedSensorRun(NamedTuple):
     """Placeholder for runs that are skipped during the run_key idempotence check."""
+
+    run_key: Optional[str]
+    existing_run: DagsterRun
 
 
 class SensorLaunchContext:
@@ -82,21 +79,21 @@ class SensorLaunchContext:
             self._purge_settings[day_offset].add(status)
 
     @property
-    def status(self):
+    def status(self) -> TickStatus:
         return self._tick.status
 
     @property
-    def logger(self):
+    def logger(self) -> logging.Logger:
         return self._logger
 
     @property
-    def run_count(self):
+    def run_count(self) -> int:
         return len(self._tick.run_ids)
 
-    def update_state(self, status, **kwargs):
-        skip_reason = kwargs.get("skip_reason")
-        cursor = kwargs.get("cursor")
-        origin_run_id = kwargs.get("origin_run_id")
+    def update_state(self, status: TickStatus, **kwargs: object):
+        skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
+        cursor = cast(Optional[str], kwargs.get("cursor"))
+        origin_run_id = cast(Optional[str], kwargs.get("origin_run_id"))
         if "skip_reason" in kwargs:
             del kwargs["skip_reason"]
 
@@ -120,16 +117,16 @@ class SensorLaunchContext:
         if origin_run_id:
             self._tick = self._tick.with_origin_run(origin_run_id)
 
-    def add_run_info(self, run_id=None, run_key=None):
+    def add_run_info(self, run_id: Optional[str] = None, run_key: Optional[str] = None) -> None:
         self._tick = self._tick.with_run_info(run_id, run_key)
 
-    def add_log_info(self, log_key):
+    def add_log_info(self, log_key: Sequence[str]) -> None:
         self._tick = self._tick.with_log_key(log_key)
 
-    def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool):
+    def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool) -> None:
         self._should_update_cursor_on_failure = should_update_cursor_on_failure
 
-    def _write(self):
+    def _write(self) -> None:
         self._instance.update_tick(self._tick)
 
         if self._tick.status not in FINISHED_TICK_STATES:
@@ -146,19 +143,19 @@ class SensorLaunchContext:
             state = self._instance.get_instigator_state(
                 self._external_sensor.get_external_origin_id(), self._external_sensor.selector_id
             )
-            last_run_key = state.instigator_data.last_run_key if state.instigator_data else None
+            last_run_key = state.instigator_data.last_run_key if state.instigator_data else None  # type: ignore  # (possible none)
             if self._tick.run_keys and should_update_cursor_and_last_run_key:
                 last_run_key = self._tick.run_keys[-1]
 
-            cursor = state.instigator_data.cursor if state.instigator_data else None
+            cursor = state.instigator_data.cursor if state.instigator_data else None  # type: ignore  # (possible none)
             if should_update_cursor_and_last_run_key:
                 cursor = self._tick.cursor
 
             marked_timestamp = max(
-                self._tick.timestamp, state.instigator_data.last_tick_start_timestamp or 0
+                self._tick.timestamp, state.instigator_data.last_tick_start_timestamp or 0  # type: ignore  # (possible none)
             )
             self._instance.update_instigator_state(
-                state.with_data(
+                state.with_data(  # type: ignore  # (possible none)
                     SensorInstigatorData(
                         last_tick_timestamp=self._tick.timestamp,
                         last_run_key=last_run_key,
@@ -169,10 +166,15 @@ class SensorLaunchContext:
                 )
             )
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(
+        self,
+        exception_type: Type[BaseException],
+        exception_value: Exception,
+        traceback: TracebackType,
+    ) -> None:
         if exception_type and isinstance(exception_value, KeyboardInterrupt):
             return
 
@@ -194,7 +196,7 @@ class SensorLaunchContext:
             )
 
 
-def _check_for_debug_crash(debug_crash_flags, key):
+def _check_for_debug_crash(debug_crash_flags: Optional[Mapping[str, int]], key: str) -> None:
     if not debug_crash_flags:
         return
 

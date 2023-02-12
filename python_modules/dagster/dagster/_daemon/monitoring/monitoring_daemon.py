@@ -1,6 +1,7 @@
 import logging
 import sys
 import time
+from typing import Iterator, Optional
 
 from dagster import (
     DagsterInstance,
@@ -15,12 +16,14 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
 )
 from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
 
 
-def monitor_starting_run(instance: DagsterInstance, run, logger):
+def monitor_starting_run(
+    instance: DagsterInstance, run: DagsterRun, logger: logging.Logger
+) -> None:
     check.invariant(run.status == DagsterRunStatus.STARTING)
     run_stats = instance.get_run_stats(run.run_id)
 
@@ -39,7 +42,7 @@ def monitor_starting_run(instance: DagsterInstance, run, logger):
     # TODO: consider attempting to resume the run, if the run worker is in a bad status
 
 
-def count_resume_run_attempts(instance: DagsterInstance, run_id: str):
+def count_resume_run_attempts(instance: DagsterInstance, run_id: str) -> int:
     events = instance.all_logs(run_id, of_type=DagsterEventType.ENGINE_EVENT)
     return len([event for event in events if event.message == RESUME_RUN_LOG_MESSAGE])
 
@@ -49,7 +52,7 @@ def monitor_started_run(
     workspace: IWorkspace,
     run: DagsterRun,
     logger: logging.Logger,
-):
+) -> None:
     check.invariant(run.status == DagsterRunStatus.STARTED)
     check_health_result = instance.run_launcher.check_run_worker_health(run)
     if check_health_result.status not in [WorkerStatus.RUNNING, WorkerStatus.SUCCESS]:
@@ -96,7 +99,7 @@ def execute_monitoring_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     _debug_crash_flags=None,
-):
+) -> Iterator[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
     check.invariant(
         instance.run_launcher.supports_check_run_worker_health, "Must use a supported run launcher"

@@ -4,6 +4,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Optional
 
 import click
 
@@ -15,6 +16,7 @@ from dagster._utils.log import configure_loggers
 from .job import apply_click_params
 from .utils import get_instance_for_service
 from .workspace.cli_target import (
+    ClickArgValue,
     get_workspace_load_target,
     python_file_option,
     python_module_option,
@@ -55,7 +57,12 @@ def dev_command_options(f):
 )
 @click.option("--dagit-port", "-p", help="Port to use for the Dagit UI.", required=False)
 @click.option("--dagit-host", "-h", help="Host to use for the Dagit UI.", required=False)
-def dev_command(code_server_log_level, dagit_port, dagit_host, **kwargs):
+def dev_command(
+    code_server_log_level: str,
+    dagit_port: Optional[str],
+    dagit_host: Optional[str],
+    **kwargs: ClickArgValue,
+) -> None:
     # check if dagit installed, crash if not
     try:
         import dagit  #  # noqa: F401

@@ -1,12 +1,15 @@
+import datetime
 import logging
 import sys
 import threading
 import time
 import uuid
 from contextlib import AbstractContextManager, ExitStack, contextmanager
-from typing import Callable, Iterator, Sequence
+from types import TracebackType
+from typing import Callable, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Type
 
 import pendulum
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
@@ -48,18 +51,20 @@ DAEMON_GRPC_SERVER_RELOAD_INTERVAL = 60
 DAEMON_GRPC_SERVER_HEARTBEAT_TTL = 120
 
 
-def _sorted_quoted(strings):
+def _sorted_quoted(strings: Iterable[str]) -> str:
     return "[" + ", ".join(["'{}'".format(s) for s in sorted(list(strings))]) + "]"
 
 
-def create_daemons_from_instance(instance):
+def create_daemons_from_instance(instance: DagsterInstance) -> Sequence[DagsterDaemon]:
     return [
         create_daemon_of_type(daemon_type, instance)
         for daemon_type in instance.get_required_daemon_types()
     ]
 
 
-def create_daemon_grpc_server_registry(instance, code_server_log_level="INFO"):
+def create_daemon_grpc_server_registry(
+    instance: DagsterInstance, code_server_log_level: str = "INFO"
+) -> GrpcServerRegistry:
     return GrpcServerRegistry(
         instance=instance,
         reload_interval=DAEMON_GRPC_SERVER_RELOAD_INTERVAL,
@@ -77,14 +82,14 @@ def daemon_controller_from_instance(
     heartbeat_tolerance_seconds: int = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     wait_for_processes_on_exit: bool = False,
     gen_daemons: Callable[
-        [DagsterInstance], Iterator[DagsterDaemon]
+        [DagsterInstance], Iterable[DagsterDaemon]
     ] = create_daemons_from_instance,
     error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
     code_server_log_level: str = "info",
-):
+) -> Iterator["DagsterDaemonController"]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace_load_target, "workspace_load_target", WorkspaceLoadTarget)
-    grpc_server_registry = None
+    grpc_server_registry: Optional[GrpcServerRegistry] = None
     try:
         with ExitStack() as stack:
             grpc_server_registry = stack.enter_context(
@@ -115,12 +120,24 @@ def daemon_controller_from_instance(
 
 
 class DagsterDaemonController(AbstractContextManager):
+    _daemon_uuid: str
+    _daemons: Dict[str, DagsterDaemon]
+    _daemon_threads: Dict[str, threading.Thread]
+    _workspace_process_context: IWorkspaceProcessContext
+    _instance: DagsterInstance
+    _heartbeat_interval_seconds: float
+    _heartbeat_tolerance_seconds: float
+    _daemon_shutdown_event: threading.Event
+    _logger: logging.Logger
+    _last_healthy_heartbeat_times: Dict[str, float]
+    _start_time: datetime.datetime
+
     def __init__(
         self,
         workspace_process_context: IWorkspaceProcessContext,
         daemons: Sequence[DagsterDaemon],
-        heartbeat_interval_seconds: int = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
-        heartbeat_tolerance_seconds: int = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+        heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+        heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
         handler: str = "default",
     ):
@@ -174,14 +191,14 @@ class DagsterDaemonController(AbstractContextManager):
 
         self._start_time = pendulum.now("UTC")
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def _daemon_thread_healthy(self, daemon_type):
+    def _daemon_thread_healthy(self, daemon_type: str) -> bool:
         thread = self._daemon_threads[daemon_type]
         return thread.is_alive()
 
-    def _daemon_heartbeat_health(self):
+    def _daemon_heartbeat_health(self) -> Mapping[str, bool]:
         now = time.time()
         try:
             daemon_statuses_by_type = get_daemon_statuses(
@@ -200,11 +217,11 @@ class DagsterDaemonController(AbstractContextManager):
                 if is_daemon_healthy:
                     self._last_healthy_heartbeat_times[daemon_type] = now
 
-            return daemon_health_by_type
+            return daemon_health_by_type  # type: ignore  # (possible None)
         except Exception:
             self._logger.warning(
                 "Error attempting to check daemon heartbeats",
-                exc_info=sys.exc_info,
+                exc_info=sys.exc_info,  # type: ignore  # (should be func call)
             )
 
             return {
@@ -215,7 +232,7 @@ class DagsterDaemonController(AbstractContextManager):
                 for daemon_type in self._daemons.keys()
             }
 
-    def check_daemon_threads(self):
+    def check_daemon_threads(self) -> None:
         failed_daemons = [
             daemon_type
             for daemon_type in self._daemon_threads
@@ -229,7 +246,7 @@ class DagsterDaemonController(AbstractContextManager):
             )
             raise Exception("Stopped dagster-daemon process due to threads no longer running")
 
-    def check_daemon_heartbeats(self):
+    def check_daemon_heartbeats(self) -> None:
         failed_daemons = [
             daemon_type
             for daemon_type, is_daemon_healthy in self._daemon_heartbeat_health().items()
@@ -243,7 +260,7 @@ class DagsterDaemonController(AbstractContextManager):
             )
             raise Exception("Stopped dagster-daemon process due to thread heartbeat failure")
 
-    def check_daemon_loop(self):
+    def check_daemon_loop(self) -> None:
         start_time = time.time()
         last_heartbeat_check_time = start_time
         last_workspace_update_time = start_time
@@ -273,7 +290,12 @@ class DagsterDaemonController(AbstractContextManager):
                 self.check_daemon_heartbeats()
                 last_heartbeat_check_time = time.time()
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(
+        self,
+        exception_type: Type[BaseException],
+        exception_value: Exception,
+        traceback: TracebackType,
+    ) -> None:
         if isinstance(exception_value, KeyboardInterrupt):
             self._logger.info("Received interrupt, shutting down daemon threads...")
         elif exception_type:
@@ -291,25 +313,25 @@ class DagsterDaemonController(AbstractContextManager):
                     self._logger.error("Thread for %s did not shut down gracefully.", daemon_type)
         self._logger.info("Daemon threads shut down.")
 
-    def _add_daemon(self, daemon):
+    def _add_daemon(self, daemon: DagsterDaemon) -> None:
         self._daemons[daemon.daemon_type()] = daemon
 
-    def get_daemon(self, daemon_type):
+    def get_daemon(self, daemon_type: str) -> DagsterDaemon:
         return self._daemons.get(daemon_type)
 
     @property
-    def daemons(self):
+    def daemons(self) -> Sequence[DagsterDaemon]:
         return list(self._daemons.values())
 
 
-def create_daemon_of_type(daemon_type, instance):
+def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> DagsterDaemon:
     if daemon_type == SchedulerDaemon.daemon_type():
         return SchedulerDaemon()
     elif daemon_type == SensorDaemon.daemon_type():
         return SensorDaemon()
     elif daemon_type == QueuedRunCoordinatorDaemon.daemon_type():
         return QueuedRunCoordinatorDaemon(
-            interval_seconds=instance.run_coordinator.dequeue_interval_seconds
+            interval_seconds=instance.run_coordinator.dequeue_interval_seconds  # type: ignore  # (??)
         )
     elif daemon_type == BackfillDaemon.daemon_type():
         return BackfillDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
@@ -322,11 +344,11 @@ def create_daemon_of_type(daemon_type, instance):
 
 
 def all_daemons_healthy(
-    instance,
-    curr_time_seconds=None,
-    heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
-    heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
-):
+    instance: DagsterInstance,
+    curr_time_seconds: Optional[float] = None,
+    heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+    heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+) -> bool:
     """
     True if all required daemons have had a recent heartbeat with no errors.
     """
@@ -342,11 +364,11 @@ def all_daemons_healthy(
 
 
 def all_daemons_live(
-    instance,
-    curr_time_seconds=None,
-    heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
-    heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
-):
+    instance: DagsterInstance,
+    curr_time_seconds: Optional[float] = None,
+    heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+    heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+) -> bool:
     """
     True if all required daemons have had a recent heartbeat, regardless of if it contained errors.
     """
@@ -363,18 +385,18 @@ def all_daemons_live(
 
 
 def get_daemon_statuses(
-    instance,
-    daemon_types,
-    curr_time_seconds=None,
-    ignore_errors=False,
-    heartbeat_interval_seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
-    heartbeat_tolerance_seconds=DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
-):
+    instance: DagsterInstance,
+    daemon_types: Iterable[str],
+    curr_time_seconds: Optional[float] = None,
+    ignore_errors: bool = False,
+    heartbeat_interval_seconds: float = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+    heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+) -> Mapping[str, DaemonStatus]:
     curr_time_seconds = check.opt_float_param(
         curr_time_seconds, "curr_time_seconds", default=pendulum.now("UTC").float_timestamp
     )
 
-    daemon_statuses_by_type = {}
+    daemon_statuses_by_type: Dict[str, DaemonStatus] = {}
     heartbeats = instance.get_daemon_heartbeats()
 
     for daemon_type in daemon_types:
@@ -411,7 +433,7 @@ def get_daemon_statuses(
     return daemon_statuses_by_type
 
 
-def debug_daemon_heartbeats(instance):
+def debug_daemon_heartbeats(instance: DagsterInstance) -> None:
     daemon = SensorDaemon()
     timestamp = pendulum.now("UTC").float_timestamp
     instance.add_daemon_heartbeat(DaemonHeartbeat(timestamp, daemon.daemon_type(), None, None))

@@ -2353,7 +2353,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def wipe_daemon_heartbeats(self):
         self._run_storage.wipe_daemon_heartbeats()
 
-    def get_required_daemon_types(self):
+    def get_required_daemon_types(self) -> Sequence[str]:
         from dagster._core.run_coordinator import QueuedRunCoordinator
         from dagster._core.scheduler import DagsterDaemonScheduler
         from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
@@ -2396,7 +2396,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
     @property
-    def daemon_skip_heartbeats_without_errors(self):
+    def daemon_skip_heartbeats_without_errors(self) -> bool:
         # If enabled, daemon threads won't write heartbeats unless they encounter an error. This is
         # enabled in cloud, where we don't need to use heartbeats to check if daemons are running, but
         # do need to surface errors to users. This is an optimization to reduce DB writes.

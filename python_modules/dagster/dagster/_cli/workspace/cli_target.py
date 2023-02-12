@@ -54,7 +54,8 @@ WORKSPACE_TARGET_WARNING = (
     " --grpc-socket."
 )
 
-ClickArgMapping: TypeAlias = Mapping[str, Union[str, Tuple[str]]]
+ClickArgValue: TypeAlias = Union[str, Tuple[str]]
+ClickArgMapping: TypeAlias = Mapping[str, ClickArgValue]
 
 
 def _cli_load_invariant(condition: object, msg=None) -> None:

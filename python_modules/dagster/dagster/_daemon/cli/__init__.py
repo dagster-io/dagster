@@ -1,10 +1,16 @@
 import os
 import sys
+from typing import Optional
 
 import click
 
 from dagster import __version__ as dagster_version
-from dagster._cli.workspace.cli_target import get_workspace_load_target, workspace_target_argument
+from dagster._cli.workspace.cli_target import (
+    ClickArgMapping,
+    ClickArgValue,
+    get_workspace_load_target,
+    workspace_target_argument,
+)
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._daemon.controller import (
@@ -47,7 +53,11 @@ def _get_heartbeat_tolerance():
     hidden=True,
 )
 @workspace_target_argument
-def run_command(code_server_log_level, instance_ref, **kwargs):
+def run_command(
+    code_server_log_level: str,
+    instance_ref: Optional[str],
+    **kwargs: ClickArgValue,
+) -> None:
     try:
         with capture_interrupts():
             with DagsterInstance.from_ref(
@@ -59,7 +69,9 @@ def run_command(code_server_log_level, instance_ref, **kwargs):
 
 
 @telemetry_wrapper(metadata={"DAEMON_SESSION_ID": get_telemetry_daemon_session_id()})
-def _daemon_run_command(instance: DagsterInstance, code_server_log_level: str, kwargs):
+def _daemon_run_command(
+    instance: DagsterInstance, code_server_log_level: str, kwargs: ClickArgMapping
+) -> None:
     workspace_load_target = get_workspace_load_target(kwargs)
 
     with daemon_controller_from_instance(
@@ -75,7 +87,7 @@ def _daemon_run_command(instance: DagsterInstance, code_server_log_level: str, k
     name="liveness-check",
     help="Check for recent heartbeats from the daemon.",
 )
-def liveness_check_command():
+def liveness_check_command() -> None:
     with DagsterInstance.get() as instance:
         if all_daemons_live(instance, heartbeat_tolerance_seconds=_get_heartbeat_tolerance()):
             click.echo("Daemon live")
@@ -88,7 +100,7 @@ def liveness_check_command():
     name="wipe",
     help="Wipe all heartbeats from storage.",
 )
-def wipe_command():
+def wipe_command() -> None:
     with DagsterInstance.get() as instance:
         instance.wipe_daemon_heartbeats()
         click.echo("Daemon heartbeats wiped")
@@ -98,7 +110,7 @@ def wipe_command():
     name="heartbeat",
     help="Read and write a heartbeat",
 )
-def debug_heartbeat_command():
+def debug_heartbeat_command() -> None:
     with DagsterInstance.get() as instance:
         debug_daemon_heartbeats(instance)
 
@@ -107,7 +119,7 @@ def debug_heartbeat_command():
     name="heartbeat-dump",
     help="Log all heartbeat statuses",
 )
-def debug_heartbeat_dump_command():
+def debug_heartbeat_dump_command() -> None:
     with DagsterInstance.get() as instance:
         for daemon_status in get_daemon_statuses(instance, instance.get_required_daemon_types()):
             click.echo(daemon_status)
@@ -116,11 +128,11 @@ def debug_heartbeat_dump_command():
 @click.group(
     commands={"heartbeat": debug_heartbeat_command, "heartbeat-dump": debug_heartbeat_dump_command}
 )
-def debug_group():
+def debug_group() -> None:
     """Daemon debugging utils."""
 
 
-def create_dagster_daemon_cli():
+def create_dagster_daemon_cli() -> click.Group:
     commands = {
         "run": run_command,
         "liveness-check": liveness_check_command,
@@ -139,5 +151,5 @@ def create_dagster_daemon_cli():
 cli = create_dagster_daemon_cli()
 
 
-def main():
+def main() -> None:
     cli(obj={})  # pylint:disable=E1123

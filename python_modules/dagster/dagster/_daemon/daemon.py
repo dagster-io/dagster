@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from collections import deque
 from contextlib import AbstractContextManager
 from threading import Event
-from typing import Generator, Generic, TypeVar, Union
+from typing import TYPE_CHECKING, Generator, Generic, Optional, TypeVar, Union
 
 import pendulum
 
@@ -23,6 +23,9 @@ from dagster._daemon.sensor import execute_sensor_iteration_loop
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._scheduler.scheduler import execute_scheduler_iteration_loop
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+
+if TYPE_CHECKING:
+    from pendulum.datetime import DateTime
 
 
 def get_default_daemon_logger(daemon_name) -> logging.Logger:
@@ -44,6 +47,9 @@ TContext = TypeVar("TContext", bound=IWorkspaceProcessContext)
 
 
 class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
+    _logger: logging.Logger
+    _last_heartbeat_time: Optional["DateTime"]
+
     def __init__(self):
         self._logger = get_default_daemon_logger(type(self).__name__)
 
@@ -70,7 +76,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
         workspace_process_context: TContext,
         daemon_uuid: str,
         daemon_shutdown_event: Event,
-        heartbeat_interval_seconds: int,
+        heartbeat_interval_seconds: float,
         error_interval_seconds: int,
     ):
         from dagster._core.telemetry_upload import uploading_logging_thread
@@ -120,10 +126,10 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
     def _check_add_heartbeat(
         self,
         instance: DagsterInstance,
-        daemon_uuid,
-        heartbeat_interval_seconds,
-        error_interval_seconds,
-    ):
+        daemon_uuid: str,
+        heartbeat_interval_seconds: float,
+        error_interval_seconds: int,
+    ) -> None:
         error_max_time = pendulum.now("UTC").subtract(seconds=error_interval_seconds)
 
         while len(self._errors):
@@ -230,7 +236,7 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
 
 class SchedulerDaemon(DagsterDaemon):
     @classmethod
-    def daemon_type(cls):
+    def daemon_type(cls) -> str:
         return "SCHEDULER"
 
     def core_loop(
@@ -253,7 +259,7 @@ class SchedulerDaemon(DagsterDaemon):
 
 class SensorDaemon(DagsterDaemon):
     @classmethod
-    def daemon_type(cls):
+    def daemon_type(cls) -> str:
         return "SENSOR"
 
     def core_loop(
@@ -270,7 +276,7 @@ class SensorDaemon(DagsterDaemon):
 
 class BackfillDaemon(IntervalDaemon):
     @classmethod
-    def daemon_type(cls):
+    def daemon_type(cls) -> str:
         return "BACKFILL"
 
     def run_iteration(
@@ -282,7 +288,7 @@ class BackfillDaemon(IntervalDaemon):
 
 class MonitoringDaemon(IntervalDaemon):
     @classmethod
-    def daemon_type(cls):
+    def daemon_type(cls) -> str:
         return "MONITORING"
 
     def run_iteration(
