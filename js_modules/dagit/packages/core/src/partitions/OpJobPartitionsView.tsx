@@ -13,7 +13,12 @@ import {RepoAddress} from '../workspace/types';
 import {BackfillPartitionSelector} from './BackfillSelector';
 import {JobBackfillsTable} from './JobBackfillsTable';
 import {PartitionGraph} from './PartitionGraph';
-import {PartitionState, PartitionStatus, runStatusToPartitionState} from './PartitionStatus';
+import {
+  PartitionRunStatus,
+  PartitionState,
+  PartitionStatus,
+  runStatusToPartitionState,
+} from './PartitionStatus';
 import {getVisibleItemCount, PartitionPerOpStatus} from './PartitionStepStatus';
 import {GRID_FLOATING_CONTAINER_WIDTH} from './RunMatrixUtils';
 import {
@@ -225,7 +230,7 @@ const OpJobPartitionsViewContent: React.FC<{
       </Box>
       <Box padding={{vertical: 16, horizontal: 24}}>
         <div {...containerProps}>
-          <PartitionStatus
+          <PartitionRunStatus
             partitionNames={partitionNames}
             partitionStateForKey={(name) => statusData[name]}
             selected={showSteps ? selectedPartitions : undefined}

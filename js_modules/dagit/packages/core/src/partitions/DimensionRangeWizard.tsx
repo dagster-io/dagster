@@ -5,14 +5,14 @@ import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
 import {Range} from '../assets/usePartitionHealthData';
 
 import {DimensionRangeInput} from './DimensionRangeInput';
-import {PartitionStatus} from './PartitionStatus';
+import {PartitionRunStatus, PartitionState, PartitionStatus} from './PartitionStatus';
 
 export const DimensionRangeWizard: React.FC<{
   selected: string[];
   setSelected: (selected: string[]) => void;
   partitionKeys: string[];
-  ranges: Range[];
-}> = ({selected, setSelected, partitionKeys, ranges}) => {
+  health: {ranges: Range[]} | {partitionStateForKey: (key: string) => PartitionState};
+}> = ({selected, setSelected, partitionKeys, health}) => {
   const isTimeseries = isTimeseriesPartition(partitionKeys[0]);
 
   return (
@@ -36,13 +36,23 @@ export const DimensionRangeWizard: React.FC<{
         </Button>
       </Box>
       <Box margin={{bottom: 8}}>
-        <PartitionStatus
-          partitionNames={partitionKeys}
-          ranges={ranges}
-          splitPartitions={!isTimeseries}
-          selected={selected}
-          onSelect={setSelected}
-        />
+        {'partitionStateForKey' in health ? (
+          <PartitionRunStatus
+            partitionNames={partitionKeys}
+            partitionStateForKey={health.partitionStateForKey}
+            splitPartitions={!isTimeseries}
+            selected={selected}
+            onSelect={setSelected}
+          />
+        ) : (
+          <PartitionStatus
+            partitionNames={partitionKeys}
+            ranges={health.ranges}
+            splitPartitions={!isTimeseries}
+            selected={selected}
+            onSelect={setSelected}
+          />
+        )}
       </Box>
     </>
   );

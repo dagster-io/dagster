@@ -2,7 +2,6 @@ import {Box, Tooltip, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Range} from '../assets/usePartitionHealthData';
 import {useViewport} from '../gantt/useViewport';
 import {RunStatus} from '../graphql/types';
 
@@ -25,6 +24,12 @@ export enum PartitionState {
   STARTED = 'started',
 }
 
+export type PartitionStateRange = {
+  start: {idx: number; key: string};
+  end: {idx: number; key: string};
+  value: PartitionState;
+};
+
 export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
   switch (runStatus) {
     case RunStatus.CANCELED:
@@ -40,12 +45,6 @@ export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
     default:
       return PartitionState.MISSING;
   }
-};
-
-type PartitionStateRange = {
-  start: {idx: number; key: string};
-  end: {idx: number; key: string};
-  value: PartitionState;
 };
 
 export function assembleIntoPartitionStateRanges(
@@ -66,9 +65,9 @@ export function assembleIntoPartitionStateRanges(
   return result;
 }
 
-export const PartitionStatus: React.FC<{
+interface PartitionStatusProps {
   partitionNames: string[];
-  ranges: Range[] | PartitionStateRange[];
+  ranges: PartitionStateRange[];
   selected?: string[];
   small?: boolean;
   onClick?: (partitionName: string) => void;
@@ -77,7 +76,9 @@ export const PartitionStatus: React.FC<{
   hideStatusTooltip?: boolean;
   tooltipMessage?: string;
   selectionWindowSize?: number;
-}> = ({
+}
+
+export const PartitionStatus: React.FC<PartitionStatusProps> = ({
   partitionNames,
   ranges,
   selected,
@@ -342,6 +343,30 @@ export const PartitionStatus: React.FC<{
       ) : null}
     </div>
   );
+};
+
+export const PartitionRunStatus: React.FC<
+  Omit<PartitionStatusProps, 'ranges'> & {
+    partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState;
+  }
+> = ({partitionStateForKey, ...rest}) => {
+  const ranges = React.useMemo(() => {
+    const spans = rest.splitPartitions
+      ? rest.partitionNames.map((name, idx) => ({
+          startIdx: idx,
+          endIdx: idx,
+          status: partitionStateForKey(name, idx),
+        }))
+      : assembleIntoSpans(rest.partitionNames, partitionStateForKey);
+
+    return spans.map((s) => ({
+      value: s.status,
+      start: {idx: s.startIdx, key: rest.partitionNames[s.startIdx]},
+      end: {idx: s.endIdx, key: rest.partitionNames[s.endIdx]},
+    }));
+  }, [rest.splitPartitions, rest.partitionNames, partitionStateForKey]);
+
+  return <PartitionStatus ranges={ranges} {...rest} />;
 };
 
 export const partitionStateToStyle = (status: PartitionState): React.CSSProperties => {

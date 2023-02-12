@@ -13,7 +13,7 @@ export const PartitionHealthSummary: React.FC<{
   showAssetKey?: boolean;
   data: PartitionHealthData[];
   selections?: PartitionDimensionSelection[];
-}> = ({showAssetKey, assetKey, data, selections}) => {
+}> = React.memo(({showAssetKey, assetKey, data, selections}) => {
   const assetData = data.find((d) => JSON.stringify(d.assetKey) === JSON.stringify(assetKey));
 
   if (!assetData) {
@@ -63,4 +63,4 @@ export const PartitionHealthSummary: React.FC<{
       ))}
     </Box>
   );
-};
+});

@@ -12,8 +12,8 @@ import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunStatus, BulkActionStatus} from '../graphql/types';
 import {
+  PartitionRunStatus,
   PartitionState,
-  PartitionStatus,
   runStatusToPartitionState,
 } from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -255,7 +255,7 @@ const BackfillRunStatus = ({
   }, {});
 
   return statuses ? (
-    <PartitionStatus
+    <PartitionRunStatus
       partitionNames={backfill.partitionNames}
       partitionStateForKey={(key, _) =>
         runStatusToPartitionState(statuses.filter((s) => s.partitionName === key)[0].runStatus)
@@ -376,7 +376,7 @@ const BackfillRequestedRange = ({
         </TagButton>
       </div>
       {allPartitions && (
-        <PartitionStatus
+        <PartitionRunStatus
           small
           hideStatusTooltip
           partitionNames={allPartitions}
