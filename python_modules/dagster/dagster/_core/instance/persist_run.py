@@ -1,8 +1,8 @@
 from typing import Mapping, Optional
 
+from dagster._core.definitions.selector import PipelineSelector
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.host_representation.repository_location import RepositoryLocation
-from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster._core.utils import make_new_run_id
