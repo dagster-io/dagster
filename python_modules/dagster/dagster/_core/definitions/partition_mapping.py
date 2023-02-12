@@ -1,7 +1,7 @@
 import collections.abc
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Collection, Mapping, NamedTuple, Optional, Union, cast
+from typing import Collection, Mapping, NamedTuple, Optional, Tuple, Type, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
@@ -496,7 +496,7 @@ def infer_partition_mapping(
         return AllPartitionMapping()
 
 
-def get_builtin_partition_mapping_types():
+def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
     from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
     return (

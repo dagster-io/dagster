@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
+    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -36,7 +37,7 @@ from .time_window_partitions import TimeWindowPartitionsDefinition
 class AssetGraph:
     def __init__(
         self,
-        asset_dep_graph: DependencyGraph,
+        asset_dep_graph: DependencyGraph[AssetKey],
         source_asset_keys: AbstractSet[AssetKey],
         partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
@@ -55,15 +56,15 @@ class AssetGraph:
         self._code_versions_by_key = code_versions_by_key
 
     @property
-    def asset_dep_graph(self):
+    def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
         return self._asset_dep_graph
 
     @property
-    def group_names_by_key(self):
+    def group_names_by_key(self) -> Mapping[AssetKey, Optional[str]]:
         return self._group_names_by_key
 
     @property
-    def source_asset_keys(self):
+    def source_asset_keys(self) -> AbstractSet[AssetKey]:
         return self._source_asset_keys
 
     @property
@@ -74,15 +75,15 @@ class AssetGraph:
         return AssetSelection.keys(*self.all_asset_keys).sources().resolve(self)
 
     @property
-    def freshness_policies_by_key(self):
+    def freshness_policies_by_key(self) -> Mapping[AssetKey, Optional[FreshnessPolicy]]:
         return self._freshness_policies_by_key
 
     @staticmethod
     def from_assets(
         all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]
     ) -> "InternalAssetGraph":
-        assets_defs = []
-        source_assets = []
+        assets_defs: List[AssetsDefinition] = []
+        source_assets: List[SourceAsset] = []
         partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
         partition_mappings_by_key: Dict[
             AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]
@@ -167,7 +168,7 @@ class AssetGraph:
         Returns every partition in every of the given asset's children that depends on the given
         partition of that asset.
         """
-        result = set()
+        result: Set[AssetKeyPartitionKey] = set()
         for child_asset_key in self.get_children(asset_key):
             if self.is_partitioned(child_asset_key):
                 for child_partition_key in self.get_child_partition_keys_of_parent(
@@ -235,7 +236,7 @@ class AssetGraph:
         Returns every partition in every of the given asset's parents that the given partition of
         that asset depends on.
         """
-        result = set()
+        result: Set[AssetKeyPartitionKey] = set()
         for parent_asset_key in self.get_parents(asset_key):
             if self.is_partitioned(parent_asset_key):
                 for parent_partition_key in self.get_parent_partition_keys_for_child(
@@ -395,17 +396,17 @@ class AssetGraph:
 
         return result
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return id(self)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return self is other
 
 
 class InternalAssetGraph(AssetGraph):
     def __init__(
         self,
-        asset_dep_graph: DependencyGraph,
+        asset_dep_graph: DependencyGraph[AssetKey],
         source_asset_keys: AbstractSet[AssetKey],
         partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
@@ -474,7 +475,9 @@ class ToposortedPriorityQueue:
     def dequeue(self) -> Iterable[AssetKeyPartitionKey]:
         return heappop(self._heap).multi_asset_partition
 
-    def _queue_item(self, asset_partition: AssetKeyPartitionKey):
+    def _queue_item(
+        self, asset_partition: AssetKeyPartitionKey
+    ) -> "ToposortedPriorityQueue.QueueItem":
         asset_key = asset_partition.asset_key
 
         required_multi_asset_keys = self._asset_graph.get_required_multi_asset_keys(asset_key) | {
@@ -489,11 +492,9 @@ class ToposortedPriorityQueue:
             if partitions_def is not None and isinstance(
                 partitions_def, TimeWindowPartitionsDefinition
             ):
-                partition_sort_key = (
-                    cast(TimeWindowPartitionsDefinition, partitions_def)
-                    .time_window_for_partition_key(cast(str, asset_partition.partition_key))
-                    .start.timestamp()
-                )
+                partition_sort_key = partitions_def.time_window_for_partition_key(
+                    cast(str, asset_partition.partition_key)
+                ).start.timestamp()
             else:
                 check.failed("Assets with self-dependencies must have time-window partitions")
         else:
