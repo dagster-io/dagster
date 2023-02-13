@@ -9,12 +9,13 @@ if TYPE_CHECKING:
     from dagster._config.structured_config import PartialResource
 
 
-
-
-
 # Since a metaclass is invoked by Resource before Resource or PartialResource is defined, we need to
 # define a temporary class to use as a placeholder for use in the initial metaclass invocation.
-# When the metaclass is invoked for a Resource subclass, it will use the non-placeholder values.
+#
+# These initial invocations will use the placeholder values, which is fine, since there's no
+# attributes on the Resource class which would be affected. The only time the metaclass will
+# actually change the type annotations is when it's invoked for a user-created subclass of Resource,
+# at which point the placeholder values will be replaced with the actual types.
 class LateBoundTypesForResourceTypeChecking:
     _ResValue = TypeVar("_ResValue")
 
@@ -79,17 +80,24 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
         for field in annotations:
             if not field.startswith("__"):
                 # Check if the annotation is a ResourceDependency
-                if get_origin(annotations[field]) == LateBoundTypesForResourceTypeChecking.get_resource_rep_type():
+                if (
+                    get_origin(annotations[field])
+                    == LateBoundTypesForResourceTypeChecking.get_resource_rep_type()
+                ):
                     # arg = get_args(annotations[field])[0]
                     # If so, we treat it as a Union of a PartialResource and a Resource
                     # for Pydantic's sake.
                     annotations[field] = Any
-                elif safe_is_subclass(annotations[field], LateBoundTypesForResourceTypeChecking.get_resource_type()):
+                elif safe_is_subclass(
+                    annotations[field], LateBoundTypesForResourceTypeChecking.get_resource_type()
+                ):
                     # If the annotation is a Resource, we treat it as a Union of a PartialResource
                     # and a Resource for Pydantic's sake, so that a user can pass in a partially
                     # configured resource.
                     base = annotations[field]
-                    annotations[field] = Union[LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base), base]
+                    annotations[field] = Union[
+                        LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base), base
+                    ]
 
         namespaces["__annotations__"] = annotations
         return super().__new__(cls, name, bases, namespaces, **kwargs)

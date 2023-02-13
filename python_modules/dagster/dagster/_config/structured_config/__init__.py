@@ -5,9 +5,9 @@ from typing import (
     Dict,
     Generic,
     Mapping,
+    NamedTuple,
     Optional,
     Set,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -371,7 +371,7 @@ class Resource(
         resource_pointers, data_without_resources = _separate_resource_params(data)
 
         schema = infer_schema_from_config_class(
-            self.__class__, ignore_resource_fields=set(resource_pointers.keys())
+            self.__class__, fields_to_omit=set(resource_pointers.keys())
         )
 
         post_processed_data = _process_config_values(
@@ -490,7 +490,7 @@ class PartialResource(
         }
 
         schema = infer_schema_from_config_class(
-            resource_cls, ignore_resource_fields=set(resource_pointers.keys())
+            resource_cls, fields_to_omit=set(resource_pointers.keys())
         )
 
         def resource_fn(context: InitResourceContext):
@@ -766,12 +766,12 @@ def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any)
 def infer_schema_from_config_class(
     model_cls: Type[Config],
     description: Optional[str] = None,
-    ignore_resource_fields: Optional[Set[str]] = None,
+    fields_to_omit: Optional[Set[str]] = None,
 ) -> Field:
     """
     Parses a structured config class and returns a corresponding Dagster config Field.
     """
-    ignore_resource_fields = ignore_resource_fields or set()
+    fields_to_omit = fields_to_omit or set()
 
     check.param_invariant(
         issubclass(model_cls, Config),
@@ -780,7 +780,7 @@ def infer_schema_from_config_class(
 
     fields = {}
     for pydantic_field in model_cls.__fields__.values():
-        if pydantic_field.name not in ignore_resource_fields:
+        if pydantic_field.name not in fields_to_omit:
             fields[pydantic_field.alias] = _convert_pydantic_field(pydantic_field)
 
     shape_cls = Permissive if model_cls.__config__.extra == Extra.allow else Shape
@@ -789,24 +789,19 @@ def infer_schema_from_config_class(
     return Field(config=shape_cls(fields), description=description or docstring)
 
 
-def _separate_resource_params(
-    data: Dict[str, Any]
-) -> Tuple[Dict[str, Union[Resource, PartialResource, ResourceDefinition]], Dict[str, Any]]:
+class SeparatedResourceParams(NamedTuple):
+    resources: Dict[str, ResourceDefinition]
+    non_resources: Dict[str, Any]
+
+
+def _separate_resource_params(data: Dict[str, Any]) -> SeparatedResourceParams:
     """
     Separates out the key/value inputs of fields in a structured config Resource class which
     are themselves Resources and those which are not.
     """
-    return (
-        {
-            k: v
-            for k, v in data.items()
-            if isinstance(v, (Resource, PartialResource, ResourceDefinition))
-        },
-        {
-            k: v
-            for k, v in data.items()
-            if not isinstance(v, (Resource, PartialResource, ResourceDefinition))
-        },
+    return SeparatedResourceParams(
+        resources={k: v for k, v in data.items() if isinstance(v, ResourceDefinition)},
+        non_resources={k: v for k, v in data.items() if not isinstance(v, ResourceDefinition)},
     )
 
 
@@ -820,7 +815,6 @@ def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourc
         return cast(ResourceFunctionWithContext, obj.resource_fn)(context)
     else:
         return cast(ResourceFunctionWithoutContext, obj.resource_fn)()
-
 
 
 LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(

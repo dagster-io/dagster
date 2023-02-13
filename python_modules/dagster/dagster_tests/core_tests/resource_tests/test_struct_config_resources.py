@@ -920,6 +920,9 @@ def get_mypy_type_output(filename) -> List[str]:
     return match
 
 
+# you can specify the -m "typesignature" flag to run these tests, they're
+# slow so we don't want to run them by default
+@pytest.mark.typesignature
 def test_type_signatures_constructor_nested_resource():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
@@ -960,6 +963,7 @@ reveal_type(my_outer.inner)
         assert mypy_out[2] == "test.InnerResource"
 
 
+@pytest.mark.typesignature
 def test_type_signatures_config_at_launch():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
@@ -984,6 +988,7 @@ reveal_type(MyResource.configure_at_launch())
         assert mypy_out[0].endswith("PartialResource[test.MyResource]")
 
 
+@pytest.mark.typesignature
 def test_type_signatures_constructor_resource_dependency():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
