@@ -335,9 +335,6 @@ def clause_to_subset(
         subset_list (List[T]): a list of selected and qualified items, empty if input is
             invalid.
     """
-    # parse clause
-    if not isinstance(clause, str):
-        return []
     parts = parse_clause(clause)
     if parts is None:
         return []
