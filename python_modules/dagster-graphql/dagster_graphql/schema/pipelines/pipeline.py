@@ -648,8 +648,8 @@ class GrapheneIPipelineSnapshotMixin:
 
     def resolve_solid_handle(
         self, _graphene_info: ResolveInfo, handleID: str
-    ) -> GrapheneSolidHandle:
-        return build_solid_handles(self.get_represented_pipeline()).get(handleID)  # type: ignore  # (unclear if this can return None)
+    ) -> Optional[GrapheneSolidHandle]:
+        return build_solid_handles(self.get_represented_pipeline()).get(handleID)
 
     def resolve_solid_handles(
         self, _graphene_info: ResolveInfo, parentHandleID: Optional[str] = None
@@ -925,8 +925,8 @@ class GrapheneGraph(graphene.ObjectType):
 
     def resolve_solid_handle(
         self, _graphene_info: ResolveInfo, handleID: str
-    ) -> GrapheneSolidHandle:
-        return build_solid_handles(self._external_pipeline).get(handleID)  # type: ignore  # (unclear if this can return None)
+    ) -> Optional[GrapheneSolidHandle]:
+        return build_solid_handles(self._external_pipeline).get(handleID)
 
     def resolve_solid_handles(
         self, _graphene_info: ResolveInfo, parentHandleID: Optional[str] = None
