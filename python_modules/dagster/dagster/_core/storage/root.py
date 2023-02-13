@@ -1,5 +1,3 @@
-# pyright: strict
-
 import os
 from typing import Optional
 

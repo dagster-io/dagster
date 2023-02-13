@@ -1,5 +1,3 @@
-# pyright: strict reportPrivateUsage=off
-
 import hashlib
 import json
 import warnings

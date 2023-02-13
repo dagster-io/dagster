@@ -1,5 +1,3 @@
-# pyright: strict
-
 from typing import Dict
 
 from typing_extensions import TypedDict

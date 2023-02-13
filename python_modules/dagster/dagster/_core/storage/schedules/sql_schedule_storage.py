@@ -225,7 +225,7 @@ class SqlScheduleStorage(ScheduleStorage):
         result = conn.execute(query)
         row = result.fetchone()
         result.close()
-        return row[0] > 0  # type: ignore
+        return row[0] > 0  # type: ignore  # (possible none)
 
     def _add_filter_limit(
         self,

@@ -1,5 +1,3 @@
-# pyright: strict
-
 import os
 import sqlite3
 
