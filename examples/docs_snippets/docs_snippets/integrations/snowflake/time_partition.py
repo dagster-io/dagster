@@ -1,4 +1,6 @@
-get_iris_data_for_date = None
+def get_iris_data_for_date(*args, **kwargs):
+    pass
+
 
 # start_example
 
