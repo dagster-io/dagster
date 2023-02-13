@@ -81,7 +81,7 @@ from dagster._seven.compat.pendulum import create_pendulum_time
         (
             FreshnessPolicy(
                 cron_schedule="0 3 * * *",
-                schedule_timezone="America/Los_Angeles",
+                cron_schedule_timezone="America/Los_Angeles",
                 maximum_lag_minutes=60,
             ),
             create_pendulum_time(2022, 1, 1, 1, 0, tz="America/Los_Angeles"),
@@ -93,7 +93,7 @@ from dagster._seven.compat.pendulum import create_pendulum_time
             # same as above, but specifying the input to the function in UTC
             FreshnessPolicy(
                 cron_schedule="0 3 * * *",
-                schedule_timezone="America/Los_Angeles",
+                cron_schedule_timezone="America/Los_Angeles",
                 maximum_lag_minutes=60,
             ),
             create_pendulum_time(2022, 1, 1, 1, 0, tz="America/Los_Angeles").in_tz("UTC"),
@@ -104,7 +104,7 @@ from dagster._seven.compat.pendulum import create_pendulum_time
         (
             FreshnessPolicy(
                 cron_schedule="0 3 * * *",
-                schedule_timezone="America/Los_Angeles",
+                cron_schedule_timezone="America/Los_Angeles",
                 maximum_lag_minutes=60,
             ),
             create_pendulum_time(2022, 1, 1, 0, 0, tz="America/Los_Angeles"),
@@ -134,10 +134,10 @@ def test_invalid_freshness_policies():
     with pytest.raises(DagsterInvalidDefinitionError, match="Invalid cron schedule"):
         FreshnessPolicy(cron_schedule="xyz-123-bad-schedule", maximum_lag_minutes=60)
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid schedule timezone"):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Invalid cron schedule timezone"):
         FreshnessPolicy(
-            cron_schedule="0 1 * * *", maximum_lag_minutes=60, schedule_timezone="Not/ATimezone"
+            cron_schedule="0 1 * * *", maximum_lag_minutes=60, cron_schedule_timezone="Not/ATimezone"
         )
 
     with pytest.raises(ParameterCheckError, match="without a cron_schedule"):
-        FreshnessPolicy(maximum_lag_minutes=0, schedule_timezone="America/Los_Angeles")
+        FreshnessPolicy(maximum_lag_minutes=0, cron_schedule_timezone="America/Los_Angeles")

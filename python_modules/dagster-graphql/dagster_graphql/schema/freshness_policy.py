@@ -14,7 +14,7 @@ class GrapheneAssetFreshnessInfo(graphene.ObjectType):
 class GrapheneFreshnessPolicy(graphene.ObjectType):
     maximumLagMinutes = graphene.NonNull(graphene.Float)
     cronSchedule = graphene.Field(graphene.String)
-    scheduleTimezone = graphene.Field(graphene.String)
+    cronScheduleTimezone = graphene.Field(graphene.String)
 
     class Meta:
         name = "FreshnessPolicy"
@@ -25,5 +25,5 @@ class GrapheneFreshnessPolicy(graphene.ObjectType):
         super().__init__(
             maximumLagMinutes=freshness_policy.maximum_lag_minutes,
             cronSchedule=freshness_policy.cron_schedule,
-            scheduleTimezone=freshness_policy.schedule_timezone,
+            cronScheduleTimezone=freshness_policy.cron_schedule_timezone,
         )

@@ -19,7 +19,7 @@ export type AssetNodeLiveFragment = {
     __typename: 'FreshnessPolicy';
     maximumLagMinutes: number;
     cronSchedule: string | null;
-    scheduleTimezone: string | null;
+    cronScheduleTimezone: string | null;
   } | null;
   freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
   assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
@@ -34,7 +34,7 @@ export type AssetNodeLiveFreshnessPolicyFragment = {
   __typename: 'FreshnessPolicy';
   maximumLagMinutes: number;
   cronSchedule: string | null;
-  scheduleTimezone: string | null;
+  cronScheduleTimezone: string | null;
 };
 
 export type AssetNodeLiveFreshnessInfoFragment = {

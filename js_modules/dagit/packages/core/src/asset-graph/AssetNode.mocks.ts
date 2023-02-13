@@ -162,7 +162,7 @@ export const LiveDataForNodeMaterializedAndStaleAndLate: LiveDataForNode = {
     __typename: 'FreshnessPolicy',
     maximumLagMinutes: 10,
     cronSchedule: null,
-    scheduleTimezone: null,
+    cronScheduleTimezone: null,
   },
   partitionStats: null,
 };
@@ -189,7 +189,7 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
     __typename: 'FreshnessPolicy',
     maximumLagMinutes: 10,
     cronSchedule: null,
-    scheduleTimezone: null,
+    cronScheduleTimezone: null,
   },
   partitionStats: null,
 };
@@ -216,7 +216,7 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
     __typename: 'FreshnessPolicy',
     maximumLagMinutes: 10,
     cronSchedule: null,
-    scheduleTimezone: null,
+    cronScheduleTimezone: null,
   },
   partitionStats: null,
 };
@@ -243,7 +243,7 @@ export const LiveDataForNodeMaterializedAndLate: LiveDataForNode = {
     __typename: 'FreshnessPolicy',
     maximumLagMinutes: 10,
     cronSchedule: null,
-    scheduleTimezone: null,
+    cronScheduleTimezone: null,
   },
   partitionStats: null,
 };
@@ -422,7 +422,7 @@ export const LiveDataForNodePartitionedStaleAndLate: LiveDataForNode = {
     __typename: 'FreshnessPolicy',
     maximumLagMinutes: 10,
     cronSchedule: null,
-    scheduleTimezone: null,
+    cronScheduleTimezone: null,
   },
   partitionStats: {
     numMaterialized: 1500,
@@ -452,7 +452,7 @@ export const LiveDataForNodePartitionedStaleAndFresh: LiveDataForNode = {
     __typename: 'FreshnessPolicy',
     maximumLagMinutes: 10,
     cronSchedule: null,
-    scheduleTimezone: null,
+    cronScheduleTimezone: null,
   },
   partitionStats: {
     numMaterialized: 1500,

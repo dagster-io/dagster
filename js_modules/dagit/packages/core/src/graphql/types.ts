@@ -1279,8 +1279,8 @@ export type FloatMetadataEntry = MetadataEntry & {
 export type FreshnessPolicy = {
   __typename: 'FreshnessPolicy';
   cronSchedule: Maybe<Scalars['String']>;
+  cronScheduleTimezone: Maybe<Scalars['String']>;
   maximumLagMinutes: Scalars['Float'];
-  scheduleTimezone: Maybe<Scalars['String']>;
 };
 
 export type Graph = SolidContainer & {

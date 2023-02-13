@@ -30,7 +30,7 @@ class FreshnessPolicy(
         [
             ("maximum_lag_minutes", float),
             ("cron_schedule", Optional[str]),
-            ("schedule_timezone", Optional[str]),
+            ("cron_schedule_timezone", Optional[str]),
         ],
     )
 ):
@@ -68,7 +68,7 @@ class FreshnessPolicy(
         cron_schedule (Optional[str]): A cron schedule string (e.g. ``"0 1 * * *"``) specifying a
             series of times by which the `maximum_lag_minutes` constraint must be satisfied. If
             no cron schedule is provided, then this constraint must be satisfied at all times.
-        schedule_timezone (Optional[str]): Timezone in which the cron schedule should be evaluated.
+        cron_schedule_timezone (Optional[str]): Timezone in which the cron schedule should be evaluated.
             If not specified, defaults to UTC. Supported strings for timezones are the ones provided
             by the `IANA time zone database <https://www.iana.org/time-zones>` - e.g.
             "America/Los_Angeles".
@@ -92,7 +92,7 @@ class FreshnessPolicy(
         *,
         maximum_lag_minutes: float,
         cron_schedule: Optional[str] = None,
-        schedule_timezone: Optional[str] = None,
+        cron_schedule_timezone: Optional[str] = None,
     ):
         if cron_schedule is not None:
             if not is_valid_cron_schedule(cron_schedule):
@@ -102,18 +102,18 @@ class FreshnessPolicy(
                 "cron_schedule",
                 f"Invalid cron schedule '{cron_schedule}'.",
             )
-        if schedule_timezone is not None:
+        if cron_schedule_timezone is not None:
             check.param_invariant(
                 cron_schedule is not None,
-                "schedule_timezone",
-                "Cannot specify schedule_timezone without a cron_schedule.",
+                "cron_schedule_timezone",
+                "Cannot specify cron_schedule_timezone without a cron_schedule.",
             )
             try:
                 # Verify that the timezone can be loaded
-                pendulum.tz.timezone(schedule_timezone)  # type: ignore
+                pendulum.tz.timezone(cron_schedule_timezone)  # type: ignore
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
-                    "Invalid schedule timezone '{schedule_timezone}'.   "
+                    "Invalid cron schedule timezone '{cron_schedule_timezone}'.   "
                 ) from e
         return super(FreshnessPolicy, cls).__new__(
             cls,
@@ -121,7 +121,7 @@ class FreshnessPolicy(
                 check.numeric_param(maximum_lag_minutes, "maximum_lag_minutes")
             ),
             cron_schedule=check.opt_str_param(cron_schedule, "cron_schedule"),
-            schedule_timezone=check.opt_str_param(schedule_timezone, "schedule_timezone"),
+            cron_schedule_timezone=check.opt_str_param(cron_schedule_timezone, "cron_schedule_timezone"),
         )
 
     @classmethod
@@ -163,7 +163,7 @@ class FreshnessPolicy(
             constraint_ticks = cron_string_iterator(
                 start_timestamp=window_start.timestamp(),
                 cron_string=self.cron_schedule,
-                execution_timezone=self.schedule_timezone,
+                execution_timezone=self.cron_schedule_timezone,
             )
         else:
             # this constraint must be satisfied at all points in time, so generate a series of
@@ -215,7 +215,7 @@ class FreshnessPolicy(
             schedule_ticks = reverse_cron_string_iterator(
                 end_timestamp=evaluation_time.timestamp(),
                 cron_string=self.cron_schedule,
-                execution_timezone=self.schedule_timezone,
+                execution_timezone=self.cron_schedule_timezone,
             )
             evaluation_tick = next(schedule_ticks)
         else:
