@@ -77,12 +77,12 @@ class RetryPolicy(
     ):
         if backoff is not None and delay is None:
             raise DagsterInvalidDefinitionError(
-                "Can not set backoff on RetryPolicy without also setting delay"
+                "Can not set jitter on RetryPolicy without also setting delay"
             )
 
         if jitter is not None and delay is None:
             raise DagsterInvalidDefinitionError(
-                "Can not set jitter on RetryPolicy without also setting delay"
+                "Can not set backoff on RetryPolicy without also setting delay"
             )
 
         return super().__new__(
