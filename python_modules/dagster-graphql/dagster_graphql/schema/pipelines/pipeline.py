@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import dagster._check as check
 import graphene
@@ -27,7 +27,12 @@ from ...implementation.fetch_sensors import get_sensors_for_pipeline
 from ...implementation.loader import BatchRunLoader, RepositoryScopedBatchLoader
 from ...implementation.utils import UserFacingGraphQLError, capture_error
 from ..asset_key import GrapheneAssetKey
-from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
+from ..dagster_types import (
+    GrapheneDagsterType,
+    GrapheneDagsterTypeOrError,
+    GrapheneDagsterTypeUnion,
+    to_dagster_type,
+)
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
 from ..inputs import GrapheneInputTag
@@ -70,26 +75,11 @@ COMPLETED_STATUSES = {
 }
 
 
-def parse_time_range_args(args):
+def parse_timestamp(timestamp: Optional[str] = None) -> Optional[float]:
     try:
-        before_timestamp = (
-            int(args.get("beforeTimestampMillis")) / 1000.0
-            if args.get("beforeTimestampMillis")
-            else None
-        )
+        return int(timestamp) / 1000.0 if timestamp else None
     except ValueError:
-        before_timestamp = None
-
-    try:
-        after_timestamp = (
-            int(args.get("afterTimestampMillis")) / 1000.0
-            if args.get("afterTimestampMillis")
-            else None
-        )
-    except ValueError:
-        after_timestamp = None
-
-    return before_timestamp, after_timestamp
+        return None
 
 
 class GrapheneTimePartitionRange(graphene.ObjectType):
@@ -202,16 +192,22 @@ class GrapheneAsset(graphene.ObjectType):
             )
         return get_unique_asset_id(self.key)
 
-    def resolve_assetMaterializations(self, graphene_info: ResolveInfo, **kwargs):
+    def resolve_assetMaterializations(
+        self,
+        graphene_info: ResolveInfo,
+        partitions: Optional[Sequence[Optional[str]]] = None,
+        partitionInLast: Optional[int] = None,
+        beforeTimestampMillis: Optional[str] = None,
+        afterTimestampMillis: Optional[str] = None,
+        limit: Optional[int] = None,
+        tags: Optional[Sequence[GrapheneInputTag]] = None,
+    ) -> Sequence[GrapheneMaterializationEvent]:
         from ...implementation.fetch_assets import get_asset_materializations
 
-        before_timestamp, after_timestamp = parse_time_range_args(kwargs)
-        limit = kwargs.get("limit")
-        partitions = kwargs.get("partitions")
-        partitionInLast = kwargs.get("partitionInLast")
+        before_timestamp = parse_timestamp(beforeTimestampMillis)
+        after_timestamp = parse_timestamp(afterTimestampMillis)
         if partitionInLast and self._definition:
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
-        tags = kwargs.get("tags")
 
         events = get_asset_materializations(
             graphene_info,
@@ -226,13 +222,19 @@ class GrapheneAsset(graphene.ObjectType):
         loader = BatchRunLoader(graphene_info.context.instance, run_ids) if run_ids else None
         return [GrapheneMaterializationEvent(event=event, loader=loader) for event in events]
 
-    def resolve_assetObservations(self, graphene_info: ResolveInfo, **kwargs):
+    def resolve_assetObservations(
+        self,
+        graphene_info: ResolveInfo,
+        partitions: Optional[Sequence[Optional[str]]] = None,
+        partitionInLast: Optional[int] = None,
+        beforeTimestampMillis: Optional[str] = None,
+        afterTimestampMillis: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Sequence[GrapheneObservationEvent]:
         from ...implementation.fetch_assets import get_asset_observations
 
-        before_timestamp, after_timestamp = parse_time_range_args(kwargs)
-        limit = kwargs.get("limit")
-        partitions = kwargs.get("partitions")
-        partitionInLast = kwargs.get("partitionInLast")
+        before_timestamp = parse_timestamp(beforeTimestampMillis)
+        after_timestamp = parse_timestamp(afterTimestampMillis)
         if partitionInLast and self._definition:
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
 
@@ -609,19 +611,19 @@ class GrapheneIPipelineSnapshotMixin:
         )
 
     @capture_error
-    def resolve_dagster_type_or_error(self, _graphene_info: ResolveInfo, **kwargs):
-        type_name = kwargs["dagsterTypeName"]
-
+    def resolve_dagster_type_or_error(
+        self, _graphene_info: ResolveInfo, dagsterTypeName: str
+    ) -> GrapheneDagsterTypeUnion:
         represented_pipeline = self.get_represented_pipeline()
 
-        if not represented_pipeline.has_dagster_type_named(type_name):
+        if not represented_pipeline.has_dagster_type_named(dagsterTypeName):
             raise UserFacingGraphQLError(
-                GrapheneDagsterTypeNotFoundError(dagster_type_name=type_name)
+                GrapheneDagsterTypeNotFoundError(dagster_type_name=dagsterTypeName)
             )
 
         return to_dagster_type(
             represented_pipeline.pipeline_snapshot,
-            represented_pipeline.get_dagster_type_by_name(type_name).key,
+            represented_pipeline.get_dagster_type_by_name(dagsterTypeName).key,
         )
 
     def resolve_solids(self, _graphene_info: ResolveInfo):
@@ -644,12 +646,15 @@ class GrapheneIPipelineSnapshotMixin:
             )
         ]
 
-    def resolve_solid_handle(self, _graphene_info: ResolveInfo, handleID):
-        return build_solid_handles(self.get_represented_pipeline()).get(handleID)
+    def resolve_solid_handle(
+        self, _graphene_info: ResolveInfo, handleID: str
+    ) -> GrapheneSolidHandle:
+        return build_solid_handles(self.get_represented_pipeline()).get(handleID)  # type: ignore  # (unclear if this can return None)
 
-    def resolve_solid_handles(self, _graphene_info: ResolveInfo, **kwargs):
+    def resolve_solid_handles(
+        self, _graphene_info: ResolveInfo, parentHandleID: Optional[str] = None
+    ) -> Sequence[GrapheneSolidHandle]:
         handles = build_solid_handles(self.get_represented_pipeline())
-        parentHandleID = kwargs.get("parentHandleID")
 
         if parentHandleID == "":
             handles = {key: handle for key, handle in handles.items() if not handle.parent}
@@ -676,7 +681,9 @@ class GrapheneIPipelineSnapshotMixin:
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
         return self.get_represented_pipeline().solid_selection
 
-    def resolve_runs(self, graphene_info: ResolveInfo, **kwargs):
+    def resolve_runs(
+        self, graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
+    ) -> Sequence[GrapheneRun]:
         pipeline = self.get_represented_pipeline()
         if isinstance(pipeline, ExternalPipeline):
             runs_filter = RunsFilter(
@@ -687,7 +694,7 @@ class GrapheneIPipelineSnapshotMixin:
             )
         else:
             runs_filter = RunsFilter(pipeline_name=pipeline.name)
-        return get_runs(graphene_info, runs_filter, kwargs.get("cursor"), kwargs.get("limit"))
+        return get_runs(graphene_info, runs_filter, cursor, limit)
 
     def resolve_schedules(self, graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_pipeline()
@@ -847,16 +854,18 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
             location,
         )
 
-    def resolve_runs(self, graphene_info: ResolveInfo, **kwargs):
+    def resolve_runs(
+        self, graphene_info: ResolveInfo, cursor: Optional[str] = None, limit: Optional[int] = None
+    ) -> Sequence[GrapheneRun]:
         # override the implementation to use the batch run loader
-        if not kwargs.get("cursor") and kwargs.get("limit") and self._batch_loader:
+        if not cursor and limit and self._batch_loader:
             records = self._batch_loader.get_run_records_for_job(
-                self._external_pipeline.name, kwargs.get("limit")
+                self._external_pipeline.name, limit
             )
             return [GrapheneRun(record) for record in records]
 
         # otherwise, fall back to the default implementation
-        return super().resolve_runs(graphene_info, **kwargs)
+        return super().resolve_runs(graphene_info, cursor=cursor, limit=limit)
 
 
 class GrapheneJob(GraphenePipeline):
@@ -914,12 +923,15 @@ class GrapheneGraph(graphene.ObjectType):
     def resolve_description(self, _graphene_info: ResolveInfo):
         return self._external_pipeline.description
 
-    def resolve_solid_handle(self, _graphene_info: ResolveInfo, handleID):
-        return build_solid_handles(self._external_pipeline).get(handleID)
+    def resolve_solid_handle(
+        self, _graphene_info: ResolveInfo, handleID: str
+    ) -> GrapheneSolidHandle:
+        return build_solid_handles(self._external_pipeline).get(handleID)  # type: ignore  # (unclear if this can return None)
 
-    def resolve_solid_handles(self, _graphene_info: ResolveInfo, **kwargs):
+    def resolve_solid_handles(
+        self, _graphene_info: ResolveInfo, parentHandleID: Optional[str] = None
+    ) -> Sequence[GrapheneSolidHandle]:
         handles = build_solid_handles(self._external_pipeline)
-        parentHandleID = kwargs.get("parentHandleID")
 
         if parentHandleID == "":
             handles = {key: handle for key, handle in handles.items() if not handle.parent}
