@@ -333,7 +333,7 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
 def attach_resource_id_to_key_mapping(
     resource_def: Any, resource_id_to_key_mapping: Dict[ResourceId, str]
 ) -> Any:
-    if isinstance(resource_def, ResourceDefinition):
+    if isinstance(resource_def, (Resource, PartialResource)):
         return (
             IOManagerWithKeyMapping(resource_def, resource_id_to_key_mapping)
             if isinstance(resource_def, IOManagerDefinition)
