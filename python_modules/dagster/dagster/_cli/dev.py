@@ -53,8 +53,8 @@ def dev_command_options(f):
         ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
     ),
 )
-@click.option("--dagit-port", help="Port to use for the Dagit UI.", required=False)
-@click.option("--dagit-host", help="Host to use for the Dagit UI.", required=False)
+@click.option("--dagit-port", "-p", help="Port to use for the Dagit UI.", required=False)
+@click.option("--dagit-host", "-h", help="Host to use for the Dagit UI.", required=False)
 def dev_command(code_server_log_level, dagit_port, dagit_host, **kwargs):
     # check if dagit installed, crash if not
     try:
