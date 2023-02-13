@@ -55,17 +55,7 @@ class RetryPolicy(
         backoff (Optional[Backoff]):
             A modifier for delay as a function of retry attempt number.
         jitter (Optional[Jitter]):
-            A randomizing modifier for delay, applied after backoff calculation, either dagster.Jitter.FULL or dagster.Jitter.PLUS_MINUS
-    
-    Example:
-        from dagster import Backoff, Jitter, RetryPolicy
-        RetryPolicy(
-            max_retries=3,
-            delay=0.2,  # 200ms
-            backoff=Backoff.EXPONENTIAL,
-            jitter=Jitter.PLUS_MINUS,
-        )
-)
+            A randomizing modifier for delay, applied after backoff calculation.
     """
 
     def __new__(
