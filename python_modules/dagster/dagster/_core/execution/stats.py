@@ -11,14 +11,16 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._utils import datetime_as_float
 
 
-def build_run_stats_from_events(run_id, records):
+def build_run_stats_from_events(
+    run_id: str, entries: Iterable[EventLogEntry]
+) -> PipelineRunStatsSnapshot:
     try:
-        iter(records)
+        iter(entries)
     except TypeError as exc:
         raise check.ParameterCheckError(
             "Invariant violation for parameter 'records'. Description: Expected iterable."
         ) from exc
-    for i, record in enumerate(records):
+    for i, record in enumerate(entries):
         check.inst_param(record, f"records[{i}]", EventLogEntry)
 
     steps_succeeded = 0
@@ -30,7 +32,7 @@ def build_run_stats_from_events(run_id, records):
     start_time = None
     end_time = None
 
-    for event in records:
+    for event in entries:
         if not event.is_dagster_event:
             continue
         dagster_event = event.get_dagster_event()

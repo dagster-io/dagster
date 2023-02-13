@@ -30,6 +30,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Sized,
@@ -42,7 +43,7 @@ from typing import (
 )
 
 import packaging.version
-from typing_extensions import Literal
+from typing_extensions import Literal, TypeGuard
 
 import dagster._check as check
 import dagster._seven as seven
@@ -484,12 +485,12 @@ class frozentags(frozendict, Mapping[str, str]):
         super(frozentags, self).__init__(*args, **kwargs)
         check.dict_param(self, "self", key_type=str, value_type=str)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(tuple(sorted(self.items())))
 
-    def updated_with(self, new_tags):
+    def updated_with(self, new_tags: Mapping[str, str]) -> "frozentags":
         check.dict_param(new_tags, "new_tags", key_type=str, value_type=str)
-        updated = dict(self)
+        updated: Dict[str, str] = dict(self)
         for key, value in new_tags.items():
             updated[key] = value
 
@@ -736,3 +737,14 @@ def iter_to_list(iterable: Iterable[T]) -> List[T]:
     if isinstance(iterable, List):
         return iterable
     return list(iterable)
+
+
+# This is needed for type narrowing, because `NamedTuple` is weird and its subclasses don't
+# actually inherit from it.
+def is_named_tuple_subclass(obj: object) -> TypeGuard[Type[NamedTuple]]:
+    return (
+        isinstance(obj, type)
+        and issubclass(obj, tuple)
+        and hasattr(obj, "_fields")
+        and hasattr(obj, "_field_types")
+    )

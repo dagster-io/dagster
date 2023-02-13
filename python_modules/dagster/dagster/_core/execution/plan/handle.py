@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple, Optional, Union, cast
+from typing import NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.dependency import NodeHandle
@@ -14,8 +14,7 @@ class StepHandle(NamedTuple("_StepHandle", [("solid_handle", NodeHandle), ("key"
         return super(StepHandle, cls).__new__(
             cls,
             solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
-            # mypy can't tell that if default is set, this is guaranteed to be a str
-            key=cast(str, check.opt_str_param(key, "key", default=solid_handle.to_string())),
+            key=check.opt_str_param(key, "key", default=solid_handle.to_string()),
         )
 
     def to_key(self) -> str:
@@ -48,10 +47,10 @@ class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("solid_handle",
             solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
         )
 
-    def to_key(self):
+    def to_key(self) -> str:
         return f"{self.solid_handle.to_string()}[?]"
 
-    def resolve(self, map_key) -> "ResolvedFromDynamicStepHandle":
+    def resolve(self, map_key: str) -> "ResolvedFromDynamicStepHandle":
         return ResolvedFromDynamicStepHandle(self.solid_handle, map_key)
 
 
@@ -73,12 +72,8 @@ class ResolvedFromDynamicStepHandle(
             cls,
             solid_handle=check.inst_param(solid_handle, "solid_handle", NodeHandle),
             mapping_key=check.str_param(mapping_key, "mapping_key"),
-            # mypy can't tell that if default is set, this is guaranteed to be a str
-            key=cast(
-                str,
-                check.opt_str_param(
-                    key, "key", default=f"{solid_handle.to_string()}[{mapping_key}]"
-                ),
+            key=check.opt_str_param(
+                key, "key", default=f"{solid_handle.to_string()}[{mapping_key}]"
             ),
         )
 

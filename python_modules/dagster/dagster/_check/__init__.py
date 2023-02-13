@@ -107,8 +107,8 @@ def bool_elem(ddict: Mapping, key: str, additional_message: Optional[str] = None
 # ##### CALLABLE
 # ########################
 
-T_Callable = TypeVar("T_Callable", bound=Callable)
-U_Callable = TypeVar("U_Callable", bound=Callable)
+T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
+U_Callable = TypeVar("U_Callable", bound=Callable[..., Any])
 
 
 def callable_param(
@@ -144,17 +144,17 @@ def opt_callable_param(
 
 
 def opt_callable_param(
-    obj: Optional[Callable],
+    obj: Optional[T_Callable],
     param_name: str,
-    default: Optional[Callable] = None,
+    default: Optional[T_Callable] = None,
     additional_message: Optional[str] = None,
-) -> Optional[Callable]:
+) -> Optional[T_Callable]:
     if obj is not None and not callable(obj):
         raise _param_not_callable_exception(obj, param_name, additional_message)
     return default if obj is None else obj
 
 
-def is_callable(obj: object, additional_message: Optional[str] = None) -> Callable:
+def is_callable(obj: T_Callable, additional_message: Optional[str] = None) -> T_Callable:
     if not callable(obj):
         raise CheckError(
             "Must be callable. Got"
@@ -167,7 +167,7 @@ def is_callable(obj: object, additional_message: Optional[str] = None) -> Callab
 # ##### CLASS
 # ########################
 
-T_Type = TypeVar("T_Type", bound=type)
+T_Type = TypeVar("T_Type", bound=Type[object])
 
 
 def class_param(
@@ -191,38 +191,35 @@ def class_param(
 
 @overload
 def opt_class_param(
-    obj: object,
+    obj: T_Type,
     param_name: str,
-    default: type,
-    superclass: Optional[type] = None,
+    superclass: Optional[Type[object]] = None,
     additional_message: Optional[str] = None,
-) -> type:
+) -> T_Type:
     ...
 
 
 @overload
 def opt_class_param(
-    obj: object,
+    obj: None,
     param_name: str,
-    default: None = ...,
-    superclass: Optional[type] = None,
+    superclass: Optional[Type[object]] = None,
     additional_message: Optional[str] = None,
-) -> Optional[type]:
+) -> None:
     ...
 
 
 def opt_class_param(
-    obj: object,
+    obj: Optional[Type[object]],
     param_name: str,
-    default: Optional[type] = None,
-    superclass: Optional[type] = None,
+    superclass: Optional[Type[object]] = None,
     additional_message: Optional[str] = None,
-) -> Optional[type]:
+) -> Optional[object]:
     if obj is not None and not isinstance(obj, type):
         raise _param_class_mismatch_exception(obj, param_name, superclass, True, additional_message)
 
     if obj is None:
-        return default
+        return None
 
     if superclass and not issubclass(obj, superclass):
         raise _param_class_mismatch_exception(obj, param_name, superclass, True, additional_message)
@@ -1054,7 +1051,7 @@ def two_dim_mapping_param(
     key_type: TypeOrTupleOfTypes = str,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Mapping:
+) -> Mapping[object, Mapping[object, object]]:
     if not isinstance(obj, Mapping):
         raise _param_type_mismatch_exception(obj, dict, param_name, additional_message)
     return _check_two_dim_mapping_entries(obj, key_type, value_type)
@@ -1864,7 +1861,7 @@ def _check_two_dim_mapping_entries(
     obj: W,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
-    mapping_type: Type = collections.abc.Mapping,
+    mapping_type: Type[Mapping[object, object]] = collections.abc.Mapping,
 ) -> W:
     _check_mapping_entries(
         obj, key_type, mapping_type, mapping_type=mapping_type

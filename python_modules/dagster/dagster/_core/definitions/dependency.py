@@ -182,6 +182,12 @@ class Node(ABC):
         return self.definition.output_def_named(name)
 
     @property
+    def is_graph(self) -> bool:
+        from .graph_definition import GraphDefinition
+
+        return isinstance(self.definition, GraphDefinition)
+
+    @property
     def input_dict(self) -> Mapping[str, InputDefinition]:
         return self.definition.input_dict
 
@@ -438,9 +444,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         check.inst_param(ancestor, "ancestor", NodeHandle)
         check.invariant(
             self.is_or_descends_from(ancestor),
-            "Handle {handle} does not descend from {ancestor}".format(
-                handle=self.to_string(), ancestor=ancestor.to_string()
-            ),
+            f"Handle {self.to_string()} does not descend from {ancestor.to_string()}",
         )
 
         return NodeHandle.from_path(self.path[len(ancestor.path) :])

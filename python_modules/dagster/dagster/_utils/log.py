@@ -3,7 +3,7 @@ import logging
 import sys
 import traceback
 from contextlib import contextmanager
-from typing import Mapping, NamedTuple, Optional
+from typing import Any, Callable, Mapping, NamedTuple, Optional, Union
 
 import coloredlogs
 import pendulum
@@ -11,7 +11,7 @@ import pendulum
 import dagster._check as check
 import dagster._seven as seven
 from dagster._config import Enum, EnumValue
-from dagster._core.definitions.logger_definition import logger
+from dagster._core.definitions.logger_definition import LoggerDefinition, logger
 from dagster._core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
 
 LogLevelEnum = Enum("log_level", list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))
@@ -100,7 +100,7 @@ class JsonEventLoggerHandler(logging.Handler):
 
 
 class StructuredLoggerHandler(logging.Handler):
-    def __init__(self, callback):
+    def __init__(self, callback: Callable[[StructuredLoggerMessage], None]):
         super(StructuredLoggerHandler, self).__init__()
         self.callback = check.is_callable(callback, "callback")
 
@@ -121,14 +121,16 @@ class StructuredLoggerHandler(logging.Handler):
             logging.exception(str(e))
 
 
-def construct_single_handler_logger(name, level, handler):
+def construct_single_handler_logger(
+    name: str, level: Union[str, int], handler: logging.Handler
+) -> LoggerDefinition:
     check.str_param(name, "name")
     check.inst_param(handler, "handler", logging.Handler)
 
     level = coerce_valid_log_level(level)
 
     @logger
-    def single_handler_logger(_init_context):
+    def single_handler_logger(_):
         klass = logging.getLoggerClass()
         logger_ = klass(name, level=level)
         logger_.addHandler(handler)
@@ -181,7 +183,9 @@ def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
     return base_builtin
 
 
-def define_structured_logger(name, callback, level):
+def define_structured_logger(
+    name: str, callback: Callable[[StructuredLoggerMessage], Any], level: Union[str, int]
+):
     check.str_param(name, "name")
     check.callable_param(callback, "callback")
     level = coerce_valid_log_level(level)
