@@ -384,7 +384,7 @@ def external_asset_graph_from_assets_by_repo_name(
             r" \"time_windows\":"
             r' [[1645747200.0, 1646006400.0]], \"num_partitions\": 3}"},'
             r' "serializable_partitions_ids_by_asset_key": {"daily_asset":'
-            r' "05a78c752a4b02ce0a6c299150508c17ed03f3ef"}, "subset_types_by_asset_key":'
+            r' "9fd02488f5859c7b2fb25f77f2a25dce938897d3"}, "subset_types_by_asset_key":'
             r' {"daily_asset": "TIME_WINDOW"}, "non_partitioned_asset_keys": []},'
             r' "latest_storage_id":'
             r' null, "serialized_requested_subset": {"partitions_subsets_by_asset_key": {},'

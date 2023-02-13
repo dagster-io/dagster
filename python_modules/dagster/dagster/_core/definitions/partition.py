@@ -1331,7 +1331,7 @@ class PartitionsSubset(ABC):
         serializable_unique_id: Optional[str],
         subset_type: Optional[PartitionsSubsetType],
     ) -> bool:
-        pass
+        raise NotImplementedError()
 
     @property
     @abstractmethod
