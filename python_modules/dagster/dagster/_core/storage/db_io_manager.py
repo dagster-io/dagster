@@ -76,7 +76,7 @@ class DbClient:
         ...
 
     @staticmethod
-    def create_schema(context: OutputContext, table_slice: TableSlice) -> None:
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
         ...
 
 
@@ -117,7 +117,7 @@ class DbIOManager(IOManager):
 
             self._db_client.delete_table_slice(context, table_slice)
 
-            self._db_client.create_schema(context, table_slice)
+            self._db_client.ensure_schema_exists(context, table_slice)
             handler_metadata = (
                 self._handlers_by_type[obj_type].handle_output(context, table_slice, obj) or {}
             )

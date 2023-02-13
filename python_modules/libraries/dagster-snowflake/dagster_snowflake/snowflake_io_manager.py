@@ -140,7 +140,7 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
 class SnowflakeDbClient(DbClient):
     @staticmethod
-    def create_schema(context: OutputContext, table_slice: TableSlice) -> None:
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
         no_schema_config = (
             {k: v for k, v in context.resource_config.items() if k != "schema"}
             if context.resource_config

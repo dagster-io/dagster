@@ -113,7 +113,7 @@ class DuckDbClient(DbClient):
         conn.close()
 
     @staticmethod
-    def create_schema(context: OutputContext, table_slice: TableSlice) -> None:
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
         conn = _connect_duckdb(context).cursor()
         conn.execute(f"create schema if not exists {table_slice.schema};")
         conn.close()
