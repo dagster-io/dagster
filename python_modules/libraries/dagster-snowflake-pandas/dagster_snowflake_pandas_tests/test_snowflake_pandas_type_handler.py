@@ -11,6 +11,8 @@ from dagster import (
     DailyPartitionsDefinition,
     IOManagerDefinition,
     MetadataValue,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     Out,
     StaticPartitionsDefinition,
     TableColumn,
@@ -77,7 +79,7 @@ def test_handle_output():
                 schema="my_schema",
                 database="my_db",
                 columns=None,
-                partition=None,
+                partition_dimensions=[],
             ),
             df,
         )
@@ -105,7 +107,7 @@ def test_load_input():
                 schema="my_schema",
                 database="my_db",
                 columns=None,
-                partition=None,
+                partition_dimensions=[],
             ),
         )
         assert mock_read_sql.call_args_list[0][1]["sql"] == "SELECT * FROM my_db.my_schema.my_table"
@@ -243,7 +245,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_time_window_partitioned_asset(tmp_path):
+def test_time_window_partitioned_asset():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
@@ -257,7 +259,7 @@ def test_time_window_partitioned_asset(tmp_path):
             key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
             name=table_name,
         )
-        def daily_partitioned(context):
+        def daily_partitioned(context) -> DataFrame:
             partition = Timestamp(context.asset_partition_key_for_output())
             value = context.op_config["value"]
 
@@ -321,7 +323,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
-def test_static_partitioned_asset(tmp_path):
+def test_static_partitioned_asset():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
@@ -335,7 +337,7 @@ def test_static_partitioned_asset(tmp_path):
             config_schema={"value": str},
             name=table_name,
         )
-        def static_partitioned(context):
+        def static_partitioned(context) -> DataFrame:
             partition = context.asset_partition_key_for_output()
             value = context.op_config["value"]
             return DataFrame(
@@ -394,3 +396,97 @@ def test_static_partitioned_asset(tmp_path):
             f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+def test_multi_partitioned_asset():
+    with temporary_snowflake_table(
+        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
+        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        column_str=" COLOR string, TIME TIMESTAMP_NTZ(9), A string",
+    ) as table_name:
+
+        @asset(
+            partitions_def=MultiPartitionsDefinition(
+                {
+                    "time": DailyPartitionsDefinition(start_date="2022-01-01"),
+                    "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+                }
+            ),
+            key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
+            metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
+            config_schema={"value": str},
+            name=table_name,
+        )
+        def multi_partitioned(context) -> DataFrame:
+            partition = context.partition_key.keys_by_dimension
+            value = context.op_config["value"]
+            return DataFrame(
+                {
+                    "color": [partition["color"], partition["color"], partition["color"]],
+                    "time": [partition["time"], partition["time"], partition["time"]],
+                    "a": [value, value, value],
+                }
+            )
+
+        asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
+        snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
+
+        snowflake_config = {
+            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
+            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+        }
+        snowflake_conn = SnowflakeConnection(
+            snowflake_config, logging.getLogger("temporary_snowflake_table")
+        )
+
+        snowflake_io_manager = snowflake_pandas_io_manager.configured(snowflake_config)
+        resource_defs = {"io_manager": snowflake_io_manager}
+
+        materialize(
+            [multi_partitioned],
+            partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+            resources=resource_defs,
+            run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
+        )
+
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert out_df["A"].tolist() == ["1", "1", "1"]
+
+        materialize(
+            [multi_partitioned],
+            partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
+            resources=resource_defs,
+            run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
+        )
+
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+
+        materialize(
+            [multi_partitioned],
+            partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "red"}),
+            resources=resource_defs,
+            run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
+        )
+
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
+
+        materialize(
+            [multi_partitioned],
+            partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+            resources=resource_defs,
+            run_config={"ops": {asset_full_name: {"config": {"value": "4"}}}},
+        )
+
+        out_df = snowflake_conn.execute_query(
+            f"SELECT * FROM {snowflake_table_path}", use_pandas_result=True
+        )
+        assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]

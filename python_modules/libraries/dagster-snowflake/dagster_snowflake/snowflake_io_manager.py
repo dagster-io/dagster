@@ -6,7 +6,7 @@ from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
-    TablePartition,
+    TablePartitionDimension,
     TableSlice,
 )
 from snowflake.connector import ProgrammingError
@@ -150,7 +150,6 @@ class SnowflakeDbClient(DbClient):
             dict(schema=table_slice.schema, **no_schema_config), context.log
         ).get_connection() as con:
             try:
-                print("DELETING DATA")
                 con.execute_string(_get_cleanup_statement(table_slice))
             except ProgrammingError:
                 # table doesn't exist yet, so ignore the error
@@ -159,17 +158,19 @@ class SnowflakeDbClient(DbClient):
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
-        if table_slice.partition:
-            partition_where = (
-                _static_where_clause(table_slice.partition)
-                if isinstance(table_slice.partition.partition, str)
-                else _time_window_where_clause(table_slice.partition)
-            )
-            return (
+        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+            query = (
                 f"SELECT {col_str} FROM"
-                f" {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
-                + partition_where
+                f" {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
             )
+            partition_where = " AND\n".join(
+                _static_where_clause(partition_dimension)
+                if isinstance(partition_dimension.partition, str)
+                else _time_window_where_clause(partition_dimension)
+                for partition_dimension in table_slice.partition_dimensions
+            )
+
+            return query + partition_where
         else:
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
 
@@ -179,29 +180,30 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.partition:
-        partition_where = (
-            _static_where_clause(table_slice.partition)
-            if isinstance(table_slice.partition.partition, str)
-            else _time_window_where_clause(table_slice.partition)
+    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        query = (
+            f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
         )
-        return (
-            f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
-            + partition_where
+        partition_where = " AND\n".join(
+            _static_where_clause(partition_dimension)
+            if isinstance(partition_dimension.partition, str)
+            else _time_window_where_clause(partition_dimension)
+            for partition_dimension in table_slice.partition_dimensions
         )
+        return query + partition_where
     else:
         return f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
 
 
-def _time_window_where_clause(table_partition: TablePartition) -> str:
+def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
     partition = cast(TimeWindow, table_partition.partition)
     start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     # Snowflake BETWEEN is inclusive; start <= partition expr <= end. We don't want to remove the next partition so we instead
     # write this as start <= partition expr < end.
-    return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+    return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
 
 
-def _static_where_clause(table_partition: TablePartition) -> str:
-    return f"""WHERE {table_partition.partition_expr} = '{table_partition.partition}'"""
+def _static_where_clause(table_partition: TablePartitionDimension) -> str:
+    return f"""{table_partition.partition_expr} = '{table_partition.partition}'"""
