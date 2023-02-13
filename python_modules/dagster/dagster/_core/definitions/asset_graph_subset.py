@@ -2,7 +2,11 @@ from collections import defaultdict
 from typing import AbstractSet, Any, Dict, Iterable, Mapping, Optional, Set, Union, cast
 
 from dagster import _check as check
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition import (
+    PartitionsDefinition,
+    PartitionsSubset,
+    PartitionsSubsetType,
+)
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
 
@@ -75,6 +79,10 @@ class AssetGraphSubset:
             },
             "serializable_partitions_ids_by_asset_key": {
                 key.to_user_string(): value.partitions_def.serializable_unique_identifier
+                for key, value in self.partitions_subsets_by_asset_key.items()
+            },
+            "subset_types_by_asset_key": {
+                key.to_user_string(): value.subset_type().value
                 for key, value in self.partitions_subsets_by_asset_key.items()
             },
             "non_partitioned_asset_keys": [
@@ -163,6 +171,16 @@ class AssetGraphSubset:
             "serializable_partitions_ids_by_asset_key",
         )
 
+        subset_types = serialized_dict.get("subset_types_by_asset_key")
+        deserialized_subset_types = (
+            {
+                key: PartitionsSubsetType.from_serialized(value)
+                for key, value in subset_types.items()
+            }
+            if subset_types
+            else None
+        )
+
         for key, value in serialized_dict["partitions_subsets_by_asset_key"].items():
             asset_key = AssetKey.from_user_string(key)
             partitions_def = asset_graph.get_partitions_def(asset_key)
@@ -171,12 +189,18 @@ class AssetGraphSubset:
                 # Asset had a partitions definition at storage time, but no longer does
                 return False
 
-            return partitions_def.can_deserialize_subset(
+            if not partitions_def.can_deserialize_subset(
                 value,
                 serializable_unique_id=serializable_partitions_ids.get(key)
                 if serializable_partitions_ids
                 else None,
-            )
+                subset_type=deserialized_subset_types.get(key)
+                if deserialized_subset_types
+                else None,
+            ):
+                return False
+
+        return True
 
     @classmethod
     def from_storage_dict(
@@ -187,10 +211,7 @@ class AssetGraphSubset:
             asset_key = AssetKey.from_user_string(key)
             partitions_def = asset_graph.get_partitions_def(asset_key)
 
-            # If no serialized partitions def id....
-
             if partitions_def is None:
-                # TODO here compare against serialized partitions def id
                 raise DagsterDefinitionChangedDeserializationError(
                     f"Asset {key} had a PartitionsDefinition at storage-time, but no longer does"
                 )

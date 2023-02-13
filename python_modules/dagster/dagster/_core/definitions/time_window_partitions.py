@@ -32,6 +32,7 @@ from .partition import (
     PartitionedConfig,
     PartitionsDefinition,
     PartitionsSubset,
+    PartitionsSubsetType,
     ScheduleType,
     cron_schedule_from_schedule_type_and_offsets,
 )
@@ -649,8 +650,7 @@ class TimeWindowPartitionsDefinition(
 
     @property
     def serializable_unique_identifier(self) -> str:
-        contents = hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
-        return json.dumps({"type": type(self).__name__, "contents": contents})
+        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
@@ -1417,9 +1417,13 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         partitions_def: PartitionsDefinition,
         serialized: str,
         serializable_unique_id: Optional[str],
+        subset_type: Optional[PartitionsSubsetType],
     ) -> bool:
+        if subset_type and subset_type != cls.subset_type():
+            return False
+
         if serializable_unique_id:
-            return partitions_def.is_serializable_unique_identifier_type(serializable_unique_id)
+            return partitions_def.serializable_unique_identifier == serializable_unique_id
 
         data = json.loads(serialized)
         return isinstance(data, list) or (

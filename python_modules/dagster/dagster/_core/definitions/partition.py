@@ -217,6 +217,17 @@ class ScheduleType(Enum):
         return self.ordinal < other.ordinal
 
 
+@whitelist_for_serdes
+class PartitionsSubsetType(Enum):
+    DEFAULT = "DEFAULT"
+    MULTIPARTITIONS = "MULTIPARTITIONS"
+    TIME_WINDOW = "TIME_WINDOW"
+
+    @staticmethod
+    def from_serialized(value: str) -> "PartitionsSubsetType":
+        return PartitionsSubsetType(value)
+
+
 class PartitionsDefinition(ABC, Generic[T]):
     @property
     def partitions_subset_class(self):
@@ -304,28 +315,18 @@ class PartitionsDefinition(ABC, Generic[T]):
         return self.partitions_subset_class.from_serialized(self, serialized)
 
     def can_deserialize_subset(
-        self, serialized: str, serializable_unique_id: Optional[str]
+        self,
+        serialized: str,
+        serializable_unique_id: Optional[str],
+        subset_type: Optional[PartitionsSubsetType],
     ) -> bool:
         return self.partitions_subset_class.can_deserialize(
-            self, serialized, serializable_unique_id
+            self, serialized, serializable_unique_id, subset_type
         )
 
     @property
     def serializable_unique_identifier(self) -> str:
-        partition_key_identifier = hashlib.sha1(
-            json.dumps(self.get_partition_keys()).encode("utf-8")
-        ).hexdigest()
-        return json.dumps(
-            {"type": type(self.empty_subset()).__name__, "contents": partition_key_identifier}
-        )
-
-    def is_serializable_unique_identifier_type(self, serializable_unique_identifier: str) -> bool:
-        """
-        Given a serializable unique identifier for a partitions subset, return True if this
-        partition set can deserialize it.
-        """
-        data = json.loads(serializable_unique_identifier)
-        return data.get("type") == type(self).__name__
+        return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
 
     def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
         tags = {PARTITION_NAME_TAG: partition_key}
@@ -624,7 +625,7 @@ class DynamicPartitionsDefinition(
         if not self.name:
             return super().serializable_unique_identifier
 
-        return json.dumps({"type": type(self).__name__, "contents": self.__repr__()})
+        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
     def get_partitions(
         self,
@@ -1328,6 +1329,7 @@ class PartitionsSubset(ABC):
         partitions_def: PartitionsDefinition,
         serialized: str,
         serializable_unique_id: Optional[str],
+        subset_type: Optional[PartitionsSubsetType],
     ) -> bool:
         pass
 
@@ -1343,6 +1345,22 @@ class PartitionsSubset(ABC):
     @abstractmethod
     def __contains__(self, value) -> bool:
         raise NotImplementedError()
+
+    @classmethod
+    def subset_type(cls) -> PartitionsSubsetType:
+        from .multi_dimensional_partitions import MultiPartitionsSubset
+        from .time_window_partitions import TimeWindowPartitionsSubset
+
+        # Add type checks to ensure that subclasses are recognized
+        # E.g. a new subclass of DefaultPartitionsSubset should raise an error
+        if cls is MultiPartitionsSubset:
+            return PartitionsSubsetType.MULTIPARTITIONS
+        elif cls is TimeWindowPartitionsSubset:
+            return PartitionsSubsetType.TIME_WINDOW
+        else:
+            if cls is not DefaultPartitionsSubset:
+                check.failed(f"Unexpected type {cls}")
+            return PartitionsSubsetType.DEFAULT
 
 
 class DefaultPartitionsSubset(PartitionsSubset):
@@ -1433,9 +1451,10 @@ class DefaultPartitionsSubset(PartitionsSubset):
         partitions_def: PartitionsDefinition,
         serialized: str,
         serializable_unique_id: Optional[str],
+        subset_type: Optional[PartitionsSubsetType],
     ) -> bool:
-        if serializable_unique_id:
-            return partitions_def.is_serializable_unique_identifier_type(serializable_unique_id)
+        if subset_type is not None:
+            return subset_type == cls.subset_type()
 
         data = json.loads(serialized)
         return isinstance(data, list) or (

@@ -18,12 +18,13 @@ from .partition import (
     DefaultPartitionsSubset,
     Partition,
     PartitionsDefinition,
-    PartitionsSubset,
     StaticPartitionsDefinition,
 )
 from .time_window_partitions import TimeWindowPartitionsDefinition
 
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
+
+MULTIPARTITION_KEY_DELIMITER = "|"
 
 
 class PartitionDimensionKey(
@@ -64,7 +65,10 @@ class MultiPartitionKey(str):
         ]
 
         str_key = super(MultiPartitionKey, cls).__new__(
-            cls, "|".join([dim_key.partition_key for dim_key in dimension_keys])
+            cls,
+            MULTIPARTITION_KEY_DELIMITER.join(
+                [dim_key.partition_key for dim_key in dimension_keys]
+            ),
         )
 
         str_key.dimension_keys = dimension_keys
@@ -263,7 +267,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         """
         check.str_param(partition_key_str, "partition_key_str")
 
-        partition_key_strs = partition_key_str.split("|")
+        partition_key_strs = partition_key_str.split(MULTIPARTITION_KEY_DELIMITER)
         check.invariant(
             len(partition_key_strs) == len(self.partitions_defs),
             (
@@ -323,7 +327,13 @@ class MultiPartitionsSubset(DefaultPartitionsSubset):
     ):
         check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
         subset = (
-            set(partitions_def.get_partition_key_from_str(key) for key in subset)
+            set(
+                [
+                    partitions_def.get_partition_key_from_str(key)
+                    for key in subset
+                    if MULTIPARTITION_KEY_DELIMITER in key
+                ]
+            )
             if subset
             else set()
         )

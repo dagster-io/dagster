@@ -83,7 +83,6 @@ export const BackfillRow = ({
     if (data?.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {counts: null, statuses: null};
     }
-    // here is the tsx
     if ('partitionStatusCounts' in data.partitionBackfillOrError) {
       const counts = Object.fromEntries(
         data.partitionBackfillOrError.partitionStatusCounts.map((e) => [e.runStatus, e.count]),
