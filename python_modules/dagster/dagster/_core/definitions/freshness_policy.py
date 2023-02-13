@@ -69,8 +69,9 @@ class FreshnessPolicy(
             series of times by which the `maximum_lag_minutes` constraint must be satisfied. If
             no cron schedule is provided, then this constraint must be satisfied at all times.
         schedule_timezone (Optional[str]): Timezone in which the cron schedule should be evaluated.
-            Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            If not specified, defaults to UTC. Supported strings for timezones are the ones provided
+            by the `IANA time zone database <https://www.iana.org/time-zones>` - e.g.
+            "America/Los_Angeles".
 
     .. code-block:: python
 
