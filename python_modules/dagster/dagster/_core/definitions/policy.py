@@ -53,7 +53,7 @@ class RetryPolicy(
             being started. This unit of time can be modulated as a function of attempt number
             with backoff and randomly with jitter.
         backoff (Optional[Backoff]):
-            A modifier for delay as a function of retry attempt number, either dagster.Backoff.LINEAR or dagster.Backoff.EXPONENTIAL
+            A modifier for delay as a function of retry attempt number.
         jitter (Optional[Jitter]):
             A randomizing modifier for delay, applied after backoff calculation, either dagster.Jitter.FULL or dagster.Jitter.PLUS_MINUS
     
