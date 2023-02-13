@@ -1,15 +1,15 @@
-from typing import Sequence
+from typing import Sequence, cast
 
-from google.cloud import bigquery
-
-from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster import Field, IOManagerDefinition, Noneable, OutputContext, StringSource, io_manager
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
-    TablePartition,
+    TablePartitionDimension,
     TableSlice,
+    TimeWindow,
 )
+from google.cloud import bigquery
 
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -28,7 +28,6 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
         IOManagerDefinition
 
     Examples:
-
         .. code-block:: python
 
             from dagster_duckdb import build_duckdb_io_manager
@@ -82,7 +81,9 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
                 StringSource, description="Name of the schema to use.", is_required=False
             ),
             "project": Field(StringSource),  # elementl-dev - sort of like the database?
-            "location": Field(StringSource, is_required=False),  # compute location? like us-east-2
+            "location": Field(
+                Noneable(StringSource), is_required=False, default_value=None
+            ),  # compute location? like us-east-2
         }
     )
     def bigquery_io_manager(init_context):
@@ -124,13 +125,22 @@ class BigQueryClient(DbClient):
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
-        if table_slice.partition:
-            return (
-                f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}\n"
-                + _time_window_where_clause(table_slice.partition)
+
+        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+            # TODO - should table_slice.database be in this stmt?
+            query = (
+                f"SELECT {col_str} FROM"
+                f" {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
             )
+            partition_where = " AND\n".join(
+                _static_where_clause(partition_dimension)
+                if isinstance(partition_dimension.partition, str)
+                else _time_window_where_clause(partition_dimension)
+                for partition_dimension in table_slice.partition_dimensions
+            )
+            return query + partition_where
         else:
-            return f"""SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}"""
+            return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
 
 
 def _connect_bigquery(context):
@@ -145,17 +155,29 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.partition:
-        return (
-            f"DELETE FROM {table_slice.schema}.{table_slice.table}\n"
-            + _time_window_where_clause(table_slice.partition)
+    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        query = (
+            f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
         )
+
+        partition_where = " AND\n".join(
+            _static_where_clause(partition_dimension)
+            if isinstance(partition_dimension.partition, str)
+            else _time_window_where_clause(partition_dimension)
+            for partition_dimension in table_slice.partition_dimensions
+        )
+        return query + partition_where
     else:
         return f"TRUNCATE TABLE {table_slice.database}.{table_slice.schema}.{table_slice.table}"
 
 
-def _time_window_where_clause(table_partition: TablePartition) -> str:
-    start_dt, end_dt = table_partition.time_window
+def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
+    partition = cast(TimeWindow, table_partition.partition)
+    start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(BIGQUERY_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(BIGQUERY_DATETIME_FORMAT)
-    return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+    return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+
+
+def _static_where_clause(table_partition: TablePartitionDimension) -> str:
+    return f"""{table_partition.partition_expr} = '{table_partition.partition}'"""

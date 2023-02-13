@@ -1,9 +1,8 @@
 import pandas as pd
 import pandas_gbq
-from dagster_gcp.bigquery.io_manager import BigQueryClient, build_bigquery_io_manager
-
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster_gcp.bigquery.io_manager import BigQueryClient, build_bigquery_io_manager
 
 
 class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -36,7 +35,6 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
     def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame):
         """Stores the pandas DataFrame in duckdb."""
-
         print("THIS IS THE TABLE SLICE")
         print(table_slice)
 
