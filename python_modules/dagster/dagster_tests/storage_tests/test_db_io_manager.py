@@ -90,7 +90,7 @@ def test_asset_out():
 
     assert len(handler.handle_output_calls) == 1
     table_slice = TableSlice(
-        database="database_abc", schema="schema1", table="table1", partition=[]
+        database="database_abc", schema="schema1", table="table1", partition_dimensions=[]
     )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
@@ -118,7 +118,7 @@ def test_asset_out_columns():
 
     assert len(handler.handle_output_calls) == 1
     table_slice = TableSlice(
-        database="database_abc", schema="schema1", table="table1", partition=[]
+        database="database_abc", schema="schema1", table="table1", partition_dimensions=[]
     )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
@@ -129,7 +129,7 @@ def test_asset_out_columns():
         schema="schema1",
         table="table1",
         columns=["apple", "banana"],
-        partition=[],
+        partition_dimensions=[],
     )
 
 
@@ -168,7 +168,7 @@ def test_asset_out_partitioned():
         database="database_abc",
         schema="schema1",
         table="table1",
-        partition=[
+        partition_dimensions=[
             TablePartitionDimension(
                 partition=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
                 partition_expr="abc",
@@ -212,7 +212,7 @@ def test_asset_out_static_partitioned():
         database="database_abc",
         schema="schema1",
         table="table1",
-        partition=[
+        partition_dimensions=[
             TablePartitionDimension(
                 partition="red",
                 partition_expr="abc",
@@ -237,7 +237,7 @@ def test_different_output_and_input_types():
     assert len(int_handler.handle_output_calls) == 1
     assert len(str_handler.handle_output_calls) == 0
     table_slice = TableSlice(
-        database="database_abc", schema="schema1", table="table1", partition=[]
+        database="database_abc", schema="schema1", table="table1", partition_dimensions=[]
     )
     assert int_handler.handle_output_calls[0][1:] == (table_slice, 5)
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
@@ -277,7 +277,7 @@ def test_non_asset_out():
 
     assert len(handler.handle_output_calls) == 1
     table_slice = TableSlice(
-        database="database_abc", schema="schema1", table="table1", partition=[]
+        database="database_abc", schema="schema1", table="table1", partition_dimensions=[]
     )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
     db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)

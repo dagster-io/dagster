@@ -34,7 +34,7 @@ def test_get_select_statement_time_partitioned():
                 database="database_abc",
                 schema="schema1",
                 table="table1",
-                partition=[
+                partition_dimensions=[
                     TablePartitionDimension(
                         partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
                         partition_expr="my_timestamp_col",
@@ -55,7 +55,7 @@ def test_get_select_statement_static_partitioned():
                 database="database_abc",
                 schema="schema1",
                 table="table1",
-                partition=[
+                partition_dimensions=[
                     TablePartitionDimension(partition_expr="my_fruit_col", partition="apple")
                 ],
                 columns=["apple", "banana"],
@@ -72,7 +72,7 @@ def test_get_select_statement_multi_partitioned():
                 database="database_abc",
                 schema="schema1",
                 table="table1",
-                partition=[
+                partition_dimensions=[
                     TablePartitionDimension(partition_expr="my_fruit_col", partition="apple"),
                     TablePartitionDimension(
                         partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
@@ -103,7 +103,7 @@ def test_get_cleanup_statement_time_partitioned():
                 database="database_abc",
                 schema="schema1",
                 table="table1",
-                partition=[
+                partition_dimensions=[
                     TablePartitionDimension(
                         partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
                         partition_expr="my_timestamp_col",
@@ -123,7 +123,7 @@ def test_get_cleanup_statement_static_partitioned():
                 database="database_abc",
                 schema="schema1",
                 table="table1",
-                partition=[
+                partition_dimensions=[
                     TablePartitionDimension(partition_expr="my_fruit_col", partition="apple")
                 ],
             )
@@ -139,7 +139,7 @@ def test_get_cleanup_statement_multi_partitioned():
                 database="database_abc",
                 schema="schema1",
                 table="table1",
-                partition=[
+                partition_dimensions=[
                     TablePartitionDimension(partition_expr="my_fruit_col", partition="apple"),
                     TablePartitionDimension(
                         partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),

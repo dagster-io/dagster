@@ -89,7 +89,7 @@ def test_handle_output():
                 schema="my_schema",
                 database="my_db",
                 columns=None,
-                partition=None,
+                partition_dimensions=None,
             ),
             df,
         )
@@ -123,7 +123,7 @@ def test_load_input():
                 schema="my_schema",
                 database="my_db",
                 columns=None,
-                partition=None,
+                partition_dimensions=None,
             ),
         )
         assert mock_read.called

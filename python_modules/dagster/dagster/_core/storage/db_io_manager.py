@@ -44,7 +44,7 @@ class TableSlice(NamedTuple):
     schema: str
     database: Optional[str] = None
     columns: Optional[Sequence[str]] = None
-    partition: Optional[Sequence[TablePartitionDimension]] = None
+    partition_dimensions: Optional[Sequence[TablePartitionDimension]] = None
 
 
 class DbTypeHandler(ABC, Generic[T]):
@@ -156,7 +156,7 @@ class DbIOManager(IOManager):
         schema: str
         table: str
         partition_value: Optional[Union[TimeWindow, str]] = None
-        partitions: List[TablePartitionDimension] = []
+        partition_dimensions: List[TablePartitionDimension] = []
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
@@ -202,7 +202,7 @@ class DbIOManager(IOManager):
                                 " column of the database contains data for the"
                                 f" {part.name} partition."
                             )
-                        partitions.append(
+                        partition_dimensions.append(
                             TablePartitionDimension(
                                 partition_expr=cast(str, partition_expr_str),
                                 partition=partition_value,
@@ -215,7 +215,7 @@ class DbIOManager(IOManager):
                         context.asset_partitions_def, partition_key
                     )
 
-                    partitions.append(
+                    partition_dimensions.append(
                         TablePartitionDimension(
                             partition_expr=partition_expr_str, partition=partition_value
                         )
@@ -240,7 +240,7 @@ class DbIOManager(IOManager):
             table=table,
             schema=schema,
             database=self._database,
-            partition=partitions,
+            partition_dimensions=partition_dimensions,
             columns=(context.metadata or {}).get("columns"),  # type: ignore  # (mypy bug)
         )
 

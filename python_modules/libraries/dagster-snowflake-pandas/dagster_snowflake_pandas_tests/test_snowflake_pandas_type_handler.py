@@ -79,7 +79,7 @@ def test_handle_output():
                 schema="my_schema",
                 database="my_db",
                 columns=None,
-                partition=[],
+                partition_dimensions=[],
             ),
             df,
         )
@@ -107,7 +107,7 @@ def test_load_input():
                 schema="my_schema",
                 database="my_db",
                 columns=None,
-                partition=[],
+                partition_dimensions=[],
             ),
         )
         assert mock_read_sql.call_args_list[0][1]["sql"] == "SELECT * FROM my_db.my_schema.my_table"

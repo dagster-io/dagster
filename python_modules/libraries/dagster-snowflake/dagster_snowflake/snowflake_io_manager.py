@@ -158,24 +158,19 @@ class SnowflakeDbClient(DbClient):
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
-        if table_slice.partition and len(table_slice.partition) > 0:
+        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
             query = (
                 f"SELECT {col_str} FROM"
                 f" {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
             )
-            for i in range(len(table_slice.partition)):
-                part = table_slice.partition[i]
-                partition_where = (
-                    _static_where_clause(part)
-                    if isinstance(part.partition, str)
-                    else _time_window_where_clause(part)
-                )
-                query += partition_where
+            partition_where = " AND\n".join(
+                _static_where_clause(partition_dimension)
+                if isinstance(partition_dimension.partition, str)
+                else _time_window_where_clause(partition_dimension)
+                for partition_dimension in table_slice.partition_dimensions
+            )
 
-                if i < len(table_slice.partition) - 1:
-                    query += " AND\n"
-
-            return query
+            return query + partition_where
         else:
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
 
@@ -185,22 +180,17 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.partition and len(table_slice.partition) > 0:
+    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
         query = (
             f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
         )
-        for i in range(len(table_slice.partition)):
-            part = table_slice.partition[i]
-            partition_where = (
-                _static_where_clause(part)
-                if isinstance(part.partition, str)
-                else _time_window_where_clause(part)
-            )
-            query += partition_where
-
-            if i < len(table_slice.partition) - 1:
-                query += " AND\n"
-        return query
+        partition_where = " AND\n".join(
+            _static_where_clause(partition_dimension)
+            if isinstance(partition_dimension.partition, str)
+            else _time_window_where_clause(partition_dimension)
+            for partition_dimension in table_slice.partition_dimensions
+        )
+        return query + partition_where
     else:
         return f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
 
