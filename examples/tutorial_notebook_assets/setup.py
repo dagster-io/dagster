@@ -5,6 +5,7 @@ setup(
     packages=find_packages(exclude=["tutorial_notebook_assets"]),
     install_requires=[
         "dagster",
+        "dagster-cloud",
         "dagstermill",
         "papermill-origami>=0.0.8",
         "pandas",

@@ -19,6 +19,7 @@ setup(
         "dagster",
         "dagster-aws",
         "dagster-dbt",
+        "dagster-cloud",
         "dagster-pandas",
         "dagster-pyspark",
         "dagster-slack",

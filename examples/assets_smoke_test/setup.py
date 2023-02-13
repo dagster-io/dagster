@@ -6,6 +6,7 @@ setup(
     package_data={"assets_smoke_test": ["dbt_project/*"]},
     install_requires=[
         "dagster",
+        "dagster-cloud",
         "dagster-pandas",
         "dagster-dbt",
         "pandas",

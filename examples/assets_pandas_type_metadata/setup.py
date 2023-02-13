@@ -5,6 +5,7 @@ setup(
     packages=find_packages(exclude=["assets_pandas_type_metadata_tests"]),
     install_requires=[
         "dagster",
+        "dagster-cloud",
         "dagster-pandera",
         "jupyterlab",
         "matplotlib",

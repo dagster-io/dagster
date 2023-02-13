@@ -5,6 +5,7 @@ setup(
     packages=find_packages(exclude=["with_pyspark_tests"]),
     install_requires=[
         "dagster",
+        "dagster-cloud",
         "dagster-spark",
         "dagster-pyspark",
     ],

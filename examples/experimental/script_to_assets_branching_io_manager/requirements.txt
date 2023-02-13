@@ -1,4 +1,5 @@
 dagster
+dagster-cloud
 dagit
 matplotlib
 pandas

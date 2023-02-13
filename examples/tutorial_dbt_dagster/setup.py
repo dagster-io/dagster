@@ -5,6 +5,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "dagster",
+        "dagster-cloud",
         "dagster-dbt",
         "pandas",
         "dbt-core",

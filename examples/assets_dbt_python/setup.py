@@ -6,6 +6,7 @@ setup(
     package_data={"assets_dbt_python": ["dbt_project/*"]},
     install_requires=[
         "dagster",
+        "dagster-cloud",
         "dagster-dbt",
         "pandas",
         "numpy",

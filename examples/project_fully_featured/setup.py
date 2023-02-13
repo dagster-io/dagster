@@ -18,6 +18,7 @@ setup(
         "aiobotocore",
         "dagster",
         "dagster-aws",
+        "dagster-cloud",
         "dagster-dbt",
         "dagster-pandas",
         "dagster-pyspark",

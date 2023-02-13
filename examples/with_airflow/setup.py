@@ -5,6 +5,7 @@ setup(
     packages=find_packages(exclude=["with_airflow_tests"]),
     install_requires=[
         "dagster",
+        "dagster-cloud",
         "dagster_airflow",
         "apache-airflow==2.3.0",
         # for the kubernetes operator

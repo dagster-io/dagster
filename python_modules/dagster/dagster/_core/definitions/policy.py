@@ -53,9 +53,19 @@ class RetryPolicy(
             being started. This unit of time can be modulated as a function of attempt number
             with backoff and randomly with jitter.
         backoff (Optional[Backoff]):
-            A modifier for delay as a function of retry attempt number.
+            A modifier for delay as a function of retry attempt number, either dagster.Backoff.LINEAR or dagster.Backoff.EXPONENTIAL
         jitter (Optional[Jitter]):
-            A randomizing modifier for delay, applied after backoff calculation.
+            A randomizing modifier for delay, applied after backoff calculation, either dagster.Jitter.FULL or dagster.Jitter.PLUS_MINUS
+    
+    Example:
+        from dagster import Backoff, Jitter, RetryPolicy
+        RetryPolicy(
+            max_retries=3,
+            delay=0.2,  # 200ms
+            backoff=Backoff.EXPONENTIAL,
+            jitter=Jitter.PLUS_MINUS,
+        )
+)
     """
 
     def __new__(
@@ -67,12 +77,12 @@ class RetryPolicy(
     ):
         if backoff is not None and delay is None:
             raise DagsterInvalidDefinitionError(
-                "Can not set jitter on RetryPolicy without also setting delay"
+                "Can not set backoff on RetryPolicy without also setting delay"
             )
 
         if jitter is not None and delay is None:
             raise DagsterInvalidDefinitionError(
-                "Can not set backoff on RetryPolicy without also setting delay"
+                "Can not set jitter on RetryPolicy without also setting delay"
             )
 
         return super().__new__(

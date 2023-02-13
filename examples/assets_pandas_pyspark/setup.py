@@ -5,6 +5,7 @@ setup(
     packages=find_packages(exclude=["assets_pandas_pyspark_tests"]),
     install_requires=[
         "dagster",
+        "dagster-cloud", 
         "pandas",
         "pyspark",
         # "pyarrow",

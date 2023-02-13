@@ -5,6 +5,7 @@ setup(
     packages=find_packages(exclude=["with_wandb_tests"]),
     install_requires=[
         "dagster",
+        "dagster-cloud",
         "dagster-wandb",
         "onnxruntime",
         "skl2onnx",

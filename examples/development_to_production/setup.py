@@ -7,6 +7,7 @@ setup(
     packages=["development_to_production"],  # same as name
     install_requires=[
         "dagster",
+        "dagster-cloud",
         "dagster-snowflake",
         "dagster-snowflake-pandas",
         "pandas",
