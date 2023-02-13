@@ -652,6 +652,37 @@ class TimeWindowPartitionsDefinition(
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
+    """A set of daily partitions.
+
+    The first partition in the set will start at the start_date at midnight. The last partition
+    in the set will end before the current time, unless the end_offset argument is set to a
+    positive number. If minute_offset and/or hour_offset are used, the start and end times of
+    each partition will be hour_offset:minute_offset of each day.
+
+    Args:
+        start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
+            provide in either a datetime or string format.
+        minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+            to 0.
+        hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
+        timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+        fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+        end_offset (int): Extends the partition set by a number of partitions equal to the value
+            passed. If end_offset is 0 (the default), the last partition ends before the current
+            time. If end_offset is 1, the second-to-last partition ends before the current time,
+            and so on.
+
+    .. code-block:: python
+
+        DailyPartitionsDefinition(start_date="2022-03-12")
+        # creates partitions (2022-03-12-00:00, 2022-03-13-00:00), (2022-03-13-00:00, 2022-03-14-00:00), ...
+
+        DailyPartitionsDefinition(start_date="2022-03-12", minute_offset=15, hour_offset=16)
+        # creates partitions (2022-03-12-16:15, 2022-03-13-16:15), (2022-03-13-16:15, 2022-03-14-16:15), ...
+    """
+
     def __new__(  # pylint: disable=signature-differs
         cls,
         start_date: Union[datetime, str],
@@ -661,35 +692,6 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         fmt: Optional[str] = None,
         end_offset: int = 0,
     ):
-        """A set of daily partitions.
-
-        The first partition in the set will start at the start_date at midnight. The last partition
-        in the set will end before the current time, unless the end_offset argument is set to a
-        positive number. If minute_offset and/or hour_offset are used, the start and end times of
-        each partition will be hour_offset:minute_offset of each day.
-
-        Args:
-            start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
-                provide in either a datetime or string format.
-            minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
-                to 0.
-            hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
-            timezone (Optional[str]): The timezone in which each date should exist.
-                Supported strings for timezones are the ones provided by the
-                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
-            fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
-            end_offset (int): Extends the partition set by a number of partitions equal to the value
-                passed. If end_offset is 0 (the default), the last partition ends before the current
-                time. If end_offset is 1, the second-to-last partition ends before the current time,
-                and so on.
-
-        .. code-block:: python
-            DailyPartitionsDefinition(start_date="2022-03-12")
-            # creates partitions (2022-03-12-00:00, 2022-03-13-00:00), (2022-03-13-00:00, 2022-03-14-00:00), ...
-
-            DailyPartitionsDefinition(start_date="2022-03-12", minute_offset=15, hour_offset=16)
-            # creates partitions (2022-03-12-16:15, 2022-03-13-16:15), (2022-03-13-16:15, 2022-03-14-16:15), ...
-        """
         _fmt = fmt or DEFAULT_DATE_FORMAT
 
         return super(DailyPartitionsDefinition, cls).__new__(
@@ -787,6 +789,36 @@ def daily_partitioned_config(
 
 
 class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
+    """A set of hourly partitions.
+
+    The first partition in the set will start on the start_date at midnight. The last partition
+    in the set will end before the current time, unless the end_offset argument is set to a
+    positive number. If minute_offset is provided, the start and end times of each partition
+    will be minute_offset past the hour.
+
+    Args:
+        start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
+            provide in either a datetime or string format.
+        minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+            to 0.
+        fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+        timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+        end_offset (int): Extends the partition set by a number of partitions equal to the value
+            passed. If end_offset is 0 (the default), the last partition ends before the current
+            time. If end_offset is 1, the second-to-last partition ends before the current time,
+            and so on.
+
+    .. code-block:: python
+
+        HourlyPartitionsDefinition(start_date=datetime(2022, 03, 12))
+        # creates partitions (2022-03-12-00:00, 2022-03-12-01:00), (2022-03-12-01:00, 2022-03-12-02:00), ...
+
+        HourlyPartitionsDefinition(start_date=datetime(2022, 03, 12), minute_offset=15)
+        # creates partitions (2022-03-12-00:15, 2022-03-12-01:15), (2022-03-12-01:15, 2022-03-12-02:15), ...
+    """
+
     def __new__(  # pylint: disable=signature-differs
         cls,
         start_date: Union[datetime, str],
@@ -795,35 +827,6 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         fmt: Optional[str] = None,
         end_offset: int = 0,
     ):
-        """A set of hourly partitions.
-
-        The first partition in the set will start on the start_date at midnight. The last partition
-        in the set will end before the current time, unless the end_offset argument is set to a
-        positive number. If minute_offset is provided, the start and end times of each partition
-        will be minute_offset past the hour.
-
-        Args:
-            start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
-                provide in either a datetime or string format.
-            minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
-                to 0.
-            fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
-            timezone (Optional[str]): The timezone in which each date should exist.
-                Supported strings for timezones are the ones provided by the
-                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
-            end_offset (int): Extends the partition set by a number of partitions equal to the value
-                passed. If end_offset is 0 (the default), the last partition ends before the current
-                time. If end_offset is 1, the second-to-last partition ends before the current time,
-                and so on.
-
-        .. code-block:: python
-
-            HourlyPartitionsDefinition(start_date=datetime(2022, 03, 12))
-            # creates partitions (2022-03-12-00:00, 2022-03-12-01:00), (2022-03-12-01:00, 2022-03-12-02:00), ...
-
-            HourlyPartitionsDefinition(start_date=datetime(2022, 03, 12), minute_offset=15)
-            # creates partitions (2022-03-12-00:15, 2022-03-12-01:15), (2022-03-12-01:15, 2022-03-12-02:15), ...
-        """
         _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
         return super(HourlyPartitionsDefinition, cls).__new__(
@@ -906,6 +909,40 @@ def hourly_partitioned_config(
 
 
 class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
+    """A set of monthly partitions.
+
+    The first partition in the set will start at the soonest first of the month after start_date
+    at midnight. The last partition in the set will end before the current time, unless the
+    end_offset argument is set to a positive number. If day_offset is provided, the start and
+    end date of each partition will be day_offset. If minute_offset and/or hour_offset are used,
+    the start and end times of each partition will be hour_offset:minute_offset of each day.
+
+    Args:
+        start_date (Union[datetime.datetime, str]): The first date in the set of partitions will be
+            midnight the sonnest first of the month following start_date. Can provide in either a
+            datetime or string format.
+        minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+            to 0.
+        hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
+        day_offset (int): Day of the month to "split" the partition. Defaults to 1.
+        timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+        fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+        end_offset (int): Extends the partition set by a number of partitions equal to the value
+            passed. If end_offset is 0 (the default), the last partition ends before the current
+            time. If end_offset is 1, the second-to-last partition ends before the current time,
+            and so on.
+
+    .. code-block:: python
+
+        MonthlyPartitionsDefinition(start_date="2022-03-12")
+        # creates partitions (2022-04-01-00:00, 2022-05-01-00:00), (2022-05-01-00:00, 2022-06-01-00:00), ...
+
+        MonthlyPartitionsDefinition(start_date="2022-03-12", minute_offset=15, hour_offset=3, day_offset=5)
+        # creates partitions (2022-04-05-03:15, 2022-05-05-03:15), (2022-05-05-03:15, 2022-06-05-03:15), ...
+    """
+
     def __new__(  # pylint: disable=signature-differs
         cls,
         start_date: Union[datetime, str],
@@ -916,39 +953,6 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         fmt: Optional[str] = None,
         end_offset: int = 0,
     ):
-        """A set of monthly partitions.
-
-        The first partition in the set will start at the soonest first of the month after start_date
-        at midnight. The last partition in the set will end before the current time, unless the
-        end_offset argument is set to a positive number. If day_offset is provided, the start and
-        end date of each partition will be day_offset. If minute_offset and/or hour_offset are used,
-        the start and end times of each partition will be hour_offset:minute_offset of each day.
-
-        Args:
-            start_date (Union[datetime.datetime, str]): The first date in the set of partitions will be
-                midnight the sonnest first of the month following start_date. Can provide in either a
-                datetime or string format.
-            minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
-                to 0.
-            hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
-            day_offset (int): Day of the month to "split" the partition. Defaults to 1.
-            timezone (Optional[str]): The timezone in which each date should exist.
-                Supported strings for timezones are the ones provided by the
-                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
-            fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
-            end_offset (int): Extends the partition set by a number of partitions equal to the value
-                passed. If end_offset is 0 (the default), the last partition ends before the current
-                time. If end_offset is 1, the second-to-last partition ends before the current time,
-                and so on.
-
-        .. code-block:: python
-
-            MonthlyPartitionsDefinition(start_date="2022-03-12")
-            # creates partitions (2022-04-01-00:00, 2022-05-01-00:00), (2022-05-01-00:00, 2022-06-01-00:00), ...
-
-            MonthlyPartitionsDefinition(start_date="2022-03-12", minute_offset=15, hour_offset=3, day_offset=5)
-            # creates partitions (2022-04-05-03:15, 2022-05-05-03:15), (2022-05-05-03:15, 2022-06-05-03:15), ...
-        """
         _fmt = fmt or DEFAULT_DATE_FORMAT
 
         return super(MonthlyPartitionsDefinition, cls).__new__(
@@ -1041,6 +1045,41 @@ def monthly_partitioned_config(
 
 
 class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
+    """Defines a set of weekly partitions.
+
+    The first partition in the set will start at the start_date. The last partition in the set will
+    end before the current time, unless the end_offset argument is set to a positive number. If
+    day_offset is provided, the start and end date of each partition will be day of the week
+    corresponding to day_offset (0 indexed with Sunday as the start of the week). If
+    minute_offset and/or hour_offset are used, the start and end times of each partition will be
+    hour_offset:minute_offset of each day.
+
+    Args:
+        start_date (Union[datetime.datetime, str]): The first date in the set of partitions will
+            Sunday at midnight following start_date. Can provide in either a datetime or string
+            format.
+        minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+            to 0.
+        hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
+        day_offset (int): Day of the week to "split" the partition. Defaults to 0 (Sunday).
+        timezone (Optional[str]): The timezone in which each date should exist.
+            Supported strings for timezones are the ones provided by the
+            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+        fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
+        end_offset (int): Extends the partition set by a number of partitions equal to the value
+            passed. If end_offset is 0 (the default), the last partition ends before the current
+            time. If end_offset is 1, the second-to-last partition ends before the current time,
+            and so on.
+
+    .. code-block:: python
+
+        WeeklyPartitionsDefinition(start_date="2022-03-12")
+        # creates partitions (2022-03-13-00:00, 2022-03-20-00:00), (2022-03-20-00:00, 2022-03-27-00:00), ...
+
+        WeeklyPartitionsDefinition(start_date="2022-03-12", minute_offset=15, hour_offset=3, day_offset=6)
+        # creates partitions (2022-03-12-03:15, 2022-03-19-03:15), (2022-03-19-03:15, 2022-03-26-03:15), ...
+    """
+
     def __new__(  # pylint: disable=signature-differs
         cls,
         start_date: Union[datetime, str],
@@ -1051,40 +1090,6 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         fmt: Optional[str] = None,
         end_offset: int = 0,
     ):
-        """Defines a set of weekly partitions.
-
-        The first partition in the set will start at the start_date. The last partition in the set will
-        end before the current time, unless the end_offset argument is set to a positive number. If
-        day_offset is provided, the start and end date of each partition will be day of the week
-        corresponding to day_offset (0 indexed with Sunday as the start of the week). If
-        minute_offset and/or hour_offset are used, the start and end times of each partition will be
-        hour_offset:minute_offset of each day.
-
-        Args:
-            start_date (Union[datetime.datetime, str]): The first date in the set of partitions will
-                Sunday at midnight following start_date. Can provide in either a datetime or string
-                format.
-            minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
-                to 0.
-            hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
-            day_offset (int): Day of the week to "split" the partition. Defaults to 0 (Sunday).
-            timezone (Optional[str]): The timezone in which each date should exist.
-                Supported strings for timezones are the ones provided by the
-                `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
-            fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
-            end_offset (int): Extends the partition set by a number of partitions equal to the value
-                passed. If end_offset is 0 (the default), the last partition ends before the current
-                time. If end_offset is 1, the second-to-last partition ends before the current time,
-                and so on.
-
-        .. code-block:: python
-
-            WeeklyPartitionsDefinition(start_date="2022-03-12")
-            # creates partitions (2022-03-13-00:00, 2022-03-20-00:00), (2022-03-20-00:00, 2022-03-27-00:00), ...
-
-            WeeklyPartitionsDefinition(start_date="2022-03-12", minute_offset=15, hour_offset=3, day_offset=6)
-            # creates partitions (2022-03-12-03:15, 2022-03-19-03:15), (2022-03-19-03:15, 2022-03-26-03:15), ...
-        """
         _fmt = fmt or DEFAULT_DATE_FORMAT
 
         return super(WeeklyPartitionsDefinition, cls).__new__(
