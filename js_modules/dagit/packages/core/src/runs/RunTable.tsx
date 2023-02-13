@@ -279,6 +279,7 @@ const RunRow: React.FC<{
                       })
                     : workspacePipelinePathGuessRepo(run.pipelineName)
                 }
+                target="_blank"
               >
                 <Icon name="open_in_new" color={Colors.Blue500} />
               </Link>
