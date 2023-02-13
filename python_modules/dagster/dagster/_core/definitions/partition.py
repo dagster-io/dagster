@@ -317,11 +317,11 @@ class PartitionsDefinition(ABC, Generic[T]):
     def can_deserialize_subset(
         self,
         serialized: str,
-        serializable_unique_id: Optional[str],
+        serialized_partitions_def_unique_id: Optional[str],
         subset_type: Optional[PartitionsSubsetType],
     ) -> bool:
         return self.partitions_subset_class.can_deserialize(
-            self, serialized, serializable_unique_id, subset_type
+            self, serialized, serialized_partitions_def_unique_id, subset_type
         )
 
     @property
@@ -1328,7 +1328,7 @@ class PartitionsSubset(ABC):
         cls,
         partitions_def: PartitionsDefinition,
         serialized: str,
-        serializable_unique_id: Optional[str],
+        serialized_partitions_def_unique_id: Optional[str],
         subset_type: Optional[PartitionsSubsetType],
     ) -> bool:
         raise NotImplementedError()
@@ -1450,7 +1450,7 @@ class DefaultPartitionsSubset(PartitionsSubset):
         cls,
         partitions_def: PartitionsDefinition,
         serialized: str,
-        serializable_unique_id: Optional[str],
+        serialized_partitions_def_unique_id: Optional[str],
         subset_type: Optional[PartitionsSubsetType],
     ) -> bool:
         if subset_type is not None:

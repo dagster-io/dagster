@@ -1425,14 +1425,16 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         cls,
         partitions_def: PartitionsDefinition,
         serialized: str,
-        serializable_unique_id: Optional[str],
+        serialized_partitions_def_unique_id: Optional[str],
         subset_type: Optional[PartitionsSubsetType],
     ) -> bool:
         if subset_type and subset_type != cls.subset_type():
             return False
 
-        if serializable_unique_id:
-            return partitions_def.serializable_unique_identifier == serializable_unique_id
+        if serialized_partitions_def_unique_id:
+            return (
+                partitions_def.serializable_unique_identifier == serialized_partitions_def_unique_id
+            )
 
         data = json.loads(serialized)
         return isinstance(data, list) or (

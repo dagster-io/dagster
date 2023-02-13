@@ -712,7 +712,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         cls,
         partitions_def: "PartitionsDefinition",
         serialized: str,
-        serializable_unique_id: Optional[str],
+        serialized_partitions_def_unique_id: Optional[str],
         subset_type: Optional[PartitionsSubsetType],
     ) -> bool:
         raise NotImplementedError()
