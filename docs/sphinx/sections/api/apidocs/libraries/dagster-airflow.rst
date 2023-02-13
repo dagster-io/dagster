@@ -20,10 +20,6 @@ Run Airflow on Dagster
 
 .. autofunction:: load_assets_from_airflow_dag
 
-.. autofunction:: make_ephemeral_airflow_db_resource
-
-.. autofunction:: make_persistent_airflow_db_resource
-
 
 Orchestrate Dagster from Airflow
 ================================

@@ -21,7 +21,7 @@ from .operators.dagster_operator import (
 )
 from .resources import (
     make_ephemeral_airflow_db_resource as make_ephemeral_airflow_db_resource,
-    make_persistent_airflow_db_resource as make_persistent_airflow_db_resource
+    make_persistent_airflow_db_resource as make_persistent_airflow_db_resource,
 )
 from .version import __version__ as __version__
 

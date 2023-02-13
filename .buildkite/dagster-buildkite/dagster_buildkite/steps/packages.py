@@ -398,9 +398,11 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_step_dependencies=test_project_depends_fn,
         pytest_tox_factors=[
             "default-airflow1",
-            "requiresairflowdb-airflow1",
+            "localdb-airflow1",
+            "persistantdb-airflow1",
             "default-airflow2",
-            "requiresairflowdb-airflow2",
+            "localdb-airflow2",
+            "persistantdb-airflow2",
         ],
     ),
     PackageSpec(
