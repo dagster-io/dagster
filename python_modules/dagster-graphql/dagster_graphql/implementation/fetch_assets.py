@@ -375,6 +375,15 @@ def get_materialized_partitions_subset(
         )
 
 
+def get_failed_partitions_subset(
+    instance: DagsterInstance,
+    asset_key: AssetKey,
+    dynamic_partitions_loader: DynamicPartitionsStore,
+    partitions_def: PartitionsDefinition,
+) -> PartitionsSubset:
+    return partitions_def.empty_subset()
+
+
 def build_materialized_partitions(
     dynamic_partitions_store: DynamicPartitionsStore,
     materialized_partitions_subset: Optional[PartitionsSubset],
