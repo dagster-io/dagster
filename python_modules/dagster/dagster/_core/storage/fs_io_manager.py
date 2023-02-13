@@ -189,7 +189,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
         self.read_mode = "rb"
 
     def _get_path(self, path: str) -> str:
-        return os.path.join(self.base_dir, path)  # type: ignore
+        return os.path.join(self.base_dir, path)  # type: ignore  # (possible none)
 
     def handle_output(self, context: OutputContext, obj: object):
         """Pickle the data and store the object to a custom file path.
@@ -199,7 +199,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
         """
         check.inst_param(context, "context", OutputContext)
         metadata = context.metadata
-        path = check.str_param(metadata.get("path"), "metadata.path")  # type: ignore
+        path = check.str_param(metadata.get("path"), "metadata.path")  # type: ignore  # (possible none)
 
         filepath = self._get_path(path)
 
@@ -220,8 +220,8 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
     def load_input(self, context: InputContext) -> object:
         """Unpickle the file from a given file path and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
-        metadata = context.upstream_output.metadata  # type: ignore
-        path = check.str_param(metadata.get("path"), "metadata.path")  # type: ignore
+        metadata = context.upstream_output.metadata  # type: ignore  # (possible none)
+        path = check.str_param(metadata.get("path"), "metadata.path")  # type: ignore  # (possible none)
         filepath = self._get_path(path)
         context.log.debug(f"Loading file from: {filepath}")
 

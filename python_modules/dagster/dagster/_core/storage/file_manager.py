@@ -223,7 +223,7 @@ def local_file_manager(init_context: InitResourceContext) -> "LocalFileManager":
     """
     return LocalFileManager(
         base_dir=init_context.resource_config.get(
-            "base_dir", os.path.join(init_context.instance.storage_directory(), "file_manager")  # type: ignore
+            "base_dir", os.path.join(init_context.instance.storage_directory(), "file_manager")  # type: ignore  # (possible none)
         )
     )
 
@@ -253,7 +253,7 @@ class LocalFileManager(FileManager):
 
     def copy_handle_to_local_temp(self, file_handle: FileHandle) -> str:
         check.inst_param(file_handle, "file_handle", FileHandle)
-        with self.read(file_handle, "rb") as handle_obj:  # type: ignore
+        with self.read(file_handle, "rb") as handle_obj:  # type: ignore  # (??)
             temp_file_obj = self._temp_file_manager.tempfile()
             temp_file_obj.write(handle_obj.read())
             temp_name = temp_file_obj.name
@@ -268,11 +268,11 @@ class LocalFileManager(FileManager):
 
         encoding = None if mode == "rb" else "utf8"
         with open(file_handle.path, mode, encoding=encoding) as file_obj:
-            yield file_obj  # type: ignore
+            yield file_obj  # type: ignore  # (??)
 
     def read_data(self, file_handle: LocalFileHandle) -> bytes:
         with self.read(file_handle, mode="rb") as file_obj:
-            return file_obj.read()  # type: ignore
+            return file_obj.read()  # type: ignore  # (??)
 
     def write_data(self, data: bytes, ext: Optional[str] = None):
         check.inst_param(data, "data", bytes)
@@ -292,7 +292,7 @@ class LocalFileManager(FileManager):
 
         encoding = None if "b" in mode else "utf8"
         with open(dest_file_path, mode, encoding=encoding) as dest_file_obj:
-            shutil.copyfileobj(file_obj, dest_file_obj)  # type: ignore
+            shutil.copyfileobj(file_obj, dest_file_obj)  # type: ignore  # (??)
             return LocalFileHandle(dest_file_path)
 
     def delete_local_temp(self) -> None:

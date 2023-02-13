@@ -134,6 +134,7 @@ class CapturedLogSubscription:
 
 
 def _has_max_data(chunk: Optional[bytes]) -> bool:
+    # function is used as predicate but does not actually return a boolean
     return chunk and len(chunk) >= MAX_BYTES_CHUNK_READ  # type: ignore
 
 

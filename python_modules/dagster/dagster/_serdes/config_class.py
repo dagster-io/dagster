@@ -1,6 +1,6 @@
 import importlib
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Type
+from typing import Any, Dict, Mapping, NamedTuple, Type
 
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
@@ -8,9 +8,6 @@ from dagster._utils import convert_dagster_submodule_name
 from dagster._utils.yaml_utils import load_run_config_yaml
 
 from .serdes import DefaultNamedTupleSerializer, WhitelistMap, whitelist_for_serdes
-
-if TYPE_CHECKING:
-    pass
 
 
 class ConfigurableClassDataSerializer(DefaultNamedTupleSerializer):

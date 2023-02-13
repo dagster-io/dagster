@@ -158,7 +158,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 conn.execute(
                     db_dialects.mysql.insert(AssetKeyTable)
                     .values(
-                        asset_key=event.dagster_event.asset_key.to_string(),  # type: ignore
+                        asset_key=event.dagster_event.asset_key.to_string(),  # type: ignore  # (possible none)
                         **values,
                     )
                     .on_duplicate_key_update(
@@ -169,7 +169,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 try:
                     conn.execute(
                         db_dialects.mysql.insert(AssetKeyTable).values(
-                            asset_key=event.dagster_event.asset_key.to_string(),  # type: ignore
+                            asset_key=event.dagster_event.asset_key.to_string(),  # type: ignore  # (possible none)
                         )
                     )
                 except db_exc.IntegrityError:
@@ -209,7 +209,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @property
     def supports_intersect(self) -> bool:
-        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(  # type: ignore
+        return parse_mysql_version(self._mysql_version) >= parse_mysql_version(  # type: ignore  # (possible none)
             MINIMUM_MYSQL_INTERSECT_VERSION
         )
 

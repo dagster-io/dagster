@@ -211,11 +211,11 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         check.opt_str_param(cursor, "cursor")
 
         if cursor:
-            cursor = int(cursor)  # type: ignore
+            cursor = int(cursor)  # type: ignore   # (var reassigned diff type)
         else:
-            cursor = 0  # type: ignore
+            cursor = 0  # type: ignore  # (var reassigned diff type)
 
-        subscription = ComputeLogSubscription(self, run_id, key, io_type, cursor)  # type: ignore
+        subscription = ComputeLogSubscription(self, run_id, key, io_type, cursor)  # type: ignore  # (var reassigned diff type)
         self.on_subscribe(subscription)
         return subscription
 

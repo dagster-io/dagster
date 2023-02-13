@@ -24,7 +24,14 @@ class IDagsterMeta(Protocol):
         ...
 
 
-# We type-ignore because this is a stub class, we only ever cast log records to this.
+# The type-checker complains here that DagsterLogRecord does not implement the `dagster_meta`
+# property of `IDagsterMeta`. We ignore this error because we don't need to implement this method--
+# `DagsterLogRecord` is a stub class that is never instantiated. We only ever cast
+# `logging.LogRecord` objects to `DagsterLogRecord`, because it gives us typed access to the
+# `dagster_meta` property. `dagster_meta` itself is set on these `logging.LogRecord` objects via the
+# `extra` argument to `logging.Logger.log` (see `DagsterLogManager.log_dagster_event`), but
+# `logging.LogRecord` has no way of exposing to the type-checker the attributes that are dynamically
+# defined via `extra`.
 class DagsterLogRecord(logging.LogRecord, IDagsterMeta):  # type: ignore
     pass
 

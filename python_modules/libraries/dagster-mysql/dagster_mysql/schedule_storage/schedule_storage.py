@@ -139,7 +139,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     def upgrade(self) -> None:
         alembic_config = mysql_alembic_config(__file__)
-        run_alembic_upgrade(alembic_config, self._engine)  # type: ignore  # shouldn't this be a connection
+        run_alembic_upgrade(alembic_config, self._engine)  # type: ignore  # (should 2nd arg be a Connection instead of an Engine?)
 
     def _add_or_update_instigators_table(self, conn: Connection, state) -> None:
         selector_id = state.selector_id

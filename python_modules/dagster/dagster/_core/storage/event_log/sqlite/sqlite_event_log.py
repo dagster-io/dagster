@@ -418,7 +418,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
         if handler in self._watchers[run_id]:
             event_handler, watch = self._watchers[run_id][handler]
-            self._obs.remove_handler_for_watch(event_handler, watch)  # type: ignore
+            self._obs.remove_handler_for_watch(event_handler, watch)  # type: ignore  # (possible none)
             del self._watchers[run_id][handler]
 
     def dispose(self) -> None:
