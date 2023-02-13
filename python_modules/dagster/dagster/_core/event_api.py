@@ -1,3 +1,5 @@
+# pyright: strict
+
 from datetime import datetime
 from typing import Callable, Mapping, NamedTuple, Optional, Sequence, Union
 

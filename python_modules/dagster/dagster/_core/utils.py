@@ -4,7 +4,7 @@ import string
 import uuid
 import warnings
 from collections import OrderedDict
-from typing import AbstractSet, Any, Iterable, Mapping, Sequence, Tuple, TypeVar, Union, cast
+from typing import AbstractSet, Any, Iterable, Mapping, Sequence, Tuple, TypeVar, cast
 
 import toposort as toposort_
 from typing_extensions import Final
@@ -34,7 +34,7 @@ PYTHON_LOGGING_LEVELS_NAMES = frozenset(
 T = TypeVar("T", bound=Any)
 
 
-def coerce_valid_log_level(log_level: Union[str, int]) -> int:
+def coerce_valid_log_level(log_level: LogLevel) -> int:
     """Convert a log level into an integer for consumption by the low-level Python logging API."""
     if isinstance(log_level, int):
         return log_level

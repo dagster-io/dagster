@@ -1,10 +1,11 @@
 from contextlib import contextmanager
+from typing import Optional
 
 import dagster._check as check
 import dagster._seven as seven
 
 
-def format_duration(milliseconds):
+def format_duration(milliseconds: int) -> str:
     """Given milliseconds, return human readable duration string such as:
     533ms, 2.1s, 4m52s, 34m12s, 1h4m.
     """
@@ -42,12 +43,12 @@ def format_duration(milliseconds):
 class TimerResult:
     def __init__(self):
         self.start_time = seven.time_fn()
-        self.end_time = None
+        self.end_time: Optional[float] = None
 
     @property
     def seconds(self):
         check.invariant(self.end_time is not None, "end time is not set")
-        return self.end_time - self.start_time
+        return self.end_time - self.start_time  # type: ignore
 
     @property
     def millis(self):

@@ -1,3 +1,5 @@
+# pyright: strict
+
 """Structured representations of system events."""
 import logging
 import os
@@ -15,9 +17,12 @@ from typing import (
     Sequence,
     Tuple,
     TypeVar,
+    Type,
     Union,
     cast,
 )
+
+from typing_extensions import TypeAlias, TypeGuard, TypeVar
 
 import dagster._check as check
 from dagster._annotations import public
@@ -58,7 +63,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.step import StepKind
 
-EventSpecificData = Union[
+EventSpecificData: TypeAlias = Union[
     StepOutputData,
     StepFailureData,
     StepSuccessData,
@@ -78,6 +83,24 @@ EventSpecificData = Union[
     "AssetObservationData",
     "AssetMaterializationPlannedData",
     None,
+]
+
+StepEventSpecificData: TypeAlias = Union[
+    StepOutputData,
+    StepFailureData,
+    StepSuccessData,
+    "StepMaterializationData",
+    "StepExpectationResultData",
+    StepInputData,
+    "ObjectStoreOperationResultData",
+    "HandledOutputData",
+    "LoadedInputData",
+]
+
+FailureEventSpecificData: TypeAlias = Union[
+    StepFailureData,
+    "PipelineFailureData",
+    "PipelineCanceledData",
 ]
 
 
@@ -354,7 +377,9 @@ class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
             ),
         )
 
-T_EventSpecificData = TypeVar("T_EventSpecificData", bound="EventSpecificData")
+T_EventSpecificData = TypeVar(
+    "T_EventSpecificData", bound="EventSpecificData", default="EventSpecificData"
+)
 
 @whitelist_for_serdes(
     serializer=DagsterEventSerializer,
@@ -397,44 +422,36 @@ class DagsterEvent(
         step_key (Optional[str]): DEPRECATED
     """
 
-    # @staticmethod
-    # def is_step_output(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[StepOutputData]"]:
-    #     return event.event_type == DagsterEventType.STEP_OUTPUT
-    #
-    # @staticmethod
-    # def is_step_failure(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[StepFailureData]"]:
-    #     return event.event_type == DagsterEventType.STEP_FAILURE
-    #
-    # @staticmethod
-    # def is_step_success(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[StepSuccessData]"]:
-    #     return event.event_type == DagsterEventType.STEP_SUCCESS
-    #
-    # @staticmethod
-    # def is_step_materialization(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[StepMaterializationData]"]:
-    #     return event.event_type == DagsterEventType.ASSET_MATERIALIZATION
-    #
-    # @staticmethod
-    # def is_step_expectation_result(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[StepExpectationResultData]"]:
-    #     return event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT
-    #
-    # @staticmethod
-    # def is_engine(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[EngineEventData]"]:
-    #     return event.event_type in (
-    #         DagsterEventType.ENGINE_EVENT,
-    #         DagsterEventType.STEP_WORKER_STARTING,
-    #         DagsterEventType.STEP_WORKER_STARTED,
-    #         DagsterEventType.RESOURCE_INIT_STARTED,
-    #         DagsterEventType.RESOURCE_INIT_SUCCESS,
-    #         DagsterEventType.RESOURCE_INIT_FAILURE,
-    #     )
-    #
-    # @staticmethod
-    # def is_hook_errored(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[HookErroredData]"]:
-    #     return event.event_type == DagsterEventType.HOOK_ERRORED
-    #
-    # @staticmethod
-    # def is_asset_materialization_planned(event: "DagsterEvent[EventSpecificData]") -> TypeGuard["DagsterEvent[AssetMaterializationPlannedData]"]:
-    #     return event.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+    @staticmethod
+    def is_step_output(
+        event: "DagsterEvent[EventSpecificData]",
+    ) -> TypeGuard["DagsterEvent[StepOutputData]"]:
+        return event.event_type == DagsterEventType.STEP_OUTPUT
+
+    @staticmethod
+    def is_step_expectation_result(
+        event: "DagsterEvent[EventSpecificData]",
+    ) -> TypeGuard["DagsterEvent[StepExpectationResultData]"]:
+        return event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT
+
+    @staticmethod
+    def is_engine(
+        event: "DagsterEvent[EventSpecificData]",
+    ) -> TypeGuard["DagsterEvent[EngineEventData]"]:
+        return event.event_type in (
+            DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.STEP_WORKER_STARTING,
+            DagsterEventType.STEP_WORKER_STARTED,
+            DagsterEventType.RESOURCE_INIT_STARTED,
+            DagsterEventType.RESOURCE_INIT_SUCCESS,
+            DagsterEventType.RESOURCE_INIT_FAILURE,
+        )
+
+    @staticmethod
+    def is_hook_errored(
+        event: "DagsterEvent[EventSpecificData]",
+    ) -> TypeGuard["DagsterEvent[HookErroredData]"]:
+        return event.event_type == DagsterEventType.HOOK_ERRORED
 
     @staticmethod
     def from_step(
@@ -909,7 +926,7 @@ class DagsterEvent(
     @staticmethod
     def step_success_event(
         step_context: IStepContext, success: "StepSuccessData"
-    ) -> "DagsterEvent":
+    ) -> "DagsterEvent[StepSuccessData]":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_SUCCESS,
             step_context=step_context,

@@ -1,9 +1,10 @@
 import copy
 import logging
+import logging.config
 import sys
 import traceback
 from contextlib import contextmanager
-from typing import Mapping, NamedTuple, Optional
+from typing import Callable, Iterator, Mapping, NamedTuple, Optional, Sequence
 
 import coloredlogs
 import pendulum
@@ -11,7 +12,8 @@ import pendulum
 import dagster._check as check
 import dagster._seven as seven
 from dagster._config import Enum, EnumValue
-from dagster._core.definitions.logger_definition import logger
+from dagster._core.definitions.logger_definition import LoggerDefinition, logger
+from dagster._core.events.log import EventLogEntry
 from dagster._core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
 
 LogLevelEnum = Enum("log_level", list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))
@@ -81,7 +83,9 @@ class StructuredLoggerMessage(
 
 
 class JsonEventLoggerHandler(logging.Handler):
-    def __init__(self, json_path: str, construct_event_record):
+    def __init__(
+        self, json_path: str, construct_event_record: Callable[[logging.LogRecord], EventLogEntry]
+    ):
         super(JsonEventLoggerHandler, self).__init__()
         self.json_path = check.str_param(json_path, "json_path")
         self.construct_event_record = construct_event_record
@@ -121,7 +125,7 @@ class StructuredLoggerHandler(logging.Handler):
             logging.exception(str(e))
 
 
-def construct_single_handler_logger(name, level, handler):
+def construct_single_handler_logger(name: str, level, handler: logging.Handler) -> LoggerDefinition:
     check.str_param(name, "name")
     check.inst_param(handler, "handler", logging.Handler)
 
@@ -179,7 +183,9 @@ def get_dagster_logger(name: Optional[str] = None) -> logging.Logger:
     return base_builtin
 
 
-def define_structured_logger(name, callback, level):
+def define_structured_logger(
+    name: str, callback: Callable[[StructuredLoggerMessage], None], level: int
+) -> LoggerDefinition:
     check.str_param(name, "name")
     check.callable_param(callback, "callback")
     level = coerce_valid_log_level(level)
@@ -187,7 +193,7 @@ def define_structured_logger(name, callback, level):
     return construct_single_handler_logger(name, level, StructuredLoggerHandler(callback))
 
 
-def define_json_file_logger(name, json_path, level):
+def define_json_file_logger(name: str, json_path: str, level: int) -> LoggerDefinition:
     check.str_param(name, "name")
     check.str_param(json_path, "json_path")
     level = coerce_valid_log_level(level)
@@ -197,7 +203,7 @@ def define_json_file_logger(name, json_path, level):
     return construct_single_handler_logger(name, level, stream_handler)
 
 
-def get_stack_trace_array(exception):
+def get_stack_trace_array(exception: Exception) -> Sequence[str]:
     check.inst_param(exception, "exception", Exception)
     if hasattr(exception, "__traceback__"):
         tb = exception.__traceback__
@@ -213,20 +219,20 @@ def _mockable_formatTime(record, datefmt=None):
     return pendulum.now().strftime(datefmt if datefmt else default_date_format_string())
 
 
-def default_format_string():
+def default_format_string() -> str:
     return "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 
-def default_date_format_string():
+def default_date_format_string() -> str:
     return "%Y-%m-%d %H:%M:%S %z"
 
 
-def define_default_formatter():
+def define_default_formatter() -> logging.Formatter:
     return logging.Formatter(default_format_string(), default_date_format_string())
 
 
 @contextmanager
-def quieten(quiet=True, level=logging.WARNING):
+def quieten(quiet: bool = True, level: int = logging.WARNING) -> Iterator[None]:
     if quiet:
         logging.disable(level)
     try:
@@ -236,7 +242,7 @@ def quieten(quiet=True, level=logging.WARNING):
             logging.disable(logging.NOTSET)
 
 
-def configure_loggers(handler="default", log_level="INFO"):
+def configure_loggers(handler: str = "default", log_level: str = "INFO") -> None:
     LOGGING_CONFIG = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -276,10 +282,10 @@ def configure_loggers(handler="default", log_level="INFO"):
 
     if handler == "default":
         for name in ["dagster", "dagit"]:
-            logging.getLogger(name).handlers[0].formatter.formatTime = _mockable_formatTime
+            logging.getLogger(name).handlers[0].formatter.formatTime = _mockable_formatTime  # type: ignore
 
 
-def create_console_logger(name, level):
+def create_console_logger(name: str, level) -> logging.Logger:
     klass = logging.getLoggerClass()
     handler = klass(name, level=level)
     coloredlogs.install(

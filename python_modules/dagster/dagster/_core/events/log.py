@@ -1,10 +1,13 @@
-from typing import Mapping, NamedTuple, Optional, Union
-from typing import Any, Dict, Generic, Mapping, NamedTuple, Optional, TypeVar, Union
+from typing import Generic, Mapping, NamedTuple, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Mapping, NamedTuple, Optional, Union
+
+from typing_extensions import TypeAlias, TypeVar
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.events import DagsterEvent, DagsterEventType, EventSpecificData
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import (
@@ -19,6 +22,8 @@ from dagster._utils.log import (
     StructuredLoggerMessage,
     construct_single_handler_logger,
 )
+
+EventRecordHandlerFn: TypeAlias = Callable[[StructuredLoggerMessage], None]
 
 
 T_EventSpecificData = TypeVar("T_EventSpecificData", bound="EventSpecificData")
@@ -117,7 +122,7 @@ class EventLogEntry(
 
     @public
     @property
-    def dagster_event_type(self):
+    def dagster_event_type(self) -> Optional[DagsterEventType]:
         return self.dagster_event.event_type if self.dagster_event else None
 
     @public
@@ -197,7 +202,7 @@ def construct_event_logger(event_record_callback):
     )
 
 
-def construct_json_event_logger(json_path):
+def construct_json_event_logger(json_path: str) -> LoggerDefinition:
     """Record a stream of event records to json."""
     check.str_param(json_path, "json_path")
     return construct_single_handler_logger(
