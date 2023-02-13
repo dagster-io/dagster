@@ -173,23 +173,24 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       dimensionIdx = 1 - dimensionIdx;
     }
     if (dimensionIdx === 0 && !otherDimensionSelectedRanges) {
-      return ranges;
+      return removeSubrangesAndJoin(ranges);
     } else if (dimensionIdx === 0 && otherDimensionSelectedRanges) {
       const otherDimensionKeyCount = keyCountInSelection(otherDimensionSelectedRanges);
-      return ranges
-        .map((range) => ({
-          ...range,
-          subranges: range.subranges
-            ? rangesClippedToSelection(range.subranges, otherDimensionSelectedRanges)
-            : undefined,
-        }))
+      const clipped = ranges
         .map((range) => {
+          const subranges = range.subranges
+            ? rangesClippedToSelection(range.subranges, otherDimensionSelectedRanges)
+            : [];
+
           return {
-            ...range,
-            value: partitionStatusGivenRanges(range.subranges || [], otherDimensionKeyCount),
+            start: range.start,
+            end: range.end,
+            value: partitionStatusGivenRanges(subranges, otherDimensionKeyCount),
+            subranges,
           };
         })
         .filter((range) => range.value !== PartitionState.MISSING) as Range[];
+      return removeSubrangesAndJoin(clipped);
     } else {
       const [d0, d1] = dimensions;
       const allKeys = d1.partitionKeys;
@@ -233,6 +234,11 @@ export type Range = {
   subranges?: Range[];
 };
 
+/** Given a set of materialized ranges and the total number of keys in the dimension,
+ * return whether these ranges represent "success" (all the keys), "success_missing"
+ * (some of the keys) or "missing". (none of the keys). Used to evaluate the status
+ * of the first dimension based on second dimension materialized ranges.
+ */
 export function partitionStatusGivenRanges(ranges: Range[], totalKeyCount: number) {
   const keyCount = keyCountInRanges(ranges);
   return keyCount === totalKeyCount
@@ -254,7 +260,10 @@ function rangesClippedToSelection(ranges: Range[], selection: PartitionDimension
  * Given a range eg: [B-F] and a selection of interest [A-C], [D-Z], this function returns the ranges
  * required to represent the range clipped to the selection. ([[B-C], [D-F]])
  */
-function rangeClippedToSelection(range: Range, selection: PartitionDimensionSelectionRange[]) {
+export function rangeClippedToSelection(
+  range: Range,
+  selection: PartitionDimensionSelectionRange[],
+) {
   const intersecting = selection.filter(
     ([start, end]) => range.start.idx <= end.idx && range.end.idx >= start.idx,
   );
@@ -266,6 +275,27 @@ function rangeClippedToSelection(range: Range, selection: PartitionDimensionSele
       subranges: range.subranges,
     };
   });
+}
+
+// If you provide the primary dimension ranges of a multi-partitioned asset, there can be tons of
+// small ranges which differ only in their subranges, which can lead to tiny "A-B", "C-D", "E"
+// ranges rendering when one "A-E" would suffice. This is noticeable because we use a striped pattern
+// for partial ranges and the pattern resets.
+//
+// This function walks the ranges and merges them if their top level status is the same so they
+// can be rendered with the minimal number of divs.
+//
+function removeSubrangesAndJoin(ranges: Range[]): Range[] {
+  const result: Range[] = [];
+  for (const range of ranges) {
+    const last = result[result.length - 1];
+    if (last && last.end.idx === range.start.idx - 1 && last.value === range.value) {
+      last.end = range.end;
+    } else {
+      result.push({start: range.start, end: range.end, value: range.value});
+    }
+  }
+  return result;
 }
 
 // In a follow-up, maybe we make these two data structures share a signature

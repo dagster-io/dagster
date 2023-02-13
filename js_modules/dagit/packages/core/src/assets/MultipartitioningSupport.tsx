@@ -91,6 +91,8 @@ export function mergedAssetHealth(
 export function mergedStates(states: PartitionState[]): PartitionState {
   if (states.includes(PartitionState.MISSING) && states.includes(PartitionState.SUCCESS)) {
     return PartitionState.SUCCESS_MISSING;
+  } else if (states.includes(PartitionState.SUCCESS_MISSING)) {
+    return PartitionState.SUCCESS_MISSING;
   } else {
     return states[0];
   }
@@ -115,15 +117,20 @@ export function mergedStates(states: PartitionState[]): PartitionState {
  * range at "B - 1", and we may not have any range in the input we can reference to get that value.
  */
 export function mergedRanges(allKeys: string[], rangeSets: Range[][]): Range[] {
+  if (rangeSets.length === 1) {
+    return rangeSets[0];
+  }
+
   const transitions: {idx: number; delta: number}[] = [];
   for (const ranges of rangeSets) {
     for (const range of ranges) {
-      transitions.push({idx: range.start.idx, delta: 1});
-      transitions.push({idx: range.end.idx + 1, delta: -1});
+      const delta = range.value === PartitionState.SUCCESS ? 1 : 0.5;
+      transitions.push({idx: range.start.idx, delta});
+      transitions.push({idx: range.end.idx + 1, delta: -delta});
     }
   }
 
-  return assembleRangesFromTransitions(allKeys, transitions, rangeSets.length - 1);
+  return assembleRangesFromTransitions(allKeys, transitions, rangeSets.length);
 }
 
 export function assembleRangesFromTransitions(

@@ -358,7 +358,7 @@ function useRenderableRanges(
       ? buildRangesFromStateFn(partitionNames, splitPartitions, _stateForKey)
       : _ranges && splitPartitions
       ? convertToSingleKeyRanges(partitionNames, _ranges)
-      : joinRangesSharingValue(_ranges!);
+      : _ranges!;
   }, [splitPartitions, partitionNames, _ranges, _stateForKey]);
 }
 
@@ -377,27 +377,6 @@ function convertToSingleKeyRanges(
         end: {idx, key: partitionNames[idx]},
         value: range.value,
       });
-    }
-  }
-  return result;
-}
-
-// If you provide the primary dimension ranges of a multi-partitioned asset, there can be tons of
-// small ranges which differ only in their subranges, which can lead to tiny "A-B", "C-D", "E"
-// ranges rendering when one "A-E" would suffice. This is noticeable because we use a striped pattern
-// for partial ranges and the pattern resets.
-//
-// This function walks the ranges and merges them if their top level status is the same so they
-// can be rendered with the minimal number of divs.
-//
-function joinRangesSharingValue(ranges: PartitionStatusRange[]): PartitionStatusRange[] {
-  const result: PartitionStatusRange[] = [];
-  for (const range of ranges) {
-    const last = result[result.length - 1];
-    if (last && last.end.idx === range.start.idx - 1 && last.value === range.value) {
-      last.end = range.end;
-    } else {
-      result.push({...range});
     }
   }
   return result;
