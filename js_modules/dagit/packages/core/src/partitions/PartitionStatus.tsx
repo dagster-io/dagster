@@ -14,6 +14,8 @@ type SelectionRange = {
 
 const MIN_SPAN_WIDTH = 8;
 
+// Todo: Rename this enum to Partition"Status" instead of Partition"State" to
+// match the server-provided RunStatus and others.
 export enum PartitionState {
   MISSING = 'missing',
   SUCCESS = 'success',
@@ -24,11 +26,25 @@ export enum PartitionState {
   STARTED = 'started',
 }
 
-export type PartitionStateRange = {
+// This type is similar to a partition health "Range", but this component is also
+// used by backfill UI and backfills can have a wider range of partition states,
+// so this type allows the entire enum.
+export type PartitionStatusRange = {
   start: {idx: number; key: string};
   end: {idx: number; key: string};
   value: PartitionState;
 };
+
+// This component can be wired up to assets, which provide partition status in terms
+// of ranges with a given status. It can also be wired up to backfills, which provide
+// status per-partition.
+//
+// In the latter case, this component will call the getter function you provide
+// and assemble ranges by itself for display.
+//
+export type PartitionStatusHealthSource =
+  | {ranges: PartitionStatusRange[]}
+  | {partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState};
 
 export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
   switch (runStatus) {
@@ -47,27 +63,9 @@ export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
   }
 };
 
-export function assembleIntoPartitionStateRanges(
-  keys: string[],
-  keyTestFn: (key: string, idx: number) => RunStatus,
-) {
-  const result: PartitionStateRange[] = [];
-
-  for (let idx = 0; idx < keys.length; idx++) {
-    const value = runStatusToPartitionState(keyTestFn(keys[idx], idx));
-    if (!result.length || result[result.length - 1].value !== value) {
-      result.push({start: {idx, key: keys[idx]}, end: {idx, key: keys[idx]}, value});
-    } else {
-      result[result.length - 1].end = {key: keys[idx], idx};
-    }
-  }
-
-  return result;
-}
-
 interface PartitionStatusProps {
   partitionNames: string[];
-  ranges: PartitionStateRange[];
+  health: PartitionStatusHealthSource;
   selected?: string[];
   small?: boolean;
   onClick?: (partitionName: string) => void;
@@ -80,21 +78,23 @@ interface PartitionStatusProps {
 
 export const PartitionStatus: React.FC<PartitionStatusProps> = ({
   partitionNames,
-  ranges,
   selected,
   onSelect,
   onClick,
-  splitPartitions,
   small,
+  health,
   selectionWindowSize,
   hideStatusTooltip,
   tooltipMessage,
+  splitPartitions = false,
 }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
     SelectionRange | undefined
   >();
   const {viewport, containerProps} = useViewport();
+
+  const ranges = useRenderableRanges(health, splitPartitions, partitionNames);
 
   const toPartitionName = React.useCallback(
     (e: MouseEvent) => {
@@ -345,29 +345,83 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
   );
 };
 
-export const PartitionRunStatus: React.FC<
-  Omit<PartitionStatusProps, 'ranges'> & {
-    partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState;
+function useRenderableRanges(
+  health: PartitionStatusHealthSource,
+  splitPartitions: boolean,
+  partitionNames: string[],
+) {
+  const _ranges = 'ranges' in health ? health.ranges : null;
+  const _stateForKey = 'partitionStateForKey' in health ? health.partitionStateForKey : null;
+
+  return React.useMemo(() => {
+    return _stateForKey
+      ? buildRangesFromStateFn(partitionNames, splitPartitions, _stateForKey)
+      : _ranges && splitPartitions
+      ? convertToSingleKeyRanges(partitionNames, _ranges)
+      : joinRangesSharingValue(_ranges!);
+  }, [splitPartitions, partitionNames, _ranges, _stateForKey]);
+}
+
+// If you ask for each partition to be rendered as a separate segment in the UI, we break the
+// provided ranges apart into per-partition ranges so that each partition can have a separate tooltip.
+//
+function convertToSingleKeyRanges(
+  partitionNames: string[],
+  ranges: PartitionStatusRange[],
+): PartitionStatusRange[] {
+  const result: PartitionStatusRange[] = [];
+  for (const range of ranges) {
+    for (let idx = range.start.idx; idx <= range.end.idx; idx++) {
+      result.push({
+        start: {idx, key: partitionNames[idx]},
+        end: {idx, key: partitionNames[idx]},
+        value: range.value,
+      });
+    }
   }
-> = ({partitionStateForKey, ...rest}) => {
-  const ranges = React.useMemo(() => {
-    const spans = rest.splitPartitions
-      ? rest.partitionNames.map((name, idx) => ({
-          startIdx: idx,
-          endIdx: idx,
-          status: partitionStateForKey(name, idx),
-        }))
-      : assembleIntoSpans(rest.partitionNames, partitionStateForKey);
+  return result;
+}
 
-    return spans.map((s) => ({
-      value: s.status,
-      start: {idx: s.startIdx, key: rest.partitionNames[s.startIdx]},
-      end: {idx: s.endIdx, key: rest.partitionNames[s.endIdx]},
-    }));
-  }, [rest.splitPartitions, rest.partitionNames, partitionStateForKey]);
+// If you provide the primary dimension ranges of a multi-partitioned asset, there can be tons of
+// small ranges which differ only in their subranges, which can lead to tiny "A-B", "C-D", "E"
+// ranges rendering when one "A-E" would suffice. This is noticeable because we use a striped pattern
+// for partial ranges and the pattern resets.
+//
+// This function walks the ranges and merges them if their top level status is the same so they
+// can be rendered with the minimal number of divs.
+//
+function joinRangesSharingValue(ranges: PartitionStatusRange[]): PartitionStatusRange[] {
+  const result: PartitionStatusRange[] = [];
+  for (const range of ranges) {
+    const last = result[result.length - 1];
+    if (last && last.end.idx === range.start.idx - 1 && last.value === range.value) {
+      last.end = range.end;
+    } else {
+      result.push({...range});
+    }
+  }
+  return result;
+}
 
-  return <PartitionStatus ranges={ranges} {...rest} />;
-};
+function buildRangesFromStateFn(
+  partitionNames: string[],
+  splitPartitions: boolean,
+  partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState,
+) {
+  const spans = splitPartitions
+    ? partitionNames.map((name, idx) => ({
+        startIdx: idx,
+        endIdx: idx,
+        status: partitionStateForKey(name, idx),
+      }))
+    : assembleIntoSpans(partitionNames, partitionStateForKey);
+
+  return spans.map((s) => ({
+    value: s.status,
+    start: {idx: s.startIdx, key: partitionNames[s.startIdx]},
+    end: {idx: s.endIdx, key: partitionNames[s.endIdx]},
+  }));
+}
 
 export const partitionStateToStyle = (status: PartitionState): React.CSSProperties => {
   switch (status) {

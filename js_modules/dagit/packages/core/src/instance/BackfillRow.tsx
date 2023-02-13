@@ -12,8 +12,8 @@ import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunStatus, BulkActionStatus} from '../graphql/types';
 import {
-  PartitionRunStatus,
   PartitionState,
+  PartitionStatus,
   runStatusToPartitionState,
 } from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -254,13 +254,21 @@ const BackfillRunStatus = ({
     return partitionCounts;
   }, {});
 
+  const health = React.useMemo(
+    () => ({
+      partitionStateForKey: (key: string) =>
+        statuses
+          ? runStatusToPartitionState(statuses.filter((s) => s.partitionName === key)[0].runStatus)
+          : PartitionState.MISSING,
+    }),
+    [statuses],
+  );
+
   return statuses ? (
-    <PartitionRunStatus
+    <PartitionStatus
       partitionNames={backfill.partitionNames}
-      partitionStateForKey={(key, _) =>
-        runStatusToPartitionState(statuses.filter((s) => s.partitionName === key)[0].runStatus)
-      }
-      splitPartitions={true}
+      health={health}
+      splitPartitions
       onClick={(partitionName) => {
         const entry = statuses.find((r) => r.partitionName === partitionName);
         if (entry?.runId) {
@@ -366,6 +374,14 @@ const BackfillRequestedRange = ({
   allPartitions?: string[];
   onExpand: () => void;
 }) => {
+  const health = React.useMemo(
+    () => ({
+      partitionStateForKey: (key: string) =>
+        backfill.partitionNames.includes(key) ? PartitionState.QUEUED : PartitionState.MISSING,
+    }),
+    [backfill.partitionNames],
+  );
+
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       <div>
@@ -376,14 +392,7 @@ const BackfillRequestedRange = ({
         </TagButton>
       </div>
       {allPartitions && (
-        <PartitionRunStatus
-          small
-          hideStatusTooltip
-          partitionNames={allPartitions}
-          partitionStateForKey={(key) =>
-            backfill.partitionNames.includes(key) ? PartitionState.QUEUED : PartitionState.MISSING
-          }
-        />
+        <PartitionStatus small hideStatusTooltip partitionNames={allPartitions} health={health} />
       )}
     </Box>
   );

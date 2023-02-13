@@ -2,16 +2,15 @@ import {Box, Button} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {isTimeseriesPartition} from '../assets/MultipartitioningSupport';
-import {Range} from '../assets/usePartitionHealthData';
 
 import {DimensionRangeInput} from './DimensionRangeInput';
-import {PartitionRunStatus, PartitionState, PartitionStatus} from './PartitionStatus';
+import {PartitionStatusHealthSource, PartitionStatus} from './PartitionStatus';
 
 export const DimensionRangeWizard: React.FC<{
   selected: string[];
   setSelected: (selected: string[]) => void;
   partitionKeys: string[];
-  health: {ranges: Range[]} | {partitionStateForKey: (key: string) => PartitionState};
+  health: PartitionStatusHealthSource;
 }> = ({selected, setSelected, partitionKeys, health}) => {
   const isTimeseries = isTimeseriesPartition(partitionKeys[0]);
 
@@ -36,23 +35,13 @@ export const DimensionRangeWizard: React.FC<{
         </Button>
       </Box>
       <Box margin={{bottom: 8}}>
-        {'partitionStateForKey' in health ? (
-          <PartitionRunStatus
-            partitionNames={partitionKeys}
-            partitionStateForKey={health.partitionStateForKey}
-            splitPartitions={!isTimeseries}
-            selected={selected}
-            onSelect={setSelected}
-          />
-        ) : (
-          <PartitionStatus
-            partitionNames={partitionKeys}
-            ranges={health.ranges}
-            splitPartitions={!isTimeseries}
-            selected={selected}
-            onSelect={setSelected}
-          />
-        )}
+        <PartitionStatus
+          partitionNames={partitionKeys}
+          health={health}
+          splitPartitions={!isTimeseries}
+          selected={selected}
+          onSelect={setSelected}
+        />
       </Box>
     </>
   );

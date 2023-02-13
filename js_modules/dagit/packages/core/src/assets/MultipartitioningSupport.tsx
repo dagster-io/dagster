@@ -14,6 +14,23 @@ export function isTimeseriesPartition(aPartitionKey = '') {
   return /\d{4}-\d{2}-\d{2}/.test(aPartitionKey); // cheak trick for now
 }
 
+/*
+This function takes the health of several assets and returns a single health object in which SUCCESS
+means that all the assets were in a SUCCESS state for that partition and SUCCESS_MISSING means only
+some were - or that the assets were individually in SUCCESS_MISSING state. (multipartitioned only)
+
+This representation is somewhat "lossy" because an individual asset can also be in SUCCESS_MISSING
+state for a partition key if it is multi-dimensional.
+
+Note: For this to work, all of the assets must share the same partition dimensions. This function
+throws exceptions if that is not the case.
+
+Q: Why do we do this at all?
+A: If you select multiple assets with the same partitioning in the asset graph and click Materialize,
+the asset health bar you see is a flattened representation of the health of all of all of them, with a
+"show per-asset health" button beneath.
+
+*/
 export function mergedAssetHealth(
   assetHealth: PartitionHealthData[],
 ): Omit<PartitionHealthData, 'assetKey'> {
@@ -63,6 +80,7 @@ export function mergedAssetHealth(
       ),
     rangesForSingleDimension: (dimensionIdx, otherDimensionSelectedRanges?) =>
       mergedRanges(
+        dimensions[dimensionIdx].partitionKeys,
         assetHealth.map((health) =>
           health.rangesForSingleDimension(dimensionIdx, otherDimensionSelectedRanges),
         ),
@@ -79,27 +97,40 @@ export function mergedStates(states: PartitionState[]): PartitionState {
 }
 
 /**
- * This function takes the materialized ranges of several assets and returns a single set of ranges with the
- * "success" / "partial" (SUCCESS_MISSING) states have been flattened together. This implementation is based
- * on this solution: https://stackoverflow.com/questions/4542892 and involves placing all the start/end points
- * into an ordered array.
- *
- * Why?: If you select multiple assets with the same partitioning in the asset graph and click Materialize,
- * the asset health bar you see is a flattened representation of the health of all of all of them, with a
- * "show per-asset health" button beneath.
+ * This function takes the materialized ranges of several assets and returns a single set of ranges with
+ * the "success" / "partial" (SUCCESS_MISSING) states flattened as described above. This implementation
+ * is based on https://stackoverflow.com/questions/4542892 and involves placing all the start/end points
+ * into an ordered array and then walking an "accumulator" over the points. If the accumulator's counter is
+ * incremented to the total number of assets at any point, they are all materialized.
  *
  * Note that this function does not populate subranges on the returned ranges -- if you want to filter the
- * health data to a second-dimension partition key range, do that FIRST and then merge the results.
+ * health data to a second-dimension partition key selection, do that FIRST and then merge the results.
+ *
+ * This algorithm only works because asset state is a boolean -- if we add a third state like "stale"
+ * to the individual range representation, this might get more complicated.
+ *
+ * Q: Why does this require the dimension keys?
+ * A: Right now, partition health ranges are inclusive - {start: b, end: d} is "B through D". If "B" is
+ * where a new range begins and we need to switch from "partial" to "success", we need to end the previous
+ * range at "B - 1", and we may not have any range in the input we can reference to get that value.
  */
-export function mergedRanges(rangeSets: Range[][]): Range[] {
-  const transitions: {key: string; idx: number; delta: 1 | -1}[] = [];
+export function mergedRanges(allKeys: string[], rangeSets: Range[][]): Range[] {
+  const transitions: {idx: number; delta: number}[] = [];
   for (const ranges of rangeSets) {
     for (const range of ranges) {
-      transitions.push({key: range.start.key, idx: range.start.idx, delta: 1});
-      transitions.push({key: range.end.key, idx: range.end.idx, delta: -1});
+      transitions.push({idx: range.start.idx, delta: 1});
+      transitions.push({idx: range.end.idx + 1, delta: -1});
     }
   }
 
+  return assembleRangesFromTransitions(allKeys, transitions, rangeSets.length - 1);
+}
+
+export function assembleRangesFromTransitions(
+  allKeys: string[],
+  transitions: {idx: number; delta: number}[],
+  maxOverlap: number,
+) {
   // sort the array
   transitions.sort((a, b) => a.idx - b.idx);
 
@@ -109,45 +140,39 @@ export function mergedRanges(rangeSets: Range[][]): Range[] {
   // FROM: [{idx: 0, delta: 1}, {idx: 0, delta: 1}, {idx: 3, delta: 1}, {idx: 10, delta: -1}]
   //   TO: [{idx: 0, depth: 2}, {idx: 3, depth: 3}, {idx: 10, depth: 2}]
   //
-  const depths: {idx: number; key: string; depth: number}[] = [];
+  const depths: {idx: number; depth: number}[] = [];
   for (const transition of transitions) {
     const last = depths[depths.length - 1];
     if (last && last.idx === transition.idx) {
       last.depth += transition.delta;
     } else {
-      depths.push({
-        idx: transition.idx,
-        key: transition.key,
-        depth: (last?.depth || 0) + transition.delta,
-      });
+      depths.push({idx: transition.idx, depth: (last?.depth || 0) + transition.delta});
     }
   }
 
   // Ok! This array of depth values IS our SUCCESS vs. SUCCESS_MISSING range state. We just need to flatten it one
   // more time. Anytime depth == rangeSets.length - 1, all the assets were materialzied within this band.
-  const result: Range[] = [];
-  for (const {idx, key, depth} of depths) {
+  //
+  const result: (Omit<Range, 'value'> & {value: PartitionState})[] = [];
+  for (const {idx, depth} of depths) {
     const value =
-      depth === rangeSets.length - 1
+      depth === maxOverlap
         ? PartitionState.SUCCESS
         : depth > 0
         ? PartitionState.SUCCESS_MISSING
         : PartitionState.MISSING;
 
     const last = result[result.length - 1];
-    if (last && last.value !== value) {
-      last.end = {idx, key};
-    }
-    if (value !== PartitionState.MISSING && last?.value !== value) {
-      result.push({
-        start: {idx, key},
-        end: {idx, key},
-        value,
-      });
+
+    if (last?.value !== value) {
+      if (last) {
+        last.end = {idx: idx - 1, key: allKeys[idx - 1]};
+      }
+      result.push({start: {idx, key: allKeys[idx]}, end: {idx, key: allKeys[idx]}, value});
     }
   }
 
-  return result;
+  return result.filter((range) => range.value !== PartitionState.MISSING) as Range[];
 }
 
 export function explodePartitionKeysInSelection(
