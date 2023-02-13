@@ -200,7 +200,7 @@ def clone_production_database(context):
     )
 
 
-@job
+@graph
 def clone_prod():
     clone_production_database(start=drop_database_clone())
 ```
@@ -215,13 +215,17 @@ resources = {
         "snowflake_io_manager": snowflake_pandas_io_manager.configured(
             {
                 **snowflake_config,
-                "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
+                "database": (
+                    f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}"
+                ),
             }
         ),
         "snowflake": snowflake_resource.configured(
             {
                 **snowflake_config,
-                "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
+                "database": (
+                    f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}"
+                ),
             }
         ),
     },
@@ -232,7 +236,9 @@ resources = {
                 "database": "PRODUCTION",
             }
         ),
-        "snowflake": snowflake_resource.configured({**snowflake_config, "database": "PRODUCTION"}),
+        "snowflake": snowflake_resource.configured(
+            {**snowflake_config, "database": "PRODUCTION"}
+        ),
     },
 }
 ```
@@ -240,10 +246,13 @@ resources = {
 Then, we can add the `clone_prod` job:
 
 ```python file=/guides/dagster/development_to_production/branch_deployments/repository_v2.py startafter=start_repository endbefore=end_repository
+branch_deployment_jobs = [clone_prod.to_job(resource_defs=resources[get_current_env()])]
 defs = Definitions(
     assets=[items, comments, stories],
     resources=resources[get_current_env()],
-    jobs=[clone_prod] if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1" else [],
+    jobs=branch_deployment_jobs
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+    else [],
 )
 ```
 

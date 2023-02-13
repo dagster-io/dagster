@@ -21,13 +21,17 @@ resources = {
         "snowflake_io_manager": snowflake_pandas_io_manager.configured(
             {
                 **snowflake_config,
-                "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
+                "database": (
+                    f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}"
+                ),
             }
         ),
         "snowflake": snowflake_resource.configured(
             {
                 **snowflake_config,
-                "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
+                "database": (
+                    f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}"
+                ),
             }
         ),
     },
@@ -38,7 +42,9 @@ resources = {
                 "database": "PRODUCTION",
             }
         ),
-        "snowflake": snowflake_resource.configured({**snowflake_config, "database": "PRODUCTION"}),
+        "snowflake": snowflake_resource.configured(
+            {**snowflake_config, "database": "PRODUCTION"}
+        ),
     },
 }
 # end_resources
@@ -51,10 +57,13 @@ def get_current_env():
 
 
 # start_repository
+branch_deployment_jobs = [clone_prod.to_job(resource_defs=resources[get_current_env()])]
 defs = Definitions(
     assets=[items, comments, stories],
     resources=resources[get_current_env()],
-    jobs=[clone_prod] if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1" else [],
+    jobs=branch_deployment_jobs
+    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+    else [],
 )
 
 # end_repository
