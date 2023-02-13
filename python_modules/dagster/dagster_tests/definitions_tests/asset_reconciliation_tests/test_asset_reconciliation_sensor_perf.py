@@ -273,11 +273,11 @@ large_unpartitioned_assets_2_random_runs = InstanceSnapshot(
 )
 
 # 500 assets, all daily partitioned
-large_all_daily_partitioned_assets=RandomAssets(
-        name="large_all_daily_partitioned_assets",
-        n_assets=500,
-        asset_partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-    )
+large_all_daily_partitioned_assets = RandomAssets(
+    name="large_all_daily_partitioned_assets",
+    n_assets=500,
+    asset_partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
+)
 large_all_partitioned_assets_2_partition_keys = InstanceSnapshot(
     assets=large_all_daily_partitioned_assets,
     partition_keys_to_backfill=["2020-01-01", "2020-01-02"],
@@ -290,16 +290,16 @@ large_all_partitioned_assets_20_partition_keys = InstanceSnapshot(
 # 100 assets, all hourly partitioned
 hourly_partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
 medium_all_hourly_partitioned_assets = RandomAssets(
-        name="medium_all_hourly_partitioned_assets",
-        n_assets=100,
-        asset_partitions_def=hourly_partitions_def,
-    )
+    name="medium_all_hourly_partitioned_assets",
+    n_assets=100,
+    asset_partitions_def=hourly_partitions_def,
+)
 medium_all_partitioned_assets_2_partition_keys = InstanceSnapshot(
-    assets = medium_all_hourly_partitioned_assets,
+    assets=medium_all_hourly_partitioned_assets,
     partition_keys_to_backfill=["2020-01-01-00:00", "2020-01-02-00:00"],
 )
 medium_all_partitioned_assets_100_partition_keys = InstanceSnapshot(
-    assets = medium_all_hourly_partitioned_assets,
+    assets=medium_all_hourly_partitioned_assets,
     partition_keys_to_backfill=hourly_partitions_def.get_partition_keys_in_range(
         PartitionKeyRange("2020-01-01-00:00", "2020-01-05-03:00")
     ),
@@ -351,17 +351,7 @@ perf_scenarios = [
         max_execution_time_seconds=30,
     ),
     PerfScenario(
-        snapshot=large_all_partitioned_assets_20_partition_keys,
-        n_freshness_policies=100,
-        max_execution_time_seconds=30,
-    ),
-    PerfScenario(
         snapshot=medium_all_partitioned_assets_2_partition_keys,
-        n_freshness_policies=100,
-        max_execution_time_seconds=30,
-    ),
-    PerfScenario(
-        snapshot=medium_all_partitioned_assets_100_partition_keys,
         n_freshness_policies=100,
         max_execution_time_seconds=30,
     ),
@@ -372,7 +362,5 @@ perf_scenarios = [
 def test_reconciliation_perf(scenario: PerfScenario):
     if os.getenv("BUILDKITE") is not None and scenario.max_execution_time_seconds > 20:
         pytest.skip("Skipping slow test on BK")
-    if len(scenario.snapshot.partition_keys_to_backfill or []) > 2:
-        pytest.skip("Skipping test that would require a large snapshot")
 
     scenario.do_scenario()
