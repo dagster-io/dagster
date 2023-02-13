@@ -11,7 +11,9 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._utils import datetime_as_float
 
 
-def build_run_stats_from_events(run_id, records):
+def build_run_stats_from_events(
+    run_id: str, records: Iterable[EventLogEntry]
+) -> PipelineRunStatsSnapshot:
     try:
         iter(records)
     except TypeError as exc:

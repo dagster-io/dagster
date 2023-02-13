@@ -7,7 +7,7 @@ import pytest
 from dagster_postgres.pynotify import await_pg_notifications
 
 
-def test_await_pg_notifications_failure(conn_string):
+def test_await_pg_notifications_failure(conn_string: str):
     expected_error_num = errno.ECONNREFUSED
     exceptions = [error(errno.EINTR, ""), error(expected_error_num, "")]
     with patch("dagster_postgres.pynotify.select") as mock_select:

@@ -8,6 +8,7 @@ from enum import Enum
 from typing import (
     Any,
     Callable,
+    ContextManager,
     Dict,
     Iterable,
     List,
@@ -42,6 +43,7 @@ from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
+from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -51,11 +53,11 @@ from dagster._core.storage.tags import (
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import (
     deserialize_as,
-    deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
 )
+from dagster._serdes.serdes import deserialize_json_to_dagster_namedtuple
 from dagster._seven import JSONDecodeError
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._utils import PrintFn, utc_datetime_from_timestamp
 from dagster._utils.merger import merge_dicts
 
 from ..pipeline_run import (
@@ -68,7 +70,12 @@ from ..pipeline_run import (
     TagBucket,
 )
 from .base import RunGroupInfo, RunStorage
-from .migration import OPTIONAL_DATA_MIGRATIONS, REQUIRED_DATA_MIGRATIONS, RUN_PARTITIONS
+from .migration import (
+    OPTIONAL_DATA_MIGRATIONS,
+    REQUIRED_DATA_MIGRATIONS,
+    RUN_PARTITIONS,
+    MigrationFn,
+)
 from .schema import (
     BulkActionsTable,
     DaemonHeartbeatsTable,
@@ -90,7 +97,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     """Base class for SQL based run storages."""
 
     @abstractmethod
-    def connect(self) -> Connection:
+    def connect(self) -> ContextManager[Connection]:
         """Context manager yielding a sqlalchemy.engine.Connection."""
 
     @abstractmethod
@@ -99,7 +106,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         out-of-date instance of the storage up to date.
         """
 
-    def fetchall(self, query) -> Sequence[Any]:
+    def fetchall(self, query: SqlAlchemyQuery) -> Sequence[Any]:
         with self.connect() as conn:
             result_proxy = conn.execute(query)
             res = result_proxy.fetchall()
@@ -107,7 +114,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return res
 
-    def fetchone(self, query) -> Optional[Any]:
+    def fetchone(self, query: SqlAlchemyQuery) -> Optional[Any]:
         with self.connect() as conn:
             result_proxy = conn.execute(query)
             row = result_proxy.fetchone()
@@ -202,7 +209,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
             )
 
-    def _row_to_run(self, row) -> DagsterRun:
+    def _row_to_run(self, row: SqlAlchemyRow) -> DagsterRun:
         run = deserialize_as(row["run_body"], DagsterRun)
         status = DagsterRunStatus(row["status"])
         # NOTE: the status column is more trustworthy than the status in the run body, since concurrent
@@ -210,17 +217,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         # overriden with an old value.
         return run.with_status(status)
 
-    def _rows_to_runs(self, rows: Iterable[Any]) -> Sequence[DagsterRun]:
+    def _rows_to_runs(self, rows: Iterable[SqlAlchemyRow]) -> Sequence[DagsterRun]:
         return list(map(self._row_to_run, rows))
 
     def _add_cursor_limit_to_query(
         self,
-        query,
+        query: SqlAlchemyQuery,
         cursor: Optional[str],
         limit: Optional[int],
         order_by: Optional[str],
         ascending: Optional[bool],
-    ):
+    ) -> SqlAlchemyQuery:
         """Helper function to deal with cursor/limit pagination args."""
         if cursor:
             cursor_query = db.select([RunsTable.c.id]).where(RunsTable.c.run_id == cursor)
@@ -236,10 +243,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return query
 
     @property
-    def supports_intersect(self):
+    def supports_intersect(self) -> bool:
         return True
 
-    def _add_filters_to_query(self, query, filters: RunsFilter):
+    def _add_filters_to_query(self, query: SqlAlchemyQuery, filters: RunsFilter) -> SqlAlchemyQuery:
         check.inst_param(filters, "filters", RunsFilter)
 
         if filters.run_ids:
@@ -298,7 +305,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         order_by: Optional[str] = None,
         ascending: bool = False,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
-    ):
+    ) -> SqlAlchemyQuery:
         filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
         check.opt_str_param(cursor, "cursor")
         check.opt_int_param(limit, "limit")
@@ -325,7 +332,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         base_query = self._add_filters_to_query(base_query, filters)
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
 
-    def _bucket_rank_column(self, bucket_by, order_by, ascending):
+    def _bucket_rank_column(
+        self, bucket_by: Union[JobBucket, TagBucket], order_by: Optional[str], ascending: bool
+    ):
         check.inst_param(bucket_by, "bucket_by", (JobBucket, TagBucket))
         check.invariant(
             self.supports_bucket_queries, "Bucket queries are not supported by this storage layer"
@@ -348,7 +357,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         columns: Sequence[str],
         order_by: Optional[str] = None,
         ascending: bool = False,
-    ):
+    ) -> SqlAlchemyQuery:
         bucket_rank = self._bucket_rank_column(bucket_by, order_by, ascending)
         query_columns = [getattr(RunsTable.c, column) for column in columns] + [bucket_rank]
 
@@ -425,7 +434,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         self,
         table: db.Table,
         tags: Mapping[str, Union[str, Sequence[str]]],
-    ):
+    ) -> db.Table:
         multi_join = len(tags) > 1
         for key, value in tags.items():
             tags_table = RunTagsTable.alias() if multi_join else RunTagsTable
@@ -527,7 +536,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             result[r[0]].add(r[1])
         return sorted(list([(k, v) for k, v in result.items()]), key=lambda x: x[0])
 
-    def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]):
+    def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
         check.str_param(run_id, "run_id")
         check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
 
@@ -772,7 +781,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.str_param(run_id, "run_id")
         return bool(self._get_run_by_id(run_id))
 
-    def delete_run(self, run_id: str):
+    def delete_run(self, run_id: str) -> None:
         check.str_param(run_id, "run_id")
         query = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)
         with self.connect() as conn:
@@ -799,7 +808,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_pipeline_snapshot(self, pipeline_snapshot_id: str) -> PipelineSnapshot:
         check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
-        return self._get_snapshot(pipeline_snapshot_id)
+        return self._get_snapshot(pipeline_snapshot_id)  # type: ignore  # (allowed to return None?)
 
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:
         check.str_param(execution_plan_snapshot_id, "execution_plan_snapshot_id")
@@ -822,7 +831,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> ExecutionPlanSnapshot:
         check.str_param(execution_plan_snapshot_id, "execution_plan_snapshot_id")
-        return self._get_snapshot(execution_plan_snapshot_id)
+        return self._get_snapshot(execution_plan_snapshot_id)  # type: ignore  # (allowed to return None?)
 
     def _add_snapshot(self, snapshot_id: str, snapshot_obj, snapshot_type: SnapshotType) -> str:
         check.str_param(snapshot_id, "snapshot_id")
@@ -862,14 +871,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return bool(row)
 
-    def _get_snapshot(self, snapshot_id: str):
+    def _get_snapshot(self, snapshot_id: str) -> Optional[PipelineSnapshot]:
         query = db.select([SnapshotsTable.c.snapshot_body]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
         )
 
         row = self.fetchone(query)
 
-        return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
+        return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None  # type: ignore
 
     def get_run_partition_data(self, runs_filter: RunsFilter) -> Sequence[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
@@ -940,8 +949,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     # Tracking data migrations over secondary indexes
 
     def _execute_data_migrations(
-        self, migrations, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False
-    ):
+        self,
+        migrations: Mapping[str, Callable[[], MigrationFn]],
+        print_fn: Optional[PrintFn] = None,
+        force_rebuild_all: bool = False,
+    ) -> None:
         for migration_name, migration_fn in migrations.items():
             if self.has_built_index(migration_name):
                 if not force_rebuild_all:
@@ -955,10 +967,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             if print_fn:
                 print_fn(f"Finished data migration: {migration_name}")
 
-    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         self._execute_data_migrations(REQUIRED_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
-    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         self._execute_data_migrations(OPTIONAL_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
     def has_built_index(self, migration_name: str) -> bool:
@@ -973,7 +985,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return len(results) > 0
 
-    def mark_index_built(self, migration_name: str):
+    def mark_index_built(self, migration_name: str) -> None:
         query = (
             SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
                 name=migration_name,
@@ -992,12 +1004,12 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     # Checking for migrations
 
-    def has_run_stats_index_cols(self):
+    def has_run_stats_index_cols(self) -> bool:
         with self.connect() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
             return "start_time" in column_names and "end_time" in column_names
 
-    def has_bulk_actions_selector_cols(self):
+    def has_bulk_actions_selector_cols(self) -> bool:
         with self.connect() as conn:
             column_names = [
                 x.get("name") for x in db.inspect(conn).get_columns(BulkActionsTable.name)
@@ -1006,7 +1018,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     # Daemon heartbeats
 
-    def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat):
+    def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat) -> None:
         with self.connect() as conn:
             # insert, or update if already present
             try:
@@ -1037,7 +1049,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 heartbeats.append(deserialize_as(row.body, DaemonHeartbeat))
             return {heartbeat.daemon_type: heartbeat for heartbeat in heartbeats}
 
-    def wipe(self):
+    def wipe(self) -> None:
         """Clears the run storage."""
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
@@ -1047,7 +1059,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(BulkActionsTable.delete())  # pylint: disable=no-value-for-parameter
 
-    def wipe_daemon_heartbeats(self):
+    def wipe_daemon_heartbeats(self) -> None:
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
@@ -1079,7 +1091,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         row = self.fetchone(query)
         return deserialize_as(row[0], PartitionBackfill) if row else None
 
-    def add_backfill(self, partition_backfill: PartitionBackfill):
+    def add_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
         values: Dict[str, Any] = dict(
             key=partition_backfill.backfill_id,
@@ -1097,7 +1109,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 BulkActionsTable.insert().values(**values)  # pylint: disable=no-value-for-parameter
             )
 
-    def update_backfill(self, partition_backfill: PartitionBackfill):
+    def update_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
         backfill_id = partition_backfill.backfill_id
         if not self.get_backfill(backfill_id):
@@ -1114,7 +1126,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
             )
 
-    def supports_kvs(self):
+    def supports_kvs(self) -> bool:
         return True
 
     def kvs_get(self, keys: Set[str]) -> Mapping[str, str]:
@@ -1141,7 +1153,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
 
     # Migrating run history
-    def replace_job_origin(self, run: DagsterRun, job_origin: ExternalPipelineOrigin):
+    def replace_job_origin(self, run: DagsterRun, job_origin: ExternalPipelineOrigin) -> None:
         new_label = job_origin.external_repository_origin.get_label()
         with self.connect() as conn:
             conn.execute(
@@ -1162,12 +1174,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"
 
 
-def defensively_unpack_pipeline_snapshot_query(logger, row):
+def defensively_unpack_pipeline_snapshot_query(
+    logger: logging.Logger, row: SqlAlchemyRow
+) -> Optional[PipelineSnapshot]:
     # no checking here because sqlalchemy returns a special
     # row proxy and don't want to instance check on an internal
     # implementation detail
 
-    def _warn(msg):
+    def _warn(msg: str) -> None:
         logger.warning("get-pipeline-snapshot: {msg}".format(msg=msg))
 
     if not isinstance(row[0], bytes):
@@ -1187,7 +1201,7 @@ def defensively_unpack_pipeline_snapshot_query(logger, row):
         return None
 
     try:
-        return deserialize_json_to_dagster_namedtuple(decoded_str)
+        return deserialize_json_to_dagster_namedtuple(decoded_str)  # type: ignore
     except JSONDecodeError:
         _warn("Could not parse json in snapshot table.")
         return None

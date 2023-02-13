@@ -92,7 +92,9 @@ class RetryPolicy(
         )
 
 
-def calculate_delay(attempt_num, backoff, jitter, base_delay):
+def calculate_delay(
+    attempt_num: int, backoff: Optional[Backoff], jitter: Optional[Jitter], base_delay: float
+) -> float:
     if backoff is Backoff.EXPONENTIAL:
         calc_delay = ((2**attempt_num) - 1) * base_delay
     elif backoff is Backoff.LINEAR:

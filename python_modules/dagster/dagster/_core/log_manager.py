@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
+
+from typing_extensions import Protocol
 
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level, make_new_run_id
@@ -14,6 +16,24 @@ if TYPE_CHECKING:
     from dagster._legacy import DagsterRun
 
 DAGSTER_META_KEY = "dagster_meta"
+
+
+class IDagsterMeta(Protocol):
+    @property
+    def dagster_meta(self) -> DagsterLoggingMetadata:
+        ...
+
+
+# The type-checker complains here that DagsterLogRecord does not implement the `dagster_meta`
+# property of `IDagsterMeta`. We ignore this error because we don't need to implement this method--
+# `DagsterLogRecord` is a stub class that is never instantiated. We only ever cast
+# `logging.LogRecord` objects to `DagsterLogRecord`, because it gives us typed access to the
+# `dagster_meta` property. `dagster_meta` itself is set on these `logging.LogRecord` objects via the
+# `extra` argument to `logging.Logger.log` (see `DagsterLogManager.log_dagster_event`), but
+# `logging.LogRecord` has no way of exposing to the type-checker the attributes that are dynamically
+# defined via `extra`.
+class DagsterLogRecord(logging.LogRecord, IDagsterMeta):  # type: ignore
+    pass
 
 
 class DagsterMessageProps(
@@ -123,7 +143,7 @@ class DagsterLoggingMetadata(
         )
 
     @property
-    def log_source(self):
+    def log_source(self) -> str:
         if self.resource_name is None:
             return self.pipeline_name or "system"
         return f"resource:{self.resource_name}"
@@ -160,7 +180,7 @@ def construct_log_string(
 
 def get_dagster_meta_dict(
     logging_metadata: DagsterLoggingMetadata, dagster_message_props: DagsterMessageProps
-) -> Mapping[str, Any]:
+) -> Mapping[str, object]:
     # combine all dagster meta information into a single dictionary
     meta_dict = {
         **logging_metadata._asdict(),
@@ -197,7 +217,7 @@ class DagsterLogHandler(logging.Handler):
         super().__init__()
 
     @property
-    def logging_metadata(self):
+    def logging_metadata(self) -> DagsterLoggingMetadata:
         return self._logging_metadata
 
     def with_tags(self, **new_tags: str) -> DagsterLogHandler:
@@ -219,7 +239,7 @@ class DagsterLogHandler(logging.Handler):
         ]
         return {k: v for k, v in record.__dict__.items() if k not in ref_attrs}
 
-    def _convert_record(self, record: logging.LogRecord) -> logging.LogRecord:
+    def _convert_record(self, record: logging.LogRecord) -> DagsterLogRecord:
         # we store the originating DagsterEvent in the DAGSTER_META_KEY field, if applicable
         dagster_meta = getattr(record, DAGSTER_META_KEY, None)
 
@@ -239,7 +259,8 @@ class DagsterLogHandler(logging.Handler):
         record.msg = construct_log_string(self._logging_metadata, dagster_message_props)
         record.args = ()
 
-        return record
+        # DagsterLogRecord is a LogRecord with a `dagster_meta` field
+        return cast(DagsterLogRecord, record)
 
     def filter(self, record: logging.LogRecord) -> bool:
         """If you list multiple levels of a python logging hierarchy as managed loggers, and do not
@@ -251,7 +272,7 @@ class DagsterLogHandler(logging.Handler):
             getattr(record, DAGSTER_META_KEY, None), dict
         )
 
-    def emit(self, record: logging.LogRecord):
+    def emit(self, record: logging.LogRecord) -> None:
         """For any received record, add Dagster metadata, and have handlers handle it."""
         try:
             # to prevent the potential for infinite loops in which a handler produces log messages

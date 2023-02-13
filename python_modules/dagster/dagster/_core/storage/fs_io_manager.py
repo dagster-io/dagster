@@ -1,6 +1,6 @@
 import os
 import pickle
-from typing import Any
+from typing import Any, Optional
 
 from upath import UPath
 
@@ -10,6 +10,7 @@ from dagster._annotations import experimental
 from dagster._config import Field, StringSource
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager, io_manager
@@ -21,7 +22,7 @@ from dagster._utils import PICKLE_PROTOCOL, mkdir_p
     config_schema={"base_dir": Field(StringSource, is_required=False)},
     description="Built-in filesystem IO manager that stores and retrieves values using pickling.",
 )
-def fs_io_manager(init_context):
+def fs_io_manager(init_context: InitResourceContext) -> "PickledObjectFilesystemIOManager":
     """Built-in filesystem IO manager that stores and retrieves values using pickling.
 
     The base directory that the pickle files live inside is determined by:
@@ -119,7 +120,7 @@ def fs_io_manager(init_context):
 
     """
     base_dir = init_context.resource_config.get(
-        "base_dir", init_context.instance.storage_directory()
+        "base_dir", init_context.instance.storage_directory()  # type: ignore
     )
 
     return PickledObjectFilesystemIOManager(base_dir=base_dir)
@@ -182,15 +183,15 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
             manager will be stored in.
     """
 
-    def __init__(self, base_dir=None):
+    def __init__(self, base_dir: Optional[str] = None):
         self.base_dir = check.opt_str_param(base_dir, "base_dir")
         self.write_mode = "wb"
         self.read_mode = "rb"
 
-    def _get_path(self, path):
-        return os.path.join(self.base_dir, path)
+    def _get_path(self, path: str) -> str:
+        return os.path.join(self.base_dir, path)  # type: ignore  # (possible none)
 
-    def handle_output(self, context, obj):
+    def handle_output(self, context: OutputContext, obj: object):
         """Pickle the data and store the object to a custom file path.
 
         This method emits an AssetMaterialization event so the assets will be tracked by the
@@ -198,7 +199,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
         """
         check.inst_param(context, "context", OutputContext)
         metadata = context.metadata
-        path = check.str_param(metadata.get("path"), "metadata.path")
+        path = check.str_param(metadata.get("path"), "metadata.path")  # type: ignore  # (possible none)
 
         filepath = self._get_path(path)
 
@@ -216,11 +217,11 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
             ],
         )
 
-    def load_input(self, context):
+    def load_input(self, context: InputContext) -> object:
         """Unpickle the file from a given file path and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
-        metadata = context.upstream_output.metadata
-        path = check.str_param(metadata.get("path"), "metadata.path")
+        metadata = context.upstream_output.metadata  # type: ignore  # (possible none)
+        path = check.str_param(metadata.get("path"), "metadata.path")  # type: ignore  # (possible none)
         filepath = self._get_path(path)
         context.log.debug(f"Loading file from: {filepath}")
 
@@ -230,7 +231,9 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
 
 @io_manager(config_schema={"base_dir": Field(StringSource, is_required=True)})
 @experimental
-def custom_path_fs_io_manager(init_context):
+def custom_path_fs_io_manager(
+    init_context: InitResourceContext,
+) -> CustomPathPickledObjectFilesystemIOManager:
     """Built-in IO manager that allows users to custom output file path per output definition.
 
     It requires users to specify a base directory where all the step output will be stored in. It

@@ -4,6 +4,7 @@ from collections import defaultdict
 from typing import Callable, List, MutableMapping, Optional, Sequence
 
 import dagster._check as check
+from dagster._core.event_api import EventHandlerFn
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.polling_event_watcher import CallbackAfterCursor
@@ -21,7 +22,7 @@ def watcher_thread(
     watcher_thread_started: threading.Event,
     channels: Sequence[str],
     gen_event_log_entry_from_cursor: Callable[[int], EventLogEntry],
-):
+) -> None:
     for notif in await_pg_notifications(
         conn_string,
         channels=channels,
@@ -80,9 +81,9 @@ class PostgresEventWatcher:
         self,
         run_id: str,
         cursor: Optional[str],
-        callback: Callable[[EventLogEntry, str], None],
-        start_timeout=15,
-    ):
+        callback: EventHandlerFn,
+        start_timeout: int = 15,
+    ) -> None:
         check.str_param(run_id, "run_id")
         check.opt_str_param(cursor, "cursor")
         check.callable_param(callback, "callback")
@@ -114,7 +115,7 @@ class PostgresEventWatcher:
         with self._dict_lock:
             self._handlers_dict[run_id].append(CallbackAfterCursor(cursor, callback))
 
-    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry, str], None]):
+    def unwatch_run(self, run_id: str, handler: EventHandlerFn) -> None:
         check.str_param(run_id, "run_id")
         check.callable_param(handler, "handler")
         with self._dict_lock:
@@ -127,9 +128,9 @@ class PostgresEventWatcher:
                 if not self._handlers_dict[run_id]:
                     del self._handlers_dict[run_id]
 
-    def close(self):
+    def close(self) -> None:
         if self._watcher_thread:
-            self._watcher_thread_exit.set()
+            self._watcher_thread_exit.set()  # type: ignore
             if self._watcher_thread.is_alive():
                 self._watcher_thread.join()
             self._watcher_thread_exit = None
