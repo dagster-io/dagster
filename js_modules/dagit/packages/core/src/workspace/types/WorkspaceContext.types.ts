@@ -43,6 +43,11 @@ export type RootWorkspaceQuery = {
                 isReloadSupported: boolean;
                 serverId: string | null;
                 name: string;
+                dagsterLibraryVersions: Array<{
+                  __typename: 'DagsterLibraryVersion';
+                  name: string;
+                  version: string;
+                }> | null;
                 repositories: Array<{
                   __typename: 'Repository';
                   id: string;
@@ -132,6 +137,11 @@ export type WorkspaceLocationNodeFragment = {
         isReloadSupported: boolean;
         serverId: string | null;
         name: string;
+        dagsterLibraryVersions: Array<{
+          __typename: 'DagsterLibraryVersion';
+          name: string;
+          version: string;
+        }> | null;
         repositories: Array<{
           __typename: 'Repository';
           id: string;
@@ -199,6 +209,11 @@ export type WorkspaceLocationFragment = {
   isReloadSupported: boolean;
   serverId: string | null;
   name: string;
+  dagsterLibraryVersions: Array<{
+    __typename: 'DagsterLibraryVersion';
+    name: string;
+    version: string;
+  }> | null;
   repositories: Array<{
     __typename: 'Repository';
     id: string;
