@@ -113,7 +113,7 @@ When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using 
 
 ## Storing partitioned assets
 
-The Snowflake IO manager supports storing and loading partitioned data. In order to correctly store and load data from the Snowflake table, the Snowflake I/O manager needs to know which column contains the data defining the partition bounds. The Snowflake I/O manager uses this information to construct the correct queries to select or replace the correct data. In the following sections, we describe how the I/O manager constructs these queries for different types of partitions.
+The Snowflake I/O manager supports storing and loading partitioned data. In order to correctly store and load data from the Snowflake table, the Snowflake I/O manager needs to know which column contains the data defining the partition bounds. The Snowflake I/O manager uses this information to construct the correct queries to select or replace the data. In the following sections, we describe how the I/O manager constructs these queries for different types of partitions.
 
 ### Storing static partitioned assets
 
@@ -146,7 +146,7 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     return full_df[full_df["Species"] == species]
 ```
 
-Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a static partition, the statement `SELECT * WHERE <partition_expr> = <selected partition>` is used, so when materializing the **Iris-setosa** partition of the above asset, the query is `SELECT * WHERE SPECIES = 'Iris-setosa'`.
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a static partition, the statement `SELECT * WHERE [partition_expr] = [selected partition]` is used, so when materializing the **Iris-setosa** partition of the above asset, the query is `SELECT * WHERE SPECIES = 'Iris-setosa'`.
 
 ### Storing time partitioned assets
 
@@ -171,7 +171,9 @@ def iris_data_per_day(context) -> pd.DataFrame:
     return get_iris_data_for_date(partition)
 ```
 
-Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a dynamic partition, the statement `SELECT * WHERE <partition_expr> >= <partition_start> AND <partition_expr> < <partition_end>` is used. The `<partition_start>` and `<partition_end>` bounds are of the form `YYYY-MM-DD HH:MM:SS`. So when materializing the **2023-01-02** partition the bound query is `SELECT * WHERE TO_TIMESTAMP(time::INT) >= '2023-01-02 00:00:00' AND TO_TIMESTAMP(time::INT) < '2023-01-03 00:00:00'`. Since the data in the **TIME** column cannot be directly compared to a timestamp, the `partition_expr` metadata is a SQL statement that converts integers to timestamps.
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a dynamic partition, the statement `SELECT * WHERE [partition_expr] >= [partition_start] AND [partition_expr] < [partition_end]` is used. The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. So when materializing the **2023-01-02** partition the bound query is `SELECT * WHERE TO_TIMESTAMP(time::INT) >= '2023-01-02 00:00:00' AND TO_TIMESTAMP(time::INT) < '2023-01-03 00:00:00'`. In this example, the data in the **TIME** column are integers, so the `partition_expr` metadata includes a SQL statement to convert integers to timestamps.
+
+Since the data in the **TIME** column cannot be directly compared to a timestamp, the `partition_expr` metadata is a SQL statement that converts integers to timestamps.
 
 ### Storing multi-partitioned assets
 
