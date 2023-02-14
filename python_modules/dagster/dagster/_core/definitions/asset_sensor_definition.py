@@ -85,7 +85,9 @@ class AssetSensorDefinition(SensorDefinition):
                 )
 
                 if not event_records:
-                    yield SkipReason(f"No new materialization events found for asset key {self._asset_key}")
+                    yield SkipReason(
+                        f"No new materialization events found for asset key {self._asset_key}"
+                    )
                     return
 
                 event_record = event_records[0]
