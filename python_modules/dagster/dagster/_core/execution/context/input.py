@@ -16,7 +16,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey, AssetObservation
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
-from dagster._core.definitions.partition import PartitionsSubset, PartitionsSubsetType
+from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWindowPartitionsSubset
 from dagster._core.errors import DagsterInvariantViolationError
@@ -713,6 +713,6 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         partitions_def: "PartitionsDefinition",
         serialized: str,
         serialized_partitions_def_unique_id: Optional[str],
-        subset_type: Optional[PartitionsSubsetType],
+        serialized_partitions_def_class_name: Optional[str],
     ) -> bool:
         raise NotImplementedError()

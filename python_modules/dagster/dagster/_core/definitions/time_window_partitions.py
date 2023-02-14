@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Type,
     Union,
     cast,
 )
@@ -32,7 +33,6 @@ from .partition import (
     PartitionedConfig,
     PartitionsDefinition,
     PartitionsSubset,
-    PartitionsSubsetType,
     ScheduleType,
     cron_schedule_from_schedule_type_and_offsets,
 )
@@ -644,11 +644,11 @@ class TimeWindowPartitionsDefinition(
         ) < self.start_time_for_partition_key(partition_key2)
 
     @property
-    def partitions_subset_class(self):
+    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
         return TimeWindowPartitionsSubset
 
-    def empty_subset(self) -> "TimeWindowPartitionsSubset":
-        return TimeWindowPartitionsSubset(self, num_partitions=0, included_partition_keys=set())
+    def empty_subset(self) -> "PartitionsSubset":
+        return self.partitions_subset_class.empty_subset(self)
 
     def is_valid_partition_key(self, partition_key: str) -> bool:
         try:
@@ -1426,9 +1426,12 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         partitions_def: PartitionsDefinition,
         serialized: str,
         serialized_partitions_def_unique_id: Optional[str],
-        subset_type: Optional[PartitionsSubsetType],
+        serialized_partitions_def_class_name: Optional[str],
     ) -> bool:
-        if subset_type and subset_type != cls.subset_type():
+        if (
+            serialized_partitions_def_class_name
+            and serialized_partitions_def_class_name != partitions_def.__class__.__name__
+        ):
             return False
 
         if serialized_partitions_def_unique_id:
@@ -1442,6 +1445,13 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
             and data.get("time_windows") is not None
             and data.get("num_partitions") is not None
         )
+
+    @classmethod
+    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            check.failed("Partitions definition must be a TimeWindowPartitionsDefinition")
+        partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
+        return cls(partitions_def, 0, [], set())
 
     def serialize(self) -> str:
         return json.dumps(

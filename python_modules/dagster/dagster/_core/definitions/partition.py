@@ -3,7 +3,11 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
-from datetime import datetime, time, timedelta
+from datetime import (
+    datetime,
+    time,
+    timedelta,
+)
 from enum import Enum
 from typing import (
     Any,
@@ -16,6 +20,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -217,20 +222,9 @@ class ScheduleType(Enum):
         return self.ordinal < other.ordinal
 
 
-@whitelist_for_serdes
-class PartitionsSubsetType(Enum):
-    DEFAULT = "DEFAULT"
-    MULTIPARTITIONS = "MULTIPARTITIONS"
-    TIME_WINDOW = "TIME_WINDOW"
-
-    @staticmethod
-    def from_serialized(value: str) -> "PartitionsSubsetType":
-        return PartitionsSubsetType(value)
-
-
 class PartitionsDefinition(ABC, Generic[T]):
     @property
-    def partitions_subset_class(self):
+    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
         return DefaultPartitionsSubset
 
     @abstractmethod
@@ -309,7 +303,7 @@ class PartitionsDefinition(ABC, Generic[T]):
         ]
 
     def empty_subset(self) -> "PartitionsSubset":
-        return self.partitions_subset_class(self, set())
+        return self.partitions_subset_class.empty_subset(self)
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return self.partitions_subset_class.from_serialized(self, serialized)
@@ -318,10 +312,13 @@ class PartitionsDefinition(ABC, Generic[T]):
         self,
         serialized: str,
         serialized_partitions_def_unique_id: Optional[str],
-        subset_type: Optional[PartitionsSubsetType],
+        serialized_partitions_def_class_name: Optional[str],
     ) -> bool:
         return self.partitions_subset_class.can_deserialize(
-            self, serialized, serialized_partitions_def_unique_id, subset_type
+            self,
+            serialized,
+            serialized_partitions_def_unique_id,
+            serialized_partitions_def_class_name,
         )
 
     @property
@@ -1329,7 +1326,7 @@ class PartitionsSubset(ABC):
         partitions_def: PartitionsDefinition,
         serialized: str,
         serialized_partitions_def_unique_id: Optional[str],
-        subset_type: Optional[PartitionsSubsetType],
+        serialized_partitions_def_class_name: Optional[str],
     ) -> bool:
         raise NotImplementedError()
 
@@ -1347,20 +1344,9 @@ class PartitionsSubset(ABC):
         raise NotImplementedError()
 
     @classmethod
-    def subset_type(cls) -> PartitionsSubsetType:
-        from .multi_dimensional_partitions import MultiPartitionsSubset
-        from .time_window_partitions import TimeWindowPartitionsSubset
-
-        # Add type checks to ensure that subclasses are recognized
-        # E.g. a new subclass of DefaultPartitionsSubset should raise an error
-        if cls is MultiPartitionsSubset:
-            return PartitionsSubsetType.MULTIPARTITIONS
-        elif cls is TimeWindowPartitionsSubset:
-            return PartitionsSubsetType.TIME_WINDOW
-        else:
-            if cls is not DefaultPartitionsSubset:
-                check.failed(f"Unexpected type {cls}")
-            return PartitionsSubsetType.DEFAULT
+    @abstractmethod
+    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
+        raise NotImplementedError()
 
 
 class DefaultPartitionsSubset(PartitionsSubset):
@@ -1451,10 +1437,10 @@ class DefaultPartitionsSubset(PartitionsSubset):
         partitions_def: PartitionsDefinition,
         serialized: str,
         serialized_partitions_def_unique_id: Optional[str],
-        subset_type: Optional[PartitionsSubsetType],
+        serialized_partitions_def_class_name: Optional[str],
     ) -> bool:
-        if subset_type is not None:
-            return subset_type == cls.subset_type()
+        if serialized_partitions_def_class_name is not None:
+            return serialized_partitions_def_class_name == partitions_def.__class__.__name__
 
         data = json.loads(serialized)
         return isinstance(data, list) or (
@@ -1482,3 +1468,7 @@ class DefaultPartitionsSubset(PartitionsSubset):
         return (
             f"DefaultPartitionsSubset(subset={self._subset}, partitions_def={self._partitions_def})"
         )
+
+    @classmethod
+    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
+        return cls(partitions_def=partitions_def)

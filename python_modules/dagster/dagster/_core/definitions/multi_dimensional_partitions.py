@@ -1,6 +1,18 @@
 import itertools
 from datetime import datetime
-from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, cast
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    cast,
+)
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -18,6 +30,7 @@ from .partition import (
     DefaultPartitionsSubset,
     Partition,
     PartitionsDefinition,
+    PartitionsSubset,
     StaticPartitionsDefinition,
 )
 from .time_window_partitions import TimeWindowPartitionsDefinition
@@ -186,7 +199,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         )
 
     @property
-    def partitions_subset_class(self):
+    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
         return MultiPartitionsSubset
 
     @property

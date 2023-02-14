@@ -5,7 +5,6 @@ from dagster import _check as check
 from dagster._core.definitions.partition import (
     PartitionsDefinition,
     PartitionsSubset,
-    PartitionsSubsetType,
 )
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
@@ -77,12 +76,12 @@ class AssetGraphSubset:
                 key.to_user_string(): value.serialize()
                 for key, value in self.partitions_subsets_by_asset_key.items()
             },
-            "serializable_partitions_ids_by_asset_key": {
+            "serializable_partitions_def_ids_by_asset_key": {
                 key.to_user_string(): value.partitions_def.serializable_unique_identifier
                 for key, value in self.partitions_subsets_by_asset_key.items()
             },
-            "subset_types_by_asset_key": {
-                key.to_user_string(): value.subset_type().value
+            "partitions_def_class_names_by_asset_key": {
+                key.to_user_string(): value.partitions_def.__class__.__name__
                 for key, value in self.partitions_subsets_by_asset_key.items()
             },
             "non_partitioned_asset_keys": [
@@ -168,17 +167,11 @@ class AssetGraphSubset:
     @classmethod
     def can_deserialize(cls, serialized_dict: Mapping[str, Any], asset_graph: AssetGraph) -> bool:
         serializable_partitions_ids = serialized_dict.get(
-            "serializable_partitions_ids_by_asset_key",
+            "serializable_partitions_def_ids_by_asset_key", {}
         )
 
-        subset_types = serialized_dict.get("subset_types_by_asset_key")
-        deserialized_subset_types = (
-            {
-                key: PartitionsSubsetType.from_serialized(value)
-                for key, value in subset_types.items()
-            }
-            if subset_types
-            else None
+        partitions_def_class_names_by_asset_key = serialized_dict.get(
+            "partitions_def_class_names_by_asset_key", {}
         )
 
         for key, value in serialized_dict["partitions_subsets_by_asset_key"].items():
@@ -191,12 +184,10 @@ class AssetGraphSubset:
 
             if not partitions_def.can_deserialize_subset(
                 value,
-                serialized_partitions_def_unique_id=serializable_partitions_ids.get(key)
-                if serializable_partitions_ids
-                else None,
-                subset_type=deserialized_subset_types.get(key)
-                if deserialized_subset_types
-                else None,
+                serialized_partitions_def_unique_id=serializable_partitions_ids.get(key),
+                serialized_partitions_def_class_name=partitions_def_class_names_by_asset_key.get(
+                    key
+                ),
             ):
                 return False
 
