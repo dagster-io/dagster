@@ -20,9 +20,10 @@ from typing import (
     Set,
     Tuple,
     TypeVar,
+    Union,
 )
 
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import Final, Literal, TypeAlias
 
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
@@ -354,26 +355,35 @@ def clause_to_subset(
     return subset_list
 
 
-class LeafNodeSelection:
+class SelectionTreeLeaf:
     """Marker for no further nesting selection needed."""
 
 
-def convert_dot_seperated_string_to_dict(
-    tree: Dict[str, Any], splits: Sequence[str]
-) -> Dict[str, Any]:
+SelectionTreeBranch: TypeAlias = Dict[str, "SelectionTree"]
+SelectionTree: TypeAlias = Union[SelectionTreeBranch, SelectionTreeLeaf]
+
+SELECTION_TREE_LEAF_NODE: Final = SelectionTreeLeaf()
+
+
+def convert_dot_separated_string_to_selection_tree(
+    tree: SelectionTreeBranch, splits: Sequence[str]
+) -> SelectionTreeBranch:
     # For example:
-    # "subgraph.subsubgraph.return_one" => {"subgraph": {"subsubgraph": {"return_one": None}}}
+    # "subgraph.subsubgraph.return_one" => {"subgraph": {"subsubgraph": {"return_one":
+    # SELECTION_TREE_LEAF_NODE}}}
     key = splits[0]
     if len(splits) == 1:
-        tree[key] = LeafNodeSelection
+        tree[key] = SELECTION_TREE_LEAF_NODE
     else:
-        tree[key] = convert_dot_seperated_string_to_dict(
-            tree[key] if key in tree else {}, splits[1:]
-        )
+        curr_node = tree.get(key, {})
+        assert not isinstance(curr_node, SelectionTreeLeaf), "Invalid selection tree"
+        tree[key] = convert_dot_separated_string_to_selection_tree(curr_node, splits[1:])
     return tree
 
 
-def parse_op_selection(job_def: "JobDefinition", op_selection: Sequence[str]) -> Mapping[str, Any]:
+def parse_op_selection(
+    job_def: "JobDefinition", op_selection: Sequence[str]
+) -> SelectionTreeBranch:
     """Parse  an op selection into a nested dictionary.
 
     Examples:
@@ -389,11 +399,13 @@ def parse_op_selection(job_def: "JobDefinition", op_selection: Sequence[str]) ->
     if any(["." in item for item in op_selection]):
         resolved_op_selection_dict: Dict[str, Any] = {}
         for item in op_selection:
-            convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
+            convert_dot_separated_string_to_selection_tree(
+                resolved_op_selection_dict, splits=item.split(".")
+            )
         return resolved_op_selection_dict
 
     return {
-        top_level_op: LeafNodeSelection
+        top_level_op: SELECTION_TREE_LEAF_NODE
         for top_level_op in parse_solid_selection(job_def, op_selection)
     }
 
