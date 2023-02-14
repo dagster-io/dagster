@@ -235,7 +235,7 @@ def _handle_events_from_notebook(
 
     output_nb = scrapbook.read_notebook(executed_notebook_path)
 
-    for output_name, _ in step_context.solid_def.output_dict.items():
+    for output_name, _ in step_context.op_def.output_dict.items():
         data_dict = output_nb.scraps.data_dict
         if output_name in data_dict:
             # read outputs that were passed out of process via io manager from `yield_result`

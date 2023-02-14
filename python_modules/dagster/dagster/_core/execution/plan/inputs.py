@@ -302,7 +302,7 @@ class FromRootInputManager(
             ),
         )
 
-        input_def = step_context.solid_def.input_def_named(input_def.name)
+        input_def = step_context.op_def.input_def_named(input_def.name)
 
         solid_config = step_context.resolved_run_config.ops.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None

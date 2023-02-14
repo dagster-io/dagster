@@ -162,7 +162,7 @@ def _step_output_error_checked_user_event_sequence(
         yield output
 
     for step_output in step.step_outputs:
-        step_output_def = step_context.solid_def.output_def_named(step_output.name)
+        step_output_def = step_context.op_def.output_def_named(step_output.name)
         if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
             if step_output_def.dagster_type.is_nothing:
                 step_context.log.info(
@@ -223,7 +223,7 @@ def _type_checked_event_sequence_for_input(
     check.str_param(input_name, "input_name")
 
     step_input = step_context.step.step_input_named(input_name)
-    input_def = step_context.solid_def.input_def_named(step_input.name)
+    input_def = step_context.op_def.input_def_named(step_input.name)
 
     check.invariant(
         input_def.name == input_name,
@@ -268,7 +268,7 @@ def _type_check_output(
     check.inst_param(output, "output", (Output, DynamicOutput))
 
     step_output = step_context.step.step_output_named(output.output_name)
-    step_output_def = step_context.solid_def.output_def_named(step_output.name)
+    step_output_def = step_context.op_def.output_def_named(step_output.name)
 
     dagster_type = step_output_def.dagster_type
     type_check_context = step_context.for_type(dagster_type)
@@ -333,7 +333,7 @@ def core_dagster_event_sequence_for_step(
         step_context.fetch_external_input_asset_records()
 
     for step_input in step_context.step.step_inputs:
-        input_def = step_context.solid_def.input_def_named(step_input.name)
+        input_def = step_context.op_def.input_def_named(step_input.name)
         dagster_type = input_def.dagster_type
 
         if dagster_type.is_nothing:
@@ -357,10 +357,10 @@ def core_dagster_event_sequence_for_step(
     # was generated from the @solid or @lambda_solid decorator, then compute_fn needs to be coerced
     # into this format. If the solid definition was created directly, then it is expected that the
     # compute_fn is already in this format.
-    if isinstance(step_context.solid_def.compute_fn, DecoratedOpFunction):
-        core_gen = create_op_compute_wrapper(step_context.solid_def)
+    if isinstance(step_context.op_def.compute_fn, DecoratedOpFunction):
+        core_gen = create_op_compute_wrapper(step_context.op_def)
     else:
-        core_gen = step_context.solid_def.compute_fn
+        core_gen = step_context.op_def.compute_fn
 
     with time_execution_scope() as timer_result:
         user_event_sequence = check.generator(
@@ -574,7 +574,7 @@ def _store_output(
     step_output_handle: StepOutputHandle,
     output: Union[Output, DynamicOutput],
 ) -> Iterator[DagsterEvent]:
-    output_def = step_context.solid_def.output_def_named(step_output_handle.output_name)
+    output_def = step_context.op_def.output_def_named(step_output_handle.output_name)
     output_manager = step_context.get_io_manager(step_output_handle)
     output_context = step_context.get_output_context(step_output_handle)
 
@@ -701,10 +701,10 @@ def _create_type_materializations(
                 step_output = step.step_output_named(output_name)
                 with user_code_error_boundary(
                     DagsterTypeMaterializationError,
-                    msg_fn=lambda: f'Error occurred during output materialization:\n    output name: "{output_name}"\n    solid invocation: "{step_context.solid.name}"\n    solid definition: "{step_context.solid_def.name}"',
+                    msg_fn=lambda: f'Error occurred during output materialization:\n    output name: "{output_name}"\n    solid invocation: "{step_context.solid.name}"\n    solid definition: "{step_context.op_def.name}"',
                     log_manager=step_context.log,
                 ):
-                    output_def = step_context.solid_def.output_def_named(step_output.name)
+                    output_def = step_context.op_def.output_def_named(step_output.name)
                     dagster_type = output_def.dagster_type
                     materializer = dagster_type.materializer
                     if materializer is None:

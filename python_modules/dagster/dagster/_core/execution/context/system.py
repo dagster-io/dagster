@@ -468,7 +468,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             raise DagsterInvariantViolationError(
                 "Multiple required resources for {described_op} have inherited StepLauncher"
                 "There should be at most one step launcher resource per {node_type}.".format(
-                    described_op=self.describe_op(), node_type=self.solid_def.node_type_str
+                    described_op=self.describe_op(), node_type=self.op_def.node_type_str
                 )
             )
         elif len(step_launcher_resources) == 1:
@@ -511,16 +511,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step_launcher
 
     @property
-    def solid_def(self) -> OpDefinition:
-        return self.solid.definition.ensure_op_def()
-
-    @property
     def op_def(self) -> OpDefinition:
-        check.invariant(
-            isinstance(self.solid_def, OpDefinition),
-            "Attempted to call op_def property for solid definition.",
-        )
-        return self.solid_def
+        return self.solid.definition.ensure_op_def()
 
     @property
     def pipeline_def(self) -> PipelineDefinition:
@@ -547,7 +539,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self.pipeline_def.get_retry_policy_for_handle(self.node_handle)
 
     def describe_op(self) -> str:
-        if isinstance(self.solid_def, OpDefinition):
+        if isinstance(self.op_def, OpDefinition):
             return f'op "{str(self.node_handle)}"'
 
         return f'solid "{str(self.node_handle)}"'
@@ -627,7 +619,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return InputContext(
             job_name=self.pipeline_def.name,
             name=name,
-            solid_def=self.solid_def,
+            solid_def=self.op_def,
             config=config,
             metadata=metadata,
             upstream_output=upstream_output,
@@ -693,8 +685,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         output_name: Optional[str] = None,
         mapping_key: Optional[str] = None,
     ) -> None:
-        if output_name is None and len(self.solid_def.output_defs) == 1:
-            output_def = self.solid_def.output_defs[0]
+        if output_name is None and len(self.op_def.output_defs) == 1:
+            output_def = self.op_def.output_defs[0]
             output_name = output_def.name
         elif output_name is None:
             raise DagsterInvariantViolationError(
@@ -703,7 +695,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 " `context.add_output_metadata`."
             )
         else:
-            output_def = self.solid_def.output_def_named(output_name)
+            output_def = self.op_def.output_def_named(output_name)
 
         if self.has_seen_output(output_name, mapping_key):
             output_desc = (
@@ -712,13 +704,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 else f"output '{output_def.name}' with mapping_key '{mapping_key}'"
             )
             raise DagsterInvariantViolationError(
-                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log output"
+                f"In {self.op_def.node_type_str} '{self.solid.name}', attempted to log output"
                 f" metadata for {output_desc} which has already been yielded. Metadata must be"
                 " logged before the output is yielded."
             )
         if output_def.is_dynamic and not mapping_key:
             raise DagsterInvariantViolationError(
-                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata"
+                f"In {self.op_def.node_type_str} '{self.solid.name}', attempted to log metadata"
                 f" for dynamic output '{output_def.name}' without providing a mapping key. When"
                 " logging metadata for a dynamic output, it is necessary to provide a mapping key."
             )
@@ -726,7 +718,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if output_name in self._output_metadata:
             if not mapping_key or mapping_key in self._output_metadata[output_name]:
                 raise DagsterInvariantViolationError(
-                    f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log"
+                    f"In {self.op_def.node_type_str} '{self.solid.name}', attempted to log"
                     f" metadata for output '{output_name}' more than once."
                 )
         if mapping_key:
