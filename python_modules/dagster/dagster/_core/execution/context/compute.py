@@ -112,14 +112,10 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         self._events: List[DagsterEvent] = []
         self._output_metadata: Dict[str, Any] = {}
 
-    @property
-    def solid_config(self) -> Any:
-        return self._step_execution_context.op_config
-
     @public
     @property
     def op_config(self) -> Any:
-        return self.solid_config
+        return self._step_execution_context.op_config
 
     @property
     def pipeline_run(self) -> DagsterRun:

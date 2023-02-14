@@ -19,7 +19,7 @@ def define_pass_value_solid(name, description=None):
         config_schema={"value": Field(String)},
     )
     def pass_value_solid(context):
-        yield Output(context.solid_config["value"])
+        yield Output(context.op_config["value"])
 
     return pass_value_solid
 
