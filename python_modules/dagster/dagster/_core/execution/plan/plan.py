@@ -164,7 +164,7 @@ class _PlanBuilder:
                 )
             )
         self._seen_handles.add(step.handle)
-        self._steps[step.solid_handle.to_string()] = step
+        self._steps[step.node_handle.to_string()] = step
 
     def get_step_by_node_handle(self, handle: NodeHandle) -> IExecutionStep:
         check.inst_param(handle, "handle", NodeHandle)

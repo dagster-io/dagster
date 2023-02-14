@@ -684,7 +684,7 @@ def _create_type_materializations(
 ) -> Iterator[DagsterEvent]:
     """If the output has any dagster type materializers, runs them."""
     step = step_context.step
-    current_handle = step.solid_handle
+    current_handle = step.node_handle
 
     # check for output mappings at every point up the composition hierarchy
     while current_handle:
