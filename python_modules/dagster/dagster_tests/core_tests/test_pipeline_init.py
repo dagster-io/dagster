@@ -110,7 +110,7 @@ def test_clean_event_generator_exit():
         pipeline=InMemoryPipeline(pipeline_def),
         execution_plan=execution_plan,
         run_config={},
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         instance=instance,
         retry_mode=RetryMode.DISABLED,
         scoped_resources_builder_cm=resource_initialization_manager,

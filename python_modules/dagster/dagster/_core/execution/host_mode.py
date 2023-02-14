@@ -214,7 +214,7 @@ def execute_run_host_mode(
             pipeline=pipeline,
             execution_plan=execution_plan,
             run_config=pipeline_run.run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
             instance=instance,
             raise_on_error=raise_on_error,
             executor_defs=executor_defs,
