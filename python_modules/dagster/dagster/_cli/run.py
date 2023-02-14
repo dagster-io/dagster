@@ -134,7 +134,7 @@ def run_migrate_command(from_label, **kwargs):
 
         if should_migrate:
             for record in tqdm(records):
-                instance.run_storage.replace_job_origin(record.pipeline_run, new_job_origin)
+                instance.run_storage.replace_job_origin(record.dagster_run, new_job_origin)
             click.echo(f"Migrated the run history for {job_name} from {from_label} to {to_label}.")
         else:
             raise click.ClickException("Exiting without migrating.")

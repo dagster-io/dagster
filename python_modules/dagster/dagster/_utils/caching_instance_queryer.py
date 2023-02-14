@@ -153,7 +153,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         run_record = self._get_run_record_by_id(run_id=run_id)
         if run_record is not None:
-            return run_record.pipeline_run
+            return run_record.dagster_run
         return None
 
     @cached_method
@@ -687,7 +687,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     @cached_method
     def _get_in_progress_run_ids(self, current_time: datetime.datetime) -> Sequence[str]:
         return [
-            record.pipeline_run.run_id
+            record.dagster_run.run_id
             for record in self._instance.get_run_records(
                 filters=RunsFilter(
                     statuses=[
@@ -806,7 +806,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         # latest run did not fail
         if (
             latest_run_record is None
-            or latest_run_record.pipeline_run.status != DagsterRunStatus.FAILURE
+            or latest_run_record.dagster_run.status != DagsterRunStatus.FAILURE
         ):
             return {}
 
@@ -814,7 +814,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         latest_materialization = asset_record.asset_entry.last_materialization
         if (
             latest_materialization is not None
-            and latest_materialization.run_id == latest_run_record.pipeline_run.run_id
+            and latest_materialization.run_id == latest_run_record.dagster_run.run_id
         ):
             return {}
 
