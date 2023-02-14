@@ -768,7 +768,7 @@ def get_subselected_graph_definition(
 
     selected_nodes: List[Tuple[str, NodeDefinition]] = []
 
-    for node in graph.solids_in_topological_order:
+    for node in graph.nodes_in_topological_order:
         node_handle = NodeHandle(node.name, parent=parent_handle)
         # skip if the node isn't selected
         if node.name not in resolved_op_selection_dict:

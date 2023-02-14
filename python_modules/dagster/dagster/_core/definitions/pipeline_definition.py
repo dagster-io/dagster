@@ -473,7 +473,7 @@ class PipelineDefinition:
 
     @property
     def solids_in_topological_order(self) -> Sequence[Node]:
-        return self._graph_def.solids_in_topological_order
+        return self._graph_def.nodes_in_topological_order
 
     def all_dagster_types(self) -> Iterable[DagsterType]:
         return self._graph_def.all_dagster_types()
@@ -703,7 +703,7 @@ def _get_pipeline_subset_def(
 
     # go in topo order to ensure deps dict is ordered
     solids = list(
-        filter(lambda solid: solid.name in solids_to_execute, graph.solids_in_topological_order)
+        filter(lambda solid: solid.name in solids_to_execute, graph.nodes_in_topological_order)
     )
 
     deps: Dict[

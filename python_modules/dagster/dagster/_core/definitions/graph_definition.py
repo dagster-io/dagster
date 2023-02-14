@@ -308,7 +308,7 @@ class GraphDefinition(NodeDefinition):
         return self._node_defs
 
     @property
-    def solids_in_topological_order(self) -> Sequence[Node]:
+    def nodes_in_topological_order(self) -> Sequence[Node]:
         return self._nodes_in_topological_order
 
     @property

@@ -389,7 +389,7 @@ class _PlanBuilder:
             # Recurse over the solids contained in an instance of GraphDefinition
             elif isinstance(solid.definition, GraphDefinition):
                 self._build_from_sorted_solids(
-                    solid.definition.solids_in_topological_order,
+                    solid.definition.nodes_in_topological_order,
                     solid.definition.dependency_structure,
                     parent_handle=handle,
                     parent_step_inputs=step_inputs,
