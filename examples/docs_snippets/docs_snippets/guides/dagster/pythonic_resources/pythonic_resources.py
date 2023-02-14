@@ -414,3 +414,40 @@ bucket = FileStoreBucket(
 )
 
 # end_impl_details_resolve
+
+from dagster._config.structured_config import ConfigurableIOManager
+from dagster import InputContext, OutputContext, AssetKey
+from typing import Union
+
+
+def write_csv(path: str, obj: Any):
+    pass
+
+
+def read_csv(path: str):
+    pass
+
+
+# start_new_io_manager
+
+
+class MyIOManager(ConfigurableIOManager):
+    root_path: str
+
+    def _get_path(self, asset_key: AssetKey) -> str:
+        return self.root_path + "/".join(asset_key.path)
+
+    def handle_output(self, context: OutputContext, obj):
+        write_csv(self._get_path(context.asset_key), obj)
+
+    def load_input(self, context: InputContext):
+        return read_csv(self._get_path(context.asset_key))
+
+defs = Definitions(
+    assets=...,
+    resources={
+        "io_manager": MyIOManager(root_path="/tmp/")
+    },
+)
+
+# end_new_io_manager
