@@ -41,7 +41,7 @@ Having defined a partitioned asset or job, you can:
 | <PyObject object="StaticPartitionsDefinition" />  | A partitions definition with a fixed set of partitions.                           |
 | <PyObject object="MultiPartitionsDefinition" />   | A partitions definition with multiple dimensions.                                 |
 | <PyObject object="MultiPartitionKey" />           | A multi-dimensional partition key.                                                |
-| <PyObject object="DynamicPartitionsDefinition" /> | A partitions definition whose keys can be dynamically added and removed.          |
+| <PyObject object="DynamicPartitionsDefinition" /> | A partitions definition whose partitions can be dynamically added and removed.          |
 
 A software-defined asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. If the asset is stored in a filesystem or an object store, then each partition will typically correspond to a file or object. If the asset is stored in a database, then each partition will typically correspond to a range of values in a table that fall within a particular window.
 
@@ -152,7 +152,7 @@ def images(context):
     ...
 ```
 
-For a given dynamic partition set, partition keys can be added and removed. One common pattern is detecting the presence of a new partition through a [sensor](concepts/partitions-schedules-sensors/sensors#sensors), adding the partition and then triggering a run for that partition:
+For a given dynamic partition set, partition keys can be added and removed. One common pattern is detecting the presence of a new partition through a [sensor](concepts/partitions-schedules-sensors/sensors#sensors), adding the partition, and then triggering a run for that partition:
 
 ```python file=/concepts/partitions_schedules_sensors/dynamic_partitioned_asset.py startafter=start_dynamic_partitions_2 endbefore=end_dynamic_partitions_2
 images_job = define_asset_job(
