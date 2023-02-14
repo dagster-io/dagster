@@ -113,7 +113,7 @@ def _resolve_output_to_destinations(
         for input_handle in downstream_input_handles:
             all_destinations.append(
                 NodeInputHandle(
-                    NodeHandle(input_handle.solid_name, parent=handle), input_handle.input_name
+                    NodeHandle(input_handle.node_name, parent=handle), input_handle.input_name
                 )
             )
 
