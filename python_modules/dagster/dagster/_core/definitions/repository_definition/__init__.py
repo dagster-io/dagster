@@ -23,16 +23,12 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.instance import DagsterInstance
-from dagster._core.selector import parse_solid_selection
-from dagster._serdes import whitelist_for_serdes
-from dagster._utils import make_readonly_value
-from dagster._utils.merger import merge_dicts
-
 from dagster._core.definitions.asset_graph import AssetGraph, InternalAssetGraph
-from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX, get_base_asset_jobs, is_base_asset_job_name
+from dagster._core.definitions.assets_job import (
+    ASSET_BASE_JOB_PREFIX,
+    get_base_asset_jobs,
+    is_base_asset_job_name,
+)
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
@@ -41,11 +37,18 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.partition import PartitionScheduleDefinition, PartitionSetDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.utils import check_valid_name
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.instance import DagsterInstance
+from dagster._core.selector import parse_solid_selection
+from dagster._serdes import whitelist_for_serdes
+from dagster._utils import make_readonly_value
+from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetGroup, AssetsDefinition
