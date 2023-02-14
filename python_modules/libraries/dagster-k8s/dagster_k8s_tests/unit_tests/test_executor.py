@@ -4,6 +4,7 @@ from unittest import mock
 
 import pytest
 from dagster import execute_job, job, op
+from dagster._config import process_config, resolve_to_config_type
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.api import create_execution_plan
@@ -16,7 +17,7 @@ from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster._grpc.types import ExecuteStepArgs
 from dagster_k8s.container_context import K8sContainerContext
-from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
+from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
 
 
@@ -37,6 +38,16 @@ RESOURCE_TAGS = {
     "requests": {"cpu": "250m", "memory": "64Mi"},
 }
 
+OTHER_RESOURCE_TAGS = {
+    "limits": {"cpu": "1000m", "memory": "1280Mi"},
+    "requests": {"cpu": "500m", "memory": "128Mi"},
+}
+
+
+VOLUME_MOUNTS_TAGS = [{"name": "volume1", "mount_path": "foo/bar", "sub_path": "file.txt"}]
+
+OTHER_VOLUME_MOUNTS_TAGS = [{"name": "volume2", "mount_path": "baz/quux", "sub_path": "voom.txt"}]
+
 
 @job(
     executor_def=k8s_job_executor,
@@ -52,6 +63,32 @@ def bar_with_resources():
     )
 
     @op(tags={"dagster-k8s/config": user_defined_k8s_config_with_resources_json})
+    def foo():
+        return 1
+
+    foo()
+
+
+@job(
+    executor_def=k8s_job_executor,
+    resource_defs={"io_manager": fs_io_manager},
+    tags={
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": RESOURCE_TAGS,
+                "volume_mounts": VOLUME_MOUNTS_TAGS,
+            }
+        }
+    },
+)
+def bar_with_tags_in_job_and_op():
+    expected_resources = RESOURCE_TAGS
+    user_defined_k8s_config_with_resources = UserDefinedDagsterK8sConfig(
+        container_config={"resources": expected_resources},
+    )
+    json.dumps(user_defined_k8s_config_with_resources.to_dict())
+
+    @op(tags={"dagster-k8s/config": {"container_config": {"resources": OTHER_RESOURCE_TAGS}}})
     def foo():
         return 1
 
@@ -109,11 +146,17 @@ def test_requires_k8s_launcher_fail():
 
 
 def _get_executor(instance, pipeline, executor_config=None):
+    process_result = process_config(
+        resolve_to_config_type(_K8S_EXECUTOR_CONFIG_SCHEMA),
+        executor_config or {},
+    )
+    assert process_result.success, str(process_result.errors)
+
     return k8s_job_executor.executor_creation_fn(
         InitExecutorContext(
             job=pipeline,
             executor_def=k8s_job_executor,
-            executor_config=executor_config or {"retries": {}},
+            executor_config=process_result.value,
             instance=instance,
         )
     )
@@ -160,7 +203,6 @@ def test_executor_init(k8s_run_launcher_instance):
         reconstructable(bar),
         {
             "env_vars": ["FOO_TEST"],
-            "retries": {},
             "resources": resources,
             "scheduler_name": "my-scheduler",
         },
@@ -206,7 +248,7 @@ def test_executor_init_container_context(
     executor = _get_executor(
         k8s_run_launcher_instance,
         reconstructable(bar),
-        {"env_vars": ["FOO_TEST"], "retries": {}, "max_concurrent": 4},
+        {"env_vars": ["FOO_TEST"], "max_concurrent": 4},
     )
 
     run = create_run_for_test(
@@ -444,3 +486,51 @@ def test_step_handler_with_container_context(
 
         assert envs["FOO_TEST"] == "bar"
         assert envs["BAZ_TEST"] == "blergh"
+
+
+def test_step_raw_k8s_config_inheritance(
+    k8s_run_launcher_instance, python_origin_with_container_context
+):
+    container_context_config = {
+        "k8s": {
+            "run_k8s_config": {"container_config": {"volume_mounts": OTHER_VOLUME_MOUNTS_TAGS}},
+        }
+    }
+
+    python_origin = reconstructable(bar_with_tags_in_job_and_op).get_python_origin()
+
+    python_origin_with_container_context = python_origin._replace(
+        repository_origin=python_origin.repository_origin._replace(
+            container_context=container_context_config
+        )
+    )
+
+    # Verifies that raw k8s config for step pods is pulled from the container context and
+    # dagster-k8s/config tags on the op, but *not* from tags on the job
+    executor = _get_executor(
+        k8s_run_launcher_instance,
+        reconstructable(bar_with_tags_in_job_and_op),
+        {},
+    )
+
+    run = create_run_for_test(
+        k8s_run_launcher_instance,
+        pipeline_name="bar_with_tags_in_job_and_op",
+        pipeline_code_origin=python_origin_with_container_context,
+    )
+
+    step_handler_context = _step_handler_context(
+        pipeline=reconstructable(bar_with_tags_in_job_and_op),
+        pipeline_run=run,
+        instance=k8s_run_launcher_instance,
+        executor=executor,
+    )
+
+    container_context = executor._step_handler._get_container_context(step_handler_context)
+
+    raw_k8s_config = container_context.get_run_user_defined_k8s_config()
+
+    print(str(raw_k8s_config))
+
+    assert raw_k8s_config.container_config["resources"] == OTHER_RESOURCE_TAGS
+    assert raw_k8s_config.container_config["volume_mounts"] == OTHER_VOLUME_MOUNTS_TAGS

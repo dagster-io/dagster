@@ -35,25 +35,27 @@ from .job import (
     get_user_defined_k8s_config,
 )
 
+_K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
+    DagsterK8sJobConfig.config_type_job(),
+    {
+        "job_namespace": Field(StringSource, is_required=False),
+        "retries": get_retries_config(),
+        "max_concurrent": Field(
+            IntSource,
+            is_required=False,
+            description=(
+                "Limit on the number of pods that will run concurrently within the scope "
+                "of a Dagster run. Note that this limit is per run, not global."
+            ),
+        ),
+        "tag_concurrency_limits": get_tag_concurrency_limits_config(),
+    },
+)
+
 
 @executor(
     name="k8s",
-    config_schema=merge_dicts(
-        DagsterK8sJobConfig.config_type_job(),
-        {
-            "job_namespace": Field(StringSource, is_required=False),
-            "retries": get_retries_config(),
-            "max_concurrent": Field(
-                IntSource,
-                is_required=False,
-                description=(
-                    "Limit on the number of pods that will run concurrently within the scope "
-                    "of a Dagster run. Note that this limit is per run, not global."
-                ),
-            ),
-            "tag_concurrency_limits": get_tag_concurrency_limits_config(),
-        },
-    ),
+    config_schema=_K8S_EXECUTOR_CONFIG_SCHEMA,
     requirements=multiple_process_executor_requirements(),
 )
 def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
@@ -168,11 +170,19 @@ class K8sStepHandler(StepHandler):
         )
 
     def _get_container_context(self, step_handler_context: StepHandlerContext):
-        run_target = K8sContainerContext.create_for_run(
+        step_key = next(iter(step_handler_context.execute_step_args.step_keys_to_execute))
+
+        context = K8sContainerContext.create_for_run(
             step_handler_context.pipeline_run,
             cast(K8sRunLauncher, step_handler_context.instance.run_launcher),
+            include_run_tags=False,  # For now don't include job-level dagster-k8s/config tags in step pods
         )
-        return run_target.merge(self._executor_container_context)
+        context = context.merge(self._executor_container_context)
+
+        user_defined_k8s_config = get_user_defined_k8s_config(
+            frozentags(step_handler_context.step_tags[step_key])
+        )
+        return context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict()))
 
     def _get_k8s_step_job_name(self, step_handler_context: StepHandlerContext):
         if (
@@ -223,17 +233,13 @@ class K8sStepHandler(StepHandler):
         if not job_config.job_image:
             raise Exception("No image included in either executor config or the job")
 
-        user_defined_k8s_config = get_user_defined_k8s_config(
-            frozentags(step_handler_context.step_tags[step_key])
-        )
-
         job = construct_dagster_k8s_job(
             job_config=job_config,
             args=args,
             job_name=job_name,
             pod_name=pod_name,
             component="step_worker",
-            user_defined_k8s_config=user_defined_k8s_config,
+            user_defined_k8s_config=container_context.get_run_user_defined_k8s_config(),
             labels={
                 "dagster/job": step_handler_context.pipeline_run.pipeline_name,
                 "dagster/op": step_key,
@@ -291,7 +297,7 @@ class K8sStepHandler(StepHandler):
         step_key = step_keys_to_execute[0]
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
-        container_context = self._get_container_context(step_handler_context)
+        container_context = self._get_container_context(step_handler_context, step_key)
 
         yield DagsterEvent.engine_event(
             step_handler_context.get_step_context(step_key),

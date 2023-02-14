@@ -141,7 +141,9 @@ class K8sContainerContext(
 
     @staticmethod
     def create_for_run(
-        pipeline_run: DagsterRun, run_launcher: Optional["K8sRunLauncher"]
+        pipeline_run: DagsterRun,
+        run_launcher: Optional["K8sRunLauncher"],
+        include_run_tags: bool,
     ) -> "K8sContainerContext":
         context = K8sContainerContext()
 
@@ -175,11 +177,12 @@ class K8sContainerContext(
                     K8sContainerContext.create_from_config(run_container_context)
                 )
 
-        user_defined_k8s_config = get_user_defined_k8s_config(frozentags(pipeline_run.tags))
+        if include_run_tags:
+            user_defined_k8s_config = get_user_defined_k8s_config(frozentags(pipeline_run.tags))
 
-        context = context.merge(
-            K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict())
-        )
+            context = context.merge(
+                K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict())
+            )
 
         return context
 
