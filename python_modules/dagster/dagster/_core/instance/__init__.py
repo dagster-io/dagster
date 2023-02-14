@@ -61,7 +61,14 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
     TagBucket,
 )
-from dagster._core.storage.tags import PARENT_RUN_ID_TAG, RESUME_RETRY_TAG, ROOT_RUN_ID_TAG
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    PARENT_RUN_ID_TAG,
+    PARTITION_NAME_TAG,
+    RESUME_RETRY_TAG,
+    ROOT_RUN_ID_TAG,
+)
 from dagster._core.utils import str_format_list
 from dagster._serdes import ConfigurableClass
 from dagster._seven import get_current_datetime_in_utc
@@ -1133,21 +1140,45 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return execution_plan_snapshot_id
 
-    def _log_asset_materialization_planned_events(self, pipeline_run, execution_plan_snapshot):
+    def _log_asset_materialization_planned_events(
+        self, run: DagsterRun, execution_plan_snapshot: ExecutionPlanSnapshot
+    ):
         from dagster._core.events import (
             AssetMaterializationPlannedData,
             DagsterEvent,
             DagsterEventType,
         )
 
-        pipeline_name = pipeline_run.pipeline_name
+        pipeline_name = run.pipeline_name
 
         for step in execution_plan_snapshot.steps:
             if step.key in execution_plan_snapshot.step_keys_to_execute:
                 for output in step.outputs:
-                    asset_key = output.properties.asset_key
+                    asset_key = check.not_none(output.properties).asset_key
                     if asset_key:
                         # Logs and stores asset_materialization_planned event
+                        partition_tag = run.tags.get(PARTITION_NAME_TAG)
+                        partition_range_start, partition_range_end = run.tags.get(
+                            ASSET_PARTITION_RANGE_START_TAG
+                        ), run.tags.get(ASSET_PARTITION_RANGE_END_TAG)
+
+                        check.invariant(
+                            not (partition_tag and partition_range_start),
+                            "Cannot have both a partition and a partition range",
+                        )
+
+                        if partition_range_start:
+                            check.invariant(
+                                partition_range_end, "Partition range start set but not end"
+                            )
+                            # TODO: resolve which partitions are in the range, and emit an event for each
+
+                        partition = (
+                            partition_tag
+                            if check.not_none(output.properties).is_asset_partitioned
+                            else None
+                        )
+
                         event = DagsterEvent(
                             event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
                             pipeline_name=pipeline_name,
@@ -1155,9 +1186,11 @@ class DagsterInstance(DynamicPartitionsStore):
                                 f"{pipeline_name} intends to materialize asset"
                                 f" {asset_key.to_string()}"
                             ),
-                            event_specific_data=AssetMaterializationPlannedData(asset_key),
+                            event_specific_data=AssetMaterializationPlannedData(
+                                asset_key, partition=partition
+                            ),
                         )
-                        self.report_dagster_event(event, pipeline_run.run_id, logging.DEBUG)
+                        self.report_dagster_event(event, run.run_id, logging.DEBUG)
 
     def create_run(
         self,
