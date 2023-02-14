@@ -30,6 +30,12 @@ dagster dev -m your_module_name
 
 This command loads the definitions in the variable containing the <PyObject object="Definitions" /> object in the named module - defined as the root `__init__.py` file - in the current Python environment.
 
+You can also include multiple modules at a time, where each module will be loaded as a code location:
+
+```shell
+dagster dev -m your_module_name -m your_second_module
+```
+
 ---
 
 </TabItem>
