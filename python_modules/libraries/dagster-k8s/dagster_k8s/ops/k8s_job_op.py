@@ -202,6 +202,7 @@ def execute_k8s_job(
         context.instance.run_launcher
         if isinstance(context.instance.run_launcher, K8sRunLauncher)
         else None,
+        include_run_tags=True,
     )
 
     container_config = container_config.copy() if container_config else {}
