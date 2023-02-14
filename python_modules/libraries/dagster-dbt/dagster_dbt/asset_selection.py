@@ -42,6 +42,9 @@ class DbtManifestAssetSelection(AssetSelection):
                 node_info_to_asset_key=my_node_info_to_asset_key_fn,
             )
 
+            # This will retrieve the asset keys according to the selection
+            selected_asset_keys = my_selection.resolve(my_dbt_assets)
+
     """
 
     def __init__(
