@@ -66,6 +66,7 @@ from .metadata import (
     TextMetadataValue as TextMetadataValue,
     UrlMetadataValue as UrlMetadataValue,
 )
+from .node_container import create_execution_structure as create_execution_structure
 from .node_definition import NodeDefinition as NodeDefinition
 from .output import (
     DynamicOut as DynamicOut,
@@ -111,7 +112,6 @@ from .sensor_definition import (
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
 )
-from .solid_container import create_execution_structure as create_execution_structure
 
 # isort: split
 from .asset_group import AssetGroup as AssetGroup
