@@ -275,14 +275,18 @@ def test_to_source_assets():
     def my_asset():
         ...
 
-    assert my_asset.to_source_assets() == [
-        SourceAsset(
-            AssetKey(["my_asset"]),
-            metadata={"a": "b"},
-            io_manager_key="abc",
-            description="blablabla",
-        )
-    ]
+    assert (
+        my_asset.to_source_assets()
+        == [my_asset.to_source_asset()]
+        == [
+            SourceAsset(
+                AssetKey(["my_asset"]),
+                metadata={"a": "b"},
+                io_manager_key="abc",
+                description="blablabla",
+            )
+        ]
+    )
 
     @multi_asset(
         outs={
@@ -304,20 +308,28 @@ def test_to_source_assets():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
+    my_asset_name_source_asset = SourceAsset(
+        AssetKey(["my_asset_name"]),
+        metadata={"a": "b"},
+        io_manager_key="abc",
+        description="blablabla",
+    )
+    my_other_asset_source_asset = SourceAsset(
+        AssetKey(["my_other_asset"]),
+        metadata={"c": "d"},
+        io_manager_key="def",
+        description="ablablabl",
+    )
+
     assert my_multi_asset.to_source_assets() == [
-        SourceAsset(
-            AssetKey(["my_asset_name"]),
-            metadata={"a": "b"},
-            io_manager_key="abc",
-            description="blablabla",
-        ),
-        SourceAsset(
-            AssetKey(["my_other_asset"]),
-            metadata={"c": "d"},
-            io_manager_key="def",
-            description="ablablabl",
-        ),
+        my_asset_name_source_asset,
+        my_other_asset_source_asset,
     ]
+
+    assert (
+        my_multi_asset.to_source_asset(AssetKey(["my_other_asset"])) == my_other_asset_source_asset
+    )
+    assert my_multi_asset.to_source_asset("my_other_asset") == my_other_asset_source_asset
 
 
 def test_coerced_asset_keys():
