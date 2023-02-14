@@ -1088,7 +1088,7 @@ class ExecuteRunWithPlanIterable:
 
         self.pipeline_context = None
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[DagsterEvent]:
         # Since interrupts can't be raised at arbitrary points safely, delay them until designated
         # checkpoints during the execution.
         # To be maximally certain that interrupts are always caught during an execution process,

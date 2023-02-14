@@ -214,7 +214,7 @@ class ExecutionStep(
             deps.update(inp.dependency_keys)
         return deps
 
-    def get_mapping_key(self):
+    def get_mapping_key(self) -> Optional[str]:
         if isinstance(self.handle, ResolvedFromDynamicStepHandle):
             return self.handle.mapping_key
 

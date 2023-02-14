@@ -5,6 +5,7 @@ from typing import (
     Any,
     Dict,
     FrozenSet,
+    Iterable,
     Iterator,
     Mapping,
     Optional,
@@ -23,6 +24,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
 from dagster._utils import frozentags
 from dagster._utils.backcompat import experimental_class_warning
@@ -456,13 +458,13 @@ class PipelineDefinition:
         check.str_param(name, "name")
         return name in self._all_node_defs
 
-    def get_solid(self, handle):
+    def get_solid(self, handle: NodeHandle) -> Node:
         return self._graph_def.get_solid(handle)
 
-    def has_solid_named(self, name):
+    def has_solid_named(self, name: str) -> bool:
         return self._graph_def.has_solid_named(name)
 
-    def solid_named(self, name):
+    def solid_named(self, name: str) -> Node:
         return self._graph_def.solid_named(name)
 
     @property
@@ -470,16 +472,16 @@ class PipelineDefinition:
         return self._graph_def.solids
 
     @property
-    def solids_in_topological_order(self):
+    def solids_in_topological_order(self) -> Sequence[Node]:
         return self._graph_def.solids_in_topological_order
 
-    def all_dagster_types(self):
+    def all_dagster_types(self) -> Iterable[DagsterType]:
         return self._graph_def.all_dagster_types()
 
-    def has_dagster_type(self, name):
+    def has_dagster_type(self, name: str) -> bool:
         return self._graph_def.has_dagster_type(name)
 
-    def dagster_type_named(self, name):
+    def dagster_type_named(self, name: str) -> DagsterType:
         return self._graph_def.dagster_type_named(name)
 
     def get_pipeline_subset_def(

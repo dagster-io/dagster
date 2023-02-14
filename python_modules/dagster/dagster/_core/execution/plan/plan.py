@@ -66,6 +66,8 @@ from .inputs import (
     FromUnresolvedStepOutput,
     StepInput,
     StepInputSource,
+    StepInputSourceUnion,
+    StepInputUnion,
     UnresolvedCollectStepInput,
     UnresolvedMappedStepInput,
 )
@@ -280,9 +282,7 @@ class _PlanBuilder:
         solids: Sequence[Node],
         dependency_structure: DependencyStructure,
         parent_handle: Optional[NodeHandle] = None,
-        parent_step_inputs: Optional[
-            Sequence[Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]]
-        ] = None,
+        parent_step_inputs: Optional[Sequence[StepInputUnion]] = None,
     ) -> None:
         asset_layer = self.pipeline.get_definition().asset_layer
         for solid in solids:
@@ -292,9 +292,7 @@ class _PlanBuilder:
             # Create and add execution plan steps for solid inputs
             has_unresolved_input = False
             has_pending_input = False
-            step_inputs: List[
-                Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]
-            ] = []
+            step_inputs: List[StepInputUnion] = []
             for input_name, input_def in solid.definition.input_dict.items():
                 step_input_source = get_step_input_source(
                     self,
@@ -357,7 +355,7 @@ class _PlanBuilder:
                     check.failed("Can not have pending and unresolved step inputs")
 
                 elif has_unresolved_input:
-                    new_step: IExecutionStep = UnresolvedMappedExecutionStep(
+                    new_step = UnresolvedMappedExecutionStep(
                         handle=UnresolvedStepHandle(solid_handle=handle),
                         pipeline_name=self.pipeline_name,
                         step_inputs=cast(
@@ -472,10 +470,8 @@ def get_step_input_source(
     input_def: InputDefinition,
     dependency_structure: DependencyStructure,
     handle: NodeHandle,
-    parent_step_inputs: Optional[
-        Sequence[Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]]
-    ],
-):
+    parent_step_inputs: Optional[Sequence[StepInputUnion]],
+) -> Optional[StepInputSourceUnion]:
     check.inst_param(plan_builder, "plan_builder", _PlanBuilder)
     check.inst_param(solid, "solid", Node)
     check.str_param(input_name, "input_name")
@@ -790,7 +786,7 @@ class ExecutionPlan(
         step_keys_to_execute: Sequence[str],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
-        step_output_versions: Optional[Mapping[StepOutputHandle, str]] = None,
+        step_output_versions: Optional[Mapping[StepOutputHandle, Optional[str]]] = None,
     ) -> "ExecutionPlan":
         check.sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         step_output_versions = check.opt_mapping_param(
@@ -849,7 +845,7 @@ class ExecutionPlan(
         # If step output versions were provided when constructing the subset plan, add them to the
         # known state.
         if len(step_output_versions) > 0:
-            versions = StepOutputVersionData.get_version_list_from_dict(step_output_versions)
+            versions = StepOutputVersionData.get_version_list_from_dict(step_output_versions)  # type: ignore  # (possible none)
             if self.known_state:
                 known_state = self.known_state._replace(step_output_versions=versions)
             else:
@@ -1061,7 +1057,9 @@ class ExecutionPlan(
         return plan_builder.build()
 
     @staticmethod
-    def rebuild_step_input(step_input_snap: "ExecutionStepInputSnap"):
+    def rebuild_step_input(
+        step_input_snap: "ExecutionStepInputSnap",
+    ) -> Union["StepInput", "UnresolvedMappedStepInput", "UnresolvedCollectStepInput"]:
         from dagster._core.snap.execution_plan_snapshot import ExecutionStepInputSnap
 
         check.inst_param(step_input_snap, "step_input_snap", ExecutionStepInputSnap)
@@ -1088,7 +1086,7 @@ class ExecutionPlan(
             return StepInput(
                 step_input_snap.name,
                 step_input_snap.dagster_type_key,
-                step_input_snap.source,
+                step_input_snap.source,  # type: ignore  # (possible none)
             )
 
     @staticmethod
@@ -1133,7 +1131,7 @@ class ExecutionPlan(
                         ttype=(StepHandle, ResolvedFromDynamicStepHandle),
                     ),
                     pipeline_name,
-                    step_inputs,
+                    step_inputs,  # type: ignore  # (plain StepInput only)
                     step_outputs,
                     step_snap.tags,
                 )
@@ -1144,7 +1142,7 @@ class ExecutionPlan(
                         ttype=UnresolvedStepHandle,
                     ),
                     pipeline_name,
-                    step_inputs,
+                    step_inputs,  # type: ignore  # (StepInput or UnresolvedMappedStepInput only)
                     step_outputs,
                     step_snap.tags,
                 )
@@ -1152,7 +1150,7 @@ class ExecutionPlan(
                 step = UnresolvedCollectExecutionStep(
                     check.inst(cast(StepHandle, step_snap.step_handle), ttype=StepHandle),
                     pipeline_name,
-                    step_inputs,
+                    step_inputs,  # type: ignore  # (StepInput or UnresolvedCollectStepInput only)
                     step_outputs,
                     step_snap.tags,
                 )

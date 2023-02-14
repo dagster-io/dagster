@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Set, cast
 
 from typing_extensions import TypeAlias
 
@@ -38,7 +38,7 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
     """
 
     @abstractmethod
-    def has_tag(self, key) -> bool:
+    def has_tag(self, key: str) -> bool:
         """Implement this method to check if a logging tag is set."""
 
     @abstractmethod
@@ -129,7 +129,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     @property
     def run(self) -> DagsterRun:
         """DagsterRun: The current run."""
-        return cast(DagsterRun, self.pipeline_run)
+        return self.pipeline_run
 
     @public
     @property
@@ -315,7 +315,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
     def selected_output_names(self) -> AbstractSet[str]:
         # map selected asset keys to the output names they correspond to
         selected_asset_keys = self.selected_asset_keys
-        selected_outputs = set()
+        selected_outputs: Set[str] = set()
         for output_name in self.op.output_dict.keys():
             asset_info = self.job_def.asset_layer.asset_info_for_output(
                 self.solid_handle, output_name

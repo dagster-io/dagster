@@ -11,6 +11,7 @@ from typing import (
     Generator,
     Generic,
     Iterable,
+    Iterator,
     Mapping,
     NamedTuple,
     Optional,
@@ -178,7 +179,7 @@ TContextType = TypeVar("TContextType", bound=IPlanContext)
 class ExecutionContextManager(Generic[TContextType], ABC):
     def __init__(
         self,
-        event_generator: Generator[Union[DagsterEvent, TContextType], None, None],
+        event_generator: Iterator[Union[DagsterEvent, TContextType]],
         raise_on_error: Optional[bool] = False,
     ):
         self._manager = EventGenerationManager[TContextType](
@@ -277,7 +278,8 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
     def __init__(
         self,
         context_event_generator: Callable[
-            ..., Generator[Union[DagsterEvent, PlanOrchestrationContext], None, None]
+            ...,
+            Iterator[Union[DagsterEvent, PlanOrchestrationContext]],
         ],
         pipeline: IPipeline,
         execution_plan: ExecutionPlan,
@@ -317,7 +319,7 @@ def orchestration_context_event_generator(
     executor_defs: Optional[Sequence[ExecutorDefinition]],
     output_capture: Optional[Mapping["StepOutputHandle", Any]],
     resume_from_failure: bool = False,
-) -> Generator[Union[DagsterEvent, PlanOrchestrationContext], None, None]:
+) -> Iterator[Union[DagsterEvent, PlanOrchestrationContext]]:
     check.invariant(executor_defs is None)
     context_creation_data = create_context_creation_data(
         pipeline,

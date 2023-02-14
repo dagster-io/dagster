@@ -408,7 +408,7 @@ def get_required_resource_keys_for_step(
 
     # add all the solid compute resource keys
     solid_def = pipeline_def.get_solid(execution_step.solid_handle).definition
-    resource_keys = resource_keys.union(solid_def.required_resource_keys)
+    resource_keys = resource_keys.union(solid_def.required_resource_keys)  # type: ignore  # (should be OpDefinition)
 
     # add input type, input loader, and input io manager resource keys
     for step_input in execution_step.step_inputs:

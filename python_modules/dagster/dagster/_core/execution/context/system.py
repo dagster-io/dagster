@@ -132,7 +132,7 @@ class IPlanContext(ABC):
         return self.plan_data.retry_mode
 
     @property
-    def execution_plan(self):
+    def execution_plan(self) -> "ExecutionPlan":
         return self.plan_data.execution_plan
 
     @property
@@ -264,7 +264,14 @@ class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
     information.
     """
 
-    def __init__(self, plan_data, log_manager, executor, step, output_capture):
+    def __init__(
+        self,
+        plan_data: PlanData,
+        log_manager: DagsterLogManager,
+        executor: Executor,
+        step: ExecutionStep,
+        output_capture: Optional[Mapping[StepOutputHandle, Any]],
+    ):
         super(StepOrchestrationContext, self).__init__(
             plan_data, log_manager, executor, output_capture
         )
@@ -513,7 +520,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             isinstance(self.solid_def, OpDefinition),
             "Attempted to call op_def property for solid definition.",
         )
-        return cast(OpDefinition, self.solid_def)
+        return self.solid_def
 
     @property
     def pipeline_def(self) -> PipelineDefinition:
@@ -539,13 +546,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def solid_retry_policy(self) -> Optional[RetryPolicy]:
         return self.pipeline_def.get_retry_policy_for_handle(self.solid_handle)
 
-    def describe_op(self):
+    def describe_op(self) -> str:
         if isinstance(self.solid_def, OpDefinition):
             return f'op "{str(self.solid_handle)}"'
 
         return f'solid "{str(self.solid_handle)}"'
 
-    def get_io_manager(self, step_output_handle) -> IOManager:
+    def get_io_manager(self, step_output_handle: StepOutputHandle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
         io_manager_key = (
             self.pipeline_def.get_solid(step_output.solid_handle)
@@ -556,7 +563,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         output_manager = getattr(self.resources, io_manager_key)
         return check.inst(output_manager, IOManager)
 
-    def get_output_context(self, step_output_handle) -> OutputContext:
+    def get_output_context(self, step_output_handle: StepOutputHandle) -> OutputContext:
         return get_output_context(
             self.execution_plan,
             self.pipeline_def,

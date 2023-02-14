@@ -6,12 +6,16 @@ from dagster._core.execution.retries import RetryMode
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
+    from dagster._core.execution.context.system import PlanOrchestrationContext
+    from dagster._core.execution.plan.plan import ExecutionPlan
 
 
 class Executor(ABC):
     @public
     @abstractmethod
-    def execute(self, plan_context, execution_plan) -> Iterator["DagsterEvent"]:
+    def execute(
+        self, plan_context: "PlanOrchestrationContext", execution_plan: "ExecutionPlan"
+    ) -> Iterator["DagsterEvent"]:
         """
         For the given context and execution plan, orchestrate a series of sub plan executions in a way that satisfies the whole plan being executed.
 

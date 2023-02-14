@@ -49,6 +49,7 @@ if TYPE_CHECKING:
         Partition,
         PartitionSetDefinition,
     )
+    from dagster._core.host_representation.external import ExternalSchedule, ExternalSensor
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
 
@@ -455,13 +456,13 @@ class DagsterRun(
     def with_tags(self, tags: Mapping[str, str]) -> Self:
         return self._replace(tags=tags)
 
-    def get_root_run_id(self):
+    def get_root_run_id(self) -> Optional[str]:
         return self.tags.get(ROOT_RUN_ID_TAG)
 
-    def get_parent_run_id(self):
+    def get_parent_run_id(self) -> Optional[str]:
         return self.tags.get(PARENT_RUN_ID_TAG)
 
-    def tags_for_storage(self):
+    def tags_for_storage(self) -> Mapping[str, str]:
         repository_tags = {}
         if self.external_pipeline_origin:
             # tag the run with a label containing the repository name / location name, to allow for
@@ -477,7 +478,7 @@ class DagsterRun(
 
     @public
     @property
-    def is_finished(self):
+    def is_finished(self) -> bool:
         return self.status in FINISHED_STATUSES
 
     @public
@@ -645,23 +646,25 @@ class RunsFilter(
         )
 
     @property
-    def pipeline_name(self):
-        return self.job_name
+    def pipeline_name(self) -> str:
+        return self.job_name  # type: ignore  # (possible none)
 
     @staticmethod
-    def for_schedule(schedule):
+    def for_schedule(schedule: "ExternalSchedule") -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_schedule(schedule))
 
     @staticmethod
-    def for_partition(partition_set, partition):
+    def for_partition(
+        partition_set: "PartitionSetDefinition", partition: "Partition"
+    ) -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_partition_set(partition_set, partition))
 
     @staticmethod
-    def for_sensor(sensor):
+    def for_sensor(sensor: "ExternalSensor") -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_sensor(sensor))
 
     @staticmethod
-    def for_backfill(backfill_id):
+    def for_backfill(backfill_id: str) -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_id))
 
 
@@ -702,12 +705,12 @@ class RunRecord(
 
     def __new__(
         cls,
-        storage_id,
-        pipeline_run,
-        create_timestamp,
-        update_timestamp,
-        start_time=None,
-        end_time=None,
+        storage_id: int,
+        pipeline_run: DagsterRun,
+        create_timestamp: datetime,
+        update_timestamp: datetime,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
     ):
         return super(RunRecord, cls).__new__(
             cls,
