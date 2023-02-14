@@ -6,5 +6,7 @@ examples/experimental/project_fully_featured_v2_resources
 
 ### NOT TYPE CHECKED
 
+examples/assets_dbt_python
+examples/assets_modern_data_stack
 examples/assets_smoke_test
 examples/tutorial_dbt_dagster/tutorial_template
