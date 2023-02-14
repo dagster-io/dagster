@@ -362,7 +362,7 @@ def execute_pipeline_iterator(
             solid_selection=solid_selection,
         )
 
-        pipeline_run = execute_instance.create_run_for_pipeline(
+        dagster_run = execute_instance.create_run_for_pipeline(
             pipeline_def=pipeline.get_definition(),
             run_config=run_config,
             mode=mode,
@@ -372,7 +372,7 @@ def execute_pipeline_iterator(
             repository_load_data=repository_load_data,
         )
 
-        return execute_run_iterator(pipeline, pipeline_run, execute_instance)
+        return execute_run_iterator(pipeline, dagster_run, execute_instance)
 
 
 @contextmanager
@@ -675,7 +675,7 @@ def _logged_execute_pipeline(
 
     log_repo_stats(instance=instance, pipeline=pipeline, source="execute_pipeline")
 
-    pipeline_run = instance.create_run_for_pipeline(
+    dagster_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline.get_definition(),
         run_config=run_config,
         mode=mode,
@@ -691,7 +691,7 @@ def _logged_execute_pipeline(
 
     return execute_run(
         pipeline,
-        pipeline_run,
+        dagster_run,
         instance,
         raise_on_error=raise_on_error,
     )
@@ -758,8 +758,8 @@ def reexecute_pipeline(
             tags=tags,
         )
 
-        parent_pipeline_run = execute_instance.get_run_by_id(parent_run_id)
-        if parent_pipeline_run is None:
+        parent_dagster_run = execute_instance.get_run_by_id(parent_run_id)
+        if parent_dagster_run is None:
             check.failed(
                 "No parent run with id {parent_run_id} found in instance.".format(
                     parent_run_id=parent_run_id
@@ -774,26 +774,26 @@ def reexecute_pipeline(
                 pipeline,
                 mode,
                 run_config,
-                cast(DagsterRun, parent_pipeline_run),
+                cast(DagsterRun, parent_dagster_run),
                 step_selection,
             )
 
-        if parent_pipeline_run.asset_selection:
+        if parent_dagster_run.asset_selection:
             pipeline = pipeline.subset_for_execution(
-                solid_selection=None, asset_selection=parent_pipeline_run.asset_selection
+                solid_selection=None, asset_selection=parent_dagster_run.asset_selection
             )
 
-        pipeline_run = execute_instance.create_run_for_pipeline(
+        dagster_run = execute_instance.create_run_for_pipeline(
             pipeline_def=pipeline.get_definition(),
             execution_plan=execution_plan,
             run_config=run_config,
             mode=mode,
             tags=tags,
-            solid_selection=parent_pipeline_run.solid_selection,
-            asset_selection=parent_pipeline_run.asset_selection,
-            solids_to_execute=parent_pipeline_run.solids_to_execute,
-            root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
-            parent_run_id=parent_pipeline_run.run_id,
+            solid_selection=parent_dagster_run.solid_selection,
+            asset_selection=parent_dagster_run.asset_selection,
+            solids_to_execute=parent_dagster_run.solids_to_execute,
+            root_run_id=parent_dagster_run.root_run_id or parent_dagster_run.run_id,
+            parent_run_id=parent_dagster_run.run_id,
             pipeline_code_origin=(
                 pipeline.get_python_origin()
                 if isinstance(pipeline, ReconstructablePipeline)
@@ -804,7 +804,7 @@ def reexecute_pipeline(
 
         return execute_run(
             pipeline,
-            pipeline_run,
+            dagster_run,
             execute_instance,
             raise_on_error=raise_on_error,
         )
@@ -814,14 +814,14 @@ def reexecute_pipeline(
 def execute_plan_iterator(
     execution_plan: ExecutionPlan,
     pipeline: IPipeline,
-    pipeline_run: DagsterRun,
+    dagster_run: DagsterRun,
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
     run_config: Optional[Mapping[str, object]] = None,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline, "pipeline", IPipeline)
-    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
     retry_mode = check.opt_inst_param(retry_mode, "retry_mode", RetryMode, RetryMode.DISABLED)
     run_config = check.opt_mapping_param(run_config, "run_config")
@@ -838,7 +838,7 @@ def execute_plan_iterator(
                 retry_mode=retry_mode,
                 execution_plan=execution_plan,
                 run_config=run_config,
-                dagster_run=pipeline_run,
+                dagster_run=dagster_run,
                 instance=instance,
             ),
         )
@@ -849,7 +849,7 @@ def execute_plan(
     execution_plan: ExecutionPlan,
     pipeline: IPipeline,
     instance: DagsterInstance,
-    pipeline_run: DagsterRun,
+    dagster_run: DagsterRun,
     run_config: Optional[Mapping[str, object]] = None,
     retry_mode: Optional[RetryMode] = None,
 ) -> Sequence[DagsterEvent]:
@@ -859,7 +859,7 @@ def execute_plan(
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    check.inst_param(dagster_run, "dagster_run", DagsterRun)
     run_config = check.opt_mapping_param(run_config, "run_config")
     check.opt_inst_param(retry_mode, "retry_mode", RetryMode)
 
@@ -868,7 +868,7 @@ def execute_plan(
             execution_plan=execution_plan,
             pipeline=pipeline,
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
             retry_mode=retry_mode,
         )
@@ -885,34 +885,34 @@ def _check_pipeline(pipeline: Union[PipelineDefinition, IPipeline]) -> IPipeline
 
 
 def _get_execution_plan_from_run(
-    pipeline: IPipeline, pipeline_run: DagsterRun, instance: DagsterInstance
+    pipeline: IPipeline, dagster_run: DagsterRun, instance: DagsterInstance
 ) -> ExecutionPlan:
     execution_plan_snapshot = None
     if (
         pipeline.solids_to_execute is None
         and pipeline.asset_selection is None
-        and pipeline_run.execution_plan_snapshot_id
+        and dagster_run.execution_plan_snapshot_id
     ):
         execution_plan_snapshot = instance.get_execution_plan_snapshot(
-            pipeline_run.execution_plan_snapshot_id
+            dagster_run.execution_plan_snapshot_id
         )
         if execution_plan_snapshot.can_reconstruct_plan:
             return ExecutionPlan.rebuild_from_snapshot(
-                pipeline_run.pipeline_name,
+                dagster_run.pipeline_name,
                 execution_plan_snapshot,
             )
 
-    if pipeline_run.has_repository_load_data:
+    if dagster_run.has_repository_load_data:
         # if you haven't fetched it already, get the snapshot now
         execution_plan_snapshot = execution_plan_snapshot or instance.get_execution_plan_snapshot(
-            check.not_none(pipeline_run.execution_plan_snapshot_id)
+            check.not_none(dagster_run.execution_plan_snapshot_id)
         )
     # need to rebuild execution plan so it matches the subsetted graph
     return create_execution_plan(
         pipeline,
-        run_config=pipeline_run.run_config,
-        mode=pipeline_run.mode,
-        step_keys_to_execute=pipeline_run.step_keys_to_execute,
+        run_config=dagster_run.run_config,
+        mode=dagster_run.mode,
+        step_keys_to_execute=dagster_run.step_keys_to_execute,
         instance_ref=instance.get_ref() if instance.is_persistent else None,
         repository_load_data=execution_plan_snapshot.repository_load_data
         if execution_plan_snapshot
