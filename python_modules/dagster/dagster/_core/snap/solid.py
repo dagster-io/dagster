@@ -154,7 +154,7 @@ class InputMappingSnap(
 
 def build_input_mapping_snap(input_mapping: InputMapping) -> InputMappingSnap:
     return InputMappingSnap(
-        mapped_solid_name=input_mapping.maps_to.solid_name,
+        mapped_solid_name=input_mapping.maps_to.node_name,
         mapped_input_name=input_mapping.maps_to.input_name,
         external_input_name=input_mapping.graph_input_name,
     )

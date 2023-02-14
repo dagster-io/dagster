@@ -451,7 +451,7 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_node = self.node_named(mapping.maps_to.solid_name)
+        mapped_node = self.node_named(mapping.maps_to.node_name)
 
         return mapped_node.definition.default_value_for_input(mapping.maps_to.input_name)
 
@@ -464,7 +464,7 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_node = self.node_named(mapping.maps_to.solid_name)
+        mapped_node = self.node_named(mapping.maps_to.node_name)
 
         return mapped_node.definition.input_has_default(mapping.maps_to.input_name)
 
@@ -484,7 +484,7 @@ class GraphDefinition(NodeDefinition):
 
     def input_supports_dynamic_output_dep(self, input_name: str) -> bool:
         mapping = self.get_input_mapping(input_name)
-        target_node = mapping.maps_to.solid_name
+        target_node = mapping.maps_to.node_name
         # check if input mapped to solid which is downstream of another dynamic output within
         if self.dependency_structure.is_dynamic_mapped(target_node):
             return False
@@ -760,10 +760,10 @@ class GraphDefinition(NodeDefinition):
                 continue
             # recurse into graph structure
             all_destinations += self.node_named(
-                mapping.maps_to.solid_name
+                mapping.maps_to.node_name
             ).definition.resolve_input_to_destinations(
                 NodeInputHandle(
-                    NodeHandle(mapping.maps_to.solid_name, parent=input_handle.node_handle),
+                    NodeHandle(mapping.maps_to.node_name, parent=input_handle.node_handle),
                     mapping.maps_to.input_name,
                 ),
             )
