@@ -156,7 +156,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         ...
 
     @abstractmethod
-    def iterate_solid_defs(self) -> Iterable["OpDefinition"]:
+    def iterate_op_defs(self) -> Iterable["OpDefinition"]:
         ...
 
     @abstractmethod

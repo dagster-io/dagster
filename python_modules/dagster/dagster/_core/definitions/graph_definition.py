@@ -355,9 +355,9 @@ class GraphDefinition(NodeDefinition):
         for outer_node_def in self._node_defs:
             yield from outer_node_def.iterate_node_defs()
 
-    def iterate_solid_defs(self) -> Iterator["OpDefinition"]:
+    def iterate_op_defs(self) -> Iterator["OpDefinition"]:
         for outer_node_def in self._node_defs:
-            yield from outer_node_def.iterate_solid_defs()
+            yield from outer_node_def.iterate_op_defs()
 
     def iterate_node_handles(
         self, parent_node_handle: Optional[NodeHandle] = None
