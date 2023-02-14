@@ -816,8 +816,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def op_config(self) -> Any:
-        solid_config = self.resolved_run_config.solids.get(str(self.solid_handle))
-        return solid_config.config if solid_config else None
+        op_config = self.resolved_run_config.solids.get(str(self.solid_handle))
+        return op_config.config if op_config else None
 
     @property
     def step_materializes_assets(self) -> bool:
