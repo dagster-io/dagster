@@ -136,7 +136,9 @@ def test_invalid_freshness_policies():
 
     with pytest.raises(DagsterInvalidDefinitionError, match="Invalid cron schedule timezone"):
         FreshnessPolicy(
-            cron_schedule="0 1 * * *", maximum_lag_minutes=60, cron_schedule_timezone="Not/ATimezone"
+            cron_schedule="0 1 * * *",
+            maximum_lag_minutes=60,
+            cron_schedule_timezone="Not/ATimezone",
         )
 
     with pytest.raises(ParameterCheckError, match="without a cron_schedule"):

@@ -121,7 +121,9 @@ class FreshnessPolicy(
                 check.numeric_param(maximum_lag_minutes, "maximum_lag_minutes")
             ),
             cron_schedule=check.opt_str_param(cron_schedule, "cron_schedule"),
-            cron_schedule_timezone=check.opt_str_param(cron_schedule_timezone, "cron_schedule_timezone"),
+            cron_schedule_timezone=check.opt_str_param(
+                cron_schedule_timezone, "cron_schedule_timezone"
+            ),
         )
 
     @classmethod
