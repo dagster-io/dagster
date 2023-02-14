@@ -16,8 +16,8 @@ from .databricks_pyspark_step_launcher import (
     DatabricksPySparkStepLauncher,
     databricks_pyspark_step_launcher,
 )
+from .ops import create_databricks_job_op
 from .resources import databricks_client
-from .solids import create_databricks_job_op
 from .types import (
     DATABRICKS_RUN_TERMINATED_STATES,
     DatabricksRunLifeCycleState,
