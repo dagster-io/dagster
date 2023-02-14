@@ -883,8 +883,19 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._event_storage.get_step_stats_for_run(run_id, step_keys)
 
     @traced
-    def get_run_tags(self) -> Sequence[Tuple[str, Set[str]]]:
-        return self._run_storage.get_run_tags()
+    def get_run_tags(
+        self,
+        tag_keys: Optional[Sequence[str]] = None,
+        value_prefix: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Sequence[Tuple[str, Set[str]]]:
+        return self._run_storage.get_run_tags(
+            tag_keys=tag_keys, value_prefix=value_prefix, limit=limit
+        )
+
+    @traced
+    def get_run_tag_keys(self) -> Sequence[str]:
+        return self._run_storage.get_run_tag_keys()
 
     @traced
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
