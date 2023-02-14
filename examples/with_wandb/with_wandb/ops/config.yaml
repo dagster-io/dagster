@@ -1,0 +1,18 @@
+resources:
+  wandb_config:
+    config:
+      entity: my_entity
+      project: my_project
+ops:
+  run_launch_agent:
+    config:
+      max_jobs: -1
+      queues:
+        - my_dagster_queue
+  my_launched_job:
+    config:
+      entry_point:
+        - python
+        - train.py
+      queue: my_dagster_queue
+      uri: https://github.com/wandb/example-dagster-integration-with-launch

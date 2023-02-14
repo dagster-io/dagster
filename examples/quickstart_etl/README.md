@@ -13,7 +13,6 @@ This guide covers:
   - [Step 1: Materializing assets](#step-1-materializing-assets)
   - [Step 2: Viewing and monitoring assets](#step-2-viewing-and-monitoring-assets)
   - [Step 3: Scheduling a daily job](#step-3-scheduling-a-daily-job)
-    - [(Optional) Running daemon locally](#optional-running-daemon-locally)
   - [Learning more](#learning-more)
     - [Changing the code locally](#changing-the-code-locally)
     - [Using environment variables and secrets](#using-environment-variables-and-secrets)
@@ -64,10 +63,10 @@ First, install your Dagster code as a Python package. By using the `--editable` 
 pip install -e ".[dev]"
 ```
 
-Then, start the Dagit web server:
+Then, start the Dagster UI web server:
 
 ```bash
-dagit
+dagster dev
 ```
 
 Open http://localhost:3000 with your browser to see the project.
@@ -175,33 +174,6 @@ You can now turn on the schedule switch to set up the daily job we defined in [q
 <p align="center">
     <img height="500" src="../../docs/next/public/images/quickstarts/basic/step-3-2-schedule-on.png" />
 </p>
-
-### (Optional) Running daemon locally
-
-If you're running Dagster locally, you will see a warning that your daemon isn’t running.
-
-<p align="center">
-    <img height="300" src="../../docs/next/public/images/quickstarts/basic/step-3-3-daemon-warning.png" />
-</p>
-
-<details><summary>👈 Expand to learn how to set up a local daemon</summary>
-
-If you want to enable Dagster [schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) for your jobs, start the [Dagster daemon](https://docs.dagster.io/deployment/dagster-daemon) process in the same folder as your `workspace.yaml` file, but in a different shell or terminal.
-
-The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. Note: using directories within `/tmp` may cause issues. See [Dagster Instance default local behavior](https://docs.dagster.io/deployment/dagster-instance#default-local-behavior) for more details.
-
-In this case, go to the project root directory and run:
-```bash
-dagster-daemon run
-```
-
-Once your Dagster daemon is running, the schedules that are turned on will start running.
-
-<p align="center">
-    <img height="500" src="../../docs/next/public/images/quickstarts/basic/step-3-4-daemon-on.png" />
-</p>
-
-</details>
 
 <br />
 <br />

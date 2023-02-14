@@ -9,6 +9,7 @@ export const SENSOR_FRAGMENT = gql`
     name
     description
     minIntervalSeconds
+    sensorType
     nextTick {
       timestamp
     }

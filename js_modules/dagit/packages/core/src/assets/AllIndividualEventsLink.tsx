@@ -134,8 +134,8 @@ const MetadataEntriesRow: React.FC<{
                             <Link to={`/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
                               <Mono>{titleForRun({runId: obs.runId})}</Mono>
                             </Link>
-                            {` (${dayjs(obs.timestamp).from(
-                              timestamp,
+                            {` (${dayjs(Number(obs.timestamp)).from(
+                              Number(timestamp),
                               true, // withoutSuffix
                             )} later)`}
                           </span>

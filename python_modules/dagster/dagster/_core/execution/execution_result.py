@@ -1,5 +1,3 @@
-# pyright: strict
-
 from abc import ABC, abstractmethod
 from typing import AbstractSet, Callable, List, Optional, Sequence, Set, Union, cast
 

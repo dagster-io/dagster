@@ -181,6 +181,7 @@ def schedule_execution_time_iterator(
     start_timestamp: float,
     cron_schedule: Union[str, Sequence[str]],
     execution_timezone: Optional[str],
+    ascending: bool = True,
 ) -> Iterator[datetime.datetime]:
     """Generator of execution datetimes >= start_timestamp for the given schedule.
 
@@ -192,10 +193,16 @@ def schedule_execution_time_iterator(
     check.invariant(is_valid_cron_schedule(cron_schedule))
 
     if isinstance(cron_schedule, str):
-        yield from cron_string_iterator(start_timestamp, cron_schedule, execution_timezone)
+        yield from cron_string_iterator(
+            start_timestamp, cron_schedule, execution_timezone
+        ) if ascending else reverse_cron_string_iterator(
+            start_timestamp, cron_schedule, execution_timezone
+        )
     else:
         iterators = [
             cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+            if ascending
+            else reverse_cron_string_iterator(start_timestamp, cron_string, execution_timezone)
             for cron_string in cron_schedule
         ]
         next_dates = [next(it) for it in iterators]

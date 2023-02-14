@@ -24,6 +24,7 @@ from dagster import (
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOutput,
+    DynamicPartitionsDefinition,
     Enum,
     EnumValue,
     ExpectationResult,
@@ -52,17 +53,22 @@ from dagster import (
     TableSchema,
     _check as check,
     asset,
+    asset_sensor,
     dagster_type_loader,
     dagster_type_materializer,
     daily_partitioned_config,
     define_asset_job,
+    freshness_policy_sensor,
     graph,
     job,
     logger,
     multi_asset,
+    multi_asset_sensor,
     op,
     repository,
     resource,
+    run_failure_sensor,
+    run_status_sensor,
     schedule,
     static_partitioned_config,
     usable_as_dagster_type,
@@ -258,17 +264,6 @@ def tag_asset_solid(_):
     yield Output(1)
 
 
-def lineage_solid_factory(solid_name_prefix, key, partitions=None):
-    @solid(
-        name=f"{solid_name_prefix}_{key}",
-        output_defs=[OutputDefinition(asset_key=AssetKey(key), asset_partitions=partitions)],
-    )
-    def _solid(_, _in1):
-        yield Output(1)
-
-    return _solid
-
-
 @pipeline
 def single_asset_pipeline():
     solid_asset_a()
@@ -287,18 +282,6 @@ def partitioned_asset_pipeline():
 @pipeline
 def asset_tag_pipeline():
     tag_asset_solid()
-
-
-@pipeline
-def asset_lineage_pipeline():
-    lineage_solid_factory("alp", "b")(lineage_solid_factory("alp", "a")(noop_solid()))
-
-
-@pipeline
-def partitioned_asset_lineage_pipeline():
-    lineage_solid_factory("palp", "b", set("1"))(
-        lineage_solid_factory("palp", "a", set("1"))(noop_solid())
-    )
 
 
 @pipeline
@@ -1039,6 +1022,11 @@ def dynamic_pipeline():
     )
 
 
+@job
+def basic_job():
+    pass
+
+
 def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None):
     selector = infer_pipeline_selector(graphql_context, "retry_multi_output_pipeline")
     return {
@@ -1234,6 +1222,20 @@ def define_schedules():
     def composite_cron_schedule(_context):
         return {}
 
+    @schedule(
+        cron_schedule="* * * * *", job=basic_job, default_status=DefaultScheduleStatus.RUNNING
+    )
+    def past_tick_schedule():
+        return {}
+
+    @schedule(cron_schedule="* * * * *", job=req_config_job)
+    def provide_config_schedule():
+        return {"ops": {"the_op": {"config": {"foo": "bar"}}}}
+
+    @schedule(cron_schedule="* * * * *", job=req_config_job)
+    def always_error():
+        raise Exception("darnit")
+
     return [
         run_config_error_schedule,
         no_config_pipeline_hourly_schedule,
@@ -1255,6 +1257,9 @@ def define_schedules():
         invalid_config_schedule,
         running_in_code_schedule,
         composite_cron_schedule,
+        past_tick_schedule,
+        provide_config_schedule,
+        always_error,
     ]
 
 
@@ -1303,6 +1308,15 @@ def define_sensors():
         raise Exception("OOPS")
 
     @sensor(job_name="no_config_pipeline")
+    def update_cursor_sensor(context):
+        if not context.cursor:
+            cursor = 0
+        else:
+            cursor = int(context.cursor)
+        cursor += 1
+        context.update_cursor(str(cursor))
+
+    @sensor(job_name="no_config_pipeline")
     def once_no_config_sensor(_):
         return RunRequest(
             run_key="once",
@@ -1337,6 +1351,26 @@ def define_sensors():
         context.log.info("hello hello")
         return SkipReason()
 
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=no_config_pipeline)
+    def run_status(_):
+        return SkipReason("always skip")
+
+    @asset_sensor(asset_key=AssetKey("foo"), job=single_asset_pipeline)
+    def single_asset_sensor():
+        pass
+
+    @multi_asset_sensor(monitored_assets=[], job=single_asset_pipeline)
+    def many_asset_sensor(_):
+        pass
+
+    @freshness_policy_sensor(asset_selection=AssetSelection.all())
+    def fresh_sensor(_):
+        pass
+
+    @run_failure_sensor
+    def the_failure_sensor():
+        pass
+
     return [
         always_no_config_sensor,
         always_error_sensor,
@@ -1346,6 +1380,12 @@ def define_sensors():
         custom_interval_sensor,
         running_in_code_sensor,
         logging_sensor,
+        update_cursor_sensor,
+        run_status,
+        single_asset_sensor,
+        many_asset_sensor,
+        fresh_sensor,
+        the_failure_sensor,
     ]
 
 
@@ -1557,6 +1597,24 @@ static_partitioned_assets_job = build_assets_job(
 )
 
 
+@asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
+def upstream_dynamic_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=DynamicPartitionsDefinition(name="foo"))
+def downstream_dynamic_partitioned_asset(
+    upstream_dynamic_partitioned_asset,
+):  # pylint: disable=redefined-outer-name
+    assert upstream_dynamic_partitioned_asset
+
+
+dynamic_partitioned_assets_job = build_assets_job(
+    "dynamic_partitioned_assets_job",
+    assets=[upstream_dynamic_partitioned_asset, downstream_dynamic_partitioned_asset],
+)
+
+
 @static_partitioned_config(partition_keys=["1", "2", "3", "4", "5"])
 def my_static_partitioned_config(_partition_key: str):
     return {}
@@ -1658,6 +1716,15 @@ def nested_job():
         return plus_one(adder(op_1(), op_2()))
 
     plus_one(subgraph())
+
+
+@job
+def req_config_job():
+    @op(config_schema={"foo": str})
+    def the_op():
+        pass
+
+    the_op()
 
 
 @asset
@@ -1811,6 +1878,7 @@ def empty_repo():
 def define_pipelines():
     return [
         asset_tag_pipeline,
+        basic_job,
         composites_pipeline,
         csv_hello_world_df_input,
         csv_hello_world_two,
@@ -1850,8 +1918,6 @@ def define_pipelines():
         tagged_pipeline,
         chained_failure_pipeline,
         dynamic_pipeline,
-        asset_lineage_pipeline,
-        partitioned_asset_lineage_pipeline,
         backcompat_materialization_pipeline,
         simple_graph.to_job("simple_job_a"),
         simple_graph.to_job("simple_job_b"),
@@ -1861,6 +1927,7 @@ def define_pipelines():
         two_ins_job,
         two_assets_job,
         static_partitioned_assets_job,
+        dynamic_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
         observation_job,
@@ -1869,6 +1936,7 @@ def define_pipelines():
         hanging_graph_asset_job,
         named_groups_job,
         memoization_job,
+        req_config_job,
     ]
 
 

@@ -9,7 +9,7 @@ from dagster import (
     OutputMapping,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.graph_definition import _create_adjacency_lists
+from dagster._core.definitions.graph_definition import create_adjacency_lists
 from dagster._utils.schedules import is_valid_cron_schedule
 
 from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
@@ -131,7 +131,7 @@ def load_assets_from_airflow_dag(
         raise DagsterAirflowError("Invalid start_date: {} in DAG {}".format(start_date, dag.dag_id))
 
     # leaf nodes have no downstream nodes
-    forward_edges, _ = _create_adjacency_lists(graph.nodes, graph.dependency_structure)
+    forward_edges, _ = create_adjacency_lists(graph.nodes, graph.dependency_structure)
     leaf_nodes = {
         node_name.replace(f"{normalized_name(dag.dag_id)}__", "")
         for node_name, downstream_nodes in forward_edges.items()
@@ -178,7 +178,6 @@ def load_assets_from_airflow_dag(
         )
         if cron_schedule is not None
         else None,
-        resource_defs=job.resource_defs,
         group_name=dag.dag_id,
         keys_by_output_name=keys_by_output_name,
         internal_asset_deps=internal_asset_deps,

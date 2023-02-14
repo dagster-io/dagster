@@ -40,8 +40,6 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         conn = _connect_duckdb(context).cursor()
 
         pd_df = obj.toPandas()  # noqa: F841
-
-        conn.execute(f"create schema if not exists {table_slice.schema};")
         conn.execute(
             f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
             " pd_df;"

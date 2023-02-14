@@ -1,12 +1,13 @@
-from typing import Sequence
+from typing import Sequence, cast
 
 import duckdb
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
-    TablePartition,
+    TablePartitionDimension,
     TableSlice,
 )
 from dagster._utils.backoff import backoff
@@ -112,13 +113,24 @@ class DuckDbClient(DbClient):
         conn.close()
 
     @staticmethod
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
+        conn = _connect_duckdb(context).cursor()
+        conn.execute(f"create schema if not exists {table_slice.schema};")
+        conn.close()
+
+    @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
-        if table_slice.partition:
-            return (
-                f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}\n"
-                + _time_window_where_clause(table_slice.partition)
+
+        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+            query = f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table} WHERE\n"
+            partition_where = " AND\n".join(
+                _static_where_clause(partition_dimension)
+                if isinstance(partition_dimension.partition, str)
+                else _time_window_where_clause(partition_dimension)
+                for partition_dimension in table_slice.partition_dimensions
             )
+            return query + partition_where
         else:
             return f"""SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}"""
 
@@ -137,17 +149,27 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.partition:
-        return (
-            f"DELETE FROM {table_slice.schema}.{table_slice.table}\n"
-            + _time_window_where_clause(table_slice.partition)
+    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        query = f"DELETE FROM {table_slice.schema}.{table_slice.table} WHERE\n"
+
+        partition_where = " AND\n".join(
+            _static_where_clause(partition_dimension)
+            if isinstance(partition_dimension.partition, str)
+            else _time_window_where_clause(partition_dimension)
+            for partition_dimension in table_slice.partition_dimensions
         )
+        return query + partition_where
     else:
         return f"DELETE FROM {table_slice.schema}.{table_slice.table}"
 
 
-def _time_window_where_clause(table_partition: TablePartition) -> str:
-    start_dt, end_dt = table_partition.time_window
+def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
+    partition = cast(TimeWindow, table_partition.partition)
+    start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(DUCKDB_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(DUCKDB_DATETIME_FORMAT)
-    return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+    return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+
+
+def _static_where_clause(table_partition: TablePartitionDimension) -> str:
+    return f"""{table_partition.partition_expr} = '{table_partition.partition}'"""

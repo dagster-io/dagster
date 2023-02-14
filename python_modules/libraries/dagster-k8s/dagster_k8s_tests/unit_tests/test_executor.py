@@ -3,7 +3,7 @@ import json
 from unittest import mock
 
 import pytest
-from dagster._core.definitions.mode import ModeDefinition
+from dagster import execute_job, job, op
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.api import create_execution_plan
@@ -15,31 +15,21 @@ from dagster._core.executor.step_delegating.step_handler.base import StepHandler
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster._grpc.types import ExecuteStepArgs
-from dagster._legacy import PipelineDefinition, execute_pipeline, solid
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
 
 
-def _get_pipeline(name, solid_tags=None):
-    @solid(tags=solid_tags or {})
+@job(
+    executor_def=k8s_job_executor,
+    resource_defs={"io_manager": fs_io_manager},
+)
+def bar():
+    @op
     def foo():
         return 1
 
-    return PipelineDefinition(
-        name=name,
-        solid_defs=[foo],
-        mode_defs=[
-            ModeDefinition(
-                executor_defs=[k8s_job_executor],
-                resource_defs={"io_manager": fs_io_manager},
-            )
-        ],
-    )
-
-
-def bar():
-    return _get_pipeline("bar")
+    foo()
 
 
 RESOURCE_TAGS = {
@@ -48,23 +38,44 @@ RESOURCE_TAGS = {
 }
 
 
+@job(
+    executor_def=k8s_job_executor,
+    resource_defs={"io_manager": fs_io_manager},
+)
 def bar_with_resources():
     expected_resources = RESOURCE_TAGS
-    user_defined_k8s_config = UserDefinedDagsterK8sConfig(
+    user_defined_k8s_config_with_resources = UserDefinedDagsterK8sConfig(
         container_config={"resources": expected_resources},
     )
-    user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
+    user_defined_k8s_config_with_resources_json = json.dumps(
+        user_defined_k8s_config_with_resources.to_dict()
+    )
 
-    return _get_pipeline("bar_with_resources", {"dagster-k8s/config": user_defined_k8s_config_json})
+    @op(tags={"dagster-k8s/config": user_defined_k8s_config_with_resources_json})
+    def foo():
+        return 1
+
+    foo()
 
 
+@job(
+    executor_def=k8s_job_executor,
+    resource_defs={"io_manager": fs_io_manager},
+)
 def bar_with_images():
-    # Construct Dagster solid tags with user defined k8s config.
-    user_defined_k8s_config = UserDefinedDagsterK8sConfig(
+    # Construct Dagster op tags with user defined k8s config.
+    user_defined_k8s_config_with_image = UserDefinedDagsterK8sConfig(
         container_config={"image": "new-image"},
     )
-    user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
-    return _get_pipeline("bar_with_images", {"dagster-k8s/config": user_defined_k8s_config_json})
+    user_defined_k8s_config_with_image_json = json.dumps(
+        user_defined_k8s_config_with_image.to_dict()
+    )
+
+    @op(tags={"dagster-k8s/config": user_defined_k8s_config_with_image_json})
+    def foo():
+        return 1
+
+    foo()
 
 
 @pytest.fixture
@@ -94,7 +105,7 @@ def test_requires_k8s_launcher_fail():
             DagsterUnmetExecutorRequirementsError,
             match="This engine is only compatible with a K8sRunLauncher",
         ):
-            execute_pipeline(reconstructable(bar), instance=instance)
+            execute_job(reconstructable(bar), instance=instance, raise_on_error=True)
 
 
 def _get_executor(instance, pipeline, executor_config=None):

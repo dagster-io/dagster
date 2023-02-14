@@ -40,14 +40,22 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
+from dagster._core.definitions.partition import (
+    DynamicPartitionsDefinition,
+    PartitionScheduleDefinition,
+    ScheduleType,
+)
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
     get_builtin_partition_mapping_types,
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    SensorDefinition,
+    SensorType,
+)
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -415,7 +423,10 @@ class ExternalSensorMetadata(
 class ExternalSensorDataSerializer(DefaultNamedTupleSerializer):
     @classmethod
     def skip_when_empty(cls) -> Set[str]:
-        return {"default_status"}  # Maintain stable snapshot ID for back-compat purposes
+        return {
+            "default_status",
+            "sensor_type",
+        }  # Maintain stable snapshot ID for back-compat purposes
 
 
 @whitelist_for_serdes(serializer=ExternalSensorDataSerializer)
@@ -432,6 +443,7 @@ class ExternalSensorData(
             ("target_dict", Mapping[str, ExternalTargetData]),
             ("metadata", Optional[ExternalSensorMetadata]),
             ("default_status", Optional[DefaultSensorStatus]),
+            ("sensor_type", Optional[SensorType]),
         ],
     )
 ):
@@ -446,6 +458,7 @@ class ExternalSensorData(
         target_dict: Optional[Mapping[str, ExternalTargetData]] = None,
         metadata: Optional[ExternalSensorMetadata] = None,
         default_status: Optional[DefaultSensorStatus] = None,
+        sensor_type: Optional[SensorType] = None,
     ):
         if pipeline_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
@@ -479,6 +492,7 @@ class ExternalSensorData(
             default_status=DefaultSensorStatus.RUNNING
             if default_status == DefaultSensorStatus.RUNNING
             else None,
+            sensor_type=sensor_type,
         )
 
 
@@ -670,6 +684,15 @@ class ExternalMultiPartitionsDefinitionData(
                 for partition_dimension in self.external_partition_dimension_definitions
             }
         )
+
+
+@whitelist_for_serdes
+class ExternalDynamicPartitionsDefinitionData(
+    ExternalPartitionsDefinitionData,
+    NamedTuple("_ExternalDynamicPartitionsDefinitionData", [("name", str)]),
+):
+    def get_partitions_definition(self):
+        return DynamicPartitionsDefinition(name=self.name)
 
 
 @whitelist_for_serdes
@@ -1218,7 +1241,7 @@ def external_asset_graph_from_defs(
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
                 code_version=code_version_by_asset_key.get(asset_key),
-                op_description=node_def.description or output_def.description,
+                op_description=output_def.description or node_def.description,
                 node_definition_name=node_def.name,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,
@@ -1336,9 +1359,12 @@ def external_partitions_definition_from_def(
         return external_static_partitions_definition_from_def(partitions_def)
     elif isinstance(partitions_def, MultiPartitionsDefinition):
         return external_multi_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, DynamicPartitionsDefinition):
+        return external_dynamic_partitions_definition_from_def(partitions_def)
     else:
         raise DagsterInvalidDefinitionError(
-            "Only static, time window, and multi-dimensional partitions are currently supported."
+            "Only static, time window, multi-dimensional partitions, and dynamic partitions"
+            " definitions with a name parameter are currently supported."
         )
 
 
@@ -1391,6 +1417,17 @@ def external_multi_partitions_definition_from_def(
             for dimension in partitions_def.partitions_defs
         ]
     )
+
+
+def external_dynamic_partitions_definition_from_def(
+    partitions_def: DynamicPartitionsDefinition,
+) -> ExternalDynamicPartitionsDefinitionData:
+    check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)
+    if partitions_def.name is None:
+        raise DagsterInvalidDefinitionError(
+            "Dagit does not support dynamic partitions definitions without a name parameter."
+        )
+    return ExternalDynamicPartitionsDefinitionData(name=partitions_def.name)
 
 
 def external_partition_set_data_from_def(
@@ -1453,6 +1490,7 @@ def external_sensor_data_from_def(
         description=sensor_def.description,
         metadata=ExternalSensorMetadata(asset_keys=asset_keys),
         default_status=sensor_def.default_status,
+        sensor_type=sensor_def.sensor_type,
     )
 
 

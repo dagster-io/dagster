@@ -17,7 +17,6 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions import InputDefinition, NodeHandle, PipelineDefinition
-from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.version_strategy import ResourceVersionContext
@@ -40,18 +39,6 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext
     from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.storage.input_manager import InputManager
-
-
-def _get_asset_lineage_from_fns(
-    context, asset_key_fn, asset_partitions_fn
-) -> Optional[AssetLineageInfo]:
-    asset_key = asset_key_fn(context)
-    if not asset_key:
-        return None
-    return AssetLineageInfo(
-        asset_key=asset_key,
-        partitions=asset_partitions_fn(context),
-    )
 
 
 @whitelist_for_serdes
@@ -121,13 +108,6 @@ class StepInputSource(ABC):
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> AbstractSet[str]:
         return set()
-
-    def get_asset_lineage(
-        self,
-        _step_context: "StepExecutionContext",
-        _input_def: InputDefinition,
-    ) -> Sequence[AssetLineageInfo]:
-        return []
 
     @abstractmethod
     def compute_version(
@@ -462,12 +442,18 @@ class FromStepOutput(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
+        io_manager_key: Optional[str] = None,
     ) -> "InputContext":
-        io_manager_key = step_context.execution_plan.get_manager_key(
-            self.step_output_handle, step_context.pipeline_def
+        resolved_io_manager_key = (
+            step_context.execution_plan.get_manager_key(
+                self.step_output_handle, step_context.pipeline_def
+            )
+            if io_manager_key is None
+            else io_manager_key
         )
-        resource_config = step_context.resolved_run_config.resources[io_manager_key].config
-        resources = build_resources_for_manager(io_manager_key, step_context)
+
+        resource_config = step_context.resolved_run_config.resources[resolved_io_manager_key].config
+        resources = build_resources_for_manager(resolved_io_manager_key, step_context)
 
         solid_config = step_context.resolved_run_config.solids.get(str(step_context.solid_handle))
         config_data = solid_config.inputs.get(input_def.name) if solid_config else None
@@ -519,7 +505,9 @@ class FromStepOutput(
                     f'"{manager_key}" is an IOManager.'
                 ),
             )
-        load_input_context = self.get_load_context(step_context, input_def)
+        load_input_context = self.get_load_context(
+            step_context, input_def, io_manager_key=manager_key
+        )
         yield from _load_input_with_input_manager(input_manager, load_input_context)
 
         metadata_entries = load_input_context.consume_metadata_entries()
@@ -553,35 +541,6 @@ class FromStepOutput(
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
-
-    def get_asset_lineage(
-        self,
-        step_context: "StepExecutionContext",
-        input_def: InputDefinition,
-    ) -> Sequence[AssetLineageInfo]:
-        load_context = self.get_load_context(step_context, input_def)
-
-        # check input_def
-        if input_def.is_asset:
-            lineage_info = _get_asset_lineage_from_fns(
-                load_context, input_def.get_asset_key, input_def.get_asset_partitions
-            )
-            return [lineage_info] if lineage_info else []
-
-        # check output_def
-        upstream_output = step_context.execution_plan.get_step_output(self.step_output_handle)
-        if upstream_output.is_asset:
-            output_def = step_context.pipeline_def.get_solid(
-                upstream_output.solid_handle
-            ).output_def_named(upstream_output.name)
-            lineage_info = _get_asset_lineage_from_fns(
-                load_context.upstream_output,
-                output_def.get_asset_key,
-                output_def.get_asset_partitions,
-            )
-            return [lineage_info] if lineage_info else []
-
-        return []
 
 
 @whitelist_for_serdes
@@ -846,15 +805,6 @@ class FromMultipleSources(
                 for inner_source in self.sources
             ]
         )
-
-    def get_asset_lineage(
-        self, step_context: "StepExecutionContext", input_def: InputDefinition
-    ) -> Sequence[AssetLineageInfo]:
-        return [
-            relation
-            for source in self.sources
-            for relation in source.get_asset_lineage(step_context, input_def)
-        ]
 
 
 def _load_input_with_input_manager(

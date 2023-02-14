@@ -22,10 +22,16 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
+from dagster._core.definitions.selector import (
+    InstigatorSelector,
+    RepositorySelector,
+    ScheduleSelector,
+    SensorSelector,
+)
 from dagster._core.definitions.sensor_definition import (
     DEFAULT_SENSOR_DAEMON_INTERVAL,
     DefaultSensorStatus,
+    SensorType,
 )
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.host_representation.origin import (
@@ -247,7 +253,9 @@ class ExternalRepository:
         """
         return self.get_external_origin().get_id()
 
-    def get_external_asset_nodes(self, job_name=None) -> Sequence[ExternalAssetNode]:
+    def get_external_asset_nodes(
+        self, job_name: Optional[str] = None
+    ) -> Sequence[ExternalAssetNode]:
         return (
             self.external_repository_data.external_asset_graph_data
             if job_name is None
@@ -628,6 +636,14 @@ class ExternalSchedule:
         )
 
     @property
+    def schedule_selector(self) -> ScheduleSelector:
+        return ScheduleSelector(
+            self.handle.location_name,
+            self.handle.repository_name,
+            self._external_schedule_data.name,
+        )
+
+    @property
     def selector_id(self) -> str:
         return create_snapshot_id(self.selector)
 
@@ -673,9 +689,11 @@ class ExternalSchedule:
                 ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
             )
 
-    def execution_time_iterator(self, start_timestamp: float) -> Iterator[datetime]:
+    def execution_time_iterator(
+        self, start_timestamp: float, ascending: bool = True
+    ) -> Iterator[datetime]:
         return schedule_execution_time_iterator(
-            start_timestamp, self.cron_schedule, self.execution_timezone
+            start_timestamp, self.cron_schedule, self.execution_timezone, ascending
         )
 
 
@@ -754,8 +772,20 @@ class ExternalSensor:
         )
 
     @property
+    def sensor_selector(self) -> SensorSelector:
+        return SensorSelector(
+            self.handle.location_name,
+            self.handle.repository_name,
+            self._external_sensor_data.name,
+        )
+
+    @property
     def selector_id(self) -> str:
         return create_snapshot_id(self.selector)
+
+    @property
+    def sensor_type(self) -> SensorType:
+        return self._external_sensor_data.sensor_type or SensorType.UNKNOWN
 
     def get_current_instigator_state(
         self, stored_state: Optional["InstigatorState"]

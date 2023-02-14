@@ -300,6 +300,7 @@ const OVERVIEW_SENSORS_QUERY = gql`
                   id
                   name
                   description
+                  sensorType
                 }
               }
             }

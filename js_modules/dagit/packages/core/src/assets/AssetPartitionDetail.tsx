@@ -13,6 +13,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AllIndividualEventsLink} from './AllIndividualEventsLink';
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
+import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationUpstreamData} from './AssetMaterializationUpstreamData';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetKey} from './types';
@@ -72,7 +73,7 @@ export const AssetPartitionDetailLoader: React.FC<{assetKey: AssetKey; partition
   );
 };
 
-const ASSET_PARTITION_DETAIL_QUERY = gql`
+export const ASSET_PARTITION_DETAIL_QUERY = gql`
   query AssetPartitionDetailQuery($assetKey: AssetKeyInput!, $partitionKey: String!) {
     assetNodeOrError(assetKey: $assetKey) {
       __typename
@@ -121,7 +122,7 @@ export const AssetPartitionDetail: React.FC<{
       : [];
 
   return (
-    <Box padding={{horizontal: 24}} style={{flex: 1}}>
+    <Box padding={{horizontal: 24, bottom: 24}} style={{flex: 1}}>
       <Box
         padding={{vertical: 24}}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
@@ -139,7 +140,7 @@ export const AssetPartitionDetail: React.FC<{
             )}
           </Box>
         ) : (
-          <Heading color={Colors.Gray400}>No Partition Selected</Heading>
+          <Heading color={Colors.Gray400}>No partition selected</Heading>
         )}
         <div style={{flex: 1}} />
       </Box>
@@ -149,7 +150,7 @@ export const AssetPartitionDetail: React.FC<{
         padding={{vertical: 16}}
       >
         <Box flex={{gap: 4, direction: 'column'}}>
-          <Subheading>Latest Event</Subheading>
+          <Subheading>Latest event</Subheading>
           {!latest ? (
             <Box flex={{gap: 4}}>
               <Icon name="materialization" />
@@ -215,8 +216,12 @@ export const AssetPartitionDetail: React.FC<{
         <AssetEventMetadataEntriesTable event={latest} observations={observationsAboutLatest} />
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subheading>Source Data</Subheading>
+        <Subheading>Source data</Subheading>
         <AssetMaterializationUpstreamData timestamp={latest?.timestamp} assetKey={assetKey} />
+      </Box>
+      <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
+        <Subheading>System tags</Subheading>
+        <AssetEventSystemTags event={latest} collapsible />
       </Box>
     </Box>
   );

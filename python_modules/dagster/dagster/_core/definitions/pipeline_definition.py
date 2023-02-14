@@ -269,7 +269,7 @@ class PipelineDefinition:
             self._preset_dict[preset.name] = preset
 
         self._asset_layer = check.opt_inst_param(
-            asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
+            asset_layer, "asset_layer", AssetLayer, default=AssetLayer()
         )
 
         resource_requirements = {}
@@ -466,7 +466,7 @@ class PipelineDefinition:
         return self._graph_def.solid_named(name)
 
     @property
-    def solids(self):
+    def solids(self) -> Sequence[Node]:
         return self._graph_def.solids
 
     @property

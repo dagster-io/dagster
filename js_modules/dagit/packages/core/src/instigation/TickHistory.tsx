@@ -19,7 +19,6 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {TickLogDialog} from '../TickLogDialog';
 import {SharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -30,6 +29,7 @@ import {InstigationTickStatus, InstigationType} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {TickLogDialog} from '../ticks/TickLogDialog';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -374,7 +374,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
         id
         instigationType
         nextTick {
-          ...NextTickForHistoy
+          ...NextTickForHistory
         }
         ticks(dayRange: $dayRange, limit: $limit, cursor: $cursor, statuses: $statuses) {
           id
@@ -385,7 +385,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
     }
   }
 
-  fragment NextTickForHistoy on FutureInstigationTick {
+  fragment NextTickForHistory on DryRunInstigationTick {
     timestamp
   }
 
@@ -435,3 +435,5 @@ const CopyButton = styled.button`
     background-color: ${Colors.Link};
   }
 `;
+
+export type Test = React.SyntheticEvent<HTMLElement>;

@@ -457,7 +457,8 @@ class OutputContext:
             )
 
         return self.asset_partitions_def.get_partition_keys_in_range(
-            self.step_context.asset_partition_key_range_for_output(self.name)
+            self.step_context.asset_partition_key_range_for_output(self.name),
+            dynamic_partitions_store=self.step_context.instance,
         )
 
     @public
@@ -611,13 +612,7 @@ class OutputContext:
 
         if isinstance(event, (AssetMaterialization, Materialization)):
             if self._step_context:
-                self._events.append(
-                    DagsterEvent.asset_materialization(
-                        self._step_context,
-                        event,
-                        self._step_context.get_input_lineage(),
-                    )
-                )
+                self._events.append(DagsterEvent.asset_materialization(self._step_context, event))
             self._user_events.append(event)
         elif isinstance(event, AssetObservation):
             if self._step_context:

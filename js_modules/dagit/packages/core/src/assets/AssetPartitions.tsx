@@ -201,7 +201,7 @@ export const AssetPartitions: React.FC<Props> = ({
           </Box>
         ))}
 
-        <Box style={{flex: 3, minWidth: 0}} flex={{direction: 'column'}}>
+        <Box style={{flex: 3, minWidth: 0, overflowY: 'auto'}} flex={{direction: 'column'}}>
           {params.partition && focusedDimensionKeys.length === ranges.length ? (
             <AssetPartitionDetailLoader assetKey={assetKey} partitionKey={params.partition} />
           ) : (

@@ -1,6 +1,5 @@
 from typing import (
     TYPE_CHECKING,
-    Callable,
     Iterable,
     Mapping,
     Optional,
@@ -12,7 +11,10 @@ from typing import (
 )
 
 from dagster import _check as check
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.event_api import EventHandlerFn
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import PrintFn
 
 from .base_storage import DagsterStorage
 from .event_log.base import (
@@ -33,6 +35,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
+    from dagster._core.instance import DagsterInstance
     from dagster._core.scheduler.instigation import (
         InstigatorState,
         InstigatorTick,
@@ -81,7 +84,7 @@ class CompositeStorage(DagsterStorage, ConfigurableClass):
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return {
             "run_storage": {
                 "module_name": str,
@@ -103,7 +106,7 @@ class CompositeStorage(DagsterStorage, ConfigurableClass):
     @staticmethod
     def from_config_value(
         inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, Mapping[str, str]]
-    ):
+    ) -> "CompositeStorage":
         run_storage_config = config_value["run_storage"]
         run_storage = cast(
             RunStorage,
@@ -159,15 +162,15 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         return self._inst_data
 
     @property
-    def _instance(self):
-        return self._storage._instance  # pylint: disable=protected-access
+    def _instance(self) -> Optional["DagsterInstance"]:
+        return self._storage._instance
 
-    def register_instance(self, instance):
-        if not self._storage._instance:  # pylint: disable=protected-access
+    def register_instance(self, instance: "DagsterInstance") -> None:
+        if not self._storage._instance:
             self._storage.register_instance(instance)
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return {
             "module_name": str,
             "class_name": str,
@@ -175,7 +178,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         }
 
     @staticmethod
-    def from_config_value(inst_data, config_value: Mapping[str, str]) -> "LegacyRunStorage":
+    def from_config_value(
+        inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, str]
+    ) -> "LegacyRunStorage":
         storage = ConfigurableClassData(
             module_name=config_value["module_name"],
             class_name=config_value["class_name"],
@@ -282,12 +287,10 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def supports_bucket_queries(self) -> bool:
         return self._storage.run_storage.supports_bucket_queries
 
-    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False) -> None:
+    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.run_storage.migrate(print_fn, force_rebuild_all)
 
-    def optimize(
-        self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False
-    ) -> None:
+    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.run_storage.optimize(print_fn, force_rebuild_all)
 
     def dispose(self) -> None:
@@ -316,10 +319,10 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._storage.run_storage.get_backfill(backfill_id)
 
-    def add_backfill(self, partition_backfill: "PartitionBackfill"):
+    def add_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         return self._storage.run_storage.add_backfill(partition_backfill)
 
-    def update_backfill(self, partition_backfill: "PartitionBackfill"):
+    def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         return self._storage.run_storage.update_backfill(partition_backfill)
 
     def get_run_partition_data(self, runs_filter: "RunsFilter") -> Sequence["RunPartitionData"]:
@@ -331,7 +334,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def kvs_set(self, pairs: Mapping[str, str]) -> None:
         return self._storage.run_storage.kvs_set(pairs)
 
-    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalPipelineOrigin"):
+    def replace_job_origin(self, run: "DagsterRun", job_origin: "ExternalPipelineOrigin") -> None:
         return self._storage.run_storage.replace_job_origin(run, job_origin)
 
 
@@ -346,7 +349,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return {
             "module_name": str,
             "class_name": str,
@@ -356,7 +359,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     @staticmethod
     def from_config_value(
         inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, str]
-    ):
+    ) -> "LegacyEventLogStorage":
         storage = cast(
             DagsterStorage,
             ConfigurableClassData(
@@ -370,10 +373,10 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return LegacyEventLogStorage(storage, inst_data=inst_data)
 
     @property
-    def _instance(self):
+    def _instance(self) -> Optional["DagsterInstance"]:
         return self._storage._instance  # pylint: disable=protected-access
 
-    def register_instance(self, instance):
+    def register_instance(self, instance: "DagsterInstance") -> None:
         if not self._storage._instance:  # pylint: disable=protected-access
             self._storage.register_instance(instance)
 
@@ -390,42 +393,42 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.get_stats_for_run(run_id)
 
     def get_step_stats_for_run(
-        self, run_id: str, step_keys=None
+        self, run_id: str, step_keys: Optional[Sequence[str]] = None
     ) -> Sequence["RunStepKeyStatsSnapshot"]:
         return self._storage.event_log_storage.get_step_stats_for_run(run_id, step_keys)
 
-    def store_event(self, event: "EventLogEntry"):
+    def store_event(self, event: "EventLogEntry") -> None:
         return self._storage.event_log_storage.store_event(event)
 
-    def delete_events(self, run_id: str):
+    def delete_events(self, run_id: str) -> None:
         return self._storage.event_log_storage.delete_events(run_id)
 
-    def upgrade(self):
+    def upgrade(self) -> None:
         return self._storage.event_log_storage.upgrade()
 
-    def reindex_events(self, print_fn: Optional[Callable] = None, force: bool = False):
+    def reindex_events(self, print_fn: Optional[PrintFn] = None, force: bool = False) -> None:
         return self._storage.event_log_storage.reindex_events(print_fn, force)
 
-    def reindex_assets(self, print_fn: Optional[Callable] = None, force: bool = False):
+    def reindex_assets(self, print_fn: Optional[PrintFn] = None, force: bool = False) -> None:
         return self._storage.event_log_storage.reindex_assets(print_fn, force)
 
-    def wipe(self):
+    def wipe(self) -> None:
         return self._storage.event_log_storage.wipe()
 
-    def watch(self, run_id: str, cursor: str, callback: Callable):
+    def watch(self, run_id: str, cursor: str, callback: EventHandlerFn) -> None:
         return self._storage.event_log_storage.watch(run_id, cursor, callback)
 
-    def end_watch(self, run_id: str, handler: Callable):
+    def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
         return self._storage.event_log_storage.end_watch(run_id, handler)
 
     @property
     def is_persistent(self) -> bool:
         return self._storage.event_log_storage.is_persistent
 
-    def dispose(self):
+    def dispose(self) -> None:
         return self._storage.event_log_storage.dispose()
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
         return self._storage.event_log_storage.optimize_for_dagit(statement_timeout, pool_recycle)
 
     def get_event_records(
@@ -519,10 +522,10 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_records_for_run(
         self,
-        run_id,
-        cursor=None,
-        of_type=None,
-        limit=None,
+        run_id: str,
+        cursor: Optional[str] = None,
+        of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None,
+        limit: Optional[int] = None,
     ) -> EventLogConnection:
         return self._storage.event_log_storage.get_records_for_run(run_id, cursor, of_type, limit)
 
@@ -538,7 +541,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return {
             "module_name": str,
             "class_name": str,
@@ -560,11 +563,11 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         return LegacyScheduleStorage(storage, inst_data=inst_data)
 
     @property
-    def _instance(self):
-        return self._storage._instance  # pylint: disable=protected-access
+    def _instance(self) -> Optional["DagsterInstance"]:
+        return self._storage._instance  # pyright: disable=reportPrivateUsage
 
-    def register_instance(self, instance):
-        if not self._storage._instance:  # pylint: disable=protected-access
+    def register_instance(self, instance: "DagsterInstance") -> None:
+        if not self._storage._instance:  # pyright: disable=reportPrivateUsage
             self._storage.register_instance(instance)
 
     def wipe(self) -> None:
@@ -615,10 +618,10 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
             origin_id, selector_id, before, after, limit, statuses
         )
 
-    def create_tick(self, tick_data: "TickData") -> None:
+    def create_tick(self, tick_data: "TickData") -> "InstigatorTick":
         return self._storage.schedule_storage.create_tick(tick_data)
 
-    def update_tick(self, tick: "InstigatorTick") -> None:
+    def update_tick(self, tick: "InstigatorTick") -> "InstigatorTick":
         return self._storage.schedule_storage.update_tick(tick)
 
     def purge_ticks(
@@ -635,16 +638,14 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def upgrade(self) -> None:
         return self._storage.schedule_storage.upgrade()
 
-    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False) -> None:
+    def migrate(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.schedule_storage.migrate(print_fn, force_rebuild_all)
 
-    def optimize(
-        self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False
-    ) -> None:
+    def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.schedule_storage.optimize(print_fn, force_rebuild_all)
 
     def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
         return self._storage.schedule_storage.optimize_for_dagit(statement_timeout, pool_recycle)
 
-    def dispose(self):
+    def dispose(self) -> None:
         return self._storage.schedule_storage.dispose()

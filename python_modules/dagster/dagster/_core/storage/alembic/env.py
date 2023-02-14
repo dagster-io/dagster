@@ -12,6 +12,6 @@ config = context.config
 target_metadata = [SqlEventLogStorageMetadata, SqlRunStorage, SqlScheduleStorage]
 
 if context.is_offline_mode():
-    run_migrations_offline(context, config, target_metadata)
+    run_migrations_offline(context, config, target_metadata)  # type: ignore  # (bad stubs)
 else:
-    run_migrations_online(context, config, target_metadata)
+    run_migrations_online(context, config, target_metadata)  # type: ignore  # (bad stubs)

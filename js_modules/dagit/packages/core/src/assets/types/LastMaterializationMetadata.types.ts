@@ -8,6 +8,7 @@ export type LatestMaterializationMetadataFragment = {
   runId: string;
   timestamp: string;
   stepKey: string | null;
+  tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
   runOrError:
     | {__typename: 'PythonError'}
     | {

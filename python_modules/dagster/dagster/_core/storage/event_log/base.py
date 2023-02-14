@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
-    Callable,
     Iterable,
     Mapping,
     NamedTuple,
@@ -16,7 +15,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey
-from dagster._core.event_api import EventLogRecord, EventRecordsFilter
+from dagster._core.event_api import EventHandlerFn, EventLogRecord, EventRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import (
@@ -26,7 +25,9 @@ from dagster._core.execution.stats import (
 )
 from dagster._core.instance import MayHaveInstanceWeakref
 from dagster._core.storage.pipeline_run import PipelineRunStatsSnapshot
+from dagster._core.storage.sql import AlembicVersion
 from dagster._seven import json
+from dagster._utils import PrintFn
 
 if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
@@ -63,7 +64,7 @@ class EventLogCursor(NamedTuple):
         check.invariant(self.cursor_type == EventLogCursorType.STORAGE_ID)
         return int(self.value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.to_string()
 
     def to_string(self) -> str:
@@ -120,7 +121,7 @@ class AssetEntry(
         )
 
     @property
-    def last_materialization(self) -> Optional[EventLogEntry]:
+    def last_materialization(self) -> Optional["EventLogEntry"]:
         if self.last_materialization_record is None:
             return None
         return self.last_materialization_record.event_log_entry
@@ -154,7 +155,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         cursor: Optional[Union[str, int]] = None,
         of_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
-    ) -> Iterable[EventLogEntry]:
+    ) -> Iterable["EventLogEntry"]:
         """Get all of the logs corresponding to a run.
 
         Args:
@@ -191,7 +192,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         return build_run_stats_from_events(run_id, self.get_logs_for_run(run_id))
 
     def get_step_stats_for_run(
-        self, run_id: str, step_keys=None
+        self, run_id: str, step_keys: Optional[Sequence[str]] = None
     ) -> Sequence[RunStepKeyStatsSnapshot]:
         """Get per-step stats for a pipeline run."""
         logs = self.get_logs_for_run(run_id)
@@ -205,7 +206,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         return build_run_step_stats_from_events(run_id, logs)
 
     @abstractmethod
-    def store_event(self, event: EventLogEntry):
+    def store_event(self, event: "EventLogEntry") -> None:
         """Store an event corresponding to a pipeline run.
 
         Args:
@@ -213,33 +214,33 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def delete_events(self, run_id: str):
+    def delete_events(self, run_id: str) -> None:
         """Remove events for a given run id."""
 
     @abstractmethod
-    def upgrade(self):
+    def upgrade(self) -> None:
         """This method should perform any schema migrations necessary to bring an
         out-of-date instance of the storage up to date.
         """
 
     @abstractmethod
-    def reindex_events(self, print_fn: Optional[Callable] = None, force: bool = False):
+    def reindex_events(self, print_fn: Optional[PrintFn] = None, force: bool = False) -> None:
         """Call this method to run any data migrations across the event_log tables."""
 
     @abstractmethod
-    def reindex_assets(self, print_fn: Optional[Callable] = None, force: bool = False):
+    def reindex_assets(self, print_fn: Optional[PrintFn] = None, force: bool = False) -> None:
         """Call this method to run any data migrations across the asset tables."""
 
     @abstractmethod
-    def wipe(self):
+    def wipe(self) -> None:
         """Clear the log storage."""
 
     @abstractmethod
-    def watch(self, run_id: str, cursor: str, callback: Callable):
+    def watch(self, run_id: str, cursor: Optional[str], callback: EventHandlerFn) -> None:
         """Call this method to start watching."""
 
     @abstractmethod
-    def end_watch(self, run_id: str, handler: Callable):
+    def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
         """Call this method to stop watching."""
 
     @property
@@ -247,10 +248,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def is_persistent(self) -> bool:
         """bool: Whether the storage is persistent."""
 
-    def dispose(self):
+    def dispose(self) -> None:
         """Explicit lifecycle management."""
 
-    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int):
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
         """Allows for optimizing database connection / use in the context of a long lived dagit process.
         """
 
@@ -271,7 +272,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         after_cursor: int = -1,
         dagster_event_type: Optional[Union[DagsterEventType, Set[DagsterEventType]]] = None,
         limit: Optional[int] = None,
-    ) -> Mapping[int, EventLogEntry]:
+    ) -> Mapping[int, "EventLogEntry"]:
         """Get event records across all runs. Only supported for non sharded sql storage."""
         raise NotImplementedError()
 
@@ -329,7 +330,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def get_latest_materialization_events(
         self, asset_keys: Sequence[AssetKey]
-    ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
+    ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
         pass
 
     def supports_add_asset_event_tags(self) -> bool:
@@ -358,7 +359,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
-    def wipe_asset(self, asset_key: AssetKey):
+    def wipe_asset(self, asset_key: AssetKey) -> None:
         """Remove asset index history from event log for given asset_key."""
 
     @abstractmethod
@@ -389,10 +390,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         """Delete a partition for the specified dynamic partitions definition."""
         raise NotImplementedError()
 
-    def alembic_version(self):
+    def alembic_version(self) -> Optional[AlembicVersion]:
         return None
 
     @property
-    def is_run_sharded(self):
+    def is_run_sharded(self) -> bool:
         """Indicates that the EventLogStoarge is sharded."""
         return False

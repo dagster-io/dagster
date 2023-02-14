@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import Dict, Mapping, Optional, Type, cast
+from typing import Any, Dict, Mapping, Optional, Type, cast
 
 from dagster._annotations import public
 from dagster._core.definitions.assets import AssetsDefinition
@@ -42,7 +42,11 @@ class AssetValueLoader:
         else:
             self._instance = instance
 
-    def _ensure_resource_instances_in_cache(self, resource_defs: Mapping[str, ResourceDefinition]):
+    def _ensure_resource_instances_in_cache(
+        self,
+        resource_defs: Mapping[str, ResourceDefinition],
+        resource_config: Optional[Mapping[str, Any]] = None,
+    ):
         for built_resource_key, built_resource in (
             self._exit_stack.enter_context(
                 build_resources(
@@ -51,6 +55,7 @@ class AssetValueLoader:
                         for resource_key, resource_def in resource_defs.items()
                     },
                     instance=self._instance,
+                    resource_config=resource_config,
                 )
             )
             ._asdict()
@@ -63,8 +68,9 @@ class AssetValueLoader:
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[Type] = None,
+        python_type: Optional[Type[object]] = None,
         partition_key: Optional[str] = None,
+        resource_config: Optional[Any] = None,
     ) -> object:
         """
         Loads the contents of an asset as a Python object.
@@ -76,11 +82,14 @@ class AssetValueLoader:
             python_type (Optional[Type]): The python type to load the asset as. This is what will
                 be returned inside `load_input` by `context.dagster_type.typing_type`.
             partition_key (Optional[str]): The partition of the asset to load.
+            resource_config (Optional[Any]): A dictionary of resource configurations to be passed
+                to the :py:class:`IOManager`.
 
         Returns:
             The contents of an asset as a Python object.
         """
         asset_key = AssetKey.from_coerceable(asset_key)
+        resource_config = resource_config or {}
 
         assets_def = self._assets_defs_by_key[asset_key]
         resource_defs = merge_dicts(
@@ -92,11 +101,17 @@ class AssetValueLoader:
         required_resource_keys = io_manager_def.required_resource_keys | {io_manager_key}
 
         self._ensure_resource_instances_in_cache(
-            {k: v for k, v in resource_defs.items() if k in required_resource_keys}
+            {k: v for k, v in resource_defs.items() if k in required_resource_keys},
+            resource_config=resource_config,
         )
         io_manager = cast(IOManager, self._resource_instance_cache[io_manager_key])
 
-        io_manager_config = get_mapped_resource_config({io_manager_key: io_manager_def}, {})
+        io_config = resource_config.get(io_manager_key)
+        io_resource_config = {io_manager_key: io_config} if io_config else {}
+
+        io_manager_config = get_mapped_resource_config(
+            {io_manager_key: io_manager_def}, io_resource_config
+        )
 
         input_context = build_input_context(
             name=None,
@@ -107,6 +122,7 @@ class AssetValueLoader:
                 metadata=assets_def.metadata_by_key[asset_key],
                 asset_key=asset_key,
                 op_def=assets_def.get_op_def_for_asset_key(asset_key),
+                resource_config=resource_config,
             ),
             resources=self._resource_instance_cache,
             resource_config=io_manager_config[io_manager_key].config,

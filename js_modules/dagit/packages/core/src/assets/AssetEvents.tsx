@@ -158,8 +158,8 @@ export const AssetEvents: React.FC<Props> = ({
         </Box>
 
         <Box
-          style={{flex: 3, minWidth: 0}}
           flex={{direction: 'column'}}
+          style={{flex: 3, minWidth: 0, overflowY: 'auto'}}
           border={{side: 'left', color: Colors.KeylineGray, width: 1}}
         >
           <ErrorBoundary region="event" resetErrorOnChange={[focused]}>

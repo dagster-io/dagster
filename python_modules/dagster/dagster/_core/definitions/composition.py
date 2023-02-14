@@ -1,5 +1,5 @@
 import warnings
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -55,6 +55,7 @@ if TYPE_CHECKING:
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
+    from .source_asset import SourceAsset
 
 
 _composition_stack: List["InProgressCompositionContext"] = []
@@ -79,8 +80,8 @@ class InvokedNodeOutputHandle:
     def __iter__(self) -> NoReturn:
         raise DagsterInvariantViolationError(
             'Attempted to iterate over an {cls}. This object represents the output "{out}" '
-            'from the solid "{solid}". Consider defining multiple Outs if you seek to pass '
-            "different parts of this output to different solids.".format(
+            'from the op/graph "{solid}". Consider defining multiple Outs if you seek to pass '
+            "different parts of this output to different op/graph.".format(
                 cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
             )
         )
@@ -145,6 +146,7 @@ InputSource = Union[
     InvokedNodeOutputHandle,
     InputMappingNode,
     DynamicFanIn,
+    "SourceAsset",
     List[Union[InvokedNodeOutputHandle, InputMappingNode]],
 ]
 
@@ -198,15 +200,9 @@ def is_in_composition() -> bool:
 def assert_in_composition(name: str, node_def: NodeDefinition) -> None:
     if len(_composition_stack) < 1:
         node_label = node_def.node_type_str
-        if node_def.is_graph_job_op_node:
-            correction = (
-                f"Invoking {node_label}s is only valid in a function decorated with @job or @graph."
-            )
-        else:
-            correction = (
-                f"Invoking {node_label}s is only valid in a function decorated with "
-                "@pipeline or @composite_solid."
-            )
+        correction = (
+            f"Invoking {node_label}s is only valid in a function decorated with @job or @graph."
+        )
         raise DagsterInvariantViolationError(
             f"Attempted to call {node_label} '{name}' outside of a composition function."
             f" {correction}"
@@ -215,7 +211,7 @@ def assert_in_composition(name: str, node_def: NodeDefinition) -> None:
 
 class InProgressCompositionContext:
     """This context captures invocations of solids within a
-    composition function such as @composite_solid or @pipeline.
+    composition function such as @job or @graph.
     """
 
     name: str
@@ -289,6 +285,7 @@ class CompleteCompositionContext(NamedTuple):
     dependencies: Mapping[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
     input_mappings: Sequence[InputMapping]
     output_mapping_dict: Mapping[str, OutputMapping]
+    node_input_source_assets: Mapping[str, Mapping[str, "SourceAsset"]]
 
     @staticmethod
     def create(
@@ -298,9 +295,12 @@ class CompleteCompositionContext(NamedTuple):
         output_mapping_dict: Mapping[str, OutputMapping],
         pending_invocations: Mapping[str, "PendingNodeInvocation"],
     ):
+        from .source_asset import SourceAsset
+
         dep_dict: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
         node_def_dict: Dict[str, NodeDefinition] = {}
         input_mappings = []
+        node_input_source_assets: Dict[str, Dict[str, "SourceAsset"]] = defaultdict(dict)
 
         for solid in pending_invocations.values():
             _not_invoked_warning(solid, source, name)
@@ -323,6 +323,8 @@ class CompleteCompositionContext(NamedTuple):
                     input_mappings.append(
                         node.input_def.mapping_to(invocation.node_name, input_name)
                     )
+                elif isinstance(node, SourceAsset):
+                    node_input_source_assets[invocation.node_name][input_name] = node
                 elif isinstance(node, list):
                     entries: List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]] = []
                     for idx, fanned_in_node in enumerate(node):
@@ -366,6 +368,7 @@ class CompleteCompositionContext(NamedTuple):
             dep_dict,
             input_mappings,
             output_mapping_dict,
+            node_input_source_assets=node_input_source_assets,
         )
 
 
@@ -556,7 +559,11 @@ class PendingNodeInvocation:
         return f"{self.node_def.node_type_str} '{node_name}'"
 
     def _process_argument_node(self, node_name, output_node, input_name, input_bindings, arg_desc):
-        if isinstance(output_node, (InvokedNodeOutputHandle, InputMappingNode, DynamicFanIn)):
+        from .source_asset import SourceAsset
+
+        if isinstance(
+            output_node, (InvokedNodeOutputHandle, InputMappingNode, DynamicFanIn, SourceAsset)
+        ):
             input_bindings[input_name] = output_node
 
         elif isinstance(output_node, list):
@@ -1019,14 +1026,14 @@ def do_composition(
     Sequence[NodeDefinition],
     Optional[ConfigMapping],
     Sequence[str],
+    Mapping[str, Mapping[str, "SourceAsset"]],
 ]:
     """
-    This a function used by both @pipeline and @composite_solid to implement their composition
+    This a function used by both @job and @graph to implement their composition
     function which is our DSL for constructing a dependency graph.
 
     Args:
-        decorator_name (str): Name of the calling decorator. e.g. "@pipeline",
-            "@composite_solid", "@graph"
+        decorator_name (str): Name of the calling decorator. e.g. "@graph" or "@job"
         graph_name (str): User-defined name of the definition being constructed
         fn (Callable): The composition function to be called.
         provided_input_defs(List[InputDefinition]): List of input definitions
@@ -1109,17 +1116,12 @@ def do_composition(
         ]
 
         if len(mappings) == 0:
-            if decorator_name in {"@op", "@graph"}:
-                invocation_name = "op/graph"
-            else:
-                invocation_name = "solid"
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{graph_name}' has unmapped input '{input_name}'. "
-                "Remove it or pass it to the appropriate {invocation_name} invocation.".format(
+                "Remove it or pass it to the appropriate op/graph invocation.".format(
                     decorator_name=decorator_name,
                     graph_name=graph_name,
                     input_name=defn.name,
-                    invocation_name=invocation_name,
                 )
             )
 
@@ -1139,7 +1141,7 @@ def do_composition(
 
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{graph_name}' has unmapped output '{output_name}'. "
-                "Remove it or return a value from the appropriate solid invocation.".format(
+                "Remove it or return a value from the appropriate op/graph invocation.".format(
                     decorator_name=decorator_name, graph_name=graph_name, output_name=defn.name
                 )
             )
@@ -1152,6 +1154,7 @@ def do_composition(
         context.solid_defs,
         config_mapping,
         compute_fn.positional_inputs(),
+        context.node_input_source_assets,
     )
 
 

@@ -31,11 +31,13 @@ from dagster._core.definitions.dependency import (
     MultiDependencyDefinition,
     Node,
     NodeHandle,
+    NodeInputHandle,
     NodeInvocation,
     NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
@@ -242,7 +244,7 @@ class JobDefinition(PipelineDefinition):
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
             version_strategy=version_strategy,
-            asset_layer=asset_layer,
+            asset_layer=asset_layer or _infer_asset_layer_from_source_asset_deps(graph_def),
         )
 
     @property
@@ -387,7 +389,7 @@ class JobDefinition(PipelineDefinition):
                     " partitioned config"
                 )
 
-            partition = partition_set.get_partition(partition_key)
+            partition = partition_set.get_partition(partition_key, instance)
             run_config = (
                 run_config if run_config else partition_set.run_config_for_partition(partition)
             )
@@ -584,6 +586,7 @@ class JobDefinition(PipelineDefinition):
         tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
+        instance: Optional["DagsterInstance"] = None,
     ) -> RunRequest:
         """
         Creates a RunRequest object for a run that processes the given partition.
@@ -607,7 +610,14 @@ class JobDefinition(PipelineDefinition):
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        partition = partition_set.get_partition(partition_key)
+        if isinstance(partition_set.partitions_def, DynamicPartitionsDefinition):
+            if not instance:
+                check.failed(
+                    "Must provide a dagster instance when calling run_request_for_partition on a "
+                    "dynamic partition set"
+                )
+
+        partition = partition_set.get_partition(partition_key, instance)
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags
@@ -1002,4 +1012,54 @@ def get_run_config_schema_for_job(
         )
         .get_run_config_schema("default")
         .run_config_schema_type
+    )
+
+
+def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) -> AssetLayer:
+    """
+    For non-asset jobs that have some inputs that are fed from SourceAssets, constructs an
+    AssetLayer that includes those SourceAssets.
+    """
+    asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
+    source_assets_list = []
+    source_asset_keys_set = set()
+    io_manager_keys_by_asset_key: Mapping[AssetKey, str] = {}
+
+    # each entry is a graph definition and its handle relative to the job root
+    stack: List[Tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
+
+    while stack:
+        graph_def, parent_node_handle = stack.pop()
+
+        for node_name, input_source_assets in graph_def.node_input_source_assets.items():
+            node_handle = NodeHandle(node_name, parent_node_handle)
+            for input_name, source_asset in input_source_assets.items():
+                if source_asset.key not in source_asset_keys_set:
+                    source_asset_keys_set.add(source_asset.key)
+                    source_assets_list.append(source_asset)
+
+                input_handle = NodeInputHandle(node_handle, input_name)
+                asset_keys_by_node_input_handle[input_handle] = source_asset.key
+                for resolved_input_handle in graph_def.node_dict[
+                    node_name
+                ].definition.resolve_input_to_destinations(input_handle):
+                    asset_keys_by_node_input_handle[resolved_input_handle] = source_asset.key
+
+                if source_asset.io_manager_key:
+                    io_manager_keys_by_asset_key[source_asset.key] = source_asset.io_manager_key
+
+        for node_name, node in graph_def.node_dict.items():
+            if isinstance(node.definition, GraphDefinition):
+                stack.append((node.definition, NodeHandle(node_name, parent_node_handle)))
+
+    return AssetLayer(
+        asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
+        asset_info_by_node_output_handle={},
+        asset_deps={},
+        dependency_node_handles_by_asset_key={},
+        assets_defs=[],
+        source_asset_defs=source_assets_list,
+        io_manager_keys_by_asset_key=io_manager_keys_by_asset_key,
+        node_output_handles_to_dep_asset_keys={},
+        partition_mappings_by_asset_dep={},
     )

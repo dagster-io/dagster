@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
     from .asset_layer import AssetLayer
     from .composition import PendingNodeInvocation
-    from .dependency import NodeHandle
+    from .dependency import NodeHandle, NodeInputHandle
     from .graph_definition import GraphDefinition
     from .input import InputDefinition
     from .op_definition import OpDefinition
@@ -170,6 +170,15 @@ class NodeDefinition(NamedConfigurableDefinition):
     @abstractmethod
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
         ...
+
+    @abstractmethod
+    def resolve_input_to_destinations(
+        self, input_handle: "NodeInputHandle"
+    ) -> Sequence["NodeInputHandle"]:
+        """
+        Recursively follow input mappings to find all op inputs that correspond to the given input
+        to this graph.
+        """
 
     @abstractmethod
     def input_has_default(self, input_name: str) -> bool:

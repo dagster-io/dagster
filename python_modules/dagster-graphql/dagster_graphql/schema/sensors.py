@@ -26,7 +26,7 @@ from .errors import (
     GrapheneUnauthorizedError,
 )
 from .inputs import GrapheneSensorSelector
-from .instigation import GrapheneFutureInstigationTick, GrapheneInstigationState
+from .instigation import GrapheneDryRunInstigationTick, GrapheneInstigationState
 from .util import ResolveInfo, non_null_list
 
 
@@ -56,6 +56,18 @@ class GrapheneSensorMetadata(graphene.ObjectType):
         name = "SensorMetadata"
 
 
+class GrapheneSensorType(graphene.Enum):
+    STANDARD = "STANDARD"
+    RUN_STATUS = "RUN_STATUS"
+    ASSET = "ASSET"
+    MULTI_ASSET = "MULTI_ASSET"
+    FRESHNESS_POLICY = "FRESHNESS_POLICY"
+    UNKNOWN = "UNKNOWN"
+
+    class Meta:
+        name = "SensorType"
+
+
 class GrapheneSensor(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     jobOriginId = graphene.NonNull(graphene.String)
@@ -64,8 +76,9 @@ class GrapheneSensor(graphene.ObjectType):
     sensorState = graphene.NonNull(GrapheneInstigationState)
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
-    nextTick = graphene.Field(GrapheneFutureInstigationTick)
+    nextTick = graphene.Field(GrapheneDryRunInstigationTick)
     metadata = graphene.NonNull(GrapheneSensorMetadata)
+    sensorType = graphene.NonNull(GrapheneSensorType)
 
     class Meta:
         name = "Sensor"
@@ -89,6 +102,7 @@ class GrapheneSensor(graphene.ObjectType):
             metadata=GrapheneSensorMetadata(
                 assetKeys=external_sensor.metadata.asset_keys if external_sensor.metadata else None
             ),
+            sensorType=external_sensor.sensor_type.value,
         )
 
     def resolve_id(self, _):

@@ -144,7 +144,8 @@
         ]
       },
       {
-        "title": "Schedules, Sensors, & Partitions",
+        "title": "Schedules & Sensors",
+        "path": "/concepts/partitions-schedules-sensors/schedules",
         "children": [
           {
             "title": "Schedules",
@@ -157,7 +158,13 @@
           {
             "title": "Asset Sensors",
             "path": "/concepts/partitions-schedules-sensors/asset-sensors"
-          },
+          }
+        ]
+      },
+      {
+        "title": "Partitions & Backfills",
+        "path": "/concepts/partitions-schedules-sensors/partitions",
+        "children": [
           {
             "title": "Partitions",
             "path": "/concepts/partitions-schedules-sensors/partitions"
@@ -725,6 +732,10 @@
           {
             "title": "Airbyte ingestion as code",
             "path": "/guides/dagster/airbyte-ingestion-as-code"
+          },
+          {
+            "title": "Asset versioning and caching",
+            "path": "/guides/dagster/asset-versioning-and-caching"
           }
         ]
       }
@@ -982,6 +993,10 @@
           {
             "title": "Twilio (dagster-twilio)",
             "path": "/_apidocs/libraries/dagster-twilio"
+          },
+          {
+            "title": "Weights & Biases (dagster-wandb)",
+            "path": "/_apidocs/libraries/dagster-wandb"
           }
         ]
       }
