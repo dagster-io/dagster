@@ -6,9 +6,11 @@ from dagster import (
     Output,
     asset,
     job,
+    materialize_to_memory,
     multi_asset,
     op,
 )
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import build_assets_job
 
@@ -87,3 +89,20 @@ def test_multi_asset_asset_materialization_planned_events():
 
         assert instance.run_ids_for_asset_key(AssetKey("my_asset_name")) == [run_id]
         assert instance.run_ids_for_asset_key(AssetKey("my_other_asset")) == [run_id]
+
+
+def test_asset_partition_materialization_planned_events():
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    def my_asset():
+        pass
+
+    with instance_for_test() as instance:
+        materialize_to_memory([my_asset], instance=instance, partition_key="b")
+        records = instance.get_event_records(
+            EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                AssetKey("my_asset"),
+            )
+        )
+        assert len(records) == 1
+        assert records[0].event_log_entry.dagster_event.event_specific_data.partition == "b"
