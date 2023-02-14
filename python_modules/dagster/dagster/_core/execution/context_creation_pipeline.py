@@ -72,7 +72,7 @@ def initialize_console_manager(
                 )
             )
         )
-    return DagsterLogManager.create(loggers=loggers, pipeline_run=dagster_run, instance=instance)
+    return DagsterLogManager.create(loggers=loggers, dagster_run=dagster_run, instance=instance)
 
 
 def executor_def_from_config(
@@ -519,7 +519,7 @@ def create_log_manager(
             )
 
     return DagsterLogManager.create(
-        loggers=loggers, pipeline_run=dagster_run, instance=context_creation_data.instance
+        loggers=loggers, dagster_run=dagster_run, instance=context_creation_data.instance
     )
 
 
@@ -550,4 +550,4 @@ def create_context_free_log_manager(
             )
         ]
 
-    return DagsterLogManager.create(loggers=loggers, instance=instance, pipeline_run=dagster_run)
+    return DagsterLogManager.create(loggers=loggers, instance=instance, dagster_run=dagster_run)
