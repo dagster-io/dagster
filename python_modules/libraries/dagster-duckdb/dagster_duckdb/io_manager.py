@@ -113,6 +113,12 @@ class DuckDbClient(DbClient):
         conn.close()
 
     @staticmethod
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
+        conn = _connect_duckdb(context).cursor()
+        conn.execute(f"create schema if not exists {table_slice.schema};")
+        conn.close()
+
+    @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
