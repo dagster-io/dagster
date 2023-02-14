@@ -16,7 +16,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from .valid_definitions import RepositoryLevelDefinition
 
 
-class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
+class CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
     def __init__(
         self,
         definition_class: Type[RepositoryLevelDefinition],

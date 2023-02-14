@@ -38,7 +38,7 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._utils.merger import merge_dicts
 
-from .caching_index import _CacheingDefinitionIndex
+from .caching_index import CacheingDefinitionIndex
 from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
 
 if TYPE_CHECKING:
@@ -361,7 +361,7 @@ class CachingRepositoryData(RepositoryData):
             top_level_resources, "top_level_resources", key_type=str, value_type=ResourceDefinition
         )
 
-        self._pipelines = _CacheingDefinitionIndex(
+        self._pipelines = CacheingDefinitionIndex(
             PipelineDefinition,
             "PipelineDefinition",
             "pipeline",
@@ -369,7 +369,7 @@ class CachingRepositoryData(RepositoryData):
             self._validate_pipeline,
         )
 
-        self._jobs = _CacheingDefinitionIndex(
+        self._jobs = CacheingDefinitionIndex(
             JobDefinition,
             "JobDefinition",
             "job",
@@ -377,7 +377,7 @@ class CachingRepositoryData(RepositoryData):
             self._validate_job,
         )
 
-        self._schedules = _CacheingDefinitionIndex(
+        self._schedules = CacheingDefinitionIndex(
             ScheduleDefinition,
             "ScheduleDefinition",
             "schedule",
@@ -408,7 +408,7 @@ class CachingRepositoryData(RepositoryData):
 
             return job_partition_sets
 
-        self._partition_sets = _CacheingDefinitionIndex(
+        self._partition_sets = CacheingDefinitionIndex(
             PartitionSetDefinition,
             "PartitionSetDefinition",
             "partition set",
@@ -419,7 +419,7 @@ class CachingRepositoryData(RepositoryData):
             self._validate_partition_set,
             load_partition_sets_from_pipelines,
         )
-        self._sensors = _CacheingDefinitionIndex(
+        self._sensors = CacheingDefinitionIndex(
             SensorDefinition,
             "SensorDefinition",
             "sensor",
