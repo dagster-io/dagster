@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Any,
     Iterator,
     List,
     Mapping,
@@ -31,7 +30,6 @@ from dagster._core.errors import (
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import ensure_gen
 
 from .objects import TypeCheckData
 from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
@@ -604,7 +602,7 @@ class FromConfig(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-    ) -> Any:
+    ) -> Iterator[object]:
         with user_code_error_boundary(
             DagsterTypeLoadingError,
             msg_fn=lambda: f'Error occurred while loading input "{self.input_name}" of step "{step_context.step.key}":',
@@ -613,7 +611,7 @@ class FromConfig(
             dagster_type = self.get_associated_input_def(step_context.pipeline_def).dagster_type
             config_data = self.get_associated_config(step_context.resolved_run_config)
             loader = check.not_none(dagster_type.loader)
-            return loader.construct_from_config_value(
+            yield loader.construct_from_config_value(
                 step_context.get_type_loader_context(), config_data
             )
 
@@ -653,7 +651,7 @@ class FromDirectInputValue(
 
     def load_input_object(
         self, step_context: "StepExecutionContext", input_def: InputDefinition
-    ) -> Any:
+    ) -> Iterator[object]:
         pipeline_def = step_context.pipeline_def
         if not pipeline_def.is_job:
             raise DagsterInvariantViolationError(
@@ -661,7 +659,7 @@ class FromDirectInputValue(
             )
 
         job_def = cast(JobDefinition, pipeline_def)
-        return job_def.get_direct_input_value(self.input_name)
+        yield job_def.get_direct_input_value(self.input_name)
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
@@ -702,8 +700,8 @@ class FromDefaultValue(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-    ):
-        return self._load_value(step_context.pipeline_def)
+    ) -> Iterator[object]:
+        yield self._load_value(step_context.pipeline_def)
 
     def compute_version(
         self,
@@ -773,7 +771,7 @@ class FromMultipleSources(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-    ):
+    ) -> Iterator[object]:
         from dagster._core.events import DagsterEvent
 
         values = []
@@ -793,9 +791,7 @@ class FromMultipleSources(
             ):
                 continue
 
-            for event_or_input_value in ensure_gen(
-                inner_source.load_input_object(step_context, input_def)
-            ):
+            for event_or_input_value in inner_source.load_input_object(step_context, input_def):
                 if isinstance(event_or_input_value, DagsterEvent):
                     yield event_or_input_value
                 else:

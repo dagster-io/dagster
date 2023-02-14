@@ -39,7 +39,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._legacy import Materialization, ModeDefinition, PipelineDefinition
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
-from dagster._utils import EventGenerationManager, ensure_gen
+from dagster._utils import EventGenerationManager
 from dagster._utils.backcompat import canonicalize_backcompat_args, deprecation_warning
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
@@ -415,9 +415,7 @@ class Manager:
         step_context = dm_context.step_context  # pylint: disable=protected-access
         step_input = step_context.step.step_input_named(input_name)
         input_def = step_context.solid_def.input_def_named(input_name)
-        for event_or_input_value in ensure_gen(
-            step_input.source.load_input_object(step_context, input_def)
-        ):
+        for event_or_input_value in step_input.source.load_input_object(step_context, input_def):
             if isinstance(event_or_input_value, DagsterEvent):
                 continue
             else:
