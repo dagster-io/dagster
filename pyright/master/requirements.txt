@@ -81,8 +81,8 @@ wordcloud  # (quickstart-*)
 
 ### EXAMPLES
 
--e examples/assets_dbt_python
--e examples/assets_modern_data_stack
+# -e examples/assets_dbt_python # it includes dagster-cloud
+# -e examples/assets_modern_data_stack # it includes dagster-cloud
 -e examples/assets_pandas_pyspark
 # -e examples/assets_pandas_type_metadata
 # -e examples/assets_smoke_test
