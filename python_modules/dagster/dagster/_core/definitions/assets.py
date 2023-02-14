@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
+    List,
     Mapping,
     Optional,
     Sequence,
