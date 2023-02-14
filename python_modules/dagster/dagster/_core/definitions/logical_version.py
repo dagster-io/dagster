@@ -3,10 +3,25 @@ from __future__ import annotations
 from enum import Enum
 from hashlib import sha256
 from typing import TYPE_CHECKING, Callable, Iterator, Mapping, NamedTuple, Optional, Sequence, Union
+from inspect import Parameter
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Type,
+    Union,
+    overload,
+)
 
-from typing_extensions import Final
+from typing_extensions import Final, Literal
 
 from dagster import _check as check
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._serdes.serdes import DefaultNamedTupleSerializer, WhitelistMap, whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -17,6 +32,7 @@ if TYPE_CHECKING:
         AssetObservation,
         Materialization,
     )
+    from dagster._core.events import DagsterEvent
     from dagster._core.events.log import EventLogEntry
     from dagster._core.instance import DagsterInstance
 
@@ -32,6 +48,7 @@ def foo(x):
 UNKNOWN_VALUE: Final[UnknownValue] = UnknownValue()
 
 
+@whitelist_for_serdes
 class LogicalVersion(
     NamedTuple(
         "_LogicalVersion",
@@ -59,6 +76,42 @@ NULL_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("NULL")
 UNKNOWN_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("UNKNOWN")
 
 
+class LogicalVersionProvenanceSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> "LogicalVersionProvenance":
+        input_logical_versions = {
+            AssetKey(k): LogicalVersion(v) for k, v in storage_dict["input_logical_versions"]
+        }
+        return LogicalVersionProvenance(
+            code_version=storage_dict["code_version"],
+            input_logical_versions=input_logical_versions,
+        )
+
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: "LogicalVersionProvenance",
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        input_logical_versions = [
+            [k.path, v.value] for k, v in value.input_logical_versions.items()
+        ]
+        mydict = {
+            "code_version": value.code_version,
+            "input_logical_versions": input_logical_versions,
+        }
+        return mydict
+
+
+@whitelist_for_serdes(serializer=LogicalVersionProvenanceSerializer)
 class LogicalVersionProvenance(
     NamedTuple(
         "_LogicalVersionProvenance",
@@ -164,27 +217,59 @@ def compute_logical_version(
 def extract_logical_version_from_entry(
     entry: EventLogEntry,
 ) -> Optional[LogicalVersion]:
-    event_data = _extract_event_data_from_entry(entry)
-    tags = event_data.tags or {}
-    value = tags.get(LOGICAL_VERSION_TAG_KEY)
-    return None if value is None else LogicalVersion(value)
+    event = check.not_none(entry.dagster_event)
+    return extract_logical_version_from_event(event)
 
 
 def extract_logical_version_provenance_from_entry(
     entry: EventLogEntry,
 ) -> Optional[LogicalVersionProvenance]:
-    event_data = _extract_event_data_from_entry(entry)
+    event = check.not_none(entry.dagster_event)
+    return extract_logical_version_provenance_from_event(event)
+
+
+@overload
+def extract_logical_version_from_event(
+    event: "DagsterEvent", error_on_missing: Literal[True]
+) -> LogicalVersion:
+    ...
+
+
+@overload
+def extract_logical_version_from_event(
+    event: "DagsterEvent", error_on_missing: Literal[False] = ...
+) -> Optional[LogicalVersion]:
+    ...
+
+
+def extract_logical_version_from_event(
+    event: "DagsterEvent", error_on_missing: bool = False
+) -> Optional[LogicalVersion]:
+    event_data = _extract_event_data_from_event(event)
+    tags = event_data.tags or {}
+    value = tags.get(LOGICAL_VERSION_TAG_KEY)
+    if error_on_missing and value is None:
+        raise DagsterInvariantViolationError(
+            f"Event {event} of type {event.event_type_value} is missing a logical version."
+        )
+    return None if value is None else LogicalVersion(value)
+
+
+def extract_logical_version_provenance_from_event(
+    event: "DagsterEvent",
+) -> Optional[LogicalVersionProvenance]:
+    event_data = _extract_event_data_from_event(event)
     tags = event_data.tags or {}
     return LogicalVersionProvenance.from_tags(tags)
 
 
-def _extract_event_data_from_entry(
-    entry: EventLogEntry,
+def _extract_event_data_from_event(
+    event: "DagsterEvent",
 ) -> Union["AssetMaterialization", "AssetObservation"]:
     from dagster._core.definitions.events import AssetMaterialization, AssetObservation
     from dagster._core.events import AssetObservationData, StepMaterializationData
 
-    data = check.not_none(entry.dagster_event).event_specific_data
+    data = event.event_specific_data
     event_data: Union[Materialization, AssetMaterialization, AssetObservation]
     if isinstance(data, StepMaterializationData):
         event_data = data.materialization

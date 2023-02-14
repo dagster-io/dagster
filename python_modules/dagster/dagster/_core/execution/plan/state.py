@@ -15,6 +15,8 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.logical_version import LogicalVersionProvenance
 from dagster._core.errors import DagsterExecutionPlanSnapshotNotFoundError, DagsterRunNotFoundError
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.handle import StepHandle, UnresolvedStepHandle
@@ -27,6 +29,27 @@ from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import StepHandleUnion
+
+
+@whitelist_for_serdes
+class AssetProvenanceData(NamedTuple):
+    asset_key: AssetKey
+    logical_version_provenance: LogicalVersionProvenance
+
+    @staticmethod
+    def list_from_map(
+        asset_provenance_dict: Mapping[AssetKey, LogicalVersionProvenance],
+    ) -> Sequence["AssetProvenanceData"]:
+        return [
+            AssetProvenanceData(asset_key, provenance)
+            for asset_key, provenance in asset_provenance_dict.items()
+        ]
+
+    @staticmethod
+    def map_from_list(
+        asset_provenance_list: Sequence["AssetProvenanceData"],
+    ) -> Mapping[AssetKey, LogicalVersionProvenance]:
+        return {data.asset_key: data.logical_version_provenance for data in asset_provenance_list}
 
 
 @whitelist_for_serdes
@@ -97,6 +120,7 @@ class KnownExecutionState(
             ("step_output_versions", Sequence[StepOutputVersionData]),
             ("ready_outputs", Set[StepOutputHandle]),
             ("parent_state", Optional[PastExecutionState]),
+            ("asset_provenance", Sequence[AssetProvenanceData]),
         ],
     )
 ):
@@ -113,6 +137,7 @@ class KnownExecutionState(
         step_output_versions: Optional[Sequence[StepOutputVersionData]] = None,
         ready_outputs: Optional[Set[StepOutputHandle]] = None,
         parent_state: Optional[PastExecutionState] = None,
+        asset_provenance: Optional[Sequence[AssetProvenanceData]] = None,
     ):
         dynamic_mappings = check.opt_mapping_param(
             dynamic_mappings,
@@ -137,6 +162,11 @@ class KnownExecutionState(
             ),
             check.opt_set_param(ready_outputs, "ready_outputs", StepOutputHandle),
             check.opt_inst_param(parent_state, "parent_state", PastExecutionState),
+            check.opt_sequence_param(
+                asset_provenance,
+                "asset_provenance",
+                AssetProvenanceData,
+            ),
         )
 
     def get_retry_state(self) -> RetryState:

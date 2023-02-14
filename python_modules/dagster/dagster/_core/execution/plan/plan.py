@@ -29,7 +29,12 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import DependencyStructure
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.executor_definition import ExecutorRequirement
+from dagster._core.definitions.logical_version import (
+    LogicalVersionProvenance,
+    extract_logical_version_provenance_from_entry,
+)
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
@@ -72,7 +77,7 @@ from .inputs import (
     UnresolvedMappedStepInput,
 )
 from .outputs import StepOutput, StepOutputHandle, UnresolvedStepOutputHandle
-from .state import KnownExecutionState, StepOutputVersionData
+from .state import AssetProvenanceData, KnownExecutionState, StepOutputVersionData
 from .step import (
     ExecutionStep,
     IExecutionStep,
@@ -149,6 +154,25 @@ class _PlanBuilder:
         self.repository_load_data = check.opt_inst_param(
             repository_load_data, "repository_load_data", RepositoryLoadData
         )
+        asset_provenance_map = self.make_asset_provenance_map()
+        self.known_state = self.known_state._replace(
+            asset_provenance=AssetProvenanceData.list_from_map(asset_provenance_map)
+        )
+
+    def make_asset_provenance_map(self) -> Mapping[AssetKey, LogicalVersionProvenance]:
+        pipeline_def = self.pipeline.get_definition()
+        asset_provenance_map: Dict[AssetKey, LogicalVersionProvenance] = {}
+        if self._instance_ref is not None:
+            instance = DagsterInstance.from_ref(self._instance_ref)
+            for key in pipeline_def.asset_layer.asset_keys:
+                record = instance.get_latest_logical_version_record(key)
+                if record is not None:
+                    provenance = extract_logical_version_provenance_from_entry(
+                        record.event_log_entry
+                    )
+                    if provenance is not None:
+                        asset_provenance_map[key] = provenance
+        return asset_provenance_map
 
     @property
     def pipeline_name(self) -> str:

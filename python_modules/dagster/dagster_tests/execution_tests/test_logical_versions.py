@@ -1,6 +1,6 @@
 # pylint: disable=unused-argument
 
-from typing import Dict, List, Mapping, Sequence, Tuple, Union, cast, overload
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast, overload
 
 from dagster import (
     AssetMaterialization,
@@ -28,6 +28,7 @@ from dagster._core.definitions.logical_version import (
     compute_logical_version,
 )
 from dagster._core.definitions.observe import observe
+from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance_for_test import instance_for_test
 from typing_extensions import Literal
@@ -182,9 +183,16 @@ def materialize_asset(
 
 
 def materialize_assets(
-    assets: Sequence[AssetsDefinition], instance: DagsterInstance
+    assets: Sequence[AssetsDefinition],
+    instance: DagsterInstance,
+    run_config: Optional[Dict[str, Any]] = None,
 ) -> MaterializationTable:
-    result = materialize(assets, instance=instance, resources={"io_manager": mock_io_manager})
+    result = materialize(
+        assets,
+        instance=instance,
+        resources={"io_manager": mock_io_manager},
+        run_config=run_config,
+    )
     return get_mats_from_result(result, assets)
 
 
@@ -485,3 +493,41 @@ def test_set_logical_version_inside_op():
 
     mat = materialize_asset([asset1], asset1, instance)
     assert_logical_version(mat, LogicalVersion("foo"))
+
+
+def _get_logical_version_config(**logical_versions: str) -> Dict[str, Any]:
+    return {
+        "ops": {
+            op_name: {"config": {"logical_version": logical_version}}
+            for op_name, logical_version in logical_versions.items()
+        }
+    }
+
+
+def test_runtime_staleness():
+    executed = {
+        "alpha": 0,
+        "beta": 0,
+    }
+
+    @asset(config_schema={"logical_version": str})
+    def alpha(context: OpExecutionContext):
+        executed["alpha"] += 1
+        return Output(1, logical_version=LogicalVersion(context.op_config["logical_version"]))
+
+    @asset
+    def beta(context, alpha):
+        executed["beta"] += 1
+
+    with instance_for_test() as instance:
+        materialize_assets([alpha, beta], instance, _get_logical_version_config(alpha="foo"))
+        assert executed["alpha"] == 1
+        assert executed["beta"] == 1
+
+        materialize_assets([alpha, beta], instance, _get_logical_version_config(alpha="bar"))
+        assert executed["alpha"] == 2
+        assert executed["beta"] == 2
+
+        materialize_assets([alpha, beta], instance, _get_logical_version_config(alpha="bar"))
+        assert executed["alpha"] == 3
+        assert executed["beta"] == 2

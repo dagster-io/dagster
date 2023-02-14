@@ -18,18 +18,23 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.logical_version import (
+    LogicalVersion,
+    extract_logical_version_from_event,
+)
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
     DagsterInvariantViolationError,
     DagsterUnknownStepStateError,
 )
-from dagster._core.events import DagsterEvent
+from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.execution.context.system import (
     IPlanContext,
     PlanExecutionContext,
     PlanOrchestrationContext,
 )
-from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.execution.plan.state import AssetProvenanceData, KnownExecutionState
 from dagster._core.execution.retries import RetryMode, RetryState
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._utils.interrupts import pop_captured_interrupt
@@ -114,6 +119,13 @@ class ActiveExecution:
         self._unknown_state: Set[str] = set()
 
         self._interrupted: bool = False
+
+        # versions gathered from materialization events during this execution
+        self._runtime_asset_versions: Dict[AssetKey, LogicalVersion] = {}
+
+        self._asset_provenance_map = AssetProvenanceData.map_from_list(
+            self._plan.known_state.asset_provenance
+        )
 
         # Start the show by loading _executable with the set of _pending steps that have no deps
         self._update()
@@ -222,10 +234,16 @@ class ActiveExecution:
                             ]
                             break
 
+                if not self.is_provenance_changed(step):
+                    should_skip = True
+                    self._skipped_deps[step_key] = []
+
                 if should_skip:
+                    print(f"SKIPPING {step.key}")
                     new_steps_to_skip.append(step_key)
                 else:
                     new_steps_to_execute.append(step_key)
+                    print(f"EXECUTING {step.key}")
 
         for key in new_steps_to_execute:
             self._executable.append(key)
@@ -248,6 +266,32 @@ class ActiveExecution:
         for key in ready_to_retry:
             self._executable.append(key)
             del self._waiting_to_retry[key]
+
+    def is_provenance_changed(self, step: ExecutionStep) -> bool:
+        existing_combined_input_versions: Dict[AssetKey, LogicalVersion] = {}
+        output_assets = [output.asset_key for output in step.step_outputs if output.asset_key]
+        for asset_key in output_assets:
+            pre_run_provenance = self._asset_provenance_map.get(asset_key)
+            if pre_run_provenance:
+                existing_combined_input_versions.update(pre_run_provenance.input_logical_versions)
+
+        projected_combined_input_versions: Dict[AssetKey, LogicalVersion] = {}
+        for step_input in step.step_inputs:
+            dep_output_handles = step_input.get_step_output_handle_dependencies()
+            dep_outputs = [self._plan.get_step_output(handle) for handle in dep_output_handles]
+            asset_keys = [output.asset_key for output in dep_outputs if output.asset_key]
+            projected_combined_input_versions.update(
+                {asset_key: self._runtime_asset_versions[asset_key] for asset_key in asset_keys}
+            )
+
+        print("PROV MAP", self._asset_provenance_map)
+        print("PROJECTED COMBINED INPUT VERSIONS", projected_combined_input_versions)
+        print("EXISTING COMBINED INPUT VERSIONS", existing_combined_input_versions)
+
+        return (
+            len(existing_combined_input_versions) == 0
+            or existing_combined_input_versions != projected_combined_input_versions
+        )
 
     def sleep_til_ready(self) -> None:
         now = time.time()
@@ -492,6 +536,14 @@ class ActiveExecution:
                     ],
                 ).append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
+        elif dagster_event.is_step_materialization:
+            logical_version = extract_logical_version_from_event(dagster_event)
+            if logical_version is not None:
+                materialization = cast(
+                    StepMaterializationData, dagster_event.event_specific_data
+                ).materialization
+                self._runtime_asset_versions[materialization.asset_key] = logical_version
+
     def verify_complete(self, pipeline_context: IPlanContext, step_key: str) -> None:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure.
         """
@@ -538,12 +590,12 @@ class ActiveExecution:
             parent_state=self._plan.known_state.parent_state,
         )
 
-    def _prep_for_dynamic_outputs(self, step: ExecutionStep):
+    def _prep_for_dynamic_outputs(self, step: ExecutionStep) -> None:
         dyn_outputs = [step_out for step_out in step.step_outputs if step_out.is_dynamic]
         if dyn_outputs:
             self._gathering_dynamic_outputs[step.key] = {out.name: [] for out in dyn_outputs}
 
-    def _skip_for_dynamic_outputs(self, step: ExecutionStep):
+    def _skip_for_dynamic_outputs(self, step: ExecutionStep) -> None:
         dyn_outputs = [step_out for step_out in step.step_outputs if step_out.is_dynamic]
         if dyn_outputs:
             # place None to indicate the dynamic output was skipped, different than having 0 entries
