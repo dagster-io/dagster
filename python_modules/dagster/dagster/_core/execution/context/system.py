@@ -283,7 +283,7 @@ class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
 
     @property
     def solid_handle(self) -> "NodeHandle":
-        return self.step.solid_handle
+        return self.step.node_handle
 
 
 class PlanExecutionContext(IPlanContext):
@@ -496,7 +496,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def solid_handle(self) -> "NodeHandle":
-        return self.step.solid_handle
+        return self.step.node_handle
 
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
@@ -540,7 +540,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def solid(self) -> "Node":
-        return self.pipeline_def.get_solid(self._step.solid_handle)
+        return self.pipeline_def.get_solid(self._step.node_handle)
 
     @property
     def solid_retry_policy(self) -> Optional[RetryPolicy]:
