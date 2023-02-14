@@ -317,7 +317,7 @@ def initialize_step_context(scratch_dir, instance):
         pipeline=recon_pipeline,
         execution_plan=plan,
         run_config=pipeline_run.run_config,
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         instance=instance,
         retry_mode=RetryMode.DISABLED,
     )

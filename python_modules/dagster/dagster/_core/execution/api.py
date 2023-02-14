@@ -72,26 +72,26 @@ from .results import PipelineExecutionResult
 
 def execute_run_iterator(
     pipeline: IPipeline,
-    pipeline_run: DagsterRun,
+    dagster_run: DagsterRun,
     instance: DagsterInstance,
     resume_from_failure: bool = False,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(pipeline, "pipeline", IPipeline)
-    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
-    if pipeline_run.status == DagsterRunStatus.CANCELED:
+    if dagster_run.status == DagsterRunStatus.CANCELED:
         # This can happen if the run was force-terminated while it was starting
         def gen_execute_on_cancel():
             yield instance.report_engine_event(
                 "Not starting execution since the run was canceled before execution could start",
-                pipeline_run,
+                dagster_run,
             )
 
         return gen_execute_on_cancel()
 
     if not resume_from_failure:
-        if pipeline_run.status not in (DagsterRunStatus.NOT_STARTED, DagsterRunStatus.STARTING):
+        if dagster_run.status not in (DagsterRunStatus.NOT_STARTED, DagsterRunStatus.STARTING):
             if instance.run_monitoring_enabled:
                 # This can happen if the pod was unexpectedly restarted by the cluster - ignore it since
                 # the run monitoring daemon will also spin up a new pod
@@ -101,16 +101,16 @@ def execute_run_iterator(
                             "Ignoring a duplicate run that was started from somewhere other than"
                             " the run monitor daemon"
                         ),
-                        pipeline_run,
+                        dagster_run,
                     )
 
                 return gen_ignore_duplicate_run_worker()
-            elif pipeline_run.is_finished:
+            elif dagster_run.is_finished:
 
                 def gen_ignore_duplicate_run_worker():
                     yield instance.report_engine_event(
                         "Ignoring a run worker that started after the run had already finished.",
-                        pipeline_run,
+                        dagster_run,
                     )
 
                 return gen_ignore_duplicate_run_worker()
@@ -119,38 +119,38 @@ def execute_run_iterator(
                 def gen_fail_restarted_run_worker():
                     yield instance.report_engine_event(
                         (
-                            f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started a new"
-                            f" run worker while the run was already in state {pipeline_run.status}."
+                            f"{dagster_run.pipeline_name} ({dagster_run.run_id}) started a new"
+                            f" run worker while the run was already in state {dagster_run.status}."
                             " This most frequently happens when the run worker unexpectedly stops"
                             " and is restarted by the cluster. Marking the run as failed."
                         ),
-                        pipeline_run,
+                        dagster_run,
                     )
-                    yield instance.report_run_failed(pipeline_run)
+                    yield instance.report_run_failed(dagster_run)
 
                 return gen_fail_restarted_run_worker()
 
     else:
         check.invariant(
-            pipeline_run.status == DagsterRunStatus.STARTED
-            or pipeline_run.status == DagsterRunStatus.STARTING,
+            dagster_run.status == DagsterRunStatus.STARTED
+            or dagster_run.status == DagsterRunStatus.STARTING,
             desc=(
                 "Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
                 "resuming from a run worker failure".format(
-                    pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+                    dagster_run.pipeline_name, dagster_run.run_id, dagster_run.status
                 )
             ),
         )
 
-    if pipeline_run.solids_to_execute or pipeline_run.asset_selection:
+    if dagster_run.solids_to_execute or dagster_run.asset_selection:
         pipeline_def = pipeline.get_definition()
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
-                pipeline_run.solids_to_execute == pipeline.solids_to_execute,
+                dagster_run.solids_to_execute == pipeline.solids_to_execute,
                 "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that"
                 " conflicts with pipeline subset {pipeline_solids_to_execute}.".format(
                     pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
-                    solids_to_execute=str_format_set(pipeline_run.solids_to_execute),
+                    solids_to_execute=str_format_set(dagster_run.solids_to_execute),
                 ),
             )
         else:
@@ -158,13 +158,11 @@ def execute_run_iterator(
             # note that when we receive the solids to execute via DagsterRun, it won't support
             # solid selection query syntax
             pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-                frozenset(pipeline_run.solids_to_execute)
-                if pipeline_run.solids_to_execute
-                else None,
-                asset_selection=pipeline_run.asset_selection,
+                frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
+                asset_selection=dagster_run.asset_selection,
             )
 
-    execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
+    execution_plan = _get_execution_plan_from_run(pipeline, dagster_run, instance)
     if isinstance(pipeline, ReconstructablePipeline):
         pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
 
@@ -176,9 +174,9 @@ def execute_run_iterator(
                 context_event_generator=orchestration_context_event_generator,
                 pipeline=pipeline,
                 execution_plan=execution_plan,
-                pipeline_run=pipeline_run,
+                dagster_run=dagster_run,
                 instance=instance,
-                run_config=pipeline_run.run_config,
+                run_config=dagster_run.run_config,
                 raise_on_error=False,
                 executor_defs=None,
                 output_capture=None,
@@ -190,7 +188,7 @@ def execute_run_iterator(
 
 def execute_run(
     pipeline: IPipeline,
-    pipeline_run: DagsterRun,
+    dagster_run: DagsterRun,
     instance: DagsterInstance,
     raise_on_error: bool = False,
 ) -> PipelineExecutionResult:
@@ -200,7 +198,7 @@ def execute_run(
 
     Args:
         pipeline (IPipeline): The pipeline to execute.
-        pipeline_run (DagsterRun): The run to execute
+        dagster_run (DagsterRun): The run to execute
         instance (DagsterInstance): The instance in which the run has been created.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``False``.
@@ -226,33 +224,33 @@ def execute_run(
         )
 
     check.inst_param(pipeline, "pipeline", IPipeline)
-    check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
+    check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
 
-    if pipeline_run.status == DagsterRunStatus.CANCELED:
+    if dagster_run.status == DagsterRunStatus.CANCELED:
         message = "Not starting execution since the run was canceled before execution could start"
         instance.report_engine_event(
             message,
-            pipeline_run,
+            dagster_run,
         )
         raise DagsterInvariantViolationError(message)
 
     check.invariant(
-        pipeline_run.status == DagsterRunStatus.NOT_STARTED
-        or pipeline_run.status == DagsterRunStatus.STARTING,
+        dagster_run.status == DagsterRunStatus.NOT_STARTED
+        or dagster_run.status == DagsterRunStatus.STARTING,
         desc="Run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-            pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+            dagster_run.pipeline_name, dagster_run.run_id, dagster_run.status
         ),
     )
     pipeline_def = pipeline.get_definition()
-    if pipeline_run.solids_to_execute or pipeline_run.asset_selection:
+    if dagster_run.solids_to_execute or dagster_run.asset_selection:
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
-                pipeline_run.solids_to_execute == pipeline.solids_to_execute,
+                dagster_run.solids_to_execute == pipeline.solids_to_execute,
                 "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that "
                 "conflicts with pipeline subset {pipeline_solids_to_execute}.".format(
                     pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
-                    solids_to_execute=str_format_set(pipeline_run.solids_to_execute),
+                    solids_to_execute=str_format_set(dagster_run.solids_to_execute),
                 ),
             )
         else:
@@ -260,13 +258,11 @@ def execute_run(
             # note that when we receive the solids to execute via DagsterRun, it won't support
             # solid selection query syntax
             pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-                frozenset(pipeline_run.solids_to_execute)
-                if pipeline_run.solids_to_execute
-                else None,
-                pipeline_run.asset_selection,
+                frozenset(dagster_run.solids_to_execute) if dagster_run.solids_to_execute else None,
+                dagster_run.asset_selection,
             )
 
-    execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
+    execution_plan = _get_execution_plan_from_run(pipeline, dagster_run, instance)
     if isinstance(pipeline, ReconstructablePipeline):
         pipeline = pipeline.with_repository_load_data(execution_plan.repository_load_data)
 
@@ -279,9 +275,9 @@ def execute_run(
             context_event_generator=orchestration_context_event_generator,
             pipeline=pipeline,
             execution_plan=execution_plan,
-            pipeline_run=pipeline_run,
+            dagster_run=dagster_run,
             instance=instance,
-            run_config=pipeline_run.run_config,
+            run_config=dagster_run.run_config,
             raise_on_error=raise_on_error,
             executor_defs=None,
             output_capture=output_capture,
@@ -291,13 +287,13 @@ def execute_run(
 
     return PipelineExecutionResult(
         pipeline.get_definition(),
-        pipeline_run.run_id,
+        dagster_run.run_id,
         event_list,
         lambda: scoped_pipeline_context(  # type: ignore
             execution_plan,
             pipeline,
-            pipeline_run.run_config,
-            pipeline_run,
+            dagster_run.run_config,
+            dagster_run,
             instance,
         ),
         output_capture=output_capture,
@@ -842,7 +838,7 @@ def execute_plan_iterator(
                 retry_mode=retry_mode,
                 execution_plan=execution_plan,
                 run_config=run_config,
-                pipeline_run=pipeline_run,
+                dagster_run=pipeline_run,
                 instance=instance,
             ),
         )
@@ -1226,17 +1222,17 @@ def _resolve_reexecute_step_selection(
     pipeline: IPipeline,
     mode: Optional[str],
     run_config: Optional[Mapping],
-    parent_pipeline_run: DagsterRun,
+    parent_dagster_run: DagsterRun,
     step_selection: Sequence[str],
 ) -> ExecutionPlan:
-    if parent_pipeline_run.solid_selection:
-        pipeline = pipeline.subset_for_execution(parent_pipeline_run.solid_selection, None)
+    if parent_dagster_run.solid_selection:
+        pipeline = pipeline.subset_for_execution(parent_dagster_run.solid_selection, None)
 
-    state = KnownExecutionState.build_for_reexecution(instance, parent_pipeline_run)
+    state = KnownExecutionState.build_for_reexecution(instance, parent_dagster_run)
 
     parent_plan = create_execution_plan(
         pipeline,
-        parent_pipeline_run.run_config,
+        parent_dagster_run.run_config,
         mode,
         known_state=state,
     )
@@ -1247,7 +1243,7 @@ def _resolve_reexecute_step_selection(
         mode,
         step_keys_to_execute=list(step_keys_to_execute),
         known_state=state.update_for_step_selection(step_keys_to_execute),
-        tags=parent_pipeline_run.tags,
+        tags=parent_dagster_run.tags,
     )
     return execution_plan
 
