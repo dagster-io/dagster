@@ -221,7 +221,7 @@ def test_solid_invocation_with_cm_resource():
 def test_solid_invocation_with_config():
     @solid(config_schema={"foo": str})
     def solid_requires_config(context):
-        assert context.solid_config["foo"] == "bar"
+        assert context.op_config["foo"] == "bar"
         return 5
 
     # Ensure that error is raised when attempting to execute and no context is provided
@@ -281,15 +281,15 @@ def test_solid_invocation_with_config():
 def test_solid_invocation_default_config():
     @solid(config_schema={"foo": Field(str, is_required=False, default_value="bar")})
     def solid_requires_config(context):
-        assert context.solid_config["foo"] == "bar"
-        return context.solid_config["foo"]
+        assert context.op_config["foo"] == "bar"
+        return context.op_config["foo"]
 
     assert solid_requires_config(None) == "bar"
 
     @solid(config_schema=Field(str, is_required=False, default_value="bar"))
     def solid_requires_config_val(context):
-        assert context.solid_config == "bar"
-        return context.solid_config
+        assert context.op_config == "bar"
+        return context.op_config
 
     assert solid_requires_config_val(None) == "bar"
 
@@ -300,9 +300,9 @@ def test_solid_invocation_default_config():
         }
     )
     def solid_requires_config_partial(context):
-        assert context.solid_config["foo"] == "bar"
-        assert context.solid_config["baz"] == "bar"
-        return context.solid_config["foo"] + context.solid_config["baz"]
+        assert context.op_config["foo"] == "bar"
+        assert context.op_config["baz"] == "bar"
+        return context.op_config["foo"] + context.op_config["baz"]
 
     assert (
         solid_requires_config_partial(build_solid_context(solid_config={"baz": "bar"})) == "barbar"
@@ -312,14 +312,14 @@ def test_solid_invocation_default_config():
 def test_solid_invocation_dict_config():
     @solid(config_schema=dict)
     def solid_requires_dict(context):
-        assert context.solid_config == {"foo": "bar"}
-        return context.solid_config
+        assert context.op_config == {"foo": "bar"}
+        return context.op_config
 
     assert solid_requires_dict(build_solid_context(solid_config={"foo": "bar"})) == {"foo": "bar"}
 
     @solid(config_schema=Noneable(dict))
     def solid_noneable_dict(context):
-        return context.solid_config
+        return context.op_config
 
     assert solid_noneable_dict(build_solid_context()) is None
     assert solid_noneable_dict(None) is None
@@ -341,7 +341,7 @@ def test_solid_invocation_kitchen_sink_config():
         }
     )
     def kitchen_sink(context):
-        return context.solid_config
+        return context.op_config
 
     solid_config_one = {
         "str_field": "kjf",

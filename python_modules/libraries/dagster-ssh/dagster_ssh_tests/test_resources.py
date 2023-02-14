@@ -222,8 +222,8 @@ def test_ssh_sftp(sftpserver):
         required_resource_keys={"ssh_resource"},
     )
     def sftp_solid_get(context):
-        local_filepath = context.solid_config.get("local_filepath")
-        remote_filepath = context.solid_config.get("remote_filepath")
+        local_filepath = context.op_config.get("local_filepath")
+        remote_filepath = context.op_config.get("remote_filepath")
         return context.resources.ssh_resource.sftp_get(remote_filepath, local_filepath)
 
     with sftpserver.serve_content({"a_dir": {"readme.txt": "hello, world"}}):

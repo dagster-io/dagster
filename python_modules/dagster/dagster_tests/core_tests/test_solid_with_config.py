@@ -15,7 +15,7 @@ def test_basic_solid_with_config():
         config_schema={"some_config": Field(String)},
     )
     def solid_with_context(context):
-        did_get["yep"] = context.solid_config
+        did_get["yep"] = context.op_config
 
     @pipeline
     def pipeline_def():
@@ -267,7 +267,7 @@ def test_extra_config_unsatisfied_input_io_man():
 def test_config_with_no_schema():
     @solid
     def my_solid(context):
-        assert context.solid_config == 5
+        assert context.op_config == 5
 
     @pipeline
     def my_pipeline():
