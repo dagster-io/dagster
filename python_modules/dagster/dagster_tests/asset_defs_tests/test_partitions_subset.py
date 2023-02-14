@@ -4,7 +4,6 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
-    TimeWindowPartitionsDefinition,
 )
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
 
