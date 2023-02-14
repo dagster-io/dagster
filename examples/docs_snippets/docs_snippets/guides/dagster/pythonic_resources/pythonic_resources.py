@@ -3,10 +3,18 @@
 from dagster import ResourceDefinition, graph, job, Definitions, resource
 import requests
 from requests import Response
+from typing import Generic, TypeVar
 
 
 # start_new_resource_testing
 from dagster._config.structured_config import ConfigurableResource, ConfigurableResourceAdapter
+
+V = TypeVar("V")
+
+
+class ResourceDependency(Generic[V]):
+    def __get__(self, obj: "Resource", __owner: Any) -> V:
+        return getattr(obj, self._name)
 
 
 class MyResource(ConfigurableResource):
@@ -293,6 +301,49 @@ defs = Definitions(
 
 # end_raw_github_resource
 
+from contextlib import AbstractContextManager
+
+
+class Connection(AbstractContextManager):
+    def execute(self, query: str):
+        return None
+
+    def __enter__(self) -> "Connection":
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+class Engine:
+    def connect(self) -> Connection:
+        return Connection()
+
+
+def create_engine(*args, **kwargs):
+    return Engine()
+
+
+# start_raw_github_resource_dep
+
+
+class DBResource(ConfigurableResource):
+    engine: ResourceDependency[Engine]
+
+    def query(self, query: str):
+        with self.engine.connect() as conn:
+            return conn.execute(query)
+
+
+engine = create_engine(...)
+defs = Definitions(
+    assets=...,
+    resources={"db": DBResource(engine=engine)},
+)
+
+
+# end_raw_github_resource_dep
+
 # start_resource_adapter
 
 
@@ -328,3 +379,38 @@ def my_asset(writer: Writer):
 defs = Definitions(assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")})
 
 # end_resource_adapter
+
+# start_impl_details_resolve
+
+
+class CredentialsResource(ConfigurableResource):
+    username: str
+    password: str
+
+
+class FileStoreBucket(ConfigurableResource):
+    credentials: CredentialsResource
+    region: str
+
+    def write(self, data: str):
+        # In this context, `self.credentials` is ensured to
+        # be a CredentialsResource
+
+        get_filestore_client(
+            username=self.credentials.username,
+            password=self.credentials.password,
+            region=self.region,
+        ).write(data)
+
+
+# unconfigured_credentials_resource is typed as PartialResource[CredentialsResource]
+unconfigured_credentials_resource = CredentialsResource.configure_at_launch()
+
+# FileStoreBucket constructor accepts either a CredentialsResource or a
+# PartialResource[CredentialsResource] for the `credentials` argument
+bucket = FileStoreBucket(
+    credentials=unconfigured_credentials_resource,
+    region="us-east-1",
+)
+
+# end_impl_details_resolve

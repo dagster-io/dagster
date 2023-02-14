@@ -246,6 +246,13 @@ You can test the initialization of a <PyObject object="ConfigurableResource"/> b
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resource_testing endbefore=end_new_resource_testing
 from dagster._config.structured_config import ConfigurableResource, ConfigurableResourceAdapter
 
+V = TypeVar("V")
+
+
+class ResourceDependency(Generic[V]):
+    def __get__(self, obj: "Resource", __owner: Any) -> V:
+        return getattr(obj, self._name)
+
 
 class MyResource(ConfigurableResource):
     value: str
@@ -340,5 +347,67 @@ def public_github_repos(github: Resource[GitHub]):
 defs = Definitions(
     assets=[public_github_repos],
     resources={"github": GitHub()},
+)
+```
+
+If you would like a Pythonic resource to depend on a bare Python object, you can use the <PyObject object="ResourceDependency"/> annotation to annotate the attribute in question. This indicates to Dagster that the attribute should be treated as a resource dependency.
+
+```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_raw_github_resource_dep endbefore=end_raw_github_resource_dep
+class DBResource(ConfigurableResource):
+    engine: ResourceDependency[Engine]
+
+    def query(self, query: str):
+        with self.engine.connect() as conn:
+            return conn.execute(query)
+
+
+engine = create_engine(...)
+defs = Definitions(
+    assets=...,
+    resources={"db": DBResource(engine=engine)},
+)
+```
+
+---
+
+## Implementation details
+
+### Resource input resolution
+
+Resources defined by subclassing <PyObject object="ConfigurableResource"/> can take various unresolved inputs, including `EnvVar`s instead of string values or unconfigured resources returned by `configure_at_launch()` in place of configured resources.
+
+Between construction time and runtime, the <PyObject object="ConfigurableResource"/> class resolves all of its attributes to their final values, meaning that when an attribute of a resource is accessed in the body of an asset or op, it will always be a fully resolved value.
+
+In the following example, the `FileStoreBucket` constructor will accept the still-unconfigured `unconfigured_credentials_resource`, which will be resolved once the resource is configured at runtime.
+
+```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_impl_details_resolve endbefore=end_impl_details_resolve
+class CredentialsResource(ConfigurableResource):
+    username: str
+    password: str
+
+
+class FileStoreBucket(ConfigurableResource):
+    credentials: CredentialsResource
+    region: str
+
+    def write(self, data: str):
+        # In this context, `self.credentials` is ensured to
+        # be a CredentialsResource
+
+        get_filestore_client(
+            username=self.credentials.username,
+            password=self.credentials.password,
+            region=self.region,
+        ).write(data)
+
+
+# unconfigured_credentials_resource is typed as PartialResource[CredentialsResource]
+unconfigured_credentials_resource = CredentialsResource.configure_at_launch()
+
+# FileStoreBucket constructor accepts either a CredentialsResource or a
+# PartialResource[CredentialsResource] for the `credentials` argument
+bucket = FileStoreBucket(
+    credentials=unconfigured_credentials_resource,
+    region="us-east-1",
 )
 ```
