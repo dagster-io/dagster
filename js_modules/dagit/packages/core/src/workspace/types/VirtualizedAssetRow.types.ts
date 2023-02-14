@@ -43,6 +43,7 @@ export type SingleAssetQuery = {
             __typename: 'FreshnessPolicy';
             maximumLagMinutes: number;
             cronSchedule: string | null;
+            cronScheduleTimezone: string | null;
           } | null;
           freshnessInfo: {
             __typename: 'AssetFreshnessInfo';

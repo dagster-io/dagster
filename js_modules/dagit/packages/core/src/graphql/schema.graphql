@@ -704,6 +704,7 @@ type AssetFreshnessInfo {
 type FreshnessPolicy {
   maximumLagMinutes: Float!
   cronSchedule: String
+  cronScheduleTimezone: String
 }
 
 union MaterializedPartitions = DefaultPartitions | MultiPartitions | TimePartitions
