@@ -41,7 +41,7 @@ def test_execution_plan_simple_two_steps():
     events = execute_plan(
         execution_plan,
         InMemoryPipeline(pipeline_def),
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         instance=instance,
     )
     step_starts = find_events(events, event_type="STEP_START")
@@ -86,7 +86,7 @@ def test_execution_plan_two_outputs():
     events = execute_plan(
         execution_plan,
         InMemoryPipeline(pipeline_def),
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         instance=instance,
     )
 
@@ -115,7 +115,7 @@ def test_reentrant_execute_plan():
     step_events = execute_plan(
         execution_plan,
         InMemoryPipeline(pipeline_def),
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         instance=instance,
     )
 
