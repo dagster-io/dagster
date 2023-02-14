@@ -83,7 +83,7 @@ def get_run_group(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunGrou
     root_run_id, run_group = result
     run_group_run_ids = [run.run_id for run in run_group]
     records_by_id = {
-        record.pipeline_run.run_id: record
+        record.dagster_run.run_id: record
         for record in instance.get_run_records(RunsFilter(run_ids=run_group_run_ids))
     }
     return GrapheneRunGroup(
@@ -188,9 +188,9 @@ def get_assets_latest_info(
     if run_ids:
         run_records = instance.get_run_records(RunsFilter(run_ids=run_ids))
         for run_record in run_records:
-            if run_record.pipeline_run.status in PENDING_STATUSES:
+            if run_record.dagster_run.status in PENDING_STATUSES:
                 in_progress_records.append(run_record)
-            run_records_by_run_id[run_record.pipeline_run.run_id] = run_record
+            run_records_by_run_id[run_record.dagster_run.run_id] = run_record
 
     (
         in_progress_run_ids_by_asset,
@@ -229,7 +229,7 @@ def _get_in_progress_runs_for_assets(
     unstarted_run_ids_by_asset = defaultdict(set)
 
     for record in in_progress_records:
-        run = record.pipeline_run
+        run = record.dagster_run
         asset_selection = run.asset_selection
         run_step_keys = graphene_info.context.instance.get_execution_plan_snapshot(
             check.not_none(run.execution_plan_snapshot_id)
@@ -261,14 +261,14 @@ def _get_in_progress_runs_for_assets(
                             for step_stat in asset_step_stats
                         ]
                     ):
-                        in_progress_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
+                        in_progress_run_ids_by_asset[asset].add(record.dagster_run.run_id)
                     # else if step_stats exist and none are in progress, the step has completed
                 else:  # if step stats is none, then the step has not started
-                    unstarted_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
+                    unstarted_run_ids_by_asset[asset].add(record.dagster_run.run_id)
         else:
             # the run never began execution, all steps are unstarted
             for asset in selected_assets:
-                unstarted_run_ids_by_asset[asset].add(record.pipeline_run.run_id)
+                unstarted_run_ids_by_asset[asset].add(record.dagster_run.run_id)
 
     return in_progress_run_ids_by_asset, unstarted_run_ids_by_asset
 
@@ -294,7 +294,7 @@ def get_run_groups(
     run_groups = instance.get_run_groups(filters=filters, cursor=cursor, limit=limit)
     run_ids = {run.run_id for run_group in run_groups.values() for run in run_group.get("runs", [])}
     records_by_ids = {
-        record.pipeline_run.run_id: record
+        record.dagster_run.run_id: record
         for record in instance.get_run_records(RunsFilter(run_ids=list(run_ids)))
     }
 

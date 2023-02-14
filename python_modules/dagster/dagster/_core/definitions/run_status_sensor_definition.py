@@ -557,7 +557,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     )
                     continue
 
-                pipeline_run = run_records[0].pipeline_run
+                pipeline_run = run_records[0].dagster_run
                 update_timestamp = run_records[0].update_timestamp
 
                 job_match = False

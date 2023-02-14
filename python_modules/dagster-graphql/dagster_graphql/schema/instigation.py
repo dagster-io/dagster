@@ -168,7 +168,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             return []
 
         records_by_id = {
-            record.pipeline_run.run_id: record
+            record.dagster_run.run_id: record
             for record in instance.get_run_records(RunsFilter(run_ids=run_ids))
         }
 

@@ -90,7 +90,7 @@ def chunked_run_records_iterator(
             has_more = chunk_size and len(chunk) >= chunk_size
 
             for run in chunk:
-                cursor = run.pipeline_run.run_id
+                cursor = run.dagster_run.run_id
                 yield run
 
             if progress:
@@ -122,7 +122,7 @@ def migrate_run_start_end(storage: RunStorage, print_fn: Optional[PrintFn] = Non
         print_fn("Querying run and event log storage.")
 
     for run_record in chunked_run_records_iterator(storage, print_fn):
-        if run_record.pipeline_run.status in UNSTARTED_RUN_STATUSES:
+        if run_record.dagster_run.status in UNSTARTED_RUN_STATUSES:
             continue
 
         # commented out here to ensure that previously written timestamps that may not have
@@ -130,7 +130,7 @@ def migrate_run_start_end(storage: RunStorage, print_fn: Optional[PrintFn] = Non
         # if run_record.start_time:
         #     continue
 
-        add_run_stats(storage, run_record.pipeline_run.run_id)
+        add_run_stats(storage, run_record.dagster_run.run_id)
 
 
 def add_run_stats(run_storage: RunStorage, run_id: str) -> None:

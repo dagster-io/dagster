@@ -687,7 +687,7 @@ class RunRecord(
         "_RunRecord",
         [
             ("storage_id", int),
-            ("pipeline_run", DagsterRun),
+            ("dagster_run", DagsterRun),
             ("create_timestamp", datetime),
             ("update_timestamp", datetime),
             ("start_time", Optional[float]),
@@ -704,7 +704,7 @@ class RunRecord(
     def __new__(
         cls,
         storage_id: int,
-        pipeline_run: DagsterRun,
+        dagster_run: DagsterRun,
         create_timestamp: datetime,
         update_timestamp: datetime,
         start_time: Optional[float] = None,
@@ -713,17 +713,13 @@ class RunRecord(
         return super(RunRecord, cls).__new__(
             cls,
             storage_id=check.int_param(storage_id, "storage_id"),
-            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", DagsterRun),
+            dagster_run=check.inst_param(dagster_run, "pipeline_run", DagsterRun),
             create_timestamp=check.inst_param(create_timestamp, "create_timestamp", datetime),
             update_timestamp=check.inst_param(update_timestamp, "update_timestamp", datetime),
             # start_time and end_time fields will be populated once the run has started and ended, respectively, but will be None beforehand.
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
         )
-
-    @property
-    def dagster_run(self) -> DagsterRun:
-        return self.pipeline_run
 
 
 @whitelist_for_serdes
