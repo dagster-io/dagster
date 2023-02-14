@@ -356,7 +356,7 @@ class _PlanBuilder:
 
                 elif has_unresolved_input:
                     new_step = UnresolvedMappedExecutionStep(
-                        handle=UnresolvedStepHandle(solid_handle=handle),
+                        handle=UnresolvedStepHandle(node_handle=handle),
                         pipeline_name=self.pipeline_name,
                         step_inputs=cast(
                             List[Union[StepInput, UnresolvedMappedStepInput]], step_inputs
@@ -366,7 +366,7 @@ class _PlanBuilder:
                     )
                 elif has_pending_input:
                     new_step = UnresolvedCollectExecutionStep(
-                        handle=StepHandle(solid_handle=handle),
+                        handle=StepHandle(node_handle=handle),
                         pipeline_name=self.pipeline_name,
                         step_inputs=cast(
                             List[Union[StepInput, UnresolvedCollectStepInput]], step_inputs
@@ -376,7 +376,7 @@ class _PlanBuilder:
                     )
                 else:
                     new_step = ExecutionStep(
-                        handle=StepHandle(solid_handle=handle),
+                        handle=StepHandle(node_handle=handle),
                         pipeline_name=self.pipeline_name,
                         step_inputs=cast(List[StepInput], step_inputs),
                         step_outputs=step_outputs,
