@@ -1,21 +1,23 @@
 # isort: skip_file
 # pylint: disable=unused-argument,reimported,unnecessary-ellipsis
-from dagster import ResourceDefinition, graph, job, Definitions
+from dagster import ResourceDefinition, graph, job, Definitions, resource
 import requests
 from requests import Response
 
 
 # start_new_resource_testing
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.structured_config import ConfigurableResource, ConfigurableResourceAdapter
 
 
 class MyResource(ConfigurableResource):
+    value: str
+
     def get_value(self) -> str:
-        return "foo"
+        return self.value
 
 
 def test_my_resource():
-    assert MyResource().get_value() == "foo"
+    assert MyResource(value="foo").get_value() == "foo"
 
 
 # end_new_resource_testing
@@ -34,7 +36,8 @@ class MyResourceRequiresAnother(ConfigurableResource):
 
 
 def test_my_resource_with_context():
-    resource = MyResourceRequiresAnother(foo=StringHolderResource("foo"), bar="bar")
+    string_holder = StringHolderResource(value="foo")
+    resource = MyResourceRequiresAnother(foo=string_holder, bar="bar")
     assert resource.foo.value == "foo"
     assert resource.bar == "bar"
 
@@ -106,8 +109,6 @@ class MyConnectionResource(ConfigurableResource):
         )
 
 
-# Since MyConnectionResource extends ConfigurableResource, we don't
-# need to wrap it in a Resource[] annotation.
 @asset
 def data_from_service(my_conn: MyConnectionResource) -> Dict[str, Any]:
     return my_conn.request("/fetch_data").json()
@@ -141,8 +142,6 @@ class MyConnectionResource(ConfigurableResource):
         )
 
 
-# Since MyConnectionResource extends ConfigurableResource, we don't
-# need to wrap it in a Resource[] annotation.
 @op
 def update_service(my_conn: MyConnectionResource):
     my_conn.request("/update")
@@ -264,3 +263,68 @@ defs = Definitions(
     },
 )
 # end_new_resources_env_vars
+
+
+class GitHubOrganization:
+    def __init__(self, name: str):
+        self.name = name
+
+    def repositories(self):
+        return ["dagster", "dagit", "dagster-graphql"]
+
+
+class GitHub:
+    def organization(self, name: str):
+        return GitHubOrganization(name)
+
+
+# start_raw_github_resource
+
+
+@asset
+def public_github_repos(github: Resource[GitHub]):
+    return github.organization("dagster-io").repositories()
+
+
+defs = Definitions(
+    assets=[public_github_repos],
+    resources={"github": GitHub()},
+)
+
+# end_raw_github_resource
+
+# start_resource_adapter
+
+
+# Old code, cannot be changed for back-compat purposes
+class Writer:
+    def __init__(self, prefix: str):
+        self._prefix = prefix
+
+    def output(self, text: str) -> None:
+        print(self._prefix + text)
+
+
+@resource(config_schema={"prefix": str})
+def writer_resource(context):
+    prefix = context.resource_config["prefix"]
+    return Writer(prefix)
+
+
+# New adapter layer
+class WriterResource(ConfigurableResourceAdapter):
+    prefix: str
+
+    @property
+    def wrapped_resource(self) -> ResourceDefinition:
+        return writer_resource
+
+
+@asset
+def my_asset(writer: Writer):
+    writer.output("hello, world!")
+
+
+defs = Definitions(assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")})
+
+# end_resource_adapter
