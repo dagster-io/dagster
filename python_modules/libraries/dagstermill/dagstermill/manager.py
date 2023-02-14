@@ -95,7 +95,7 @@ class Manager:
             resource_configs=resource_configs,
             log_manager=log_manager,
             execution_plan=execution_plan,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
             resource_keys_to_init=resource_keys_to_init,
             instance=instance,
             emit_persistent_events=emit_persistent_events,

@@ -97,7 +97,7 @@ def test_clean_event_generator_exit():
         resource_configs=resolved_run_config.resources,
         log_manager=log_manager,
         execution_plan=execution_plan,
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         resource_keys_to_init={"a"},
         instance=instance,
         emit_persistent_events=True,

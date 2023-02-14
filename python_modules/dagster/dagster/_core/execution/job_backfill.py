@@ -210,7 +210,7 @@ def submit_backfill_runs(
             external_partition_set.pipeline_name
         )
     for partition_data in result.partition_data:
-        pipeline_run = create_backfill_run(
+        dagster_run = create_backfill_run(
             instance,
             repo_location,
             external_pipeline,
@@ -218,12 +218,12 @@ def submit_backfill_runs(
             backfill_job,
             partition_data,
         )
-        if pipeline_run:
+        if dagster_run:
             # we skip runs in certain cases, e.g. we are running a `from_failure` backfill job
             # and the partition has had a successful run since the time the backfill was
             # scheduled
-            instance.submit_run(pipeline_run.run_id, workspace)
-            yield pipeline_run.run_id
+            instance.submit_run(dagster_run.run_id, workspace)
+            yield dagster_run.run_id
         yield None
 
 

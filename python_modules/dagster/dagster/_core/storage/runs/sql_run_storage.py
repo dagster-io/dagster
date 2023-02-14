@@ -515,7 +515,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return [
             RunRecord(
                 storage_id=check.int_param(row["id"], "id"),
-                pipeline_run=self._row_to_run(row),
+                dagster_run=self._row_to_run(row),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
                 start_time=check.opt_inst(row["start_time"], float)

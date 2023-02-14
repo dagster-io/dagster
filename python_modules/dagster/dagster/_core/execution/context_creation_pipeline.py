@@ -253,7 +253,7 @@ def execution_context_event_generator(
         resource_configs=context_creation_data.resolved_run_config.resources,
         log_manager=log_manager,
         execution_plan=execution_plan,
-        pipeline_run=context_creation_data.dagster_run,
+        dagster_run=context_creation_data.dagster_run,
         resource_keys_to_init=context_creation_data.resource_keys_to_init,
         instance=instance,
         emit_persistent_events=True,
