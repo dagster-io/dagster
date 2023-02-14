@@ -252,7 +252,7 @@ class GraphDefinition(NodeDefinition):
 
     def _get_nodes_in_topological_order(self) -> Sequence[Node]:
         _forward_edges, backward_edges = create_adjacency_lists(
-            self.solids, self.dependency_structure
+            self.nodes, self.dependency_structure
         )
 
         try:
@@ -294,10 +294,6 @@ class GraphDefinition(NodeDefinition):
     @property
     def is_graph_job_op_node(self) -> bool:
         return True
-
-    @property
-    def solids(self) -> Sequence[Node]:
-        return list(set(self._node_dict.values()))
 
     @property
     def nodes(self) -> Sequence[Node]:
@@ -826,7 +822,7 @@ class SubselectedGraphDefinition(GraphDefinition):
 
     def get_top_level_omitted_nodes(self) -> Sequence[Node]:
         return [
-            solid for solid in self.parent_graph_def.solids if not self.has_node_named(solid.name)
+            solid for solid in self.parent_graph_def.nodes if not self.has_node_named(solid.name)
         ]
 
     @property

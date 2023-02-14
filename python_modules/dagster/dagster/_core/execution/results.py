@@ -132,7 +132,7 @@ class GraphExecutionResult:
         """List[Union[CompositeSolidExecutionResult, SolidExecutionResult]]: The results for each
         top level solid.
         """
-        return [self.result_for_node(node.name) for node in self.container.solids]
+        return [self.result_for_node(node.name) for node in self.container.nodes]
 
     def _result_for_handle(
         self, node: Node, handle: NodeHandle

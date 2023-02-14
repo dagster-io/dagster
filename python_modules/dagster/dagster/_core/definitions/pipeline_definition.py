@@ -469,7 +469,7 @@ class PipelineDefinition:
 
     @property
     def solids(self) -> Sequence[Node]:
-        return self._graph_def.solids
+        return self._graph_def.nodes
 
     @property
     def solids_in_topological_order(self) -> Sequence[Node]:
@@ -818,7 +818,7 @@ def _create_run_config_schema(
 
             ignored_solids = [
                 solid
-                for solid in parent_job.graph.solids
+                for solid in parent_job.graph.nodes
                 if not pipeline_def.has_solid_named(solid.name)
             ]
     elif pipeline_def.is_subset_pipeline:
@@ -827,7 +827,7 @@ def _create_run_config_schema(
 
         ignored_solids = [
             solid
-            for solid in pipeline_def.parent_pipeline_def.graph.solids
+            for solid in pipeline_def.parent_pipeline_def.graph.nodes
             if not pipeline_def.has_solid_named(solid.name)
         ]
     else:
@@ -836,7 +836,7 @@ def _create_run_config_schema(
     run_config_schema_type = define_run_config_schema_type(
         RunConfigSchemaCreationData(
             pipeline_name=pipeline_def.name,
-            solids=pipeline_def.graph.solids,
+            solids=pipeline_def.graph.nodes,
             graph_def=pipeline_def.graph,
             dependency_structure=pipeline_def.graph.dependency_structure,
             mode_definition=mode_definition,
