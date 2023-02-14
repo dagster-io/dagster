@@ -230,7 +230,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         :meta private:
         """
-        return self._step_execution_context.solid_handle
+        return self._step_execution_context.node_handle
 
     @property
     def op_handle(self) -> NodeHandle:
