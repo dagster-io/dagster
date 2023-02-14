@@ -38,8 +38,10 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         print("THIS IS THE TABLE SLICE")
         print(table_slice)
 
+        with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
+
         pandas_gbq.to_gbq(
-            obj,
+            with_uppercase_cols,
             destination_table=f"{table_slice.schema}.{table_slice.table}",
             project_id=table_slice.database,
             if_exists="append",
@@ -61,12 +63,11 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
     def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
-        print("THIS IS THE TABLE SLICE")
-        print(table_slice)
-
-        return pandas_gbq.read_gbq(
+        result = pandas_gbq.read_gbq(
             BigQueryClient.get_select_statement(table_slice), project_id=table_slice.database
         )
+        result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
+        return result
 
     @property
     def supported_types(self):

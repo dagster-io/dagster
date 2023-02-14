@@ -1,3 +1,5 @@
+import os
+import tempfile
 from typing import Sequence, cast
 
 from dagster import Field, IOManagerDefinition, Noneable, OutputContext, StringSource, io_manager
@@ -78,12 +80,27 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
     @io_manager(
         config_schema={
             "dataset": Field(
-                StringSource, description="Name of the schema to use.", is_required=False
+                StringSource, description="Name of the BigQuery dataset to use.", is_required=False
             ),
-            "project": Field(StringSource),  # elementl-dev - sort of like the database?
+            "project": Field(
+                StringSource, description="The GCP project to use."
+            ),  # elementl-dev - sort of like the database?
             "location": Field(
-                Noneable(StringSource), is_required=False, default_value=None
+                Noneable(StringSource),
+                is_required=False,
+                default_value=None,
+                description="The GCP location.",
             ),  # compute location? like us-east-2
+            "gcp_credentials": Field(
+                Noneable(StringSource),
+                is_required=False,
+                default_value=None,
+                description=(
+                    "GCP authentication credentials. If provided, a temporary file will be created"
+                    " with the credentials and GOOGLE_APPLICATION_CREDENTIALS will be set to the"
+                    " temporary file."
+                ),
+            ),
         }
     )
     def bigquery_io_manager(init_context):
@@ -96,13 +113,23 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
         Op outputs will be stored in the schema specified by output metadata (defaults to public) in a
         table of the name of the output.
         """
-        return DbIOManager(
+        temp_file_name = ""
+        if init_context.resource_config.get("gcp_credentials"):
+            with tempfile.NamedTemporaryFile("w", delete=False) as f:
+                f.write(init_context.resource_config.get("gcp_credentials"))
+                temp_file_name = f.name
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file_name
+
+        yield DbIOManager(
             type_handlers=type_handlers,
             db_client=BigQueryClient(),
             io_manager_name="BigQueryIOManager",
             database=init_context.resource_config["project"],
             schema=init_context.resource_config.get("dataset"),
         )
+        if init_context.resource_config.get("gcp_credentials"):
+            os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+            os.remove(temp_file_name)
 
     return bigquery_io_manager
 
@@ -110,24 +137,18 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
 class BigQueryClient(DbClient):
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
-        print("IN DELETE")
         conn = _connect_bigquery(context)
         try:
-            print("CKLEANUP STATEMENT")
-            print(_get_cleanup_statement(table_slice))
             conn.query(_get_cleanup_statement(table_slice)).result()
-            print("DONE DELETE")
         except Exception:  # TODO - find the real exception
             # table doesn't exist yet, so ignore the error
             pass
-        # conn.close()
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
         if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
-            # TODO - should table_slice.database be in this stmt?
             query = (
                 f"SELECT {col_str} FROM"
                 f" {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
@@ -141,6 +162,11 @@ class BigQueryClient(DbClient):
             return query + partition_where
         else:
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
+
+    @staticmethod
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
+        bq_client = _connect_bigquery(context)
+        bq_client.query(f"CREATE SCHEMA IF NOT EXISTS {table_slice.schema}").result()
 
 
 def _connect_bigquery(context):

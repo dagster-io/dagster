@@ -1,7 +1,40 @@
+import os
+import uuid
+from contextlib import contextmanager
 from datetime import datetime
+from typing import Iterator
 
-from dagster._core.storage.db_io_manager import TablePartitionDimension, TableSlice
-from dagster_gcp.bigquery.io_manager import BigQueryClient, _get_cleanup_statement
+import pytest
+from dagster import InputContext, OutputContext, asset, materialize
+from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
+from dagster_gcp.bigquery.io_manager import (
+    BigQueryClient,
+    _connect_bigquery,
+    _get_cleanup_statement,
+    build_bigquery_io_manager,
+)
+from google.cloud import bigquery
+
+IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+
+SHARED_BUILDKITE_BQ_CONFIG = {
+    "project": os.getenv("GCP_PROJECT_ID"),
+}
+
+
+@contextmanager
+def temporary_bigquery_table(schema_name: str, column_str: str) -> Iterator[str]:
+    bq_client = bigquery.Client(
+        project=SHARED_BUILDKITE_BQ_CONFIG["project"],
+    )
+    table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
+    bq_client.query(f"create table {schema_name}.{table_name} ({column_str})").result()
+    try:
+        yield table_name
+    finally:
+        bq_client.query(
+            f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
+        ).result()
 
 
 def test_get_select_statement():
@@ -148,3 +181,57 @@ def test_get_cleanup_statement_multi_partitioned():
         == "DELETE FROM db.schema1.table1 WHERE\nmy_fruit_col = 'apple' AND\nmy_timestamp_col >="
         " '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
     )
+
+
+class FakeHandler(DbTypeHandler[int]):
+    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: int):
+        bq = _connect_bigquery(context)
+        bq.query(
+            f"SELECT * FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
+        ).result()
+
+    def load_input(self, context: InputContext, table_slice: TableSlice) -> int:
+        return 7
+
+    @property
+    def supported_types(self):
+        return [int]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+def test_authenticate_via_config():
+    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+    with temporary_bigquery_table(
+        schema_name=schema,
+        column_str=" FOO string",
+    ) as table_name:
+        asset_info = dict()
+
+        @asset(name=table_name, key_prefix=schema)
+        def test_asset(context) -> int:
+            asset_info["gcp_creds_file"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+            assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is not None
+            return 1
+
+        old_gcp_creds_file = os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+        with open(old_gcp_creds_file) as f:
+            gcp_creds = f.read()
+
+        bq_io_manager = build_bigquery_io_manager([FakeHandler()]).configured(
+            {**SHARED_BUILDKITE_BQ_CONFIG, "gcp_credentials": gcp_creds}
+        )
+        resource_defs = {"io_manager": bq_io_manager}
+
+        assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
+
+        result = materialize(
+            [test_asset],
+            resources=resource_defs,
+        )
+
+        assert result.success
+
+        assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
+        assert not os.path.exists(asset_info["gcp_creds_file"])
+
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_gcp_creds_file
