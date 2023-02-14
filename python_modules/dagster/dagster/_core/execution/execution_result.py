@@ -85,7 +85,7 @@ class ExecutionResult(ABC):
             )
         # Resolve the first layer of mapping
         output_mapping = graph_def.get_output_mapping(output_name)
-        mapped_node = graph_def.solid_named(output_mapping.maps_from.solid_name)
+        mapped_node = graph_def.node_named(output_mapping.maps_from.solid_name)
         origin_output_def, origin_handle = mapped_node.definition.resolve_output_to_origin(
             output_mapping.maps_from.output_name,
             NodeHandle(mapped_node.name, None),

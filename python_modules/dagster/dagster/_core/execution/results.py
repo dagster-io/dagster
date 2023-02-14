@@ -292,7 +292,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
             output_mapping = self.node.definition.get_output_mapping(output_name)
 
             inner_solid_values = self._result_for_handle(
-                self.node.definition.solid_named(output_mapping.maps_from.solid_name),
+                self.node.definition.node_named(output_mapping.maps_from.solid_name),
                 NodeHandle(output_mapping.maps_from.solid_name, None),
             ).output_values
 
@@ -323,7 +323,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         output_mapping = self.node.definition.get_output_mapping(output_name)
 
         return self._result_for_handle(
-            self.node.definition.solid_named(output_mapping.maps_from.solid_name),
+            self.node.definition.node_named(output_mapping.maps_from.solid_name),
             NodeHandle(output_mapping.maps_from.solid_name, None),
         ).output_value(output_mapping.maps_from.output_name)
 

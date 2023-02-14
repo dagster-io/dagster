@@ -49,9 +49,9 @@ def test_solid_def():
 
     assert len(list(pipeline_def.solids[0].outputs())) == 1
 
-    assert isinstance(pipeline_def.solid_named("op_one"), Node)
+    assert isinstance(pipeline_def.node_named("op_one"), Node)
 
-    solid_one_solid = pipeline_def.solid_named("op_one")
+    solid_one_solid = pipeline_def.node_named("op_one")
 
     assert solid_one_solid.has_input("input_one")
 

@@ -465,7 +465,7 @@ class PipelineDefinition:
         return self._graph_def.has_node_named(name)
 
     def solid_named(self, name: str) -> Node:
-        return self._graph_def.solid_named(name)
+        return self._graph_def.node_named(name)
 
     @property
     def solids(self) -> Sequence[Node]:
@@ -575,7 +575,7 @@ class PipelineDefinition:
 
         # hooks on top-level solid
         name = lineage.pop()
-        solid = self._graph_def.solid_named(name)
+        solid = self._graph_def.node_named(name)
         hook_defs = hook_defs.union(solid.hook_defs)
 
         # hooks on non-top-level solids
@@ -583,7 +583,7 @@ class PipelineDefinition:
             name = lineage.pop()
             # While lineage is non-empty, definition is guaranteed to be a graph
             definition = cast(GraphDefinition, solid.definition)
-            solid = definition.solid_named(name)
+            solid = definition.node_named(name)
             hook_defs = hook_defs.union(solid.hook_defs)
 
         # hooks applied to a pipeline definition will run on every solid

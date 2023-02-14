@@ -260,7 +260,7 @@ class GraphDefinition(NodeDefinition):
         except CircularDependencyError as err:
             raise DagsterInvalidDefinitionError(str(err)) from err
 
-        return [self.solid_named(solid_name) for solid_name in order]
+        return [self.node_named(solid_name) for solid_name in order]
 
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
@@ -323,7 +323,7 @@ class GraphDefinition(NodeDefinition):
         check.str_param(name, "name")
         return name in self._node_dict
 
-    def solid_named(self, name: str) -> Node:
+    def node_named(self, name: str) -> Node:
         check.str_param(name, "name")
         check.invariant(
             name in self._node_dict,
@@ -341,12 +341,12 @@ class GraphDefinition(NodeDefinition):
             current = current.parent
 
         name = lineage.pop()
-        solid = self.solid_named(name)
+        solid = self.node_named(name)
         while lineage:
             name = lineage.pop()
             # We know that this is a current solid is a graph while ascending lineage
             definition = cast(GraphDefinition, solid.definition)
-            solid = definition.solid_named(name)
+            solid = definition.node_named(name)
 
         return solid
 
@@ -433,7 +433,7 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
-        mapped_solid = self.solid_named(mapping.maps_from.solid_name)
+        mapped_solid = self.node_named(mapping.maps_from.solid_name)
         return mapped_solid.definition.resolve_output_to_origin(
             mapping.maps_from.output_name,
             NodeHandle(mapped_solid.name, handle),
@@ -442,7 +442,7 @@ class GraphDefinition(NodeDefinition):
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
-        return self.solid_named(
+        return self.node_named(
             mapping.maps_from.solid_name
         ).definition.resolve_output_to_origin_op_def(output_name)
 
@@ -455,7 +455,7 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_solid = self.solid_named(mapping.maps_to.solid_name)
+        mapped_solid = self.node_named(mapping.maps_to.solid_name)
 
         return mapped_solid.definition.default_value_for_input(mapping.maps_to.input_name)
 
@@ -468,7 +468,7 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_solid = self.solid_named(mapping.maps_to.solid_name)
+        mapped_solid = self.node_named(mapping.maps_to.solid_name)
 
         return mapped_solid.definition.input_has_default(mapping.maps_to.input_name)
 
@@ -497,7 +497,7 @@ class GraphDefinition(NodeDefinition):
         if self.dependency_structure.has_dynamic_downstreams(target_node):
             return False
 
-        return self.solid_named(target_node).definition.input_supports_dynamic_output_dep(
+        return self.node_named(target_node).definition.input_supports_dynamic_output_dep(
             mapping.maps_to.input_name
         )
 
@@ -763,7 +763,7 @@ class GraphDefinition(NodeDefinition):
             if mapping.graph_input_name != input_handle.input_name:
                 continue
             # recurse into graph structure
-            all_destinations += self.solid_named(
+            all_destinations += self.node_named(
                 mapping.maps_to.solid_name
             ).definition.resolve_input_to_destinations(
                 NodeInputHandle(
