@@ -97,7 +97,7 @@ class ExecutionResult(ABC):
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> object:
         # resolve handle of node that node_str is referring to
         target_handle = NodeHandle.from_string(node_str)
-        target_node_def = self.job_def.graph.get_solid(target_handle).definition
+        target_node_def = self.job_def.graph.get_node(target_handle).definition
         origin_output_def, origin_handle = target_node_def.resolve_output_to_origin(
             output_name, NodeHandle.from_string(node_str)
         )

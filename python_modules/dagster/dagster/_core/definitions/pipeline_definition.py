@@ -459,7 +459,7 @@ class PipelineDefinition:
         return name in self._all_node_defs
 
     def get_solid(self, handle: NodeHandle) -> Node:
-        return self._graph_def.get_solid(handle)
+        return self._graph_def.get_node(handle)
 
     def has_solid_named(self, name: str) -> bool:
         return self._graph_def.has_node_named(name)

@@ -328,7 +328,7 @@ class GraphDefinition(NodeDefinition):
 
         return self._node_dict[name]
 
-    def get_solid(self, handle: NodeHandle) -> Node:
+    def get_node(self, handle: NodeHandle) -> Node:
         check.inst_param(handle, "handle", NodeHandle)
         current = handle
         lineage: List[str] = []

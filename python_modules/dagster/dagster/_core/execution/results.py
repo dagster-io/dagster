@@ -199,7 +199,7 @@ class GraphExecutionResult:
         else:
             check.inst_param(handle, "handle", NodeHandle)
 
-        node = self.container.get_solid(handle)
+        node = self.container.get_node(handle)
 
         return self._result_for_handle(node, handle)
 
