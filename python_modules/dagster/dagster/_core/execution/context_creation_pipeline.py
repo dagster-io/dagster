@@ -151,7 +151,7 @@ def create_plan_data(
 ) -> PlanData:
     return PlanData(
         pipeline=context_creation_data.pipeline,
-        pipeline_run=context_creation_data.pipeline_run,
+        dagster_run=context_creation_data.pipeline_run,
         instance=context_creation_data.instance,
         execution_plan=context_creation_data.execution_plan,
         raise_on_error=raise_on_error,

@@ -41,7 +41,7 @@ def test_step_handler_context():
         plan_context = PlanOrchestrationContext(
             plan_data=PlanData(
                 pipeline=recon_pipeline,
-                pipeline_run=run,
+                dagster_run=run,
                 instance=instance,
                 execution_plan=execution_plan,
                 raise_on_error=True,
