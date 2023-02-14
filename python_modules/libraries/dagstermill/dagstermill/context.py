@@ -145,7 +145,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def run(self) -> DagsterRun:
         """:class:`dagster.DagsterRun`: The job run for the context."""
-        return cast(DagsterRun, self._pipeline_context.pipeline_run)
+        return cast(DagsterRun, self._pipeline_context.dagster_run)
 
     @property
     def pipeline_run(self) -> DagsterRun:

@@ -53,7 +53,7 @@ class LocalExternalStepLauncher(StepLauncher):
         step_context: StepExecutionContext,
     ) -> Iterator[DagsterEvent]:
         step_run_ref = step_context_to_step_run_ref(step_context)
-        run_id = step_context.pipeline_run.run_id
+        run_id = step_context.dagster_run.run_id
 
         step_run_dir = os.path.join(self.scratch_dir, run_id, step_run_ref.step_key)
         if os.path.exists(step_run_dir):
@@ -151,8 +151,8 @@ def step_context_to_step_run_ref(
 
     return StepRunRef(
         run_config=step_context.run_config,
-        pipeline_run=step_context.pipeline_run,
-        run_id=step_context.pipeline_run.run_id,
+        pipeline_run=step_context.dagster_run,
+        run_id=step_context.dagster_run.run_id,
         step_key=step_context.step.key,
         retry_mode=retry_mode,
         recon_pipeline=recon_pipeline,  # type: ignore

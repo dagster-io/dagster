@@ -145,7 +145,7 @@ class InMemoryPipeline(IPipeline, object):
         return self._subset_for_execution(solids_to_execute, asset_selection=asset_selection)
 
     @property
-    def solid_selection(self) -> Sequence[str]:
+    def solid_selection(self) -> Optional[Sequence[str]]:
         # a list of solid queries provided by the user
         return self._solid_selection  # type: ignore  # (possible none)
 

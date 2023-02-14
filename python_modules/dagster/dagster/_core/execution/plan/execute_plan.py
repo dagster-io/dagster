@@ -85,7 +85,7 @@ def inner_plan_execution_iterator(
                         try:
                             step_stack.enter_context(
                                 pipeline_context.instance.compute_log_manager.watch(
-                                    step_context.pipeline_run, step_context.step.key
+                                    step_context.dagster_run, step_context.step.key
                                 )
                             )
                             yield DagsterEvent.legacy_compute_log_step_event(step_context)
