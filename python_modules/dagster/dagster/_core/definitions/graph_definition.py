@@ -429,7 +429,7 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
-        mapped_node = self.node_named(mapping.maps_from.solid_name)
+        mapped_node = self.node_named(mapping.maps_from.node_name)
         return mapped_node.definition.resolve_output_to_origin(
             mapping.maps_from.output_name,
             NodeHandle(mapped_node.name, handle),
@@ -439,7 +439,7 @@ class GraphDefinition(NodeDefinition):
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
         return self.node_named(
-            mapping.maps_from.solid_name
+            mapping.maps_from.node_name
         ).definition.resolve_output_to_origin_op_def(output_name)
 
     def default_value_for_input(self, input_name: str) -> object:
@@ -944,12 +944,12 @@ def _validate_out_mappings(
     output_defs: List[OutputDefinition] = []
     for mapping in output_mappings:
         if isinstance(mapping, OutputMapping):
-            target_solid = solid_dict.get(mapping.maps_from.solid_name)
+            target_solid = solid_dict.get(mapping.maps_from.node_name)
             if target_solid is None:
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' output mapping references node "
                     "'{solid_name}' which it does not contain.".format(
-                        name=name, solid_name=mapping.maps_from.solid_name, class_name=class_name
+                        name=name, solid_name=mapping.maps_from.node_name, class_name=class_name
                     )
                 )
             if not target_solid.has_output(mapping.maps_from.output_name):
@@ -976,7 +976,7 @@ def _validate_out_mappings(
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' output '{mapping.graph_output_name}' of type"
                     " {mapping.dagster_type.display_name} maps from"
-                    " {mapping.maps_from.solid_name}.{mapping.maps_from.output_name} of different"
+                    " {mapping.maps_from.node_name}.{mapping.maps_from.output_name} of different"
                     " type {target_output.dagster_type.display_name}. OutputMapping source and"
                     " destination must have the same type.".format(
                         class_name=class_name,
