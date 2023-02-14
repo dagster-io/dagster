@@ -688,7 +688,7 @@ def _create_type_materializations(
 
     # check for output mappings at every point up the composition hierarchy
     while current_handle:
-        solid_config = step_context.resolved_run_config.solids.get(current_handle.to_string())
+        solid_config = step_context.resolved_run_config.ops.get(current_handle.to_string())
         current_handle = current_handle.parent
 
         if solid_config is None:

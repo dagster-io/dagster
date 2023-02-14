@@ -485,7 +485,7 @@ def get_step_input_source(
     )
 
     input_handle = node.get_input(input_name)
-    node_config = plan_builder.resolved_run_config.solids.get(str(handle))
+    node_config = plan_builder.resolved_run_config.ops.get(str(handle))
 
     input_def = node.definition.input_def_named(input_name)
     asset_layer = plan_builder.pipeline.get_definition().asset_layer

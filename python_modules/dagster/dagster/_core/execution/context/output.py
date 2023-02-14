@@ -725,7 +725,7 @@ def get_output_context(
     """
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config
-    op_config = resolved_run_config.solids[step.node_handle.to_string()]
+    op_config = resolved_run_config.ops[step.node_handle.to_string()]
     outputs_config = op_config.outputs
 
     if outputs_config:

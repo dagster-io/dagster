@@ -107,7 +107,7 @@ def resolve_step_versions(
 
         solid_name = str(step.node_handle)
 
-        solid_config = resolved_run_config.solids[solid_name].config
+        solid_config = resolved_run_config.ops[solid_name].config
 
         solid_def_version = None
         if solid_def.version is not None:  # type: ignore  # (should be OpDefinition)
