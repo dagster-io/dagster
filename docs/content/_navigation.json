@@ -651,6 +651,10 @@
         "path": "/guides/general",
         "children": [
           {
+            "title": "Running Dagster locally",
+            "path": "/guides/running-dagster-locally"
+          },
+          {
             "title": "Enriching with Software-defined assets",
             "path": "/guides/dagster/enriching-with-software-defined-assets"
           },

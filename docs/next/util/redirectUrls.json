@@ -1,5 +1,10 @@
 [
   {
+    "source": "/deployment/guides/running-locally",
+    "destination": "/guides/running-dagster-locally",
+    "statusCode": 302
+  },
+  {
     "source": "/install",
     "destination": "/getting-started",
     "statusCode": 302
