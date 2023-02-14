@@ -319,7 +319,7 @@ class GraphDefinition(NodeDefinition):
     def node_input_source_assets(self) -> Mapping[str, Mapping[str, "SourceAsset"]]:
         return self._node_input_source_assets
 
-    def has_solid_named(self, name: str) -> bool:
+    def has_node_named(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self._node_dict
 
@@ -826,7 +826,7 @@ class SubselectedGraphDefinition(GraphDefinition):
 
     def get_top_level_omitted_nodes(self) -> Sequence[Node]:
         return [
-            solid for solid in self.parent_graph_def.solids if not self.has_solid_named(solid.name)
+            solid for solid in self.parent_graph_def.solids if not self.has_node_named(solid.name)
         ]
 
     @property

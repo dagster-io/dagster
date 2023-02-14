@@ -462,7 +462,7 @@ class PipelineDefinition:
         return self._graph_def.get_solid(handle)
 
     def has_solid_named(self, name: str) -> bool:
-        return self._graph_def.has_solid_named(name)
+        return self._graph_def.has_node_named(name)
 
     def solid_named(self, name: str) -> Node:
         return self._graph_def.solid_named(name)
@@ -691,7 +691,7 @@ def _get_pipeline_subset_def(
     check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
     graph = pipeline_def.graph
     for solid_name in solids_to_execute:
-        if not graph.has_solid_named(solid_name):
+        if not graph.has_node_named(solid_name):
             raise DagsterInvalidSubsetError(
                 "{target_type} {pipeline_name} has no {node_type} named {name}.".format(
                     target_type=pipeline_def.target_type,

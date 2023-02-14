@@ -103,7 +103,7 @@ class GraphExecutionResult:
             Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of the solid
             execution within the pipeline.
         """
-        if not self.container.has_solid_named(name):
+        if not self.container.has_node_named(name):
             raise DagsterInvariantViolationError(
                 "Tried to get result for solid '{name}' in '{container}'. No such top level "
                 "solid.".format(name=name, container=self.container.name)
