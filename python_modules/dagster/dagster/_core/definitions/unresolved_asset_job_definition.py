@@ -47,7 +47,9 @@ class UnresolvedAssetJobDefinition(
         cls,
         name: str,
         selection: "AssetSelection",
-        config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
+        config: Optional[
+            Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", ConfigInput]
+        ] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
@@ -241,7 +243,9 @@ class UnresolvedAssetJobDefinition(
 def define_asset_job(
     name: str,
     selection: Optional["CoercibleToAssetSelection"] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
+    config: Optional[
+        Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]", ConfigInput]
+    ] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
     partitions_def: Optional["PartitionsDefinition[Any]"] = None,

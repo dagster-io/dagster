@@ -1,14 +1,14 @@
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions import JobDefinition
-from dagster._core.definitions.run_config import convert_config_input
+from dagster._core.definitions.run_config import ConfigInput, convert_config_input
 from dagster._core.system_config.objects import ResolvedRunConfig
 
 
 def validate_run_config(
     job_def: JobDefinition,
-    run_config: Optional[Mapping[str, Any]] = None,
+    run_config: Optional[Union[Mapping[str, Any], ConfigInput]] = None,
 ) -> Mapping[str, Any]:
     """Function to validate a provided run config blob against a given job.
 
