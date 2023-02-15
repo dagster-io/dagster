@@ -930,12 +930,12 @@ def test_type_signatures_constructor_nested_resource():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import Resource
+from dagster._config.structured_config import ConfigurableResource
 
-class InnerResource(Resource):
+class InnerResource(ConfigurableResource):
     a_string: str
 
-class OuterResource(Resource):
+class OuterResource(ConfigurableResource):
     inner: InnerResource
     a_bool: bool
 
@@ -971,9 +971,9 @@ def test_type_signatures_config_at_launch():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import Resource
+from dagster._config.structured_config import ConfigurableResource
 
-class MyResource(Resource):
+class MyResource(ConfigurableResource):
     a_string: str
 
 reveal_type(MyResource.configure_at_launch())
@@ -996,9 +996,9 @@ def test_type_signatures_constructor_resource_dependency():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import Resource, ResourceDependency
+from dagster._config.structured_config import ConfigurableResource, ResourceDependency
 
-class StringDependentResource(Resource):
+class StringDependentResource(ConfigurableResource):
     a_string: ResourceDependency[str]
 
 reveal_type(StringDependentResource.__init__)
@@ -1015,8 +1015,8 @@ reveal_type(my_str_resource.a_string)
         # resource function that returns a str
         assert (
             pyright_out[0]
-            == "(self: StringDependentResource, a_string: Resource[str] | PartialResource[str] |"
-            " ResourceDefinition | str) -> None"
+            == "(self: StringDependentResource, a_string: ConfigurableResource[str] |"
+            " PartialResource[str] | ResourceDefinition | str) -> None"
         )
 
         # Ensure that the retrieved type is str
