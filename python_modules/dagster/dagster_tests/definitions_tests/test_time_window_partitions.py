@@ -397,7 +397,9 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
         else:
             expected_keys_not_in_subset.append(full_set_keys[i])
 
-    subset = partitions_def.empty_subset().with_partition_keys(subset_keys)
+    subset = cast(
+        TimeWindowPartitionsSubset, partitions_def.empty_subset().with_partition_keys(subset_keys)
+    )
     for partition_key in subset_keys:
         assert partition_key in subset
     assert (
@@ -508,7 +510,7 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
 
     subset = partitions_def.empty_subset().with_partition_keys(initial_subset_keys)
     assert all(partition_key in subset for partition_key in initial_subset_keys)
-    updated_subset = subset.with_partition_keys(added_subset_keys)
+    updated_subset = cast(TimeWindowPartitionsSubset, subset.with_partition_keys(added_subset_keys))
     assert all(partition_key in updated_subset for partition_key in added_subset_keys)
     assert (
         updated_subset.get_partition_keys_not_in_subset(

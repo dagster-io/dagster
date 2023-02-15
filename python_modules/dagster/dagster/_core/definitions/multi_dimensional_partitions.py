@@ -1,6 +1,18 @@
 import itertools
 from datetime import datetime
-from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, cast
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    cast,
+)
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -24,6 +36,8 @@ from .partition import (
 from .time_window_partitions import TimeWindowPartitionsDefinition
 
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
+
+MULTIPARTITION_KEY_DELIMITER = "|"
 
 
 class PartitionDimensionKey(
@@ -64,7 +78,10 @@ class MultiPartitionKey(str):
         ]
 
         str_key = super(MultiPartitionKey, cls).__new__(
-            cls, "|".join([dim_key.partition_key for dim_key in dimension_keys])
+            cls,
+            MULTIPARTITION_KEY_DELIMITER.join(
+                [dim_key.partition_key for dim_key in dimension_keys]
+            ),
         )
 
         str_key.dimension_keys = dimension_keys
@@ -182,6 +199,10 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         )
 
     @property
+    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
+        return MultiPartitionsSubset
+
+    @property
     def partition_dimension_names(self) -> List[str]:
         return [dim_def.name for dim_def in self._partitions_defs]
 
@@ -259,7 +280,7 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         """
         check.str_param(partition_key_str, "partition_key_str")
 
-        partition_key_strs = partition_key_str.split("|")
+        partition_key_strs = partition_key_str.split(MULTIPARTITION_KEY_DELIMITER)
         check.invariant(
             len(partition_key_strs) == len(self.partitions_defs),
             (
@@ -271,12 +292,6 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         return MultiPartitionKey(
             {dim.name: partition_key_strs[i] for i, dim in enumerate(self._partitions_defs)}
         )
-
-    def empty_subset(self) -> "MultiPartitionsSubset":
-        return MultiPartitionsSubset(self, set())
-
-    def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
-        return MultiPartitionsSubset.from_serialized(self, serialized)
 
     def _get_primary_and_secondary_dimension(
         self,
@@ -325,7 +340,13 @@ class MultiPartitionsSubset(DefaultPartitionsSubset):
     ):
         check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
         subset = (
-            set(partitions_def.get_partition_key_from_str(key) for key in subset)
+            set(
+                [
+                    partitions_def.get_partition_key_from_str(key)
+                    for key in subset
+                    if MULTIPARTITION_KEY_DELIMITER in key
+                ]
+            )
             if subset
             else set()
         )

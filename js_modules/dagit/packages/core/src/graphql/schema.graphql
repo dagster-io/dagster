@@ -2308,6 +2308,7 @@ type PartitionBackfill {
   backfillId: String!
   status: BulkActionStatus!
   partitionNames: [String!]!
+  isValidSerialization: Boolean!
   numPartitions: Int!
   numCancelable: Int!
   fromFailure: Boolean!

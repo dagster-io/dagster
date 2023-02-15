@@ -2135,6 +2135,7 @@ export type PartitionBackfill = {
   backfillId: Scalars['String'];
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
+  isValidSerialization: Scalars['Boolean'];
   numCancelable: Scalars['Int'];
   numPartitions: Scalars['Int'];
   partitionNames: Array<Scalars['String']>;

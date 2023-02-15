@@ -117,6 +117,13 @@ class AssetBackfillData(NamedTuple):
         )
 
     @classmethod
+    def is_valid_serialization(cls, serialized: str, asset_graph: AssetGraph) -> bool:
+        storage_dict = json.loads(serialized)
+        return AssetGraphSubset.can_deserialize(
+            storage_dict["serialized_target_subset"], asset_graph
+        )
+
+    @classmethod
     def from_serialized(cls, serialized: str, asset_graph: AssetGraph) -> "AssetBackfillData":
         storage_dict = json.loads(serialized)
 
