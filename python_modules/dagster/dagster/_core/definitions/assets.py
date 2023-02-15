@@ -482,7 +482,9 @@ class AssetsDefinition(ResourceAddable):
             freshness_policies_by_key={
                 keys_by_output_name[output_name]: freshness_policy
                 for output_name, freshness_policy in freshness_policies_by_output_name.items()
-            } if freshness_policies_by_output_name else None,
+            }
+            if freshness_policies_by_output_name
+            else None,
             can_subset=can_subset,
         )
 
