@@ -619,7 +619,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return InputContext(
             job_name=self.pipeline_def.name,
             name=name,
-            solid_def=self.op_def,
+            op_def=self.op_def,
             config=config,
             metadata=metadata,
             upstream_output=upstream_output,
