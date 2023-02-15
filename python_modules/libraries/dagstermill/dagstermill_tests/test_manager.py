@@ -26,7 +26,7 @@ from dagstermill.manager import Manager
 @contextlib.contextmanager
 def in_job_manager(
     pipeline_name="hello_world_job",
-    solid_handle=NodeHandle("hello_world", None),
+    node_handle=NodeHandle("hello_world", None),
     step_key="hello_world",
     executable_dict=None,
     mode=None,
@@ -58,7 +58,7 @@ def in_job_manager(
             with safe_tempfile_path() as output_log_file_path:
                 context_dict = {
                     "pipeline_run_dict": pipeline_run_dict,
-                    "solid_handle_kwargs": solid_handle._asdict(),
+                    "solid_handle_kwargs": node_handle._asdict(),
                     "executable_dict": executable_dict,
                     "marshal_dir": marshal_dir,
                     "run_config": {},
@@ -112,7 +112,7 @@ def test_yield_unserializable_result():
 
     with in_job_manager(
         pipeline_name="hello_world_output_job",
-        solid_handle=NodeHandle("hello_world_output", None),
+        node_handle=NodeHandle("hello_world_output", None),
         executable_dict=ReconstructablePipeline.for_module(
             "dagstermill.examples.repository",
             "hello_world_output_job",
@@ -128,7 +128,7 @@ def test_in_job_manager_bad_solid():
         check.CheckError,
         match="hello_world_job has no op named foobar",
     ):
-        with in_job_manager(solid_handle=NodeHandle("foobar", None)) as _manager:
+        with in_job_manager(node_handle=NodeHandle("foobar", None)) as _manager:
             pass
 
 
@@ -158,7 +158,7 @@ def test_in_job_manager_solid_config():
 
     with in_job_manager(
         pipeline_name="hello_world_config_job",
-        solid_handle=NodeHandle("hello_world_config", None),
+        node_handle=NodeHandle("hello_world_config", None),
         executable_dict=ReconstructablePipeline.for_module(
             "dagstermill.examples.repository",
             "hello_world_config_job",
@@ -169,7 +169,7 @@ def test_in_job_manager_solid_config():
 
     with in_job_manager(
         pipeline_name="hello_world_config_job",
-        solid_handle=NodeHandle("hello_world_config", None),
+        node_handle=NodeHandle("hello_world_config", None),
         run_config={
             "ops": {
                 "hello_world_config": {"config": {"greeting": "bonjour"}},
@@ -186,7 +186,7 @@ def test_in_job_manager_solid_config():
 
     with in_job_manager(
         pipeline_name="hello_world_config_job",
-        solid_handle=NodeHandle("goodbye_config", None),
+        node_handle=NodeHandle("goodbye_config", None),
         run_config={
             "ops": {
                 "hello_world_config": {
@@ -215,7 +215,7 @@ def test_in_job_manager_with_resources():
                 "dagstermill.examples.repository",
                 "resource_job",
             ).to_dict(),
-            solid_handle=NodeHandle("hello_world_resource", None),
+            node_handle=NodeHandle("hello_world_resource", None),
             run_config={"resources": {"list": {"config": path}}},
             step_key="hello_world_resource",
         ) as manager:
