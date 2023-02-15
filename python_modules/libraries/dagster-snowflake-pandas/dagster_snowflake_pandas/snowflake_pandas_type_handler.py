@@ -102,7 +102,10 @@ snowflake_pandas_io_manager = build_snowflake_io_manager(
     [SnowflakePandasTypeHandler()], default_load_type=pd.DataFrame
 )
 snowflake_pandas_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes pandas dataframes to Snowflake.
+An IO manager definition that reads inputs from and writes Pandas DataFrames to Snowflake. When
+using the snowflake_pandas_io_manager, any inputs and outputs without type annotations will be loaded
+as Pandas DataFrames.
+
 
 Returns:
     IOManagerDefinition

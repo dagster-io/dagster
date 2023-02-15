@@ -82,7 +82,9 @@ duckdb_pyspark_io_manager = build_duckdb_io_manager(
     [DuckDBPySparkTypeHandler()], default_load_type=pyspark.sql.DataFrame
 )
 duckdb_pyspark_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes PySpark DataFrames to DuckDB.
+An IO manager definition that reads inputs from and writes PySpark DataFrames to DuckDB. When
+using the duckdb_pyspark_io_manager, any inputs and outputs without type annotations will be loaded
+as PySpark DataFrames.
 
 Returns:
     IOManagerDefinition

@@ -101,7 +101,9 @@ snowflake_pyspark_io_manager = build_snowflake_io_manager(
     [SnowflakePySparkTypeHandler()], default_load_type=DataFrame
 )
 snowflake_pyspark_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes PySpark DataFrames to Snowflake.
+An IO manager definition that reads inputs from and writes PySpark DataFrames to Snowflake. When
+using the snowflake_pyspark_io_manager, any inputs and outputs without type annotations will be loaded
+as PySpark DataFrames.
 
 Returns:
     IOManagerDefinition
