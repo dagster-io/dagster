@@ -5,8 +5,12 @@ import dagster_databricks
 import dagster_pyspark
 import pytest
 from dagster._utils.test import create_test_pipeline_execution_context
-from dagster_databricks.databricks import DatabricksError, DatabricksJobRunner, DatabricksRunState
-from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
+from dagster_databricks.databricks import DatabricksError, DatabricksJobRunner
+from dagster_databricks.types import (
+    DatabricksRunLifeCycleState,
+    DatabricksRunResultState,
+    DatabricksRunState,
+)
 
 HOST = "https://uksouth.azuredatabricks.net"
 TOKEN = "super-secret-token"

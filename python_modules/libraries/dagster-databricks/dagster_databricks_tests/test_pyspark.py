@@ -14,7 +14,7 @@ from dagster_databricks import (
     DatabricksRunResultState,
     databricks_pyspark_step_launcher,
 )
-from dagster_databricks.databricks import DatabricksRunState
+from dagster_databricks.types import DatabricksRunState
 from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
