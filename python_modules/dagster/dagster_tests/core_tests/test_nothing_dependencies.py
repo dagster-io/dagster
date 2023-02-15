@@ -228,6 +228,13 @@ def test_valid_nothing_fns():
     result = fn_test.execute_in_process()
     assert result.success
 
+    # test direct invocations
+    just_pass()
+    just_pass2()
+    ret_none()
+    [_ for _ in yield_none()]
+    [_ for _ in yield_stuff()]
+
 
 def test_invalid_nothing_fns():
     @op(out=Out(Nothing))
