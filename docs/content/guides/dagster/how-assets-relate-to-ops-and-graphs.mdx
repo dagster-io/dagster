@@ -43,27 +43,27 @@ Under the covers, every software-defined asset contains an op (or graph of ops -
 
 <!-- ![Op and software-defined asset](/images/guides/assets-relate-to-ops/op-software-defined-asset.png) -->
 
-<Image
-alt="Op and software-defined asset"
-src="/images/guides/assets-relate-to-ops/op-software-defined-asset.png"
-width={714}
-height={516}
-/>
-
-<center></center>
+<center>
+  <Image
+    alt="Op and software-defined asset"
+    src="/images/guides/assets-relate-to-ops/op-software-defined-asset.png"
+    width={714}
+    height={516}
+  />
+</center>
 
 When you use the <PyObject object="multi_asset" decorator /> decorator, you’re defining a single op that produces multiple assets:
 
 <!-- ![Multi- software-defined asset](/images/guides/assets-relate-to-ops/multi-software-defined-asset.png) -->
 
-<Image
-alt="Multi- software-defined asset"
-src="/images/guides/assets-relate-to-ops/multi-software-defined-asset.png"
-width={715}
-height={286}
-/>
-
-<center></center>
+<center>
+  <Image
+    alt="Multi- software-defined asset"
+    src="/images/guides/assets-relate-to-ops/multi-software-defined-asset.png"
+    width={715}
+    height={286}
+  />
+</center>
 
 ### Graph-backed assets
 
@@ -71,14 +71,14 @@ Dagster allows composing a set of ops into an op graph, usually by using the <Py
 
 <!-- ![Op graph and graph-backed asset](/images/guides/assets-relate-to-ops/op-graph-graph-backed-asset.png) -->
 
-<Image
-alt="Op graph and graph-backed asset"
-src="/images/guides/assets-relate-to-ops/op-graph-graph-backed-asset.png"
-width={716}
-height={540}
-/>
-
-<center></center>
+<center>
+  <Image
+    alt="Op graph and graph-backed asset"
+    src="/images/guides/assets-relate-to-ops/op-graph-graph-backed-asset.png"
+    width={716}
+    height={540}
+  />
+</center>
 
 Graph-backed assets are useful when you want to execute multiple separate steps to compute an asset, and some of those steps don’t produce assets of their own.
 
@@ -117,11 +117,11 @@ In this case, the asset is just used as a data source for the job - it’s not m
 
 <!-- ![Op graph with source asset](/images/guides/assets-relate-to-ops/op-graph-source-asset.png) -->
 
-<Image
-alt="Op graph with source asset"
-src="/images/guides/assets-relate-to-ops/op-graph-source-asset.png"
-width={718}
-height={294}
-/>
-
-<center></center>
+<center>
+  <Image
+    alt="Op graph with source asset"
+    src="/images/guides/assets-relate-to-ops/op-graph-source-asset.png"
+    width={718}
+    height={294}
+  />
+</center>
