@@ -48,6 +48,7 @@ export type InstanceBackfillsQuery = {
           __typename: 'PartitionBackfill';
           backfillId: string;
           status: Types.BulkActionStatus;
+          isValidSerialization: boolean;
           numPartitions: number;
           timestamp: number;
           partitionSetName: string | null;

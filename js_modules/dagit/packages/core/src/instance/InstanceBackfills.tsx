@@ -123,6 +123,7 @@ const BACKFILLS_QUERY = gql`
         results {
           backfillId
           status
+          isValidSerialization
           numPartitions
           timestamp
           partitionSetName

@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Type,
     Union,
     cast,
 )
@@ -253,6 +254,15 @@ class TimeWindowPartitionsDefinition(
             and self.fmt == other.fmt
             and self.end_offset == other.end_offset
             and self.cron_schedule == other.cron_schedule
+        )
+
+    def __repr__(self):
+        # Between python 3.8 and 3.9 the repr of a datetime object changed.
+        # Replaces start time with timestamp as a workaround to make sure the repr is consistent across versions.
+        return (
+            f"TimeWindowPartitionsDefinition(start={self.start.timestamp()},"
+            f" timezone='{self.timezone}', fmt='{self.fmt}', end_offset={self.end_offset},"
+            f" cron_schedule='{self.cron_schedule}')"
         )
 
     def __hash__(self):
@@ -633,11 +643,12 @@ class TimeWindowPartitionsDefinition(
             partition_key1
         ) < self.start_time_for_partition_key(partition_key2)
 
-    def empty_subset(self) -> "TimeWindowPartitionsSubset":
-        return TimeWindowPartitionsSubset(self, num_partitions=0, included_partition_keys=set())
+    @property
+    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
+        return TimeWindowPartitionsSubset
 
-    def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
-        return TimeWindowPartitionsSubset.from_serialized(self, serialized)
+    def empty_subset(self) -> "PartitionsSubset":
+        return self.partitions_subset_class.empty_subset(self)
 
     def is_valid_partition_key(self, partition_key: str) -> bool:
         try:
@@ -1408,6 +1419,39 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return TimeWindowPartitionsSubset(
             partitions_def, num_partitions=num_partitions, included_time_windows=time_windows
         )
+
+    @classmethod
+    def can_deserialize(
+        cls,
+        partitions_def: PartitionsDefinition,
+        serialized: str,
+        serialized_partitions_def_unique_id: Optional[str],
+        serialized_partitions_def_class_name: Optional[str],
+    ) -> bool:
+        if (
+            serialized_partitions_def_class_name
+            and serialized_partitions_def_class_name != partitions_def.__class__.__name__
+        ):
+            return False
+
+        if serialized_partitions_def_unique_id:
+            return (
+                partitions_def.serializable_unique_identifier == serialized_partitions_def_unique_id
+            )
+
+        data = json.loads(serialized)
+        return isinstance(data, list) or (
+            isinstance(data, dict)
+            and data.get("time_windows") is not None
+            and data.get("num_partitions") is not None
+        )
+
+    @classmethod
+    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            check.failed("Partitions definition must be a TimeWindowPartitionsDefinition")
+        partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
+        return cls(partitions_def, 0, [], set())
 
     def serialize(self) -> str:
         return json.dumps(

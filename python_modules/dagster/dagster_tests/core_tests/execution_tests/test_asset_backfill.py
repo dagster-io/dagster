@@ -6,10 +6,13 @@ import pytest
 from dagster import (
     AssetsDefinition,
     DagsterInstance,
+    DailyPartitionsDefinition,
     Definitions,
     PartitionsDefinition,
     RunRequest,
     SourceAsset,
+    StaticPartitionsDefinition,
+    asset,
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -326,3 +329,114 @@ def external_asset_graph_from_assets_by_repo_name(
     return ExternalAssetGraph.from_repository_handles_and_external_asset_nodes(
         from_repository_handles_and_external_asset_nodes
     )
+
+
+@pytest.mark.parametrize(
+    "static_serialization",
+    [
+        (
+            r'{"requested_runs_for_target_roots": false, "serialized_target_subset":'
+            r' {"partitions_subsets_by_asset_key": {"static_asset": "{\"version\": 1, \"subset\":'
+            r' [\"b\", \"d\", \"c\", \"a\", \"e\", \"f\"]}"}, "non_partitioned_asset_keys": []},'
+            r' "latest_storage_id": null, "serialized_requested_subset":'
+            r' {"partitions_subsets_by_asset_key": {}, "non_partitioned_asset_keys": []},'
+            r' "serialized_materialized_subset": {"partitions_subsets_by_asset_key": {},'
+            r' "non_partitioned_asset_keys": []}, "serialized_failed_subset":'
+            r' {"partitions_subsets_by_asset_key": {}, "non_partitioned_asset_keys": []}}'
+        ),
+        (
+            r'{"requested_runs_for_target_roots": false, "serialized_target_subset":'
+            r' {"partitions_subsets_by_asset_key": {"static_asset": "{\"version\": 1, \"subset\":'
+            r' [\"f\", \"b\", \"e\", \"c\", \"d\", \"a\"]}"},'
+            r' "serializable_partitions_ids_by_asset_key": {"static_asset":'
+            r' "7c2047f8b02e90a69136c1a657bd99ad80b433a2"}, "subset_types_by_asset_key":'
+            r' {"static_asset": "DEFAULT"}, "non_partitioned_asset_keys": []}, "latest_storage_id":'
+            r' null, "serialized_requested_subset": {"partitions_subsets_by_asset_key": {},'
+            r' "serializable_partitions_ids_by_asset_key": {}, "subset_types_by_asset_key": {},'
+            r' "non_partitioned_asset_keys": []}, "serialized_materialized_subset":'
+            r' {"partitions_subsets_by_asset_key": {},'
+            r' "serializable_partitions_ids_by_asset_key": {},'
+            r' "subset_types_by_asset_key": {}, "non_partitioned_asset_keys": []},'
+            r' "serialized_failed_subset": {"partitions_subsets_by_asset_key": {},'
+            r' "serializable_partitions_ids_by_asset_key": {}, "subset_types_by_asset_key": {},'
+            r' "non_partitioned_asset_keys": []}}'
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    "time_window_serialization",
+    [
+        (
+            r'{"requested_runs_for_target_roots": false, "serialized_target_subset":'
+            r' {"partitions_subsets_by_asset_key": {"daily_asset": "{\"version\": 1,'
+            r" \"time_windows\":"
+            r' [[1659484800.0, 1659744000.0]], \"num_partitions\": 3}"},'
+            r' "non_partitioned_asset_keys":'
+            r' []}, "latest_storage_id": null, "serialized_requested_subset":'
+            r' {"partitions_subsets_by_asset_key": {}, "non_partitioned_asset_keys": []},'
+            r' "serialized_materialized_subset": {"partitions_subsets_by_asset_key": {},'
+            r' "non_partitioned_asset_keys": []}, "serialized_failed_subset":'
+            r' {"partitions_subsets_by_asset_key": {}, "non_partitioned_asset_keys": []}}'
+        ),
+        (
+            r'{"requested_runs_for_target_roots": true, "serialized_target_subset":'
+            r' {"partitions_subsets_by_asset_key": {"daily_asset": "{\"version\": 1,'
+            r' \"time_windows\": [[1571356800.0, 1571529600.0]], \"num_partitions\": 2}"},'
+            r' "serializable_partitions_def_ids_by_asset_key": {"daily_asset":'
+            r' "9fd02488f5859c7b2fb25f77f2a25dce938897d3"},'
+            r' "partitions_def_class_names_by_asset_key": {"daily_asset":'
+            r' "TimeWindowPartitionsDefinition"}, "non_partitioned_asset_keys": []},'
+            r' "latest_storage_id": 235, "serialized_requested_subset":'
+            r' {"partitions_subsets_by_asset_key": {"daily_asset": "{\"version\": 1,'
+            r' \"time_windows\": [[1571356800.0, 1571529600.0]], \"num_partitions\": 2}"},'
+            r' "serializable_partitions_def_ids_by_asset_key": {"daily_asset":'
+            r' "9fd02488f5859c7b2fb25f77f2a25dce938897d3"},'
+            r' "partitions_def_class_names_by_asset_key": {"daily_asset":'
+            r' "TimeWindowPartitionsDefinition"}, "non_partitioned_asset_keys": []},'
+            r' "serialized_materialized_subset": {"partitions_subsets_by_asset_key": {},'
+            r' "serializable_partitions_def_ids_by_asset_key": {},'
+            r' "partitions_def_class_names_by_asset_key": {}, "non_partitioned_asset_keys": []},'
+            r' "serialized_failed_subset": {"partitions_subsets_by_asset_key": {},'
+            r' "serializable_partitions_def_ids_by_asset_key": {},'
+            r' "partitions_def_class_names_by_asset_key": {}, "non_partitioned_asset_keys": []}}'
+        ),
+    ],
+)
+def test_serialization(static_serialization, time_window_serialization):
+    time_window_partitions = DailyPartitionsDefinition(start_date="2015-05-05")
+
+    @asset(partitions_def=time_window_partitions)
+    def daily_asset():
+        return 1
+
+    keys = ["a", "b", "c", "d", "e", "f"]
+    static_partitions = StaticPartitionsDefinition(keys)
+
+    @asset(partitions_def=static_partitions)
+    def static_asset():
+        return 1
+
+    asset_graph = external_asset_graph_from_assets_by_repo_name(
+        {"repo": [daily_asset, static_asset]}
+    )
+
+    assert AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph) is True
+    assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph) is True
+
+    daily_asset._partitions_def = static_partitions  # pylint: disable=protected-access
+    static_asset._partitions_def = time_window_partitions  # pylint: disable=protected-access
+
+    asset_graph = external_asset_graph_from_assets_by_repo_name(
+        {"repo": [daily_asset, static_asset]}
+    )
+
+    assert AssetBackfillData.is_valid_serialization(time_window_serialization, asset_graph) is False
+    assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph) is False
+
+    static_asset._partitions_def = StaticPartitionsDefinition(keys + ["x"])
+
+    asset_graph = external_asset_graph_from_assets_by_repo_name(
+        {"repo": [daily_asset, static_asset]}
+    )
+
+    assert AssetBackfillData.is_valid_serialization(static_serialization, asset_graph) is True

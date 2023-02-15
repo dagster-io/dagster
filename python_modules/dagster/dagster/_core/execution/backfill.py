@@ -117,7 +117,18 @@ class PartitionBackfill(
 
         return self.partition_set_origin.partition_set_name
 
+    def is_valid_serialization(self, workspace: IWorkspace) -> bool:
+        if self.serialized_asset_backfill_data is not None:
+            return AssetBackfillData.is_valid_serialization(
+                self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
+            )
+        else:
+            return True
+
     def get_num_partitions(self, workspace: IWorkspace) -> int:
+        if not self.is_valid_serialization(workspace):
+            return 0
+
         if self.serialized_asset_backfill_data is not None:
             try:
                 asset_backfill_data = AssetBackfillData.from_serialized(
@@ -135,6 +146,9 @@ class PartitionBackfill(
             return len(self.partition_names)
 
     def get_partition_names(self, workspace: IWorkspace) -> Sequence[str]:
+        if not self.is_valid_serialization(workspace):
+            return []
+
         if self.serialized_asset_backfill_data is not None:
             try:
                 asset_backfill_data = AssetBackfillData.from_serialized(

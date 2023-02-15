@@ -132,6 +132,7 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
     status
     numCancelable
     partitionNames
+    isValidSerialization
     numPartitions
     timestamp
     partitionSetName

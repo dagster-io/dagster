@@ -3,7 +3,11 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
-from datetime import datetime, time, timedelta
+from datetime import (
+    datetime,
+    time,
+    timedelta,
+)
 from enum import Enum
 from typing import (
     Any,
@@ -16,6 +20,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -218,6 +223,10 @@ class ScheduleType(Enum):
 
 
 class PartitionsDefinition(ABC, Generic[T]):
+    @property
+    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
+        return DefaultPartitionsSubset
+
     @abstractmethod
     def get_partitions(
         self,
@@ -294,10 +303,23 @@ class PartitionsDefinition(ABC, Generic[T]):
         ]
 
     def empty_subset(self) -> "PartitionsSubset":
-        return DefaultPartitionsSubset(self, set())
+        return self.partitions_subset_class.empty_subset(self)
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
-        return DefaultPartitionsSubset.from_serialized(self, serialized)
+        return self.partitions_subset_class.from_serialized(self, serialized)
+
+    def can_deserialize_subset(
+        self,
+        serialized: str,
+        serialized_partitions_def_unique_id: Optional[str],
+        serialized_partitions_def_class_name: Optional[str],
+    ) -> bool:
+        return self.partitions_subset_class.can_deserialize(
+            self,
+            serialized,
+            serialized_partitions_def_unique_id,
+            serialized_partitions_def_class_name,
+        )
 
     @property
     def serializable_unique_identifier(self) -> str:
@@ -594,6 +616,13 @@ class DynamicPartitionsDefinition(
             return f"Dynamic partitions definition {self._validated_name()}"
         else:
             return super().__str__()
+
+    @property
+    def serializable_unique_identifier(self) -> str:
+        if not self.name:
+            return super().serializable_unique_identifier
+
+        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
 
     def get_partitions(
         self,
@@ -1290,6 +1319,17 @@ class PartitionsSubset(ABC):
     ) -> "PartitionsSubset":
         raise NotImplementedError()
 
+    @classmethod
+    @abstractmethod
+    def can_deserialize(
+        cls,
+        partitions_def: PartitionsDefinition,
+        serialized: str,
+        serialized_partitions_def_unique_id: Optional[str],
+        serialized_partitions_def_class_name: Optional[str],
+    ) -> bool:
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def partitions_def(self) -> PartitionsDefinition:
@@ -1301,6 +1341,11 @@ class PartitionsSubset(ABC):
 
     @abstractmethod
     def __contains__(self, value) -> bool:
+        raise NotImplementedError()
+
+    @classmethod
+    @abstractmethod
+    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
         raise NotImplementedError()
 
 
@@ -1386,6 +1431,22 @@ class DefaultPartitionsSubset(PartitionsSubset):
                 )
             return cls(subset=set(data.get("subset")), partitions_def=partitions_def)
 
+    @classmethod
+    def can_deserialize(
+        cls,
+        partitions_def: PartitionsDefinition,
+        serialized: str,
+        serialized_partitions_def_unique_id: Optional[str],
+        serialized_partitions_def_class_name: Optional[str],
+    ) -> bool:
+        if serialized_partitions_def_class_name is not None:
+            return serialized_partitions_def_class_name == partitions_def.__class__.__name__
+
+        data = json.loads(serialized)
+        return isinstance(data, list) or (
+            data.get("subset") is not None and data.get("version") == cls.SERIALIZATION_VERSION
+        )
+
     @property
     def partitions_def(self) -> PartitionsDefinition:
         return self._partitions_def
@@ -1407,3 +1468,7 @@ class DefaultPartitionsSubset(PartitionsSubset):
         return (
             f"DefaultPartitionsSubset(subset={self._subset}, partitions_def={self._partitions_def})"
         )
+
+    @classmethod
+    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
+        return cls(partitions_def=partitions_def)
