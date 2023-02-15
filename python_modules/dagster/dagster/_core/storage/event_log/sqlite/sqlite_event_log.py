@@ -184,6 +184,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     or "table event_logs already exists" in err_msg
                     or "table asset_event_tags already exists" in err_msg
                     or "table alembic_version already exists" in err_msg
+                    or "table dynamic_partitions already exists" in err_msg
                     or "database is locked" in err_msg
                     or "UNIQUE constraint failed: alembic_version.version_num" in err_msg
                 ):
