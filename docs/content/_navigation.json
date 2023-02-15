@@ -859,6 +859,10 @@
             "path": "/_apidocs/libraries/dagster-azure"
           },
           {
+            "title": "BigQuery + Pandas (dagster-bigquery-pandas)",
+            "path": "/_apidocs/libraries/dagster-bigquery-pandas"
+          },
+          {
             "title": "Celery (dagster-celery)",
             "path": "/_apidocs/libraries/dagster-celery"
           },

@@ -28,6 +28,7 @@
    sections/api/apidocs/libraries/dagster-airflow
    sections/api/apidocs/libraries/dagster-aws
    sections/api/apidocs/libraries/dagster-azure
+   sections/api/apidocs/libraries/dagster-bigquery-pandas
    sections/api/apidocs/libraries/dagster-celery
    sections/api/apidocs/libraries/dagster-celery-docker
    sections/api/apidocs/libraries/dagster-celery-k8s

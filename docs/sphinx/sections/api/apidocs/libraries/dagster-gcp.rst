@@ -11,6 +11,9 @@ BigQuery
 .. autoconfigurable:: bigquery_resource
   :annotation: ResourceDefinition
 
+.. autoconfigurable:: build_bigquery_io_manager
+  :annotation: IOManagerDefinition
+
 .. autofunction:: bq_create_dataset
 
 .. autofunction:: bq_delete_dataset
