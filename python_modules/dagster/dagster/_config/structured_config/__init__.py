@@ -178,8 +178,8 @@ def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSch
     return DefinitionConfigSchema(_apply_defaults_to_schema_field(schema_field, data))
 
 
-ResValue = TypeVar("ResValue")
-IOManagerValue = TypeVar("IOManagerValue", bound=IOManager)
+TResValue = TypeVar("TResValue")
+TIOManagerValue = TypeVar("TIOManagerValue", bound=IOManager)
 
 ResourceId: TypeAlias = int
 
@@ -343,7 +343,7 @@ def attach_resource_id_to_key_mapping(
 
 
 class Resource(
-    Generic[ResValue],
+    Generic[TResValue],
     ResourceDefinition,
     Config,
     TypecheckAllowPartialResourceInitParams,
@@ -402,7 +402,7 @@ class Resource(
         """
         return PartialResource(cls, data=kwargs)
 
-    def initialize_and_run(self, context: InitResourceContext) -> ResValue:
+    def initialize_and_run(self, context: InitResourceContext) -> TResValue:
         # If we have any partially configured resources, we need to update them
         # with the fully configured resources from the context
 
@@ -440,12 +440,12 @@ class Resource(
 
         return self._create_object_fn(context)
 
-    def _create_object_fn(self, context: InitResourceContext) -> ResValue:
+    def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_object_to_pass_to_user_code(context)
 
     def create_object_to_pass_to_user_code(
         self, context: InitResourceContext
-    ) -> ResValue:  # pylint: disable=unused-argument
+    ) -> TResValue:  # pylint: disable=unused-argument
         """
         Returns the object that this resource hands to user code, accessible by ops or assets
         through the context or resource parameters. This works like the function decorated
@@ -454,7 +454,7 @@ class Resource(
         Default behavior for new class-based resources is to return itself, passing
         the actual resource object to user code.
         """
-        return cast(ResValue, self)
+        return cast(TResValue, self)
 
 
 def _is_fully_configured(resource: ResourceDefinition) -> bool:
@@ -473,12 +473,12 @@ def _is_fully_configured(resource: ResourceDefinition) -> bool:
 
 
 class PartialResource(
-    Generic[ResValue], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
+    Generic[TResValue], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
 ):
     data: Dict[str, Any]
-    resource_cls: Type[Resource[ResValue]]
+    resource_cls: Type[Resource[TResValue]]
 
-    def __init__(self, resource_cls: Type[Resource[ResValue]], data: Dict[str, Any]):
+    def __init__(self, resource_cls: Type[Resource[TResValue]], data: Dict[str, Any]):
         resource_pointers, data_without_resources = _separate_resource_params(data)
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
@@ -505,9 +505,9 @@ class PartialResource(
         )
 
 
-ResourceOrPartial: TypeAlias = Union[Resource[ResValue], PartialResource[ResValue]]
-ResourceOrPartialOrBase: TypeAlias = Union[
-    Resource[ResValue], PartialResource[ResValue], ResourceDefinition, ResValue
+ResourceOrPartial: TypeAlias = Union[Resource[TResValue], PartialResource[TResValue]]
+ResourceOrPartialOrValue: TypeAlias = Union[
+    Resource[TResValue], PartialResource[TResValue], ResourceDefinition, TResValue
 ]
 
 
@@ -521,7 +521,7 @@ class ResourceDependency(Generic[V]):
     def __get__(self, obj: "Resource", __owner: Any) -> V:
         return getattr(obj, self._name)
 
-    def __set__(self, obj: Optional[object], value: ResourceOrPartialOrBase[V]) -> None:
+    def __set__(self, obj: Optional[object], value: ResourceOrPartialOrValue[V]) -> None:
         setattr(obj, self._name, value)
 
 
@@ -566,7 +566,7 @@ class StructuredResourceAdapter(Resource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-class StructuredConfigIOManagerBase(Resource[IOManagerValue], IOManagerDefinition):
+class StructuredConfigIOManagerBase(Resource[TIOManagerValue], IOManagerDefinition):
     """
     Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
@@ -586,11 +586,11 @@ class StructuredConfigIOManagerBase(Resource[IOManagerValue], IOManagerDefinitio
             description=self.__doc__,
         )
 
-    def _create_object_fn(self, context: InitResourceContext) -> IOManagerValue:
+    def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
         return self.create_io_manager_to_pass_to_user_code(context)
 
     @abstractmethod
-    def create_io_manager_to_pass_to_user_code(self, context) -> IOManagerValue:
+    def create_io_manager_to_pass_to_user_code(self, context) -> TIOManagerValue:
         """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
 
@@ -603,8 +603,8 @@ class StructuredConfigIOManagerBase(Resource[IOManagerValue], IOManagerDefinitio
         return PartialIOManager(cls, data=kwargs)
 
 
-class PartialIOManager(Generic[ResValue], PartialResource[ResValue], IOManagerDefinition):
-    def __init__(self, resource_cls: Type[Resource[ResValue]], data: Dict[str, Any]):
+class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManagerDefinition):
+    def __init__(self, resource_cls: Type[Resource[TResValue]], data: Dict[str, Any]):
         PartialResource.__init__(self, resource_cls, data)
         IOManagerDefinition.__init__(
             self,

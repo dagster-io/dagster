@@ -17,9 +17,9 @@ if TYPE_CHECKING:
 # actually change the type annotations is when it's invoked for a user-created subclass of Resource,
 # at which point the placeholder values will be replaced with the actual types.
 class LateBoundTypesForResourceTypeChecking:
-    _ResValue = TypeVar("_ResValue")
+    _TResValue = TypeVar("_TResValue")
 
-    class _Temp(Generic[_ResValue]):
+    class _Temp(Generic[_TResValue]):
         pass
 
     _ResourceDep: Type = _Temp
