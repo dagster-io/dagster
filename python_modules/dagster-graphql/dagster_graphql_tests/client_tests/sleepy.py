@@ -31,7 +31,7 @@ def sleeper(context, units):
     ],
 )
 def giver(context):
-    units = context.solid_config
+    units = context.op_config
     queues = [[], [], [], []]
     for i, sec in enumerate(units):
         queues[i % 4].append(sec)

@@ -671,7 +671,7 @@ def build_solid_context(
         resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can be
             either values or resource definitions.
         solid_config (Optional[Any]): The solid config to provide to the context. The value provided
-            here will be available as ``context.solid_config``.
+            here will be available as ``context.op_config``.
         resources_config (Optional[Dict[str, Any]]): Configuration for any resource definitions
             provided to the resources arg. The configuration under a specific key should match the
             resource under a specific key in the resources dictionary.

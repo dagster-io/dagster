@@ -154,7 +154,7 @@ def test_in_job_manager_resources():
 
 def test_in_job_manager_solid_config():
     with in_job_manager() as manager:
-        assert manager.context.solid_config is None
+        assert manager.context.op_config is None
 
     with in_job_manager(
         pipeline_name="hello_world_config_job",
@@ -165,7 +165,7 @@ def test_in_job_manager_solid_config():
         ).to_dict(),
         step_key="hello_world_config",
     ) as manager:
-        assert manager.context.solid_config == {"greeting": "hello"}
+        assert manager.context.op_config == {"greeting": "hello"}
 
     with in_job_manager(
         pipeline_name="hello_world_config_job",
@@ -182,7 +182,7 @@ def test_in_job_manager_solid_config():
         ).to_dict(),
         step_key="hello_world_config",
     ) as manager:
-        assert manager.context.solid_config == {"greeting": "bonjour"}
+        assert manager.context.op_config == {"greeting": "bonjour"}
 
     with in_job_manager(
         pipeline_name="hello_world_config_job",
@@ -201,7 +201,7 @@ def test_in_job_manager_solid_config():
         ).to_dict(),
         step_key="goodbye_config",
     ) as manager:
-        assert manager.context.solid_config == {"farewell": "goodbye"}
+        assert manager.context.op_config == {"farewell": "goodbye"}
 
 
 def test_in_job_manager_with_resources():
