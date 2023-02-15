@@ -7,10 +7,13 @@ class DatabricksRunResultState(str, Enum):
     See https://docs.databricks.com/dev-tools/api/2.0/jobs.html#runresultstate.
     """
 
-    Success = "SUCCESS"
-    Failed = "FAILED"
-    TimedOut = "TIMEDOUT"
-    Canceled = "CANCELED"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+    TIMEDOUT = "TIMEDOUT"
+    CANCELED = "CANCELED"
+
+    def is_successful(self) -> bool:
+        return self == DatabricksRunResultState.SUCCESS
 
 
 class DatabricksRunLifeCycleState(str, Enum):
@@ -18,19 +21,19 @@ class DatabricksRunLifeCycleState(str, Enum):
     See https://docs.databricks.com/dev-tools/api/2.0/jobs.html#jobsrunlifecyclestate.
     """
 
-    Pending = "PENDING"
-    Running = "RUNNING"
-    Terminating = "TERMINATING"
-    Terminated = "TERMINATED"
-    Skipped = "SKIPPED"
-    InternalError = "INTERNAL_ERROR"
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    TERMINATING = "TERMINATING"
+    TERMINATED = "TERMINATED"
+    SKIPPED = "SKIPPED"
+    INTERNAL_ERROR = "INTERNAL_ERROR"
 
-
-DATABRICKS_RUN_TERMINATED_STATES = [
-    DatabricksRunLifeCycleState.Terminating,
-    DatabricksRunLifeCycleState.Terminated,
-    DatabricksRunLifeCycleState.InternalError,
-]
+    def has_terminated(self) -> bool:
+        return self in [
+            DatabricksRunLifeCycleState.TERMINATING,
+            DatabricksRunLifeCycleState.TERMINATED,
+            DatabricksRunLifeCycleState.INTERNAL_ERROR,
+        ]
 
 
 class DatabricksRunState(NamedTuple):
@@ -42,8 +45,8 @@ class DatabricksRunState(NamedTuple):
 
     def has_terminated(self) -> bool:
         """Has the job terminated?"""
-        return self.life_cycle_state in DATABRICKS_RUN_TERMINATED_STATES
+        return self.life_cycle_state.has_terminated()
 
     def is_successful(self) -> bool:
         """Was the job successful?"""
-        return self.result_state == DatabricksRunResultState.Success
+        return bool(self.result_state and self.result_state.is_successful())

@@ -31,8 +31,8 @@ def test_run_create_databricks_job_op(
     mock_submit_run.return_value = RUN_ID
     mock_get_run_state.return_value = DatabricksRunState(
         state_message="",
-        result_state=DatabricksRunResultState.Success,
-        life_cycle_state=DatabricksRunLifeCycleState.Terminated,
+        result_state=DatabricksRunResultState.SUCCESS,
+        life_cycle_state=DatabricksRunLifeCycleState.TERMINATED,
     )
 
     result = test_job.execute_in_process()
