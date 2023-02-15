@@ -333,17 +333,17 @@ perf_scenarios = [
     PerfScenario(
         snapshot=giant_unpartitioned_assets_2_random_runs,
         n_freshness_policies=10,
-        max_execution_time_seconds=45,
+        max_execution_time_seconds=20,
     ),
     PerfScenario(
         snapshot=large_unpartitioned_assets_2_random_runs,
         n_freshness_policies=0,
-        max_execution_time_seconds=30,
+        max_execution_time_seconds=2,
     ),
     PerfScenario(
         snapshot=large_unpartitioned_assets_2_random_runs,
         n_freshness_policies=100,
-        max_execution_time_seconds=30,
+        max_execution_time_seconds=10,
     ),
     PerfScenario(
         snapshot=large_all_partitioned_assets_2_partition_keys,
