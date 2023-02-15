@@ -94,20 +94,20 @@ def _resolve_output_to_destinations(
         if mapping.graph_output_name != output_name:
             continue
         output_pointer = mapping.maps_from
-        output_node = node_def.node_named(output_pointer.solid_name)
+        output_node = node_def.node_named(output_pointer.node_name)
 
         all_destinations.extend(
             _resolve_output_to_destinations(
                 output_pointer.output_name,
                 output_node.definition,
-                NodeHandle(output_pointer.solid_name, parent=handle),
+                NodeHandle(output_pointer.node_name, parent=handle),
             )
         )
 
         output_def = output_node.definition.output_def_named(output_pointer.output_name)
         downstream_input_handles = (
             node_def.dependency_structure.output_to_downstream_inputs_for_node(
-                output_pointer.solid_name
+                output_pointer.node_name
             ).get(NodeOutput(output_node, output_def), [])
         )
         for input_handle in downstream_input_handles:
@@ -152,7 +152,7 @@ def _build_graph_dependencies(
             )
             outputs_by_graph_handle[curr_node_handle] = {
                 mapping.graph_output_name: NodeOutputHandle(
-                    NodeHandle(mapping.maps_from.solid_name, parent=curr_node_handle),
+                    NodeHandle(mapping.maps_from.node_name, parent=curr_node_handle),
                     mapping.maps_from.output_name,
                 )
                 for mapping in sub_node.definition.output_mappings

@@ -1105,7 +1105,7 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
 
     # set of nodes that have outputs mapped to a graph output
     mapped_output_nodes = {
-        output_mapping.maps_from.solid_name for output_mapping in graph_def.output_mappings
+        output_mapping.maps_from.node_name for output_mapping in graph_def.output_mappings
     }
 
     # leaf nodes which do not have an associated mapped output

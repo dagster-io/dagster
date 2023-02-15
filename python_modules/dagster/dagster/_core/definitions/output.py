@@ -251,17 +251,13 @@ class DynamicOutputDefinition(OutputDefinition):
         return True
 
 
-class OutputPointer(NamedTuple("_OutputPointer", [("solid_name", str), ("output_name", str)])):
-    def __new__(cls, solid_name: str, output_name: Optional[str] = None):
+class OutputPointer(NamedTuple("_OutputPointer", [("node_name", str), ("output_name", str)])):
+    def __new__(cls, node_name: str, output_name: Optional[str] = None):
         return super(OutputPointer, cls).__new__(
             cls,
-            check.str_param(solid_name, "solid_name"),
+            check.str_param(node_name, "node_name"),
             check.opt_str_param(output_name, "output_name", DEFAULT_OUTPUT),
         )
-
-    @property
-    def node_name(self):
-        return self.solid_name
 
 
 class OutputMapping(NamedTuple):
