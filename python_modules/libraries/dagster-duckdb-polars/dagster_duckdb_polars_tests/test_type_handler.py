@@ -160,7 +160,7 @@ def test_not_supported_type(tmp_path):
 )
 def daily_partitioned(context) -> pl.DataFrame:
     df = pl.DataFrame({"date": context.asset_partition_key_for_output()})
-    partition = df.with_column(
+    partition = df.with_columns(
         pl.col("date").str.strptime(pl.Date, fmt="%Y-%m-%d", strict=False).cast(pl.Datetime)
     )["date"][0]
     value = context.op_config["value"]
