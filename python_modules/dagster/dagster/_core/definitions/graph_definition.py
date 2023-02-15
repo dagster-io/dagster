@@ -47,10 +47,10 @@ from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
 from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
+from .node_container import create_execution_structure, validate_dependency_dict
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .resource_requirement import ResourceRequirement
-from .solid_container import create_execution_structure, validate_dependency_dict
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
