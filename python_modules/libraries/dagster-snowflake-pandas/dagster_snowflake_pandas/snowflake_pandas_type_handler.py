@@ -98,7 +98,9 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         return [pd.DataFrame]
 
 
-snowflake_pandas_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
+snowflake_pandas_io_manager = build_snowflake_io_manager(
+    [SnowflakePandasTypeHandler()], default_load_type=pd.DataFrame
+)
 snowflake_pandas_io_manager.__doc__ = """
 An IO manager definition that reads inputs from and writes pandas dataframes to Snowflake.
 

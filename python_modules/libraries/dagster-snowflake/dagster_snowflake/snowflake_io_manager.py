@@ -1,6 +1,5 @@
 from contextlib import contextmanager
-from typing import Mapping, Sequence, cast
-
+from typing import Mapping, Sequence, cast, Type
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
@@ -17,13 +16,16 @@ from .resources import SnowflakeConnection
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
+def build_snowflake_io_manager(
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+) -> IOManagerDefinition:
     """
     Builds an IO manager definition that reads inputs from and writes outputs to Snowflake.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
             slices of Snowflake tables and an in-memory type - e.g. a Pandas DataFrame.
+        default_load_type (Type): When an input has no type annotation, load it as this type.
 
     Returns:
         IOManagerDefinition
@@ -134,6 +136,7 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             io_manager_name="SnowflakeIOManager",
             database=init_context.resource_config["database"],
             schema=init_context.resource_config.get("schema"),
+            default_load_type=default_load_type,
         )
 
     return snowflake_io_manager
