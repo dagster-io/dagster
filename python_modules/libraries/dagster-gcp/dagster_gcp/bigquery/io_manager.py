@@ -18,7 +18,7 @@ BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
     """
-    Builds an IO manager definition that reads inputs from and writes outputs to BigQuery.
+    Builds an I/O manager definition that reads inputs from and writes outputs to BigQuery.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
@@ -35,7 +35,7 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
             from dagster import Definitions
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the dataset in BigQuery
+                key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
@@ -51,8 +51,8 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
                 }
             )
 
-        If you do not provide a dataset, Dagster will determine a dataset based on the assets and ops using
-        the IO Manager. For assets, the dataset will be determined from the asset key, as shown in the above example.
+        If you do not provide a dataset as configuration to the I/O manager, Dagster will determine a dataset based on the assets and ops using
+        the I/O Manager. For assets, the dataset will be determined from the asset key, as shown in the above example.
         For ops, the dataset can be specified by including a "schema" entry in output metadata. If "schema" is not provided
         via config or on the asset/op, "public" will be used for the dataset.
 
@@ -110,7 +110,7 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
         }
     )
     def bigquery_io_manager(init_context):
-        """IO Manager for storing outputs in a BigQuery database
+        """I/O Manager for storing outputs in a BigQuery database
 
         Assets will be stored in the dataset and table name specified by their AssetKey.
         Subsequent materializations of an asset will overwrite previous materializations of that asset.

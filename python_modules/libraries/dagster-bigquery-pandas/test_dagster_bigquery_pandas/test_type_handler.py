@@ -8,11 +8,13 @@ import pandas_gbq
 import pytest
 from dagster import (
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     Out,
     StaticPartitionsDefinition,
     asset,
+    instance_for_test,
     job,
     materialize,
     op,
@@ -56,9 +58,7 @@ def test_io_manager_with_bigquery_pandas():
             out={
                 table_name: Out(
                     io_manager_key="bigquery",
-                    metadata={
-                        "schema": schema
-                    },  # TODO this is a bit odd since in bigquery wording, it should be dataset
+                    metadata={"schema": schema},
                 )
             }
         )
@@ -365,3 +365,80 @@ def test_multi_partitioned_asset():
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+def test_dynamic_partitioned_asset():
+    schema = "BIGQUERY_IO_MANAGER_SCHEMA"
+    with temporary_bigquery_table(
+        schema_name=schema,
+        column_str=" FRUIT string, A string",
+    ) as table_name:
+        dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
+
+        @asset(
+            partitions_def=dynamic_fruits,
+            key_prefix=[schema],
+            metadata={"partition_expr": "FRUIT"},
+            config_schema={"value": str},
+            name=table_name,
+        )
+        def dynamic_partitioned(context) -> pd.DataFrame:
+            partition = context.asset_partition_key_for_output()
+            value = context.op_config["value"]
+            return pd.DataFrame(
+                {
+                    "fruit": [partition, partition, partition],
+                    "a": [value, value, value],
+                }
+            )
+
+        asset_full_name = f"{schema}__{table_name}"
+        bq_table_path = f"{schema}.{table_name}"
+
+        bq_io_manager = bigquery_pandas_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
+        resource_defs = {"io_manager": bq_io_manager}
+
+        with instance_for_test() as instance:
+            dynamic_fruits.add_partitions(["apple"], instance)
+
+            materialize(
+                [dynamic_partitioned],
+                partition_key="apple",
+                resources=resource_defs,
+                instance=instance,
+                run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
+            )
+
+            out_df = pandas_gbq.read_gbq(
+                f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
+            )
+            assert out_df["A"].tolist() == ["1", "1", "1"]
+
+            dynamic_fruits.add_partitions(["orange"], instance)
+
+            materialize(
+                [dynamic_partitioned],
+                partition_key="orange",
+                resources=resource_defs,
+                instance=instance,
+                run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
+            )
+
+            out_df = pandas_gbq.read_gbq(
+                f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
+            )
+            assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+
+            materialize(
+                [dynamic_partitioned],
+                partition_key="apple",
+                resources=resource_defs,
+                instance=instance,
+                run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
+            )
+
+            out_df = pandas_gbq.read_gbq(
+                f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
+            )
+            assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]

@@ -15,7 +15,9 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             from dagster_bigquery_pandas import BigQueryPandasTypeHandler
             from dagster import asset, Definitions
 
-            @asset
+            @asset(
+                key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
+            )
             def my_table():
                 ...
 
@@ -86,7 +88,7 @@ Examples:
         from dagster import Definitions
 
         @asset(
-            key_prefix=["my_schema"]  # will be used as the dataset in BigQuery
+            key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
         )
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
@@ -102,7 +104,7 @@ Examples:
             }
         )
 
-    If you do not provide a dataset, Dagster will determine a dataset based on the assets and ops using
+    If you do not provide a dataset as configuration to the I/O manager, Dagster will determine a dataset based on the assets and ops using
     the IO Manager. For assets, the dataset will be determined from the asset key, as shown in the above example.
     For ops, the dataset can be specified by including a "schema" entry in output metadata. If "schema" is not provided
     via config or on the asset/op, "public" will be used for the dataset.
