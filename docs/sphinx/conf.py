@@ -54,7 +54,7 @@ paths = [
     "../../python_modules/libraries/dagster-dbt",
     "../../python_modules/libraries/dagster-ge",
     "../../python_modules/libraries/dagster-gcp",
-    "../../python_modules/libraries/dagster-bigquery-pandas",
+    "../../python_modules/libraries/dagster-gcp-pandas",
     "../../python_modules/libraries/dagster-pyspark",
     "../../python_modules/libraries/dagster-databricks",
     "../../python_modules/libraries/dagster-duckdb",

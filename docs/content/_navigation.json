@@ -859,10 +859,6 @@
             "path": "/_apidocs/libraries/dagster-azure"
           },
           {
-            "title": "BigQuery + Pandas (dagster-bigquery-pandas)",
-            "path": "/_apidocs/libraries/dagster-bigquery-pandas"
-          },
-          {
             "title": "Celery (dagster-celery)",
             "path": "/_apidocs/libraries/dagster-celery"
           },
@@ -917,6 +913,10 @@
           {
             "title": "GCP (dagster-gcp)",
             "path": "/_apidocs/libraries/dagster-gcp"
+          },
+          {
+            "title": "GCP + Pandas (dagster-gcp-pandas)",
+            "path": "/_apidocs/libraries/dagster-gcp-pandas"
           },
           {
             "title": "Great Expectations (dagster-ge)",

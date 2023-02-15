@@ -28,7 +28,6 @@
    sections/api/apidocs/libraries/dagster-airflow
    sections/api/apidocs/libraries/dagster-aws
    sections/api/apidocs/libraries/dagster-azure
-   sections/api/apidocs/libraries/dagster-bigquery-pandas
    sections/api/apidocs/libraries/dagster-celery
    sections/api/apidocs/libraries/dagster-celery-docker
    sections/api/apidocs/libraries/dagster-celery-k8s
@@ -43,6 +42,7 @@
    sections/api/apidocs/libraries/dagster-fivetran
    sections/api/apidocs/libraries/dagster-docker
    sections/api/apidocs/libraries/dagster-gcp
+   sections/api/apidocs/libraries/dagster-gcp-pandas
    sections/api/apidocs/libraries/dagster-ge
    sections/api/apidocs/libraries/dagster-github
    sections/api/apidocs/libraries/dagster-k8s

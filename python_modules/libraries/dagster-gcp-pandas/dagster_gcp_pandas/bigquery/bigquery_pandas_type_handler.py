@@ -104,9 +104,12 @@ Examples:
             }
         )
 
-    If you do not provide a dataset as configuration to the I/O manager, Dagster will determine a dataset based on the assets and ops using
-    the IO Manager. For assets, the dataset will be determined from the asset key, as shown in the above example.
-    For ops, the dataset can be specified by including a "schema" entry in output metadata. If "schema" is not provided
+    You can tell Dagster in which dataset to create tables by setting the "dataset" configuration value.
+    If you do not provide a dataset as configuration to the I/O manager, Dagster will determine a dataset based
+    on the assets and ops using the I/O Manager. For assets, the dataset will be determined from the asset key,
+    as shown in the above example. The final prefix before the asset name will be used as the dataset. For example,
+    if the asset "my_table" had the key prefix ["gcp", "bigquery", "my_dataset"], the dataset "my_dataset" will be
+    used. For ops, the dataset can be specified by including a "schema" entry in output metadata. If "schema" is not provided
     via config or on the asset/op, "public" will be used for the dataset.
 
     .. code-block:: python

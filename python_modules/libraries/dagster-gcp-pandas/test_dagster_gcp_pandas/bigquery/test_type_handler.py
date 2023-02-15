@@ -19,7 +19,7 @@ from dagster import (
     materialize,
     op,
 )
-from dagster_bigquery_pandas import bigquery_pandas_io_manager
+from dagster_gcp_pandas import bigquery_pandas_io_manager
 from google.cloud import bigquery
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
