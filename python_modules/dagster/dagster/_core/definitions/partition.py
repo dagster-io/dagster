@@ -223,6 +223,12 @@ class ScheduleType(Enum):
 
 
 class PartitionsDefinition(ABC, Generic[T]):
+    """
+    Defines a set of partitions, which can be attached to a software-defined asset or job.
+
+    Abstract class with implementations for different kinds of partitions.
+    """
+
     @property
     def partitions_subset_class(self) -> Type["PartitionsSubset"]:
         return DefaultPartitionsSubset
@@ -351,8 +357,25 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
 
 
 class StaticPartitionsDefinition(
-    PartitionsDefinition[str],
+    PartitionsDefinition[str]
 ):  # pylint: disable=unsubscriptable-object
+    """
+    A statically-defined set of partitions.
+
+    Example:
+        .. code-block:: python
+
+            from dagster import StaticPartitionsDefinition, asset
+
+            oceans_partitions_def = StaticPartitionsDefinition(
+                ["arctic", "atlantic", "indian", "pacific", "southern"]
+            )
+
+            @asset(partitions_def=oceans_partitions_defs)
+            def ml_model_for_each_ocean():
+                ...
+    """
+
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
