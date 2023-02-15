@@ -531,3 +531,9 @@ def test_runtime_staleness():
         materialize_assets([alpha, beta], instance, _get_logical_version_config(alpha="bar"))
         assert executed["alpha"] == 3
         assert executed["beta"] == 2
+
+
+# def test_return_asset_observation_from_materialize_fn():
+#     @asset(config_schema={"logical_version": str})
+#     def alpha(context: OpExecutionContext):
+#         return AssetObservation

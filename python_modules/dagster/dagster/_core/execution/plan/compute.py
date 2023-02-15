@@ -27,6 +27,7 @@ from dagster._core.definitions import (
     Output,
 )
 from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.events import Observation
 from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
@@ -43,6 +44,7 @@ T = TypeVar("T")
 OpOutputUnion: TypeAlias = Union[
     DynamicOutput[Any],
     Output[Any],
+    Observation,
     AssetMaterialization,
     Materialization,
     ExpectationResult,

@@ -364,6 +364,64 @@ class DynamicOutput(Generic[T]):
         )
 
 
+class Observation:
+    """Event corresponding to an observation about one an op's outputs.
+
+    Indicates information that has been observed about the output without recomputing it. Used for
+    memoized and source assets.
+
+    Args:
+        output_name (Optional[str]): Name of the corresponding out. (default:
+            "result")
+        metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
+            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            one of the following: string, float, int, JSON-serializable dict, JSON-serializable
+            list, and one of the data classes returned by a MetadataValue static method.
+        logical_version (Optional[LogicalVersion]): The logical version of the output.
+    """
+
+    def __init__(
+        self,
+        output_name: Optional[str] = DEFAULT_OUTPUT,
+        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        logical_version: Optional[LogicalVersion] = None,
+    ):
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        metadata_entries = check.opt_sequence_param(
+            metadata_entries,
+            "metadata_entries",
+            of_type=(MetadataEntry, PartitionMetadataEntry),
+        )
+        self._output_name = check.str_param(output_name, "output_name")
+        self._metadata_entries = normalize_metadata(metadata, [])
+        self._logical_version = check.opt_inst_param(
+            logical_version, "logical_version", LogicalVersion
+        )
+
+    @property
+    def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
+        return self._metadata_entries
+
+    @public
+    @property
+    def output_name(self) -> str:
+        return self._output_name
+
+    @public
+    @property
+    def logical_version(self) -> Optional[LogicalVersion]:
+        return self._logical_version
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, Output)
+            and self.output_name == other.output_name
+            and self.metadata_entries == other.metadata_entries
+            and self.logical_version == other.logical_version
+        )
+
+
 @whitelist_for_serdes
 class AssetObservation(
     NamedTuple(
