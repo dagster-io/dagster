@@ -209,7 +209,7 @@ class UnboundHookContext(HookContext):
             def temp_graph():
                 op()
 
-            self._op = temp_graph.solids[0]
+            self._op = temp_graph.nodes[0]
 
         # Open resource context manager
         self._resource_defs = wrap_resources_for_execution(resources)

@@ -115,7 +115,7 @@ def _composite_descent(
 
     This process unrolls recursively as you descend down the tree.
     """
-    for solid in parent_stack.current_container.solids:
+    for solid in parent_stack.current_container.nodes:
         current_stack = parent_stack.descend(solid)
         current_handle = current_stack.handle
 
@@ -204,7 +204,7 @@ def _apply_top_level_config_mapping(
         # be evaluated against
 
         type_to_evaluate_against = define_solid_dictionary_cls(
-            solids=graph_def.solids,
+            solids=graph_def.nodes,
             ignored_solids=None,
             dependency_structure=graph_def.dependency_structure,
             resource_defs=resource_defs,
@@ -268,7 +268,7 @@ def _get_mapped_solids_dict(
     ignored_solids = graph_def.get_top_level_omitted_nodes() if graph_def.is_subselected else None
 
     type_to_evaluate_against = define_solid_dictionary_cls(
-        solids=graph_def.solids,
+        solids=graph_def.nodes,
         ignored_solids=ignored_solids,
         dependency_structure=graph_def.dependency_structure,
         parent_handle=current_stack.handle,

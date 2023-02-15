@@ -47,8 +47,7 @@ def build_dep_structure_snapshot_from_icontains_solids(
     check.inst_param(icontains_solids, "icontains_solids", GraphDefinition)
     return DependencyStructureSnapshot(
         solid_invocation_snaps=[
-            build_solid_invocation_snap(icontains_solids, solid)
-            for solid in icontains_solids.solids
+            build_solid_invocation_snap(icontains_solids, solid) for solid in icontains_solids.nodes
         ]
     )
 
