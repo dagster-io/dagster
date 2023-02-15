@@ -52,11 +52,11 @@ def test_duckdb_io_manager_with_ops(tmp_path):
         assert res.success
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
 
-        out_df = duckdb_conn.execute("SELECT * FROM a_df.result").fetch_df()
-        assert out_df["a"].tolist() == [1, 2, 3]
+        out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM a_df.result").arrow())
+        assert out_df["a"].to_list() == [1, 2, 3]
 
-        out_df = duckdb_conn.execute("SELECT * FROM add_one.result").fetch_df()
-        assert out_df["a"].tolist() == [2, 3, 4]
+        out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM add_one.result").arrow())
+        assert out_df["a"].to_list() == [2, 3, 4]
 
         duckdb_conn.close()
 
@@ -85,11 +85,11 @@ def test_duckdb_io_manager_with_assets(tmp_path):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
 
-        out_df = duckdb_conn.execute("SELECT * FROM my_schema.b_df").fetch_df()
-        assert out_df["a"].tolist() == [1, 2, 3]
+        out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.b_df").arrow())
+        assert out_df["a"].to_list() == [1, 2, 3]
 
-        out_df = duckdb_conn.execute("SELECT * FROM my_schema.b_plus_one").fetch_df()
-        assert out_df["a"].tolist() == [2, 3, 4]
+        out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.b_plus_one").arrow())
+        assert out_df["a"].to_list() == [2, 3, 4]
 
         duckdb_conn.close()
 
@@ -113,11 +113,13 @@ def test_loading_columns(tmp_path):
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
 
-        out_df = duckdb_conn.execute("SELECT * FROM my_schema.b_df").fetch_df()
-        assert out_df["a"].tolist() == [1, 2, 3]
+        out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.b_df").arrow())
+        assert out_df["a"].to_list() == [1, 2, 3]
 
-        out_df = duckdb_conn.execute("SELECT * FROM my_schema.b_plus_one_columns").fetch_df()
-        assert out_df["a"].tolist() == [2, 3, 4]
+        out_df = pl.DataFrame(
+            duckdb_conn.execute("SELECT * FROM my_schema.b_plus_one_columns").arrow()
+        )
+        assert out_df["a"].to_list() == [2, 3, 4]
 
         assert out_df.shape[1] == 1
 
@@ -187,7 +189,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
-    assert out_df["a"].tolist() == ["1", "1", "1"]
+    assert out_df["a"].to_list() == ["1", "1", "1"]
     duckdb_conn.close()
 
     materialize(
@@ -198,8 +200,8 @@ def test_time_window_partitioned_asset(tmp_path):
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
-    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+    out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").arrow())
+    assert sorted(out_df["a"].to_list()) == ["1", "1", "1", "2", "2", "2"]
     duckdb_conn.close()
 
     materialize(
@@ -210,8 +212,8 @@ def test_time_window_partitioned_asset(tmp_path):
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
-    assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+    out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").arrow())
+    assert sorted(out_df["a"].to_list()) == ["2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()
 
 
@@ -247,8 +249,8 @@ def test_static_partitioned_asset(tmp_path):
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").fetch_df()
-    assert out_df["a"].tolist() == ["1", "1", "1"]
+    out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").arrow())
+    assert out_df["a"].to_list() == ["1", "1", "1"]
     duckdb_conn.close()
 
     materialize(
@@ -259,8 +261,8 @@ def test_static_partitioned_asset(tmp_path):
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").fetch_df()
-    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+    out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").arrow())
+    assert sorted(out_df["a"].to_list()) == ["1", "1", "1", "2", "2", "2"]
     duckdb_conn.close()
 
     materialize(
@@ -271,8 +273,8 @@ def test_static_partitioned_asset(tmp_path):
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").fetch_df()
-    assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+    out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").arrow())
+    assert sorted(out_df["a"].to_list()) == ["2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()
 
 
@@ -313,8 +315,8 @@ def test_multi_partitioned_asset(tmp_path):
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
-    assert out_df["a"].tolist() == ["1", "1", "1"]
+    out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").arrow())
+    assert out_df["a"].to_list() == ["1", "1", "1"]
     duckdb_conn.close()
 
     materialize(
@@ -325,8 +327,8 @@ def test_multi_partitioned_asset(tmp_path):
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
-    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+    out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").arrow())
+    assert sorted(out_df["a"].to_list()) == ["1", "1", "1", "2", "2", "2"]
     duckdb_conn.close()
 
     materialize(
@@ -337,8 +339,8 @@ def test_multi_partitioned_asset(tmp_path):
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
-    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
+    out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").arrow())
+    assert sorted(out_df["a"].to_list()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()
 
     materialize(
@@ -349,8 +351,8 @@ def test_multi_partitioned_asset(tmp_path):
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
-    assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
+    out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").arrow())
+    assert sorted(out_df["a"].to_list()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
     duckdb_conn.close()
 
 
@@ -392,8 +394,10 @@ def test_dynamic_partition(tmp_path):
         )
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-        out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
-        assert out_df["a"].tolist() == ["1", "1", "1"]
+        out_df = pl.DataFrame(
+            duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").arrow()
+        )
+        assert out_df["a"].to_list() == ["1", "1", "1"]
         duckdb_conn.close()
 
         dynamic_fruits.add_partitions(["orange"], instance)
@@ -407,8 +411,10 @@ def test_dynamic_partition(tmp_path):
         )
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-        out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
-        assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+        out_df = pl.DataFrame(
+            duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").arrow()
+        )
+        assert sorted(out_df["a"].to_list()) == ["1", "1", "1", "2", "2", "2"]
         duckdb_conn.close()
 
         materialize(
@@ -420,6 +426,8 @@ def test_dynamic_partition(tmp_path):
         )
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-        out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
-        assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+        out_df = pl.DataFrame(
+            duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").arrow()
+        )
+        assert sorted(out_df["a"].to_list()) == ["2", "2", "2", "3", "3", "3"]
         duckdb_conn.close()
