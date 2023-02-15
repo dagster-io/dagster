@@ -102,9 +102,9 @@ class _PlanBuilder:
 
     steps List[ExecutionStep]: a list of the execution steps that have been created.
 
-    step_output_map Dict[NodeOutput, StepOutputHandle]:  maps logical solid outputs
-    (solid_name, output_name) to particular step outputs. This covers the case where a solid maps to
-    multiple steps and one wants to be able to attach to the logical output of a solid during
+    step_output_map Dict[NodeOutput, StepOutputHandle]:  maps logical node outputs
+    (node_name, output_name) to particular step outputs. This covers the case where a node maps to
+    multiple steps and one wants to be able to attach to the logical output of a node during
     execution.
     """
 
@@ -166,7 +166,7 @@ class _PlanBuilder:
         self._seen_handles.add(step.handle)
         self._steps[step.solid_handle.to_string()] = step
 
-    def get_step_by_solid_handle(self, handle: NodeHandle) -> IExecutionStep:
+    def get_step_by_node_handle(self, handle: NodeHandle) -> IExecutionStep:
         check.inst_param(handle, "handle", NodeHandle)
         return self._steps[handle.to_string()]
 
@@ -219,7 +219,7 @@ class _PlanBuilder:
                 )
             )
 
-        self._build_from_sorted_solids(
+        self._build_from_sorted_nodes(
             pipeline_def.solids_in_topological_order,
             pipeline_def.dependency_structure,
             parent_step_inputs=root_inputs,
@@ -277,26 +277,26 @@ class _PlanBuilder:
 
         return plan
 
-    def _build_from_sorted_solids(
+    def _build_from_sorted_nodes(
         self,
-        solids: Sequence[Node],
+        nodes: Sequence[Node],
         dependency_structure: DependencyStructure,
         parent_handle: Optional[NodeHandle] = None,
         parent_step_inputs: Optional[Sequence[StepInputUnion]] = None,
     ) -> None:
         asset_layer = self.pipeline.get_definition().asset_layer
-        for solid in solids:
-            handle = NodeHandle(solid.name, parent_handle)
+        for node in nodes:
+            handle = NodeHandle(node.name, parent_handle)
 
             ### 1. INPUTS
-            # Create and add execution plan steps for solid inputs
+            # Create and add execution plan steps for node inputs
             has_unresolved_input = False
             has_pending_input = False
             step_inputs: List[StepInputUnion] = []
-            for input_name, input_def in solid.definition.input_dict.items():
+            for input_name, input_def in node.definition.input_dict.items():
                 step_input_source = get_step_input_source(
                     self,
-                    solid,
+                    node,
                     input_name,
                     input_def,
                     dependency_structure,
@@ -345,10 +345,10 @@ class _PlanBuilder:
                     )
 
             ### 2a. COMPUTE FUNCTION
-            # Create and add execution plan step for the solid compute function
-            if isinstance(solid.definition, OpDefinition):
+            # Create and add execution plan step for the op compute function
+            if isinstance(node.definition, OpDefinition):
                 step_outputs = create_step_outputs(
-                    solid, handle, self.resolved_run_config, asset_layer
+                    node, handle, self.resolved_run_config, asset_layer
                 )
 
                 if has_pending_input and has_unresolved_input:
@@ -362,7 +362,7 @@ class _PlanBuilder:
                             List[Union[StepInput, UnresolvedMappedStepInput]], step_inputs
                         ),
                         step_outputs=step_outputs,
-                        tags=solid.tags,
+                        tags=node.tags,
                     )
                 elif has_pending_input:
                     new_step = UnresolvedCollectExecutionStep(
@@ -372,7 +372,7 @@ class _PlanBuilder:
                             List[Union[StepInput, UnresolvedCollectStepInput]], step_inputs
                         ),
                         step_outputs=step_outputs,
-                        tags=solid.tags,
+                        tags=node.tags,
                     )
                 else:
                     new_step = ExecutionStep(
@@ -380,17 +380,17 @@ class _PlanBuilder:
                         pipeline_name=self.pipeline_name,
                         step_inputs=cast(List[StepInput], step_inputs),
                         step_outputs=step_outputs,
-                        tags=solid.tags,
+                        tags=node.tags,
                     )
 
                 self.add_step(new_step)
 
             ### 2b. RECURSE
-            # Recurse over the solids contained in an instance of GraphDefinition
-            elif isinstance(solid.definition, GraphDefinition):
-                self._build_from_sorted_solids(
-                    solid.definition.nodes_in_topological_order,
-                    solid.definition.dependency_structure,
+            # Recurse over the nodes contained in an instance of GraphDefinition
+            elif isinstance(node.definition, GraphDefinition):
+                self._build_from_sorted_nodes(
+                    node.definition.nodes_in_topological_order,
+                    node.definition.dependency_structure,
                     parent_handle=handle,
                     parent_step_inputs=step_inputs,
                 )
@@ -399,21 +399,21 @@ class _PlanBuilder:
                 check.invariant(
                     False,
                     "Unexpected solid type {type} encountered during execution planning".format(
-                        type=type(solid.definition)
+                        type=type(node.definition)
                     ),
                 )
 
             ### 3. OUTPUTS
-            # Create output handles for solid outputs
-            for name, output_def in solid.definition.output_dict.items():
-                node_output = solid.get_output(name)
+            # Create output handles for node outputs
+            for name, output_def in node.definition.output_dict.items():
+                node_output = node.get_output(name)
 
                 # Punch through layers of composition scope to map to the output of the
                 # actual compute step
-                resolved_output_def, resolved_handle = solid.definition.resolve_output_to_origin(
+                resolved_output_def, resolved_handle = node.definition.resolve_output_to_origin(
                     output_def.name, handle
                 )
-                step = self.get_step_by_solid_handle(check.not_none(resolved_handle))
+                step = self.get_step_by_node_handle(check.not_none(resolved_handle))
                 if isinstance(step, (ExecutionStep, UnresolvedCollectExecutionStep)):
                     step_output_handle: Union[
                         StepOutputHandle, UnresolvedStepOutputHandle
@@ -465,7 +465,7 @@ def get_root_graph_input_source(
 
 def get_step_input_source(
     plan_builder: _PlanBuilder,
-    solid: Node,
+    node: Node,
     input_name: str,
     input_def: InputDefinition,
     dependency_structure: DependencyStructure,
@@ -473,7 +473,7 @@ def get_step_input_source(
     parent_step_inputs: Optional[Sequence[StepInputUnion]],
 ) -> Optional[StepInputSourceUnion]:
     check.inst_param(plan_builder, "plan_builder", _PlanBuilder)
-    check.inst_param(solid, "solid", Node)
+    check.inst_param(node, "node", Node)
     check.str_param(input_name, "input_name")
     check.inst_param(input_def, "input_def", InputDefinition)
     check.inst_param(dependency_structure, "dependency_structure", DependencyStructure)
@@ -484,10 +484,10 @@ def get_step_input_source(
         of_type=(StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput),
     )
 
-    input_handle = solid.get_input(input_name)
-    solid_config = plan_builder.resolved_run_config.solids.get(str(handle))
+    input_handle = node.get_input(input_name)
+    node_config = plan_builder.resolved_run_config.solids.get(str(handle))
 
-    input_def = solid.definition.input_def_named(input_name)
+    input_def = node.definition.input_def_named(input_name)
     asset_layer = plan_builder.pipeline.get_definition().asset_layer
 
     if (
@@ -495,7 +495,7 @@ def get_step_input_source(
         not dependency_structure.has_deps(input_handle)
         and
         #  make sure input is unconnected in the outer dependency structure too
-        not solid.container_maps_input(input_handle.input_name)
+        not node.container_maps_input(input_handle.input_name)
     ):
         # can only load from source asset if assets defs are available
         if asset_layer.asset_key_for_input(handle, input_handle.input_name):
@@ -504,14 +504,14 @@ def get_step_input_source(
             return FromRootInputManager(solid_handle=handle, input_name=input_name)
 
     if dependency_structure.has_direct_dep(input_handle):
-        solid_output_handle = dependency_structure.get_direct_dep(input_handle)
-        step_output_handle = plan_builder.get_output_handle(solid_output_handle)
+        node_output_handle = dependency_structure.get_direct_dep(input_handle)
+        step_output_handle = plan_builder.get_output_handle(node_output_handle)
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
             return FromUnresolvedStepOutput(
                 unresolved_step_output_handle=step_output_handle,
             )
 
-        if solid_output_handle.output_def.is_dynamic:
+        if node_output_handle.output_def.is_dynamic:
             return FromPendingDynamicStepOutput(
                 step_output_handle=step_output_handle,
             )
@@ -550,7 +550,7 @@ def get_step_input_source(
                 if parent_step_inputs is None:
                     check.failed("unexpected error in composition descent during plan building")
 
-                parent_name = solid.container_mapped_fan_in_input(input_name, idx).graph_input_name
+                parent_name = node.container_mapped_fan_in_input(input_name, idx).graph_input_name
                 parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
                 parent_input = parent_inputs[parent_name]
                 source = parent_input.source
@@ -561,36 +561,36 @@ def get_step_input_source(
         return FromMultipleSources(sources=sources)
 
     if dependency_structure.has_dynamic_fan_in_dep(input_handle):
-        solid_output_handle = dependency_structure.get_dynamic_fan_in_dep(input_handle)
-        step_output_handle = plan_builder.get_output_handle(solid_output_handle)
+        node_output_handle = dependency_structure.get_dynamic_fan_in_dep(input_handle)
+        step_output_handle = plan_builder.get_output_handle(node_output_handle)
         if isinstance(step_output_handle, UnresolvedStepOutputHandle):
             return FromDynamicCollect(
                 source=FromUnresolvedStepOutput(
                     unresolved_step_output_handle=step_output_handle,
                 ),
             )
-        elif solid_output_handle.output_def.is_dynamic:
+        elif node_output_handle.output_def.is_dynamic:
             return FromDynamicCollect(
                 source=FromPendingDynamicStepOutput(
                     step_output_handle=step_output_handle,
                 ),
             )
 
-    if solid_config and input_name in solid_config.inputs:
+    if node_config and input_name in node_config.inputs:
         return FromConfig(solid_handle=handle, input_name=input_name)
 
-    if solid.container_maps_input(input_name):
+    if node.container_maps_input(input_name):
         if parent_step_inputs is None:
             check.failed("unexpected error in composition descent during plan building")
 
-        parent_name = solid.container_mapped_input(input_name).graph_input_name
+        parent_name = node.container_mapped_input(input_name).graph_input_name
         parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
         if parent_name in parent_inputs:
             parent_input = parent_inputs[parent_name]
             return parent_input.source
         # else fall through to Nothing case or raise
 
-    if solid.definition.input_has_default(input_name):
+    if node.definition.input_has_default(input_name):
         return FromDefaultValue(solid_handle=handle, input_name=input_name)
 
     # At this point we have an input that is not hooked up to
@@ -608,7 +608,7 @@ def get_step_input_source(
             "inputs section of its configuration."
         ).format(
             described_target=plan_builder.pipeline.get_definition().describe_target(),
-            described_node=solid.describe_node(),
+            described_node=node.describe_node(),
             input_name=input_name,
         )
     )
@@ -1022,8 +1022,8 @@ class ExecutionPlan(
     ) -> "ExecutionPlan":
         """Here we build a new ExecutionPlan from a pipeline definition and the resolved run config.
 
-        To do this, we iterate through the pipeline's solids in topological order, and hand off the
-        execution steps for each solid to a companion _PlanBuilder object.
+        To do this, we iterate through the pipeline's nodes in topological order, and hand off the
+        execution steps for each node to a companion _PlanBuilder object.
 
         Once we've processed the entire pipeline, we invoke _PlanBuilder.build() to construct the
         ExecutionPlan object.
@@ -1234,9 +1234,7 @@ def can_isolate_steps(pipeline_def: PipelineDefinition, mode_def: ModeDefinition
     # pylint: disable=comparison-with-callable
 
     output_defs = [
-        output_def
-        for solid_def in pipeline_def.all_node_defs
-        for output_def in solid_def.output_defs
+        output_def for node_def in pipeline_def.all_node_defs for output_def in node_def.output_defs
     ]
     for output_def in output_defs:
         if mode_def.resource_defs[output_def.io_manager_key] == mem_io_manager:
@@ -1444,8 +1442,8 @@ def _get_manager_key(
     pipeline_def: PipelineDefinition,
 ) -> str:
     step_output = _get_step_output(step_dict_by_key, step_output_handle)
-    solid_handle = step_output.solid_handle
-    output_def = pipeline_def.get_solid(solid_handle).output_def_named(step_output.name)
+    node_handle = step_output.solid_handle
+    output_def = pipeline_def.get_solid(node_handle).output_def_named(step_output.name)
     return output_def.io_manager_key
 
 
