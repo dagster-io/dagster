@@ -64,7 +64,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         result = pandas_gbq.read_gbq(
             BigQueryClient.get_select_statement(table_slice), project_id=table_slice.database
         )
-        result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
+        result.columns = map(str.lower, result.columns)
         return result
 
     @property
