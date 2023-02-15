@@ -144,7 +144,7 @@ export const SensorDetails: React.FC<{
         currentCursor={cursor || ''}
         name={sensor.name}
         repoAddress={repoAddress}
-        jobName={sensor.targets?.[0].pipelineName || ''}
+        jobName={sensor.targets?.[0]?.pipelineName || ''}
       />
       <MetadataTableWIP>
         <tbody>
