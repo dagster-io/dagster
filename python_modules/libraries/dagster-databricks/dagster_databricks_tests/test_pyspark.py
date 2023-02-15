@@ -167,11 +167,11 @@ def test_local():
     assert result.success
 
 
-@mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
+@mock.patch("databricks_cli.sdk.JobsService.submit_run")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.read_file")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.put_file")
 @mock.patch("dagster_databricks.DatabricksPySparkStepLauncher.get_step_events")
-@mock.patch("dagster_databricks.databricks.DatabricksClient.get_run")
+@mock.patch("databricks_cli.sdk.JobsService.get_run")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run_state")
 @mock.patch("databricks_cli.sdk.api_client.ApiClient.perform_query")
 def test_pyspark_databricks(
@@ -183,7 +183,7 @@ def test_pyspark_databricks(
     mock_read_file,
     mock_submit_run,
 ):
-    mock_submit_run.return_value = 12345
+    mock_submit_run.return_value = {"run_id": 12345}
     mock_read_file.return_value = "somefilecontents".encode()
 
     running_state = DatabricksRunState(DatabricksRunLifeCycleState.RUNNING, None, "")
