@@ -35,7 +35,7 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
             from dagster import Definitions
 
             @asset(
-                key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
+                key_prefix=["my_dataset"]  # my_dataset will be used as the dataset in BigQuery
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
@@ -51,10 +51,10 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
                 }
             )
 
-        If you do not provide a dataset as configuration to the I/O manager, Dagster will determine a dataset based on the assets and ops using
-        the I/O Manager. For assets, the dataset will be determined from the asset key, as shown in the above example.
-        For ops, the dataset can be specified by including a "schema" entry in output metadata. If "schema" is not provided
-        via config or on the asset/op, "public" will be used for the dataset.
+        If you do not provide a dataset as configuration to the I/O manager, Dagster will determine a dataset based
+        on the assets and ops using the I/O Manager. For assets, the dataset will be determined from the asset key,
+        as shown in the above example. For ops, the dataset can be specified by including a "schema" entry in output
+        metadata. If "schema" is not provided via config or on the asset/op, "public" will be used for the dataset.
 
         .. code-block:: python
 
@@ -88,7 +88,12 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
     @io_manager(
         config_schema={
             "dataset": Field(
-                StringSource, description="Name of the BigQuery dataset to use.", is_required=False
+                StringSource,
+                description=(
+                    "Name of the BigQuery dataset to use. If not provided, the last prefix before"
+                    " the asset name will be used."
+                ),
+                is_required=False,
             ),
             "project": Field(StringSource, description="The GCP project to use."),
             "location": Field(
@@ -178,7 +183,7 @@ class BigQueryClient(DbClient):
         bq_client.query(f"CREATE SCHEMA IF NOT EXISTS {table_slice.schema}").result()
 
 
-def _connect_bigquery(context):
+def _connect_bigquery(context) -> bigquery.Client:
     return bigquery.Client(
         project=context.resource_config.get("project"),
         location=context.resource_config.get("location"),
