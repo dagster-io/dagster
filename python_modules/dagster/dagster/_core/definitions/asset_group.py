@@ -486,7 +486,7 @@ def _validate_resource_reqs_for_asset_group(
         present_resource_keys = present_resource_keys.union(provided_resource_keys)
 
         required_resource_keys: Set[str] = set()
-        for op_def in asset_def.node_def.iterate_solid_defs():
+        for op_def in asset_def.node_def.iterate_op_defs():
             required_resource_keys.update(set(op_def.required_resource_keys or {}))
         missing_resource_keys = list(set(required_resource_keys) - present_resource_keys)
         if missing_resource_keys:
