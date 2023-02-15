@@ -150,7 +150,7 @@ Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when 
 
 ### Storing time partitioned assets
 
-Like static partitioned assets, you can must specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
+Like static partitioned assets, you can specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
 
 ```python file=/integrations/snowflake/time_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
