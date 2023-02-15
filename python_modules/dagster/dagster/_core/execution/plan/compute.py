@@ -1,6 +1,17 @@
 import asyncio
 import inspect
-from typing import Any, AsyncGenerator, Callable, Iterator, List, Mapping, Sequence, Set, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Iterator,
+    List,
+    Mapping,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
 from typing_extensions import TypeAlias
 
@@ -26,6 +37,8 @@ from dagster._utils import iterate_with_context
 
 from .outputs import StepOutput, StepOutputProperties
 from .utils import op_execution_error_boundary
+
+T = TypeVar("T")
 
 SolidOutputUnion: TypeAlias = Union[
     DynamicOutput[Any],
@@ -105,7 +118,7 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> SolidOutp
     return event
 
 
-def gen_from_async_gen(async_gen: AsyncGenerator) -> Iterator:
+def gen_from_async_gen(async_gen: AsyncIterator[T]) -> Iterator[T]:
     loop = asyncio.get_event_loop()
     while True:
         try:

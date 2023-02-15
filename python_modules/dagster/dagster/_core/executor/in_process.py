@@ -50,7 +50,7 @@ class InProcessExecutor(Executor):
                         pipeline_run=plan_context.pipeline_run,
                         instance=plan_context.instance,
                         raise_on_error=plan_context.raise_on_error,
-                        output_capture=plan_context.output_capture,  # type: ignore  # (??)
+                        output_capture=plan_context.output_capture,
                     ),
                 )
             )

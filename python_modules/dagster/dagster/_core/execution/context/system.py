@@ -210,7 +210,7 @@ class PlanOrchestrationContext(IPlanContext):
         plan_data: PlanData,
         log_manager: DagsterLogManager,
         executor: Executor,
-        output_capture: Optional[Mapping[StepOutputHandle, Any]],
+        output_capture: Optional[Dict[StepOutputHandle, Any]],
         resume_from_failure: bool = False,
     ):
         self._plan_data = plan_data
@@ -240,7 +240,7 @@ class PlanOrchestrationContext(IPlanContext):
         return self._executor
 
     @property
-    def output_capture(self) -> Optional[Mapping[StepOutputHandle, Any]]:
+    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
         return self._output_capture
 
     def for_step(self, step: ExecutionStep) -> "IStepContext":
@@ -270,7 +270,7 @@ class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
         log_manager: DagsterLogManager,
         executor: Executor,
         step: ExecutionStep,
-        output_capture: Optional[Mapping[StepOutputHandle, Any]],
+        output_capture: Optional[Dict[StepOutputHandle, Any]],
     ):
         super(StepOrchestrationContext, self).__init__(
             plan_data, log_manager, executor, output_capture

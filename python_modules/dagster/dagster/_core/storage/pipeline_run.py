@@ -646,8 +646,8 @@ class RunsFilter(
         )
 
     @property
-    def pipeline_name(self) -> str:
-        return self.job_name  # type: ignore  # (possible none)
+    def pipeline_name(self) -> Optional[str]:
+        return self.job_name
 
     @staticmethod
     def for_schedule(schedule: "ExternalSchedule") -> "RunsFilter":
