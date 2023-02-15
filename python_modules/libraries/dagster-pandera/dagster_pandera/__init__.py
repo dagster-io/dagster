@@ -110,6 +110,7 @@ def pandera_schema_to_dagster_type(
         metadata_entries=[
             MetadataEntry("schema", value=MetadataValue.table_schema(tschema)),
         ],
+        typing_type=pd.DataFrame,
     )
 
 

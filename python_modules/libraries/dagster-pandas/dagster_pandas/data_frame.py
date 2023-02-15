@@ -225,6 +225,7 @@ def create_dagster_pandas_dataframe_type(
         loader=loader if loader else dataframe_loader,
         materializer=materializer if materializer else dataframe_materializer,
         description=description,
+        typing_type=pd.DataFrame,
     )
 
 
