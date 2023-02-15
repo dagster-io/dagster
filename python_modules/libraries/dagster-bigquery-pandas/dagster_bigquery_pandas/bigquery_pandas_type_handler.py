@@ -6,38 +6,34 @@ from dagster_gcp.bigquery.io_manager import BigQueryClient, build_bigquery_io_ma
 
 
 class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
-    """Stores and loads Pandas DataFrames in BigQuery.
+    """Plugin for the BigQuery I/O Manager that can store and load Pandas DataFrames as BigQuery tables.
 
-    # TODO - update doc string
-
-    To use this type handler, pass it to ``build_duckdb_io_manager``
-
-    Example:
+    Examples:
         .. code-block:: python
 
-            from dagster_duckdb import build_duckdb_io_manager
-            from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+            from dagster_gcp import build_bigquery_io_manager
+            from dagster_bigquery_pandas import BigQueryPandasTypeHandler
+            from dagster import asset, Definitions
 
             @asset
             def my_table():
                 ...
 
-            duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
+            bigquery_io_manager = build_bigquery_io_manager([BigQueryPandasTypeHandler()])
 
-            @repository
-            def my_repo():
-                return with_resources(
-                    [my_table],
-                    {"io_manager": duckdb_io_manager.configured({"database": "my_db.duckdb"})}
-                )
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "io_manager": bigquery_io_manager.configured({
+                        "project" : {"env": "GCP_PROJECT"}
+                    })
+                }
+            )
 
     """
 
     def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame):
-        """Stores the pandas DataFrame in duckdb."""
-        print("THIS IS THE TABLE SLICE")
-        print(table_slice)
-
+        """Stores the pandas DataFrame in BigQuery."""
         with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
 
         pandas_gbq.to_gbq(
@@ -76,9 +72,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
 bigquery_pandas_io_manager = build_bigquery_io_manager([BigQueryPandasTypeHandler()])
 bigquery_pandas_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes pandas dataframes to BigQuery.
-
-# TODO - update doc string
+An IO manager definition that reads inputs from and writes pandas DataFrames to BigQuery.
 
 Returns:
     IOManagerDefinition
@@ -87,33 +81,39 @@ Examples:
 
     .. code-block:: python
 
-        from dagster_duckdb_pandas import duckdb_pandas_io_manager
+        from dagster_gcp import build_bigquery_io_manager
+        from dagster_bigquery_pandas import BigQueryPandasTypeHandler
+        from dagster import Definitions
 
         @asset(
-            key_prefix=["my_schema"]  # will be used as the schema in DuckDB
+            key_prefix=["my_schema"]  # will be used as the dataset in BigQuery
         )
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
 
-        @repository
-        def my_repo():
-            return with_resources(
-                [my_table],
-                {"io_manager": duckdb_pandas_io_manager.configured({"database": "my_db.duckdb"})}
-            )
+        bigquery_io_manager = build_bigquery_io_manager([BigQueryPandasTypeHandler()])
 
-    If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key.
-    For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
-    via config or on the asset/op, "public" will be used for the schema.
+        defs = Definitions(
+            assets=[my_table],
+            resources={
+                "io_manager": bigquery_io_manager.configured({
+                    "project" : {"env": "GCP_PROJECT"}
+                })
+            }
+        )
+
+    If you do not provide a dataset, Dagster will determine a dataset based on the assets and ops using
+    the IO Manager. For assets, the dataset will be determined from the asset key, as shown in the above example.
+    For ops, the dataset can be specified by including a "schema" entry in output metadata. If "schema" is not provided
+    via config or on the asset/op, "public" will be used for the dataset.
 
     .. code-block:: python
 
         @op(
-            out={"my_table": Out(metadata={"schema": "my_schema"})}
+            out={"my_table": Out(metadata={"schema": "my_dataset"})}
         )
         def make_my_table() -> pd.DataFrame:
-            # the returned value will be stored at my_schema.my_table
+            # the returned value will be stored at my_dataset.my_table
             ...
 
     To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
@@ -127,5 +127,11 @@ Examples:
         def my_table_a(my_table: pd.DataFrame) -> pd.DataFrame:
             # my_table will just contain the data from column "a"
             ...
+
+    If you cannot authenticate with GCP via a standard method
+    (see https://cloud.google.com/docs/authentication/provide-credentials-adc), you can provide a
+    service account key as the "gcp_credentials" configuration. Dagster will store this key in a
+    temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file. After the run completes,
+    the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be unset.
 
 """

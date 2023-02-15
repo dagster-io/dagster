@@ -20,11 +20,9 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
     """
     Builds an IO manager definition that reads inputs from and writes outputs to BigQuery.
 
-    # TODO - update doc string
-
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
-            DuckDB tables and an in-memory type - e.g. a Pandas DataFrame.
+            slices of BigQuery tables and an in-memory type - e.g. a Pandas DataFrame.
 
     Returns:
         IOManagerDefinition
@@ -32,48 +30,58 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
     Examples:
         .. code-block:: python
 
-            from dagster_duckdb import build_duckdb_io_manager
-            from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+            from dagster_gcp import build_bigquery_io_manager
+            from dagster_bigquery_pandas import BigQueryPandasTypeHandler
+            from dagster import Definitions
 
             @asset(
-                key_prefix=["my_schema"]  # will be used as the schema in duckdb
+                key_prefix=["my_schema"]  # will be used as the dataset in BigQuery
             )
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
+            bigquery_io_manager = build_bigquery_io_manager([BigQueryPandasTypeHandler()])
 
-            @repository
-            def my_repo():
-                return with_resources(
-                    [my_table],
-                    {"io_manager": duckdb_io_manager.configured({"database": "my_db.duckdb"})}
-                )
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "io_manager": bigquery_io_manager.configured({
+                        "project" : {"env": "GCP_PROJECT"}
+                    })
+                }
+            )
 
-    If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key. For ops, the schema can be
-    specified by including a "schema" entry in output metadata. If none of these is provided, the schema will
-    default to "public".
+        If you do not provide a dataset, Dagster will determine a dataset based on the assets and ops using
+        the IO Manager. For assets, the dataset will be determined from the asset key, as shown in the above example.
+        For ops, the dataset can be specified by including a "schema" entry in output metadata. If "schema" is not provided
+        via config or on the asset/op, "public" will be used for the dataset.
 
-    .. code-block:: python
+        .. code-block:: python
 
-        @op(
-            out={"my_table": Out(metadata={"schema": "my_schema"})}
-        )
-        def make_my_table() -> pd.DataFrame:
-            ...
+            @op(
+                out={"my_table": Out(metadata={"schema": "my_dataset"})}
+            )
+            def make_my_table() -> pd.DataFrame:
+                # the returned value will be stored at my_dataset.my_table
+                ...
 
-    To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
-    In or AssetIn.
+        To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
+        In or AssetIn.
 
-    .. code-block:: python
+        .. code-block:: python
 
-        @asset(
-            ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
-        )
-        def my_table_a(my_table: pd.DataFrame):
-            # my_table will just contain the data from column "a"
-            ...
+            @asset(
+                ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
+            )
+            def my_table_a(my_table: pd.DataFrame) -> pd.DataFrame:
+                # my_table will just contain the data from column "a"
+                ...
+
+        If you cannot authenticate with GCP via a standard method
+        (see https://cloud.google.com/docs/authentication/provide-credentials-adc), you can provide a
+        service account key as the "gcp_credentials" configuration. Dagster will store this key in a
+        temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file. After the run completes,
+        the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be unset.
 
     """
 
@@ -82,15 +90,13 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
             "dataset": Field(
                 StringSource, description="Name of the BigQuery dataset to use.", is_required=False
             ),
-            "project": Field(
-                StringSource, description="The GCP project to use."
-            ),  # elementl-dev - sort of like the database?
+            "project": Field(StringSource, description="The GCP project to use."),
             "location": Field(
                 Noneable(StringSource),
                 is_required=False,
                 default_value=None,
                 description="The GCP location.",
-            ),  # compute location? like us-east-2
+            ),
             "gcp_credentials": Field(
                 Noneable(StringSource),
                 is_required=False,
@@ -106,12 +112,15 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
     def bigquery_io_manager(init_context):
         """IO Manager for storing outputs in a BigQuery database
 
-        # TODO update doc string
-
-        Assets will be stored in the schema and table name specified by their AssetKey.
+        Assets will be stored in the dataset and table name specified by their AssetKey.
         Subsequent materializations of an asset will overwrite previous materializations of that asset.
-        Op outputs will be stored in the schema specified by output metadata (defaults to public) in a
+        Op outputs will be stored in the dataset specified by output metadata (defaults to public) in a
         table of the name of the output.
+
+        Note that the BigQuery config is mapped to the DB IO manager table hierarchy as follows:
+        * project -> database
+        * dataset -> schema
+        * table -> table
         """
         temp_file_name = ""
         if init_context.resource_config.get("gcp_credentials"):
