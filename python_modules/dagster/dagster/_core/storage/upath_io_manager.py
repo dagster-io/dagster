@@ -1,5 +1,9 @@
 from abc import abstractmethod
+<<<<<<< HEAD
 from typing import Any, Dict, Mapping, Union
+=======
+from typing import Any, Dict, Union, Optional
+>>>>>>> 48a0cce183 (first stab)
 
 from upath import UPath
 
@@ -7,6 +11,7 @@ from dagster import (
     InputContext,
     MetadataValue,
     OutputContext,
+    MultiPartitionKey,
     _check as check,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
@@ -93,16 +98,58 @@ class UPathIOManager(MemoizableIOManager):
                 "but the asset is not partitioned"
             )
 
+        def _formatted_multipartitioned_path(partition_key: MultiPartitionKey) -> str:
+            ordered_dimension_keys = [
+                key[1]
+                for key in sorted(partition_key.keys_by_dimension.items(), key=lambda x: x[0])
+            ]
+            return "/".join(ordered_dimension_keys)
+
+        formatted_partition_keys = [
+            _formatted_multipartitioned_path(pk) if isinstance(pk, MultiPartitionKey) else pk
+            for pk in context.asset_partition_keys
+        ]
+
+        asset_path = self._get_path_without_extension(context)
+        return {
+            partition_key: self._with_extension(asset_path / partition_key)
+            for partition_key in formatted_partition_keys
+        }
+
+    def _get_multipartition_backcompat_paths(
+        self, context: Union[InputContext, OutputContext]
+    ) -> UPath:
+        if not context.has_asset_partitions:
+            raise TypeError(
+                f"Detected {context.dagster_type.typing_type} input type "
+                "but the asset is not partitioned"
+            )
+
         partition_keys = context.asset_partition_keys
+
         asset_path = self._get_path_without_extension(context)
         return {
             partition_key: self._with_extension(asset_path / partition_key)
             for partition_key in partition_keys
+            if isinstance(partition_key, MultiPartitionKey)
         }
 
-    def _load_single_input(self, path: UPath, context: InputContext) -> Any:
+    def _load_single_input(
+        self, path: UPath, context: InputContext, backcompat_path: Optional[UPath] = None
+    ) -> Any:
         context.log.debug(f"Loading file from: {path}")
-        obj = self.load_from_path(context=context, path=path)
+        try:
+            obj = self.load_from_path(context=context, path=path)
+        except FileNotFoundError as e:
+            if backcompat_path is not None:
+                context.log.debug(
+                    "Attempting to load file from multipartitions backcompat path:"
+                    f" {backcompat_path}"
+                )
+                obj = self.load_from_path(context=context, path=backcompat_path)
+            else:
+                raise e
+
         context.add_input_metadata({"path": MetadataValue.path(str(path))})
         return obj
 
@@ -116,6 +163,7 @@ class UPathIOManager(MemoizableIOManager):
 
         objs: Dict[str, Any] = {}
         paths = self._get_paths_for_partitions(context)
+        backcompat_paths = self._get_multipartition_backcompat_paths(context)
 
         context.log.debug(f"Loading {len(paths)} partitions...")
 
@@ -125,12 +173,17 @@ class UPathIOManager(MemoizableIOManager):
                 obj = self.load_from_path(context=context, path=path)
                 objs[partition_key] = obj
             except FileNotFoundError as e:
-                if not allow_missing_partitions:
+                backcompat_path = backcompat_paths.get(partition_key)
+                if backcompat_path is not None:
+                    obj = self.load_from_path(context=context, path=backcompat_path)
+                    objs[partition_key] = obj
+
+                if not allow_missing_partitions and objs.get(partition_key) is None:
+                    context.log.debug(
+                        f"Couldn't load partition {path} and skipped it "
+                        "because the input metadata includes allow_missing_partitions=True"
+                    )
                     raise e
-                context.log.debug(
-                    f"Couldn't load partition {path} and skipped it "
-                    "because the input metadata includes allow_missing_partitions=True"
-                )
 
         # TODO: context.add_output_metadata fails in the partitioned context. this should be fixed?
         return objs
@@ -153,7 +206,12 @@ class UPathIOManager(MemoizableIOManager):
                     paths = self._get_paths_for_partitions(context)
                     check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
                     path = list(paths.values())[0]
-                    return self._load_single_input(path, context)
+                    backcompat_paths = self._get_multipartition_backcompat_paths(context)
+                    backcompat_path = (
+                        None if not backcompat_paths else list(backcompat_paths.values())[0]
+                    )
+
+                    return self._load_single_input(path, context, backcompat_path)
                 else:  # we are dealing with multiple partitions of an asset
                     type_annotation = context.dagster_type.typing_type
                     if type_annotation != Any and not is_dict_type(type_annotation):

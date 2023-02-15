@@ -23,6 +23,9 @@ from dagster import (
     materialize,
     op,
     with_resources,
+    MultiPartitionsDefinition,
+    define_asset_job,
+    MultiPartitionKey,
 )
 from dagster._core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
 from dagster._core.definitions.partition import PartitionsSubset
@@ -508,3 +511,34 @@ def test_fs_io_manager_ops_none():
 
         for event in handled_output_events:
             assert len(event.event_specific_data.metadata_entries) == 0
+
+
+def test_multipartitions_fs_io_manager():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
+        multipartitions_def = MultiPartitionsDefinition(
+            {
+                "a": StaticPartitionsDefinition(["a", "b"]),
+                "1": StaticPartitionsDefinition(["1", "2"]),
+            }
+        )
+
+        @asset(
+            partitions_def=multipartitions_def,
+            io_manager_def=io_manager_def,
+        )
+        def asset1():
+            return 1
+
+        @asset(io_manager_def=io_manager_def, partitions_def=multipartitions_def)
+        def asset2(asset1):
+            return asset1
+
+        my_job = define_asset_job("my_job", [asset1, asset2]).resolve([asset1, asset2], [])
+
+        result = my_job.execute_in_process(partition_key=MultiPartitionKey({"a": "a", "1": "1"}))
+
+        handled_output_events = list(
+            filter(lambda evt: evt.is_handled_output, result.all_node_events)
+        )
+        assert len(handled_output_events) == 2
