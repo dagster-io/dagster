@@ -40,7 +40,7 @@ from .utils import op_execution_error_boundary
 
 T = TypeVar("T")
 
-SolidOutputUnion: TypeAlias = Union[
+OpOutputUnion: TypeAlias = Union[
     DynamicOutput[Any],
     Output[Any],
     AssetMaterialization,
@@ -85,7 +85,7 @@ def create_step_outputs(
     return step_outputs
 
 
-def _validate_event(event: Any, step_context: StepExecutionContext) -> SolidOutputUnion:
+def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputUnion:
     if not isinstance(
         event,
         (
@@ -129,7 +129,7 @@ def gen_from_async_gen(async_gen: AsyncIterator[T]) -> Iterator[T]:
 
 def _yield_compute_results(
     step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: Callable
-) -> Iterator[SolidOutputUnion]:
+) -> Iterator[OpOutputUnion]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
     context = OpExecutionContext(step_context)
@@ -176,9 +176,9 @@ def _yield_compute_results(
 
 def execute_core_compute(
     step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: OpComputeFunction
-) -> Iterator[SolidOutputUnion]:
+) -> Iterator[OpOutputUnion]:
     """
-    Execute the user-specified compute for the solid. Wrap in an error boundary and do
+    Execute the user-specified compute for the op. Wrap in an error boundary and do
     all relevant logging and metrics tracking.
     """
     check.inst_param(step_context, "step_context", StepExecutionContext)

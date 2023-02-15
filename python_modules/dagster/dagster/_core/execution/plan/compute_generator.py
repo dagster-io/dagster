@@ -38,11 +38,11 @@ class NoAnnotationSentinel:
     pass
 
 
-def create_solid_compute_wrapper(solid_def: OpDefinition):
-    compute_fn = cast(DecoratedOpFunction, solid_def.compute_fn)
+def create_op_compute_wrapper(op_def: OpDefinition):
+    compute_fn = cast(DecoratedOpFunction, op_def.compute_fn)
     fn = compute_fn.decorated_fn
-    input_defs = solid_def.input_defs
-    output_defs = solid_def.output_defs
+    input_defs = op_def.input_defs
+    output_defs = op_def.output_defs
     context_arg_provided = compute_fn.has_context_arg()
     config_arg_cls = compute_fn.get_config_arg().annotation if compute_fn.has_config_arg() else None
     resource_arg_mapping = {arg.name: arg.name for arg in compute_fn.get_resource_args()}
