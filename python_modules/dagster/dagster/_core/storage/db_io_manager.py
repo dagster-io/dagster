@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import (
@@ -27,7 +28,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager
@@ -157,6 +158,14 @@ class DbIOManager(IOManager):
     def load_input(self, context: InputContext) -> object:
         obj_type = context.dagster_type.typing_type
         if obj_type is Any and self._default_load_type is not None:
+            msg = (
+                f"Input {context.name} does not have a type hint, loading as default type"
+                f" {self._default_load_type}"
+            )
+            try:
+                context.log.warning(msg)
+            except DagsterInvariantViolationError:
+                warnings.warn(msg)
             load_type = self._default_load_type
         else:
             load_type = obj_type
