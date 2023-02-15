@@ -6,7 +6,7 @@ from dagster import (
     _check as check,
     asset,
 )
-from dagster._config.structured_config import Resource
+from dagster._config.structured_config import ConfigurableResource
 from dagster_graphql.test.utils import define_out_of_process_context
 
 
@@ -15,7 +15,7 @@ def my_asset():
     pass
 
 
-class MyResource(Resource):
+class MyResource(ConfigurableResource):
     """my description"""
 
     a_bool: bool

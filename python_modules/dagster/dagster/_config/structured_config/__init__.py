@@ -64,7 +64,7 @@ from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 from .utils import safe_is_subclass
 
-Self = TypeVar("Self", bound="Resource")
+Self = TypeVar("Self", bound="ConfigurableResource")
 
 
 class MakeConfigCacheable(BaseModel):
@@ -333,7 +333,7 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
 def attach_resource_id_to_key_mapping(
     resource_def: Any, resource_id_to_key_mapping: Dict[ResourceId, str]
 ) -> Any:
-    if isinstance(resource_def, (Resource, PartialResource)):
+    if isinstance(resource_def, (ConfigurableResource, PartialResource)):
         return (
             IOManagerWithKeyMapping(resource_def, resource_id_to_key_mapping)
             if isinstance(resource_def, IOManagerDefinition)
@@ -342,7 +342,7 @@ def attach_resource_id_to_key_mapping(
     return resource_def
 
 
-class Resource(
+class ConfigurableResource(
     Generic[TResValue],
     ResourceDefinition,
     Config,
@@ -359,7 +359,7 @@ class Resource(
     Example:
     .. code-block:: python
 
-        class WriterResource(Resource):
+        class WriterResource(ConfigurableResource):
             prefix: str
 
             def output(self, text: str) -> None:
@@ -476,9 +476,9 @@ class PartialResource(
     Generic[TResValue], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
 ):
     data: Dict[str, Any]
-    resource_cls: Type[Resource[TResValue]]
+    resource_cls: Type[ConfigurableResource[TResValue]]
 
-    def __init__(self, resource_cls: Type[Resource[TResValue]], data: Dict[str, Any]):
+    def __init__(self, resource_cls: Type[ConfigurableResource[TResValue]], data: Dict[str, Any]):
         resource_pointers, data_without_resources = _separate_resource_params(data)
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
@@ -505,9 +505,9 @@ class PartialResource(
         )
 
 
-ResourceOrPartial: TypeAlias = Union[Resource[TResValue], PartialResource[TResValue]]
+ResourceOrPartial: TypeAlias = Union[ConfigurableResource[TResValue], PartialResource[TResValue]]
 ResourceOrPartialOrValue: TypeAlias = Union[
-    Resource[TResValue], PartialResource[TResValue], ResourceDefinition, TResValue
+    ConfigurableResource[TResValue], PartialResource[TResValue], ResourceDefinition, TResValue
 ]
 
 
@@ -518,14 +518,14 @@ class ResourceDependency(Generic[V]):
     def __set_name__(self, _owner, name):
         self._name = name
 
-    def __get__(self, obj: "Resource", __owner: Any) -> V:
+    def __get__(self, obj: "ConfigurableResource", __owner: Any) -> V:
         return getattr(obj, self._name)
 
     def __set__(self, obj: Optional[object], value: ResourceOrPartialOrValue[V]) -> None:
         setattr(obj, self._name, value)
 
 
-class StructuredResourceAdapter(Resource, ABC):
+class ConfigurableResourceAdapter(ConfigurableResource, ABC):
     """
     Adapter base class for wrapping a decorated, function-style resource
     with structured config.
@@ -545,7 +545,7 @@ class StructuredResourceAdapter(Resource, ABC):
 
             return output
 
-        class WriterResource(StructuredResourceAdapter):
+        class WriterResource(ConfigurableResourceAdapter):
             prefix: str
 
             @property
@@ -566,7 +566,7 @@ class StructuredResourceAdapter(Resource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-class StructuredConfigIOManagerBase(Resource[TIOManagerValue], IOManagerDefinition):
+class ConfigurableIOManagerInjector(ConfigurableResource[TIOManagerValue], IOManagerDefinition):
     """
     Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
@@ -578,7 +578,7 @@ class StructuredConfigIOManagerBase(Resource[TIOManagerValue], IOManagerDefiniti
     """
 
     def __init__(self, **data: Any):
-        Resource.__init__(self, **data)
+        ConfigurableResource.__init__(self, **data)
         IOManagerDefinition.__init__(
             self,
             resource_fn=self.initialize_and_run,
@@ -604,7 +604,7 @@ class StructuredConfigIOManagerBase(Resource[TIOManagerValue], IOManagerDefiniti
 
 
 class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManagerDefinition):
-    def __init__(self, resource_cls: Type[Resource[TResValue]], data: Dict[str, Any]):
+    def __init__(self, resource_cls: Type[ConfigurableResource[TResValue]], data: Dict[str, Any]):
         PartialResource.__init__(self, resource_cls, data)
         IOManagerDefinition.__init__(
             self,
@@ -614,7 +614,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManager
         )
 
 
-class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
+class ConfigurableIOManager(ConfigurableIOManagerInjector, IOManager):
     """
     Base class for Dagster IO managers that utilize structured config.
 
@@ -725,7 +725,7 @@ def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
     )
 
 
-class StructuredIOManagerAdapter(StructuredConfigIOManagerBase):
+class StructuredIOManagerAdapter(ConfigurableIOManagerInjector):
     @property
     @abstractmethod
     def wrapped_io_manager(self) -> IOManagerDefinition:
@@ -819,6 +819,6 @@ def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourc
 
 LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(
     resource_dep_type=ResourceDependency,
-    resource_type=Resource,
+    resource_type=ConfigurableResource,
     partial_resource_type=PartialResource,
 )
