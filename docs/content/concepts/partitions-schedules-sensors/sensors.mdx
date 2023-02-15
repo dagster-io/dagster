@@ -219,13 +219,30 @@ def my_directory_sensor_with_skip_reasons():
 
 ## Testing sensors
 
+### Via the UI
+
+On the overview page for a particular sensor, there is a `Test sensor` button. Clicking this button will perform a test evaluation of your sensor, and show you the results of that evaluation.
+Screenshot pointing to button here.
+When the button is clicked, you are prompted to provide a cursor value (to learn more about cursors, check out this part of the guide). If not using cursors, you can just leave this field blank. The cursor input is pre-filled with the existing cursor for the sensor.
+Screenshot of cursor input page here.
+When the `Evaluate` button is clicked, the sensor will fire, and the following window will show you the result of that evaluation, whether that be run requests, a skip reason, or a python error.
+Screenshot of successful evaluation screen here.
+If the run was successful, then for each produced run request, you have the option of opening the launchpad pre-scaffolded with the config produced by that run request. You will also see a new computed cursor value from the evaluation, and you have the option to persist that value.
+Note that a test evaluation of the sensor will still run the sensor's underlying python function, meaning that any side effects contained within that sensor's function may be executed.
+
+
+
+### Via the CLI
+
 To quickly preview what an existing sensor will generate when evaluated, you can run the following CLI command:
 
 ```shell
 dagster sensor preview my_sensor_name
 ```
 
-To unit test sensors, you can invoke the sensor directly. This will return all the run requests yielded by the sensor. The config obtained from these can be validated using the <PyObject object="validate_run_config" /> function:
+### Via python
+
+To unit test sensors, you can invoke the sensor's python function directly. This will return all the run requests yielded by the sensor. The config obtained from these can be validated using the <PyObject object="validate_run_config" /> function:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_testing endbefore=end_sensor_testing
 from dagster import validate_run_config
@@ -313,7 +330,7 @@ These logs can be viewed in Dagit on the corresponding sensor page, after first 
     ```
  -->
 
-Using Dagit, you can monitor and operator sensors. Dagit provides multiple view that help with observing sensor evaluations, skip reasons, and errors.
+Using Dagit, you can monitor and operate sensors. Dagit provides multiple views that help with observing sensor evaluations, skip reasons, and errors.
 
 To view all sensors, navigate to **Overview > Sensors tab**. Here, you can start and stop sensors, and view their frequency, last tick, and last run:
 
