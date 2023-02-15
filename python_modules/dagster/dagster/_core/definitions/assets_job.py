@@ -1,6 +1,5 @@
 from collections import defaultdict
 from typing import (
-    TYPE_CHECKING,
     Any,
     Dict,
     Iterable,
@@ -37,9 +36,6 @@ from .utils import DEFAULT_IO_MANAGER_KEY
 
 # Prefix for auto created jobs that are used to materialize assets
 ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.run_config import ConfigInput
 
 
 def is_base_asset_job_name(name) -> bool:
@@ -98,9 +94,7 @@ def build_assets_job(
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
-    config: Optional[
-        Union[ConfigMapping, Mapping[str, object], PartitionedConfig[object], "ConfigInput"]
-    ] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, object], PartitionedConfig[object]]] = None,
     tags: Optional[Mapping[str, str]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition[object]] = None,

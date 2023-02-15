@@ -63,7 +63,6 @@ if TYPE_CHECKING:
     from .job_definition import JobDefinition
     from .op_definition import OpDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
-    from .run_config import ConfigInput
     from .source_asset import SourceAsset
 
 T = TypeVar("T")
@@ -534,9 +533,7 @@ class GraphDefinition(NodeDefinition):
         name: Optional[str] = None,
         description: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        config: Optional[
-            Union[ConfigMapping, Mapping[str, object], "PartitionedConfig[T]", "ConfigInput"]
-        ] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, object], "PartitionedConfig[T]"]] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
