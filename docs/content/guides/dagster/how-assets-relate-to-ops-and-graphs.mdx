@@ -29,13 +29,13 @@ Instead, you want to schedule a workflow whose goal is **not** to a keep a set o
 - Scan a data warehouse for tables that haven't been used in months and delete them
 - Record metadata about a set of data assets
 
-In these cases, you should define your workflow in terms ops and graphs, not software-defined assets. The ["intro to ops and jobs" guide](/guides/dagster/intro-to-ops-jobs) is a good place to start learning how to do this.
+In these cases, you should define your workflow in terms ops and graphs, not software-defined assets. The [Intro to ops and jobs guide](/guides/dagster/intro-to-ops-jobs) is a good place to start learning how to do this.
 
-A single Dagster deployment can contain software-defined assets and op/graph-based jobs side-by-side, which means that you’re not bound to one particular choice. If your workflow reads from software-defined assets, you might wish to model that explicitly in Dagster, which is discussed in a [section below](#defining-an-op-graph-that-reads-from-software-defined-assets).
+A single Dagster deployment can contain software-defined assets and op/graph-based jobs side-by-side, which means that you’re not bound to one particular choice. If your workflow reads from software-defined assets, you might wish to model that explicitly in Dagster, which is discussed in a [a later section](#op-graphs-that-read-from-an-asset).
 
 ### Flavor 2: You want to break up one of your software-defined assets into multiple steps
 
-If computing a particular asset requires multiple steps, and some of those steps don’t produce assets of their own, and you want to be able to restart from the middle, you might want to use a _graph-backed asset_. Read more about that in the [section below](#graph-backed-assets).
+If computing a particular asset requires multiple steps, and some of those steps don’t produce assets of their own, and you want to be able to restart from the middle, you might want to use a _graph-backed asset_. This is discussed more [later in this guide](#graph-backed-assets).
 
 ### Flavor 3: You’re anchored in task-based workflows
 
@@ -61,6 +61,8 @@ Under the covers, every software-defined asset contains an op (or graph of ops -
     height={516}
   />
 </center>
+
+### Multi-assets
 
 When you use the <PyObject object="multi_asset" decorator /> decorator, you’re defining a single op that produces multiple assets:
 
@@ -94,9 +96,9 @@ Graph-backed assets are useful when you want to execute multiple separate steps 
 
 For example, maybe to compute the contents of a particular table, you need to fetch data from an API and then perform a heavy data transformation on it. You don’t care about writing the fetched, pre-transformed data to any known location, but you want the fetching and transforming to happen in two separate steps that can run in different processes. If there’s a failure, you’d like to be able to re-execute the transformation step without re-executing fetching step.
 
-The [graph-backed asset concept page](/concepts/assets/graph-backed-assets#graph-backed-assets) contains code examples and details on how to define and use graph-backed assets.
+Refer to the [Graph-backed asset documentation](/concepts/assets/graph-backed-assets) for code examples and details on how to define and use graph-backed assets.
 
-### Defining an op-graph that reads from software-defined assets
+### Op graphs that read from an asset
 
 You might want to build a job that doesn’t produce any assets, but does read from some assets.
 
