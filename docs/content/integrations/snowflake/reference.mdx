@@ -171,7 +171,23 @@ def iris_data_per_day(context) -> pd.DataFrame:
     return get_iris_data_for_date(partition)
 ```
 
-Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a dynamic partition, the statement `SELECT * WHERE [partition_expr] >= [partition_start] AND [partition_expr] < [partition_end]` is used. The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. So when materializing the **2023-01-02** partition the bound query is `SELECT * WHERE TO_TIMESTAMP(time::INT) >= '2023-01-02 00:00:00' AND TO_TIMESTAMP(time::INT) < '2023-01-03 00:00:00'`. In this example, the data in the **TIME** column are integers, so the `partition_expr` metadata includes a SQL statement to convert integers to timestamps.
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a dynamic partition, the following statement is used:
+
+```sql
+SELECT * 
+ WHERE [partition_expr] >= [partition_start]
+   AND [partition_expr] < [partition_end]
+```
+
+The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, materializing the `2023-01-02*` partition the bound query would be: 
+
+```sql
+SELECT *
+ WHERE TO_TIMESTAMP(time::INT) >= '2023-01-02 00:00:00'
+   AND TO_TIMESTAMP(time::INT) < '2023-01-03 00:00:00'
+```
+
+In this example, the data in the `TIME` column are integers, so the `partition_expr` metadata includes a SQL statement to convert integers to timestamps.
 
 Since the data in the **TIME** column cannot be directly compared to a timestamp, the `partition_expr` metadata is a SQL statement that converts integers to timestamps.
 
