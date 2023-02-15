@@ -188,7 +188,7 @@ def test_time_window_partitioned_asset(tmp_path):
     )
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
-    out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
+    out_df = pl.DataFrame(duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").arrow())
     assert out_df["a"].to_list() == ["1", "1", "1"]
     duckdb_conn.close()
 
