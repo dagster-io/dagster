@@ -1954,6 +1954,7 @@ def test_asset_job_sensor(executor, instance, workspace_context, external_repo):
             freeze_datetime,
             TickStatus.SKIPPED,
         )
+        assert "No new materialization events" in ticks[0].tick_data.skip_reason
 
         freeze_datetime = freeze_datetime.add(seconds=60)
     with pendulum.test(freeze_datetime):
