@@ -25,7 +25,7 @@ from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_output import Resource
-from dagster._core.definitions.run_config import RunConfig
+from dagster._core.definitions.run_config import ConfigInput
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
@@ -370,7 +370,7 @@ def test_runtime_config_run_config_obj():
 
     out_txt = []
 
-    class WriterResource(Resource):
+    class WriterResource(ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -387,7 +387,7 @@ def test_runtime_config_run_config_obj():
 
     assert (
         defs.get_implicit_global_asset_job_def()
-        .execute_in_process(RunConfig(resources={"writer": WriterResource(prefix="greeting: ")}))
+        .execute_in_process(ConfigInput(resources={"writer": WriterResource(prefix="greeting: ")}))
         .success
     )
     assert out_txt == ["greeting: hello, world!"]

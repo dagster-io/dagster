@@ -75,7 +75,7 @@ from .utils import DEFAULT_IO_MANAGER_KEY
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.run_config import RunConfig
+    from dagster._core.definitions.run_config import ConfigInput
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
     from dagster._core.instance import DagsterInstance
@@ -96,7 +96,7 @@ class JobDefinition(PipelineDefinition):
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         name: Optional[str] = None,
         config: Optional[
-            Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "RunConfig"]
+            Union[ConfigMapping, Mapping[str, object], PartitionedConfig, "ConfigInput"]
         ] = None,
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
@@ -113,7 +113,7 @@ class JobDefinition(PipelineDefinition):
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
     ):
-        from dagster._core.definitions.run_config import RunConfig, convert_run_config
+        from dagster._core.definitions.run_config import ConfigInput, convert_config_input
         from dagster._loggers import default_loggers
 
         check.inst_param(graph_def, "graph_def", GraphDefinition)
@@ -149,9 +149,9 @@ class JobDefinition(PipelineDefinition):
         name = check_valid_name(check.opt_str_param(name, "name", default=graph_def.name))
 
         config = check.opt_inst_param(
-            config, "config", (Mapping, ConfigMapping, PartitionedConfig, RunConfig)
+            config, "config", (Mapping, ConfigMapping, PartitionedConfig, ConfigInput)
         )
-        config = convert_run_config(config)
+        config = convert_config_input(config)
 
         description = check.opt_str_param(description, "description")
         partitions_def = check.opt_inst_param(
@@ -295,7 +295,7 @@ class JobDefinition(PipelineDefinition):
     @public
     def execute_in_process(
         self,
-        run_config: Optional[Union[Mapping[str, Any], "RunConfig"]] = None,
+        run_config: Optional[Union[Mapping[str, Any], "ConfigInput"]] = None,
         instance: Optional["DagsterInstance"] = None,
         partition_key: Optional[str] = None,
         raise_on_error: bool = True,
@@ -338,10 +338,10 @@ class JobDefinition(PipelineDefinition):
 
         """
         from dagster._core.definitions.executor_definition import execute_in_process_executor
-        from dagster._core.definitions.run_config import convert_run_config
+        from dagster._core.definitions.run_config import convert_config_input
         from dagster._core.execution.execute_in_process import core_execute_in_process
 
-        run_config = check.opt_mapping_param(convert_run_config(run_config), "run_config")
+        run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
         asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", AssetKey)
 

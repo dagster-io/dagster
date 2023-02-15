@@ -2,13 +2,13 @@ from typing import Any, Mapping, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import JobDefinition, PipelineDefinition
-from dagster._core.definitions.run_config import RunConfig, convert_run_config
+from dagster._core.definitions.run_config import ConfigInput, convert_config_input
 from dagster._core.system_config.objects import ResolvedRunConfig
 
 
 def validate_run_config(
     job_def: Optional[JobDefinition] = None,
-    run_config: Optional[Union[Mapping[str, Any], RunConfig]] = None,
+    run_config: Optional[Union[Mapping[str, Any], ConfigInput]] = None,
     mode: Optional[str] = None,
     pipeline_def: Optional[PipelineDefinition] = None,
 ) -> Mapping[str, Any]:
@@ -31,7 +31,9 @@ def validate_run_config(
     """
     job_def = check.opt_inst_param(job_def, "job_def", (JobDefinition, PipelineDefinition))
     pipeline_def = check.opt_inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-    run_config = check.opt_mapping_param(convert_run_config(run_config), "run_config", key_type=str)
+    run_config = check.opt_mapping_param(
+        convert_config_input(run_config), "run_config", key_type=str
+    )
 
     if job_def and pipeline_def:
         check.failed("Cannot specify both a job_def and a pipeline_def")

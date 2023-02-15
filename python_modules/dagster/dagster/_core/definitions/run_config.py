@@ -686,12 +686,12 @@ def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-class RunConfig:
+class ConfigInput:
     def __init__(
         self,
         loggers: Optional[Dict[str, Any]] = None,
         resources: Optional[Dict[str, Any]] = None,
-        ops: Optional[Dict[str, Any]] = None,
+        ops: Optional[Dict[str, Config]] = None,
     ):
         self.loggers = check.opt_dict_param(loggers, "loggers")
         self.resources = check.opt_dict_param(resources, "resources")
@@ -705,13 +705,13 @@ class RunConfig:
         }
 
 
-CoercibleToRunConfig: TypeAlias = Union[Dict[str, Any], RunConfig]
+CoercibleToConfigInput: TypeAlias = Union[Dict[str, Any], ConfigInput]
 
 T = TypeVar("T")
 
 
-def convert_run_config(input: Union[CoercibleToRunConfig, T]) -> Union[T, Mapping[str, Any]]:
-    if isinstance(input, RunConfig):
+def convert_config_input(input: Union[CoercibleToConfigInput, T]) -> Union[T, Mapping[str, Any]]:
+    if isinstance(input, ConfigInput):
         return input.to_config_dict()
     else:
         return input

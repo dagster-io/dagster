@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequ
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.run_config import RunConfig, convert_run_config
+from dagster._core.definitions.run_config import ConfigInput, convert_config_input
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector.subset_selector import parse_clause
@@ -48,7 +48,7 @@ class UnresolvedAssetJobDefinition(
         name: str,
         selection: "AssetSelection",
         config: Optional[
-            Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", RunConfig]
+            Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", ConfigInput]
         ] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
@@ -65,7 +65,7 @@ class UnresolvedAssetJobDefinition(
             cls,
             name=check.str_param(name, "name"),
             selection=check.inst_param(selection, "selection", AssetSelection),
-            config=convert_run_config(config),
+            config=convert_config_input(config),
             description=check.opt_str_param(description, "description"),
             tags=check.opt_mapping_param(tags, "tags"),
             partitions_def=check.opt_inst_param(
@@ -232,7 +232,7 @@ def define_asset_job(
         ]
     ] = None,
     config: Optional[
-        Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]", RunConfig]
+        Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]", ConfigInput]
     ] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
