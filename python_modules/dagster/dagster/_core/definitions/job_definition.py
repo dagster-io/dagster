@@ -768,7 +768,7 @@ def get_subselected_graph_definition(
 
     selected_nodes: List[Tuple[str, NodeDefinition]] = []
 
-    for node in graph.solids_in_topological_order:
+    for node in graph.nodes_in_topological_order:
         node_handle = NodeHandle(node.name, parent=parent_handle)
         # skip if the node isn't selected
         if node.name not in resolved_op_selection_dict:
@@ -804,7 +804,7 @@ def get_subselected_graph_definition(
                     deps[_dep_key_of(node)][
                         node_input.input_def.name
                     ] = DynamicCollectDependencyDefinition(
-                        solid_name=node_output.node.name,
+                        node_name=node_output.node.name,
                         output_name=node_output.output_def.name,
                     )
             elif graph.dependency_structure.has_fan_in_deps(node_input):

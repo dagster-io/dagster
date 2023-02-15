@@ -529,7 +529,7 @@ def define_isolid_field(
         }
         nodes_field = Field(
             define_solid_dictionary_cls(
-                solids=graph_def.solids,
+                solids=graph_def.nodes,
                 ignored_solids=None,
                 dependency_structure=graph_def.dependency_structure,
                 parent_handle=handle,
@@ -619,7 +619,7 @@ def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigTy
         if node_def.has_config_field:
             yield from node_def.get_config_field().config_type.type_iterator()
     elif isinstance(node_def, GraphDefinition):
-        for solid in node_def.solids:
+        for solid in node_def.nodes:
             yield from iterate_node_def_config_types(solid.definition)
 
     else:

@@ -2308,6 +2308,7 @@ type PartitionBackfill {
   backfillId: String!
   status: BulkActionStatus!
   partitionNames: [String!]!
+  isValidSerialization: Boolean!
   numPartitions: Int!
   numCancelable: Int!
   fromFailure: Boolean!
@@ -2741,6 +2742,7 @@ type DagitQuery {
   capturedLogsMetadata(logKey: [String!]!): CapturedLogsMetadata!
   capturedLogs(logKey: [String!]!, cursor: String, limit: Int): CapturedLogs!
   shouldShowNux: Boolean!
+  test: TestFields
 }
 
 union WorkspaceOrError = Workspace | PythonError
@@ -2827,6 +2829,10 @@ type CapturedLogsMetadata {
   stdoutLocation: String
   stderrDownloadUrl: String
   stderrLocation: String
+}
+
+type TestFields {
+  alwaysException: String
 }
 
 type DagitMutation {

@@ -1,4 +1,4 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .executor import k8s_job_executor as k8s_job_executor
 from .job import (
@@ -12,4 +12,4 @@ from .ops import (
 )
 from .version import __version__ as __version__
 
-check_dagster_package_version("dagster-k8s", __version__)
+DagsterLibraryRegistry.register("dagster-k8s", __version__)

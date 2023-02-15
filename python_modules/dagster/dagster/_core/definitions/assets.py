@@ -258,6 +258,7 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
         """
@@ -298,6 +299,10 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
+            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, FreshnessPolicy]]): Defines a
+                FreshnessPolicy to be associated with some or all of the output assets for this node.
+                Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
+                to the associated asset.
         """
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
@@ -311,6 +316,7 @@ class AssetsDefinition(ResourceAddable):
             resource_defs=resource_defs,
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
+            freshness_policies_by_output_name=freshness_policies_by_output_name,
             key_prefix=key_prefix,
             can_subset=can_subset,
         )
@@ -328,6 +334,7 @@ class AssetsDefinition(ResourceAddable):
         group_name: Optional[str] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from an OpDefinition.
@@ -363,6 +370,10 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
+            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, FreshnessPolicy]]): Defines a
+                FreshnessPolicy to be associated with some or all of the output assets for this node.
+                Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
+                to the associated asset.
         """
         return AssetsDefinition._from_node(
             node_def=op_def,
@@ -373,6 +384,7 @@ class AssetsDefinition(ResourceAddable):
             group_name=group_name,
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
+            freshness_policies_by_output_name=freshness_policies_by_output_name,
             key_prefix=key_prefix,
         )
 
@@ -388,6 +400,7 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
@@ -465,6 +478,12 @@ class AssetsDefinition(ResourceAddable):
                 for output_name, metadata in metadata_by_output_name.items()
             }
             if metadata_by_output_name
+            else None,
+            freshness_policies_by_key={
+                keys_by_output_name[output_name]: freshness_policy
+                for output_name, freshness_policy in freshness_policies_by_output_name.items()
+            }
+            if freshness_policies_by_output_name
             else None,
             can_subset=can_subset,
         )
@@ -1079,7 +1098,7 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
             _validate_graph_def(inner_node_def, prefix=[*prefix, graph_def.name])
 
     # leaf nodes have no downstream nodes
-    forward_edges, _ = create_adjacency_lists(graph_def.solids, graph_def.dependency_structure)
+    forward_edges, _ = create_adjacency_lists(graph_def.nodes, graph_def.dependency_structure)
     leaf_nodes = {
         node_name for node_name, downstream_nodes in forward_edges.items() if not downstream_nodes
     }

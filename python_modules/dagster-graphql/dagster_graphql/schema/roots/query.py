@@ -126,6 +126,7 @@ from ..runs import (
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
 from ..tags import GraphenePipelineTagAndValues
+from ..test import GrapheneTestFields
 from ..util import ResolveInfo, get_compute_log_manager, non_null_list
 from .assets import GrapheneAssetOrError, GrapheneAssetsOrError
 from .execution_plan import GrapheneExecutionPlanOrError
@@ -429,6 +430,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
     shouldShowNux = graphene.Field(
         graphene.NonNull(graphene.Boolean),
         description="Whether or not the NUX should be shown to the user",
+    )
+
+    test = graphene.Field(
+        GrapheneTestFields,
+        description="Provides fields for testing behavior",
     )
 
     def resolve_repositoriesOrError(
@@ -869,3 +875,6 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_shouldShowNux(self, graphene_info):
         return graphene_info.context.instance.nux_enabled and not get_has_seen_nux()
+
+    def resolve_test(self, _):
+        return GrapheneTestFields()

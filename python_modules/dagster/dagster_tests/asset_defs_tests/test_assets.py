@@ -129,6 +129,41 @@ def test_retain_freshness_policy():
     )
 
 
+def test_graph_backed_retain_freshness_policy():
+    fpa = FreshnessPolicy(maximum_lag_minutes=24.5)
+    fpb = FreshnessPolicy(
+        maximum_lag_minutes=30.5, cron_schedule="0 0 * * *", cron_schedule_timezone="US/Eastern"
+    )
+
+    @op
+    def foo():
+        return 1
+
+    @op
+    def bar(inp):
+        return inp + 1
+
+    @graph(out={"a": GraphOut(), "b": GraphOut(), "c": GraphOut()})
+    def my_graph():
+        f = foo()
+        return bar(f), bar(f), bar(f)
+
+    my_graph_asset = AssetsDefinition.from_graph(
+        my_graph, freshness_policies_by_output_name={"a": fpa, "b": fpb}
+    )
+
+    replaced = my_graph_asset.with_prefix_or_group(
+        output_asset_key_replacements={
+            AssetKey("a"): AssetKey("aa"),
+            AssetKey("b"): AssetKey("bb"),
+            AssetKey("c"): AssetKey("cc"),
+        }
+    )
+    assert replaced.freshness_policies_by_key[AssetKey("aa")] == fpa
+    assert replaced.freshness_policies_by_key[AssetKey("bb")] == fpb
+    assert replaced.freshness_policies_by_key.get(AssetKey("cc")) is None
+
+
 def test_retain_metadata_graph():
     @op
     def foo():

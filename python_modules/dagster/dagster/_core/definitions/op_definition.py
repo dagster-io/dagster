@@ -264,7 +264,7 @@ class OpDefinition(NodeDefinition):
     def iterate_node_defs(self) -> Iterator[NodeDefinition]:
         yield self
 
-    def iterate_solid_defs(self) -> Iterator["OpDefinition"]:
+    def iterate_op_defs(self) -> Iterator["OpDefinition"]:
         yield self
 
     T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])

@@ -130,6 +130,7 @@ autodoc_mock_imports = [
     "croniter",
     "dask",
     "databricks_api",
+    "databricks_cli",
     "datadog",
     "docker",
     "docker_image",

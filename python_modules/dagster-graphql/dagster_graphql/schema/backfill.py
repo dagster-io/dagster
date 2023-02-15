@@ -95,6 +95,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     backfillId = graphene.NonNull(graphene.String)
     status = graphene.NonNull(GrapheneBulkActionStatus)
     partitionNames = non_null_list(graphene.String)
+    isValidSerialization = graphene.NonNull(graphene.Boolean)
     numPartitions = graphene.NonNull(graphene.Int)
     numCancelable = graphene.NonNull(graphene.Int)
     fromFailure = graphene.NonNull(graphene.Boolean)
@@ -192,6 +193,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         records = self._get_records(graphene_info)
         return [GrapheneRun(record) for record in records]
+
+    def resolve_isValidSerialization(self, _graphene_info: ResolveInfo):
+        return self._backfill_job.is_valid_serialization(_graphene_info.context)
 
     def resolve_partitionNames(self, _graphene_info: ResolveInfo):
         return self._backfill_job.get_partition_names(_graphene_info.context)

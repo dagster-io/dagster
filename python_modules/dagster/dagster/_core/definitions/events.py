@@ -204,7 +204,7 @@ DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
 class AssetLineageInfo(
     NamedTuple("_AssetLineageInfo", [("asset_key", AssetKey), ("partitions", AbstractSet[str])])
 ):
-    def __new__(cls, asset_key, partitions=None):
+    def __new__(cls, asset_key: AssetKey, partitions: Optional[AbstractSet[str]] = None):
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
         partitions = check.opt_set_param(partitions, "partitions", str)
         return super(AssetLineageInfo, cls).__new__(cls, asset_key=asset_key, partitions=partitions)

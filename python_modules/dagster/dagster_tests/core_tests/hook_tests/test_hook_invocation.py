@@ -214,7 +214,7 @@ def test_hook_invocation_with_solid():
     @success_hook
     def basic_hook(context):
         assert context.op.name == "foo"
-        assert len(context.op.graph_definition.solids) == 1
+        assert len(context.op.graph_definition.nodes) == 1
 
     @op
     def foo():

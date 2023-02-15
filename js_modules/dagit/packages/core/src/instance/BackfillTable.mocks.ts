@@ -22,6 +22,7 @@ export const BackfillTableFragmentRequested2000AssetsPure: BackfillTableFragment
   backfillId: 'qtpussca',
   status: BulkActionStatus.REQUESTED,
   numPartitions: 2000,
+  isValidSerialization: true,
   timestamp: 1675196684.587724,
   partitionSetName: null,
   partitionSet: null,
@@ -75,6 +76,7 @@ export const BackfillTableFragmentRequested2000AssetsPureStatus: MockedResponse<
 export const BackfillTableFragmentCancelledAssetsPartitionSet: BackfillTableFragment = {
   backfillId: 'tclwoggv',
   status: BulkActionStatus.CANCELED,
+  isValidSerialization: true,
   numPartitions: 5000,
   timestamp: 1675106258.398993,
   partitionSetName: 'asset_job_partition_set',
@@ -131,6 +133,7 @@ export const BackfillTableFragmentCancelledAssetsPartitionSetStatus: MockedRespo
 export const BackfillTableFragmentFailedError: BackfillTableFragment = {
   backfillId: 'sjqzcfhe',
   status: BulkActionStatus.FAILED,
+  isValidSerialization: true,
   numPartitions: 100,
   timestamp: 1674774274.343382,
   partitionSetName: null,
@@ -193,6 +196,7 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
 export const BackfillTableFragmentCompletedAssetJob: BackfillTableFragment = {
   backfillId: 'pwgcpiwc',
   status: BulkActionStatus.COMPLETED,
+  isValidSerialization: true,
   numPartitions: 11,
   timestamp: 1674660450.942305,
   partitionSetName: 'asset_job_partition_set',
@@ -336,6 +340,7 @@ export const BackfillTableFragmentCompletedAssetJobStatus: MockedResponse<Single
 export const BackfillTableFragmentCompletedOpJob: BackfillTableFragment = {
   backfillId: 'pqdiepuf',
   status: BulkActionStatus.COMPLETED,
+  isValidSerialization: true,
   numPartitions: 4,
   timestamp: 1674660356.340658,
   partitionSetName: 'op_job_partition_set',
@@ -410,10 +415,35 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
   },
 };
 
+export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment = {
+  backfillId: 'jzduiapb',
+  status: BulkActionStatus.COMPLETED,
+  isValidSerialization: false,
+  numPartitions: 0,
+  timestamp: 1676397948.698646,
+  partitionSetName: null,
+  partitionSet: null,
+  error: null,
+  numCancelable: 0,
+  partitionNames: [],
+  assetSelection: [
+    {
+      path: ['asset1'],
+      __typename: 'AssetKey',
+    },
+    {
+      path: ['asset2'],
+      __typename: 'AssetKey',
+    },
+  ],
+  __typename: 'PartitionBackfill',
+};
+
 export const BackfillTableFragments: BackfillTableFragment[] = [
   BackfillTableFragmentRequested2000AssetsPure,
   BackfillTableFragmentCancelledAssetsPartitionSet,
   BackfillTableFragmentFailedError,
   BackfillTableFragmentCompletedAssetJob,
   BackfillTableFragmentCompletedOpJob,
+  BackfillTableFragmentInvalidPartitionSet,
 ];

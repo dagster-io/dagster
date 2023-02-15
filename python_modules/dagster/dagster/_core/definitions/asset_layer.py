@@ -94,7 +94,7 @@ def _resolve_output_to_destinations(
         if mapping.graph_output_name != output_name:
             continue
         output_pointer = mapping.maps_from
-        output_node = node_def.solid_named(output_pointer.solid_name)
+        output_node = node_def.node_named(output_pointer.solid_name)
 
         all_destinations.extend(
             _resolve_output_to_destinations(
@@ -113,7 +113,7 @@ def _resolve_output_to_destinations(
         for input_handle in downstream_input_handles:
             all_destinations.append(
                 NodeInputHandle(
-                    NodeHandle(input_handle.solid_name, parent=handle), input_handle.input_name
+                    NodeHandle(input_handle.node_name, parent=handle), input_handle.input_name
                 )
             )
 

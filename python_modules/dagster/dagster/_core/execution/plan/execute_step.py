@@ -64,18 +64,18 @@ from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandl
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
 from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
-from dagster._utils import ensure_gen, iterate_with_context
+from dagster._utils import iterate_with_context
 from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
 from dagster._utils.timing import time_execution_scope
 
-from .compute import SolidOutputUnion
-from .compute_generator import create_solid_compute_wrapper
+from .compute import OpOutputUnion
+from .compute_generator import create_op_compute_wrapper
 from .utils import op_execution_error_boundary
 
 
 def _step_output_error_checked_user_event_sequence(
-    step_context: StepExecutionContext, user_event_sequence: Iterator[SolidOutputUnion]
-) -> Iterator[SolidOutputUnion]:
+    step_context: StepExecutionContext, user_event_sequence: Iterator[OpOutputUnion]
+) -> Iterator[OpOutputUnion]:
     """
     Process the event sequence to check for invariant violations in the event
     sequence related to Output events emitted from the compute_fn.
@@ -339,9 +339,7 @@ def core_dagster_event_sequence_for_step(
         if dagster_type.is_nothing:
             continue
 
-        for event_or_input_value in ensure_gen(
-            step_input.source.load_input_object(step_context, input_def)
-        ):
+        for event_or_input_value in step_input.source.load_input_object(step_context, input_def):
             if isinstance(event_or_input_value, DagsterEvent):
                 yield event_or_input_value
             else:
@@ -360,7 +358,7 @@ def core_dagster_event_sequence_for_step(
     # into this format. If the solid definition was created directly, then it is expected that the
     # compute_fn is already in this format.
     if isinstance(step_context.solid_def.compute_fn, DecoratedOpFunction):
-        core_gen = create_solid_compute_wrapper(step_context.solid_def)
+        core_gen = create_op_compute_wrapper(step_context.solid_def)
     else:
         core_gen = step_context.solid_def.compute_fn
 

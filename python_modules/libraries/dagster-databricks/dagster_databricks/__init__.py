@@ -8,9 +8,9 @@ This package provides:
     to execute an arbitrary task in Databricks.
 """
 
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
-from .databricks import DatabricksError, DatabricksJobRunner
+from .databricks import DatabricksClient, DatabricksError, DatabricksJobRunner
 from .databricks_pyspark_step_launcher import (
     DatabricksConfig,
     DatabricksPySparkStepLauncher,
@@ -25,11 +25,12 @@ from .types import (
 )
 from .version import __version__
 
-check_dagster_package_version("dagster-databricks", __version__)
+DagsterLibraryRegistry.register("dagster-databricks", __version__)
 
 __all__ = [
     "create_databricks_job_op",
     "databricks_client",
+    "DatabricksClient",
     "DatabricksConfig",
     "DatabricksError",
     "DatabricksJobRunner",

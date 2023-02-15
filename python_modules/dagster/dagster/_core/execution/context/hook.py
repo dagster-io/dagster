@@ -148,7 +148,7 @@ class HookContext:
 
     @public
     @property
-    def op_exception(self):
+    def op_exception(self) -> Optional[BaseException]:
         exc = self._step_execution_context.step_exception
 
         if isinstance(exc, RetryRequestedFromPolicy):
@@ -209,7 +209,7 @@ class UnboundHookContext(HookContext):
             def temp_graph():
                 op()
 
-            self._op = temp_graph.solids[0]
+            self._op = temp_graph.nodes[0]
 
         # Open resource context manager
         self._resource_defs = wrap_resources_for_execution(resources)
@@ -229,7 +229,7 @@ class UnboundHookContext(HookContext):
         self._cm_scope_entered = True
         return self
 
-    def __exit__(self, *exc):
+    def __exit__(self, *exc: Any):
         self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
 
     def __del__(self):

@@ -763,7 +763,7 @@ def get_output_context(
         metadata=output_def.metadata,
         mapping_key=step_output_handle.mapping_key,
         config=output_config,
-        op_def=pipeline_def.get_solid(step.solid_handle).definition,
+        op_def=pipeline_def.get_solid(step.solid_handle).definition,  # type: ignore  # (should be OpDefinition not NodeDefinition)
         dagster_type=output_def.dagster_type,
         log_manager=log_manager,
         version=version,

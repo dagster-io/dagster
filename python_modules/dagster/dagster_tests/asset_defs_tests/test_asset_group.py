@@ -668,7 +668,7 @@ def test_subset_cycle_resolution_embed_assets_in_complex_graph():
     job = AssetGroup([foo, x, y], resource_defs={"io_manager": io_manager_def}).build_job("job")
 
     # should produce a job with foo(a,b,c,d,f) -> x -> foo(e,g) -> y -> foo(h)
-    assert len(list(job.graph.iterate_solid_defs())) == 5
+    assert len(list(job.graph.iterate_op_defs())) == 5
     result = job.execute_in_process()
 
     assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,g,h,x,y".split(",")}
@@ -735,7 +735,7 @@ def test_subset_cycle_resolution_complex():
     job = AssetGroup([foo, x, y], resource_defs={"io_manager": io_manager_def}).build_job("job")
 
     # should produce a job with foo -> x -> foo -> y -> foo
-    assert len(list(job.graph.iterate_solid_defs())) == 5
+    assert len(list(job.graph.iterate_op_defs())) == 5
     result = job.execute_in_process()
 
     assert _all_asset_keys(result) == {AssetKey(x) for x in "a,b,c,d,e,f,x,y".split(",")}
@@ -795,7 +795,7 @@ def test_subset_cycle_resolution_basic():
     ).build_job("job")
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
-    assert len(list(job.graph.iterate_solid_defs())) == 4
+    assert len(list(job.graph.iterate_op_defs())) == 4
 
     result = job.execute_in_process()
     assert result.output_for_node("foo", "a") == 1

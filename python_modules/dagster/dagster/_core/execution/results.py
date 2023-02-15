@@ -103,7 +103,7 @@ class GraphExecutionResult:
             Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of the solid
             execution within the pipeline.
         """
-        if not self.container.has_solid_named(name):
+        if not self.container.has_node_named(name):
             raise DagsterInvariantViolationError(
                 "Tried to get result for solid '{name}' in '{container}'. No such top level "
                 "solid.".format(name=name, container=self.container.name)
@@ -132,7 +132,7 @@ class GraphExecutionResult:
         """List[Union[CompositeSolidExecutionResult, SolidExecutionResult]]: The results for each
         top level solid.
         """
-        return [self.result_for_node(node.name) for node in self.container.solids]
+        return [self.result_for_node(node.name) for node in self.container.nodes]
 
     def _result_for_handle(
         self, node: Node, handle: NodeHandle
@@ -292,7 +292,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
             output_mapping = self.node.definition.get_output_mapping(output_name)
 
             inner_solid_values = self._result_for_handle(
-                self.node.definition.solid_named(output_mapping.maps_from.solid_name),
+                self.node.definition.node_named(output_mapping.maps_from.solid_name),
                 NodeHandle(output_mapping.maps_from.solid_name, None),
             ).output_values
 
@@ -323,7 +323,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         output_mapping = self.node.definition.get_output_mapping(output_name)
 
         return self._result_for_handle(
-            self.node.definition.solid_named(output_mapping.maps_from.solid_name),
+            self.node.definition.node_named(output_mapping.maps_from.solid_name),
             NodeHandle(output_mapping.maps_from.solid_name, None),
         ).output_value(output_mapping.maps_from.output_name)
 

@@ -113,7 +113,7 @@ export const ScheduleDetails: React.FC<{
                 setShowTestTickDialog(true);
               }}
             >
-              Preview Upcoming Ticks
+              Test Schedule
             </Button>
           </Box>
         }

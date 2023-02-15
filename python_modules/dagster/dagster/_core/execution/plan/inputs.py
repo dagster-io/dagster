@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Any,
     Iterator,
     List,
     Mapping,
@@ -14,6 +13,8 @@ from typing import (
     Union,
     cast,
 )
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.definitions import InputDefinition, NodeHandle, PipelineDefinition
@@ -29,7 +30,6 @@ from dagster._core.errors import (
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import ensure_gen
 
 from .objects import TypeCheckData
 from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
@@ -39,6 +39,10 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext
     from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.storage.input_manager import InputManager
+
+StepInputUnion: TypeAlias = Union[
+    "StepInput", "UnresolvedMappedStepInput", "UnresolvedCollectStepInput"
+]
 
 
 @whitelist_for_serdes
@@ -63,7 +67,7 @@ class StepInput(
 ):
     """Holds information for how to prepare an input for an ExecutionStep."""
 
-    def __new__(cls, name, dagster_type_key, source):
+    def __new__(cls, name: str, dagster_type_key: str, source: "StepInputSource"):
         return super(StepInput, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -72,7 +76,7 @@ class StepInput(
         )
 
     @property
-    def dependency_keys(self) -> Set[str]:
+    def dependency_keys(self) -> AbstractSet[str]:
         return self.source.step_key_dependencies
 
     def get_step_output_handle_dependencies(self) -> Sequence[StepOutputHandle]:
@@ -196,7 +200,12 @@ class FromSourceAsset(
             ],
         )
 
-    def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
+    def compute_version(
+        self,
+        step_versions: Mapping[str, Optional[str]],
+        pipeline_def: PipelineDefinition,
+        resolved_run_config: ResolvedRunConfig,
+    ) -> Optional[str]:
         from ..resolve_versions import check_valid_version, resolve_config_version
 
         op = pipeline_def.get_solid(self.solid_handle)
@@ -593,7 +602,7 @@ class FromConfig(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-    ) -> Any:
+    ) -> Iterator[object]:
         with user_code_error_boundary(
             DagsterTypeLoadingError,
             msg_fn=lambda: f'Error occurred while loading input "{self.input_name}" of step "{step_context.step.key}":',
@@ -602,7 +611,7 @@ class FromConfig(
             dagster_type = self.get_associated_input_def(step_context.pipeline_def).dagster_type
             config_data = self.get_associated_config(step_context.resolved_run_config)
             loader = check.not_none(dagster_type.loader)
-            return loader.construct_from_config_value(
+            yield loader.construct_from_config_value(
                 step_context.get_type_loader_context(), config_data
             )
 
@@ -641,8 +650,8 @@ class FromDirectInputValue(
         )
 
     def load_input_object(
-        self, step_context: "StepExecutionContext", _input_def: InputDefinition
-    ) -> Any:
+        self, step_context: "StepExecutionContext", input_def: InputDefinition
+    ) -> Iterator[object]:
         pipeline_def = step_context.pipeline_def
         if not pipeline_def.is_job:
             raise DagsterInvariantViolationError(
@@ -650,7 +659,7 @@ class FromDirectInputValue(
             )
 
         job_def = cast(JobDefinition, pipeline_def)
-        return job_def.get_direct_input_value(self.input_name)
+        yield job_def.get_direct_input_value(self.input_name)
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
@@ -691,8 +700,8 @@ class FromDefaultValue(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-    ):
-        return self._load_value(step_context.pipeline_def)
+    ) -> Iterator[object]:
+        yield self._load_value(step_context.pipeline_def)
 
     def compute_version(
         self,
@@ -743,7 +752,7 @@ class FromMultipleSources(
         )
 
     @property
-    def step_key_dependencies(self):
+    def step_key_dependencies(self) -> AbstractSet[str]:
         keys = set()
         for source in self.sources:
             keys.update(source.step_key_dependencies)
@@ -751,8 +760,8 @@ class FromMultipleSources(
         return keys
 
     @property
-    def step_output_handle_dependencies(self):
-        handles = []
+    def step_output_handle_dependencies(self) -> Sequence[StepOutputHandle]:
+        handles: List[StepOutputHandle] = []
         for source in self.sources:
             handles.extend(source.step_output_handle_dependencies)
 
@@ -762,7 +771,7 @@ class FromMultipleSources(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-    ):
+    ) -> Iterator[object]:
         from dagster._core.events import DagsterEvent
 
         values = []
@@ -782,9 +791,7 @@ class FromMultipleSources(
             ):
                 continue
 
-            for event_or_input_value in ensure_gen(
-                inner_source.load_input_object(step_context, input_def)
-            ):
+            for event_or_input_value in inner_source.load_input_object(step_context, input_def):
                 if isinstance(event_or_input_value, DagsterEvent):
                     yield event_or_input_value
                 else:
@@ -798,7 +805,12 @@ class FromMultipleSources(
             resource_keys = resource_keys.union(source.required_resource_keys(pipeline_def))
         return resource_keys
 
-    def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
+    def compute_version(
+        self,
+        step_versions: Mapping[str, Optional[str]],
+        pipeline_def: PipelineDefinition,
+        resolved_run_config: ResolvedRunConfig,
+    ) -> Optional[str]:
         return join_and_hash(
             *[
                 inner_source.compute_version(step_versions, pipeline_def, resolved_run_config)
@@ -875,7 +887,7 @@ class FromPendingDynamicStepOutput(
     def resolved_by_output_name(self) -> str:
         return self.step_output_handle.output_name
 
-    def resolve(self, mapping_key) -> FromStepOutput:
+    def resolve(self, mapping_key: str) -> FromStepOutput:
         check.str_param(mapping_key, "mapping_key")
         return FromStepOutput(
             step_output_handle=StepOutputHandle(

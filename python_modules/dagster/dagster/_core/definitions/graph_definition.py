@@ -252,7 +252,7 @@ class GraphDefinition(NodeDefinition):
 
     def _get_nodes_in_topological_order(self) -> Sequence[Node]:
         _forward_edges, backward_edges = create_adjacency_lists(
-            self.solids, self.dependency_structure
+            self.nodes, self.dependency_structure
         )
 
         try:
@@ -260,7 +260,7 @@ class GraphDefinition(NodeDefinition):
         except CircularDependencyError as err:
             raise DagsterInvalidDefinitionError(str(err)) from err
 
-        return [self.solid_named(solid_name) for solid_name in order]
+        return [self.node_named(node_name) for node_name in order]
 
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
@@ -296,10 +296,6 @@ class GraphDefinition(NodeDefinition):
         return True
 
     @property
-    def solids(self) -> Sequence[Node]:
-        return list(set(self._node_dict.values()))
-
-    @property
     def nodes(self) -> Sequence[Node]:
         return list(set(self._node_dict.values()))
 
@@ -312,18 +308,18 @@ class GraphDefinition(NodeDefinition):
         return self._node_defs
 
     @property
-    def solids_in_topological_order(self) -> Sequence[Node]:
+    def nodes_in_topological_order(self) -> Sequence[Node]:
         return self._nodes_in_topological_order
 
     @property
     def node_input_source_assets(self) -> Mapping[str, Mapping[str, "SourceAsset"]]:
         return self._node_input_source_assets
 
-    def has_solid_named(self, name: str) -> bool:
+    def has_node_named(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self._node_dict
 
-    def solid_named(self, name: str) -> Node:
+    def node_named(self, name: str) -> Node:
         check.str_param(name, "name")
         check.invariant(
             name in self._node_dict,
@@ -341,12 +337,12 @@ class GraphDefinition(NodeDefinition):
             current = current.parent
 
         name = lineage.pop()
-        solid = self.solid_named(name)
+        solid = self.node_named(name)
         while lineage:
             name = lineage.pop()
             # We know that this is a current solid is a graph while ascending lineage
             definition = cast(GraphDefinition, solid.definition)
-            solid = definition.solid_named(name)
+            solid = definition.node_named(name)
 
         return solid
 
@@ -355,9 +351,9 @@ class GraphDefinition(NodeDefinition):
         for outer_node_def in self._node_defs:
             yield from outer_node_def.iterate_node_defs()
 
-    def iterate_solid_defs(self) -> Iterator["OpDefinition"]:
+    def iterate_op_defs(self) -> Iterator["OpDefinition"]:
         for outer_node_def in self._node_defs:
-            yield from outer_node_def.iterate_solid_defs()
+            yield from outer_node_def.iterate_op_defs()
 
     def iterate_node_handles(
         self, parent_node_handle: Optional[NodeHandle] = None
@@ -433,16 +429,16 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
-        mapped_solid = self.solid_named(mapping.maps_from.solid_name)
-        return mapped_solid.definition.resolve_output_to_origin(
+        mapped_node = self.node_named(mapping.maps_from.solid_name)
+        return mapped_node.definition.resolve_output_to_origin(
             mapping.maps_from.output_name,
-            NodeHandle(mapped_solid.name, handle),
+            NodeHandle(mapped_node.name, handle),
         )
 
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
-        return self.solid_named(
+        return self.node_named(
             mapping.maps_from.solid_name
         ).definition.resolve_output_to_origin_op_def(output_name)
 
@@ -455,9 +451,9 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_solid = self.solid_named(mapping.maps_to.solid_name)
+        mapped_node = self.node_named(mapping.maps_to.solid_name)
 
-        return mapped_solid.definition.default_value_for_input(mapping.maps_to.input_name)
+        return mapped_node.definition.default_value_for_input(mapping.maps_to.input_name)
 
     def input_has_default(self, input_name: str) -> bool:
         check.str_param(input_name, "input_name")
@@ -468,9 +464,9 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_solid = self.solid_named(mapping.maps_to.solid_name)
+        mapped_node = self.node_named(mapping.maps_to.solid_name)
 
-        return mapped_solid.definition.input_has_default(mapping.maps_to.input_name)
+        return mapped_node.definition.input_has_default(mapping.maps_to.input_name)
 
     @property
     def dependencies(
@@ -497,7 +493,7 @@ class GraphDefinition(NodeDefinition):
         if self.dependency_structure.has_dynamic_downstreams(target_node):
             return False
 
-        return self.solid_named(target_node).definition.input_supports_dynamic_output_dep(
+        return self.node_named(target_node).definition.input_supports_dynamic_output_dep(
             mapping.maps_to.input_name
         )
 
@@ -763,7 +759,7 @@ class GraphDefinition(NodeDefinition):
             if mapping.graph_input_name != input_handle.input_name:
                 continue
             # recurse into graph structure
-            all_destinations += self.solid_named(
+            all_destinations += self.node_named(
                 mapping.maps_to.solid_name
             ).definition.resolve_input_to_destinations(
                 NodeInputHandle(
@@ -826,7 +822,7 @@ class SubselectedGraphDefinition(GraphDefinition):
 
     def get_top_level_omitted_nodes(self) -> Sequence[Node]:
         return [
-            solid for solid in self.parent_graph_def.solids if not self.has_solid_named(solid.name)
+            solid for solid in self.parent_graph_def.nodes if not self.has_node_named(solid.name)
         ]
 
     @property
