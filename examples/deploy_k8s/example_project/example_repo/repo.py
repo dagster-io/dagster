@@ -9,7 +9,7 @@ from dagster_k8s import k8s_job_executor
 
 @op(ins={"word": In(str)}, config_schema={"factor": int})
 def multiply_the_word(context, word):
-    return word * context.solid_config["factor"]
+    return word * context.op_config["factor"]
 
 
 @op(ins={"word": In(str)})

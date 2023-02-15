@@ -271,7 +271,7 @@ def define_subdag_pipeline():
         done = False
         while not done:
             time.sleep(0.15)
-            if os.path.isfile(context.solid_config):
+            if os.path.isfile(context.op_config):
                 return
 
     @solid(
@@ -279,7 +279,7 @@ def define_subdag_pipeline():
         config_schema=Field(String),
     )
     def writer(context):
-        with open(context.solid_config, "w", encoding="utf8") as fd:
+        with open(context.op_config, "w", encoding="utf8") as fd:
             fd.write("1")
         return
 

@@ -29,7 +29,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         resource_keys_to_init: AbstractSet[str],
         solid_name: str,
         solid_handle: NodeHandle,
-        solid_config: Any = None,
+        op_config: Any = None,
     ):
         self._pipeline_context = check.inst_param(
             pipeline_context, "pipeline_context", PlanExecutionContext
@@ -40,7 +40,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         )
         self.solid_name = check.str_param(solid_name, "solid_name")
         self.solid_handle = check.inst_param(solid_handle, "solid_handle", NodeHandle)
-        self._solid_config = solid_config
+        self._op_config = op_config
 
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is defined on the context.
@@ -208,23 +208,11 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         """collections.namedtuple: A dynamically-created type whose properties allow access to
         op-specific config.
         """
-        if self._solid_config:
-            return self._solid_config
+        if self._op_config:
+            return self._op_config
 
-        solid_config = self.resolved_run_config.solids.get(self.solid_name)
-        return solid_config.config if solid_config else None
-
-    @property
-    def solid_config(self) -> Any:
-        """collections.namedtuple: A dynamically-created type whose properties allow access to
-        solid-specific config.
-        """
-        deprecation_warning(
-            "DagstermillExecutionContext.solid_config",
-            "0.17.0",
-            "use the 'op_config' property instead.",
-        )
-        return self.op_config
+        op_config = self.resolved_run_config.solids.get(self.solid_name)
+        return op_config.config if op_config else None
 
 
 class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
@@ -236,7 +224,7 @@ class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
         solid_name: str,
         step_context: StepExecutionContext,
         solid_handle: NodeHandle,
-        solid_config: Any = None,
+        op_config: Any = None,
     ):
         self._step_context = check.inst_param(step_context, "step_context", StepExecutionContext)
         super().__init__(
@@ -245,7 +233,7 @@ class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
             resource_keys_to_init,
             solid_name,
             solid_handle,
-            solid_config,
+            op_config,
         )
 
     @property

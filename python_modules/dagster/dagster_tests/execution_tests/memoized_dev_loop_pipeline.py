@@ -9,7 +9,7 @@ from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, p
     output_defs=[OutputDefinition(name="created_string", io_manager_key="io_manager", metadata={})],
 )
 def create_string_1_asset(context):
-    return context.solid_config["input_str"]
+    return context.op_config["input_str"]
 
 
 @solid(
@@ -19,7 +19,7 @@ def create_string_1_asset(context):
     output_defs=[OutputDefinition(name="taken_string", io_manager_key="io_manager", metadata={})],
 )
 def take_string_1_asset(context, _string_input):
-    return context.solid_config["input_str"] + _string_input
+    return context.op_config["input_str"] + _string_input
 
 
 @pipeline(

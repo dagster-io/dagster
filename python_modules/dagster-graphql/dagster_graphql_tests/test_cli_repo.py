@@ -19,7 +19,7 @@ def math():
 
 @solid(config_schema={"gimme": str})
 def needs_config(context):
-    return context.solid_config["gimme"]
+    return context.op_config["gimme"]
 
 
 @lambda_solid

@@ -216,7 +216,7 @@ def csv_hello_world_solids_config():
 
 @solid(config_schema={"file": Field(String)})
 def loop(context):
-    with open(context.solid_config["file"], "w", encoding="utf8") as ff:
+    with open(context.op_config["file"], "w", encoding="utf8") as ff:
         ff.write("yup")
 
     while True:
@@ -817,7 +817,7 @@ def hard_failer():
         output_defs=[OutputDefinition(Int)],
     )
     def hard_fail_or_0(context):
-        if context.solid_config["fail"]:
+        if context.op_config["fail"]:
             segfault()
         return 0
 
@@ -876,7 +876,7 @@ def retry_resource_pipeline():
     ],
 )
 def can_fail(context, inp):  # pylint: disable=unused-argument
-    if context.solid_config["fail"]:
+    if context.op_config["fail"]:
         raise Exception("blah")
 
     yield Output("okay perfect", "start_fail")
@@ -950,7 +950,7 @@ def retry_multi_input_early_terminate_pipeline():
         required_resource_keys={"disable_gc"},
     )
     def get_input_one(context, one):
-        if context.solid_config["wait_to_terminate"]:
+        if context.op_config["wait_to_terminate"]:
             while True:
                 time.sleep(0.1)
         return one
@@ -962,7 +962,7 @@ def retry_multi_input_early_terminate_pipeline():
         required_resource_keys={"disable_gc"},
     )
     def get_input_two(context, one):
-        if context.solid_config["wait_to_terminate"]:
+        if context.op_config["wait_to_terminate"]:
             while True:
                 time.sleep(0.1)
         return one

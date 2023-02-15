@@ -50,7 +50,7 @@ executors = pytest.mark.parametrize(
 def define_run_retry_pipeline():
     @solid(config_schema={"fail": bool})
     def can_fail(context, _start_fail):
-        if context.solid_config["fail"]:
+        if context.op_config["fail"]:
             raise Exception("blah")
 
         return "okay perfect"
@@ -121,7 +121,7 @@ def test_retries(environment):
 def define_step_retry_pipeline():
     @solid(config_schema=str)
     def fail_first_time(context):
-        file = os.path.join(context.solid_config, "i_threw_up")
+        file = os.path.join(context.op_config, "i_threw_up")
         if os.path.exists(file):
             return "okay perfect"
         else:
@@ -230,7 +230,7 @@ DELAY = 2
 def define_retry_wait_fixed_pipeline():
     @solid(config_schema=str)
     def fail_first_and_wait(context):
-        file = os.path.join(context.solid_config, "i_threw_up")
+        file = os.path.join(context.op_config, "i_threw_up")
         if os.path.exists(file):
             return "okay perfect"
         else:

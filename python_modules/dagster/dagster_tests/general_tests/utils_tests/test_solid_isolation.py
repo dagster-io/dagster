@@ -55,7 +55,7 @@ def test_single_solid_with_config():
 
     @solid(config_schema=Int)
     def check_config_for_two(context):
-        assert context.solid_config == 2
+        assert context.op_config == 2
         ran["check_config_for_two"] = True
 
     result = execute_solid(
