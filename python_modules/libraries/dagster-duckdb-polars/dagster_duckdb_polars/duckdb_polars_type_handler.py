@@ -32,7 +32,7 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
 
     def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pl.DataFrame):
         """Stores the polars DataFrame in duckdb."""
-        obj_arrow = obj.to_arrow()
+        obj.to_arrow()
         conn = _connect_duckdb(context).cursor()
 
         conn.execute(f"create schema if not exists {table_slice.schema};")

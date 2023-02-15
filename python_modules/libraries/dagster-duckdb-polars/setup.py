@@ -36,7 +36,7 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-duckdb{pin}",
-        "polars",
+        "polars[pyarrow]",
     ],
     zip_safe=False,
 )
