@@ -456,12 +456,17 @@ def get_2d_run_length_encoded_materialized_partitions(
     unevaluated_idx = 0
     range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
 
+    if len(dim1_keys) == 0 or len(secondary_dim.partitions_def.get_partition_keys()) == 0:
+        return GrapheneMultiPartitions(ranges=[], primaryDimensionName=primary_dim.name)
+
     while unevaluated_idx <= len(dim1_keys):
         if (
             unevaluated_idx == len(dim1_keys)
             or dim2_partition_subset_by_dim1[dim1_keys[unevaluated_idx]]
             != dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]
         ):
+            # Add new multipartition range if we've reached the end of the dim1 keys or if the
+            # second dimension subset is different than the previous dim1 key
             if len(dim2_partition_subset_by_dim1[dim1_keys[range_start_idx]]) > 0:
                 # Do not add to materialized_2d_ranges if the dim2 partition subset is empty
                 start_key = dim1_keys[range_start_idx]

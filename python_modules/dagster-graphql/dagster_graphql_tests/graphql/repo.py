@@ -1857,6 +1857,19 @@ def multipartitions_2(multipartitions_1):
     return multipartitions_1
 
 
+no_partitions_multipartitions_def = MultiPartitionsDefinition(
+    {
+        "a": StaticPartitionsDefinition([]),
+        "b": StaticPartitionsDefinition([]),
+    }
+)
+
+
+@asset(partitions_def=no_partitions_multipartitions_def)
+def no_multipartitions_1():
+    return 1
+
+
 # For now the only way to add assets to repositories is via AssetGroup
 # When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
 named_groups_job = AssetGroup(
@@ -1955,6 +1968,12 @@ def define_asset_jobs():
             "multipartitions_job",
             AssetSelection.assets(multipartitions_1, multipartitions_2),
             partitions_def=multipartitions_def,
+        ),
+        no_multipartitions_1,
+        define_asset_job(
+            "no_multipartitions_job",
+            AssetSelection.assets(no_multipartitions_1),
+            partitions_def=no_partitions_multipartitions_def,
         ),
         SourceAsset("diamond_source"),
         fresh_diamond_top,
