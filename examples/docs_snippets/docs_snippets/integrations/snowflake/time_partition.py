@@ -22,4 +22,9 @@ def iris_data_per_day(context) -> pd.DataFrame:
     return get_iris_data_for_date(partition)
 
 
+@asset
+def iris_cleaned(iris_data_per_day: pd.DataFrame):
+    return iris_data_per_day.dropna().drop_duplicates()
+
+
 # end_example

@@ -38,4 +38,9 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     return full_df[full_df["Species"] == species]
 
 
+@asset
+def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
+    return iris_dataset_partitioned.dropna().drop_duplicates()
+
+
 # end_example

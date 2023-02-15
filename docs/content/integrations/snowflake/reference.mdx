@@ -119,7 +119,7 @@ The Snowflake I/O manager supports storing and loading partitioned data. In orde
 
 In order to store static partitioned assets in Snowflake, you must specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
 
-```python file=/integrations/snowflake/static_partition.py
+```python file=/integrations/snowflake/static_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
 from dagster import StaticPartitionDefinition, asset
@@ -144,16 +144,21 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     )
 
     return full_df[full_df["Species"] == species]
+
+
+@asset
+def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
+    return iris_dataset_partitioned.dropna().drop_duplicates()
 ```
 
-Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a static partition, the following statement is used:
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the partition in the downstream asset. When loading a static partition, the following statement is used:
 
 ```sql
 SELECT *
  WHERE [partition_expr] = [selected partition]
 ```
 
-In this example, the query used when materializing the `Iris-setosa` partition of the above asset would be:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -181,17 +186,22 @@ def iris_data_per_day(context) -> pd.DataFrame:
     # the returned dataframe contains a column named 'time' with that stores
     # the time of the row as an integer of seconds since epoch
     return get_iris_data_for_date(partition)
+
+
+@asset
+def iris_cleaned(iris_data_per_day: pd.DataFrame):
+    return iris_data_per_day.dropna().drop_duplicates()
 ```
 
-Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a dynamic partition, the following statement is used:
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in the downstream asset. When loading a dynamic partition, the following statement is used:
 
 ```sql
-SELECT * 
+SELECT *
  WHERE [partition_expr] >= [partition_start]
    AND [partition_expr] < [partition_end]
 ```
 
-The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, materializing the `2023-01-02*` partition the bound query would be: 
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -199,9 +209,7 @@ SELECT *
    AND TO_TIMESTAMP(time::INT) < '2023-01-03 00:00:00'
 ```
 
-In this example, the data in the `TIME` column are integers, so the `partition_expr` metadata includes a SQL statement to convert integers to timestamps.
-
-Since the data in the **TIME** column cannot be directly compared to a timestamp, the `partition_expr` metadata is a SQL statement that converts integers to timestamps.
+In this example, the data in the **TIME** column are integers, so the `partition_expr` metadata includes a SQL statement to convert integers to timestamps. A full list of Snowflake functions can be found [here](https://docs.snowflake.com/en/sql-reference/functions-all).
 
 ### Storing multi-partitioned assets
 
@@ -240,12 +248,19 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     full_df = get_iris_data_for_date(date)
 
     return full_df[full_df["Species"] == species]
+
+
+@asset
+def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
+    return iris_dataset_partitioned.dropna().drop_duplicates()
 ```
 
-Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement. For example, when materializing the `2023-01-02|Iris-setosa` partition, the following query will be used:
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement.
+
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
 
 ```sql
-SELECT * 
+SELECT *
  WHERE SPECIES = 'Iris-setosa'
    AND DATE >= '2023-01-02 00:00:00'
    AND DATE < '2023-01-03 00:00:00'`
