@@ -591,6 +591,7 @@ export type DagitQuery = {
   sensorOrError: SensorOrError;
   sensorsOrError: SensorsOrError;
   shouldShowNux: Scalars['Boolean'];
+  test: Maybe<TestFields>;
   topLevelResourceDetailsOrError: ResourceDetailsOrError;
   unloadableInstigationStatesOrError: InstigationStatesOrError;
   version: Scalars['String'];
@@ -3611,6 +3612,11 @@ export type TerminateRunResult =
 export type TerminateRunSuccess = TerminatePipelineExecutionSuccess & {
   __typename: 'TerminateRunSuccess';
   run: Run;
+};
+
+export type TestFields = {
+  __typename: 'TestFields';
+  alwaysException: Maybe<Scalars['String']>;
 };
 
 export type TextMetadataEntry = MetadataEntry & {
