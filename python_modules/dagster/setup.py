@@ -122,6 +122,9 @@ setup(
         "black": [
             "black[jupyter]==22.12.0",
         ],
+        "mypy": [
+            "mypy==0.991",
+        ],
         "pyright": [
             "pyright==1.1.293",
             ### Stub packages

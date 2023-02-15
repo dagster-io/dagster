@@ -2,6 +2,9 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Sequence, Ty
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._config.structured_config import (
+    attach_resource_id_to_key_mapping,
+)
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -105,8 +108,6 @@ def _create_repository_using_definitions_args(
     check.opt_iterable_param(sensors, "sensors", SensorDefinition)
     check.opt_iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
 
-    resource_defs = wrap_resources_for_execution(resources or {})
-
     check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor))
 
     executor_def = (
@@ -114,6 +115,21 @@ def _create_repository_using_definitions_args(
         if isinstance(executor, ExecutorDefinition) or executor is None
         else ExecutorDefinition.hardcoded_executor(executor)
     )
+
+    # Generate a mapping from each top-level resource instance ID to its resource key
+    resource_key_mapping = {id(v): k for k, v in resources.items()} if resources else {}
+
+    # Provide this mapping to each resource instance so that it can be used to resolve
+    # nested resources
+    resources_with_key_mapping = (
+        {
+            k: attach_resource_id_to_key_mapping(v, resource_key_mapping)
+            for k, v in resources.items()
+        }
+        if resources
+        else {}
+    )
+    resource_defs = wrap_resources_for_execution(resources_with_key_mapping)
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
