@@ -571,10 +571,6 @@ class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDef
         return self.node.name
 
     @property
-    def solid_name(self) -> str:
-        return self.node.name
-
-    @property
     def input_name(self) -> str:
         return self.input_def.name
 
@@ -600,10 +596,10 @@ class NodeOutput(NamedTuple("_NodeOutput", [("node", Node), ("output_def", Outpu
     def __repr__(self):
         return self._inner_str()
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.node.name, self.output_def.name))
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: Any) -> bool:
         return self.node.name == other.node.name and self.output_def.name == other.output_def.name
 
     def describe(self) -> str:
