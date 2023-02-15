@@ -159,6 +159,8 @@ def get_task_definition_dict_from_current_task(
     command=None,
     secrets=None,
     include_sidecars=False,
+    task_role_arn=None,
+    execution_role_arn=None,
 ):
     current_container_name = current_ecs_container_name()
 
@@ -223,6 +225,8 @@ def get_task_definition_dict_from_current_task(
         **task_definition,
         "family": family,
         "containerDefinitions": container_definitions,
+        **({"taskRoleArn": task_role_arn} if task_role_arn else {}),
+        **({"executionRoleArn": execution_role_arn} if execution_role_arn else {}),
     }
 
     return task_definition

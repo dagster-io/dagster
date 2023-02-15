@@ -170,6 +170,18 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
+    @property
+    def task_role_arn(self) -> Optional[str]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("task_role_arn")
+
+    @property
+    def execution_role_arn(self) -> Optional[str]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("execution_role_arn")
+
     @classmethod
     def config_type(cls):
         return {
@@ -491,8 +503,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     ),
                     secrets=secrets if secrets else [],
                     environment=environment,
-                    execution_role_arn=self.task_definition_dict.get("execution_role_arn"),
-                    task_role_arn=self.task_definition_dict.get("task_role_arn"),
+                    execution_role_arn=container_context.execution_role_arn,
+                    task_role_arn=container_context.task_role_arn,
                     sidecars=self.task_definition_dict.get("sidecar_containers"),
                     requires_compatibilities=self.task_definition_dict.get(
                         "requires_compatibilities", []
@@ -509,6 +521,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     environment=environment,
                     secrets=secrets if secrets else {},
                     include_sidecars=self.include_sidecars,
+                    task_role_arn=container_context.task_role_arn,
+                    execution_role_arn=container_context.execution_role_arn,
                 )
 
                 task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(

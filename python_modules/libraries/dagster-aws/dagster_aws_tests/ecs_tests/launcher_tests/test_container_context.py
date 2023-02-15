@@ -93,6 +93,9 @@ def test_merge(
         "memory": "4096",
     }
 
+    assert merged.task_role_arn == "other-task-role"
+    assert merged.execution_role_arn == "other-fake-execution-role"
+
     with pytest.raises(
         Exception, match="Tried to load environment variable OTHER_FOO_ENV_VAR, but it was not set"
     ):
