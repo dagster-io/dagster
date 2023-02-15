@@ -158,12 +158,15 @@ SELECT *
  WHERE [partition_expr] = [selected partition]
 ```
 
+When the `partition_expr` value is injected into this statement, the resulting SQL query must follow Snowflake's SQL syntax. Refer to the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/constructs) for more information.
+
 When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
 
 ```sql
 SELECT *
  WHERE SPECIES = 'Iris-setosa'
 ```
+
 
 ### Storing time partitioned assets
 
@@ -200,6 +203,8 @@ SELECT *
  WHERE [partition_expr] >= [partition_start]
    AND [partition_expr] < [partition_end]
 ```
+
+When the `partition_expr` value is injected into this statement, the resulting SQL query must follow Snowflake's SQL syntax. Refer to the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/constructs) for more information.
 
 When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitions#materializing-partitioned-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
 
