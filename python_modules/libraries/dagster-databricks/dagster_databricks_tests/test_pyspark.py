@@ -25,7 +25,7 @@ ADLS2_CONTAINER = "dagster-databricks-tests"
 
 
 BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
-    "databricks_host": os.environ.get("DATABRICKS_HOST"),
+    "databricks_host": os.environ.get("DATABRICKS_HOST") or "https://",
     "databricks_token": os.environ.get("DATABRICKS_TOKEN"),
     "local_pipeline_package_path": os.path.abspath(os.path.dirname(__file__)),
     "staging_prefix": "/dagster-databricks-tests",
@@ -210,7 +210,7 @@ def test_pyspark_databricks(
                         "config": deep_merge_dicts(
                             config,
                             {
-                                "databricks_host": "",
+                                "databricks_host": "https://",
                                 "databricks_token": "",
                                 "poll_interval_sec": 0.1,
                                 "local_dagster_job_package_path": os.path.abspath(
@@ -248,7 +248,7 @@ def test_pyspark_databricks(
                             "config": deep_merge_dicts(
                                 config,
                                 {
-                                    "databricks_host": "",
+                                    "databricks_host": "https://",
                                     "databricks_token": "",
                                     "poll_interval_sec": 0.1,
                                     "local_dagster_job_package_path": os.path.abspath(
