@@ -260,7 +260,7 @@ class GraphDefinition(NodeDefinition):
         except CircularDependencyError as err:
             raise DagsterInvalidDefinitionError(str(err)) from err
 
-        return [self.node_named(solid_name) for solid_name in order]
+        return [self.node_named(node_name) for node_name in order]
 
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
@@ -429,10 +429,10 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
-        mapped_solid = self.node_named(mapping.maps_from.solid_name)
-        return mapped_solid.definition.resolve_output_to_origin(
+        mapped_node = self.node_named(mapping.maps_from.solid_name)
+        return mapped_node.definition.resolve_output_to_origin(
             mapping.maps_from.output_name,
-            NodeHandle(mapped_solid.name, handle),
+            NodeHandle(mapped_node.name, handle),
         )
 
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
@@ -451,9 +451,9 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_solid = self.node_named(mapping.maps_to.solid_name)
+        mapped_node = self.node_named(mapping.maps_to.solid_name)
 
-        return mapped_solid.definition.default_value_for_input(mapping.maps_to.input_name)
+        return mapped_node.definition.default_value_for_input(mapping.maps_to.input_name)
 
     def input_has_default(self, input_name: str) -> bool:
         check.str_param(input_name, "input_name")
@@ -464,9 +464,9 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_solid = self.node_named(mapping.maps_to.solid_name)
+        mapped_node = self.node_named(mapping.maps_to.solid_name)
 
-        return mapped_solid.definition.input_has_default(mapping.maps_to.input_name)
+        return mapped_node.definition.input_has_default(mapping.maps_to.input_name)
 
     @property
     def dependencies(

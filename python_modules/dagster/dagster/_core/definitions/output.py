@@ -28,18 +28,18 @@ TOut = TypeVar("TOut", bound="Out")
 
 
 class OutputDefinition:
-    """Defines an output from a solid's compute function.
+    """Defines an output from an op's compute function.
 
-    Solids can have multiple outputs, in which case outputs cannot be anonymous.
+    Ops can have multiple outputs, in which case outputs cannot be anonymous.
 
-    Many solids have only one output, in which case the user can provide a single output definition
+    Many ops have only one output, in which case the user can provide a single output definition
     that will be given the default name, "result".
 
     Output definitions may be typed using the Dagster type system.
 
     Args:
         dagster_type (Optional[Union[Type, DagsterType]]]): The type of this output.
-            Users should provide the Python type of the objects that they expect the solid to yield
+            Users should provide the Python type of the objects that they expect the op to yield
             for this output, or a :py:class:`DagsterType` that defines a runtime check that they
             want to be run on this output. Defaults to :py:class:`Any`.
         name (Optional[str]): Name of the output. (default: "result")
@@ -125,25 +125,25 @@ class OutputDefinition:
         return False
 
     def mapping_from(
-        self, solid_name: str, output_name: Optional[str] = None, from_dynamic_mapping: bool = False
+        self, node_name: str, output_name: Optional[str] = None, from_dynamic_mapping: bool = False
     ) -> "OutputMapping":
-        """Create an output mapping from an output of a child solid.
+        """Create an output mapping from an output of a child node.
 
         In a CompositeSolidDefinition, you can use this helper function to construct
-        an :py:class:`OutputMapping` from the output of a child solid.
+        an :py:class:`OutputMapping` from the output of a child node.
 
         Args:
-            solid_name (str): The name of the child solid from which to map this output.
-            output_name (str): The name of the child solid's output from which to map this output.
+            node_name (str): The name of the child node from which to map this output.
+            output_name (str): The name of the child node's output from which to map this output.
 
         Examples:
             .. code-block:: python
 
-                output_mapping = OutputDefinition(Int).mapping_from('child_solid')
+                output_mapping = OutputDefinition(Int).mapping_from('child_node')
         """
         return OutputMapping(
             graph_output_name=self.name,
-            mapped_node_name=solid_name,
+            mapped_node_name=node_name,
             mapped_node_output_name=output_name or DEFAULT_OUTPUT,
             graph_output_description=self.description,
             dagster_type=self.dagster_type,
@@ -216,21 +216,21 @@ class DynamicOutputDefinition(OutputDefinition):
     When using in a composition function such as :py:func:`@pipeline <dagster.pipeline>`,
     dynamic outputs must be used with either
 
-    * ``map`` - clone downstream solids for each separate :py:class:`DynamicOutput`
+    * ``map`` - clone downstream nodes for each separate :py:class:`DynamicOutput`
     * ``collect`` - gather across all :py:class:`DynamicOutput` in to a list
 
     Uses the same constructor as :py:class:`OutputDefinition <dagster.OutputDefinition>`
 
         .. code-block:: python
 
-            @solid(
+            @op(
                 config_schema={
                     "path": Field(str, default_value=file_relative_path(__file__, "sample"))
                 },
                 output_defs=[DynamicOutputDefinition(str)],
             )
             def files_in_directory(context):
-                path = context.solid_config["path"]
+                path = context.op_config["path"]
                 dirname, _, filenames = next(os.walk(path))
                 for file in filenames:
                     yield DynamicOutput(os.path.join(dirname, file), mapping_key=_clean(file))
@@ -239,7 +239,7 @@ class DynamicOutputDefinition(OutputDefinition):
             def process_directory():
                 files = files_in_directory()
 
-                # use map to invoke a solid on each dynamic output
+                # use map to invoke an op on each dynamic output
                 file_results = files.map(process_file)
 
                 # use collect to gather the results in to a list

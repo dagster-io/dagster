@@ -824,24 +824,24 @@ InputToOutputMap: TypeAlias = Dict[NodeInput, DepTypeAndOutputs]
 
 
 def _create_handle_dict(
-    solid_dict: Mapping[str, Node],
+    node_dict: Mapping[str, Node],
     dep_dict: Mapping[str, Mapping[str, IDependencyDefinition]],
 ) -> InputToOutputMap:
     from .composition import MappedInputPlaceholder
 
-    check.mapping_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
+    check.mapping_param(node_dict, "node_dict", key_type=str, value_type=Node)
     check.two_dim_mapping_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
 
     handle_dict: InputToOutputMap = {}
 
-    for solid_name, input_dict in dep_dict.items():
-        from_solid = solid_dict[solid_name]
+    for node_name, input_dict in dep_dict.items():
+        from_node = node_dict[node_name]
         for input_name, dep_def in input_dict.items():
             if isinstance(dep_def, MultiDependencyDefinition):
                 handles: List[Union[NodeOutput, Type[MappedInputPlaceholder]]] = []
                 for inner_dep in dep_def.get_dependencies_and_mappings():
                     if isinstance(inner_dep, DependencyDefinition):
-                        handles.append(solid_dict[inner_dep.node].get_output(inner_dep.output))
+                        handles.append(node_dict[inner_dep.node].get_output(inner_dep.output))
                     elif inner_dep is MappedInputPlaceholder:
                         handles.append(inner_dep)
                     else:
@@ -851,17 +851,17 @@ def _create_handle_dict(
                             )
                         )
 
-                handle_dict[from_solid.get_input(input_name)] = (DependencyType.FAN_IN, handles)
+                handle_dict[from_node.get_input(input_name)] = (DependencyType.FAN_IN, handles)
 
             elif isinstance(dep_def, DependencyDefinition):
-                handle_dict[from_solid.get_input(input_name)] = (
+                handle_dict[from_node.get_input(input_name)] = (
                     DependencyType.DIRECT,
-                    solid_dict[dep_def.node].get_output(dep_def.output),
+                    node_dict[dep_def.node].get_output(dep_def.output),
                 )
             elif isinstance(dep_def, DynamicCollectDependencyDefinition):
-                handle_dict[from_solid.get_input(input_name)] = (
+                handle_dict[from_node.get_input(input_name)] = (
                     DependencyType.DYNAMIC_COLLECT,
-                    solid_dict[dep_def.node_name].get_output(dep_def.output_name),
+                    node_dict[dep_def.node_name].get_output(dep_def.output_name),
                 )
 
             else:
@@ -872,8 +872,8 @@ def _create_handle_dict(
 
 class DependencyStructure:
     @staticmethod
-    def from_definitions(solids: Mapping[str, Node], dep_dict: Mapping[str, Any]):
-        return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
+    def from_definitions(nodes: Mapping[str, Node], dep_dict: Mapping[str, Any]):
+        return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(nodes, dep_dict))
 
     _node_input_index: DefaultDict[str, Dict[NodeInput, List[NodeOutput]]]
     _node_output_index: Dict[str, DefaultDict[NodeOutput, List[NodeInput]]]
@@ -885,19 +885,19 @@ class DependencyStructure:
         self._input_to_output_map = input_to_output_map
 
         # Building up a couple indexes here so that one can look up all the upstream output handles
-        # or downstream input handles in O(1). Without this, this can become O(N^2) where N is solid
+        # or downstream input handles in O(1). Without this, this can become O(N^2) where N is node
         # count during the GraphQL query in particular
 
-        # solid_name => input_handle => list[output_handle]
+        # node_name => input_handle => list[output_handle]
         self._node_input_index = defaultdict(dict)
 
-        # solid_name => output_handle => list[input_handle]
+        # node_name => output_handle => list[input_handle]
         self._node_output_index = defaultdict(lambda: defaultdict(list))
 
-        # solid_name => dynamic output_handle that this solid will dupe for
+        # node_name => dynamic output_handle that this node will dupe for
         self._dynamic_fan_out_index = {}
 
-        # solid_name => set of dynamic output_handle this collects over
+        # node_name => set of dynamic output_handle this collects over
         self._collect_index = defaultdict(set)
 
         for node_input, (dep_type, node_output_or_list) in self._input_to_output_map.items():
@@ -1011,7 +1011,7 @@ class DependencyStructure:
     def all_upstream_outputs_from_node(self, node_name: str) -> Sequence[NodeOutput]:
         check.str_param(node_name, "node_name")
 
-        # flatten out all outputs that feed into the inputs of this solid
+        # flatten out all outputs that feed into the inputs of this node
         return [
             output_handle
             for output_handle_list in self._node_input_index[node_name].values()
