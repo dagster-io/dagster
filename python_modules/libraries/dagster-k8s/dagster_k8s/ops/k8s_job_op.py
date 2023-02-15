@@ -202,6 +202,7 @@ def execute_k8s_job(
         context.instance.run_launcher
         if isinstance(context.instance.run_launcher, K8sRunLauncher)
         else None,
+        include_run_tags=True,
     )
 
     container_config = container_config.copy() if container_config else {}
@@ -255,7 +256,7 @@ def execute_k8s_job(
         resources=container_context.resources,
     )
 
-    job_name = get_k8s_job_name(context.run_id, context.op.name)
+    job_name = get_k8s_job_name(context.run_id, context.get_step_execution_context().step.key)
 
     retry_number = context.retry_number
     if retry_number > 0:

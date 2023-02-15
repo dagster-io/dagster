@@ -67,6 +67,7 @@ class _Job:
             solid_defs,
             config_mapping,
             positional_inputs,
+            node_input_source_assets,
         ) = do_composition(
             decorator_name="@job",
             graph_name=self.name,
@@ -87,6 +88,7 @@ class _Job:
             config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
+            node_input_source_assets=node_input_source_assets,
         )
 
         job_def = graph_def.to_job(

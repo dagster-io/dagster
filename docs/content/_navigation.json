@@ -144,7 +144,8 @@
         ]
       },
       {
-        "title": "Schedules, Sensors, & Partitions",
+        "title": "Schedules & Sensors",
+        "path": "/concepts/partitions-schedules-sensors/schedules",
         "children": [
           {
             "title": "Schedules",
@@ -157,7 +158,13 @@
           {
             "title": "Asset Sensors",
             "path": "/concepts/partitions-schedules-sensors/asset-sensors"
-          },
+          }
+        ]
+      },
+      {
+        "title": "Partitions & Backfills",
+        "path": "/concepts/partitions-schedules-sensors/partitions",
+        "children": [
           {
             "title": "Partitions",
             "path": "/concepts/partitions-schedules-sensors/partitions"
@@ -643,6 +650,10 @@
         "title": "General",
         "path": "/guides/general",
         "children": [
+          {
+            "title": "Running Dagster locally",
+            "path": "/guides/running-dagster-locally"
+          },
           {
             "title": "Enriching with Software-defined assets",
             "path": "/guides/dagster/enriching-with-software-defined-assets"

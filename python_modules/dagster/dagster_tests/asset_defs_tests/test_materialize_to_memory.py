@@ -1,6 +1,7 @@
 import pytest
 from dagster import (
     AssetKey,
+    AssetOut,
     AssetsDefinition,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -20,6 +21,7 @@ from dagster import (
     op,
     with_resources,
 )
+from dagster._core.errors import DagsterInvalidInvocationError
 
 
 def test_basic_materialize_to_memory():
@@ -115,11 +117,11 @@ def test_materialize_conflicting_resources():
         materialize_to_memory([first, second])
 
     with pytest.raises(
-        DagsterInvalidDefinitionError,
+        DagsterInvalidInvocationError,
         match=(
-            "resource with key 'foo' provided to job conflicts with resource provided to assets."
-            " When constructing a job, all resource definitions provided must match by reference"
-            " equality for a given key."
+            r'AssetsDefinition with key \["first"\] has conflicting resource definitions with'
+            r" provided resources for the following keys: foo. Either remove the existing"
+            r" resources from the asset or change the resource keys"
         ),
     ):
         materialize_to_memory(
@@ -221,8 +223,8 @@ def test_materialize_multi_asset():
 
     @multi_asset(
         outs={
-            "my_out_name": Out(metadata={"foo": "bar"}),
-            "my_other_out_name": Out(metadata={"bar": "foo"}),
+            "my_out_name": AssetOut(metadata={"foo": "bar"}),
+            "my_other_out_name": AssetOut(metadata={"bar": "foo"}),
         },
         internal_asset_deps={
             "my_out_name": {AssetKey("my_other_out_name")},

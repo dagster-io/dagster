@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from dagster._core.storage.db_io_manager import TablePartition, TableSlice
+from dagster._core.storage.db_io_manager import TablePartitionDimension, TableSlice
 from dagster_duckdb.io_manager import DuckDbClient, _get_cleanup_statement
 
 
@@ -30,14 +30,16 @@ def test_get_select_statement_partitioned():
             TableSlice(
                 schema="schema1",
                 table="table1",
-                partition=TablePartition(
-                    partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
-                    partition_expr="my_timestamp_col",
-                ),
+                partition_dimensions=[
+                    TablePartitionDimension(
+                        partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
+                        partition_expr="my_timestamp_col",
+                    )
+                ],
                 columns=["apple", "banana"],
             )
         )
-        == "SELECT apple, banana FROM schema1.table1\nWHERE my_timestamp_col >= '2020-01-02"
+        == "SELECT apple, banana FROM schema1.table1 WHERE\nmy_timestamp_col >= '2020-01-02"
         " 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
     )
 
@@ -48,11 +50,33 @@ def test_get_select_statement_static_partitioned():
             TableSlice(
                 schema="schema1",
                 table="table1",
-                partition=TablePartition(partition_expr="my_fruit_col", partition="apple"),
+                partition_dimensions=[
+                    TablePartitionDimension(partition_expr="my_fruit_col", partition="apple")
+                ],
                 columns=["apple", "banana"],
             )
         )
-        == "SELECT apple, banana FROM schema1.table1\nWHERE my_fruit_col = 'apple'"
+        == "SELECT apple, banana FROM schema1.table1 WHERE\nmy_fruit_col = 'apple'"
+    )
+
+
+def test_get_select_statement_multi_partitioned():
+    assert (
+        DuckDbClient.get_select_statement(
+            TableSlice(
+                schema="schema1",
+                table="table1",
+                partition_dimensions=[
+                    TablePartitionDimension(partition_expr="my_fruit_col", partition="apple"),
+                    TablePartitionDimension(
+                        partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
+                        partition_expr="my_timestamp_col",
+                    ),
+                ],
+            )
+        )
+        == "SELECT * FROM schema1.table1 WHERE\nmy_fruit_col = 'apple' AND\nmy_timestamp_col >="
+        " '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
     )
 
 
@@ -69,13 +93,15 @@ def test_get_cleanup_statement_partitioned():
             TableSlice(
                 schema="schema1",
                 table="table1",
-                partition=TablePartition(
-                    partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
-                    partition_expr="my_timestamp_col",
-                ),
+                partition_dimensions=[
+                    TablePartitionDimension(
+                        partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
+                        partition_expr="my_timestamp_col",
+                    )
+                ],
             )
         )
-        == "DELETE FROM schema1.table1\nWHERE my_timestamp_col >= '2020-01-02 00:00:00' AND"
+        == "DELETE FROM schema1.table1 WHERE\nmy_timestamp_col >= '2020-01-02 00:00:00' AND"
         " my_timestamp_col < '2020-02-03 00:00:00'"
     )
 
@@ -86,8 +112,30 @@ def test_get_cleanup_statement_static_partitioned():
             TableSlice(
                 schema="schema1",
                 table="table1",
-                partition=TablePartition(partition_expr="my_fruit_col", partition="apple"),
+                partition_dimensions=[
+                    TablePartitionDimension(partition_expr="my_fruit_col", partition="apple")
+                ],
             )
         )
-        == "DELETE FROM schema1.table1\nWHERE my_fruit_col = 'apple'"
+        == "DELETE FROM schema1.table1 WHERE\nmy_fruit_col = 'apple'"
+    )
+
+
+def test_get_cleanup_statement_multi_partitioned():
+    assert (
+        _get_cleanup_statement(
+            TableSlice(
+                schema="schema1",
+                table="table1",
+                partition_dimensions=[
+                    TablePartitionDimension(partition_expr="my_fruit_col", partition="apple"),
+                    TablePartitionDimension(
+                        partition=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
+                        partition_expr="my_timestamp_col",
+                    ),
+                ],
+            )
+        )
+        == "DELETE FROM schema1.table1 WHERE\nmy_fruit_col = 'apple' AND\nmy_timestamp_col >="
+        " '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
     )

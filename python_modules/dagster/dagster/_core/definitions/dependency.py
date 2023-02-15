@@ -21,6 +21,8 @@ from typing import (
     cast,
 )
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.policy import RetryPolicy
@@ -352,11 +354,7 @@ class NodeHandleSerializer(DefaultNamedTupleSerializer):
 
 
 @whitelist_for_serdes(serializer=NodeHandleSerializer)
-class NodeHandle(
-    # mypy does not yet support recursive types
-    # NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["NodeHandle"])])
-    NamedTuple("_NodeHandle", [("name", str), ("parent", Any)])
-):
+class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["NodeHandle"])])):
     """
     A structured object to identify nodes in the potentially recursive graph structure.
     """
@@ -387,7 +385,7 @@ class NodeHandle(
         Returns:
             List[str]:
         """
-        path = []
+        path: List[str] = []
         cur = self
         while cur:
             path.append(cur.name)
@@ -821,12 +819,12 @@ class DynamicCollectDependencyDefinition(
         return True
 
 
-DepTypeAndOutputs = Tuple[
+DepTypeAndOutputs: TypeAlias = Tuple[
     DependencyType,
     Union[NodeOutput, List[Union[NodeOutput, Type["MappedInputPlaceholder"]]]],
 ]
 
-InputToOutputMap = Dict[NodeInput, DepTypeAndOutputs]
+InputToOutputMap: TypeAlias = Dict[NodeInput, DepTypeAndOutputs]
 
 
 def _create_handle_dict(
@@ -908,7 +906,7 @@ class DependencyStructure:
 
         for node_input, (dep_type, node_output_or_list) in self._input_to_output_map.items():
             if dep_type == DependencyType.FAN_IN:
-                node_output_list = []
+                node_output_list: List[NodeOutput] = []
                 for node_output in node_output_or_list:
                     if not isinstance(node_output, NodeOutput):
                         continue

@@ -1279,6 +1279,7 @@ export type FloatMetadataEntry = MetadataEntry & {
 export type FreshnessPolicy = {
   __typename: 'FreshnessPolicy';
   cronSchedule: Maybe<Scalars['String']>;
+  cronScheduleTimezone: Maybe<Scalars['String']>;
   maximumLagMinutes: Scalars['Float'];
 };
 
@@ -3170,7 +3171,7 @@ export type Schedule = {
   name: Scalars['String'];
   partitionSet: Maybe<PartitionSet>;
   pipelineName: Scalars['String'];
-  potentialTickTimestamps: Array<Maybe<Scalars['Float']>>;
+  potentialTickTimestamps: Array<Scalars['Float']>;
   scheduleState: InstigationState;
   solidSelection: Maybe<Array<Maybe<Scalars['String']>>>;
 };

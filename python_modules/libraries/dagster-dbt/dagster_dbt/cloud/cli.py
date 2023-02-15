@@ -13,9 +13,19 @@ app = typer.Typer()
 
 @app.command()
 def cache_compile_references(
-    auth_token: str = typer.Argument(..., envvar="DBT_CLOUD_API_KEY"),
-    account_id: int = typer.Argument(..., envvar="DBT_CLOUD_ACCOUNT_ID"),
-    project_id: int = typer.Argument(..., envvar="DBT_CLOUD_PROJECT_ID"),
+    auth_token: str = typer.Argument(
+        ...,
+        envvar=["DBT_CLOUD_API_TOKEN", "DBT_CLOUD_API_KEY"],
+        help="The API token for your dbt Cloud account.",
+    ),
+    account_id: int = typer.Argument(
+        ..., envvar="DBT_CLOUD_ACCOUNT_ID", help="The id of your dbt Cloud account"
+    ),
+    project_id: int = typer.Argument(
+        ...,
+        envvar="DBT_CLOUD_PROJECT_ID",
+        help="The id of your dbt Cloud project, that corresponds to the dbt project managed in git",
+    ),
 ) -> None:
     """
     Cache the latest dbt cloud compile run id for a given project.

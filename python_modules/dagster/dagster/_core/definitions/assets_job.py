@@ -1,14 +1,11 @@
-import warnings
 from collections import defaultdict
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
-from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
@@ -40,50 +37,46 @@ def get_base_asset_jobs(
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
 ) -> Sequence[JobDefinition]:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
+    assets_by_partitions_def: Dict[
+        Optional[PartitionsDefinition], List[AssetsDefinition]
+    ] = defaultdict(list)
+    for assets_def in assets:
+        assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
 
-        assets_by_partitions_def: Dict[
-            Optional[PartitionsDefinition], List[AssetsDefinition]
-        ] = defaultdict(list)
-        for assets_def in assets:
-            assets_by_partitions_def[assets_def.partitions_def].append(assets_def)
+    if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {None}:
+        return [
+            build_assets_job(
+                name=ASSET_BASE_JOB_PREFIX,
+                assets=assets,
+                source_assets=source_assets,
+                executor_def=executor_def,
+                resource_defs=resource_defs,
+            )
+        ]
+    else:
+        unpartitioned_assets = assets_by_partitions_def.get(None, [])
+        partitioned_assets_by_partitions_def = {
+            k: v for k, v in assets_by_partitions_def.items() if k is not None
+        }
+        jobs = []
 
-        if len(assets_by_partitions_def.keys()) == 0 or assets_by_partitions_def.keys() == {None}:
-            return [
+        # sort to ensure some stability in the ordering
+        for i, (_, assets_with_partitions) in enumerate(
+            sorted(partitioned_assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
+        ):
+            jobs.append(
                 build_assets_job(
-                    name=ASSET_BASE_JOB_PREFIX,
-                    assets=assets,
-                    source_assets=source_assets,
-                    executor_def=executor_def,
+                    f"{ASSET_BASE_JOB_PREFIX}_{i}",
+                    assets=assets_with_partitions + unpartitioned_assets,
+                    source_assets=[*source_assets, *assets],
                     resource_defs=resource_defs,
+                    executor_def=executor_def,
                 )
-            ]
-        else:
-            unpartitioned_assets = assets_by_partitions_def.get(None, [])
-            partitioned_assets_by_partitions_def = {
-                k: v for k, v in assets_by_partitions_def.items() if k is not None
-            }
-            jobs = []
+            )
 
-            # sort to ensure some stability in the ordering
-            for i, (_, assets_with_partitions) in enumerate(
-                sorted(partitioned_assets_by_partitions_def.items(), key=lambda item: repr(item[0]))
-            ):
-                jobs.append(
-                    build_assets_job(
-                        f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                        assets=assets_with_partitions + unpartitioned_assets,
-                        source_assets=[*source_assets, *assets],
-                        resource_defs=resource_defs,
-                        executor_def=executor_def,
-                    )
-                )
-
-            return jobs
+        return jobs
 
 
-@experimental
 def build_assets_job(
     name: str,
     assets: Sequence[AssetsDefinition],
@@ -209,7 +202,6 @@ def build_assets_job(
     )
 
 
-@experimental
 def build_source_asset_observation_job(
     name: str,
     source_assets: Sequence[SourceAsset],

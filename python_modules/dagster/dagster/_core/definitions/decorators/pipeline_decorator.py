@@ -76,6 +76,7 @@ class _Pipeline:
             solid_defs,
             config_mapping,
             positional_inputs,
+            node_input_source_assets,
         ) = do_composition(
             "@pipeline",
             self.name,
@@ -98,6 +99,7 @@ class _Pipeline:
                 output_mappings=output_mappings,
                 config=config_mapping,
                 positional_inputs=positional_inputs,
+                node_input_source_assets=node_input_source_assets,
             ),
             tags=self.tags,
             description=self.description or format_docstring_for_description(fn),

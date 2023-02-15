@@ -35,10 +35,10 @@ A software-defined asset includes the following:
 
 ## Relevant APIs
 
-| Name                                  | Description                                                                                                                                                                                                                  |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="asset" decorator /> | A decorator used to define assets.                                                                                                                                                                                           |
-| <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. <PyObject object="SourceAsset" />s are used to represent assets that other assets depend on, in settings where they can't be materialized themselves. |
+| Name                                  | Description                                                                                                                                                                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| <PyObject object="asset" decorator /> | A decorator used to define assets.                                                                                                                                                                                                   |
+| <PyObject object="SourceAsset" />     | A class that describes an asset, but doesn't define how to compute it. <PyObject object="SourceAsset" />s are used to represent assets that other assets or jobs depend on, in settings where they can't be materialized themselves. |
 
 ---
 

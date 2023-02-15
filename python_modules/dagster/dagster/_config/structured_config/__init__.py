@@ -4,10 +4,11 @@ from typing import Generic, TypeVar, Union
 from typing_extensions import TypeAlias
 
 from dagster._config.config_type import Array, ConfigFloatInstance, ConfigType
+from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.post_process import resolve_defaults
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.structured_config.typing_utils import TypecheckAllowPartialResourceInitParams
-from dagster._config.validate import validate_config
+from dagster._config.validate import process_config, validate_config
 from dagster._core.definitions.definition_config_schema import (
     DefinitionConfigSchema,
     IDefinitionConfigSchema,
@@ -24,7 +25,7 @@ except ImportError:
 
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Type, cast
+from typing import Any, Dict, Mapping, Optional, Type, cast
 
 from pydantic import BaseModel, Extra
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_MAPPING, SHAPE_SINGLETON, ModelField
@@ -143,6 +144,24 @@ def copy_with_default(old_field: Field, new_config_value: Any) -> Field:
     )
 
 
+def _process_config_values(
+    schema_field: Field, data: Mapping[str, Any], config_obj_name: str
+) -> Mapping[str, Any]:
+    post_processed_config = process_config(
+        schema_field.config_type, config_dictionary_from_values(data, schema_field)
+    )
+
+    if not post_processed_config.success:
+        raise DagsterInvalidConfigError(
+            "Error while processing {} config ".format(config_obj_name),
+            post_processed_config.errors,
+            data,
+        )
+    assert post_processed_config.value is not None
+
+    return post_processed_config.value or {}
+
+
 def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSchema:
     """Return a new config schema configured with the passed in data"""
     return DefinitionConfigSchema(_apply_defaults_to_schema_field(schema_field, data))
@@ -176,11 +195,12 @@ class Resource(
 
     def __init__(self, **data: Any):
         schema = infer_schema_from_config_class(self.__class__)
-        Config.__init__(self, **data)
+        post_processed_data = _process_config_values(schema, data, self.__class__.__name__)
+        Config.__init__(self, **post_processed_data)
         ResourceDefinition.__init__(
             self,
             resource_fn=self.create_object_to_pass_to_user_code,
-            config_schema=_curry_config_schema(schema, data),
+            config_schema=_curry_config_schema(schema, post_processed_data),
             description=self.__doc__,
         )
 
@@ -285,7 +305,8 @@ class StructuredConfigIOManagerBase(Resource[IOManager], IOManagerDefinition):
     """
 
     def __init__(self, **data: Any):
-        Resource.__init__(self, **data)
+        schema = infer_schema_from_config_class(self.__class__)
+        Resource.__init__(self, **_process_config_values(schema, data, self.__class__.__name__))
         IOManagerDefinition.__init__(
             self,
             resource_fn=self.create_io_manager_to_pass_to_user_code,

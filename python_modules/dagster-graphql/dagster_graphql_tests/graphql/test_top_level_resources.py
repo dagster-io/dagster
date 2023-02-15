@@ -111,6 +111,10 @@ def test_fetch_top_level_resource(definitions_graphql_context, snapshot):
             "key": "a_string",
             "value": '"foo"',
         },
+        {
+            "key": "an_unset_string",
+            "value": '"defaulted"',
+        },
     ]
 
     snapshot.assert_match(result.data)

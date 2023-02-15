@@ -81,6 +81,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             # we just prefetched all the asset records, so if it's not in the cache, there are
             # no materializations for this key
             asset_record = self._asset_record_cache.get(asset_key)
+            if asset_record is None:
+                self._asset_record_cache[asset_key] = None
+
             last_materialization_record = (
                 asset_record.asset_entry.last_materialization_record if asset_record else None
             )
@@ -99,6 +102,14 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 ] = last_materialization_record
                 self._no_materializations_after_cursor_cache[
                     asset_partition
+                ] = last_materialization_record.storage_id
+
+                # also cache the answer to queries that do not specify a partition
+                self._latest_materialization_record_cache[
+                    AssetKeyPartitionKey(asset_key=asset_key)
+                ] = last_materialization_record
+                self._no_materializations_after_cursor_cache[
+                    AssetKeyPartitionKey(asset_key=asset_key)
                 ] = last_materialization_record.storage_id
 
         # fill in the cache for partitioned assets
@@ -238,10 +249,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             else:
                 return None
         elif asset_partition in self._no_materializations_after_cursor_cache:
-            if (
-                after_cursor is not None
-                and after_cursor >= self._no_materializations_after_cursor_cache[asset_partition]
-            ):
+            if (after_cursor or 0) >= self._no_materializations_after_cursor_cache[asset_partition]:
                 return None
 
         record = self._get_materialization_record(

@@ -6,10 +6,14 @@ import pytest
 from dagster import (
     AssetIn,
     DailyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     Out,
     StaticPartitionsDefinition,
     asset,
     graph,
+    instance_for_test,
     materialize,
     op,
 )
@@ -63,7 +67,7 @@ def b_df() -> pd.DataFrame:
 
 
 @asset(key_prefix=["my_schema"])
-def b_plus_one(b_df: pd.DataFrame):
+def b_plus_one(b_df: pd.DataFrame) -> pd.DataFrame:
     return b_df + 1
 
 
@@ -91,7 +95,7 @@ def test_duckdb_io_manager_with_assets(tmp_path):
 
 
 @asset(key_prefix=["my_schema"], ins={"b_df": AssetIn("b_df", metadata={"columns": ["a"]})})
-def b_plus_one_columns(b_df: pd.DataFrame):
+def b_plus_one_columns(b_df: pd.DataFrame) -> pd.DataFrame:
     return b_df + 1
 
 
@@ -152,7 +156,7 @@ def test_not_supported_type(tmp_path):
     metadata={"partition_expr": "time"},
     config_schema={"value": str},
 )
-def daily_partitioned(context):
+def daily_partitioned(context) -> pd.DataFrame:
     partition = pd.Timestamp(context.asset_partition_key_for_output())
     value = context.op_config["value"]
 
@@ -180,6 +184,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
+
     assert out_df["a"].tolist() == ["1", "1", "1"]
     duckdb_conn.close()
 
@@ -192,6 +197,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
+
     assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
     duckdb_conn.close()
 
@@ -204,6 +210,7 @@ def test_time_window_partitioned_asset(tmp_path):
 
     duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
+
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()
 
@@ -214,7 +221,7 @@ def test_time_window_partitioned_asset(tmp_path):
     metadata={"partition_expr": "color"},
     config_schema={"value": str},
 )
-def static_partitioned(context):
+def static_partitioned(context) -> pd.DataFrame:
     partition = context.asset_partition_key_for_output()
     value = context.op_config["value"]
     return pd.DataFrame(
@@ -267,3 +274,152 @@ def test_static_partitioned_asset(tmp_path):
     out_df = duckdb_conn.execute("SELECT * FROM my_schema.static_partitioned").fetch_df()
     assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
     duckdb_conn.close()
+
+
+@asset(
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "time": DailyPartitionsDefinition(start_date="2022-01-01"),
+            "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+        }
+    ),
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
+    config_schema={"value": str},
+)
+def multi_partitioned(context) -> pd.DataFrame:
+    partition = context.partition_key.keys_by_dimension
+    value = context.op_config["value"]
+    return pd.DataFrame(
+        {
+            "color": [partition["color"], partition["color"], partition["color"]],
+            "time": [partition["time"], partition["time"], partition["time"]],
+            "a": [value, value, value],
+        }
+    )
+
+
+def test_multi_partitioned_asset(tmp_path):
+    duckdb_io_manager = duckdb_pandas_io_manager.configured(
+        {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    )
+    resource_defs = {"io_manager": duckdb_io_manager}
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "1"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    assert out_df["a"].tolist() == ["1", "1", "1"]
+    duckdb_conn.close()
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "2"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+    duckdb_conn.close()
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "3"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
+    duckdb_conn.close()
+
+    materialize(
+        [multi_partitioned],
+        partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__multi_partitioned": {"config": {"value": "4"}}}},
+    )
+
+    duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+    out_df = duckdb_conn.execute("SELECT * FROM my_schema.multi_partitioned").fetch_df()
+    assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
+    duckdb_conn.close()
+
+
+dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
+
+
+@asset(
+    partitions_def=dynamic_fruits,
+    key_prefix=["my_schema"],
+    metadata={"partition_expr": "fruit"},
+    config_schema={"value": str},
+)
+def dynamic_partitioned(context) -> pd.DataFrame:
+    partition = context.asset_partition_key_for_output()
+    value = context.op_config["value"]
+    return pd.DataFrame(
+        {
+            "fruit": [partition, partition, partition],
+            "a": [value, value, value],
+        }
+    )
+
+
+def test_dynamic_partition(tmp_path):
+    with instance_for_test() as instance:
+        duckdb_io_manager = duckdb_pandas_io_manager.configured(
+            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+        )
+        resource_defs = {"io_manager": duckdb_io_manager}
+
+        dynamic_fruits.add_partitions(["apple"], instance)
+
+        materialize(
+            [dynamic_partitioned],
+            partition_key="apple",
+            resources=resource_defs,
+            instance=instance,
+            run_config={"ops": {"my_schema__dynamic_partitioned": {"config": {"value": "1"}}}},
+        )
+
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+        out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
+        assert out_df["a"].tolist() == ["1", "1", "1"]
+        duckdb_conn.close()
+
+        dynamic_fruits.add_partitions(["orange"], instance)
+
+        materialize(
+            [dynamic_partitioned],
+            partition_key="orange",
+            resources=resource_defs,
+            instance=instance,
+            run_config={"ops": {"my_schema__dynamic_partitioned": {"config": {"value": "2"}}}},
+        )
+
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+        out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
+        assert sorted(out_df["a"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+        duckdb_conn.close()
+
+        materialize(
+            [dynamic_partitioned],
+            partition_key="apple",
+            resources=resource_defs,
+            instance=instance,
+            run_config={"ops": {"my_schema__dynamic_partitioned": {"config": {"value": "3"}}}},
+        )
+
+        duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
+        out_df = duckdb_conn.execute("SELECT * FROM my_schema.dynamic_partitioned").fetch_df()
+        assert sorted(out_df["a"].tolist()) == ["2", "2", "2", "3", "3", "3"]
+        duckdb_conn.close()

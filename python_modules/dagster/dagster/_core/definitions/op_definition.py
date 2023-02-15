@@ -21,7 +21,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import (
@@ -376,6 +376,11 @@ class OpDefinition(NodeDefinition):
                 node_description=node_description,
                 output_name=output_def.name,
             )
+
+    def resolve_input_to_destinations(
+        self, input_handle: NodeInputHandle
+    ) -> Sequence[NodeInputHandle]:
+        return [input_handle]
 
     def __call__(self, *args, **kwargs) -> Any:
         from ..execution.context.invocation import UnboundOpExecutionContext

@@ -83,6 +83,8 @@ def test_dagster_dev_command_no_dagster_home():
                         os.path.dirname(__file__),
                         "--dagit-port",
                         str(dagit_port),
+                        "--dagit-host",
+                        "127.0.0.1",
                     ],
                     cwd=tempdir,
                 )

@@ -34,7 +34,6 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         """Stores the pandas DataFrame in duckdb."""
         conn = _connect_duckdb(context).cursor()
 
-        conn.execute(f"create schema if not exists {table_slice.schema};")
         conn.execute(
             f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
             " obj;"

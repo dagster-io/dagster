@@ -178,7 +178,7 @@ def get_params(args: argparse.Namespace) -> Params:
     elif args.diff:
         mode = "path"
         targets = (
-            subprocess.check_output(["git", "diff", "--name-only", "master"])
+            subprocess.check_output(["git", "diff", "--name-only", "origin/master"])
             .decode("utf-8")
             .splitlines()
         )
@@ -280,6 +280,7 @@ def run_pyright(
                 f"--project={config_path}",
                 "--outputjson",
                 "--level=warning",
+                "--warnings",  # Error on warnings
             ]
         )
         shell_cmd = " \\\n".join([base_pyright_cmd, *[f"    {p}" for p in paths or []]])

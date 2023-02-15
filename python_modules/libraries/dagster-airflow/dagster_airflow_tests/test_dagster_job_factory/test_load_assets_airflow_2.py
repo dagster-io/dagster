@@ -56,10 +56,6 @@ def test_load_assets_from_airflow_dag():
         dag_bag = DagBag(dag_folder=tmpdir_path)
         asset_dag = dag_bag.get_dag(dag_id="asset_dag")
 
-        @asset
-        def new_upstream_asset():
-            return 1
-
         assets = load_assets_from_airflow_dag(
             dag=asset_dag,
             task_ids_by_asset_key={
@@ -76,6 +72,17 @@ def test_load_assets_from_airflow_dag():
         other_assets = load_assets_from_airflow_dag(
             dag=other_dag,
         )
+
+        resources = None
+
+        if assets:
+            first_asset = next(iter(assets))
+            if "io_manager" in first_asset.resource_defs:
+                resources = {"io_manager": first_asset.resource_defs["io_manager"]}
+
+        @asset(resource_defs=resources)
+        def new_upstream_asset():
+            return 1
 
         result = materialize(
             [*assets, new_upstream_asset, *other_assets],

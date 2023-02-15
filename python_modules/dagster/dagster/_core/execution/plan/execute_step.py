@@ -1,6 +1,5 @@
 import inspect
 import warnings
-from collections import defaultdict
 from typing import (
     AbstractSet,
     Any,
@@ -9,7 +8,6 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Union,
     cast,
@@ -27,7 +25,7 @@ from dagster._core.definitions import (
     TypeCheck,
 )
 from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
-from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
+from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
     DEFAULT_LOGICAL_VERSION,
@@ -356,8 +354,6 @@ def core_dagster_event_sequence_for_step(
         ):
             yield evt
 
-    input_lineage = step_context.get_input_lineage()
-
     # The core execution loop expects a compute generator in a specific format: a generator that
     # takes a context and dictionary of inputs as input, yields output events. If a solid definition
     # was generated from the @solid or @lambda_solid decorator, then compute_fn needs to be coerced
@@ -385,12 +381,12 @@ def core_dagster_event_sequence_for_step(
             if isinstance(user_event, DagsterEvent):
                 yield user_event
             elif isinstance(user_event, (Output, DynamicOutput)):
-                for evt in _type_check_and_store_output(step_context, user_event, input_lineage):
+                for evt in _type_check_and_store_output(step_context, user_event):
                     yield evt
             # for now, I'm ignoring AssetMaterializations yielded manually, but we might want
             # to do something with these in the above path eventually
             elif isinstance(user_event, (AssetMaterialization, Materialization)):
-                yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)
+                yield DagsterEvent.asset_materialization(step_context, user_event)
             elif isinstance(user_event, AssetObservation):
                 yield DagsterEvent.asset_observation(step_context, user_event)
             elif isinstance(user_event, ExpectationResult):
@@ -408,13 +404,10 @@ def core_dagster_event_sequence_for_step(
 
 
 def _type_check_and_store_output(
-    step_context: StepExecutionContext,
-    output: Union[DynamicOutput, Output],
-    input_lineage: Sequence[AssetLineageInfo],
+    step_context: StepExecutionContext, output: Union[DynamicOutput, Output]
 ) -> Iterator[DagsterEvent]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
-    check.sequence_param(input_lineage, "input_lineage", AssetLineageInfo)
 
     mapping_key = output.mapping_key if isinstance(output, DynamicOutput) else None
 
@@ -441,7 +434,7 @@ def _type_check_and_store_output(
     for output_event in _type_check_output(step_context, step_output_handle, output, version):
         yield output_event
 
-    for evt in _store_output(step_context, step_output_handle, output, input_lineage):
+    for evt in _store_output(step_context, step_output_handle, output):
         yield evt
 
     for evt in _create_type_materializations(step_context, output.output_name, output.value):
@@ -462,25 +455,6 @@ def _asset_key_and_partitions_for_output(
         )
 
     return None, set()
-
-
-def _dedup_asset_lineage(asset_lineage: Sequence[AssetLineageInfo]) -> Sequence[AssetLineageInfo]:
-    """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
-    information. Duplicates can occur naturally when calculating transitive dependencies from solids
-    with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will
-    inherit all dependencies from all of the solid Inputs).
-    """
-    key_partition_mapping: Dict[AssetKey, Set[str]] = defaultdict(set)
-
-    for lineage_info in asset_lineage:
-        if not lineage_info.partitions:
-            key_partition_mapping[lineage_info.asset_key] |= set()
-        for partition in lineage_info.partitions:
-            key_partition_mapping[lineage_info.asset_key].add(partition)
-    return [
-        AssetLineageInfo(asset_key=asset_key, partitions=partitions)
-        for asset_key, partitions in key_partition_mapping.items()
-    ]
 
 
 def _get_output_asset_materializations(
@@ -601,7 +575,6 @@ def _store_output(
     step_context: StepExecutionContext,
     step_output_handle: StepOutputHandle,
     output: Union[Output, DynamicOutput],
-    input_lineage: Sequence[AssetLineageInfo],
 ) -> Iterator[DagsterEvent]:
     output_def = step_context.solid_def.output_def_named(step_output_handle.output_name)
     output_manager = step_context.get_io_manager(step_output_handle)
@@ -684,7 +657,7 @@ def _store_output(
                     partition=materialization.partition,
                     metadata=None,
                 )
-        yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
+        yield DagsterEvent.asset_materialization(step_context, materialization)
 
     asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
     if asset_key:
@@ -696,11 +669,7 @@ def _store_output(
             manager_metadata_entries,
             step_context,
         ):
-            yield DagsterEvent.asset_materialization(
-                step_context,
-                materialization,
-                input_lineage,
-            )
+            yield DagsterEvent.asset_materialization(step_context, materialization)
 
     yield DagsterEvent.handled_output(
         step_context,
