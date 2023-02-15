@@ -214,7 +214,14 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     return full_df[full_df["Species"] == species]
 ```
 
-Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement. For example, when materializing the **2023-01-02|Iris-setosa** partition, the query `SELECT * WHERE SPECIES = 'Iris-setosa' AND DATE >= '2023-01-02 00:00:00' AND DATE < '2023-01-03 00:00:00'` will be used.
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement. For example, when materializing the `2023-01-02|Iris-setosa` partition, the following query will be used:
+
+```sql
+SELECT * 
+ WHERE SPECIES = 'Iris-setosa'
+   AND DATE >= '2023-01-02 00:00:00'
+   AND DATE < '2023-01-03 00:00:00'`
+```
 
 ---
 
