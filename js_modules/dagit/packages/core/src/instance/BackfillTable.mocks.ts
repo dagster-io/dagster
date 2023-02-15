@@ -415,10 +415,35 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
   },
 };
 
+export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment = {
+  backfillId: 'jzduiapb',
+  status: BulkActionStatus.COMPLETED,
+  isValidSerialization: false,
+  numPartitions: 0,
+  timestamp: 1676397948.698646,
+  partitionSetName: null,
+  partitionSet: null,
+  error: null,
+  numCancelable: 0,
+  partitionNames: [],
+  assetSelection: [
+    {
+      path: ['asset1'],
+      __typename: 'AssetKey',
+    },
+    {
+      path: ['asset2'],
+      __typename: 'AssetKey',
+    },
+  ],
+  __typename: 'PartitionBackfill',
+};
+
 export const BackfillTableFragments: BackfillTableFragment[] = [
   BackfillTableFragmentRequested2000AssetsPure,
   BackfillTableFragmentCancelledAssetsPartitionSet,
   BackfillTableFragmentFailedError,
   BackfillTableFragmentCompletedAssetJob,
   BackfillTableFragmentCompletedOpJob,
+  BackfillTableFragmentInvalidPartitionSet,
 ];
