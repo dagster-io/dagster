@@ -58,7 +58,7 @@ def in_job_manager(
             with safe_tempfile_path() as output_log_file_path:
                 context_dict = {
                     "pipeline_run_dict": pipeline_run_dict,
-                    "solid_handle_kwargs": node_handle._asdict(),
+                    "node_handle_kwargs": node_handle._asdict(),
                     "executable_dict": executable_dict,
                     "marshal_dir": marshal_dir,
                     "run_config": {},
@@ -123,7 +123,7 @@ def test_yield_unserializable_result():
             manager.yield_result(threading.Lock())
 
 
-def test_in_job_manager_bad_solid():
+def test_in_job_manager_bad_op():
     with pytest.raises(
         check.CheckError,
         match="hello_world_job has no op named foobar",
@@ -152,7 +152,7 @@ def test_in_job_manager_resources():
         assert len(manager.context.resources._asdict()) == 1
 
 
-def test_in_job_manager_solid_config():
+def test_in_job_manager_op_config():
     with in_job_manager() as manager:
         assert manager.context.op_config is None
 

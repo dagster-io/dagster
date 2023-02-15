@@ -176,7 +176,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def node(self) -> Node:
-        """:class:`dagster.Node`: The solid for the context.
+        """:class:`dagster.Node`: The node for the context.
 
         In interactive contexts, this may be a dagstermill-specific shim, depending whether an
         op definition was passed to ``dagstermill.get_context``.
