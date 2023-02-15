@@ -64,7 +64,7 @@ from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandl
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
 from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
-from dagster._utils import ensure_gen, iterate_with_context
+from dagster._utils import iterate_with_context
 from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
 from dagster._utils.timing import time_execution_scope
 
@@ -339,9 +339,7 @@ def core_dagster_event_sequence_for_step(
         if dagster_type.is_nothing:
             continue
 
-        for event_or_input_value in ensure_gen(
-            step_input.source.load_input_object(step_context, input_def)
-        ):
+        for event_or_input_value in step_input.source.load_input_object(step_context, input_def):
             if isinstance(event_or_input_value, DagsterEvent):
                 yield event_or_input_value
             else:
