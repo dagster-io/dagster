@@ -541,7 +541,7 @@ class AssetsDefinition(ResourceAddable):
     @property
     def dependency_keys(self) -> Iterable[AssetKey]:
         # the input asset keys that are directly upstream of a selected asset key
-        upstream_keys = set().union(*(self.asset_deps[key] for key in self.keys))
+        upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
         input_keys = set(self._keys_by_input_name.values())
         return upstream_keys.intersection(input_keys)
 
@@ -563,7 +563,7 @@ class AssetsDefinition(ResourceAddable):
 
     @property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
-        upstream_keys = set().union(*(self.asset_deps[key] for key in self.keys))
+        upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
         return {
             name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }
@@ -916,7 +916,7 @@ class AssetsDefinition(ResourceAddable):
             return f"AssetsDefinition with key {self.asset_key.to_string()}"
         else:
             asset_keys = ", ".join(
-                sorted(list([asset_key.to_string() for asset_key in self.asset_keys]))
+                sorted(([asset_key.to_string() for asset_key in self.asset_keys]))
             )
             return f"AssetsDefinition with keys {asset_keys}"
 
