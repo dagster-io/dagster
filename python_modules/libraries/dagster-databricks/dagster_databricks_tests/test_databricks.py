@@ -4,13 +4,13 @@ import dagster
 import dagster_databricks
 import dagster_pyspark
 import pytest
-from dagster._utils.test import create_test_pipeline_execution_context
-from dagster_databricks.databricks import DatabricksError, DatabricksJobRunner
+from dagster import build_op_context
+from dagster_databricks.databricks import DatabricksClient, DatabricksError, DatabricksJobRunner
 from dagster_databricks.types import (
     DatabricksRunLifeCycleState,
     DatabricksRunResultState,
-    DatabricksRunState,
 )
+from pytest_mock import MockerFixture
 
 HOST = "https://uksouth.azuredatabricks.net"
 TOKEN = "super-secret-token"
@@ -79,52 +79,72 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
     )
 
 
-@mock.patch("databricks_cli.sdk.JobsService.submit_run")
-def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
+def test_databricks_wait_for_run(mocker: MockerFixture):
+    context = build_op_context()
+    mock_submit_run = mocker.patch("databricks_cli.sdk.JobsService.submit_run")
+    mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
+
     mock_submit_run.return_value = {"run_id": 1}
 
-    context = create_test_pipeline_execution_context()
-    runner = DatabricksJobRunner(HOST, TOKEN, poll_interval_sec=0.01)
-    task = databricks_run_config.pop("task")
-    databricks_run_id = runner.submit_run(databricks_run_config, task)
+    databricks_client = DatabricksClient(host=HOST, token=TOKEN)
 
     calls = {
         "num_calls": 0,
-        "final_state": DatabricksRunState(
-            DatabricksRunLifeCycleState.TERMINATED,
-            DatabricksRunResultState.SUCCESS,
-            "Finished",
-        ),
+        "final_state": {
+            "state": {
+                "result_state": DatabricksRunResultState.SUCCESS,
+                "life_cycle_state": DatabricksRunLifeCycleState.TERMINATED,
+                "state_message": "Finished",
+            }
+        },
     }
 
-    def new_get_run_state(_run_id):
+    def _get_run(*args, **kwargs) -> dict:
         calls["num_calls"] += 1
 
         if calls["num_calls"] == 1:
-            return DatabricksRunState(
-                DatabricksRunLifeCycleState.PENDING,
-                None,
-                "",
-            )
+            return {
+                "state": {
+                    "life_cycle_state": DatabricksRunLifeCycleState.PENDING,
+                    "state_message": "",
+                }
+            }
         elif calls["num_calls"] == 2:
-            return DatabricksRunState(
-                DatabricksRunLifeCycleState.RUNNING,
-                None,
-                "",
-            )
+            return {
+                "state": {
+                    "life_cycle_state": DatabricksRunLifeCycleState.RUNNING,
+                    "state_message": "",
+                }
+            }
         else:
             return calls["final_state"]
 
-    with mock.patch.object(runner.client, "get_run_state", new=new_get_run_state):
-        runner.wait_for_run_to_complete(context.log, databricks_run_id, verbose_logs=True)
+    mock_get_run.side_effect = _get_run
+
+    databricks_client.wait_for_run_to_complete(
+        logger=context.log,
+        databricks_run_id=1,
+        poll_interval_sec=0.01,
+        max_wait_time_sec=10,
+        verbose_logs=True,
+    )
 
     calls["num_calls"] = 0
-    calls["final_state"] = DatabricksRunState(
-        DatabricksRunLifeCycleState.TERMINATED,
-        DatabricksRunResultState.FAILED,
-        "Failed",
-    )
+    calls["final_state"] = {
+        "state": {
+            "result_state": DatabricksRunResultState.FAILED,
+            "life_cycle_state": DatabricksRunLifeCycleState.TERMINATED,
+            "state_message": "Failed",
+        }
+    }
+
     with pytest.raises(DatabricksError) as exc_info:
-        with mock.patch.object(runner.client, "get_run_state", new=new_get_run_state):
-            runner.wait_for_run_to_complete(context.log, databricks_run_id, verbose_logs=True)
-    assert "Run 1 failed with result state" in str(exc_info.value)
+        databricks_client.wait_for_run_to_complete(
+            logger=context.log,
+            databricks_run_id=1,
+            poll_interval_sec=0.01,
+            max_wait_time_sec=10,
+            verbose_logs=True,
+        )
+
+    assert "Run `1` failed with result state" in str(exc_info.value)
