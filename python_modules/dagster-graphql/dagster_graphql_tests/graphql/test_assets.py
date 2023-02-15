@@ -1495,6 +1495,17 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(dimensions[0]["partitionKeys"]) == 1
         assert dimensions[0]["partitionKeys"][0] == "2021-05-05-03:00"
 
+    def test_no_multipartitions_materialized_partitions(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "no_multipartitions_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_2D_MATERIALIZED_PARTITIONS,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert result.data["assetNodes"]
+        assert result.data["assetNodes"][0]["materializedPartitions"]["ranges"] == []
+
     def test_multipartitions_get_materialization_status(self, graphql_context):
         def _get_date_float(dt_str):
             return (
