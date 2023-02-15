@@ -1,13 +1,21 @@
 ---
-title: How software-defined assets relate to ops and graphs | Dagster
-description: Dagster’s main abstraction for building data pipelines is the software-defined asset. However, Dagster also has ops and graphs. How do these relate?
+title: Understanding how software-defined assets relate to ops and graphs | Dagster Docs
+description: Dagster’s main abstraction for building data pipelines is the software-defined asset. However, Dagster also has ops and graphs. How do these relate? When should you use one over the other?
 ---
 
-# How software-defined assets relate to ops and graphs
+# Understanding how software-defined assets relate to ops and graphs
 
-Dagster’s main abstraction for building data pipelines is the _software-defined asset_. However, Dagster also has abstractions called _ops_ and _graphs_. When should you use each of them? How do these relate? Why does Dagster need all of them?
+Dagster’s main abstraction for building data pipelines is the _software-defined asset_. However, Dagster also has abstractions called _ops_ and _graphs_.
 
-## When to use software-defined assets vs. ops and graphs
+If you're not sure which one to use, this guide is for you. In this guide, we'll cover:
+
+- When you should assets or ops and graphs
+- How assets, ops, and graphs relate to each other
+- Why Dagster offers all three abstractions
+
+---
+
+## When should I use assets or ops and graphs?
 
 Dagster is mainly used to build data pipelines, and most data pipelines can be expressed in Dagster as sets of software-defined assets. If you’re a new Dagster user, and your goal is to build a data pipeline, we recommend starting with software-defined assets and not worrying about ops or graphs. This is because most of the code you’ll be writing will directly relate to producing data assets.
 
@@ -35,7 +43,9 @@ Task-based workflows have been a popular way of defining data pipelines for a lo
 
 Op-based graphs resemble task-based workflows very closely, so they’re a natural choice for data pipelines that want to stick to that paradigm, either permanently, or temporarily while migrating to software-defined assets.
 
-## How assets relate to ops and graphs
+---
+
+## How do assets relate to ops and graphs?
 
 A software-defined asset is a description of how to compute the contents of a particular data asset.
 
