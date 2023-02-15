@@ -673,20 +673,20 @@ class DependencyDefinition(
 
 
     Args:
-        solid (str): (legacy) The name of the solid that is depended on, that is, from which the value
+        node (str): The name of the node (op or graph) that is depended on, that is, from which the value
             passed between the two nodes originates.
         output (Optional[str]): The name of the output that is depended on. (default: "result")
         description (Optional[str]): Human-readable description of this dependency.
-        node (str): The name of the node (op or graph) that is depended on, that is, from which the value
+        solid (str): (legacy) The name of the solid that is depended on, that is, from which the value
             passed between the two nodes originates.
     """
 
     def __new__(
         cls,
-        solid: Optional[str] = None,
+        node: Optional[str] = None,
         output: str = DEFAULT_OUTPUT,
         description: Optional[str] = None,
-        node: Optional[str] = None,
+        solid: Optional[str] = None,
     ):
         if solid and node:
             raise DagsterInvalidDefinitionError(
@@ -809,11 +809,11 @@ class MultiDependencyDefinition(
 
 
 class DynamicCollectDependencyDefinition(
-    NamedTuple("_DynamicCollectDependencyDefinition", [("solid_name", str), ("output_name", str)]),
+    NamedTuple("_DynamicCollectDependencyDefinition", [("node_name", str), ("output_name", str)]),
     IDependencyDefinition,
 ):
     def get_node_dependencies(self) -> Sequence[DependencyDefinition]:
-        return [DependencyDefinition(self.solid_name, self.output_name)]
+        return [DependencyDefinition(self.node_name, self.output_name)]
 
     def is_fan_in(self) -> bool:
         return True
@@ -865,7 +865,7 @@ def _create_handle_dict(
             elif isinstance(dep_def, DynamicCollectDependencyDefinition):
                 handle_dict[from_solid.get_input(input_name)] = (
                     DependencyType.DYNAMIC_COLLECT,
-                    solid_dict[dep_def.solid_name].get_output(dep_def.output_name),
+                    solid_dict[dep_def.node_name].get_output(dep_def.output_name),
                 )
 
             else:

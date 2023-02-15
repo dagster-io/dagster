@@ -804,7 +804,7 @@ def get_subselected_graph_definition(
                     deps[_dep_key_of(node)][
                         node_input.input_def.name
                     ] = DynamicCollectDependencyDefinition(
-                        solid_name=node_output.node.name,
+                        node_name=node_output.node.name,
                         output_name=node_output.output_def.name,
                     )
             elif graph.dependency_structure.has_fan_in_deps(node_input):

@@ -67,7 +67,7 @@ def _traverse_airflow_dag(dag, task, seen_tasks, dependencies, node_defs):
             "airflow_task_ready": MultiDependencyDefinition(
                 [
                     DependencyDefinition(
-                        solid=normalized_name(dag.dag_id, task_upstream.task_id),
+                        node=normalized_name(dag.dag_id, task_upstream.task_id),
                         output="airflow_task_complete",
                     )
                     for task_upstream in task_upstream_list
