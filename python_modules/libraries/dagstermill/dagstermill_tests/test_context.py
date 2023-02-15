@@ -44,11 +44,11 @@ def test_resources():
 
 
 def test_solid_def():
-    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.solid_def, OpDefinition)
+    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.op_def, OpDefinition)
 
 
 def test_solid():
-    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.solid, Node)
+    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.node, Node)
 
 
 def test_log(capsys):
