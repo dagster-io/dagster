@@ -5,7 +5,7 @@ import {BrowserRouter} from 'react-router-dom';
 import {RunRequestTable} from '../DryRunRequestTable';
 
 import {mockRepository} from './DryRunRequestTable.mocks';
-import {runRequests} from './SensorDryRun.mocks';
+import {runRequests} from './SensorDryRunDialog.mocks';
 
 jest.mock('../../workspace/WorkspaceContext', () => ({useRepository: () => mockRepository}));
 

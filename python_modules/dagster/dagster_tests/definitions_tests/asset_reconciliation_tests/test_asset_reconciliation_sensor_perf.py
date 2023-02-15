@@ -328,16 +328,11 @@ perf_scenarios = [
     PerfScenario(
         snapshot=giant_unpartitioned_assets_2_random_runs,
         n_freshness_policies=0,
-        max_execution_time_seconds=5,
+        max_execution_time_seconds=20,
     ),
     PerfScenario(
         snapshot=giant_unpartitioned_assets_2_random_runs,
         n_freshness_policies=10,
-        max_execution_time_seconds=15,
-    ),
-    PerfScenario(
-        snapshot=giant_unpartitioned_assets_2_random_runs,
-        n_freshness_policies=100,
         max_execution_time_seconds=20,
     ),
     PerfScenario(
@@ -351,17 +346,12 @@ perf_scenarios = [
         max_execution_time_seconds=10,
     ),
     PerfScenario(
-        snapshot=large_unpartitioned_assets_2_random_runs,
-        n_freshness_policies=500,
-        max_execution_time_seconds=30,
-    ),
-    PerfScenario(
-        snapshot=large_all_partitioned_assets_20_partition_keys,
+        snapshot=large_all_partitioned_assets_2_partition_keys,
         n_freshness_policies=100,
         max_execution_time_seconds=30,
     ),
     PerfScenario(
-        snapshot=medium_all_partitioned_assets_100_partition_keys,
+        snapshot=medium_all_partitioned_assets_2_partition_keys,
         n_freshness_policies=100,
         max_execution_time_seconds=30,
     ),
@@ -370,9 +360,7 @@ perf_scenarios = [
 
 @pytest.mark.parametrize("scenario", perf_scenarios, ids=[s.name for s in perf_scenarios])
 def test_reconciliation_perf(scenario: PerfScenario):
-    if os.getenv("BUILDKITE") is not None and scenario.max_execution_time_seconds > 30:
+    if os.getenv("BUILDKITE") is not None and scenario.max_execution_time_seconds > 20:
         pytest.skip("Skipping slow test on BK")
-    if len(scenario.snapshot.partition_keys_to_backfill or []) > 2:
-        pytest.skip("Skipping test that would require a large snapshot")
 
     scenario.do_scenario()

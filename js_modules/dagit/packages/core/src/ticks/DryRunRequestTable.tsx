@@ -1,4 +1,4 @@
-import {Box, Icon, Subheading, Table, Tag} from '@dagster-io/ui';
+import {Box, Icon, Table, Tag} from '@dagster-io/ui';
 import qs from 'qs';
 import React from 'react';
 
@@ -75,9 +75,6 @@ export const RunRequestTable: React.FC<Props> = ({
   );
   return (
     <div>
-      <Subheading as={Box} margin={{bottom: 12}}>
-        Upcoming Ticks
-      </Subheading>
       <Table>
         <thead>
           <tr>

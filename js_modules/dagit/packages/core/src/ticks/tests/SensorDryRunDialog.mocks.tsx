@@ -3,7 +3,7 @@ import {MockedResponse} from '@apollo/client/testing';
 import {InstigationStatus, RunRequest} from '../../graphql/types';
 import {SET_CURSOR_MUTATION} from '../../sensors/EditCursorDialog';
 import {SetSensorCursorMutation} from '../../sensors/types/EditCursorDialog.types';
-import {EVALUATE_SENSOR_MUTATION} from '../SensorDryRun';
+import {EVALUATE_SENSOR_MUTATION} from '../SensorDryRunDialog';
 import {SensorDryRunMutation} from '../types/SensorDryRun.types';
 
 export const runRequests: RunRequest[] = [

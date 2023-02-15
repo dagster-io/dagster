@@ -284,6 +284,7 @@ def test_solid_config_error():
         resource_defs={},
         is_using_graph_job_op_apis=False,
         asset_layer=job_def.asset_layer,
+        node_input_source_assets={},
     )
 
     int_solid_config_type = solid_dict_type.fields["int_config_op"].config_type

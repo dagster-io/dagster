@@ -17,7 +17,7 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.definitions.dependency import DependencyStructure, OpNode
-from dagster._core.definitions.graph_definition import GraphDefinition, _create_adjacency_lists
+from dagster._core.definitions.graph_definition import GraphDefinition, create_adjacency_lists
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.execution.results import OpExecutionResult
@@ -85,7 +85,7 @@ def _do_construct(ops, dependencies):
     )
     ops = {s.name: OpNode(name=s.name, definition=s, graph_definition=job_def.graph) for s in ops}
     dependency_structure = DependencyStructure.from_definitions(ops, dependencies)
-    return _create_adjacency_lists(list(ops.values()), dependency_structure)
+    return create_adjacency_lists(list(ops.values()), dependency_structure)
 
 
 def test_empty_adjacency_lists():

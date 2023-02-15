@@ -9,7 +9,6 @@ from dagster import (
     DailyPartitionsDefinition,
     Nothing,
     OpExecutionContext,
-    Out,
     Output,
     StaticPartitionsDefinition,
     String,
@@ -162,8 +161,8 @@ def test_multi_asset_key_prefix():
 def test_multi_asset_out_backcompat():
     @multi_asset(
         outs={
-            "my_out_name": Out(asset_key=AssetKey("my_asset_name")),
-            "my_other_out_name": Out(asset_key=AssetKey("my_other_asset")),
+            "my_out_name": AssetOut(key=AssetKey("my_asset_name")),
+            "my_other_out_name": AssetOut(key=AssetKey("my_other_asset")),
         }
     )
     def my_asset():
@@ -186,7 +185,7 @@ def test_multi_asset_group_names():
     @multi_asset(
         outs={
             "out1": AssetOut(group_name="foo", key=AssetKey(["cool", "key1"])),
-            "out2": Out(),
+            "out2": AssetOut(),
             "out3": AssetOut(),
             "out4": AssetOut(group_name="bar", key_prefix="prefix4"),
             "out5": AssetOut(group_name="bar"),
@@ -208,7 +207,7 @@ def test_multi_asset_group_name():
     @multi_asset(
         outs={
             "out1": AssetOut(key=AssetKey(["cool", "key1"])),
-            "out2": Out(),
+            "out2": AssetOut(),
             "out3": AssetOut(),
             "out4": AssetOut(key_prefix="prefix4"),
             "out5": AssetOut(),
@@ -233,7 +232,7 @@ def test_multi_asset_group_names_and_group_name():
         @multi_asset(
             outs={
                 "out1": AssetOut(group_name="foo", key=AssetKey(["cool", "key1"])),
-                "out2": Out(),
+                "out2": AssetOut(),
                 "out3": AssetOut(),
                 "out4": AssetOut(group_name="bar", key_prefix="prefix4"),
                 "out5": AssetOut(group_name="bar"),
@@ -663,8 +662,8 @@ def test_multi_asset_resource_defs():
 
     @multi_asset(
         outs={
-            "key1": Out(asset_key=AssetKey("key1"), io_manager_key="foo"),
-            "key2": Out(asset_key=AssetKey("key2"), io_manager_key="bar"),
+            "key1": AssetOut(key=AssetKey("key1"), io_manager_key="foo"),
+            "key2": AssetOut(key=AssetKey("key2"), io_manager_key="bar"),
         },
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )
@@ -731,8 +730,8 @@ def test_multi_asset_retry_policy():
 
     @multi_asset(
         outs={
-            "key1": Out(asset_key=AssetKey("key1")),
-            "key2": Out(asset_key=AssetKey("key2")),
+            "key1": AssetOut(key=AssetKey("key1")),
+            "key2": AssetOut(key=AssetKey("key2")),
         },
         retry_policy=retry_policy,
     )

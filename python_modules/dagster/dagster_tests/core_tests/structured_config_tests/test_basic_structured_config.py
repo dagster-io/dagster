@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import Optional
 
@@ -570,3 +571,45 @@ def test_schema_aliased_field():
     # use the alias in config space
     assert a_job.execute_in_process({"ops": {"an_op": {"config": {"schema": "bar"}}}}).success
     assert executed["yes"]
+
+
+def test_env_var():
+    os.environ["ENV_VARIABLE_FOR_TEST"] = "foo"
+    os.environ["ENV_VARIABLE_FOR_TEST_INT"] = "2"
+    try:
+
+        class AnAssetConfig(Config):
+            a_string: str
+            an_int: int
+
+        executed = {}
+
+        @asset
+        def my_asset(config: AnAssetConfig):
+            assert config.a_string == "foo"
+            assert config.an_int == 2
+            executed["yes"] = True
+
+        assert (
+            build_assets_job(
+                "blah",
+                [my_asset],
+                config={
+                    "ops": {
+                        "my_asset": {
+                            "config": {
+                                "a_string": {"env": "ENV_VARIABLE_FOR_TEST"},
+                                "an_int": {"env": "ENV_VARIABLE_FOR_TEST_INT"},
+                            }
+                        }
+                    }
+                },
+            )
+            .execute_in_process()
+            .success
+        )
+
+        assert executed["yes"]
+    finally:
+        del os.environ["ENV_VARIABLE_FOR_TEST"]
+        del os.environ["ENV_VARIABLE_FOR_TEST_INT"]

@@ -614,45 +614,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         snapshot.assert_match(result.data)
 
-    def test_get_asset_key_lineage(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, "asset_lineage_pipeline")
-        result = execute_dagster_graphql(
-            graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={"executionParams": {"selector": selector, "mode": "default"}},
-        )
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
-
-        poll_for_finished_run(graphql_context.instance, run_id)
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_ASSET_MATERIALIZATION,
-            variables={"assetKey": {"path": ["b"]}},
-        )
-        assert result.data
-        snapshot.assert_match(result.data)
-
-    def test_get_partitioned_asset_key_lineage(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, "partitioned_asset_lineage_pipeline")
-        result = execute_dagster_graphql(
-            graphql_context,
-            LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={"executionParams": {"selector": selector, "mode": "default"}},
-        )
-        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
-        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
-        poll_for_finished_run(graphql_context.instance, run_id)
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_ASSET_MATERIALIZATION,
-            variables={"assetKey": {"path": ["b"]}},
-        )
-        assert result.data
-        snapshot.assert_match(result.data)
-
     def test_asset_wipe(self, graphql_context):
         _create_run(graphql_context, "single_asset_pipeline")
         _create_run(graphql_context, "multi_asset_pipeline")

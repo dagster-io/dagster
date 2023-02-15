@@ -42,7 +42,7 @@ from typing import (
 )
 
 import packaging.version
-from typing_extensions import Literal
+from typing_extensions import Literal, TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -66,6 +66,8 @@ PICKLE_PROTOCOL = 4
 
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
+
+PrintFn: TypeAlias = Callable[[Any], None]
 
 
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
@@ -473,7 +475,7 @@ def iterate_with_context(
         yield next_output
 
 
-def datetime_as_float(dt):
+def datetime_as_float(dt: datetime.datetime) -> float:
     check.inst_param(dt, "dt", datetime.datetime)
     return float((dt - EPOCH).total_seconds())
 

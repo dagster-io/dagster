@@ -361,6 +361,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
   fragment AssetNodeLiveFreshnessPolicy on FreshnessPolicy {
     maximumLagMinutes
     cronSchedule
+    cronScheduleTimezone
   }
 
   fragment AssetNodeLiveFreshnessInfo on AssetFreshnessInfo {

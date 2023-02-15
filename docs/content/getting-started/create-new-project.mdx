@@ -25,7 +25,7 @@ pip install dagster
 dagster project scaffold --name my-dagster-project
 ```
 
-The command `dagster project scaffold` generates a folder structure with a single Dagster code location and other files such as `pyproject.toml` and `setup.py`. This helps you to quickly start with an empty project with everything set up.
+The `dagster project scaffold` command generates a folder structure with a single Dagster code location and other files, such as `pyproject.toml` and `setup.py`. This takes care of setting things up with an empty project, enabling you to quickly get started.
 
 Here's a breakdown of the files and directories that are generated:
 
@@ -65,14 +65,15 @@ Here's a breakdown of the files and directories that are generated:
     <tr>
       <td>pyproject.toml</td>
       <td>
-        A file that specifies package core metadata in static, tool-agnostic
+        A file that specifies package core metadata in a static, tool-agnostic
         way.
         <br />
-        It includes a <code>tool.dagster</code> section which references to the Python
-        package with your Dagster definitions defined and discoverable at the top-level.
-        This allows you to type just
-        <code>dagster dev</code> without any parameters in order to load your Dagster code.
-        Visit <a href="/concepts/code-locations">Code Locations</a> to learn more.
+        <br />
+        This file includes a <code>tool.dagster</code> section which references the Python
+        package with your Dagster definitions defined and discoverable at the top level.
+        This allows you to use the
+        <code>dagster dev</code> command to load your Dagster code without any parameters.
+        Refer to the <a href="/concepts/code-locations">Code locations documentation</a> to learn more.
         <br />
         <br /> <strong>Note:</strong> <code>pyproject.toml</code> was introduced
         in <a href="https://peps.python.org/pep-0518/https://peps.python.org/pep-0518/">
@@ -100,7 +101,7 @@ Here's a breakdown of the files and directories that are generated:
   </tbody>
 </table>
 
-Inside of the `my_dagster_project/` directory, the following files and directories are generated:
+Inside the `my_dagster_project/` directory, the following files and directories are generated:
 
 <table
   className="table"
@@ -138,11 +139,11 @@ Inside of the `my_dagster_project/` directory, the following files and directori
         <br />
         <br />
         <strong>Note:</strong> As your project grows, we recommend organizing assets in sub-packages or sub-modules.
-        For example, you can put all analytics related assets in a <code>my_dagster_project/assets/analytics/</code>
+        For example, you can put all analytics-related assets in a <code>my_dagster_project/assets/analytics/</code>
         folder and use <PyObject object="load_assets_from_package_module" /> in the top-level definitions
         to load them, rather than needing to manually add assets to the top-level definitions every time
         you define one. Similarly, you can also use <PyObject object="load_assets_from_modules" /> to
-        load assets from single Python files. Read more about best practices in the <a href="/guides/dagster/example_project">Fully Featured Project guide</a>.
+        load assets from single Python files. Refer to the <a href="/guides/dagster/example_project">Fully Featured Project guide</a> for more info and best practices.
       </td>
     </tr>
 
@@ -175,30 +176,32 @@ For more info about the examples, visit the [Dagster GitHub repository](https://
 
 ## Getting started
 
-The newly generated `my-dagster-project` directory is a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`. To install it as a package and its Python dependencies, run:
+The newly generated `my-dagster-project` directory is a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`.
 
-```bash
-pip install -e ".[dev]"
-```
+1. To install it as a package and its Python dependencies, run:
 
-<Note>
-  By using the <code>--editable</code> flag, <code>pip</code> will install your
-  code location as a Python package in{" "}
-  <a href="https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs">
-    "editable mode"
-  </a>{" "}
-  so that as you develop, local code changes will automatically apply.
-</Note>
+   ```bash
+   pip install -e ".[dev]"
+   ```
 
-Then, start the Dagit web server:
+   <Note>
+     Using the <code>--editable</code> (<code>-e</code>) flag instructs{" "}
+     <code>pip</code> to install your code location as a Python package in{" "}
+     <a href="https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs">
+       "editable mode"
+     </a>{" "}
+     so that as you develop, local code changes are automatically applied.
+   </Note>
 
-```bash
-dagster dev
-```
+2. Run the following to start the Dagit web server:
 
-Open <http://localhost:3000> with your browser to see the project.
+   ```bash
+   dagster dev
+   ```
 
-Now, you can start writing assets in `my_dagster_project/assets.py`.
+   **Note**: This command also starts the [Dagster daemon](/deployment/dagster-daemon). Refer to the [Running Dagster locally guide](/guides/running-dagster-locally) for more info.
+
+3. Use your browser to open <http://localhost:3000> to view the project.
 
 ---
 
@@ -220,7 +223,7 @@ Refer to the [Using environment variables and secrets in Dagster code guide](/gu
 
 ### Unit testing
 
-Tests can be added in the `my_dagster_project_tests` directory and you can run tests using `pytest`:
+Tests can be added in the `my_dagster_project_tests` directory and run using `pytest`:
 
 ```bash
 pytest my_dagster_project_tests

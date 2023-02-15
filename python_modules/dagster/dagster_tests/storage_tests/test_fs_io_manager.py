@@ -6,13 +6,13 @@ from typing import Optional, Tuple
 import pytest
 from dagster import (
     AssetKey,
+    AssetOut,
     AssetsDefinition,
     DagsterInstance,
     DailyPartitionsDefinition,
     In,
     MetadataValue,
     Nothing,
-    Out,
     Output,
     PartitionMapping,
     PartitionsDefinition,
@@ -346,8 +346,8 @@ def test_fs_io_manager_partitioned_multi_asset():
         @multi_asset(
             partitions_def=partitions,
             outs={
-                "out_1": Out(asset_key=AssetKey("upstream_asset_1")),
-                "out_2": Out(asset_key=AssetKey("upstream_asset_2")),
+                "out_1": AssetOut(key=AssetKey("upstream_asset_1")),
+                "out_2": AssetOut(key=AssetKey("upstream_asset_2")),
             },
         )
         def upstream_asset() -> Tuple[Output[int], Output[int]]:

@@ -1241,7 +1241,7 @@ def external_asset_graph_from_defs(
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
                 code_version=code_version_by_asset_key.get(asset_key),
-                op_description=node_def.description or output_def.description,
+                op_description=output_def.description or node_def.description,
                 node_definition_name=node_def.name,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,

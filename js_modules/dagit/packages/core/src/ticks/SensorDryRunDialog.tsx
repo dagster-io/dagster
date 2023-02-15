@@ -64,13 +64,7 @@ export const SensorDryRunDialog: React.FC<Props> = (props) => {
   );
 };
 
-export const SensorDryRun: React.FC<Props> = ({
-  repoAddress,
-  name,
-  currentCursor,
-  onClose,
-  jobName,
-}) => {
+const SensorDryRun: React.FC<Props> = ({repoAddress, name, currentCursor, onClose, jobName}) => {
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
   );
@@ -267,7 +261,9 @@ export const SensorDryRun: React.FC<Props> = ({
             {didSkip ? (
               <div>
                 <Subheading>Skip reason</Subheading>
-                <div>{sensorExecutionData?.evaluationResult?.skipReason}</div>
+                <div>
+                  {sensorExecutionData?.evaluationResult?.skipReason || 'No skip reason was output'}
+                </div>
               </div>
             ) : null}
             {numRunRequests && runRequests ? (

@@ -5,7 +5,6 @@ so we have a different layer of objects that encode the explicit public API
 in the user_context module.
 """
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -16,7 +15,6 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Set,
     Union,
     cast,
@@ -1012,21 +1010,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
-    def get_input_lineage(self) -> Sequence[AssetLineageInfo]:
-        if not self._input_lineage:
-            for step_input in self.step.step_inputs:
-                input_def = self.solid_def.input_def_named(step_input.name)
-                dagster_type = input_def.dagster_type
-
-                if dagster_type.is_nothing:
-                    continue
-
-                self._input_lineage.extend(step_input.source.get_asset_lineage(self, input_def))
-
-        self._input_lineage = _dedup_asset_lineage(self._input_lineage)
-
-        return self._input_lineage
-
     def get_type_materializer_context(self) -> "DagsterTypeMaterializerContext":
         return DagsterTypeMaterializerContext(
             plan_data=self.plan_data,
@@ -1046,25 +1029,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             output_capture=self._output_capture,
             known_state=self._known_state,
         )
-
-
-def _dedup_asset_lineage(asset_lineage: Sequence[AssetLineageInfo]) -> List[AssetLineageInfo]:
-    """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
-    information. Duplicates can occur naturally when calculating transitive dependencies from solids
-    with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will
-    inherit all dependencies from all of the solid Inputs).
-    """
-    key_partition_mapping: Dict[AssetKey, Set[str]] = defaultdict(set)
-
-    for lineage_info in asset_lineage:
-        if not lineage_info.partitions:
-            key_partition_mapping[lineage_info.asset_key] |= set()
-        for partition in lineage_info.partitions:
-            key_partition_mapping[lineage_info.asset_key].add(partition)
-    return [
-        AssetLineageInfo(asset_key=asset_key, partitions=partitions)
-        for asset_key, partitions in key_partition_mapping.items()
-    ]
 
 
 class TypeCheckContext:

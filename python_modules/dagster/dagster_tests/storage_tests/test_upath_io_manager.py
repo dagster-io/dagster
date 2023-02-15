@@ -2,7 +2,7 @@ import json
 import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 import pytest
 from dagster import (
@@ -206,6 +206,81 @@ def test_upath_io_manager_multiple_static_partitions(dummy_io_manager: DummyIOMa
     result = my_job.execute_in_process(partition_key="A")
     downstream_asset_data = result.output_for_node("downstream_asset", "result")
     assert set(downstream_asset_data.keys()) == {"A", "B"}
+
+
+def test_upath_io_manager_static_partitions_with_dot():
+    partitions_def = StaticPartitionsDefinition(["0.0-to-1.0", "1.0-to-2.0"])
+
+    dumped_path: Optional[UPath] = None
+
+    class TrackingIOManager(UPathIOManager):
+        def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
+            nonlocal dumped_path
+            dumped_path = path
+
+        def load_from_path(self, context: InputContext, path: UPath):
+            pass
+
+    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
+    def tracking_io_manager(init_context: InitResourceContext):
+        assert init_context.instance is not None
+        base_path = UPath(
+            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
+        )
+        return TrackingIOManager(base_path=base_path)
+
+    @asset(partitions_def=partitions_def)
+    def my_asset(context: OpExecutionContext) -> str:
+        return context.partition_key
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[my_asset],
+        resource_defs={"io_manager": tracking_io_manager},
+    )
+    my_job.execute_in_process(partition_key="0.0-to-1.0")
+
+    assert dumped_path is not None
+    assert "0.0-to-1.0" == dumped_path.name
+
+
+def test_upath_io_manager_with_extension_static_partitions_with_dot():
+    partitions_def = StaticPartitionsDefinition(["0.0-to-1.0", "1.0-to-2.0"])
+
+    dumped_path: Optional[UPath] = None
+
+    class TrackingIOManager(UPathIOManager):
+        extension = ".ext"
+
+        def dump_to_path(self, context: OutputContext, obj: List, path: UPath):
+            nonlocal dumped_path
+            dumped_path = path
+
+        def load_from_path(self, context: InputContext, path: UPath):
+            pass
+
+    @io_manager(config_schema={"base_path": Field(str, is_required=False)})
+    def tracking_io_manager(init_context: InitResourceContext):
+        assert init_context.instance is not None
+        base_path = UPath(
+            init_context.resource_config.get("base_path", init_context.instance.storage_directory())
+        )
+        return TrackingIOManager(base_path=base_path)
+
+    @asset(partitions_def=partitions_def)
+    def my_asset(context: OpExecutionContext) -> str:
+        return context.partition_key
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[my_asset],
+        resource_defs={"io_manager": tracking_io_manager},
+    )
+    my_job.execute_in_process(partition_key="0.0-to-1.0")
+
+    assert dumped_path is not None
+    assert "0.0-to-1.0.ext" == dumped_path.name
+    assert ".ext" == dumped_path.suffix
 
 
 def test_partitioned_io_manager_preserves_single_partition_dependency(

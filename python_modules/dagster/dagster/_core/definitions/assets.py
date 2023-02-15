@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -24,6 +25,7 @@ from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.selector.subset_selector import SelectionTree
 from dagster._utils.backcompat import (
     ExperimentalWarning,
     deprecation_warning,
@@ -32,7 +34,7 @@ from dagster._utils.backcompat import (
 from dagster._utils.merger import merge_dicts
 
 from .dependency import NodeHandle
-from .events import AssetKey, CoercibleToAssetKeyPrefix
+from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
@@ -409,7 +411,7 @@ class AssetsDefinition(ResourceAddable):
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
 
-        transformed_internal_asset_deps = {}
+        transformed_internal_asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         if internal_asset_deps:
             for output_name, asset_keys in internal_asset_deps.items():
                 check.invariant(
@@ -576,12 +578,16 @@ class AssetsDefinition(ResourceAddable):
         return self._partitions_def
 
     @property
-    def metadata_by_key(self):
+    def metadata_by_key(self) -> Mapping[AssetKey, MetadataUserInput]:
         return self._metadata_by_key
 
     @property
-    def code_versions_by_key(self):
+    def code_versions_by_key(self) -> Mapping[AssetKey, Optional[str]]:
         return self._code_versions_by_key
+
+    @property
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+        return self._partition_mappings
 
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
@@ -610,7 +616,7 @@ class AssetsDefinition(ResourceAddable):
         returns the op def within the graph that produces the given asset key.
         """
         output_name = self.get_output_name_for_asset_key(key)
-        return cast(OpDefinition, self.node_def.resolve_output_to_origin_op_def(output_name))
+        return self.node_def.resolve_output_to_origin_op_def(output_name)
 
     def with_prefix_or_group(
         self,
@@ -702,7 +708,9 @@ class AssetsDefinition(ResourceAddable):
         selected_asset_keys: AbstractSet[AssetKey],
     ):
         from dagster._core.definitions.graph_definition import GraphDefinition
-        from dagster._core.selector.subset_selector import convert_dot_seperated_string_to_dict
+        from dagster._core.selector.subset_selector import (
+            convert_dot_separated_string_to_selection_tree,
+        )
 
         from .job_definition import get_subselected_graph_definition
 
@@ -715,7 +723,7 @@ class AssetsDefinition(ResourceAddable):
         dep_node_handles_by_asset_key = get_dep_node_handles_of_graph_backed_asset(
             self.node_def, self
         )
-        op_selection = []
+        op_selection: List[str] = []
         for asset_key in selected_asset_keys:
             dep_node_handles = dep_node_handles_by_asset_key[asset_key]
             for dep_node_handle in dep_node_handles:
@@ -726,11 +734,13 @@ class AssetsDefinition(ResourceAddable):
         # generate the selected assets. The ops should all be nested within a top-level graph
         # node in the original job.
 
-        resolved_op_selection_dict: Dict = {}
+        op_selection_tree: SelectionTree = {}
         for item in op_selection:
-            convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
+            convert_dot_separated_string_to_selection_tree(
+                op_selection_tree, splits=item.split(".")
+            )
 
-        return get_subselected_graph_definition(self.node_def, resolved_op_selection_dict)
+        return get_subselected_graph_definition(self.node_def, op_selection_tree)
 
     def subset_for(
         self,
@@ -823,28 +833,67 @@ class AssetsDefinition(ResourceAddable):
             )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
-        result = []
+        return [
+            self._output_to_source_asset(output_name)
+            for output_name in self.keys_by_output_name.keys()
+        ]
+
+    @public
+    def to_source_asset(self, key: Optional[CoercibleToAssetKey] = None) -> SourceAsset:
+        """
+        Returns a representation of this asset as a :py:class:`SourceAsset`.
+
+        If this is a multi-asset, the "key" argument allows selecting which asset to return a
+        SourceAsset representation of.
+
+        Args:
+            key (Optional[Union[str, Sequence[str], AssetKey]]]): If this is a multi-asset, select
+                which asset to return a SourceAsset representation of. If not a multi-asset, this
+                can be left as None.
+
+        Returns:
+            SourceAsset
+        """
+        if len(self.keys) > 1:
+            check.invariant(
+                key is not None,
+                "The 'key' argument is required when there are multiple assets to choose from",
+            )
+
+        if key is not None:
+            resolved_key = AssetKey.from_coerceable(key)
+            check.invariant(
+                resolved_key in self.keys, f"Key {resolved_key} not found in AssetsDefinition"
+            )
+        else:
+            resolved_key = self.key
+
+        output_names = [
+            output_name
+            for output_name, ak in self.keys_by_output_name.items()
+            if ak == resolved_key
+        ]
+        check.invariant(len(output_names) == 1)
+        return self._output_to_source_asset(output_names[0])
+
+    def _output_to_source_asset(self, output_name: str) -> SourceAsset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            for output_name, asset_key in self.keys_by_output_name.items():
-                # This could maybe be sped up by batching
-                output_def = self.node_def.resolve_output_to_origin(
-                    output_name, NodeHandle(self.node_def.name, parent=None)
-                )[0]
-                result.append(
-                    SourceAsset(
-                        key=asset_key,
-                        metadata=output_def.metadata,
-                        io_manager_key=output_def.io_manager_key,
-                        description=output_def.description,
-                        resource_defs=self.resource_defs,
-                        partitions_def=self.partitions_def,
-                        group_name=self.group_names_by_key[asset_key],
-                    )
-                )
+            output_def = self.node_def.resolve_output_to_origin(
+                output_name, NodeHandle(self.node_def.name, parent=None)
+            )[0]
+            key = self._keys_by_output_name[output_name]
 
-            return result
+            return SourceAsset(
+                key=key,
+                metadata=output_def.metadata,
+                io_manager_key=output_def.io_manager_key,
+                description=output_def.description,
+                resource_defs=self.resource_defs,
+                partitions_def=self.partitions_def,
+                group_name=self.group_names_by_key[key],
+            )
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
         output_name = self.get_output_name_for_asset_key(key)
@@ -1020,7 +1069,7 @@ def _build_invocation_context_with_included_resources(
 
 def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[str]] = None):
     """Ensure that all leaf nodes are mapped to graph outputs."""
-    from dagster._core.definitions.graph_definition import GraphDefinition, _create_adjacency_lists
+    from dagster._core.definitions.graph_definition import GraphDefinition, create_adjacency_lists
 
     prefix = check.opt_sequence_param(prefix, "prefix")
 
@@ -1030,7 +1079,7 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
             _validate_graph_def(inner_node_def, prefix=[*prefix, graph_def.name])
 
     # leaf nodes have no downstream nodes
-    forward_edges, _ = _create_adjacency_lists(graph_def.solids, graph_def.dependency_structure)
+    forward_edges, _ = create_adjacency_lists(graph_def.solids, graph_def.dependency_structure)
     leaf_nodes = {
         node_name for node_name, downstream_nodes in forward_edges.items() if not downstream_nodes
     }

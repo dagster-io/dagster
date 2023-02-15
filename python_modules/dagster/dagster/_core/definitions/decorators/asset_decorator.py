@@ -617,29 +617,16 @@ def build_asset_ins(
     return ins_by_asset_key
 
 
-def build_asset_outs(
-    asset_outs: Mapping[str, Union[Out, AssetOut]]
-) -> Mapping[AssetKey, Tuple[str, Out]]:
+def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tuple[str, Out]]:
     """
     Creates a mapping from AssetKey to (name of output, Out object).
     """
     outs_by_asset_key: Dict[AssetKey, Tuple[str, Out]] = {}
     for output_name, asset_out in asset_outs.items():
-        if isinstance(asset_out, AssetOut):
-            out = asset_out.to_out()
-            asset_key = asset_out.key or AssetKey(
-                list(filter(None, [*(asset_out.key_prefix or []), output_name]))
-            )
-        elif isinstance(asset_out, Out):
-            out = asset_out
-            if isinstance(asset_out.asset_key, AssetKey):
-                asset_key = asset_out.asset_key
-            elif asset_out.asset_key is None:
-                asset_key = AssetKey(output_name)
-            else:
-                check.failed("Expected AssetKey or None")
-        else:
-            check.failed("Expected Out or AssetOut")
+        out = asset_out.to_out()
+        asset_key = asset_out.key or AssetKey(
+            list(filter(None, [*(asset_out.key_prefix or []), output_name]))
+        )
 
         outs_by_asset_key[asset_key] = (output_name.replace("-", "_"), out)
 
