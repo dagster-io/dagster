@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, FrozenSet, Optional, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence
+
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
@@ -51,17 +53,21 @@ class IPipeline(ABC):
 
 class InMemoryPipeline(IPipeline, object):
     def __init__(
-        self, pipeline_def, solid_selection=None, solids_to_execute=None, asset_selection=None
+        self,
+        pipeline_def: "PipelineDefinition",
+        solid_selection: Optional[Sequence[str]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ):
         self._pipeline_def = pipeline_def
         self._solid_selection = solid_selection
         self._solids_to_execute = solids_to_execute
         self._asset_selection = asset_selection
 
-    def get_definition(self):
+    def get_definition(self) -> "PipelineDefinition":
         return self._pipeline_def
 
-    def _resolve_solid_selection(self, solid_selection):
+    def _resolve_solid_selection(self, solid_selection: Sequence[str]) -> AbstractSet[str]:
         # resolve a list of solid selection queries to a frozenset of qualified solid names
         # e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
         check.list_param(solid_selection, "solid_selection", of_type=str)
@@ -76,17 +82,22 @@ class InMemoryPipeline(IPipeline, object):
             )
         return solids_to_execute
 
-    def _subset_for_execution(self, solids_to_execute, solid_selection=None, asset_selection=None):
+    def _subset_for_execution(
+        self,
+        solids_to_execute: Optional[AbstractSet[str]],
+        solid_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
+    ) -> Self:
         if asset_selection:
             return InMemoryPipeline(
-                self._pipeline_def.get_job_def_for_subset_selection(
+                self._pipeline_def.get_job_def_for_subset_selection(  # type: ignore  # (must be JobDefinition)
                     asset_selection=asset_selection
                 ),
                 asset_selection=asset_selection,
             )
         if self._pipeline_def.is_subset_pipeline:
             return InMemoryPipeline(
-                self._pipeline_def.parent_pipeline_def.get_pipeline_subset_def(solids_to_execute),
+                self._pipeline_def.parent_pipeline_def.get_pipeline_subset_def(solids_to_execute),  # type: ignore  # (possible none)
                 solid_selection=solid_selection,
                 solids_to_execute=solids_to_execute,
             )
@@ -101,7 +112,7 @@ class InMemoryPipeline(IPipeline, object):
         self,
         solid_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ):
+    ) -> Self:
         # take a list of solid queries and resolve the queries to names of solids to execute
         solid_selection = check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
@@ -120,7 +131,7 @@ class InMemoryPipeline(IPipeline, object):
         self,
         solids_to_execute: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ):
+    ) -> Self:
         # take a frozenset of resolved solid names from an existing pipeline run
         # so there's no need to parse the selection
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
@@ -136,13 +147,13 @@ class InMemoryPipeline(IPipeline, object):
     @property
     def solid_selection(self) -> Sequence[str]:
         # a list of solid queries provided by the user
-        return self._solid_selection  # List[str]
+        return self._solid_selection  # type: ignore  # (possible none)
 
     @property
-    def solids_to_execute(self) -> FrozenSet[str]:
+    def solids_to_execute(self) -> Optional[AbstractSet[str]]:
         # a frozenset which contains the names of the solids to execute
-        return self._solids_to_execute  # FrozenSet[str]
+        return self._solids_to_execute
 
     @property
-    def asset_selection(self) -> FrozenSet[AssetKey]:
+    def asset_selection(self) -> Optional[AbstractSet[AssetKey]]:
         return self._asset_selection

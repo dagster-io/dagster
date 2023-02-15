@@ -1,4 +1,5 @@
 import os
+from typing import Iterator, Optional
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent, EngineEventData
@@ -14,15 +15,17 @@ from .base import Executor
 
 
 class InProcessExecutor(Executor):
-    def __init__(self, retries, marker_to_close):
+    def __init__(self, retries: RetryMode, marker_to_close: Optional[str] = None):
         self._retries = check.inst_param(retries, "retries", RetryMode)
         self.marker_to_close = check.opt_str_param(marker_to_close, "marker_to_close")
 
     @property
-    def retries(self):
+    def retries(self) -> RetryMode:
         return self._retries
 
-    def execute(self, plan_context, execution_plan):
+    def execute(
+        self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
+    ) -> Iterator[DagsterEvent]:
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 

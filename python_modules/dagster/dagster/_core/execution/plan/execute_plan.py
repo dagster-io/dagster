@@ -136,7 +136,9 @@ def inner_plan_execution_iterator(
                 yield from _handle_compute_log_teardown_error(pipeline_context, sys.exc_info())
 
 
-def _handle_compute_log_setup_error(context, exc_info):
+def _handle_compute_log_setup_error(
+    context: PlanExecutionContext, exc_info
+) -> Iterator[DagsterEvent]:
     yield DagsterEvent.engine_event(
         plan_context=context,
         message="Exception while setting up compute log capture",
@@ -144,7 +146,9 @@ def _handle_compute_log_setup_error(context, exc_info):
     )
 
 
-def _handle_compute_log_teardown_error(context, exc_info):
+def _handle_compute_log_teardown_error(
+    context: PlanExecutionContext, exc_info
+) -> Iterator[DagsterEvent]:
     yield DagsterEvent.engine_event(
         plan_context=context,
         message="Exception while cleaning up compute log capture",

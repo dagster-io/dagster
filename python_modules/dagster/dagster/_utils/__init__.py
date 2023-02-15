@@ -517,7 +517,7 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
 
     def __init__(
         self,
-        generator: Generator[Union["DagsterEvent", T_GeneratedContext], None, None],
+        generator: Iterator[Union["DagsterEvent", T_GeneratedContext]],
         object_cls: Type[T_GeneratedContext],
         require_object: Optional[bool] = True,
     ):

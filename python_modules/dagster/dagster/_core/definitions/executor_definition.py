@@ -266,8 +266,8 @@ def _core_in_process_executor_creation(config: ExecutorConfig) -> "InProcessExec
 
     return InProcessExecutor(
         # shouldn't need to .get() here - issue with defaults in config setup
-        retries=RetryMode.from_config(check.dict_elem(config, "retries")),
-        marker_to_close=config.get("marker_to_close"),
+        retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore  # (possible none)
+        marker_to_close=config.get("marker_to_close"),  # type: ignore  # (should be str)
     )
 
 

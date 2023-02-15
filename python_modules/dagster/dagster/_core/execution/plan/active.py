@@ -1,5 +1,21 @@
 import time
-from typing import Any, Callable, Dict, Iterator, List, Mapping, Optional, Sequence, Set, cast
+from types import TracebackType
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    Union,
+    cast,
+)
+
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.errors import (
@@ -8,7 +24,11 @@ from dagster._core.errors import (
     DagsterUnknownStepStateError,
 )
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.context.system import (
+    IPlanContext,
+    PlanExecutionContext,
+    PlanOrchestrationContext,
+)
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode, RetryState
 from dagster._core.storage.tags import PRIORITY_TAG
@@ -98,11 +118,13 @@ class ActiveExecution:
         # Start the show by loading _executable with the set of _pending steps that have no deps
         self._update()
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self._context_guard = True
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self, exc_type: Type[Exception], exc_value: Exception, traceback: TracebackType
+    ) -> None:
         self._context_guard = False
 
         # Exiting due to exception, return to allow exception to bubble
@@ -155,9 +177,9 @@ class ActiveExecution:
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
         as a function of what has been _completed.
         """
-        new_steps_to_execute = []
-        new_steps_to_skip = []
-        new_steps_to_abandon = []
+        new_steps_to_execute: List[str] = []
+        new_steps_to_skip: List[str] = []
+        new_steps_to_abandon: List[str] = []
 
         successful_or_skipped_steps = self._success | self._skipped
         failed_or_abandoned_steps = self._failed | self._abandoned
@@ -246,7 +268,7 @@ class ActiveExecution:
             step = self.get_next_step()
 
         check.invariant(step is not None, "Unexpected ActiveExecution state")
-        return cast(ExecutionStep, step)
+        return step  # type: ignore  # (possible none)
 
     def get_step_by_key(self, step_key: str) -> ExecutionStep:
         step = self._plan.get_step_by_key(step_key)
@@ -255,7 +277,7 @@ class ActiveExecution:
     def get_steps_to_execute(
         self,
         limit: Optional[int] = None,
-    ) -> List[ExecutionStep]:
+    ) -> Sequence[ExecutionStep]:
         check.invariant(
             self._context_guard,
             "ActiveExecution must be used as a context manager",
@@ -331,7 +353,9 @@ class ActiveExecution:
 
         return sorted(steps, key=self._sort_key_fn)
 
-    def plan_events_iterator(self, pipeline_context) -> Iterator[DagsterEvent]:
+    def plan_events_iterator(
+        self, pipeline_context: Union[PlanExecutionContext, PlanOrchestrationContext]
+    ) -> Iterator[DagsterEvent]:
         """Process all steps that can be skipped and abandoned."""
         steps_to_skip = self.get_steps_to_skip()
         while steps_to_skip:
@@ -468,7 +492,7 @@ class ActiveExecution:
                     ],
                 ).append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
-    def verify_complete(self, pipeline_context: PlanOrchestrationContext, step_key: str) -> None:
+    def verify_complete(self, pipeline_context: IPlanContext, step_key: str) -> None:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure.
         """
         if step_key in self._in_flight:
