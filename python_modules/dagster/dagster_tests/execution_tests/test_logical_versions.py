@@ -463,3 +463,13 @@ def test_stale_status() -> None:
         StaleStatusCause(StaleStatus.STALE, asset2.key, "new input: asset3"),
         StaleStatusCause(StaleStatus.STALE, asset3.key, "never materialized"),
     ]
+
+def test_set_logical_version_inside_op():
+    instance = DagsterInstance.ephemeral()
+
+    @asset
+    def asset1():
+        return Output(1, logical_version=LogicalVersion("foo"))
+
+    mat = materialize_asset([asset1], asset1, instance)
+    assert_logical_version(mat, LogicalVersion("foo"))

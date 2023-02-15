@@ -136,6 +136,7 @@ def _step_output_error_checked_user_event_sequence(
                         *output.metadata_entries,
                         *normalize_metadata(cast(Dict[str, Any], metadata), []),
                     ],
+                    logical_version=output.logical_version,
                 )
         else:
             if not output_def.is_dynamic:
@@ -477,17 +478,18 @@ def _get_output_asset_materializations(
         step_context.is_external_input_asset_records_loaded
         and asset_key in step_context.pipeline_def.asset_layer.asset_keys
     ):
+        assert isinstance(output, Output)
         code_version = _get_code_version(asset_key, step_context)
-        input_metadata = _get_input_metadata(asset_key, step_context)
+        input_provenance_data = _get_input_provenance_data(asset_key, step_context)
         logical_version = (
             compute_logical_version(
                 code_version,
-                {k: meta["logical_version"] for k, meta in input_metadata.items()},
+                {k: meta["logical_version"] for k, meta in input_provenance_data.items()},
             )
-            if not step_context.has_logical_version(asset_key)
-            else step_context.get_logical_version(asset_key)
+            if output.logical_version is None
+            else output.logical_version
         )
-        tags = _build_logical_version_tags(logical_version, code_version, input_metadata)
+        tags = _build_logical_version_tags(logical_version, code_version, input_provenance_data)
         if not step_context.has_logical_version(asset_key):
             logical_version = LogicalVersion(tags[LOGICAL_VERSION_TAG_KEY])
             step_context.set_logical_version(asset_key, logical_version)
@@ -559,15 +561,15 @@ def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -
     )
 
 
-class _InputMetadata(TypedDict):
+class _InputProvenanceData(TypedDict):
     logical_version: LogicalVersion
     storage_id: Optional[int]
 
 
-def _get_input_metadata(
+def _get_input_provenance_data(
     asset_key: AssetKey, step_context: StepExecutionContext
-) -> Mapping[AssetKey, _InputMetadata]:
-    input_logical_versions: Dict[AssetKey, _InputMetadata] = {}
+) -> Mapping[AssetKey, _InputProvenanceData]:
+    input_provenance: Dict[AssetKey, _InputProvenanceData] = {}
     deps = step_context.pipeline_def.asset_layer.upstream_assets_for_asset(asset_key)
     for key in deps:
         # For deps external to this step, this will retrieve the cached record that was stored prior
@@ -582,21 +584,21 @@ def _get_input_metadata(
             )
         else:
             logical_version = DEFAULT_LOGICAL_VERSION
-        input_logical_versions[key] = {
+        input_provenance[key] = {
             "logical_version": logical_version,
             "storage_id": event.storage_id if event else None,
         }
-    return input_logical_versions
+    return input_provenance
 
 
 def _build_logical_version_tags(
     logical_version: LogicalVersion,
     code_version: str,
-    input_metadata: Mapping[AssetKey, _InputMetadata],
+    input_provenance_data: Mapping[AssetKey, _InputProvenanceData],
 ) -> Dict[str, str]:
     tags: Dict[str, str] = {}
     tags[CODE_VERSION_TAG_KEY] = code_version
-    for key, meta in input_metadata.items():
+    for key, meta in input_provenance_data.items():
         tags[get_input_logical_version_tag_key(key)] = meta["logical_version"].value
         tags[get_input_event_pointer_tag_key(key)] = (
             str(meta["storage_id"]) if meta["storage_id"] else "NULL"

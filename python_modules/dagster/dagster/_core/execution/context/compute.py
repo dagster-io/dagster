@@ -15,7 +15,6 @@ from dagster._core.definitions.events import (
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.logical_version import LogicalVersion
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -566,15 +565,6 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.get_output_metadata(
             output_name=output_name, mapping_key=mapping_key
         )
-
-    def set_output_logical_version(
-        self,
-        logical_version: LogicalVersion,
-        output_name: Optional[str] = None,
-    ):
-        """Set the logical version for one of the outputs of an op."""
-        asset_key = self.asset_key_for_output(output_name=output_name or "result")
-        self._step_execution_context.set_logical_version(asset_key, logical_version)
 
     def get_step_execution_context(self) -> StepExecutionContext:
         """Allows advanced users (e.g. framework authors) to punch through to the underlying

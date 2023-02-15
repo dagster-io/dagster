@@ -20,6 +20,7 @@ from typing import (
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.logical_version import LogicalVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
@@ -242,6 +243,7 @@ class Output(Generic[T]):
         output_name: Optional[str] = DEFAULT_OUTPUT,
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        logical_version: Optional[LogicalVersion] = None,
     ):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
@@ -252,6 +254,9 @@ class Output(Generic[T]):
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
         self._metadata_entries = normalize_metadata(metadata, metadata_entries)
+        self._logical_version = check.opt_inst_param(
+            logical_version, "logical_version", LogicalVersion
+        )
 
     @property
     def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
@@ -266,6 +271,11 @@ class Output(Generic[T]):
     @property
     def output_name(self) -> str:
         return self._output_name
+
+    @public
+    @property
+    def logical_version(self) -> Optional[LogicalVersion]:
+        return self._logical_version
 
     def __eq__(self, other: object) -> bool:
         return (
