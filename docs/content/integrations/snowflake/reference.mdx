@@ -146,7 +146,19 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
     return full_df[full_df["Species"] == species]
 ```
 
-Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a static partition, the statement `SELECT * WHERE [partition_expr] = [selected partition]` is used, so when materializing the **Iris-setosa** partition of the above asset, the query is `SELECT * WHERE SPECIES = 'Iris-setosa'`.
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. When loading a static partition, the following statement is used:
+
+```sql
+SELECT *
+ WHERE [partition_expr] = [selected partition]
+```
+
+In this example, the query used when materializing the `Iris-setosa` partition of the above asset would be:
+
+```sql
+SELECT *
+ WHERE SPECIES = 'Iris-setosa'
+```
 
 ### Storing time partitioned assets
 
