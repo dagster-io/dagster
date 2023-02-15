@@ -299,7 +299,7 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
-            freshness_policy_by_ouptut_name (Optional[Mapping[str, FreshnessPolicy]]): Defines a
+            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, FreshnessPolicy]]): Defines a
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
@@ -370,7 +370,7 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
-            freshness_policy_by_ouptut_name (Optional[Mapping[str, FreshnessPolicy]]): Defines a
+            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, FreshnessPolicy]]): Defines a
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
