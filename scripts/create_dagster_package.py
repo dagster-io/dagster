@@ -82,7 +82,7 @@ def _make_dagster_package(package_name: str):
 
     for to_create, vars in files_to_create.items():
         print(f"Writing {to_create}")
-        template = jinja_env.get_template(to_create)
+        template = jinja_env.get_template(f"{to_create}.tmpl")
         with open(vars["path"], "w+") as f:
             template.stream(**vars["kwargs"]).dump(f)
 
@@ -99,7 +99,7 @@ def _make_dagster_package(package_name: str):
             for word in package_name.removeprefix("dagster-").replace("-", " ").split(" ")
         ]
     )
-    template = jinja_env.get_template("api-docs.rst")
+    template = jinja_env.get_template("api-docs.rst.tmpl")
     with open(docs_path, "w+") as f:
         template.stream(
             hyphen_name=package_name,
