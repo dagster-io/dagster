@@ -152,6 +152,11 @@ class PartitionMapping(ABC):
 
 @whitelist_for_serdes
 class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionMapping", [])):
+    """
+    Expects that the upstream and downstream assets are partitioned in the same way, and maps
+    partitions in the downstream asset to the same partition in the upstream asset.
+    """
+
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range: Optional[PartitionKeyRange],
@@ -174,6 +179,13 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
 
 @whitelist_for_serdes
 class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [])):
+    """
+    Maps every partition in the downstream asset to every partition in the upstream asset.
+
+    Commonly used in the case when the downstream asset is not partitioned, in which the entire
+    downstream asset depends on all partitions of the usptream asset.
+    """
+
     def get_upstream_partitions_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
@@ -214,6 +226,13 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
 
 @whitelist_for_serdes
 class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping", [])):
+    """
+    Maps all dependencies to the last partition in the upstream asset.
+
+    Commonly used in the case when the downstream asset is not partitioned, in which the entire
+    downstream asset depends on the last partition of the upstream asset.
+    """
+
     def get_upstream_partitions_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
