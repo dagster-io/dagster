@@ -1,12 +1,12 @@
 from typing import Any
 
 from dagster import build_init_resource_context
-from dagster._config.structured_config import ResourceDependency, StructuredConfigIOManagerBase
+from dagster._config.structured_config import ConfigurableIOManagerInjector, ResourceDependency
 from dagster._core.storage.io_manager import IOManager
 from dagster_aws.s3 import s3_pickle_io_manager
 
 
-class CommonBucketS3PickleIOManager(StructuredConfigIOManagerBase):
+class CommonBucketS3PickleIOManager(ConfigurableIOManagerInjector):
     """
     A version of the s3_pickle_io_manager that gets its bucket from another resource.
     """
@@ -14,7 +14,7 @@ class CommonBucketS3PickleIOManager(StructuredConfigIOManagerBase):
     s3_bucket: str
     s3: ResourceDependency[Any]
 
-    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+    def create_io_manager_to_inject(self, context) -> IOManager:
         return s3_pickle_io_manager(
             build_init_resource_context(
                 config={"s3_bucket": self.s3_bucket},

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._config.structured_config import StructuredConfigIOManager
+from dagster._config.structured_config import ConfigurableIOManager
 from pandas import (
     DataFrame as PandasDataFrame,
     read_sql,
@@ -37,7 +37,7 @@ def connect_snowflake(config, schema="public"):
             conn.close()
 
 
-class SnowflakeIOManager(StructuredConfigIOManager):
+class SnowflakeIOManager(ConfigurableIOManager):
     """
     This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
     the data will be written to a Snowflake table specified by metadata on the relevant Out.
