@@ -82,7 +82,7 @@ def test_docker_executor_check_step_health(aws_env):
     )
 
     # force a segfault to terminate the container unexpectedly, step health check should then fail the step
-    run_config["solids"]["multiply_the_word"]["config"]["should_segfault"] = True
+    run_config["ops"]["multiply_the_word"]["config"]["should_segfault"] = True
 
     with environ({"DOCKER_LAUNCHER_NETWORK": "container:test-postgres-db-docker"}):
         with docker_postgres_instance() as instance:

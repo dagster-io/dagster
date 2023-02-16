@@ -199,9 +199,9 @@ def test_terminate_launched_docker_run(aws_env):
             }
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("hanging_pipeline", docker_image)
+        recon_pipeline = get_test_project_recon_pipeline("hanging_job", docker_image)
         with get_test_project_workspace_and_external_pipeline(
-            instance, "hanging_pipeline", container_image=docker_image
+            instance, "hanging_job", container_image=docker_image
         ) as (workspace, orig_pipeline):
             external_pipeline = ReOriginatedExternalPipelineForTest(
                 orig_pipeline,
@@ -223,9 +223,9 @@ def test_terminate_launched_docker_run(aws_env):
 
             assert instance.run_launcher.terminate(run_id)
 
-            terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
-            terminated_pipeline_run = instance.get_run_by_id(run_id)
-            assert terminated_pipeline_run.status == DagsterRunStatus.CANCELED
+            terminated_run = poll_for_finished_run(instance, run_id, timeout=30)
+            terminated_run = instance.get_run_by_id(run_id)
+            assert terminated_run.status == DagsterRunStatus.CANCELED
 
             run_logs = instance.all_logs(run_id)
 
@@ -233,8 +233,8 @@ def test_terminate_launched_docker_run(aws_env):
                 run_logs,
                 [
                     ("PIPELINE_CANCELING", "Sending run termination request"),
-                    ("STEP_FAILURE", 'Execution of step "hanging_solid" failed.'),
-                    ("PIPELINE_CANCELED", 'Execution of run for "hanging_pipeline" canceled.'),
+                    ("STEP_FAILURE", 'Execution of step "hanging_op" failed.'),
+                    ("PIPELINE_CANCELED", 'Execution of run for "hanging_job" canceled.'),
                     ("ENGINE_EVENT", "Process for run exited"),
                 ],
             )

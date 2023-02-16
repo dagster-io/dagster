@@ -204,7 +204,7 @@ def test_recovery(aws_env):
     run_config = merge_dicts(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
-            "solids": {
+            "ops": {
                 "multiply_the_word_slow": {
                     "inputs": {"word": "bar"},
                     "config": {"factor": 2, "sleep_time": 10},

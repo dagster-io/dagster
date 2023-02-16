@@ -102,7 +102,7 @@ class DockerContainerContext(
         )
 
     @staticmethod
-    def create_for_run(pipeline_run: DagsterRun, run_launcher: Optional["DockerRunLauncher"]):
+    def create_for_run(dagster_run: DagsterRun, run_launcher: Optional["DockerRunLauncher"]):
         context = DockerContainerContext()
 
         # First apply the instance / run_launcher-level context
@@ -117,8 +117,8 @@ class DockerContainerContext(
             )
 
         run_container_context = (
-            pipeline_run.pipeline_code_origin.repository_origin.container_context
-            if pipeline_run.pipeline_code_origin
+            dagster_run.pipeline_code_origin.repository_origin.container_context
+            if dagster_run.pipeline_code_origin
             else None
         )
 

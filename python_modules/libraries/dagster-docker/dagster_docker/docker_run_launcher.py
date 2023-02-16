@@ -71,8 +71,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     ) -> Self:
         return DockerRunLauncher(inst_data=inst_data, **config_value)
 
-    def get_container_context(self, pipeline_run: DagsterRun) -> DockerContainerContext:
-        return DockerContainerContext.create_for_run(pipeline_run, self)
+    def get_container_context(self, dagster_run: DagsterRun) -> DockerContainerContext:
+        return DockerContainerContext.create_for_run(dagster_run, self)
 
     def _get_client(self, container_context: DockerContainerContext):
         client = docker.client.from_env()
@@ -96,10 +96,10 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         validate_docker_image(docker_image)
         return docker_image
 
-    def _launch_container_with_command(self, run, docker_image, command):
-        container_context = self.get_container_context(run)
+    def _launch_container_with_command(self, dagster_run, docker_image, command):
+        container_context = self.get_container_context(dagster_run)
         docker_env = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
-        docker_env["DAGSTER_RUN_JOB_NAME"] = run.job_name
+        docker_env["DAGSTER_RUN_JOB_NAME"] = dagster_run.job_name
 
         client = self._get_client(container_context)
 
@@ -136,12 +136,12 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                     docker_image=docker_image,
                 )
             ),
-            pipeline_run=run,
+            pipeline_run=dagster_run,
             cls=self.__class__,
         )
 
         self._instance.add_run_tags(
-            run.run_id,
+            dagster_run.run_id,
             {DOCKER_CONTAINER_ID_TAG: container.id, DOCKER_IMAGE_TAG: docker_image},
         )
 
