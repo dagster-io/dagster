@@ -10,11 +10,13 @@ from dagster._utils.merger import deep_merge_dicts
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_azure.adls2 import adls2_pickle_io_manager, adls2_resource
 from dagster_databricks import (
-    DatabricksRunLifeCycleState,
-    DatabricksRunResultState,
     databricks_pyspark_step_launcher,
 )
-from dagster_databricks.types import DatabricksRunState
+from dagster_databricks.types import (
+    DatabricksRunLifeCycleState,
+    DatabricksRunResultState,
+    DatabricksRunState,
+)
 from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
@@ -184,9 +186,9 @@ def test_pyspark_databricks(
     mock_submit_run.return_value = 12345
     mock_read_file.return_value = "somefilecontents".encode()
 
-    running_state = DatabricksRunState(DatabricksRunLifeCycleState.Running, None, "")
+    running_state = DatabricksRunState(DatabricksRunLifeCycleState.RUNNING, None, "")
     final_state = DatabricksRunState(
-        DatabricksRunLifeCycleState.Terminated, DatabricksRunResultState.Success, ""
+        DatabricksRunLifeCycleState.TERMINATED, DatabricksRunResultState.SUCCESS, ""
     )
     mock_get_run_state.side_effect = [running_state] * 5 + [final_state]
 

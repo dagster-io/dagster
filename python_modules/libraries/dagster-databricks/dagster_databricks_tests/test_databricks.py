@@ -91,8 +91,8 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
     calls = {
         "num_calls": 0,
         "final_state": DatabricksRunState(
-            DatabricksRunLifeCycleState.Terminated,
-            DatabricksRunResultState.Success,
+            DatabricksRunLifeCycleState.TERMINATED,
+            DatabricksRunResultState.SUCCESS,
             "Finished",
         ),
     }
@@ -102,15 +102,15 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
 
         if calls["num_calls"] == 1:
             return DatabricksRunState(
-                DatabricksRunLifeCycleState.Pending,
+                DatabricksRunLifeCycleState.PENDING,
                 None,
-                None,
+                "",
             )
         elif calls["num_calls"] == 2:
             return DatabricksRunState(
-                DatabricksRunLifeCycleState.Running,
+                DatabricksRunLifeCycleState.RUNNING,
                 None,
-                None,
+                "",
             )
         else:
             return calls["final_state"]
@@ -120,8 +120,8 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
 
     calls["num_calls"] = 0
     calls["final_state"] = DatabricksRunState(
-        DatabricksRunLifeCycleState.Terminated,
-        DatabricksRunResultState.Failed,
+        DatabricksRunLifeCycleState.TERMINATED,
+        DatabricksRunResultState.FAILED,
         "Failed",
     )
     with pytest.raises(DatabricksError) as exc_info:
