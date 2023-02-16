@@ -430,7 +430,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         metadata_entries.append(MetadataEntry("Run ID", value=run.run_id))
         self._instance.report_engine_event(
             message="Launching run in ECS task",
-            pipeline_run=run,
+            dagster_run=run,
             engine_event_data=EngineEventData(metadata_entries),
             cls=self.__class__,
         )

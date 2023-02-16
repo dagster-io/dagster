@@ -57,6 +57,6 @@ class CustomECSRunLauncher(EcsRunLauncher):
     ):
         self._instance.report_engine_event(
             message="Launching run in custom ECS task",
-            pipeline_run=run,
+            dagster_run=run,
             engine_event_data=EngineEventData([MetadataEntry("Run ID", value=run.run_id)]),
         )

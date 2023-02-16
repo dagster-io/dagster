@@ -614,7 +614,7 @@ def _evaluate_sensor(
                         f"{status} of run {origin_run_id}."
                     )
                     instance.report_engine_event(
-                        message=message, pipeline_run=pipeline_run_reaction.pipeline_run
+                        message=message, dagster_run=pipeline_run_reaction.pipeline_run
                     )
                     context.logger.info(
                         f"Completed a reaction request for run {origin_run_id}: {message}"
