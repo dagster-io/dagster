@@ -1,7 +1,10 @@
 import re
+import time
+from typing import List
 
 import pytest
-from dagster import AssetIn, AssetKey, Definitions, asset
+from dagster import AssetIn, AssetKey, AssetsDefinition, Definitions, asset
+from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
@@ -155,3 +158,36 @@ def test_one_off_component_prefix():
         ),
     ):
         Definitions(assets=[asset1, asset3])
+
+
+NUM_ASSETS_TO_TEST_PERF = 5000
+# As of 2/16/2023, `avg_elapsed_time_secs` is ~0.024 on a MBP
+PERF_CUTOFF_SECS = 0.05
+NUM_PERF_TRIALS = 10
+
+
+def test_perf():
+    assets: List[AssetsDefinition] = []
+    for i in range(NUM_ASSETS_TO_TEST_PERF):
+
+        @asset(name="asset_" + str(i))
+        def my_asset():
+            ...
+
+        assets.append(my_asset)
+
+    total_elapsed_time_secs = 0
+    for _ in range(NUM_PERF_TRIALS):
+        start_time = time.time()
+        resolve_similar_asset_names(AssetKey("asset_" + str(NUM_ASSETS_TO_TEST_PERF)), assets)
+        end_time = time.time()
+
+        elapsed_time_secs = end_time - start_time
+
+        total_elapsed_time_secs += elapsed_time_secs
+
+    avg_elapsed_time_secs = total_elapsed_time_secs / NUM_PERF_TRIALS
+
+    assert (
+        avg_elapsed_time_secs < PERF_CUTOFF_SECS
+    ), "Performance of resolve_similar_asset_names has regressed"

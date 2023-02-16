@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import AbstractSet, Dict, Iterable, List, Mapping, Tuple, cast
+from typing import AbstractSet, Dict, Iterable, List, Mapping, Sequence, Tuple, cast
 
 from thefuzz import fuzz
 
@@ -43,10 +43,10 @@ class ResolvedAssetDependencies:
         )
 
 
-def _resolve_similar_asset_names(
+def resolve_similar_asset_names(
     target_asset_key: AssetKey,
     assets_defs: Iterable[AssetsDefinition],
-) -> List[AssetKey]:
+) -> Sequence[AssetKey]:
     """
     Given a target asset key (an upstream dependency which we can't find), produces a list of
     similar asset keys from the list of asset definitions. We use this list to produce a helpful
@@ -160,10 +160,12 @@ def resolve_assets_def_deps(
                     "produced by any of the provided asset ops and is not one of the provided "
                     "sources."
                 )
-                similar_names = _resolve_similar_asset_names(upstream_key, assets_defs)
+                similar_names = resolve_similar_asset_names(upstream_key, assets_defs)
                 if similar_names:
+                    # Arbitrarily limit to 10 similar names to avoid a huge error message
+                    subset_similar_names = similar_names[:10]
                     similar_to_string = ", ".join(
-                        (similar.to_string() for similar in similar_names)
+                        (similar.to_string() for similar in subset_similar_names)
                     )
                     msg += f" Did you mean one of the following?\n\t{similar_to_string}"
                 raise DagsterInvalidDefinitionError(msg)
