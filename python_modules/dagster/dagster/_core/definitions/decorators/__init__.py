@@ -33,6 +33,5 @@ from .sensor_decorator import (
     sensor as sensor,
 )
 from .solid_decorator import (
-    op,
     solid as solid,
 )

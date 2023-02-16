@@ -1,4 +1,4 @@
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, op
+from dagster._legacy import ModeDefinition, execute_pipeline, op, pipeline
 from dagster_msteams.hooks import teams_on_failure, teams_on_success
 from dagster_msteams.resources import msteams_resource
 from mock import patch

@@ -19,7 +19,6 @@ from dagster._core.definitions import (
     OpDefinition,
     OutputMapping,
     PipelineDefinition,
-    ResourceDefinition,
     op,
 )
 from dagster._core.definitions.logger_definition import LoggerDefinition

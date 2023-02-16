@@ -5,9 +5,8 @@ from dagster._core.definitions import op
 from dagster._core.test_utils import default_mode_def_for_test
 from dagster._legacy import InputDefinition, OutputDefinition, PresetDefinition, pipeline
 
+
 # pylint:disable=no-member
-
-
 
 
 @op(
