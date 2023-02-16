@@ -91,11 +91,9 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
     AssetGroup,
-    InputDefinition,
     Materialization,
     ModeDefinition,
     OpExecutionContext,
-    OutputDefinition,
     PartitionSetDefinition,
     PresetDefinition,
     build_assets_job,
@@ -474,19 +472,19 @@ def no_config_chain_pipeline():
 
 @pipeline
 def scalar_output_pipeline():
-    @op(output_defs=[OutputDefinition(String)])
-    def return_str():
+    @op
+    def return_str() -> str:
         return "foo"
 
-    @op(output_defs=[OutputDefinition(Int)])
-    def return_int():
+    @op
+    def return_int() -> int:
         return 34234
 
-    @op(output_defs=[OutputDefinition(Bool)])
-    def return_bool():
+    @op
+    def return_bool() -> bool:
         return True
 
-    @op(output_defs=[OutputDefinition(Any)])
+    @op(out=Out(Any))
     def return_any():
         return "dkjfkdjfe"
 
@@ -668,20 +666,20 @@ def multi_mode_with_loggers():
 
 @pipeline
 def composites_pipeline():
-    @op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
-    def add_one(num):
+    @op
+    def add_one(num: int) -> int:
         return num + 1
 
-    @op(input_defs=[InputDefinition("num")])
-    def div_two(num):
+    @op
+    def div_two(num: int) -> float:
         return num / 2
 
-    @graph(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
-    def add_two(num):
+    @graph
+    def add_two(num: int) -> int:
         return add_one.alias("adder_2")(add_one.alias("adder_1")(num))
 
-    @graph(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
-    def add_four(num):
+    @graph
+    def add_four(num: int) -> int:
         return add_two.alias("adder_2")(add_two.alias("adder_1")(num))
 
     @graph
@@ -811,17 +809,14 @@ def eventually_successful():
 def hard_failer():
     @op(
         config_schema={"fail": Field(Bool, is_required=False, default_value=False)},
-        output_defs=[OutputDefinition(Int)],
     )
-    def hard_fail_or_0(context):
+    def hard_fail_or_0(context) -> int:
         if context.op_config["fail"]:
             segfault()
         return 0
 
-    @op(
-        input_defs=[InputDefinition("n", Int)],
-    )
-    def increment(_, n):
+    @op
+    def increment(_, n: int) -> int:
         return n + 1
 
     increment(hard_fail_or_0())

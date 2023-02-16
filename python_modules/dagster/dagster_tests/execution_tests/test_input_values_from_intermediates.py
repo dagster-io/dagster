@@ -1,6 +1,7 @@
 from dagster import List, Optional
 from dagster._core.definitions.decorators import op
-from dagster._legacy import InputDefinition, execute_pipeline, pipeline
+from dagster._core.definitions.input import In
+from dagster._legacy import execute_pipeline, pipeline
 
 
 def test_from_intermediates_from_multiple_outputs():
@@ -12,7 +13,7 @@ def test_from_intermediates_from_multiple_outputs():
     def y():
         return "y"
 
-    @op(input_defs=[InputDefinition("stuff", Optional[List[str]])])
+    @op(ins={"stuff": In(Optional[List[str]])})
     def gather(stuff):
         return "{} and {}".format(*stuff)
 

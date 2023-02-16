@@ -247,7 +247,7 @@ def test_capture_handler_log_records():
 def test_default_context_logging():
     called = {}
 
-    @op(input_defs=[], output_defs=[])
+    @op
     def default_context_solid(context):
         called["yes"] = True
         for logger in context.log._dagster_handler._loggers:  # pylint: disable=protected-access

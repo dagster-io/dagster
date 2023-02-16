@@ -19,7 +19,9 @@ from dagster import (
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.dependency import DependencyStructure, OpNode
 from dagster._core.definitions.graph_definition import GraphDefinition, create_adjacency_lists
+from dagster._core.definitions.input import In
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.output import Out
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.execution.results import OpExecutionResult
 from dagster._core.instance import DagsterInstance
@@ -36,9 +38,7 @@ from dagster._core.utility_solids import (
 )
 from dagster._core.workspace.load import location_origin_from_python_file
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -464,7 +464,7 @@ def test_pipeline_subset_with_multi_dependency():
     def return_two():
         return 2
 
-    @op(input_defs=[InputDefinition("dep", Nothing)])
+    @op(ins={"dep": In(Nothing)})
     def noop():
         return 3
 
@@ -511,7 +511,7 @@ def test_pipeline_explicit_subset_with_multi_dependency():
     def return_two():
         return 2
 
-    @op(input_defs=[InputDefinition("dep", Nothing)])
+    @op(ins={"dep": In(Nothing)})
     def noop():
         return 3
 
@@ -550,15 +550,15 @@ def test_pipeline_explicit_subset_with_multi_dependency():
 
 
 def define_three_part_pipeline():
-    @op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_one(num):
         return num + 1
 
-    @op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_two(num):
         return num + 2
 
-    @op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_three(num):
         return num + 3
 
@@ -599,8 +599,8 @@ def test_pipeline_execution_explicit_disjoint_subset():
 
 def test_pipeline_wrapping_types():
     @op(
-        input_defs=[InputDefinition("value", Optional[List[Optional[String]]])],
-        output_defs=[OutputDefinition(Optional[List[Optional[String]]])],
+        ins={"value": In(Optional[List[Optional[String]]])},
+        out=Out(Optional[List[Optional[String]]]),
     )
     def double_string_for_all(value):
         if not value:
@@ -671,7 +671,7 @@ def test_pipeline_streaming_iterator():
 def test_pipeline_streaming_multiple_outputs():
     events = []
 
-    @op(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
+    @op(out={"one": Out(Int), "two": Out(Int)})
     def push_one_two(_context):
         events.append(1)
         yield Output(1, "one")
@@ -1010,10 +1010,10 @@ def test_two_step_reexecution():
 
 def test_optional():
     @op(
-        output_defs=[
-            OutputDefinition(Int, "x"),
-            OutputDefinition(Int, "y", is_required=False),
-        ]
+        out={
+            "x": Out(Int),
+            "y": Out(Int, is_required=False),
+        }
     )
     def return_optional(_context):
         yield Output(1, "x")
@@ -1127,7 +1127,7 @@ def test_multi_dep_optional():
     def echo(x):
         return x
 
-    @op(output_defs=[OutputDefinition(name="skip", is_required=False)])
+    @op(out={"skip": Out(is_required=False)})
     def skip(_):
         return
         yield  # pylint: disable=unreachable

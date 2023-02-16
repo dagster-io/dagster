@@ -30,9 +30,7 @@ from dagster._core.definitions.decorators import daily_schedule, schedule
 from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     default_executors,
     pipeline,
 )
@@ -556,15 +554,15 @@ def define_resource_pipeline():
 
 
 def define_fan_in_fan_out_pipeline():
-    @op(output_defs=[OutputDefinition(int)])
-    def return_one(_):
+    @op
+    def return_one(_) -> int:
         return 1
 
-    @op(input_defs=[InputDefinition("num", int)])
-    def add_one_fan(_, num):
+    @op
+    def add_one_fan(_, num: int) -> int:
         return num + 1
 
-    @op(input_defs=[InputDefinition("nums", List[int])])
+    @op(ins={"nums": In(List[int])})
     def sum_fan_in(_, nums):
         return sum(nums)
 

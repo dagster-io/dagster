@@ -1,8 +1,8 @@
 # pylint: disable=unused-argument
 import pytest
-from dagster import op
+from dagster import In, op
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import InputDefinition, execute_solid
+from dagster._legacy import execute_solid
 
 
 def test_solid_input_arguments():
@@ -53,7 +53,7 @@ def test_solid_input_arguments():
     def _context_with_underscore_arg(context, _):
         pass
 
-    @op(input_defs=[InputDefinition("x")])
+    @op(ins={"x": In()})
     def _context_with_input_definitions(context, x):
         pass
 
@@ -73,15 +73,15 @@ def test_solid_input_arguments():
         def _context_after_inputs(x, context):
             pass
 
-    @op(input_defs=[InputDefinition("_")])
+    @op(ins={"_": In()})
     def _underscore_after_input_arg(x, _):
         pass
 
-    @op(input_defs=[InputDefinition("_x")])
+    @op(ins={"_x": In()})
     def _context_partial_inputs_1(context, _x):
         pass
 
-    @op(input_defs=[InputDefinition("x")])
+    @op(ins={"x": In()})
     def _context_partial_inputs_2(x, y):
         pass
 

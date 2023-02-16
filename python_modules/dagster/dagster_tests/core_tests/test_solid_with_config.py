@@ -3,7 +3,8 @@ from dagster import DagsterInvalidConfigError, Field, String, root_input_manager
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline
+from dagster._core.definitions.input import In
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 def test_basic_solid_with_config():
@@ -11,8 +12,6 @@ def test_basic_solid_with_config():
 
     @op(
         name="solid_with_context",
-        input_defs=[],
-        output_defs=[],
         config_schema={"some_config": Field(String)},
     )
     def solid_with_context(context):
@@ -37,8 +36,6 @@ def test_config_arg_mismatch():
 
     @op(
         name="solid_with_context",
-        input_defs=[],
-        output_defs=[],
         config_schema={"some_config": Field(String)},
     )
     def solid_with_context(context):
@@ -56,7 +53,7 @@ def test_config_arg_mismatch():
 
 
 def test_solid_not_found():
-    @op(name="find_me_solid", input_defs=[], output_defs=[])
+    @op(name="find_me_solid")
     def find_me_solid(_):
         raise Exception("should not reach")
 
@@ -235,7 +232,7 @@ def test_extra_config_unsatisfied_input_io_man():
     def config_io_man(context):
         return context.config
 
-    @op(input_defs=[InputDefinition("x", root_manager_key="my_loader")])
+    @op(ins={"x": In(root_manager_key="my_loader")})
     def start(_, x):
         return x
 

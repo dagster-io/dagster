@@ -1,7 +1,8 @@
 from unittest.mock import Mock
 
 from dagster import Nothing, ResourceDefinition, op
-from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline
+from dagster._core.definitions.input import In
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster_mlflow.hooks import _cleanup_on_success, end_mlflow_on_run_finished
 
 
@@ -42,7 +43,7 @@ def test_end_mlflow_on_run_finished():
     def solid1():
         pass
 
-    @op(input_defs=[InputDefinition("start", Nothing)])
+    @op(ins={"start": In(Nothing)})
     def solid2():
         pass
 

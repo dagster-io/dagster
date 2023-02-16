@@ -9,10 +9,10 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.definitions.decorators import op
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
     execute_pipeline,
     execute_solid,
     pipeline,
@@ -22,11 +22,10 @@ from dagster._legacy import (
 def test_multiple_outputs():
     @op(
         name="multiple_outputs",
-        input_defs=[],
-        output_defs=[
-            OutputDefinition(name="output_one"),
-            OutputDefinition(name="output_two"),
-        ],
+        out={
+            "output_one": Out(),
+            "output_two": Out(),
+        },
     )
     def multiple_outputs(_):
         yield Output(output_name="output_one", value="foo")
@@ -51,11 +50,7 @@ def test_multiple_outputs():
 
 
 def test_wrong_multiple_output():
-    @op(
-        name="multiple_outputs",
-        input_defs=[],
-        output_defs=[OutputDefinition(name="output_one")],
-    )
+    @op(name="multiple_outputs", out={"output_one": Out()})
     def multiple_outputs(_):
         yield Output(output_name="mismatch", value="foo")
 
@@ -70,11 +65,7 @@ def test_wrong_multiple_output():
 def test_multiple_outputs_of_same_name_disallowed():
     # make this illegal until it is supported
 
-    @op(
-        name="multiple_outputs",
-        input_defs=[],
-        output_defs=[OutputDefinition(name="output_one")],
-    )
+    @op(name="multiple_outputs", out={"output_one": Out()})
     def multiple_outputs(_):
         yield Output(output_name="output_one", value="foo")
         yield Output(output_name="output_one", value="foo")
@@ -90,19 +81,17 @@ def test_multiple_outputs_of_same_name_disallowed():
 def define_multi_out():
     @op(
         name="multiple_outputs",
-        input_defs=[],
-        output_defs=[
-            OutputDefinition(name="output_one"),
-            OutputDefinition(name="output_two", is_required=False),
-        ],
+        out={
+            "output_one": Out(),
+            "output_two": Out(is_required=False),
+        },
     )
     def multiple_outputs(_):
         yield Output(output_name="output_one", value="foo")
 
     @op(
         name="downstream_one",
-        input_defs=[InputDefinition("some_input")],
-        output_defs=[],
+        ins={"some_input": In()},
     )
     def downstream_one(_, some_input):
         del some_input
@@ -186,11 +175,10 @@ def test_multiple_outputs_only_emit_one_multiproc():
 def test_missing_non_optional_output_fails():
     @op(
         name="multiple_outputs",
-        input_defs=[],
-        output_defs=[
-            OutputDefinition(name="output_one"),
-            OutputDefinition(name="output_two"),
-        ],
+        out={
+            "output_one": Out(),
+            "output_two": Out(),
+        },
     )
     def multiple_outputs(_):
         yield Output(output_name="output_one", value="foo")
@@ -206,7 +194,7 @@ def test_missing_non_optional_output_fails():
 def test_warning_for_conditional_output(capsys):
     @op(
         config_schema={"return": bool},
-        output_defs=[OutputDefinition(Any, is_required=False)],
+        out=Out(Any, is_required=False),
     )
     def maybe(context):
         if context.op_config["return"]:

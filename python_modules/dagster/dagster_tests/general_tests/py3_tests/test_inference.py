@@ -13,7 +13,7 @@ from dagster import (
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.inference import infer_input_props, infer_output_props
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._legacy import InputDefinition, execute_pipeline, execute_solid, pipeline
+from dagster._legacy import execute_pipeline, execute_solid, pipeline
 
 
 def test_infer_solid_description_from_docstring():
@@ -45,7 +45,7 @@ def test_single_typed_input():
     def add_one_infer(_context, num: int):
         return num + 1
 
-    @op(input_defs=[InputDefinition("num", Int)])
+    @op(ins={"num": In(Int)})
     def add_one_ex(_context, num):
         return num + 1
 
@@ -59,7 +59,7 @@ def test_single_typed_input():
 
 
 def test_precedence():
-    @op(input_defs=[InputDefinition("num", Int)])
+    @op(ins={"num": In(Int)})
     def add_one(_context, num: Any):
         return num + 1
 

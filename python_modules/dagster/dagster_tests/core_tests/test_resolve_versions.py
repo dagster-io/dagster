@@ -22,7 +22,7 @@ from dagster import (
     root_input_manager,
     usable_as_dagster_type,
 )
-from dagster._core.definitions import InputDefinition
+from dagster._core.definitions.output import Out
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -31,7 +31,7 @@ from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, OutputDefinition, execute_pipeline, pipeline
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 class VersionedInMemoryIOManager(MemoizableIOManager):
@@ -228,7 +228,7 @@ def run_test_with_builtin_type(type_to_test, type_values):
     first_type_val, second_type_val = type_values
     manager = VersionedInMemoryIOManager()
 
-    @op(version="42", input_defs=[InputDefinition("_builtin_type", type_to_test)])
+    @op(version="42", ins={"_builtin_type": In(type_to_test)})
     def solid_ext_input(_builtin_type):
         pass
 
@@ -283,7 +283,7 @@ def run_test_with_builtin_type(type_to_test, type_values):
 def test_memoized_plan_default_input_val():
     @op(
         version="42",
-        input_defs=[InputDefinition("_my_input", String, default_value="DEFAULTVAL")],
+        ins={"_my_input": In(String, default_value="DEFAULTVAL")},
     )
     def solid_default_input(_my_input):
         pass
@@ -370,7 +370,7 @@ def test_memoized_plan_custom_io_manager_key():
     manager = VersionedInMemoryIOManager()
     mgr_def = IOManagerDefinition.hardcoded_io_manager(manager)
 
-    @op(version="39", output_defs=[OutputDefinition(io_manager_key="my_key")])
+    @op(version="39", out=Out(io_manager_key="my_key"))
     def solid_requires_io_manager():
         return Output(5)
 
@@ -500,11 +500,11 @@ def test_configured_versions():
 
 
 def test_memoized_plan_inits_resources_once():
-    @op(output_defs=[OutputDefinition(io_manager_key="foo")], version="foo")
+    @op(out=Out(io_manager_key="foo"), version="foo")
     def foo_solid():
         pass
 
-    @op(output_defs=[OutputDefinition(io_manager_key="bar")], version="bar")
+    @op(out=Out(io_manager_key="bar"), version="bar")
     def bar_solid():
         pass
 
@@ -605,7 +605,7 @@ def test_memoized_plan_root_input_manager():
         return 5
 
     @op(
-        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+        ins={"x": In(root_manager_key="my_input_manager")},
         version="foo",
     )
     def my_solid_takes_input(x):
@@ -643,7 +643,7 @@ def test_memoized_plan_root_input_manager_input_config():
         return 5
 
     @op(
-        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+        ins={"x": In(root_manager_key="my_input_manager")},
         version="foo",
     )
     def my_solid_takes_input(x):
@@ -701,7 +701,7 @@ def test_memoized_plan_root_input_manager_resource_config():
         return 5
 
     @op(
-        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+        ins={"x": In(root_manager_key="my_input_manager")},
         version="foo",
     )
     def my_solid_takes_input(x):

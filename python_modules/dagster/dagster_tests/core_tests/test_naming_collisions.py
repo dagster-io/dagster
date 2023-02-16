@@ -5,7 +5,8 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.decorators import op
-from dagster._legacy import OutputDefinition, execute_pipeline, pipeline
+from dagster._core.definitions.output import Out
+from dagster._legacy import execute_pipeline, pipeline
 
 
 def define_pass_value_solid(name, description=None):
@@ -15,8 +16,7 @@ def define_pass_value_solid(name, description=None):
     @op(
         name=name,
         description=description,
-        input_defs=[],
-        output_defs=[OutputDefinition(String)],
+        out=Out(String),
         config_schema={"value": Field(String)},
     )
     def pass_value_solid(context):
@@ -26,7 +26,7 @@ def define_pass_value_solid(name, description=None):
 
 
 def test_execute_solid_with_input_same_name():
-    @op(output_defs=[OutputDefinition()])
+    @op
     def a_thing(_, a_thing):
         return a_thing + a_thing
 

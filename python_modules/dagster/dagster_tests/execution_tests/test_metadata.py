@@ -56,7 +56,7 @@ def test_metadata_entry_construction():
 
 
 def test_metadata_asset_materialization():
-    @op(output_defs=[])
+    @op
     def the_solid(_context):
         yield AssetMaterialization(
             asset_key="foo",
@@ -97,7 +97,7 @@ def test_metadata_asset_materialization():
 
 
 def test_metadata_asset_observation():
-    @op(output_defs=[])
+    @op
     def the_solid(_context):
         yield AssetObservation(
             asset_key="foo",
@@ -134,7 +134,7 @@ def test_metadata_asset_observation():
 
 
 def test_unknown_metadata_value():
-    @op(output_defs=[])
+    @op
     def the_solid(context):
         yield AssetMaterialization(
             asset_key="foo",
@@ -192,7 +192,7 @@ def test_parse_path_metadata():
 
 
 def test_bad_json_metadata_value():
-    @op(output_defs=[])
+    @op
     def the_solid(context):
         yield AssetMaterialization(
             asset_key="foo",
@@ -361,7 +361,7 @@ def test_table_schema_from_name_type_dict():
 
 
 def test_bool_metadata_value():
-    @op(output_defs=[])
+    @op
     def the_solid():
         yield AssetMaterialization(
             asset_key="foo",

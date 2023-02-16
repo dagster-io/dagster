@@ -3,7 +3,9 @@ import time
 
 from dagster import Int, ScheduleDefinition, SkipReason, repository, sensor, usable_as_dagster_type
 from dagster._core.definitions import op
-from dagster._legacy import InputDefinition, OutputDefinition, PartitionSetDefinition, pipeline
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
+from dagster._legacy import PartitionSetDefinition, pipeline
 
 
 @op
@@ -36,13 +38,13 @@ def bar_pipeline():
     class InputTypeWithoutHydration(int):
         pass
 
-    @op(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    @op(out=Out(InputTypeWithoutHydration))
     def one(_):
         return 1
 
     @op(
-        input_defs=[InputDefinition("some_input", InputTypeWithoutHydration)],
-        output_defs=[OutputDefinition(Int)],
+        ins={"some_input": In(InputTypeWithoutHydration)},
+        out=Out(Int),
     )
     def fail_subset(_, some_input):
         return some_input

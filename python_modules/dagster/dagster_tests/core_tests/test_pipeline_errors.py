@@ -10,10 +10,10 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.decorators import op
+from dagster._core.definitions.input import In
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
 from dagster._legacy import (
-    InputDefinition,
     PipelineDefinition,
     execute_pipeline,
     execute_solid,
@@ -200,7 +200,7 @@ def test_user_error_propogation():
     def return_one():
         return 1
 
-    @op(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def add_one(num):
         return num + 1
 

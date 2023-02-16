@@ -34,10 +34,7 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
 )
 from dagster._legacy import (
-    DynamicOutputDefinition,
-    InputDefinition,
     Materialization,
-    OutputDefinition,
     build_solid_context,
     execute_solid,
     pipeline,
@@ -132,7 +129,7 @@ def test_solid_invocation_run_config_with_config():
 
 
 def test_solid_invocation_out_of_order_input_defs():
-    @op(input_defs=[InputDefinition("x"), InputDefinition("y")])
+    @op(ins={"x": In(), "y": In()})
     def check_correct_order(y, x):
         assert y == 6
         assert x == 5
@@ -463,7 +460,7 @@ def test_async_gen_invocation():
 
 
 def test_multiple_outputs_iterator():
-    @op(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
+    @op(out={"1": Out(int), "2": Out(int)})
     def solid_multiple_outputs():
         yield Output(2, output_name="2")
         yield Output(1, output_name="1")
@@ -497,10 +494,10 @@ def test_wrong_output():
 
 def test_optional_output_return():
     @op(
-        output_defs=[
-            OutputDefinition(int, name="1", is_required=False),
-            OutputDefinition(int, name="2"),
-        ]
+        out={
+            "1": Out(int, is_required=False),
+            "2": Out(int),
+        }
     )
     def solid_multiple_outputs_not_sent():
         return Output(2, output_name="2")
@@ -520,10 +517,10 @@ def test_optional_output_return():
 
 def test_optional_output_yielded():
     @op(
-        output_defs=[
-            OutputDefinition(int, name="1", is_required=False),
-            OutputDefinition(int, name="2"),
-        ]
+        out={
+            "1": Out(int, is_required=False),
+            "2": Out(int),
+        }
     )
     def solid_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
@@ -533,10 +530,10 @@ def test_optional_output_yielded():
 
 def test_optional_output_yielded_async():
     @op(
-        output_defs=[
-            OutputDefinition(int, name="1", is_required=False),
-            OutputDefinition(int, name="2"),
-        ]
+        out={
+            "1": Out(int, is_required=False),
+            "2": Out(int),
+        }
     )
     async def solid_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
@@ -554,7 +551,12 @@ def test_optional_output_yielded_async():
 
 def test_missing_required_output_generator():
     # Test missing required output from a generator solid
-    @op(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
+    @op(
+        out={
+            "1": Out(int),
+            "2": Out(int),
+        }
+    )
     def solid_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
@@ -579,7 +581,12 @@ def test_missing_required_output_generator():
 
 def test_missing_required_output_generator_async():
     # Test missing required output from an async generator solid
-    @op(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
+    @op(
+        out={
+            "1": Out(int),
+            "2": Out(int),
+        }
+    )
     async def solid_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
@@ -610,7 +617,12 @@ def test_missing_required_output_generator_async():
 
 
 def test_missing_required_output_return():
-    @op(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
+    @op(
+        out={
+            "1": Out(int),
+            "2": Out(int),
+        }
+    )
     def solid_multiple_outputs_not_sent():
         return Output(2, output_name="2")
 
@@ -628,7 +640,11 @@ def test_missing_required_output_return():
 
 
 def test_output_sent_multiple_times():
-    @op(output_defs=[OutputDefinition(int, name="1")])
+    @op(
+        out={
+            "1": Out(int),
+        }
+    )
     def solid_yields_twice():
         yield Output(1, "1")
         yield Output(2, "1")
@@ -708,7 +724,7 @@ def test_yielded_asset_materialization():
 
 
 def test_input_type_check():
-    @op(input_defs=[InputDefinition("x", dagster_type=int)])
+    @op(ins={"x": In(int)})
     def solid_takes_input(x):
         return x + 1
 
@@ -722,7 +738,7 @@ def test_input_type_check():
 
 
 def test_output_type_check():
-    @op(output_defs=[OutputDefinition(dagster_type=int)])
+    @op(out=Out(dagster_type=int))
     def wrong_type():
         return "foo"
 
@@ -797,7 +813,7 @@ def test_coroutine_asyncio_invocation():
 
 
 def test_solid_invocation_nothing_deps():
-    @op(input_defs=[InputDefinition("start", Nothing)])
+    @op(ins={"start": In(Nothing)})
     def nothing_dep():
         return 5
 
@@ -825,11 +841,11 @@ def test_solid_invocation_nothing_deps():
     assert nothing_dep() == 5
 
     @op(
-        input_defs=[
-            InputDefinition("x"),
-            InputDefinition("y", Nothing),
-            InputDefinition("z"),
-        ]
+        ins={
+            "x": In(),
+            "y": In(Nothing),
+            "z": In(),
+        }
     )
     def sandwiched_nothing_dep(x, z):
         return x + z
@@ -849,10 +865,10 @@ def test_solid_invocation_nothing_deps():
 
 def test_dynamic_output_gen():
     @op(
-        output_defs=[
-            DynamicOutputDefinition(name="a", is_required=False),
-            OutputDefinition(name="b", is_required=False),
-        ]
+        out={
+            "a": DynamicOut(is_required=False),
+            "b": Out(is_required=False),
+        }
     )
     def my_dynamic():
         yield DynamicOutput(value=1, mapping_key="1", output_name="a")
@@ -870,10 +886,10 @@ def test_dynamic_output_gen():
 
 def test_dynamic_output_async_gen():
     @op(
-        output_defs=[
-            DynamicOutputDefinition(name="a", is_required=False),
-            OutputDefinition(name="b", is_required=False),
-        ]
+        out={
+            "a": DynamicOut(is_required=False),
+            "b": Out(is_required=False),
+        }
     )
     async def aio_gen():
         yield DynamicOutput(value=1, mapping_key="1", output_name="a")
@@ -899,7 +915,11 @@ def test_dynamic_output_async_gen():
 
 
 def test_dynamic_output_non_gen():
-    @op(output_defs=[DynamicOutputDefinition(name="a", is_required=False)])
+    @op(
+        out={
+            "a": DynamicOut(is_required=False),
+        }
+    )
     def should_not_work():
         return DynamicOutput(value=1, mapping_key="1", output_name="a")
 
@@ -917,7 +937,11 @@ def test_dynamic_output_non_gen():
 
 
 def test_dynamic_output_async_non_gen():
-    @op(output_defs=[DynamicOutputDefinition(name="a", is_required=False)])
+    @op(
+        out={
+            "a": DynamicOut(is_required=False),
+        }
+    )
     def should_not_work():
         asyncio.sleep(0.01)
         return DynamicOutput(value=1, mapping_key="1", output_name="a")

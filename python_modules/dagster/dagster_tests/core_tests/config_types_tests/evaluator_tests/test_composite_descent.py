@@ -13,8 +13,9 @@ from dagster import (
 )
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.input import In
 from dagster._core.system_config.composite_descent import composite_descent
-from dagster._legacy import InputDefinition, execute_pipeline, pipeline
+from dagster._legacy import execute_pipeline, pipeline
 
 
 def test_single_level_pipeline():
@@ -319,10 +320,10 @@ def test_provide_one_of_two_inputs_via_config():
             "config_field_a": Field(String),
             "config_field_b": Field(String),
         },
-        input_defs=[
-            InputDefinition("input_a", String),
-            InputDefinition("input_b", String),
-        ],
+        ins={
+            "input_a": In(String),
+            "input_b": In(String),
+        },
     )
     def basic(context, input_a, input_b):
         res = ".".join(
@@ -336,7 +337,7 @@ def test_provide_one_of_two_inputs_via_config():
         yield Output(res)
 
     @graph(
-        input_defs=[InputDefinition("input_a", String)],
+        ins={"input_a": In(String)},
         config=ConfigMapping(
             config_schema={
                 "config_field_a": Field(String),
@@ -598,7 +599,7 @@ def test_single_level_pipeline_with_configured_solid():
 
 
 def test_configured_solid_with_inputs():
-    @op(config_schema=str, input_defs=[InputDefinition("x", int)])
+    @op(config_schema=str, ins={"x": In(int)})
     def return_int(context, x):
         assert context.op_config == "config sentinel"
         return x
@@ -763,7 +764,7 @@ def test_single_level_pipeline_with_configured_decorated_graph():
 
 
 def test_configured_graph_with_inputs():
-    @op(config_schema=str, input_defs=[InputDefinition("x", int)])
+    @op(config_schema=str, ins={"x": In(int)})
     def return_int(context, x):
         assert context.op_config == "inner config sentinel"
         return x
@@ -776,7 +777,10 @@ def test_configured_graph_with_inputs():
         return lhs + rhs
 
     @graph(
-        input_defs=[InputDefinition("x", int), InputDefinition("y", int)],
+        ins={
+            "x": In(int),
+            "y": In(int),
+        },
         config=ConfigMapping(
             config_schema={"outer": str},
             config_fn=lambda cfg: {"add": {"config": cfg["outer"]}},

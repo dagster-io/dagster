@@ -21,7 +21,6 @@ from dagster._core.execution.plan.plan import should_skip_step
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import OutputDefinition
 
 
 def define_diamond_job():
@@ -519,11 +518,11 @@ def test_fan_in_should_skip_step():
     def fan_in(_context, items):
         return items
 
-    @graph(output_defs=[OutputDefinition(is_required=False)])
+    @graph(out=Out(is_required=False))
     def graph_all_upstream_skip():
         return fan_in([skip(), skip()])
 
-    @graph(output_defs=[OutputDefinition(is_required=False)])
+    @graph(out=Out(is_required=False))
     def graph_one_upstream_skip():
         return fan_in([one(), skip()])
 

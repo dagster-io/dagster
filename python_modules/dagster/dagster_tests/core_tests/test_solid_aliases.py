@@ -1,8 +1,8 @@
 from collections import defaultdict
 
 from dagster import DependencyDefinition, Int, NodeInvocation, op
+from dagster._core.definitions.input import In
 from dagster._legacy import (
-    InputDefinition,
     PipelineDefinition,
     execute_pipeline,
 )
@@ -13,7 +13,7 @@ def test_aliased_solids():
     def first():
         return ["first"]
 
-    @op(input_defs=[InputDefinition(name="prev")])
+    @op(ins={"prev": In()})
     def not_first(prev):
         return prev + ["not_first"]
 
@@ -45,7 +45,7 @@ def test_only_aliased_solids():
     def first():
         return ["first"]
 
-    @op(input_defs=[InputDefinition(name="prev")])
+    @op(ins={"prev": In()})
     def not_first(prev):
         return prev + ["not_first"]
 
@@ -67,7 +67,7 @@ def test_only_aliased_solids():
 
 
 def test_aliased_configs():
-    @op(input_defs=[], config_schema=Int)
+    @op(config_schema=Int)
     def load_constant(context):
         return context.op_config
 

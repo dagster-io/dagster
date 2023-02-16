@@ -293,7 +293,7 @@ def op(
 
             @solid(
                 input_defs=[InputDefinition(name="foo", str)],
-                output_defs=[OutputDefinition(str)]
+                out=Out(str)
             )
             def hello_world(foo):
                 # explicitly type and name inputs and outputs

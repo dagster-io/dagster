@@ -2,10 +2,10 @@ import uuid
 from unittest import mock
 
 from dagster import ResourceDefinition, build_op_context, configured, op
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     execute_pipeline,
     pipeline,
 )
@@ -97,14 +97,14 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
     bar_bytes = b"bar"
 
     @op(
-        output_defs=[OutputDefinition(ADLS2FileHandle)],
+        out=Out(ADLS2FileHandle),
         required_resource_keys={"file_manager"},
     )
     def emit_file(context):
         return context.resources.file_manager.write_data(bar_bytes)
 
     @op(
-        input_defs=[InputDefinition("file_handle", ADLS2FileHandle)],
+        ins={"file_handle": In(ADLS2FileHandle)},
         required_resource_keys={"file_manager"},
     )
     def accept_file(context, file_handle):

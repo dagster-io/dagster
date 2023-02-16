@@ -1,8 +1,8 @@
 from dagster import In, Out, job, op
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.output import GraphOut
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.snap import create_pipeline_snapshot_id, snapshot_from_execution_plan
-from dagster._legacy import OutputDefinition
 from dagster._serdes import serialize_pp
 
 
@@ -64,11 +64,11 @@ def test_create_with_graph(snapshot):
     def add_one(_, num):
         return num + 1
 
-    @graph(output_defs=[OutputDefinition(name="named_output", dagster_type=int)])
+    @graph(out={"named_output": GraphOut()})
     def comp_1():
         return add_one(return_one())
 
-    @graph(output_defs=[OutputDefinition(name="named_output", dagster_type=int)])
+    @graph(out={"named_output": GraphOut()})
     def comp_2():
         return add_one(return_one())
 

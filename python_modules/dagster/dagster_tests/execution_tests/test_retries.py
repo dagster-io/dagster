@@ -21,6 +21,7 @@ from dagster import (
     success_hook,
 )
 from dagster._core.definitions.events import HookExecutionResult
+from dagster._core.definitions.output import Out
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.events import DagsterEvent
@@ -29,7 +30,6 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
     DagsterRun,
-    OutputDefinition,
     execute_pipeline,
     execute_pipeline_iterator,
     pipeline,
@@ -54,10 +54,10 @@ def define_run_retry_pipeline():
         return "okay perfect"
 
     @op(
-        output_defs=[
-            OutputDefinition(bool, "start_fail", is_required=False),
-            OutputDefinition(bool, "start_skip", is_required=False),
-        ]
+        out={
+            "start_fail": Out(bool, is_required=False),
+            "start_skip": Out(bool, is_required=False),
+        }
     )
     def two_outputs(_):
         yield Output(True, "start_fail")

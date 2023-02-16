@@ -15,6 +15,7 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.definitions import op
+from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, DagsterEventType
@@ -23,8 +24,6 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
     PresetDefinition,
     execute_pipeline,
     pipeline,
@@ -121,15 +120,15 @@ def define_diamond_pipeline():
     def return_two():
         return 2
 
-    @op(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def add_three(num):
         return num + 3
 
-    @op(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def mult_three(num):
         return num * 3
 
-    @op(input_defs=[InputDefinition("left"), InputDefinition("right")])
+    @op(ins={"left": In(), "right": In()})
     def adder(left, right):
         return left + right
 
@@ -158,7 +157,7 @@ def define_in_mem_pipeline():
     def return_two():
         return 2
 
-    @op(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def add_three(num):
         return num + 3
 
@@ -275,7 +274,7 @@ def define_subdag_pipeline():
                 return
 
     @op(
-        input_defs=[InputDefinition("after", Nothing)],
+        ins={"after": In(Nothing)},
         config_schema=Field(String),
     )
     def writer(context):
@@ -284,8 +283,8 @@ def define_subdag_pipeline():
         return
 
     @op(
-        input_defs=[InputDefinition("after", Nothing)],
-        output_defs=[OutputDefinition(Nothing)],
+        ins={"after": In(Nothing)},
+        out=Out(Nothing),
     )
     def noop():
         pass

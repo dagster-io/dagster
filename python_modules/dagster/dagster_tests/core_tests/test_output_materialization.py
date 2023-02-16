@@ -11,25 +11,27 @@ from dagster import (
     dagster_type_materializer,
     op,
 )
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.step import StepKind
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, execute_pipeline
+from dagster._legacy import PipelineDefinition, execute_pipeline
 from dagster._utils.test import get_temp_file_name, get_temp_file_names
 
 
 def single_int_output_pipeline():
-    @op(output_defs=[OutputDefinition(Int)])
-    def return_one():
+    @op
+    def return_one() -> int:
         return 1
 
     return PipelineDefinition(name="single_int_output_pipeline", solid_defs=[return_one])
 
 
 def single_string_output_pipeline():
-    @op(output_defs=[OutputDefinition(String)])
-    def return_foo():
+    @op
+    def return_foo() -> str:
         return "foo"
 
     return PipelineDefinition(name="single_string_output_pipeline", solid_defs=[return_foo])
@@ -37,10 +39,10 @@ def single_string_output_pipeline():
 
 def multiple_output_pipeline():
     @op(
-        output_defs=[
-            OutputDefinition(Int, "number"),
-            OutputDefinition(String, "string"),
-        ]
+        out={
+            "number": Out(Int),
+            "string": Out(String),
+        }
     )
     def return_one_and_foo(_context):
         yield Output(1, "number")
@@ -50,7 +52,7 @@ def multiple_output_pipeline():
 
 
 def single_int_named_output_pipeline():
-    @op(output_defs=[OutputDefinition(Int, name="named")])
+    @op(out={"named": Out(Int)})
     def return_named_one():
         return 1
 
@@ -60,7 +62,7 @@ def single_int_named_output_pipeline():
 
 
 def no_input_no_output_pipeline():
-    @op(output_defs=[])
+    @op
     def take_nothing_return_nothing(_context):
         pass
 
@@ -70,7 +72,7 @@ def no_input_no_output_pipeline():
 
 
 def one_input_no_output_pipeline():
-    @op(input_defs=[InputDefinition("dummy")], output_defs=[])
+    @op(ins={"dummy": In()})
     def take_input_return_nothing(_context, **_kwargs):
         pass
 
@@ -342,7 +344,7 @@ def yield_two_materializations(*_args, **_kwargs):
 def test_basic_yield_multiple_materializations():
     SomeDagsterType = create_any_type(name="SomeType", materializer=yield_two_materializations)
 
-    @op(output_defs=[OutputDefinition(SomeDagsterType)])
+    @op(out=Out(SomeDagsterType))
     def return_one():
         return 1
 
@@ -374,7 +376,7 @@ def return_int(*_args, **_kwargs):
 def test_basic_bad_output_materialization():
     SomeDagsterType = create_any_type(name="SomeType", materializer=return_int)
 
-    @op(output_defs=[OutputDefinition(SomeDagsterType)])
+    @op(out=Out(SomeDagsterType))
     def return_one():
         return 1
 

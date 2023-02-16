@@ -10,6 +10,8 @@ from dagster import (
     resource,
 )
 from dagster._core.definitions.decorators import graph
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._core.utility_solids import (
     create_root_solid,
@@ -17,7 +19,7 @@ from dagster._core.utility_solids import (
     define_stub_solid,
     input_set,
 )
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition
+from dagster._legacy import ModeDefinition
 from dagster._utils.test import execute_solid
 
 
@@ -32,7 +34,7 @@ def test_single_solid_in_isolation():
 
 
 def test_single_solid_with_single():
-    @op(input_defs=[InputDefinition(name="num")])
+    @op(ins={"num": In()})
     def add_one_solid(num):
         return num + 1
 
@@ -43,7 +45,7 @@ def test_single_solid_with_single():
 
 
 def test_single_solid_with_multiple_inputs():
-    @op(input_defs=[InputDefinition(name="num_one"), InputDefinition("num_two")])
+    @op(ins={"num_one": In(), "num_two": In()})
     def add_solid(num_one, num_two):
         return num_one + num_two
 
@@ -119,7 +121,7 @@ def test_single_solid_error():
 
 
 def test_single_solid_type_checking_output_error():
-    @op(output_defs=[OutputDefinition(Int)])
+    @op(out=Out(Int))
     def return_string():
         return "ksjdfkjd"
 
@@ -233,7 +235,7 @@ def test_execute_nested_graphs():
 
 
 def test_single_solid_with_bad_inputs():
-    @op(input_defs=[InputDefinition("num_one", int), InputDefinition("num_two", int)])
+    @op(ins={"num_one": In(int), "num_two": In(int)})
     def add_solid(num_one, num_two):
         return num_one + num_two
 
