@@ -1,5 +1,7 @@
 import base64
+import logging
 import time
+from typing import Any, Mapping, Optional
 
 import dagster
 import dagster._check as check
@@ -12,9 +14,9 @@ from databricks_cli.sdk.api_client import ApiClient
 import dagster_databricks
 
 from .types import (
-    DATABRICKS_RUN_TERMINATED_STATES,
     DatabricksRunLifeCycleState,
     DatabricksRunResultState,
+    DatabricksRunState,
 )
 
 # wait at most 24 hours by default for run execution
@@ -28,7 +30,7 @@ class DatabricksError(Exception):
 class DatabricksClient:
     """A thin wrapper over the Databricks REST API."""
 
-    def __init__(self, host, token, workspace_id=None):
+    def __init__(self, host: str, token: str, workspace_id: Optional[str] = None):
         self.host = host
         self.workspace_id = workspace_id
 
@@ -77,37 +79,38 @@ class DatabricksClient:
         """
         return self._api_client
 
-    def submit_run(self, *args, **kwargs):
+    def submit_run(self, *args, **kwargs) -> int:
         """Submit a run directly to the 'Runs Submit' API."""
-        return self.client.jobs.submit_run(*args, **kwargs)["run_id"]  # pylint: disable=no-member
+        return self.client.jobs.submit_run(*args, **kwargs)["run_id"]
 
-    def read_file(self, dbfs_path, block_size=1024**2):
+    def read_file(self, dbfs_path: str, block_size: int = 1024**2) -> bytes:
         """Read a file from DBFS to a **byte string**."""
         if dbfs_path.startswith("dbfs://"):
             dbfs_path = dbfs_path[7:]
+
         data = b""
         bytes_read = 0
-        jdoc = self.client.dbfs.read(path=dbfs_path, length=block_size)  # pylint: disable=no-member
+
+        jdoc = self.client.dbfs.read(path=dbfs_path, length=block_size)
         data += base64.b64decode(jdoc["data"])
         while jdoc["bytes_read"] == block_size:
             bytes_read += jdoc["bytes_read"]
-            jdoc = self.client.dbfs.read(  # pylint: disable=no-member
-                path=dbfs_path, offset=bytes_read, length=block_size
-            )
+            jdoc = self.client.dbfs.read(path=dbfs_path, offset=bytes_read, length=block_size)
             data += base64.b64decode(jdoc["data"])
 
         return data
 
-    def put_file(self, file_obj, dbfs_path, overwrite=False, block_size=1024**2):
+    def put_file(
+        self, file_obj, dbfs_path: str, overwrite: bool = False, block_size: int = 1024**2
+    ) -> None:
         """Upload an arbitrary large file to DBFS.
 
         This doesn't use the DBFS `Put` API because that endpoint is limited to 1MB.
         """
         if dbfs_path.startswith("dbfs://"):
             dbfs_path = dbfs_path[7:]
-        create_response = self.client.dbfs.create(  # pylint: disable=no-member
-            path=dbfs_path, overwrite=overwrite
-        )
+
+        create_response = self.client.dbfs.create(path=dbfs_path, overwrite=overwrite)
         handle = create_response["handle"]
 
         block = file_obj.read(block_size)
@@ -118,20 +121,23 @@ class DatabricksClient:
 
         self.client.dbfs.close(handle=handle)  # pylint: disable=no-member
 
-    def get_run(self, databricks_run_id):
-        return self.client.jobs.get_run(databricks_run_id)  # pylint: disable=no-member
+    def get_run(self, databricks_run_id: int) -> Mapping[str, Any]:
+        return self.client.jobs.get_run(databricks_run_id)
 
-    def get_run_state(self, databricks_run_id):
-        """Get the state of a run by Databricks run ID (_not_ dagster run ID).
+    def get_run_state(self, databricks_run_id: int) -> "DatabricksRunState":
+        """Get the state of a run by Databricks run ID.
 
         Return a `DatabricksRunState` object. Note that the `result_state`
         attribute may be `None` if the run hasn't yet terminated.
         """
         run = self.get_run(databricks_run_id)
         state = run["state"]
-        result_state = state.get("result_state")
-        if result_state:
-            result_state = DatabricksRunResultState(result_state)
+        result_state = (
+            DatabricksRunResultState(state.get("result_state"))
+            if state.get("result_state")
+            else None
+        )
+
         return DatabricksRunState(
             life_cycle_state=DatabricksRunLifeCycleState(state["life_cycle_state"]),
             result_state=result_state,
@@ -139,31 +145,15 @@ class DatabricksClient:
         )
 
 
-class DatabricksRunState:
-    """Represents the state of a Databricks job run."""
-
-    def __init__(self, life_cycle_state, result_state, state_message):
-        self.life_cycle_state = life_cycle_state
-        self.result_state = result_state
-        self.state_message = state_message
-
-    def has_terminated(self):
-        """Has the job terminated?"""
-        return self.life_cycle_state in DATABRICKS_RUN_TERMINATED_STATES
-
-    def is_successful(self):
-        """Was the job successful?"""
-        return self.result_state == DatabricksRunResultState.Success
-
-    def __repr__(self):
-        return str(self.__dict__)
-
-
 class DatabricksJobRunner:
     """Submits jobs created using Dagster config to Databricks, and monitors their progress."""
 
     def __init__(
-        self, host, token, poll_interval_sec=5, max_wait_time_sec=DEFAULT_RUN_MAX_WAIT_TIME_SEC
+        self,
+        host: str,
+        token: str,
+        poll_interval_sec: float = 5,
+        max_wait_time_sec: int = DEFAULT_RUN_MAX_WAIT_TIME_SEC,
     ):
         """Args:
 
@@ -175,14 +165,14 @@ class DatabricksJobRunner:
         self.poll_interval_sec = check.numeric_param(poll_interval_sec, "poll_interval_sec")
         self.max_wait_time_sec = check.int_param(max_wait_time_sec, "max_wait_time_sec")
 
-        self._client = DatabricksClient(host=self.host, token=self.token)
+        self._client: DatabricksClient = DatabricksClient(host=self.host, token=self.token)
 
     @property
-    def client(self):
+    def client(self) -> DatabricksClient:
         """Return the underlying `DatabricksClient` object."""
         return self._client
 
-    def submit_run(self, run_config, task):
+    def submit_run(self, run_config: Mapping[str, Any], task: Mapping[str, Any]) -> int:
         """Submit a new run using the 'Runs submit' API."""
         existing_cluster_id = run_config["cluster"].get("existing")
 
@@ -264,7 +254,7 @@ class DatabricksJobRunner:
         )
         return self.client.submit_run(**config)
 
-    def retrieve_logs_for_run_id(self, log, databricks_run_id):
+    def retrieve_logs_for_run_id(self, log: logging.Logger, databricks_run_id: int):
         """Retrieve the stdout and stderr logs for a run."""
         api_client = self.client.client
         run = api_client.jobs.get_run(databricks_run_id)  # pylint: disable=no-member
@@ -290,8 +280,14 @@ class DatabricksJobRunner:
             return stdout, stderr
 
     def wait_for_dbfs_logs(
-        self, log, prefix, cluster_id, filename, waiter_delay=10, waiter_max_attempts=10
-    ):
+        self,
+        log: logging.Logger,
+        prefix,
+        cluster_id,
+        filename,
+        waiter_delay: int = 10,
+        waiter_max_attempts: int = 10,
+    ) -> Optional[str]:
         """Attempt up to `waiter_max_attempts` attempts to get logs from DBFS."""
         path = "/".join([prefix, cluster_id, "driver", filename])
         log.info("Retrieving logs from {}".format(path))
@@ -305,7 +301,9 @@ class DatabricksJobRunner:
                 time.sleep(waiter_delay)
         log.warn("Could not retrieve cluster logs!")
 
-    def wait_for_run_to_complete(self, log, databricks_run_id, verbose_logs=True):
+    def wait_for_run_to_complete(
+        self, log: logging.Logger, databricks_run_id: int, verbose_logs: bool = True
+    ):
         return wait_for_run_to_complete(
             self.client,
             log,
@@ -317,8 +315,8 @@ class DatabricksJobRunner:
 
 
 def poll_run_state(
-    client,
-    log,
+    client: DatabricksClient,
+    log: logging.Logger,
     start_poll_time: float,
     databricks_run_id: int,
     max_wait_time_sec: float,
@@ -350,8 +348,13 @@ def poll_run_state(
 
 
 def wait_for_run_to_complete(
-    client, log, databricks_run_id, poll_interval_sec, max_wait_time_sec, verbose_logs=True
-):
+    client: DatabricksClient,
+    log: logging.Logger,
+    databricks_run_id: int,
+    poll_interval_sec: float,
+    max_wait_time_sec: int,
+    verbose_logs: bool = True,
+) -> None:
     """Wait for a Databricks run to complete."""
     check.int_param(databricks_run_id, "databricks_run_id")
     log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)

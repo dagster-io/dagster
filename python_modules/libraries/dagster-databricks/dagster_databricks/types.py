@@ -1,21 +1,10 @@
-"""Types returned by the Databricks API.
-"""
-
-from enum import Enum as PyEnum
+from enum import Enum
+from typing import NamedTuple, Optional
 
 
-class DatabricksRunResultState(PyEnum):
-    """The result state of the run.
-
-    If life_cycle_state = TERMINATED: if the run had a task, the result is guaranteed to be
-        available, and it indicates the result of the task.
-    If life_cycle_state = PENDING, RUNNING, or SKIPPED, the result state is not available.
-    If life_cycle_state = TERMINATING or life_cycle_state = INTERNAL_ERROR: the result state
-        is available if the run had a task and managed to start it.
-
-    Once available, the result state never changes.
-
-    See https://docs.databricks.com/dev-tools/api/latest/jobs.html#runresultstate.
+class DatabricksRunResultState(str, Enum):
+    """
+    See https://docs.databricks.com/dev-tools/api/2.0/jobs.html#runresultstate.
     """
 
     Success = "SUCCESS"
@@ -24,10 +13,9 @@ class DatabricksRunResultState(PyEnum):
     Canceled = "CANCELED"
 
 
-class DatabricksRunLifeCycleState(PyEnum):
-    """The life cycle state of a run.
-
-    See https://docs.databricks.com/dev-tools/api/latest/jobs.html#runlifecyclestate.
+class DatabricksRunLifeCycleState(str, Enum):
+    """
+    See https://docs.databricks.com/dev-tools/api/2.0/jobs.html#jobsrunlifecyclestate.
     """
 
     Pending = "PENDING"
@@ -43,3 +31,19 @@ DATABRICKS_RUN_TERMINATED_STATES = [
     DatabricksRunLifeCycleState.Terminated,
     DatabricksRunLifeCycleState.InternalError,
 ]
+
+
+class DatabricksRunState(NamedTuple):
+    """Represents the state of a Databricks job run."""
+
+    life_cycle_state: "DatabricksRunLifeCycleState"
+    result_state: Optional["DatabricksRunResultState"]
+    state_message: str
+
+    def has_terminated(self) -> bool:
+        """Has the job terminated?"""
+        return self.life_cycle_state in DATABRICKS_RUN_TERMINATED_STATES
+
+    def is_successful(self) -> bool:
+        """Was the job successful?"""
+        return self.result_state == DatabricksRunResultState.Success
