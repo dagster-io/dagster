@@ -46,7 +46,6 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 SHARED_BUILDKITE_BQ_CONFIG = {
     "project": os.getenv("GCP_PROJECT_ID"),
-    "temporary_gcs_bucket": "gcs_io_manager_test",
 }
 
 BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
