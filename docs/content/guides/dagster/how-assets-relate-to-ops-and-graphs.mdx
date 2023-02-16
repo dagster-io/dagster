@@ -11,7 +11,6 @@ If you're not sure which one to use, this guide is for you. In this guide, we'll
 
 - When you should assets or ops and graphs
 - How assets, ops, and graphs relate to each other
-- Why Dagster offers all three abstractions
 
 ---
 
@@ -27,7 +26,7 @@ However, there are some situations where you want to run code without thinking a
 
 ### Situation 1: You’re not building a data pipeline
 
-Let's say you want to schedule a workflow where the goal is **not** to keep a set of data assets up-to-date. It might do something like:
+You want to schedule a workflow where the goal is **not** to keep a set of data assets up-to-date. It might do something like:
 
 - Send emails to a set of users
 - Scan a data warehouse for tables that haven't been used in months and delete them

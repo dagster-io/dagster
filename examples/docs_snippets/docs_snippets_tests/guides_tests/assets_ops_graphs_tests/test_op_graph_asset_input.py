@@ -12,4 +12,6 @@ def test_send_emails_job():
         def handle_output(self, context, obj):
             ...
 
-    send_emails_job.graph.execute_in_process(resources={"io_manager": EmailsIOManager()})
+    send_emails_job.graph.execute_in_process(
+        resources={"io_manager": EmailsIOManager()}
+    )
