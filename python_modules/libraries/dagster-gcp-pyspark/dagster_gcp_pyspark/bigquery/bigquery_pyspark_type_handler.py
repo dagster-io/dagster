@@ -6,11 +6,15 @@ from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_gcp import build_bigquery_io_manager
 from pyspark.sql import DataFrame, SparkSession
 
-SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
-
 
 def _get_bigquery_options(config, table_slice: TableSlice) -> Mapping[str, str]:
-    conf = {"table": f"{table_slice.schema}.{table_slice.table}"}
+    conf = {
+        "table": f"{table_slice.database}:{table_slice.schema}.{table_slice.table}",
+    }
+    if config.get("temporary_gcs_bucket") is not None:
+        conf["temporaryGcsBucket"] = config["temporary_gcs_bucket"]
+    else:
+        conf["writeMethod"] = "direct"
     return conf
 
 

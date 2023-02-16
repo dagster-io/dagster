@@ -129,6 +129,15 @@ def build_bigquery_io_manager(
                     " cat $GOOGLE_AUTH_CREDENTIALS | base64"
                 ),
             ),
+            "temporary_gcs_bucket": Field(
+                StringSource,
+                is_required=False,
+                default_value="",
+                description=(
+                    "When using PySpark DataFrames, optionally specify a temporary GCS bucket to"
+                    " store data. If not provided, data will be directly written to BigQuery."
+                ),
+            ),
         }
     )
     def bigquery_io_manager(init_context):

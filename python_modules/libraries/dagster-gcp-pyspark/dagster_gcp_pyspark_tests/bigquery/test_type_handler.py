@@ -46,9 +46,10 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 SHARED_BUILDKITE_BQ_CONFIG = {
     "project": os.getenv("GCP_PROJECT_ID"),
+    "temporary_gcs_bucket": "gcs_io_manager_test",
 }
 
-BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.11:0.15.1-beta"
+BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
 
 
 @contextmanager
@@ -135,12 +136,12 @@ def test_build_bigquery_pyspark_io_manager():
     assert isinstance(bigquery_pyspark_io_manager, IOManagerDefinition)
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
 def test_io_manager_with_snowflake_pyspark():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="foo string, quux integer",
+        column_str="FOO string, QUUX int",
     ) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
@@ -175,17 +176,17 @@ def test_io_manager_with_snowflake_pyspark():
         assert res.success
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
 def test_time_window_partitioned_asset():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="foo string, quux integer",
+        column_str="RAW_TIME string, A string, B int, TIME DATE",
     ) as table_name:
 
         @asset(
             partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
-            metadata={"partition_expr": "time"},
+            metadata={"partition_expr": "CAST(time as DATETIME)"},
             config_schema={"value": str},
             key_prefix=schema,
             name=table_name,
@@ -259,12 +260,12 @@ def test_time_window_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
 def test_static_partitioned_asset():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="foo string, quux integer",
+        column_str="COLOR string, A string, B int",
     ) as table_name:
 
         @asset(
@@ -337,12 +338,12 @@ def test_static_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
 def test_multi_partitioned_asset():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="foo string, quux integer",
+        column_str="COLOR string, RAW_TIME string, A string, TIME DATE",
     ) as table_name:
 
         @asset(
@@ -353,7 +354,7 @@ def test_multi_partitioned_asset():
                 }
             ),
             key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
-            metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
+            metadata={"partition_expr": {"time": "CAST(time as DATETIME)", "color": "color"}},
             config_schema={"value": str},
             name=table_name,
         )
@@ -438,12 +439,12 @@ def test_multi_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
 def test_dynamic_partitions():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="foo string, quux integer",
+        column_str="FRUIT string, A string",
     ) as table_name:
         dynamic_fruits = DynamicPartitionsDefinition(name="dynamic_fruits")
 
