@@ -64,7 +64,7 @@ def _make_dagster_package(package_name: str):
         },
         "tox.ini": {
             "path": os.path.join(package_path, "tox.ini"),
-            "has_todos": False,
+            "has_todos": True,
             "kwargs": {
                 "underscore_name": package_name_underscore,
                 "hyphen_name": package_name,
@@ -96,8 +96,16 @@ def _make_dagster_package(package_name: str):
         if vars["has_todos"]:
             has_todos.append(vars["path"])
 
+    # src __init__.py
+    path = os.path.join(src_path, "__init__.py")
+    print(f"Writing {path}")
+    with open(path, "w"):
+        pass
+
     # test __init__.py
-    with open(os.path.join(tests_path, "__init__.py"), "w"):
+    path = os.path.join(tests_path, "__init__.py")
+    print(f"Writing {path}")
+    with open(path, "w"):
         pass
 
     # API docs
@@ -108,6 +116,7 @@ def _make_dagster_package(package_name: str):
         [word.capitalize() for word in package_name.split("dagster-")[1].split("-")]
     )
     template = jinja_env.get_template("api-docs.rst.tmpl")
+    print(f"Writing {docs_path}")
     with open(docs_path, "w") as f:
         template.stream(
             hyphen_name=package_name,

@@ -9,10 +9,11 @@ setenv =
   VIRTUALENV_PIP=21.3.1
   !windows: COVERAGE_ARGS = --cov=dagster --cov-append --cov-report term:skip-covered --cov-report html --cov-report xml
   windows: COVERAGE_ARGS =
-passenv = CI_* COVERALLS_REPO_TOKEN BUILDKITE*
+passenv = CI_* COVERALLS_REPO_TOKEN BUILDKITE* # TODO add additional env var requirements and add them to .buildkite/dagster-buildkite/dagster_buildkite/steps/packages.py
 deps =
   -e ../../dagster[test]
-  -e ../{{ hyphen_name }}
+  -e .
+  # TODO fill in remaining dependencies
 allowlist_externals =
   /bin/bash
 commands =
