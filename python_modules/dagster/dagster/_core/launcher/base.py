@@ -27,13 +27,13 @@ class ResumeRunContext(NamedTuple):
     Context available within a run launcher's resume_run call.
     """
 
-    pipeline_run: DagsterRun
+    dagster_run: DagsterRun
     workspace: Optional[IWorkspace]
     resume_attempt_number: Optional[int] = None
 
     @property
     def pipeline_code_origin(self) -> Optional[PipelinePythonOrigin]:
-        return self.pipeline_run.pipeline_code_origin
+        return self.dagster_run.pipeline_code_origin
 
 
 @whitelist_for_serdes
