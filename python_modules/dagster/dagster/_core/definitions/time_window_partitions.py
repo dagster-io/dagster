@@ -652,10 +652,10 @@ class TimeWindowPartitionsDefinition(
 
     def is_valid_partition_key(self, partition_key: str) -> bool:
         try:
-            datetime.strptime(partition_key, self.fmt)
+            time_obj = datetime.strptime(partition_key, self.fmt)
+            return time_obj.timestamp() >= self.start.timestamp()
         except ValueError:
             return False
-        return True
 
     @property
     def serializable_unique_identifier(self) -> str:
