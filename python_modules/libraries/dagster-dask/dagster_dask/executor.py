@@ -1,3 +1,5 @@
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence
+
 import dask
 import dask.distributed
 from dagster import (
@@ -11,17 +13,27 @@ from dagster import (
     multiple_process_executor_requirements,
 )
 from dagster._core.definitions.executor_definition import executor
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
+from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._utils import frozentags, iterate_with_context
+from typing_extensions import TypeAlias
 
 # Dask resource requirements are specified under this key
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
+
+# Placeholder values that should later be typed
+DaskClusterConfig: TypeAlias = Mapping[str, Any]
+DaskResourcesConfig: TypeAlias = Mapping[str, Any]
 
 
 @executor(
@@ -72,7 +84,7 @@ DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
         )
     },
 )
-def dask_executor(init_context):
+def dask_executor(init_context: InitExecutorContext) -> "DaskExecutor":
     """Dask-based executor.
 
     The 'cluster' can be one of the following:
@@ -108,20 +120,20 @@ def dask_executor(init_context):
             pass
 
     """
-    ((cluster_type, cluster_configuration),) = init_context.executor_config["cluster"].items()
+    ((cluster_type, cluster_configuration),) = init_context.executor_config["cluster"].items()  # type: ignore  # (untyped config value)
     return DaskExecutor(cluster_type, cluster_configuration)
 
 
 def query_on_dask_worker(
-    dependencies,
-    recon_pipeline,
-    pipeline_run,
-    run_config,
-    step_keys,
-    mode,
-    instance_ref,
-    known_state,
-):
+    dependencies: Sequence[dask.distributed.Future],
+    recon_pipeline: ReconstructablePipeline,
+    pipeline_run: DagsterRun,
+    run_config: Optional[Mapping[str, object]],
+    step_keys: Optional[Sequence[str]],
+    mode: Optional[str],
+    instance_ref: InstanceRef,
+    known_state: Optional[KnownExecutionState],
+) -> Sequence[DagsterEvent]:
     """Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
     """
@@ -143,7 +155,7 @@ def query_on_dask_worker(
         )
 
 
-def get_dask_resource_requirements(tags):
+def get_dask_resource_requirements(tags: frozentags) -> DaskResourcesConfig:
     check.inst_param(tags, "tags", frozentags)
     req_str = tags.get(DASK_RESOURCE_REQUIREMENTS_KEY)
     if req_str is not None:
@@ -153,17 +165,19 @@ def get_dask_resource_requirements(tags):
 
 
 class DaskExecutor(Executor):
-    def __init__(self, cluster_type, cluster_configuration):
+    def __init__(self, cluster_type: Optional[str], cluster_configuration: Mapping[str, object]):
         self.cluster_type = check.opt_str_param(cluster_type, "cluster_type", default="local")
         self.cluster_configuration = check.opt_dict_param(
-            cluster_configuration, "cluster_configuration"
+            cluster_configuration, "cluster_configuration"  # type: ignore  # (mapping)
         )
 
     @property
-    def retries(self):
+    def retries(self) -> RetryMode:
         return RetryMode.DISABLED
 
-    def execute(self, plan_context, execution_plan):
+    def execute(
+        self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan
+    ) -> Iterator[DagsterEvent]:
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
         check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
         check.param_invariant(
@@ -234,14 +248,14 @@ class DaskExecutor(Executor):
             )
 
         with dask.distributed.Client(cluster) as client:
-            execution_futures = []
-            execution_futures_dict = {}
+            execution_futures: List[dask.distributed.Future] = []
+            execution_futures_dict: Mapping[str, dask.distributed.Future] = {}
 
             for step_level in step_levels:
                 for step in step_level:
                     # We ensure correctness in sequencing by letting Dask schedule futures and
                     # awaiting dependencies within each step.
-                    dependencies = []
+                    dependencies: List[dask.distributed.Future] = []
                     for step_input in step.step_inputs:
                         for key in step_input.dependency_keys:
                             dependencies.append(execution_futures_dict[key])
@@ -266,7 +280,7 @@ class DaskExecutor(Executor):
                         instance.get_ref(),
                         execution_plan.known_state,
                         key=dask_task_name,
-                        resources=get_dask_resource_requirements(step.tags),
+                        resources=get_dask_resource_requirements(step.tags),  # type: ignore  # (should be frozentags)
                     )
 
                     execution_futures.append(future)
@@ -278,11 +292,11 @@ class DaskExecutor(Executor):
 
             # Allow interrupts while waiting for the results from Dask
             for future, result in iterate_with_context(raise_execution_interrupts, futures):
-                for step_event in result:
+                for step_event in result:  # type: ignore  # (??)
                     check.inst(step_event, DagsterEvent)
                     yield step_event
 
-    def build_dict(self, pipeline_name):
+    def build_dict(self, pipeline_name: str) -> DaskClusterConfig:
         """Returns a dict we can use for kwargs passed to dask client instantiation.
 
         Intended to be used like:
@@ -291,6 +305,7 @@ class DaskExecutor(Executor):
             << use client here >>
 
         """
+        dask_cfg: Dict[str, object] = {}
         if self.cluster_type in ["yarn", "pbs", "moab", "sge", "lsf", "slurm", "oar", "kube"]:
             dask_cfg = {"name": pipeline_name}
         else:
