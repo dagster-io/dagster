@@ -48,7 +48,7 @@ SHARED_BUILDKITE_BQ_CONFIG = {
     "project": os.getenv("GCP_PROJECT_ID"),
 }
 
-BIGQUERY_JARS = "gs://spark-lib/bigquery/spark-bigquery-with-dependencies_2.12-0.23.2.jar"
+BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.11:0.15.1-beta"
 
 
 @contextmanager
