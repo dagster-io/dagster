@@ -1,0 +1,3 @@
+include README.md
+include LICENSE
+include dagster_test_package/py.typed
