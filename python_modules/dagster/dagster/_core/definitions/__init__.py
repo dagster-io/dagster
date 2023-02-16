@@ -170,6 +170,7 @@ from .partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
+    MultiToSingleDimensionMapping as MultiToSingleDimensionMapping,
     PartitionMapping as PartitionMapping,
 )
 from .partitioned_schedule import (

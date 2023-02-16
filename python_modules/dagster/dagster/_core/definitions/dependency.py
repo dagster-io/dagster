@@ -779,7 +779,7 @@ class MultiDependencyDefinition(
                 if key in seen:
                     raise DagsterInvalidDefinitionError(
                         f'Duplicate dependencies on node "{dep.node}" output "{dep.output}" '
-                        'used in the same MultiDependencyDefinition.'
+                        "used in the same MultiDependencyDefinition."
                     )
                 seen[key] = True
             elif dep is MappedInputPlaceholder:
@@ -911,14 +911,14 @@ class DependencyStructure:
                         raise DagsterInvalidDefinitionError(
                             "Currently, items in a fan-in dependency cannot be downstream of"
                             " dynamic outputs. Problematic dependency on dynamic output"
-                            f" \"{node_output.describe()}\"."
+                            f' "{node_output.describe()}".'
                         )
                     if self._dynamic_fan_out_index.get(node_output.node_name):
                         raise DagsterInvalidDefinitionError(
                             "Currently, items in a fan-in dependency cannot be downstream of"
                             " dynamic outputs. Problematic dependency on output"
-                            f" \"{node_output.describe()}\", downstream of"
-                            f" \"{self._dynamic_fan_out_index[node_output.node_name].describe()}\"."
+                            f' "{node_output.describe()}", downstream of'
+                            f' "{self._dynamic_fan_out_index[node_output.node_name].describe()}".'
                         )
 
                     node_output_list.append(node_output)
@@ -963,7 +963,7 @@ class DependencyStructure:
         if not node_input.node.definition.input_supports_dynamic_output_dep(node_input.input_name):
             raise DagsterInvalidDefinitionError(
                 f"{node_input.node.describe_node()} cannot be downstream of dynamic output"
-                f" \"{node_output.describe()}\" since input \"{node_input.input_name}\" maps to a"
+                f' "{node_output.describe()}" since input "{node_input.input_name}" maps to a'
                 " node that is already downstream of another dynamic output. Nodes cannot be"
                 " downstream of more than one dynamic output"
             )
@@ -982,8 +982,8 @@ class DependencyStructure:
         if self._dynamic_fan_out_index[node_input.node_name] != node_output:
             raise DagsterInvalidDefinitionError(
                 f"{node_input.node.describe_node()} cannot be downstream of more than one dynamic"
-                f" output. It is downstream of both \"{node_output.describe()}\" and"
-                f" \"{self._dynamic_fan_out_index[node_input.node_name].describe()}\""
+                f' output. It is downstream of both "{node_output.describe()}" and'
+                f' "{self._dynamic_fan_out_index[node_input.node_name].describe()}"'
             )
 
     def _validate_and_set_collect(
@@ -1004,8 +1004,8 @@ class DependencyStructure:
         if self._dynamic_fan_out_index.get(node_output.node_name):
             raise DagsterInvalidDefinitionError(
                 f"{node_input.node.describe_node()} cannot be downstream of more than one dynamic"
-                f" output. It is downstream of both \"{node_output.describe()}\" and"
-                f" \"{self._dynamic_fan_out_index[node_output.node_name].describe()}\""
+                f' output. It is downstream of both "{node_output.describe()}" and'
+                f' "{self._dynamic_fan_out_index[node_output.node_name].describe()}"'
             )
 
     def all_upstream_outputs_from_node(self, node_name: str) -> Sequence[NodeOutput]:

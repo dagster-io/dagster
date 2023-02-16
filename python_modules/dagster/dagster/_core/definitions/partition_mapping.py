@@ -1,7 +1,7 @@
 import collections.abc
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Collection, Mapping, NamedTuple, Optional, Tuple, Type, Union, cast, Sequence
+from typing import Collection, Mapping, NamedTuple, Optional, Sequence, Tuple, Type, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
@@ -268,28 +268,28 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
 
 @experimental
 @whitelist_for_serdes
-class MultiToSingleDimensionDependencyMapping(
+class MultiToSingleDimensionMapping(
     PartitionMapping,
-    NamedTuple(
-        "_MultiToSingleDimensionDependencyMapping", [("partition_dimension_name", Optional[str])]
-    ),
+    NamedTuple("_MultiToSingleDimensionMapping", [("partition_dimension_name", Optional[str])]),
 ):
     """
-    TODO update docstring
     Defines a correspondence between an single-dimensional partitions definition
-    and a downstream MultiPartitionsDefinition. The upstream partitions definition must be
-    a dimension of the downstream MultiPartitionsDefinition.
+    and a MultiPartitionsDefinition. The single-dimensional partitions definition must be
+    a dimension of the MultiPartitionsDefinition.
 
-    For an upstream partition key X, this partition mapping assumes that any downstream
-    multi-partition key with X in the selected dimension is a downstream dependency.
+    This class handles the case where the upstream asset is multipartitioned and the
+    downstream asset is single dimensional, and vice versa.
+
+    For a partition key X, this partition mapping assumes that any multi-partition key with
+    X in the selected dimension is a dependency.
 
     Args:
-        partition_dimension_name (str): The name of the partition dimension in the downstream
-            MultiPartitionsDefinition that matches the upstream partitions definition.
+        partition_dimension_name (Optional[str]): The name of the partition dimension in the
+            MultiPartitionsDefinition that matches the single-dimension partitions definition.
     """
 
     def __new__(cls, partition_dimension_name: Optional[str] = None):
-        return super(MultiToSingleDimensionDependencyMapping, cls).__new__(
+        return super(MultiToSingleDimensionMapping, cls).__new__(
             cls,
             partition_dimension_name=check.opt_str_param(
                 partition_dimension_name, "partition_dimension_name"
@@ -307,7 +307,7 @@ class MultiToSingleDimensionDependencyMapping(
             check.failed(
                 "This partition mapping defines a relationship between a multipartitioned and"
                 " single dimensional asset. The single dimensional partitions definition must be a"
-                " dimension of the MultiPartitionsDefinition. definition and downstream partitions"
+                " dimension of the MultiPartitionsDefinition."
             )
 
         multipartitions_def = next(
@@ -338,7 +338,7 @@ class MultiToSingleDimensionDependencyMapping(
             if len(set(dimension_partitions_defs)) != len(dimension_partitions_defs):
                 check.failed(
                     "Partition dimension name must be specified on the "
-                    "MultiToSingleDimensionDependencyMapping object when dimensions of a"
+                    "MultiToSingleDimensionMapping object when dimensions of a"
                     " MultiPartitions definition share the same partitions definition."
                 )
             matching_dimension_defs = [
@@ -630,11 +630,11 @@ class StaticPartitionMapping(
 def _can_infer_single_to_multi_partition_mapping(
     upstream_partitions_def: PartitionsDefinition, downstream_partitions_def: PartitionsDefinition
 ) -> bool:
-    multipartitions_defs = {
+    multipartitions_defs = [
         partitions_def
         for partitions_def in [upstream_partitions_def, downstream_partitions_def]
         if isinstance(partitions_def, MultiPartitionsDefinition)
-    }
+    ]
 
     if len(multipartitions_defs) != 1:
         return False
@@ -647,7 +647,7 @@ def _can_infer_single_to_multi_partition_mapping(
                 upstream_partitions_def,
                 downstream_partitions_def,
             }
-            - multipartitions_defs
+            - set(multipartitions_defs)
         )
     )
 
@@ -677,7 +677,7 @@ def infer_partition_mapping(
             upstream_partitions_def, downstream_partitions_def
         )
     ):
-        return MultiToSingleDimensionDependencyMapping()
+        return MultiToSingleDimensionMapping()
     elif downstream_partitions_def is not None:
         return downstream_partitions_def.get_default_partition_mapping()
     else:
@@ -693,5 +693,5 @@ def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
         LastPartitionMapping,
         StaticPartitionMapping,
         TimeWindowPartitionMapping,
-        MultiToSingleDimensionDependencyMapping,
+        MultiToSingleDimensionMapping,
     )
