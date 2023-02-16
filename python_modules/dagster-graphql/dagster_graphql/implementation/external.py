@@ -173,6 +173,7 @@ def fetch_workspace(workspace_request_context: WorkspaceRequestContext) -> Graph
 @capture_error
 def fetch_location_statuses(
     workspace_request_context: WorkspaceRequestContext,
+    zero_out_timestamps: bool = False,
 ) -> GrapheneWorkspaceLocationStatusEntries:
     from ..schema.external import (
         GrapheneRepositoryLocationLoadStatus,
@@ -190,7 +191,7 @@ def fetch_location_statuses(
                 load_status=GrapheneRepositoryLocationLoadStatus.from_python_status(
                     status_entry.load_status
                 ),
-                update_timestamp=status_entry.update_timestamp,
+                update_timestamp=status_entry.update_timestamp if not zero_out_timestamps else 0.0,
             )
             for status_entry in workspace_request_context.get_location_statuses()
         ]
