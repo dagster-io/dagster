@@ -16,7 +16,7 @@ HOST = "https://uksouth.azuredatabricks.net"
 TOKEN = "super-secret-token"
 
 
-@mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
+@mock.patch("databricks_cli.sdk.JobsService.submit_run")
 def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_config):
     mock_submit_run.return_value = {"run_id": 1}
 
@@ -46,7 +46,7 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
     )
 
 
-@mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
+@mock.patch("databricks_cli.sdk.JobsService.submit_run")
 def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_config):
     mock_submit_run.return_value = {"run_id": 1}
 
@@ -79,9 +79,9 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
     )
 
 
-@mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
+@mock.patch("databricks_cli.sdk.JobsService.submit_run")
 def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
-    mock_submit_run.return_value = 1
+    mock_submit_run.return_value = {"run_id": 1}
 
     context = create_test_pipeline_execution_context()
     runner = DatabricksJobRunner(HOST, TOKEN, poll_interval_sec=0.01)

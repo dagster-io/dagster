@@ -9,7 +9,7 @@ import dagster_pyspark
 import requests.exceptions
 from dagster._annotations import public
 from databricks_api import DatabricksAPI
-from databricks_cli.sdk.api_client import ApiClient
+from databricks_cli.sdk import ApiClient, ClusterService, DbfsService, JobsService
 
 import dagster_databricks
 
@@ -79,10 +79,6 @@ class DatabricksClient:
         """
         return self._api_client
 
-    def submit_run(self, *args, **kwargs) -> int:
-        """Submit a run directly to the 'Runs Submit' API."""
-        return self.client.jobs.submit_run(*args, **kwargs)["run_id"]
-
     def read_file(self, dbfs_path: str, block_size: int = 1024**2) -> bytes:
         """Read a file from DBFS to a **byte string**."""
         if dbfs_path.startswith("dbfs://"):
@@ -90,12 +86,13 @@ class DatabricksClient:
 
         data = b""
         bytes_read = 0
+        dbfs_service = DbfsService(self.api_client)
 
-        jdoc = self.client.dbfs.read(path=dbfs_path, length=block_size)
+        jdoc = dbfs_service.read(path=dbfs_path, length=block_size)
         data += base64.b64decode(jdoc["data"])
         while jdoc["bytes_read"] == block_size:
             bytes_read += jdoc["bytes_read"]
-            jdoc = self.client.dbfs.read(path=dbfs_path, offset=bytes_read, length=block_size)
+            jdoc = dbfs_service.read(path=dbfs_path, offset=bytes_read, length=block_size)
             data += base64.b64decode(jdoc["data"])
 
         return data
@@ -110,19 +107,18 @@ class DatabricksClient:
         if dbfs_path.startswith("dbfs://"):
             dbfs_path = dbfs_path[7:]
 
-        create_response = self.client.dbfs.create(path=dbfs_path, overwrite=overwrite)
+        dbfs_service = DbfsService(self.api_client)
+
+        create_response = dbfs_service.create(path=dbfs_path, overwrite=overwrite)
         handle = create_response["handle"]
 
         block = file_obj.read(block_size)
         while block:
             data = base64.b64encode(block).decode("utf-8")
-            self.client.dbfs.add_block(data=data, handle=handle)  # pylint: disable=no-member
+            dbfs_service.add_block(data=data, handle=handle)
             block = file_obj.read(block_size)
 
-        self.client.dbfs.close(handle=handle)  # pylint: disable=no-member
-
-    def get_run(self, databricks_run_id: int) -> Mapping[str, Any]:
-        return self.client.jobs.get_run(databricks_run_id)
+        dbfs_service.close(handle=handle)
 
     def get_run_state(self, databricks_run_id: int) -> "DatabricksRunState":
         """Get the state of a run by Databricks run ID.
@@ -130,7 +126,7 @@ class DatabricksClient:
         Return a `DatabricksRunState` object. Note that the `result_state`
         attribute may be `None` if the run hasn't yet terminated.
         """
-        run = self.get_run(databricks_run_id)
+        run = JobsService(self.api_client).get_run(databricks_run_id)
         state = run["state"]
         result_state = (
             DatabricksRunResultState(state.get("result_state"))
@@ -245,22 +241,21 @@ class DatabricksJobRunner:
             "Multiple tasks specified in Databricks run",
         )
 
-        config = dict(
-            run_name=run_config.get("run_name"),
-            new_cluster=new_cluster,
-            existing_cluster_id=existing_cluster_id,
-            libraries=libraries,
+        config = {
+            "run_name": run_config.get("run_name"),
+            "new_cluster": new_cluster,
+            "existing_cluster_id": existing_cluster_id,
+            "libraries": libraries,
             **task,
-        )
-        return self.client.submit_run(**config)
+        }
+        return JobsService(self.client.api_client).submit_run(**config)["run_id"]
 
     def retrieve_logs_for_run_id(self, log: logging.Logger, databricks_run_id: int):
         """Retrieve the stdout and stderr logs for a run."""
-        api_client = self.client.client
-        run = api_client.jobs.get_run(databricks_run_id)  # pylint: disable=no-member
-        cluster = api_client.cluster.get_cluster(  # pylint: disable=no-member
-            run["cluster_instance"]["cluster_id"]
-        )
+        api_client = self.client.api_client
+
+        run = JobsService(api_client).get_run(databricks_run_id)
+        cluster = ClusterService(api_client).get_cluster(run["cluster_instance"]["cluster_id"])
         log_config = cluster.get("cluster_log_conf")
         if log_config is None:
             log.warn(

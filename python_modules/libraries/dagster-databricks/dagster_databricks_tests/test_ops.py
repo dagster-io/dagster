@@ -13,7 +13,7 @@ from dagster_databricks.types import (
 
 @pytest.mark.parametrize("job_creator", [create_databricks_job_op])
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run_state")
-@mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
+@mock.patch("databricks_cli.sdk.JobsService.submit_run")
 def test_run_create_databricks_job_op(
     mock_submit_run, mock_get_run_state, databricks_run_config, job_creator
 ):
@@ -28,7 +28,7 @@ def test_run_create_databricks_job_op(
         )()
 
     RUN_ID = 1
-    mock_submit_run.return_value = RUN_ID
+    mock_submit_run.return_value = {"run_id": RUN_ID}
     mock_get_run_state.return_value = DatabricksRunState(
         state_message="",
         result_state=DatabricksRunResultState.SUCCESS,
