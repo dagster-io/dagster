@@ -239,7 +239,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         step_run_ref = step_context_to_step_run_ref(
             step_context, self.local_dagster_job_package_path
         )
-        run_id = step_context.pipeline_run.run_id
+        run_id = step_context.dagster_run.run_id
         log = step_context.log
 
         step_key = step_run_ref.step_key
