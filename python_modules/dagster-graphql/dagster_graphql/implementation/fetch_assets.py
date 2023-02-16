@@ -335,8 +335,8 @@ def get_materialized_partitions_subset(
     if not partitions_def:
         return None
 
-    if instance.can_cache_asset_status_data() and any(
-        isinstance(partitions_def, partition_type) for partition_type in CACHEABLE_PARTITION_TYPES
+    if instance.can_cache_asset_status_data() and isinstance(
+        partitions_def, CACHEABLE_PARTITION_TYPES
     ):
         # When the "cached_status_data" column exists in storage, update the column to contain
         # the latest partition status values
