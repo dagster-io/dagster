@@ -139,7 +139,7 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
             schema=init_context.resource_config.get("dataset"),
         )
         if init_context.resource_config.get("gcp_credentials"):
-            with tempfile.NamedTemporaryFile("w") as f:
+            with tempfile.NamedTemporaryFile("w+") as f:
                 f.write(init_context.resource_config.get("gcp_credentials"))
                 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = f.name
                 try:

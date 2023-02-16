@@ -203,7 +203,7 @@ def test_authenticate_via_config():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str=" FOO string",
+        column_str="FOO string",
     ) as table_name:
         asset_info = dict()
 
