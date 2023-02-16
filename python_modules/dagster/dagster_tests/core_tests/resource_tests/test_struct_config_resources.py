@@ -8,7 +8,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Mapping
 
 import pytest
-
 from dagster import IOManager, asset, job, op, resource
 from dagster._check import CheckError
 from dagster._config.field import Field
