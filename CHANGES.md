@@ -25,9 +25,8 @@ def send_emails(emails) -> None:
 def send_emails_job():
     send_emails(emails_to_send.to_source_asset())
 ```
-
-- [dagster-snowflake, dagster-duckdb] Database I/O managers (Snowflake, DuckDB) now support static partitions, multi-partitions, and dynamic partitions.
 - Added a `--dagit-host/-h` argument to the `dagster dev` command to allow customization of the host where Dagit runs.
+- [dagster-snowflake, dagster-duckdb] Database I/O managers (Snowflake, DuckDB) now support static partitions, multi-partitions, and dynamic partitions.
 
 ### Bugfixes
 
