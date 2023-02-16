@@ -1,5 +1,65 @@
 # Changelog
 
+# 1.1.19 (core) / 0.17.19 (libraries)
+
+### New
+
+- The `FreshnessPolicy` object now supports a `cron_schedule_timezone` argument.
+- `AssetsDefinition.from_graph` now supports a `freshness_policies_by_output_name` parameter.
+- The `@asset_sensor` will now display an informative `SkipReason` when no new materializations have been created since the last sensor tick.
+- `AssetsDefinition` now has a `to_source_asset` method, which returns a representation of this asset as a `SourceAsset`.
+- You can now designate assets as inputs to ops within a graph or graph-based job. E.g.
+- [dagster-snowflake, dagster-duckdb] Database I/O managers (Snowflake, DuckDB) now support static partitions, multi-partitions, and dynamic partitions.
+
+```python
+from dagster import asset, job, op
+
+@asset
+def emails_to_send():
+    ...
+
+@op
+def send_emails(emails) -> None:
+    ...
+
+@job
+def send_emails_job():
+    send_emails(emails_to_send.to_source_asset())
+```
+
+- Added a `--dagit-host/-h` argument to the `dagster dev` command to allow customization of the host where Dagit runs.
+
+### Bugfixes
+
+- Previously, if a description was provided for an op that backed a multi-asset, the op’s description would override the descriptions in Dagit for the individual assets. This has been fixed.
+- Sometimes, when applying an `input_manager_key` to an asset’s input, incorrect resource config could be used when loading that input. This has been fixed.
+- Previously, the backfill page errored when partitions definitions changed for assets that had been backfilled. This has been fixed.
+- When displaying materialized partitions for multipartitioned assets, Dagit would error if a dimension had zero partitions. This has been fixed.
+- [dagster-k8s] Fixed an issue where setting `runK8sConfig` in the Dagster Helm chart would not pass configuration through to pods launched using the `k8s_job_executor`.
+- [dagster-k8s] Previously, using the `execute_k8s_job` op downstream of a dynamic output would result in k8s jobs with duplicate names being created. This has been fixed.
+- [dagster-snowflake] Previously, if the schema for storing outputs didn’t exist, the Snowflake I/O manager would fail. Now it creates the schema.
+
+### Breaking Changes
+
+- Removed the experimental, undocumented `asset_key`, `asset_partitions`, and `asset_partitions_defs` arguments on `Out`.
+- The experimental, undocumented `top_level_resources` argument to the `repository` decorator has been renamed to `_top_level_resources` to emphasize that it should not be set manually.
+
+### Community Contributions
+
+- `load_asset_values` now accepts resource configuration (thanks @Nintorac!)
+- Previously, when using the `UPathIOManager`, paths with the `"."` character in them would be incorrectly truncated, which could result in multiple distinct objects being written to the same path. This has been fixed. (Thanks @spenczar!)
+
+### Experimental
+
+- [dagster-dbt] Added documentation to our dbt Cloud integration to cache the loading of software-defined assets from a dbt Cloud job.
+
+### Documentation
+
+- Revamped the introduction to the Partitions concepts page to make it clear that non-time-window partitions are equally encouraged.
+- In Navigation, moved the Partitions and Backfill concept pages to their own section underneath Concepts.
+- Moved the Running Dagster locally guide from **Deployment** to **Guides** to reflect that OSS and Cloud users can follow it.
+- Added [a new guide](https://docs.dagster.io/guides/dagster/asset-versioning-and-caching) covering asset versioning and caching.
+
 # 1.1.18 (core) / 0.17.18 (libraries)
 
 ### New
