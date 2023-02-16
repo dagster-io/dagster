@@ -15,6 +15,7 @@ from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
@@ -268,9 +269,11 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
 
 @experimental
 @whitelist_for_serdes
-class MultiToSingleDimensionMapping(
+class MultiToSingleDimensionPartitionMapping(
     PartitionMapping,
-    NamedTuple("_MultiToSingleDimensionMapping", [("partition_dimension_name", Optional[str])]),
+    NamedTuple(
+        "_MultiToSingleDimensionPartitionMapping", [("partition_dimension_name", Optional[str])]
+    ),
 ):
     """
     Defines a correspondence between an single-dimensional partitions definition
@@ -289,7 +292,7 @@ class MultiToSingleDimensionMapping(
     """
 
     def __new__(cls, partition_dimension_name: Optional[str] = None):
-        return super(MultiToSingleDimensionMapping, cls).__new__(
+        return super(MultiToSingleDimensionPartitionMapping, cls).__new__(
             cls,
             partition_dimension_name=check.opt_str_param(
                 partition_dimension_name, "partition_dimension_name"
@@ -338,7 +341,7 @@ class MultiToSingleDimensionMapping(
             if len(set(dimension_partitions_defs)) != len(dimension_partitions_defs):
                 check.failed(
                     "Partition dimension name must be specified on the "
-                    "MultiToSingleDimensionMapping object when dimensions of a"
+                    "MultiToSingleDimensionPartitionMapping object when dimensions of a"
                     " MultiPartitions definition share the same partitions definition."
                 )
             matching_dimension_defs = [
@@ -668,18 +671,21 @@ def infer_partition_mapping(
     downstream_partitions_def: Optional[PartitionsDefinition],
     upstream_partitions_def: Optional[PartitionsDefinition],
 ) -> PartitionMapping:
+    from .time_window_partition_mapping import TimeWindowPartitionMapping
+
     if partition_mapping is not None:
         return partition_mapping
-    elif (
-        upstream_partitions_def
-        and downstream_partitions_def
-        and _can_infer_single_to_multi_partition_mapping(
+    elif upstream_partitions_def and downstream_partitions_def:
+        if _can_infer_single_to_multi_partition_mapping(
             upstream_partitions_def, downstream_partitions_def
-        )
-    ):
-        return MultiToSingleDimensionMapping()
-    elif downstream_partitions_def is not None:
-        return downstream_partitions_def.get_default_partition_mapping()
+        ):
+            return MultiToSingleDimensionPartitionMapping()
+        elif isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition) and isinstance(
+            downstream_partitions_def, TimeWindowPartitionsDefinition
+        ):
+            return TimeWindowPartitionMapping()
+        else:
+            return IdentityPartitionMapping()
     else:
         return AllPartitionMapping()
 
@@ -693,5 +699,5 @@ def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
         LastPartitionMapping,
         StaticPartitionMapping,
         TimeWindowPartitionMapping,
-        MultiToSingleDimensionMapping,
+        MultiToSingleDimensionPartitionMapping,
     )

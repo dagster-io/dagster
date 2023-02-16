@@ -3,7 +3,7 @@ from dagster import MultiPartitionKey, MultiPartitionsDefinition, StaticPartitio
 from dagster._check import CheckError
 from dagster._core.definitions.partition import DefaultPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import MultiToSingleDimensionMapping
+from dagster._core.definitions.partition_mapping import MultiToSingleDimensionPartitionMapping
 
 
 def test_get_downstream_partitions_single_key_in_range():
@@ -15,7 +15,7 @@ def test_get_downstream_partitions_single_key_in_range():
     single_dimension_subset = single_dimension_def.empty_subset().with_partition_key_range(
         PartitionKeyRange("a", "a")
     )
-    result = MultiToSingleDimensionMapping().get_downstream_partitions_for_partitions(
+    result = MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
         upstream_partitions_subset=single_dimension_subset,
         downstream_partitions_def=multipartitions_def,
     )
@@ -28,7 +28,7 @@ def test_get_downstream_partitions_single_key_in_range():
     )
     assert result == multipartitions_subset
 
-    result = MultiToSingleDimensionMapping().get_downstream_partitions_for_partitions(
+    result = MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
         upstream_partitions_subset=multipartitions_subset,
         downstream_partitions_def=single_dimension_def,
     )
@@ -38,7 +38,7 @@ def test_get_downstream_partitions_single_key_in_range():
         {"abc": single_dimension_def, "xyz": StaticPartitionsDefinition(["x", "y", "z"])}
     )
 
-    result = MultiToSingleDimensionMapping().get_downstream_partitions_for_partitions(
+    result = MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
         upstream_partitions_subset=single_dimension_def.empty_subset().with_partition_key_range(
             PartitionKeyRange("b", "b")
         ),
@@ -73,13 +73,13 @@ def test_get_downstream_partitions_multiple_keys_in_range():
         },
     )
 
-    result = MultiToSingleDimensionMapping().get_downstream_partitions_for_partitions(
+    result = MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
         upstream_partitions_subset=single_dimension_subset,
         downstream_partitions_def=multipartitions_def,
     )
     assert result == multipartitions_subset
 
-    result = MultiToSingleDimensionMapping().get_downstream_partitions_for_partitions(
+    result = MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
         upstream_partitions_subset=multipartitions_subset,
         downstream_partitions_def=single_dimension_def,
     )
@@ -148,7 +148,7 @@ def test_get_upstream_single_dimension_to_multi_partition_mapping(
     downstream_partitions_subset,
 ):
     assert (
-        MultiToSingleDimensionMapping().get_upstream_partitions_for_partitions(
+        MultiToSingleDimensionPartitionMapping().get_upstream_partitions_for_partitions(
             downstream_partitions_subset,
             upstream_partitions_def,
         )
@@ -167,7 +167,7 @@ def test_error_thrown_when_no_partition_dimension_name_provided():
     single_dimension_def = StaticPartitionsDefinition(["1", "2", "3"])
 
     with pytest.raises(CheckError, match="dimension name must be specified"):
-        MultiToSingleDimensionMapping().get_upstream_partitions_for_partitions(
+        MultiToSingleDimensionPartitionMapping().get_upstream_partitions_for_partitions(
             multipartitions_def.empty_subset().with_partition_key_range(
                 PartitionKeyRange(
                     MultiPartitionKey({"a": "1", "b": "1"}),
@@ -178,7 +178,7 @@ def test_error_thrown_when_no_partition_dimension_name_provided():
         )
 
     with pytest.raises(CheckError, match="dimension name must be specified"):
-        MultiToSingleDimensionMapping().get_downstream_partitions_for_partitions(
+        MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
             multipartitions_def.empty_subset().with_partition_key_range(
                 PartitionKeyRange(
                     MultiPartitionKey({"a": "1", "b": "1"}),
@@ -189,7 +189,7 @@ def test_error_thrown_when_no_partition_dimension_name_provided():
         )
 
     with pytest.raises(CheckError, match="dimension name must be specified"):
-        MultiToSingleDimensionMapping().get_upstream_partitions_for_partitions(
+        MultiToSingleDimensionPartitionMapping().get_upstream_partitions_for_partitions(
             single_dimension_def.empty_subset().with_partition_key_range(
                 PartitionKeyRange("1", "1")
             ),
@@ -197,7 +197,7 @@ def test_error_thrown_when_no_partition_dimension_name_provided():
         )
 
     with pytest.raises(CheckError, match="dimension name must be specified"):
-        MultiToSingleDimensionMapping().get_downstream_partitions_for_partitions(
+        MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
             single_dimension_def.empty_subset().with_partition_key_range(
                 PartitionKeyRange("1", "1")
             ),

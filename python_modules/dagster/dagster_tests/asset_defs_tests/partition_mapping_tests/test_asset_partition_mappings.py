@@ -15,7 +15,7 @@ from dagster import (
     LastPartitionMapping,
     MultiPartitionKey,
     MultiPartitionsDefinition,
-    MultiToSingleDimensionMapping,
+    MultiToSingleDimensionPartitionMapping,
     Output,
     PartitionsDefinition,
     StaticPartitionsDefinition,
@@ -653,7 +653,7 @@ def test_multipartitions_def_partition_mapping_infer_single_dim_to_multi():
 
     assert (
         asset_graph.get_partition_mapping(upstream.key, downstream.key)
-        == MultiToSingleDimensionMapping()
+        == MultiToSingleDimensionPartitionMapping()
     )
 
     class MyIOManager(IOManager):
@@ -711,7 +711,7 @@ def test_multipartitions_def_partition_mapping_infer_multi_to_single_dim():
 
     assert (
         asset_graph.get_partition_mapping(upstream.key, downstream.key)
-        == MultiToSingleDimensionMapping()
+        == MultiToSingleDimensionPartitionMapping()
     )
 
     class MyIOManager(IOManager):
