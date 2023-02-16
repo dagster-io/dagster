@@ -76,6 +76,13 @@ def _make_dagster_package(package_name: str):
             "has_todos": False,
             "kwargs": {},
         },
+        "test_version.py": {
+            "path": os.path.join(tests_path, "test_version.py"),
+            "has_todos": False,
+            "kwargs": {
+                "underscore_name": package_name_underscore,
+            },
+        },
     }
 
     has_todos = []
@@ -83,11 +90,15 @@ def _make_dagster_package(package_name: str):
     for to_create, vars in files_to_create.items():
         print(f"Writing {to_create}")
         template = jinja_env.get_template(f"{to_create}.tmpl")
-        with open(vars["path"], "w+") as f:
+        with open(vars["path"], "w") as f:
             template.stream(**vars["kwargs"]).dump(f)
 
         if vars["has_todos"]:
             has_todos.append(vars["path"])
+
+    # test __init__.py
+    with open(os.path.join(tests_path, "__init__.py"), "w"):
+        pass
 
     # API docs
     docs_path = os.path.join(
@@ -97,7 +108,7 @@ def _make_dagster_package(package_name: str):
         [word.capitalize() for word in package_name.split("dagster-")[1].split("-")]
     )
     template = jinja_env.get_template("api-docs.rst.tmpl")
-    with open(docs_path, "w+") as f:
+    with open(docs_path, "w") as f:
         template.stream(
             hyphen_name=package_name,
             underscore_name=package_name_underscore,
@@ -105,6 +116,8 @@ def _make_dagster_package(package_name: str):
         ).dump(f)
 
     has_todos.append(docs_path)
+
+    # finish up
 
     has_todos_string = "\n".join(has_todos)
     print(
