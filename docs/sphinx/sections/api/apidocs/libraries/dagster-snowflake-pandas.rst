@@ -11,7 +11,7 @@ your data warehouse.
 Related Guides:
 
 * `Using Dagster with Snowflake guide </integrations/snowflake>`_
-
+* `Snowflake I/O manager reference </integrations/snowflake/reference>`_
 
 .. currentmodule:: dagster_snowflake_pandas
 
