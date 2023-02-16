@@ -16,6 +16,7 @@ from typing import (
 )
 
 import pendulum
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -35,7 +36,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
 
-from ..decorator_utils import get_function_params, has_at_least_one_parameter
+from ..decorator_utils import get_function_params
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
@@ -243,13 +244,17 @@ RawSensorEvaluationFunctionReturn = Union[
     RunRequest,
     PipelineRunReaction,
 ]
-RawSensorEvaluationFunction = Union[
-    Callable[[], RawSensorEvaluationFunctionReturn],
-    Callable[[SensorEvaluationContext], RawSensorEvaluationFunctionReturn],
-]
-SensorEvaluationFunction = Callable[
-    [SensorEvaluationContext], Iterator[Union[SkipReason, RunRequest]]
-]
+RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
+
+SensorEvaluationFunction: TypeAlias = Callable[..., Iterator[Union[SkipReason, RunRequest]]]
+
+
+def get_context_param_name(fn: Callable) -> Optional[str]:
+    resource_params = {param.name for param in get_resource_args(fn)}
+
+    return next(
+        (param.name for param in get_function_params(fn) if param.name not in resource_params), None
+    )
 
 
 class SensorDefinition:
@@ -359,7 +364,8 @@ class SensorDefinition:
         )
 
     def __call__(self, *args, **kwargs):
-        if has_at_least_one_parameter(self._raw_fn):
+        context_param_name = get_context_param_name(self._raw_fn)
+        if context_param_name:
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Sensor evaluation function expected context argument, but no context argument "
@@ -370,8 +376,6 @@ class SensorDefinition:
                     "Sensor invocation received multiple arguments. Only a first "
                     "positional context parameter should be provided when invoking."
                 )
-
-            context_param_name = get_function_params(self._raw_fn)[0].name
 
             if args:
                 context = check.opt_inst_param(args[0], context_param_name, SensorEvaluationContext)
@@ -620,10 +624,11 @@ def wrap_sensor_evaluation(
             for resource_name in resource_arg_names
         }
 
-        if has_at_least_one_parameter(fn):
-            result = fn(context, **resource_args_populated)
+        context_param_name = get_context_param_name(fn)
+        if context_param_name:
+            result = fn(**{context_param_name: context}, **resource_args_populated)
         else:
-            result = fn()  # type: ignore
+            result = fn(**resource_args_populated)
 
         if inspect.isgenerator(result) or isinstance(result, list):
             for item in result:

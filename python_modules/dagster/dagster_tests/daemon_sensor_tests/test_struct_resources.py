@@ -11,7 +11,6 @@ from dagster import (
     sensor,
 )
 from dagster._config.structured_config import ConfigurableResource
-from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
@@ -54,9 +53,34 @@ def sensor_from_fn_arg(context: SensorEvaluationContext, my_resource: MyResource
     return RunRequest(my_resource.a_str, run_config={}, tags={})
 
 
+@sensor(job_name="the_job", required_resource_keys={"my_resource"})
+def sensor_from_context_weird_name(not_called_context: SensorEvaluationContext):
+    return RunRequest(not_called_context.resources.my_resource.a_str, run_config={}, tags={})
+
+
+@sensor(job_name="the_job")
+def sensor_from_fn_arg_no_context(my_resource: MyResource):
+    return RunRequest(my_resource.a_str, run_config={}, tags={})
+
+
+@sensor(job_name="the_job", required_resource_keys={"my_resource"})
+def sensor_context_arg_not_first_and_weird_name(
+    my_resource: MyResource, not_called_context: SensorEvaluationContext
+):
+    assert not_called_context.resources.my_resource.a_str == my_resource.a_str
+
+    return RunRequest(not_called_context.resources.my_resource.a_str, run_config={}, tags={})
+
+
 the_repo = Definitions(
     jobs=[the_job],
-    sensors=[sensor_from_context, sensor_from_fn_arg],
+    sensors=[
+        sensor_from_context,
+        sensor_from_fn_arg,
+        sensor_from_context_weird_name,
+        sensor_from_fn_arg_no_context,
+        sensor_context_arg_not_first_and_weird_name,
+    ],
     resources={"my_resource": MyResource(a_str="foo")},
 )
 
@@ -101,7 +125,16 @@ def loadable_target_origin() -> LoadableTargetOrigin:
     )
 
 
-@pytest.mark.parametrize("sensor_name", ["sensor_from_context", "sensor_from_fn_arg"])
+@pytest.mark.parametrize(
+    "sensor_name",
+    [
+        "sensor_from_context",
+        "sensor_from_fn_arg",
+        "sensor_from_context_weird_name",
+        "sensor_from_fn_arg_no_context",
+        "sensor_context_arg_not_first_and_weird_name",
+    ],
+)
 def test_resources(
     caplog,
     instance,
