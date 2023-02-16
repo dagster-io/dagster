@@ -785,7 +785,7 @@ def test_status(
         pipeline_code_origin=external_pipeline.get_python_origin(),
     )
 
-    instance.run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=None))
+    instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=None))
 
     assert instance.run_launcher.logs == cloudwatch_client
 
