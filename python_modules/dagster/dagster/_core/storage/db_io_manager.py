@@ -126,9 +126,10 @@ class DbIOManager(IOManager):
                 self._db_client.ensure_schema_exists(context, table_slice, conn)
                 self._db_client.delete_table_slice(context, table_slice, conn)
 
-            handler_metadata = (
-                self._handlers_by_type[obj_type].handle_output(context, table_slice, obj) or {}
-            )
+                handler_metadata = (
+                    self._handlers_by_type[obj_type].handle_output(context, table_slice, obj, conn)
+                    or {}
+                )
         else:
             check.invariant(
                 context.dagster_type.is_nothing,
