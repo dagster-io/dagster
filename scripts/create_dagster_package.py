@@ -5,12 +5,16 @@ from jinja2 import Environment, FileSystemLoader
 
 
 def _make_dagster_package(package_name: str):
-    package_name_underscore = package_name.replace("-", "_")
+    if not package_name.startswith("dagster-"):
+        print("Package name must start with 'dagster-'. Examples: dagster-snowflake, dagster-dbt.")
+        return
+
     dagster_repo = os.getenv("DAGSTER_GIT_REPO_DIR")
     if dagster_repo is None:
         print("Must have DAGSTER_GIT_REPO_DIR set.")
         return
 
+    package_name_underscore = package_name.replace("-", "_")
     libraries_path = os.path.join(dagster_repo, "python_modules/libraries")
     package_path = os.path.join(libraries_path, package_name)
     src_path = os.path.join(package_path, package_name_underscore)
@@ -25,22 +29,34 @@ def _make_dagster_package(package_name: str):
     jinja_env = Environment(loader=FileSystemLoader(templates_path))
 
     files_to_create = {
-        ".coveragerc": {"path": os.path.join(package_path, ".coveragerc"), "kwargs": {}},
-        "LICENSE": {"path": os.path.join(package_path, "LICENSE"), "kwargs": {}},
+        ".coveragerc": {
+            "path": os.path.join(package_path, ".coveragerc"),
+            "has_todos": False,
+            "kwargs": {},
+        },
+        "LICENSE": {
+            "path": os.path.join(package_path, "LICENSE"),
+            "has_todos": False,
+            "kwargs": {},
+        },
         "MANIFEST.in": {
             "path": os.path.join(package_path, "MANIFEST.in"),
+            "has_todos": False,
             "kwargs": {"underscore_name": package_name_underscore},
         },
         "README.md": {
             "path": os.path.join(package_path, "README.md"),
+            "has_todos": False,
             "kwargs": {"hyphen_name": package_name},
         },
         "setup.cfg": {
             "path": os.path.join(package_path, "setup.cfg"),
+            "has_todos": False,
             "kwargs": {"underscore_name": package_name_underscore},
         },
         "setup.py": {
             "path": os.path.join(package_path, "setup.py"),
+            "has_todos": True,
             "kwargs": {
                 "underscore_name": package_name_underscore,
                 "hyphen_name": package_name,
@@ -48,20 +64,56 @@ def _make_dagster_package(package_name: str):
         },
         "tox.ini": {
             "path": os.path.join(package_path, "tox.ini"),
+            "has_todos": False,
             "kwargs": {
                 "underscore_name": package_name_underscore,
                 "hyphen_name": package_name,
             },
         },
-        "py.typed": {"path": os.path.join(src_path, "py.typed"), "kwargs": {}},
-        "version.py": {"path": os.path.join(src_path, "version.py"), "kwargs": {}},
+        "py.typed": {"path": os.path.join(src_path, "py.typed"), "has_todos": False, "kwargs": {}},
+        "version.py": {
+            "path": os.path.join(src_path, "version.py"),
+            "has_todos": False,
+            "kwargs": {},
+        },
     }
+
+    has_todos = []
 
     for to_create, vars in files_to_create.items():
         print(f"Writing {to_create}")
         template = jinja_env.get_template(to_create)
         with open(vars["path"], "w+") as f:
             template.stream(**vars["kwargs"]).dump(f)
+
+        if vars["has_todos"]:
+            has_todos.append(vars["path"])
+
+    # API docs
+    docs_path = os.path.join(
+        dagster_repo, f"docs/sphinx/sections/api/apidocs/libraries/{package_name}.rst"
+    )
+    formal_name = " ".join(
+        [
+            word.capitalize()
+            for word in package_name.removeprefix("dagster-").replace("-", " ").split(" ")
+        ]
+    )
+    template = jinja_env.get_template("api-docs.rst")
+    with open(docs_path, "w+") as f:
+        template.stream(
+            hyphen_name=package_name,
+            underscore_name=package_name_underscore,
+            formal_name=formal_name,
+        ).dump(f)
+
+    has_todos.append(docs_path)
+
+    has_todos_string = "\n".join(has_todos)
+    print(
+        f"\n{package_name} has been created! See the TODOs in the following files to finish"
+        f" setup:\n{has_todos_string}"
+    )
 
 
 @click.command()
