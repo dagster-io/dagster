@@ -78,7 +78,7 @@ RESOURCES_STAGING = {
 RESOURCES_LOCAL = {
     "parquet_io_manager": LocalPartitionedParquetIOManager(pyspark=configured_pyspark),
     "warehouse_io_manager": DuckDBPartitionedParquetIOManager(
-        duckdb_path=os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb")
+        pyspark=configured_pyspark, duckdb_path=os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb")
     ),
     "hn_client": HNAPIClient(),
     "dbt": dbt_local_resource,
