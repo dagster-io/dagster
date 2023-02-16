@@ -457,6 +457,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "GCP_PROJECT_ID",
         ],
         pytest_extra_cmds=gcp_extra_cmds,
+        retries=2,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-k8s",
