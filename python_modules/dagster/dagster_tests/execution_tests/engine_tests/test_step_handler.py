@@ -41,7 +41,7 @@ def test_step_handler_context():
         plan_context = PlanOrchestrationContext(
             plan_data=PlanData(
                 pipeline=recon_pipeline,
-                pipeline_run=run,
+                dagster_run=run,
                 instance=instance,
                 execution_plan=execution_plan,
                 raise_on_error=True,
@@ -63,8 +63,8 @@ def test_step_handler_context():
             plan_context=plan_context,
             steps=execution_plan.steps,
             execute_step_args=args,
-            pipeline_run=run,
+            dagster_run=run,
         )
 
         assert ctx.execute_step_args == args
-        assert ctx.pipeline_run == run
+        assert ctx.dagster_run == run

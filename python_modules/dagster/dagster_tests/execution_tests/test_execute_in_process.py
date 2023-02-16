@@ -238,7 +238,7 @@ def test_partitions_key():
     @op
     def my_op(context):
         assert (
-            context._step_execution_context.plan_data.pipeline_run.tags[  # pylint: disable=protected-access
+            context._step_execution_context.plan_data.dagster_run.tags[  # pylint: disable=protected-access
                 "dagster/partition"
             ]
             == "2020-01-01"

@@ -2029,7 +2029,7 @@ class DagsterInstance(DynamicPartitionsStore):
             check.failed(f"Failed to reload run {run_id}")
 
         try:
-            self.run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=workspace))
+            self.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(
@@ -2073,7 +2073,7 @@ class DagsterInstance(DynamicPartitionsStore):
         try:
             self.run_launcher.resume_run(
                 ResumeRunContext(
-                    pipeline_run=run,
+                    dagster_run=run,
                     workspace=workspace,
                     resume_attempt_number=attempt_number,
                 )

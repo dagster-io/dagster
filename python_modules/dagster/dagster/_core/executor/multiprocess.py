@@ -338,7 +338,7 @@ def execute_step_out_of_process(
 ) -> Iterator[Optional[DagsterEvent]]:
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
-        pipeline_run=step_context.pipeline_run,
+        pipeline_run=step_context.dagster_run,
         step_key=step.key,
         instance_ref=step_context.instance.get_ref(),
         term_event=term_events[step.key],
