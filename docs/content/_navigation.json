@@ -655,6 +655,10 @@
             "path": "/guides/running-dagster-locally"
           },
           {
+            "title": "Understanding assets, ops, and graphs",
+            "path": "/guides/dagster/how-assets-relate-to-ops-and-graphs"
+          },
+          {
             "title": "Enriching with Software-defined assets",
             "path": "/guides/dagster/enriching-with-software-defined-assets"
           },
