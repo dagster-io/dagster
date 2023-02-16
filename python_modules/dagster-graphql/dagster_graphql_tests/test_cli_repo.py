@@ -2,10 +2,12 @@ from dagster import ScheduleDefinition, op, repository
 from dagster._legacy import pipeline
 
 
+@op
 def add_one(num: int) -> int:
     return num + 1
 
 
+@op
 def mult_two(num: int) -> int:
     return num * 2
 

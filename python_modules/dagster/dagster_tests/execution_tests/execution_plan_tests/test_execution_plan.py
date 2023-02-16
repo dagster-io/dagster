@@ -9,6 +9,7 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.output import GraphOut
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -518,11 +519,11 @@ def test_fan_in_should_skip_step():
     def fan_in(_context, items):
         return items
 
-    @graph(out=Out(is_required=False))
+    @graph(out=GraphOut())
     def graph_all_upstream_skip():
         return fan_in([skip(), skip()])
 
-    @graph(out=Out(is_required=False))
+    @graph(out=GraphOut())
     def graph_one_upstream_skip():
         return fan_in([one(), skip()])
 

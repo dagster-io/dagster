@@ -9,9 +9,11 @@ from dagster import (
     Output,
     String,
     dagster_type_materializer,
+    graph,
     op,
 )
 from dagster._core.definitions.input import In
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.output import Out
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.step import StepKind
@@ -71,14 +73,16 @@ def no_input_no_output_pipeline():
     )
 
 
-def one_input_no_output_pipeline():
-    @op(ins={"dummy": In()})
+def one_input_no_output_job():
+    @op(ins={"dummy": In()}, out={})
     def take_input_return_nothing(_context, **_kwargs):
         pass
 
-    return PipelineDefinition(
-        name="one_input_no_output_pipeline", solid_defs=[take_input_return_nothing]
-    )
+    @graph
+    def the_graph():
+        take_input_return_nothing()
+
+    return JobDefinition(name="one_input_no_output_job", graph_def=the_graph)
 
 
 def test_basic_json_default_output_config_schema():
@@ -136,15 +140,15 @@ def test_no_outputs_no_inputs_config_schema():
 
 def test_no_outputs_one_input_config_schema():
     assert ResolvedRunConfig.build(
-        one_input_no_output_pipeline(),
+        one_input_no_output_job(),
         {"solids": {"take_input_return_nothing": {"inputs": {"dummy": {"value": "value"}}}}},
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_context:
         ResolvedRunConfig.build(
-            one_input_no_output_pipeline(),
+            one_input_no_output_job(),
             {
-                "solids": {
+                "ops": {
                     "take_input_return_nothing": {
                         "inputs": {"dummy": {"value": "value"}},
                         "outputs": {},
@@ -156,7 +160,7 @@ def test_no_outputs_one_input_config_schema():
     assert len(exc_context.value.errors) == 1
     exp_msg = (
         'Error 1: Received unexpected config entry "outputs" at path'
-        " root:solids:take_input_return_nothing"
+        " root:ops:take_input_return_nothing"
     )
     assert exp_msg in exc_context.value.message
 

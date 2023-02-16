@@ -56,7 +56,7 @@ def test_metadata_entry_construction():
 
 
 def test_metadata_asset_materialization():
-    @op
+    @op(out={})
     def the_solid(_context):
         yield AssetMaterialization(
             asset_key="foo",
@@ -97,7 +97,7 @@ def test_metadata_asset_materialization():
 
 
 def test_metadata_asset_observation():
-    @op
+    @op(out={})
     def the_solid(_context):
         yield AssetObservation(
             asset_key="foo",
@@ -361,7 +361,7 @@ def test_table_schema_from_name_type_dict():
 
 
 def test_bool_metadata_value():
-    @op
+    @op(out={})
     def the_solid():
         yield AssetMaterialization(
             asset_key="foo",

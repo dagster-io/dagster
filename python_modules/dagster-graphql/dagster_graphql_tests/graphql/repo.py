@@ -283,7 +283,7 @@ def asset_tag_pipeline():
 
 @pipeline
 def pipeline_with_expectations():
-    @op
+    @op(out={})
     def emit_successful_expectation(_context):
         yield ExpectationResult(
             success=True,
@@ -292,7 +292,7 @@ def pipeline_with_expectations():
             metadata={"data": {"reason": "Just because."}},
         )
 
-    @op
+    @op(out={})
     def emit_failed_expectation(_context):
         yield ExpectationResult(
             success=False,
@@ -301,7 +301,7 @@ def pipeline_with_expectations():
             metadata={"data": {"reason": "Relentless pessimism."}},
         )
 
-    @op
+    @op(out={})
     def emit_successful_expectation_no_metadata(_context):
         yield ExpectationResult(success=True, label="no_metadata", description="Successful")
 
@@ -361,6 +361,7 @@ def more_complicated_nested_config():
                 "field_six_nullable_int_list": Field([Noneable(int)], is_required=False),
             },
         },
+        out={},
     )
     def a_solid_with_multilayered_config(_):
         return None
@@ -421,7 +422,7 @@ def hello_world_with_tags():
     solid_that_gets_tags()
 
 
-@op(name="solid_with_list", config_schema=[int])
+@op(name="solid_with_list", config_schema=[int], out={})
 def solid_def(_):
     return None
 
@@ -671,7 +672,7 @@ def composites_pipeline():
         return num + 1
 
     @op
-    def div_two(num: int) -> float:
+    def div_two(num):
         return num / 2
 
     @graph
@@ -889,7 +890,7 @@ def passthrough(_, value):
     return value
 
 
-@op(ins={"start": In(Nothing)})
+@op(ins={"start": In(Nothing)}, out={})
 def no_output(_):
     yield ExpectationResult(True)
 

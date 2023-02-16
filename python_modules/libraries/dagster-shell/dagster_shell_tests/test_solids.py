@@ -4,7 +4,7 @@ import pytest
 from dagster import Failure, job, op
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._core.definitions.output import GraphOut, Out
+from dagster._core.definitions.output import GraphOut
 from dagster._legacy import execute_solid
 from dagster_shell import create_shell_command_op, create_shell_script_op, shell_op
 
@@ -171,7 +171,7 @@ def test_shell_script_solid_run_time_config_composite(factory, monkeypatch):
             config_schema={},
             config_fn=lambda cfg: {},
         ),
-        out={"result": Out(str)},
+        out={"result": GraphOut()},
     )
     def composite():
         return solid()
