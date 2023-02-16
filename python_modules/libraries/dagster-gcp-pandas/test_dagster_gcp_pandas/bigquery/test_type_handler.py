@@ -49,7 +49,7 @@ def test_io_manager_with_bigquery_pandas():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="foo string, quux integer",
+        column_str="FOO string, QUUX int",
     ) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
@@ -98,7 +98,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
-        column_str="foo string, date TIMESTAMP",
+        column_str="FOO string, DATE TIMESTAMP",
     ) as table_name:
         time_df = pd.DataFrame(
             {

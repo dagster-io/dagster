@@ -147,7 +147,7 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
                 finally:
                     os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
         else:
-            return mgr
+            yield mgr
 
     return bigquery_io_manager
 
