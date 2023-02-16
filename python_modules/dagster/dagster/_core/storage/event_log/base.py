@@ -369,6 +369,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         pass
 
     @abstractmethod
+    def get_latest_asset_materialization_planned_event_by_partition(
+        self, asset_key: AssetKey
+    ) -> Mapping[str, EventLogRecord]:
+        pass
+
+    @abstractmethod
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         """Get the list of partition keys for a dynamic partitions definition."""
         raise NotImplementedError()

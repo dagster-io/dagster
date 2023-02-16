@@ -488,6 +488,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_keys, after_cursor
         )
 
+    def get_latest_asset_materialization_planned_event_by_partition(
+        self, asset_key: "AssetKey"
+    ) -> Mapping[str, EventLogRecord]:
+        return self._storage.event_log_storage.get_latest_asset_materialization_planned_event_by_partition(
+            asset_key
+        )
+
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         return self._storage.event_log_storage.get_dynamic_partitions(partitions_def_name)
 

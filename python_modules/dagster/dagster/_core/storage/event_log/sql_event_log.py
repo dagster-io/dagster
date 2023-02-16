@@ -1705,6 +1705,60 @@ class SqlEventLogStorage(EventLogStorage):
 
         return materialization_count_by_partition
 
+    def get_latest_asset_materialization_planned_event_by_partition(
+        self, asset_key: AssetKey
+    ) -> Mapping[str, EventLogRecord]:
+        check.inst_param(asset_key, "asset_key", AssetKey)
+
+        latest_event_subquery = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.asset_key,
+                    SqlEventLogStorageTable.c.partition,
+                    db.func.max(SqlEventLogStorageTable.c.id).label("id"),
+                ]
+            )
+            .where(
+                db.and_(
+                    db.or_(
+                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
+                    ),
+                    SqlEventLogStorageTable.c.partition != None,  # noqa: E711
+                    SqlEventLogStorageTable.c.dagster_event_type
+                    == DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                )
+            )
+            .group_by(SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition)
+            .alias("latest_materialization_planned_events")
+        )
+
+        query = db.select(
+            [
+                SqlEventLogStorageTable.c.asset_key,
+                SqlEventLogStorageTable.c.partition,
+                SqlEventLogStorageTable.c.id,
+                SqlEventLogStorageTable.c.event,
+            ]
+        ).select_from(
+            latest_event_subquery.join(
+                SqlEventLogStorageTable, SqlEventLogStorageTable.c.id == latest_event_subquery.c.id
+            ),
+        )
+
+        with self.index_connection() as conn:
+            event_rows = conn.execute(query).fetchall()
+
+        results = {}
+        for row in event_rows:
+            results[row["partition"]] = EventLogRecord(
+                storage_id=row["id"],
+                event_log_entry=cast(
+                    EventLogEntry, deserialize_json_to_dagster_namedtuple(row["event"])
+                ),
+            )
+        return results
+
     def _check_partitions_table(self) -> None:
         # Guards against cases where the user is not running the latest migration for
         # partitions storage. Should be updated when the partitions storage schema changes.
