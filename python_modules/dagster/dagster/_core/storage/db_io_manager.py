@@ -77,7 +77,8 @@ class DbClient:
         ...
 
     @staticmethod
-    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
+    @abstractmethod
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
         ...
 
     @staticmethod
@@ -122,20 +123,12 @@ class DbIOManager(IOManager):
             self._check_supported_type(obj_type)
 
             with self._db_client.connect(context, table_slice) as conn:
+                self._db_client.ensure_schema_exists(context, table_slice, conn)
                 self._db_client.delete_table_slice(context, table_slice, conn)
 
-<<<<<<< HEAD
-            self._db_client.ensure_schema_exists(context, table_slice)
             handler_metadata = (
                 self._handlers_by_type[obj_type].handle_output(context, table_slice, obj) or {}
             )
-=======
-                self._db_client.create_schema(context, table_slice, conn)
-                handler_metadata = (
-                    self._handlers_by_type[obj_type].handle_output(context, table_slice, obj, conn)
-                    or {}
-                )
->>>>>>> 1c5d4db795 (refactor to pass connection around)
         else:
             check.invariant(
                 context.dagster_type.is_nothing,
