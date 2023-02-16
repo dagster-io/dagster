@@ -23,7 +23,9 @@ from dagster import (
             ),
         }
     ),
-    metadata={"partition_expr": {"date": "TO_TIMESTAMP(time::INT)", "species": "SPECIES"}},
+    metadata={
+        "partition_expr": {"date": "TO_TIMESTAMP(time::INT)", "species": "SPECIES"}
+    },
 )
 def iris_dataset_partitioned(context) -> pd.DataFrame:
     partition = partition = context.partition_key.keys_by_dimension
