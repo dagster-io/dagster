@@ -575,7 +575,6 @@ export type DagitQuery = {
   permissions: Array<Permission>;
   pipelineOrError: PipelineOrError;
   pipelineRunOrError: RunOrError;
-  pipelineRunTags: Array<PipelineTagAndValues>;
   pipelineRunsOrError: RunsOrError;
   pipelineSnapshotOrError: PipelineSnapshotOrError;
   repositoriesOrError: RepositoriesOrError;
@@ -584,6 +583,8 @@ export type DagitQuery = {
   runGroupOrError: RunGroupOrError;
   runGroupsOrError: RunGroupsOrError;
   runOrError: RunOrError;
+  runTagKeys: Array<Scalars['String']>;
+  runTags: Array<PipelineTagAndValues>;
   runsOrError: RunsOrError;
   scheduleOrError: ScheduleOrError;
   scheduler: SchedulerOrError;
@@ -731,6 +732,12 @@ export type DagitQueryRunGroupsOrErrorArgs = {
 
 export type DagitQueryRunOrErrorArgs = {
   runId: Scalars['ID'];
+};
+
+export type DagitQueryRunTagsArgs = {
+  limit?: InputMaybe<Scalars['Int']>;
+  tagKeys?: InputMaybe<Array<Scalars['String']>>;
+  valuePrefix?: InputMaybe<Scalars['String']>;
 };
 
 export type DagitQueryRunsOrErrorArgs = {

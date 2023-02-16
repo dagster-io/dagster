@@ -56,13 +56,28 @@ def get_run_by_id(
         return GrapheneRun(record)
 
 
-def get_run_tags(graphene_info: "ResolveInfo") -> List["GraphenePipelineTagAndValues"]:
+def get_run_tag_keys(graphene_info: "ResolveInfo") -> List[str]:
+    return [
+        tag_key
+        for tag_key in graphene_info.context.instance.get_run_tag_keys()
+        if get_tag_type(tag_key) != TagType.HIDDEN
+    ]
+
+
+def get_run_tags(
+    graphene_info: "ResolveInfo",
+    tag_keys: Optional[List[str]] = None,
+    value_prefix: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> List["GraphenePipelineTagAndValues"]:
     from ..schema.tags import GraphenePipelineTagAndValues
 
     instance = graphene_info.context.instance
     return [
         GraphenePipelineTagAndValues(key=key, values=values)
-        for key, values in instance.get_run_tags()
+        for key, values in instance.get_run_tags(
+            tag_keys=tag_keys, value_prefix=value_prefix, limit=limit
+        )
         if get_tag_type(key) != TagType.HIDDEN
     ]
 

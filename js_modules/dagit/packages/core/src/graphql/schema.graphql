@@ -2711,7 +2711,8 @@ type DagitQuery {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
-  pipelineRunTags: [PipelineTagAndValues!]!
+  runTagKeys: [String!]!
+  runTags(tagKeys: [String!], valuePrefix: String, limit: Int): [PipelineTagAndValues!]!
   runGroupOrError(runId: ID!): RunGroupOrError!
   runGroupsOrError(filter: RunsFilter, cursor: String, limit: Int): RunGroupsOrError!
   isPipelineConfigValid(
