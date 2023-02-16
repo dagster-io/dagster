@@ -9,7 +9,6 @@
 - The `@asset_sensor` will now display an informative `SkipReason` when no new materializations have been created since the last sensor tick.
 - `AssetsDefinition` now has a `to_source_asset` method, which returns a representation of this asset as a `SourceAsset`.
 - You can now designate assets as inputs to ops within a graph or graph-based job. E.g.
-- [dagster-snowflake, dagster-duckdb] Database I/O managers (Snowflake, DuckDB) now support static partitions, multi-partitions, and dynamic partitions.
 
 ```python
 from dagster import asset, job, op
@@ -26,8 +25,8 @@ def send_emails(emails) -> None:
 def send_emails_job():
     send_emails(emails_to_send.to_source_asset())
 ```
-
 - Added a `--dagit-host/-h` argument to the `dagster dev` command to allow customization of the host where Dagit runs.
+- [dagster-snowflake, dagster-duckdb] Database I/O managers (Snowflake, DuckDB) now support static partitions, multi-partitions, and dynamic partitions.
 
 ### Bugfixes
 
