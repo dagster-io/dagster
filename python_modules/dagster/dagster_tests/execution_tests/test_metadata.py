@@ -17,6 +17,7 @@ from dagster import (
     UrlMetadataValue,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.decorators import op
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,

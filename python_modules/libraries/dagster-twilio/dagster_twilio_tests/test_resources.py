@@ -1,7 +1,8 @@
 import os
 
 import pytest
-from dagster._legacy import ModeDefinition, execute_solid, op
+from dagster import op
+from dagster._legacy import ModeDefinition, execute_solid
 from dagster_twilio import twilio_resource
 from twilio.base.exceptions import TwilioRestException
 

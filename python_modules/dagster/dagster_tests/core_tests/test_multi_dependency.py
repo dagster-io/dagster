@@ -12,6 +12,8 @@ from dagster._core.definitions import op
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
@@ -22,7 +24,7 @@ from dagster._legacy import (
 
 
 def test_simple_values():
-    @op(input_defs=[InputDefinition("numbers", List[Int])])
+    @op(ins={"numbers": In(List[Int])})
     def sum_num(_context, numbers):
         # cant guarantee order
         assert set(numbers) == set([1, 2, 3])
@@ -61,7 +63,7 @@ def test_simple_values():
     assert result.result_for_node("sum_num").output_value() == 6
 
 
-@op(input_defs=[InputDefinition("stuff", List[Any])])
+@op(ins={"stuff": In(List[Any])})
 def collect(_context, stuff):
     assert set(stuff) == set([1, None, "one"])
     return stuff
@@ -82,7 +84,7 @@ def emit_str():
     return "one"
 
 
-@op(output_def=OutputDefinition(Nothing))
+@op(out=Out(Nothing))
 def emit_nothing():
     pass
 

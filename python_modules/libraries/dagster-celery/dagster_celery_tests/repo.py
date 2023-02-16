@@ -1,11 +1,11 @@
 import time
 
 from dagster import Int, Output, RetryRequested, VersionStrategy, fs_io_manager
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     default_executors,
     pipeline,
 )
@@ -42,13 +42,13 @@ def test_serial_pipeline():
     return add_one(simple())
 
 
-@op(output_defs=[OutputDefinition(name="value_one"), OutputDefinition(name="value_two")])
+@op(out={"value_one": Out(), "value_two": Out()})
 def emit_values(_context):
     yield Output(1, "value_one")
     yield Output(2, "value_two")
 
 
-@op(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+@op
 def subtract(num_one, num_two):
     return num_one - num_two
 
@@ -74,11 +74,11 @@ def composite_pipeline():
 
 
 @op(
-    output_defs=[
-        OutputDefinition(Int, "out_1", is_required=False),
-        OutputDefinition(Int, "out_2", is_required=False),
-        OutputDefinition(Int, "out_3", is_required=False),
-    ]
+    out={
+        "out_1": Out(Int, is_required=False),
+        "out_2": Out(Int, is_required=False),
+        "out_3": Out(Int, is_required=False),
+    }
 )
 def foo(_):
     yield Output(1, "out_1")

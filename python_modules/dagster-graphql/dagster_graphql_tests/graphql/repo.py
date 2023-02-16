@@ -73,12 +73,13 @@ from dagster import (
     static_partitioned_config,
     usable_as_dagster_type,
 )
-from dagster._core.definitions import op
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.input import In
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.output import DynamicOut, Out
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster._core.log_manager import coerce_valid_log_level
@@ -90,7 +91,6 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
     AssetGroup,
-    DynamicOutputDefinition,
     InputDefinition,
     Materialization,
     ModeDefinition,
@@ -174,8 +174,8 @@ def get_main_external_repo(instance):
 
 
 @op(
-    input_defs=[InputDefinition("num", PoorMansDataFrame)],
-    output_def=OutputDefinition(PoorMansDataFrame),
+    ins={"num": In(PoorMansDataFrame)},
+    out=Out(PoorMansDataFrame),
 )
 def sum_solid(num):
     sum_df = deepcopy(num)
@@ -185,8 +185,8 @@ def sum_solid(num):
 
 
 @op(
-    input_defs=[InputDefinition("sum_df", PoorMansDataFrame)],
-    output_def=OutputDefinition(PoorMansDataFrame),
+    ins={"sum_df": In(PoorMansDataFrame)},
+    out=Out(PoorMansDataFrame),
 )
 def sum_sq_solid(sum_df):
     sum_sq_df = deepcopy(sum_df)
@@ -196,8 +196,8 @@ def sum_sq_solid(sum_df):
 
 
 @op(
-    input_defs=[InputDefinition("sum_df", PoorMansDataFrame)],
-    output_defs=[OutputDefinition(PoorMansDataFrame)],
+    ins={"sum_df": In(PoorMansDataFrame)},
+    out=Out(PoorMansDataFrame),
 )
 def df_expectations_solid(_context, sum_df):
     yield ExpectationResult(label="some_expectation", success=True)
@@ -285,7 +285,7 @@ def asset_tag_pipeline():
 
 @pipeline
 def pipeline_with_expectations():
-    @op(output_defs=[])
+    @op
     def emit_successful_expectation(_context):
         yield ExpectationResult(
             success=True,
@@ -294,7 +294,7 @@ def pipeline_with_expectations():
             metadata={"data": {"reason": "Just because."}},
         )
 
-    @op(output_defs=[])
+    @op
     def emit_failed_expectation(_context):
         yield ExpectationResult(
             success=False,
@@ -303,7 +303,7 @@ def pipeline_with_expectations():
             metadata={"data": {"reason": "Relentless pessimism."}},
         )
 
-    @op(output_defs=[])
+    @op
     def emit_successful_expectation_no_metadata(_context):
         yield ExpectationResult(success=True, label="no_metadata", description="Successful")
 
@@ -352,8 +352,6 @@ def config_with_map():
 def more_complicated_nested_config():
     @op(
         name="a_solid_with_multilayered_config",
-        input_defs=[],
-        output_defs=[],
         config_schema={
             "field_any": Any,
             "field_one": String,
@@ -425,7 +423,7 @@ def hello_world_with_tags():
     solid_that_gets_tags()
 
 
-@op(name="solid_with_list", input_defs=[], output_defs=[], config_schema=[int])
+@op(name="solid_with_list", config_schema=[int])
 def solid_def(_):
     return None
 
@@ -433,8 +431,8 @@ def solid_def(_):
 @pipeline
 def pipeline_with_input_output_metadata():
     @op(
-        input_defs=[InputDefinition("foo", Int, metadata={"a": "b"})],
-        output_defs=[OutputDefinition(Int, "bar", metadata={"c": "d"})],
+        ins={"foo": In(int, metadata={"a": "b"})},
+        out={"bar": Out(int, metadata={"c": "d"})},
     )
     def solid_with_input_output_metadata(foo):
         return foo + 1
@@ -540,13 +538,13 @@ def pipeline_with_invalid_definition_error():
     class InputTypeWithoutHydration(int):
         pass
 
-    @op(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    @op(out=Out(InputTypeWithoutHydration))
     def one(_):
         return 1
 
     @op(
-        input_defs=[InputDefinition("some_input", InputTypeWithoutHydration)],
-        output_defs=[OutputDefinition(Int)],
+        ins={"some_input": In(InputTypeWithoutHydration)},
+        out=Out(int),
     )
     def fail_subset(_, some_input):
         return some_input
@@ -868,11 +866,11 @@ def retry_resource_pipeline():
 
 @op(
     config_schema={"fail": bool},
-    input_defs=[InputDefinition("inp", str)],
-    output_defs=[
-        OutputDefinition(str, "start_fail", is_required=False),
-        OutputDefinition(str, "start_skip", is_required=False),
-    ],
+    ins={"inp": In(str)},
+    out={
+        "start_fail": Out(str, is_required=False),
+        "start_skip": Out(str, is_required=False),
+    },
 )
 def can_fail(context, inp):  # pylint: disable=unused-argument
     if context.op_config["fail"]:
@@ -882,10 +880,10 @@ def can_fail(context, inp):  # pylint: disable=unused-argument
 
 
 @op(
-    output_defs=[
-        OutputDefinition(str, "success", is_required=False),
-        OutputDefinition(str, "skip", is_required=False),
-    ],
+    out={
+        "success": Out(str, is_required=False),
+        "skip": Out(str, is_required=False),
+    },
 )
 def multi(_):
     yield Output("okay perfect", "success")
@@ -896,7 +894,7 @@ def passthrough(_, value):
     return value
 
 
-@op(input_defs=[InputDefinition("start", Nothing)], output_defs=[])
+@op(ins={"start": In(Nothing)})
 def no_output(_):
     yield ExpectationResult(True)
 
@@ -938,17 +936,15 @@ def disable_gc(_context):
     ]
 )
 def retry_multi_input_early_terminate_pipeline():
-    @op(output_defs=[OutputDefinition(Int)])
-    def return_one():
+    @op
+    def return_one() -> int:
         return 1
 
     @op(
         config_schema={"wait_to_terminate": bool},
-        input_defs=[InputDefinition("one", Int)],
-        output_defs=[OutputDefinition(Int)],
         required_resource_keys={"disable_gc"},
     )
-    def get_input_one(context, one):
+    def get_input_one(context, one: int) -> int:
         if context.op_config["wait_to_terminate"]:
             while True:
                 time.sleep(0.1)
@@ -956,24 +952,16 @@ def retry_multi_input_early_terminate_pipeline():
 
     @op(
         config_schema={"wait_to_terminate": bool},
-        input_defs=[InputDefinition("one", Int)],
-        output_defs=[OutputDefinition(Int)],
         required_resource_keys={"disable_gc"},
     )
-    def get_input_two(context, one):
+    def get_input_two(context, one: int) -> int:
         if context.op_config["wait_to_terminate"]:
             while True:
                 time.sleep(0.1)
         return one
 
-    @op(
-        input_defs=[
-            InputDefinition("input_one", Int),
-            InputDefinition("input_two", Int),
-        ],
-        output_defs=[OutputDefinition(Int)],
-    )
-    def sum_inputs(input_one, input_two):
+    @op
+    def sum_inputs(input_one: int, input_two: int) -> int:
         return input_one + input_two
 
     step_one = return_one()
@@ -1000,7 +988,7 @@ def dynamic_pipeline():
     def emit_ten(_):
         return 10
 
-    @op(output_defs=[DynamicOutputDefinition()])
+    @op(out=DynamicOut())
     def emit(_):
         for i in range(3):
             yield DynamicOutput(value=i, mapping_key=str(i))

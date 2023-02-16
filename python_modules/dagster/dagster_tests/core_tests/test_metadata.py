@@ -1,4 +1,5 @@
 from dagster import NodeInvocation
+from dagster._core.definitions.decorators import op
 from dagster._legacy import PipelineDefinition, execute_pipeline
 
 

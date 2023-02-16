@@ -5,7 +5,8 @@ import responses
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from dagster._legacy import ModeDefinition, execute_solid, op
+from dagster import op
+from dagster._legacy import ModeDefinition, execute_solid
 from dagster_github import github_resource
 from dagster_github.resources import GithubResource
 

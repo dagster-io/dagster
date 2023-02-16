@@ -16,6 +16,7 @@ from dagster import (
     fs_io_manager,
 )
 from dagster._config import Array, Field
+from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (

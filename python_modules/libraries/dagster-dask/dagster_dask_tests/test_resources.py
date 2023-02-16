@@ -1,18 +1,19 @@
 from typing import Any, Mapping
 
-from dagster import Dict, Output
+from dagster import Dict, Output, op
+from dagster._core.definitions.output import Out
 from dagster._core.execution.results import PipelineExecutionResult
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, OutputDefinition, execute_pipeline, op, pipeline
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster_dask import dask_resource
 from dask.distributed import Client
 
 
 @op(
-    output_defs=[
-        OutputDefinition(dagster_type=Dict, name="scheduler_info"),
-        OutputDefinition(dagster_type=Dict, name="nthreads"),
-    ],
+    out={
+        "scheduler_info": Out(Dict),
+        "nthreads": Out(Dict),
+    },
     required_resource_keys={"dask"},
 )
 def scheduler_info_solid(context):

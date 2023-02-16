@@ -16,6 +16,7 @@ from dagster import (
     _check as check,
     reconstructable,
 )
+from dagster._core.definitions.decorators import op
 from dagster._core.definitions.dependency import DependencyStructure, OpNode
 from dagster._core.definitions.graph_definition import GraphDefinition, create_adjacency_lists
 from dagster._core.definitions.job_definition import JobDefinition

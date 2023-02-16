@@ -5,13 +5,14 @@ from unittest import mock
 
 import pytest
 from dagster import reconstructable
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.input import In
 from dagster._core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.definitions.output import Out
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     execute_pipeline,
     pipeline,
 )
@@ -38,7 +39,7 @@ BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG = {
 
 
 @op(
-    output_defs=[OutputDefinition(DataFrame)],
+    out=Out(DataFrame),
     required_resource_keys={"pyspark_step_launcher", "pyspark"},
 )
 def make_df_solid(context):
@@ -55,8 +56,8 @@ def make_df_solid(context):
     name="blah",
     description="this is a test",
     config_schema={"foo": str, "bar": int},
-    input_defs=[InputDefinition("people", DataFrame)],
-    output_defs=[OutputDefinition(DataFrame)],
+    ins={"people": In(DataFrame)},
+    out=Out(DataFrame),
     required_resource_keys={"pyspark_step_launcher"},
 )
 def filter_df_solid(_, people):

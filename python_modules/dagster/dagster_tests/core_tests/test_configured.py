@@ -1,4 +1,5 @@
 from dagster import resource
+from dagster._core.definitions.decorators import op
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 

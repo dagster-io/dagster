@@ -1,5 +1,6 @@
 import pytest
 from dagster import DagsterInvalidConfigError, DependencyDefinition, List, NodeInvocation, String
+from dagster._core.definitions.decorators import op
 from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, execute_pipeline
 
 

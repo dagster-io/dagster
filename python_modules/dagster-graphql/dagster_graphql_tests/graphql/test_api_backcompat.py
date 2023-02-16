@@ -1,6 +1,7 @@
 import time
 
 from dagster import repository
+from dagster._core.definitions.decorators import op
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import PresetDefinition, pipeline

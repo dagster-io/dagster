@@ -5,6 +5,7 @@ from dagster import (
     resource,
     usable_as_dagster_type,
 )
+from dagster._core.definitions.decorators import op
 from dagster._core.types.dagster_type import create_any_type
 from dagster._legacy import (
     InputDefinition,

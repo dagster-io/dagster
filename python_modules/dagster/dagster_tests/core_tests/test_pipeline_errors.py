@@ -9,6 +9,7 @@ from dagster import (
     Output,
     _check as check,
 )
+from dagster._core.definitions.decorators import op
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
 from dagster._legacy import (

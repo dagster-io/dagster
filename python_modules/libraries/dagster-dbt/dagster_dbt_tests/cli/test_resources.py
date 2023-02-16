@@ -1,5 +1,6 @@
 import json
 
+from dagster._core.definitions.decorators import op
 from dagster._legacy import build_solid_context
 from dagster_dbt import dbt_cli_resource
 

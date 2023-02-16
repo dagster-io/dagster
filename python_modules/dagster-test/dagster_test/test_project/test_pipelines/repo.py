@@ -18,7 +18,6 @@ from dagster import (
     List,
     Output,
     RetryRequested,
-    String,
     VersionStrategy,
     file_relative_path,
     fs_io_manager,
@@ -27,8 +26,8 @@ from dagster import (
     repository,
     resource,
 )
-from dagster._core.definitions import op
 from dagster._core.definitions.decorators import daily_schedule, schedule
+from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._legacy import (
     InputDefinition,
@@ -103,47 +102,42 @@ def docker_mode_defs():
 
 
 @op(
-    input_defs=[InputDefinition("word", String)],
     config_schema={
         "factor": IntSource,
         "should_segfault": Field(bool, is_required=False, default_value=False),
     },
 )
-def multiply_the_word(context, word):
+def multiply_the_word(context, word: str) -> str:
     if context.op_config.get("should_segfault"):
         segfault()
     return word * context.op_config["factor"]
 
 
 @op(
-    input_defs=[InputDefinition("word", String)],
     config_schema={"factor": IntSource, "sleep_time": IntSource},
 )
-def multiply_the_word_slow(context, word):
+def multiply_the_word_slow(context, word: str) -> str:
     time.sleep(context.op_config["sleep_time"])
     return word * context.op_config["factor"]
 
 
-@op(input_defs=[InputDefinition("word")])
-def count_letters(word):
+@op
+def count_letters(word: str):
     counts = defaultdict(int)
     for letter in word:
         counts[letter] += 1
     return dict(counts)
 
 
-@op(
-    ins={"word": In(String)},
-)
-def always_fail(context, word):
+@op
+def always_fail(context, word: str):
     raise Exception("Op Exception Message")
 
 
 @op(
-    ins={"word": In(String)},
     config_schema={"factor": IntSource},
 )
-def multiply_the_word_op(context, word):
+def multiply_the_word_op(context, word: str) -> str:
     return word * context.op_config["factor"]
 
 
@@ -370,11 +364,11 @@ def demo_error_pipeline_s3():
 
 
 @op(
-    output_defs=[
-        OutputDefinition(Int, "out_1", is_required=False),
-        OutputDefinition(Int, "out_2", is_required=False),
-        OutputDefinition(Int, "out_3", is_required=False),
-    ]
+    out={
+        "out_1": Out(Int, is_required=False),
+        "out_2": Out(Int, is_required=False),
+        "out_3": Out(Int, is_required=False),
+    }
 )
 def foo(_):
     yield Output(1, "out_1")
@@ -630,17 +624,14 @@ def define_hard_failer():
     def hard_failer():
         @op(
             config_schema={"fail": Field(Bool, is_required=False, default_value=False)},
-            output_defs=[OutputDefinition(Int)],
         )
-        def hard_fail_or_0(context):
+        def hard_fail_or_0(context) -> int:
             if context.op_config["fail"]:
                 segfault()
             return 0
 
-        @op(
-            input_defs=[InputDefinition("n", Int)],
-        )
-        def increment(_, n):
+        @op
+        def increment(_, n: int):
             return n + 1
 
         increment(hard_fail_or_0())

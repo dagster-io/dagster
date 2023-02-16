@@ -1,6 +1,7 @@
 import pytest
 import responses
-from dagster._legacy import ModeDefinition, execute_solid, op
+from dagster import op
+from dagster._legacy import ModeDefinition, execute_solid
 from dagster_dbt import (
     DbtRpcOutput,
     DbtRpcResource,

@@ -1,3 +1,5 @@
+from dagster._core.definitions.decorators import op
+
 """
 Repository of test pipelines.
 """

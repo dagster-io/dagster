@@ -15,7 +15,7 @@ from dagster._legacy import InputDefinition, execute_pipeline, pipeline
 
 # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
 # no longer true? refactor these tests?
-@op(input_defs=[InputDefinition("input_str")])
+@op
 def pipe(input_str):
     return input_str
 

@@ -16,7 +16,6 @@ from dagster._core.definitions import (
     monthly_schedule as monthly_schedule,
     pipeline as pipeline,
     schedule_from_partitions as schedule_from_partitions,
-    solid as solid,
     weekly_schedule as weekly_schedule,
 )
 from dagster._core.execution.api import (

@@ -1,5 +1,6 @@
 import pytest
 from dagster import validate_run_config
+from dagster._core.definitions.decorators import op
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._legacy import pipeline
 

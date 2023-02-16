@@ -15,11 +15,11 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.definitions.executor_definition import default_executors
+from dagster._core.definitions.input import In
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.events import DagsterEventType
 from dagster._core.test_utils import instance_for_test, nesting_graph_pipeline
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -92,7 +92,7 @@ def test_composite_execute():
         assert result.success
 
 
-@op(input_defs=[InputDefinition("df", dagster_pd.DataFrame)])
+@op(ins={"df": In(dagster_pd.DataFrame)})
 def pandas_solid(_, df):  # pylint: disable=unused-argument
     pass
 
@@ -131,7 +131,7 @@ def test_pandas_dask():
         assert result.success
 
 
-@op(input_defs=[InputDefinition("df", DataFrame)])
+@op(ins={"df": In(DataFrame)})
 def dask_solid(_, df):  # pylint: disable=unused-argument
     pass
 
@@ -185,7 +185,7 @@ def test_execute_on_dask_local_without_io_manager():
             assert result.result_for_node("simple").output_value() == 1
 
 
-@op(input_defs=[InputDefinition("df", DataFrame)])
+@op(ins={"df": In(DataFrame)})
 def sleepy_dask_solid(_, df):  # pylint: disable=unused-argument
     start_time = time.time()
     while True:

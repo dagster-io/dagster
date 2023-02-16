@@ -1,10 +1,12 @@
 import dask.dataframe as dd
 from dagster import file_relative_path
-from dagster._legacy import InputDefinition, execute_solid
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.input import In
+from dagster._legacy import execute_solid
 from dagster_dask import DataFrame
 
 
-@op(input_defs=[InputDefinition(dagster_type=DataFrame, name="input_df")])
+@op(ins={"input_df": In(DataFrame)})
 def passthrough(_, input_df: DataFrame) -> DataFrame:  # type: ignore
     return input_df
 

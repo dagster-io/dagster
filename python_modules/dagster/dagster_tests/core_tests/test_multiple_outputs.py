@@ -8,6 +8,7 @@ from dagster import (
     Output,
     reconstructable,
 )
+from dagster._core.definitions.decorators import op
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
     InputDefinition,

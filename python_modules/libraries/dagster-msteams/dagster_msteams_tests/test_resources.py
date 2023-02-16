@@ -1,6 +1,7 @@
 import json
 
-from dagster._legacy import ModeDefinition, execute_solid, op
+from dagster import op
+from dagster._legacy import ModeDefinition, execute_solid
 from dagster_msteams import msteams_resource
 from mock import patch
 

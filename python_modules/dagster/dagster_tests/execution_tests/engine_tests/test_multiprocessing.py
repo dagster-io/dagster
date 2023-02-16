@@ -15,6 +15,7 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.definitions import op
+from dagster._core.definitions.output import Out
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
@@ -353,10 +354,10 @@ def test_ephemeral_event_log():
 
 
 @op(
-    output_defs=[
-        OutputDefinition(name="option_1", is_required=False),
-        OutputDefinition(name="option_2", is_required=False),
-    ]
+    out={
+        "option_1": Out(is_required=False),
+        "option_2": Out(is_required=False),
+    }
 )
 def either_or(_context):
     yield Output(1, "option_1")

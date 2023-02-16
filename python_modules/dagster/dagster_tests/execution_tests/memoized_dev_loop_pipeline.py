@@ -1,23 +1,24 @@
 from dagster import Field, String, job, op, repository
-from dagster._core.definitions import op
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline
+from dagster._legacy import ModeDefinition, pipeline
 
 
 @op(
     version="create_string_version",
     config_schema={"input_str": Field(String)},
-    output_defs=[OutputDefinition(name="created_string", io_manager_key="io_manager", metadata={})],
+    out={"created_string": Out(io_manager_key="io_manager", metadata={})},
 )
 def create_string_1_asset(context):
     return context.op_config["input_str"]
 
 
 @op(
-    input_defs=[InputDefinition("_string_input", String)],
+    ins={"_string_input": In(String)},
     version="take_string_version",
     config_schema={"input_str": Field(String)},
-    output_defs=[OutputDefinition(name="taken_string", io_manager_key="io_manager", metadata={})],
+    out={"taken_string": Out(io_manager_key="io_manager", metadata={})},
 )
 def take_string_1_asset(context, _string_input):
     return context.op_config["input_str"] + _string_input

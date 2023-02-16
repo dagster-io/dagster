@@ -34,6 +34,7 @@ from dagster import (
     repository,
     run_failure_sensor,
 )
+from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_request import InstigatorType

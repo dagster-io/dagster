@@ -1,4 +1,5 @@
 from dagster import List, Optional
+from dagster._core.definitions.decorators import op
 from dagster._legacy import InputDefinition, execute_pipeline, pipeline
 
 

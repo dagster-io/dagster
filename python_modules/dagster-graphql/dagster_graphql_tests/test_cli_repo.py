@@ -1,14 +1,12 @@
-from dagster import Int, ScheduleDefinition, op, repository
-from dagster._legacy import InputDefinition, OutputDefinition, pipeline
+from dagster import ScheduleDefinition, op, repository
+from dagster._legacy import pipeline
 
 
-@op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
-def add_one(num):
+def add_one(num: int) -> int:
     return num + 1
 
 
-@op(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
-def mult_two(num):
+def mult_two(num: int) -> int:
     return num * 2
 
 

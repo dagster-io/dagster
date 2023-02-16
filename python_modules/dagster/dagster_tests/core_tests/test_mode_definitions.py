@@ -11,6 +11,7 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.decorators import op
 from dagster._core.utils import coerce_valid_log_level
 from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
 from dagster._utils.test import execute_solids_within_pipeline

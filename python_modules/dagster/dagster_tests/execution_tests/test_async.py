@@ -1,6 +1,7 @@
 import asyncio
 
 from dagster import Output
+from dagster._core.definitions.decorators import op
 from dagster._legacy import execute_solid
 
 

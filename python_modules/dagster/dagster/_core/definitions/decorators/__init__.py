@@ -15,6 +15,7 @@ from .hook_decorator import (
 from .job_decorator import (
     job as job,
 )
+from .op_decorator import op as op
 from .pipeline_decorator import (
     pipeline as pipeline,
 )
@@ -31,7 +32,4 @@ from .schedule_decorator import (
 from .sensor_decorator import (
     asset_sensor as asset_sensor,
     sensor as sensor,
-)
-from .solid_decorator import (
-    solid as solid,
 )

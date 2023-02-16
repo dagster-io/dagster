@@ -2,6 +2,8 @@ import os
 
 from dagster import DynamicOutput, List, Output, fs_io_manager
 from dagster._core.definitions import op
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import DynamicOut, Out
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan, execute_run
 from dagster._core.execution.plan.inputs import (
@@ -21,22 +23,22 @@ from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_p
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.root_input_manager import root_input_manager
 from dagster._legacy import (
-    DynamicOutputDefinition,
-    InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     pipeline,
 )
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
 
 
-@op(output_defs=[OutputDefinition(int)])
-def return_one(_):
+@op
+def return_one(_) -> int:
     return 1
 
 
-@op(input_defs=[InputDefinition("nums", List[int])], output_defs=[OutputDefinition(int)])
+@op(
+    ins={"nums": In(List[int])},
+    out=Out(int),
+)
 def sum_fan_in(_, nums):
     return sum(nums)
 
@@ -46,7 +48,9 @@ def fake_root_input_manager(_context):
     return 678
 
 
-@op(input_defs=[InputDefinition("from_manager", root_manager_key="root_input_manager")])
+@op(
+    ins={"from_manager": In(root_manager_key="root_input_manager")},
+)
 def input_from_root_manager(_context, from_manager):
     return from_manager
 
@@ -64,10 +68,10 @@ def multiply_inputs(context, y, ten):
 
 
 @op(
-    output_defs=[
-        OutputDefinition(int, "optional_output", is_required=False),
-        OutputDefinition(int, "required_output", is_required=True),
-    ]
+    out={
+        "optional_output": Out(int, is_required=False),
+        "required_output": Out(int, is_required=True),
+    }
 )
 def optional_outputs(_):
     yield Output(1234, "required_output")
@@ -83,14 +87,16 @@ def echo(_, x: int) -> int:
     return x
 
 
-@op(input_defs=[InputDefinition("y", int, default_value=7)])
+@op(
+    ins={"y": In(int, default_value=7)},
+)
 def echo_default(_, y: int) -> int:
     return y
 
 
 @op(
-    output_defs=[DynamicOutputDefinition()],
-    input_defs=[InputDefinition("range_input", int, default_value=3)],
+    out=DynamicOut(),
+    ins={"range_input": In(int, default_value=3)},
 )
 def emit(_context, range_input):
     for i in range(range_input):
@@ -102,7 +108,9 @@ def sum_numbers(_, nums):
     return sum(nums)
 
 
-@op(output_defs=[DynamicOutputDefinition()])
+@op(
+    out=DynamicOut(),
+)
 def dynamic_echo(_, nums):
     for x in nums:
         yield DynamicOutput(value=x, mapping_key=str(x))

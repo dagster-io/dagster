@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 
 from dagster import DagsterEvent
+from dagster._core.definitions.decorators import op
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline

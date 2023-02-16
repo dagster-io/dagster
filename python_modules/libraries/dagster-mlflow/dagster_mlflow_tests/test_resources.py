@@ -13,7 +13,8 @@ from unittest.mock import MagicMock, patch
 import mlflow
 import pandas as pd
 import pytest
-from dagster._legacy import ModeDefinition, execute_pipeline, op, pipeline
+from dagster import op
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster_mlflow.resources import MlFlow, mlflow_tracking
 
 
