@@ -11,6 +11,7 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
     TimeWindow,
 )
+from google.api_core.exceptions import NotFound
 from google.cloud import bigquery
 
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -158,7 +159,7 @@ class BigQueryClient(DbClient):
         conn = _connect_bigquery(context)
         try:
             conn.query(_get_cleanup_statement(table_slice)).result()
-        except Exception:  # TODO - find the real exception
+        except NotFound:
             # table doesn't exist yet, so ignore the error
             pass
 
