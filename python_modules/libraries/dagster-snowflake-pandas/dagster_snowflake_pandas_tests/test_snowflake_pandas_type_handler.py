@@ -84,7 +84,7 @@ def test_handle_output():
             partition_dimensions=[],
         ),
         df,
-        connection
+        connection,
     )
 
     assert metadata == {
