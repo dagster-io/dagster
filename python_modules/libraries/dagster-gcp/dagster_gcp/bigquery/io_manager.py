@@ -126,18 +126,12 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
         table of the name of the output.
 
         Note that the BigQuery config is mapped to the DB IO manager table hierarchy as follows:
+          BigQuery   DB IO
         * project -> database
         * dataset -> schema
         * table -> table
         """
-        temp_file_name = ""
-        if init_context.resource_config.get("gcp_credentials"):
-            with tempfile.NamedTemporaryFile("w", delete=False) as f:
-                f.write(init_context.resource_config.get("gcp_credentials"))
-                temp_file_name = f.name
-                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file_name
-
-        yield DbIOManager(
+        mgr = DbIOManager(
             type_handlers=type_handlers,
             db_client=BigQueryClient(),
             io_manager_name="BigQueryIOManager",
@@ -145,8 +139,15 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
             schema=init_context.resource_config.get("dataset"),
         )
         if init_context.resource_config.get("gcp_credentials"):
-            os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
-            os.remove(temp_file_name)
+            with tempfile.NamedTemporaryFile("w") as f:
+                f.write(init_context.resource_config.get("gcp_credentials"))
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = f.name
+                try:
+                    yield mgr
+                finally:
+                    os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+        else:
+            return mgr
 
     return bigquery_io_manager
 

@@ -208,7 +208,7 @@ def test_authenticate_via_config():
         asset_info = dict()
 
         @asset(name=table_name, key_prefix=schema)
-        def test_asset(context) -> int:
+        def test_asset() -> int:
             asset_info["gcp_creds_file"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
             assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is not None
             return 1

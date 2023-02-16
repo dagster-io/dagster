@@ -278,7 +278,7 @@ def test_static_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 def test_multi_partitioned_asset():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(

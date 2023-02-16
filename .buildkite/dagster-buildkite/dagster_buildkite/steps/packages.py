@@ -449,7 +449,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         retries=2,
     ),
     PackageSpec(
-        "python_modules/libraries/dagster-bigquery-pandas",
+        "python_modules/libraries/dagster-gcp-pandas",
         env_vars=[
             "AWS_ACCESS_KEY_ID",
             "AWS_SECRET_ACCESS_KEY",
