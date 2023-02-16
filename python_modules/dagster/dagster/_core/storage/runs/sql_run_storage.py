@@ -526,15 +526,37 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             for row in rows
         ]
 
-    def get_run_tags(self) -> Sequence[Tuple[str, Set[str]]]:
+    def get_run_tags(
+        self,
+        tag_keys: Optional[Sequence[str]] = None,
+        value_prefix: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Sequence[Tuple[str, Set[str]]]:
         result = defaultdict(set)
-        query = db.select([RunTagsTable.c.key, RunTagsTable.c.value]).distinct(
-            RunTagsTable.c.key, RunTagsTable.c.value
+        query = (
+            db.select([RunTagsTable.c.key, RunTagsTable.c.value])
+            .distinct(RunTagsTable.c.key, RunTagsTable.c.value)
+            .order_by(RunTagsTable.c.key, RunTagsTable.c.value)
         )
+        if tag_keys:
+            query = query.where(RunTagsTable.c.key.in_(tag_keys))
+        if value_prefix:
+            query = query.where(RunTagsTable.c.value.startswith(value_prefix))
+        if limit:
+            query = query.limit(limit)
         rows = self.fetchall(query)
         for r in rows:
             result[r[0]].add(r[1])
         return sorted(list([(k, v) for k, v in result.items()]), key=lambda x: x[0])
+
+    def get_run_tag_keys(self) -> Sequence[str]:
+        query = (
+            db.select([RunTagsTable.c.key])
+            .distinct(RunTagsTable.c.key)
+            .order_by(RunTagsTable.c.key)
+        )
+        rows = self.fetchall(query)
+        return sorted([r[0] for r in rows])
 
     def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
         check.str_param(run_id, "run_id")
