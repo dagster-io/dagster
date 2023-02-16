@@ -101,7 +101,7 @@ class IPlanContext(ABC):
 
     @property
     def pipeline_run(self) -> DagsterRun:
-        return self.plan_data.pipeline_run
+        return self.plan_data.dagster_run
 
     @property
     def run_id(self) -> str:
@@ -165,7 +165,7 @@ class PlanData(NamedTuple):
     """
 
     pipeline: IPipeline
-    pipeline_run: DagsterRun
+    dagster_run: DagsterRun
     instance: "DagsterInstance"
     execution_plan: "ExecutionPlan"
     raise_on_error: bool = False
@@ -349,7 +349,7 @@ class PlanExecutionContext(IPlanContext):
             get_multipartition_key_from_tags,
         )
 
-        tags = self._plan_data.pipeline_run.tags
+        tags = self._plan_data.dagster_run.tags
 
         is_multipartitioned = any(
             [tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]
@@ -370,7 +370,7 @@ class PlanExecutionContext(IPlanContext):
             get_multipartition_key_from_tags,
         )
 
-        tags = self._plan_data.pipeline_run.tags
+        tags = self._plan_data.dagster_run.tags
         if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
             multipartition_key = get_multipartition_key_from_tags(tags)
             return PartitionKeyRange(multipartition_key, multipartition_key)
@@ -410,11 +410,11 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def has_partition_key(self) -> bool:
-        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags
+        return PARTITION_NAME_TAG in self._plan_data.dagster_run.tags
 
     @property
     def has_partition_key_range(self) -> bool:
-        return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.pipeline_run.tags
+        return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.dagster_run.tags
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(

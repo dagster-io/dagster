@@ -169,7 +169,7 @@ def _step_handler_context(pipeline, pipeline_run, instance, executor):
     plan_context = PlanOrchestrationContext(
         plan_data=PlanData(
             pipeline=pipeline,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
             instance=instance,
             execution_plan=execution_plan,
             raise_on_error=True,
