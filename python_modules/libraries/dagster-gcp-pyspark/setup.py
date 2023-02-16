@@ -21,7 +21,7 @@ setup(
     author="Elementl",
     author_email="hello@elementl.com",
     license="Apache-2.0",
-    description="",  # TODO - fill out description
+    description="Package for storing PySpark DataFrames in GCP",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
         "dagster-gcp-pyspark"
