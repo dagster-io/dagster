@@ -7,7 +7,7 @@ from dagster import asset, materialize
 from dagster_pyspark import pyspark_resource
 from project_fully_featured_v2_resources.partitions import hourly_partitions
 from project_fully_featured_v2_resources.resources.parquet_io_manager import (
-    local_partitioned_parquet_io_manager,
+    LocalPartitionedParquetIOManager,
 )
 from pyspark.sql import DataFrame as SparkDF
 
@@ -30,9 +30,8 @@ def test_io_manager():
         res = materialize(
             assets=[pandas_df_asset, spark_input_asset],
             resources={
-                "pyspark": pyspark_resource,
-                "io_manager": local_partitioned_parquet_io_manager.configured(
-                    {"base_path": temp_dir}
+                "io_manager": LocalPartitionedParquetIOManager(
+                    pyspark=pyspark_resource, base_path=temp_dir
                 ),
             },
             partition_key="2022-01-01-16:00",

@@ -195,7 +195,7 @@ def test_yield_in_resource_function():
     class ResourceWithCleanup(ConfigurableResource):
         idx: int
 
-        def create_object_to_pass_to_user_code(self, context):
+        def create_resource_to_inject(self, context):
             called.append(f"creation_{self.idx}")
             yield True
             called.append(f"cleanup_{self.idx}")
@@ -306,7 +306,7 @@ def test_io_manager_factory_class():
     class AnIOManagerFactory(ConfigurableIOManagerInjector):
         a_config_value: str
 
-        def create_io_manager_to_pass_to_user_code(self, _) -> IOManager:
+        def create_io_manager_to_inject(self, _) -> IOManager:
             """Implement as one would implement a @io_manager decorator function"""
             return AnIOManagerImplementation(self.a_config_value)
 
@@ -697,7 +697,7 @@ def test_resources_which_return():
     class StringResource(ConfigurableResource[str]):
         a_string: str
 
-        def create_object_to_pass_to_user_code(self, context) -> str:
+        def create_resource_to_inject(self, context) -> str:
             return self.a_string
 
     class MyResource(ConfigurableResource):
@@ -766,7 +766,7 @@ def test_nested_function_resource():
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
-        def create_object_to_pass_to_user_code(self, context) -> Callable[[str], None]:
+        def create_resource_to_inject(self, context) -> Callable[[str], None]:
             def output(text: str):
                 self.writer(f"{text}{self.postfix}")
 
@@ -804,7 +804,7 @@ def test_nested_function_resource_configured():
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
-        def create_object_to_pass_to_user_code(self, context) -> Callable[[str], None]:
+        def create_resource_to_inject(self, context) -> Callable[[str], None]:
             def output(text: str):
                 self.writer(f"{text}{self.postfix}")
 
@@ -856,7 +856,7 @@ def test_nested_function_resource_runtime_config():
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
-        def create_object_to_pass_to_user_code(self, context) -> Callable[[str], None]:
+        def create_resource_to_inject(self, context) -> Callable[[str], None]:
             def output(text: str):
                 self.writer(f"{text}{self.postfix}")
 

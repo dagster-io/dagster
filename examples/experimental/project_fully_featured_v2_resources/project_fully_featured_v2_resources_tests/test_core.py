@@ -11,7 +11,7 @@ from dagster_pyspark import pyspark_resource
 from project_fully_featured_v2_resources.assets import core
 from project_fully_featured_v2_resources.resources.hn_resource import HNSnapshotClient
 from project_fully_featured_v2_resources.resources.parquet_io_manager import (
-    local_partitioned_parquet_io_manager,
+    LocalPartitionedParquetIOManager,
 )
 
 
@@ -23,11 +23,10 @@ def test_download():
                 "io_manager": fs_io_manager.configured({"base_dir": temp_dir}),
                 "partition_start": ResourceDefinition.string_resource(),
                 "partition_end": ResourceDefinition.string_resource(),
-                "parquet_io_manager": local_partitioned_parquet_io_manager.configured(
-                    {"base_path": temp_dir}
+                "parquet_io_manager": LocalPartitionedParquetIOManager(
+                    base_path=temp_dir, pyspark=pyspark_resource
                 ),
                 "warehouse_io_manager": mem_io_manager,
-                "pyspark": pyspark_resource,
                 "hn_client": HNSnapshotClient(),
                 "dbt": ResourceDefinition.none_resource(),
             },

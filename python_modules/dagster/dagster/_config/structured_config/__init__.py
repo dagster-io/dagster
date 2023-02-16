@@ -441,9 +441,9 @@ class ConfigurableResource(
         return self._create_object_fn(context)
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
-        return self.create_object_to_pass_to_user_code(context)
+        return self.create_resource_to_inject(context)
 
-    def create_object_to_pass_to_user_code(
+    def create_resource_to_inject(
         self, context: InitResourceContext
     ) -> TResValue:  # pylint: disable=unused-argument
         """
@@ -587,10 +587,10 @@ class ConfigurableIOManagerInjector(ConfigurableResource[TIOManagerValue], IOMan
         )
 
     def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
-        return self.create_io_manager_to_pass_to_user_code(context)
+        return self.create_io_manager_to_inject(context)
 
     @abstractmethod
-    def create_io_manager_to_pass_to_user_code(self, context) -> TIOManagerValue:
+    def create_io_manager_to_inject(self, context) -> TIOManagerValue:
         """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
 
@@ -623,7 +623,7 @@ class ConfigurableIOManager(ConfigurableIOManagerInjector, IOManager):
     :py:meth:`handle_output` and :py:meth:`load_input` methods.
     """
 
-    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+    def create_io_manager_to_inject(self, context) -> IOManager:
         return self
 
 
@@ -731,7 +731,7 @@ class StructuredIOManagerAdapter(ConfigurableIOManagerInjector):
     def wrapped_io_manager(self) -> IOManagerDefinition:
         raise NotImplementedError()
 
-    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+    def create_io_manager_to_inject(self, context) -> IOManager:
         raise NotImplementedError(
             "Because we override resource_fn in the adapter, this is never called."
         )
