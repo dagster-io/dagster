@@ -1,11 +1,11 @@
 # pylint: disable=unused-argument
 
 from dagster import Definitions, In, asset, job, op
-from dagster._config.structured_config import Resource, StructuredConfigIOManager
+from dagster._config.structured_config import ConfigurableIOManager, ConfigurableResource
 
 
 def test_load_input_handle_output():
-    class MyIOManager(StructuredConfigIOManager):
+    class MyIOManager(ConfigurableIOManager):
         def handle_output(self, context, obj):
             pass
 
@@ -49,7 +49,7 @@ def test_load_input_handle_output():
 def test_runtime_config():
     out_txt = []
 
-    class MyIOManager(StructuredConfigIOManager):
+    class MyIOManager(ConfigurableIOManager):
         prefix: str
 
         def handle_output(self, context, obj):
@@ -87,10 +87,10 @@ def test_runtime_config():
 def test_nested_resources():
     out_txt = []
 
-    class IOConfigResource(Resource):
+    class IOConfigResource(ConfigurableResource):
         prefix: str
 
-    class MyIOManager(StructuredConfigIOManager):
+    class MyIOManager(ConfigurableIOManager):
         config: IOConfigResource
 
         def handle_output(self, context, obj):
@@ -117,10 +117,10 @@ def test_nested_resources():
 def test_nested_resources_runtime_config():
     out_txt = []
 
-    class IOConfigResource(Resource):
+    class IOConfigResource(ConfigurableResource):
         prefix: str
 
-    class MyIOManager(StructuredConfigIOManager):
+    class MyIOManager(ConfigurableIOManager):
         config: IOConfigResource
 
         def handle_output(self, context, obj):

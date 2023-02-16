@@ -13,16 +13,16 @@ from dagster._check import CheckError
 from dagster._config.field import Field
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import (
-    Resource,
+    ConfigurableIOManagerInjector,
+    ConfigurableResource,
+    ConfigurableResourceAdapter,
     ResourceDependency,
-    StructuredConfigIOManagerBase,
     StructuredIOManagerAdapter,
-    StructuredResourceAdapter,
 )
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.resource_output import ResourceOutput
+from dagster._core.definitions.resource_output import Resource
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
@@ -34,7 +34,7 @@ from dagster._utils.cached_method import cached_method
 def test_basic_structured_resource():
     out_txt = []
 
-    class WriterResource(Resource):
+    class WriterResource(ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -62,7 +62,7 @@ def test_basic_structured_resource():
 
 
 def test_invalid_config():
-    class MyResource(Resource):
+    class MyResource(ConfigurableResource):
         foo: int
 
     with pytest.raises(
@@ -77,7 +77,7 @@ def test_caching_within_resource():
 
     from functools import cached_property
 
-    class GreetingResource(Resource):
+    class GreetingResource(ConfigurableResource):
         name: str
 
         @cached_property
@@ -147,7 +147,7 @@ def test_caching_within_resource():
 def test_abc_resource():
     out_txt = []
 
-    class Writer(Resource, ABC):
+    class Writer(ConfigurableResource, ABC):
         @abstractmethod
         def output(self, text: str) -> None:
             pass
@@ -192,7 +192,7 @@ def test_abc_resource():
 def test_yield_in_resource_function():
     called = []
 
-    class ResourceWithCleanup(Resource):
+    class ResourceWithCleanup(ConfigurableResource):
         idx: int
 
         def create_object_to_pass_to_user_code(self, context):
@@ -202,7 +202,7 @@ def test_yield_in_resource_function():
 
     @op
     def check_resource_created(
-        resource_with_cleanup_1: ResourceOutput[bool], resource_with_cleanup_2: ResourceOutput[bool]
+        resource_with_cleanup_1: Resource[bool], resource_with_cleanup_2: Resource[bool]
     ):
         assert resource_with_cleanup_1 is True
         assert resource_with_cleanup_2 is True
@@ -234,7 +234,7 @@ def test_wrapping_function_resource():
 
         return output
 
-    class WriterResource(StructuredResourceAdapter):
+    class WriterResource(ConfigurableResourceAdapter):
         prefix: str
 
         @property
@@ -242,7 +242,7 @@ def test_wrapping_function_resource():
             return writer_resource
 
     @op
-    def hello_world_op(writer: ResourceOutput[Callable[[str], None]]):
+    def hello_world_op(writer: Resource[Callable[[str], None]]):
         writer("hello, world!")
 
     @job(resource_defs={"writer": WriterResource(prefix="")})
@@ -303,7 +303,7 @@ def test_io_manager_adapter():
 
 def test_io_manager_factory_class():
     # now test without the adapter
-    class AnIOManagerFactory(StructuredConfigIOManagerBase):
+    class AnIOManagerFactory(ConfigurableIOManagerInjector):
         a_config_value: str
 
         def create_io_manager_to_pass_to_user_code(self, _) -> IOManager:
@@ -329,7 +329,7 @@ def test_io_manager_factory_class():
 def test_structured_resource_runtime_config():
     out_txt = []
 
-    class WriterResource(Resource):
+    class WriterResource(ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -369,7 +369,7 @@ def test_env_var():
         }
     ):
 
-        class ResourceWithString(Resource):
+        class ResourceWithString(ConfigurableResource):
             a_str: str
             a_int: int
 
@@ -398,7 +398,7 @@ def test_env_var_err():
     if "UNSET_ENV_VAR" in os.environ:
         del os.environ["UNSET_ENV_VAR"]
 
-    class ResourceWithString(Resource):
+    class ResourceWithString(ConfigurableResource):
         a_str: str
 
     with pytest.raises(
@@ -410,7 +410,7 @@ def test_env_var_err():
 def test_runtime_config_env_var():
     out_txt = []
 
-    class WriterResource(Resource):
+    class WriterResource(ConfigurableResource):
         prefix: str
 
         def output(self, text: str) -> None:
@@ -442,7 +442,7 @@ def test_runtime_config_env_var():
 def test_nested_resources():
     out_txt = []
 
-    class Writer(Resource, ABC):
+    class Writer(ConfigurableResource, ABC):
         @abstractmethod
         def output(self, text: str) -> None:
             pass
@@ -511,15 +511,15 @@ def test_nested_resources():
 
 
 def test_nested_resources_multiuse():
-    class AWSCredentialsResource(Resource):
+    class AWSCredentialsResource(ConfigurableResource):
         username: str
         password: str
 
-    class S3Resource(Resource):
+    class S3Resource(ConfigurableResource):
         aws_credentials: AWSCredentialsResource
         bucket_name: str
 
-    class EC2Resource(Resource):
+    class EC2Resource(ConfigurableResource):
         aws_credentials: AWSCredentialsResource
 
     completed = {}
@@ -549,15 +549,15 @@ def test_nested_resources_multiuse():
 
 
 def test_nested_resources_runtime_config():
-    class AWSCredentialsResource(Resource):
+    class AWSCredentialsResource(ConfigurableResource):
         username: str
         password: str
 
-    class S3Resource(Resource):
+    class S3Resource(ConfigurableResource):
         aws_credentials: AWSCredentialsResource
         bucket_name: str
 
-    class EC2Resource(Resource):
+    class EC2Resource(ConfigurableResource):
         aws_credentials: AWSCredentialsResource
 
     completed = {}
@@ -603,16 +603,16 @@ def test_nested_resources_runtime_config():
 
 
 def test_nested_resources_runtime_config_complex():
-    class CredentialsResource(Resource):
+    class CredentialsResource(ConfigurableResource):
         username: str
         password: str
 
-    class DBConfigResource(Resource):
+    class DBConfigResource(ConfigurableResource):
         creds: CredentialsResource
         host: str
         database: str
 
-    class DBResource(Resource):
+    class DBResource(ConfigurableResource):
         config: DBConfigResource
 
     completed = {}
@@ -694,13 +694,13 @@ def test_nested_resources_runtime_config_complex():
 
 
 def test_resources_which_return():
-    class StringResource(Resource[str]):
+    class StringResource(ConfigurableResource[str]):
         a_string: str
 
         def create_object_to_pass_to_user_code(self, context) -> str:
             return self.a_string
 
-    class MyResource(Resource):
+    class MyResource(ConfigurableResource):
         string_from_resource: ResourceDependency[str]
 
     completed = {}
@@ -762,7 +762,7 @@ def test_nested_function_resource():
 
         return output
 
-    class PostfixWriterResource(Resource[Callable[[str], None]]):
+    class PostfixWriterResource(ConfigurableResource[Callable[[str], None]]):
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
@@ -800,7 +800,7 @@ def test_nested_function_resource_configured():
 
         return output
 
-    class PostfixWriterResource(Resource[Callable[[str], None]]):
+    class PostfixWriterResource(ConfigurableResource[Callable[[str], None]]):
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
@@ -852,7 +852,7 @@ def test_nested_function_resource_runtime_config():
 
         return output
 
-    class PostfixWriterResource(Resource[Callable[[str], None]]):
+    class PostfixWriterResource(ConfigurableResource[Callable[[str], None]]):
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
@@ -930,12 +930,12 @@ def test_type_signatures_constructor_nested_resource():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import Resource
+from dagster._config.structured_config import ConfigurableResource
 
-class InnerResource(Resource):
+class InnerResource(ConfigurableResource):
     a_string: str
 
-class OuterResource(Resource):
+class OuterResource(ConfigurableResource):
     inner: InnerResource
     a_bool: bool
 
@@ -971,9 +971,9 @@ def test_type_signatures_config_at_launch():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import Resource
+from dagster._config.structured_config import ConfigurableResource
 
-class MyResource(Resource):
+class MyResource(ConfigurableResource):
     a_string: str
 
 reveal_type(MyResource.configure_at_launch())
@@ -996,9 +996,9 @@ def test_type_signatures_constructor_resource_dependency():
         with open(filename, "w") as f:
             f.write(
                 """
-from dagster._config.structured_config import Resource, ResourceDependency
+from dagster._config.structured_config import ConfigurableResource, ResourceDependency
 
-class StringDependentResource(Resource):
+class StringDependentResource(ConfigurableResource):
     a_string: ResourceDependency[str]
 
 reveal_type(StringDependentResource.__init__)
@@ -1015,8 +1015,8 @@ reveal_type(my_str_resource.a_string)
         # resource function that returns a str
         assert (
             pyright_out[0]
-            == "(self: StringDependentResource, a_string: Resource[str] | PartialResource[str] |"
-            " ResourceDefinition | str) -> None"
+            == "(self: StringDependentResource, a_string: ConfigurableResource[str] |"
+            " PartialResource[str] | ResourceDefinition | str) -> None"
         )
 
         # Ensure that the retrieved type is str
