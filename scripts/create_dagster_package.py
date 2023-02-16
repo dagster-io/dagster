@@ -94,10 +94,7 @@ def _make_dagster_package(package_name: str):
         dagster_repo, f"docs/sphinx/sections/api/apidocs/libraries/{package_name}.rst"
     )
     formal_name = " ".join(
-        [
-            word.capitalize()
-            for word in package_name.removeprefix("dagster-").replace("-", " ").split(" ")
-        ]
+        [word.capitalize() for word in package_name.split("dagster-")[1].split("-")]
     )
     template = jinja_env.get_template("api-docs.rst.tmpl")
     with open(docs_path, "w+") as f:
