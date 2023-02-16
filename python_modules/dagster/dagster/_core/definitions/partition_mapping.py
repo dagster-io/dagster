@@ -301,19 +301,24 @@ class MultiToSingleDimensionDependencyMapping(
         upstream_partitions_def: PartitionsDefinition,
         downstream_partitions_def: PartitionsDefinition,
     ) -> Tuple[PartitionsDefinition, PartitionsDefinition, str]:
-        multipartitions_defs = {
-            partitions_def
-            for partitions_def in [upstream_partitions_def, downstream_partitions_def]
-            if isinstance(partitions_def, MultiPartitionsDefinition)
-        }
-
-        if len(multipartitions_defs) != 1:
+        if not _can_infer_single_to_multi_partition_mapping(
+            upstream_partitions_def, downstream_partitions_def
+        ):
             check.failed(
-                "This partition mapping requires that only one of the upstream partitions"
-                " definition and downstream partitions definition is multipartitioned."
+                "This partition mapping defines a relationship between a multipartitioned and"
+                " single dimensional asset. The single dimensional partitions definition must be a"
+                " dimension of the MultiPartitionsDefinition. definition and downstream partitions"
             )
 
-        multipartitions_def = cast(MultiPartitionsDefinition, next(iter(multipartitions_defs)))
+        multipartitions_def = next(
+            iter(
+                {
+                    partitions_def
+                    for partitions_def in [upstream_partitions_def, downstream_partitions_def]
+                    if isinstance(partitions_def, MultiPartitionsDefinition)
+                }
+            )
+        )
 
         single_dimension_partitions_def = next(
             iter(
@@ -321,7 +326,7 @@ class MultiToSingleDimensionDependencyMapping(
                     upstream_partitions_def,
                     downstream_partitions_def,
                 }
-                - multipartitions_defs
+                - {multipartitions_def}
             )
         )
 
@@ -332,7 +337,8 @@ class MultiToSingleDimensionDependencyMapping(
             ]
             if len(set(dimension_partitions_defs)) != len(dimension_partitions_defs):
                 check.failed(
-                    "Partition dimension name must be specified when dimensions of a"
+                    "Partition dimension name must be specified on the "
+                    "MultiToSingleDimensionDependencyMapping object when dimensions of a"
                     " MultiPartitions definition share the same partitions definition."
                 )
             matching_dimension_defs = [
@@ -621,13 +627,59 @@ class StaticPartitionMapping(
         raise NotImplementedError()
 
 
+def _can_infer_single_to_multi_partition_mapping(
+    upstream_partitions_def: PartitionsDefinition, downstream_partitions_def: PartitionsDefinition
+) -> bool:
+    multipartitions_defs = {
+        partitions_def
+        for partitions_def in [upstream_partitions_def, downstream_partitions_def]
+        if isinstance(partitions_def, MultiPartitionsDefinition)
+    }
+
+    if len(multipartitions_defs) != 1:
+        return False
+
+    multipartitions_def = cast(MultiPartitionsDefinition, next(iter(multipartitions_defs)))
+
+    single_dimension_partitions_def = next(
+        iter(
+            {
+                upstream_partitions_def,
+                downstream_partitions_def,
+            }
+            - multipartitions_defs
+        )
+    )
+
+    matching_dimension_defs = [
+        dimension_def
+        for dimension_def in multipartitions_def.partitions_defs
+        if dimension_def.partitions_def == single_dimension_partitions_def
+    ]
+
+    if not matching_dimension_defs:
+        return False
+
+    return True
+
+
 def infer_partition_mapping(
-    partition_mapping: Optional[PartitionMapping], partitions_def: Optional[PartitionsDefinition]
+    partition_mapping: Optional[PartitionMapping],
+    downstream_partitions_def: Optional[PartitionsDefinition],
+    upstream_partitions_def: Optional[PartitionsDefinition],
 ) -> PartitionMapping:
     if partition_mapping is not None:
         return partition_mapping
-    elif partitions_def is not None:
-        return partitions_def.get_default_partition_mapping()
+    elif (
+        upstream_partitions_def
+        and downstream_partitions_def
+        and _can_infer_single_to_multi_partition_mapping(
+            upstream_partitions_def, downstream_partitions_def
+        )
+    ):
+        return MultiToSingleDimensionDependencyMapping()
+    elif downstream_partitions_def is not None:
+        return downstream_partitions_def.get_default_partition_mapping()
     else:
         return AllPartitionMapping()
 

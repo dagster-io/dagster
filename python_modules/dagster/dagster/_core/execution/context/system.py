@@ -934,6 +934,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                         self.node_handle, upstream_asset_key
                     ),
                     partitions_def,
+                    upstream_asset_partitions_def,
                 )
                 return partition_mapping.get_upstream_partitions_for_partitions(
                     partitions_subset,
