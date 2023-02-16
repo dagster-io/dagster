@@ -629,6 +629,7 @@ class DagsterApiServer(DagsterApiServicer):
                 args.last_completion_time,
                 args.last_run_key,
                 args.cursor,
+                args.is_test_evaluation,
             )
         )
 

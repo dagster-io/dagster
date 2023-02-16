@@ -556,6 +556,7 @@ def _evaluate_sensor(
         instigator_data.last_tick_timestamp if instigator_data else None,
         instigator_data.last_run_key if instigator_data else None,
         instigator_data.cursor if instigator_data else None,
+        is_test_evaluation=False,
     )
 
     yield

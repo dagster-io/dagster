@@ -293,6 +293,7 @@ def execute_preview_command(
                         since,
                         last_run_key,
                         cursor,
+                        is_test_evaluation=True,
                     )
                 except Exception:
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())

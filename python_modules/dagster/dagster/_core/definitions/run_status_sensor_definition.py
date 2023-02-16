@@ -119,13 +119,14 @@ class RunStatusSensorContext:
         log (logging.Logger): the logger for the given sensor evaluation
     """
 
-    def __init__(self, sensor_name, dagster_run, dagster_event, instance, context=None):
+    def __init__(self, sensor_name, dagster_run, dagster_event, instance, context=None, is_test_evaluation=False):
         self._sensor_name = check.str_param(sensor_name, "sensor_name")
         self._dagster_run = check.inst_param(dagster_run, "dagster_run", DagsterRun)
         self._dagster_event = check.inst_param(dagster_event, "dagster_event", DagsterEvent)
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._context = check.opt_inst_param(context, "context", SensorEvaluationContext)
         self._logger: Optional[logging.Logger] = None
+        self._is_test_evaluation = is_test_evaluation
 
     def for_run_failure(self):
         """Converts RunStatusSensorContext to RunFailureSensorContext."""
@@ -135,6 +136,7 @@ class RunStatusSensorContext:
             dagster_event=self._dagster_event,
             instance=self._instance,
             context=self._context,
+            is_test_evaluation=self._is_test_evaluation,
         )
 
     @public
@@ -167,6 +169,15 @@ class RunStatusSensorContext:
             self._logger = InstigationLogger()
 
         return self._logger
+
+    @public
+    @property
+    def is_test_evaluation(self) -> bool:
+        """Returns True if this evaluation was kicked off from a dagster testing utility.
+
+        The dagster sensor testing utilities are direct invocation of a sensor via python, the dagster sensor preview CLI, and the Test sensor button in dagit.
+        """
+        return self._is_test_evaluation
 
     @property
     def pipeline_run(self) -> DagsterRun:
@@ -234,6 +245,7 @@ def build_run_status_sensor_context(
         dagster_run=dagster_run,
         dagster_event=dagster_event,
         context=context,
+        is_test_evaluation=True,
     )
 
 
@@ -629,6 +641,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                                 dagster_event=event_log_entry.dagster_event,
                                 instance=context.instance,
                                 context=context,
+                                is_test_evaluation=False,
                             )
                         )
                         if sensor_return is not None:

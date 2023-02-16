@@ -211,6 +211,7 @@ class RepositoryLocation(AbstractContextManager):
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        is_test_evaluation: bool
     ) -> "SensorExecutionData":
         pass
 
@@ -500,6 +501,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        is_test_evaluation: bool = False
     ) -> "SensorExecutionData":
         result = get_external_sensor_execution(
             self._get_repo_def(repository_handle.repository_name),
@@ -508,6 +510,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             last_completion_time,
             last_run_key,
             cursor,
+            is_test_evaluation,
         )
         if isinstance(result, ExternalSensorExecutionErrorData):
             raise DagsterUserCodeProcessError.from_error_info(result.error)
@@ -847,6 +850,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         last_completion_time: Optional[float],
         last_run_key: Optional[str],
         cursor: Optional[str],
+        is_test_evaluation: bool,
     ) -> "SensorExecutionData":
         from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 
@@ -858,6 +862,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             last_completion_time,
             last_run_key,
             cursor,
+            is_test_evaluation=is_test_evaluation,
         )
 
     def get_external_partition_set_execution_param_data(

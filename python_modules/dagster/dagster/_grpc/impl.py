@@ -302,6 +302,7 @@ def get_external_sensor_execution(
     last_completion_timestamp: Optional[float],
     last_run_key: Optional[str],
     cursor: Optional[str],
+    is_test_evaluation: bool
 ):
     sensor_def = repo_def.get_sensor_def(sensor_name)
 
@@ -315,6 +316,7 @@ def get_external_sensor_execution(
                 repository_name=repo_def.name,
                 repository_def=repo_def,
                 sensor_name=sensor_name,
+                is_test_evaluation=is_test_evaluation
             )
         )
 

@@ -50,12 +50,14 @@ def sync_get_external_sensor_execution_data_grpc(
     last_run_key: Optional[str],
     cursor: Optional[str],
     timeout: Optional[int] = DEFAULT_GRPC_TIMEOUT,
+    is_test_evaluation: bool = False,
 ) -> SensorExecutionData:
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(sensor_name, "sensor_name")
     check.opt_float_param(last_completion_time, "last_completion_time")
     check.opt_str_param(last_run_key, "last_run_key")
     check.opt_str_param(cursor, "cursor")
+    check.bool_param(is_test_evaluation, "is_test_evaluation")
 
     origin = repository_handle.get_external_origin()
 
@@ -68,6 +70,7 @@ def sync_get_external_sensor_execution_data_grpc(
                 last_completion_time=last_completion_time,
                 last_run_key=last_run_key,
                 cursor=cursor,
+                is_test_evaluation=is_test_evaluation,
             ),
             timeout=timeout,
         ),

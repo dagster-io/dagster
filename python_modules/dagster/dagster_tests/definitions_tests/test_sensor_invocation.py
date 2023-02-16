@@ -104,6 +104,13 @@ def test_sensor_invocation_args():
             context, _arbitrary_context=None
         )
 
+def test_basic_sensor_test_evaluation():
+    @sensor(job_name="irrelevant")
+    def the_sensor(context):
+        assert context.is_test_evaluation
+
+    the_sensor(None)
+    the_sensor(build_sensor_context())
 
 def test_instance_access_built_sensor():
     with pytest.raises(
@@ -145,6 +152,7 @@ def test_sensor_w_no_job():
 def test_run_status_sensor():
     @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
     def status_sensor(context):
+        assert context.is_test_evaluation
         assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
 
     @op
@@ -174,6 +182,7 @@ def test_run_status_sensor():
 def test_run_failure_sensor():
     @run_failure_sensor
     def failure_sensor(context):
+        assert context.is_test_evaluation
         assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
 
     @op
@@ -278,6 +287,7 @@ def test_run_failure_w_run_request():
 def test_freshness_policy_sensor():
     @freshness_policy_sensor(asset_selection=AssetSelection.all())
     def freshness_sensor(context):
+        assert context.is_test_evaluation
         assert context.minutes_late == 10
         assert context.previous_minutes_late is None
 
@@ -331,6 +341,7 @@ def test_multi_asset_sensor():
 
     @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
     def a_and_b_sensor(context):
+        assert context.is_test_evaluation
         asset_events = context.latest_materialization_records_by_key()
         if all(asset_events.values()):
             context.advance_all_cursors()

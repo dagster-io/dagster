@@ -102,6 +102,7 @@ class SensorEvaluationContext:
         repository_def: Optional["RepositoryDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
         sensor_name: Optional[str] = None,
+        is_test_evaluation: bool = False,
     ):
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -124,6 +125,7 @@ class SensorEvaluationContext:
             else None
         )
         self._logger: Optional[InstigationLogger] = None
+        self._is_test_evaluation = is_test_evaluation
 
     def __enter__(self):
         return self
@@ -156,6 +158,15 @@ class SensorEvaluationContext:
     @property
     def last_completion_time(self) -> Optional[float]:
         return self._last_completion_time
+
+    @public
+    @property
+    def is_test_evaluation(self) -> bool:
+        """Returns True if this evaluation was kicked off from a dagster testing utility.
+
+        The dagster sensor testing utilities are direct invocation of a sensor via python, the dagster sensor preview CLI, and the Test sensor button in dagit.
+        """
+        return self._is_test_evaluation
 
     @public
     @property
@@ -650,6 +661,7 @@ def build_sensor_context(
         instance=instance,
         repository_def=repository_def,
         sensor_name=sensor_name,
+        is_test_evaluation=True,
     )
 
 

@@ -1297,7 +1297,9 @@ def define_partitions():
 
 def define_sensors():
     @sensor(job_name="no_config_pipeline")
-    def always_no_config_sensor(_):
+    def always_no_config_sensor(context):
+        if context.is_test_evaluation:
+            context.instance.run_storage.kvs_set({"always_no_config_sensor": "in_test_eval"})
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},

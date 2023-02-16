@@ -772,6 +772,7 @@ def test_sensor_timeout():
                         last_completion_time=None,
                         last_run_key=None,
                         cursor=None,
+                        is_test_evaluation=False,
                     ),
                     timeout=2,
                 )
@@ -787,6 +788,7 @@ def test_sensor_timeout():
                     last_completion_time=None,
                     last_run_key=None,
                     cursor=None,
+                    is_test_evaluation=False,
                 ),
             )
     finally:

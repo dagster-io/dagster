@@ -410,6 +410,9 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         assert evaluation_result["skipReason"] is None
         assert evaluation_result["error"] is None
 
+        # The definition of always_no_config_sensor writes to kvs if within test evaluation - ensure that occurred.
+        assert graphql_context.instance.run_storage.kvs_get({"always_no_config_sensor"})["always_no_config_sensor"] == "in_test_eval"
+
     def test_dry_run_failure(self, graphql_context):
         instigator_selector = infer_sensor_selector(graphql_context, "always_error_sensor")
         result = execute_dagster_graphql(

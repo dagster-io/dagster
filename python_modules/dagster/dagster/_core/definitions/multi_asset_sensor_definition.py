@@ -217,6 +217,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         repository_def: "RepositoryDefinition",
         monitored_assets: Union[Sequence[AssetKey], AssetSelection],
         instance: Optional[DagsterInstance] = None,
+        is_test_evaluation: Optional[bool] = False,
     ):
         from dagster._core.storage.event_log.base import EventLogRecord
 
@@ -264,6 +265,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             repository_name=repository_name,
             instance=instance,
             repository_def=repository_def,
+            is_test_evaluation=is_test_evaluation,
         )
 
     def _cache_initial_unconsumed_events(self) -> None:
