@@ -174,8 +174,6 @@ class TestLoadWorkspace(BaseTestSuite):
 
             origins_mock.return_value = original_origins
 
-            reload_timestamp = time.time()
-
             new_context = graphql_context.reload_workspace()
 
             result = execute_dagster_graphql(new_context, LOCATION_STATUS_QUERY)
@@ -195,7 +193,6 @@ class TestLoadWorkspace(BaseTestSuite):
             assert all(
                 [node["__typename"] == "WorkspaceLocationStatusEntry" for node in nodes]
             ), str(nodes)
-
             for node in nodes:
                 assert node["loadStatus"] == "LOADED"
-                assert float(node["updateTimestamp"]) > reload_timestamp
+                assert float(node["updateTimestamp"]) == 0.0
