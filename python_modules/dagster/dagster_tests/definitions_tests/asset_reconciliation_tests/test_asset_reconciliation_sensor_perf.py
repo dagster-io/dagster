@@ -232,7 +232,7 @@ class PerfScenario(NamedTuple):
                 )
                 end = time.time()
                 execution_time_seconds = end - start
-                assert execution_time_seconds < 0, self.max_execution_time_seconds
+                assert execution_time_seconds < self.max_execution_time_seconds
 
 
 # ==============================================
@@ -328,7 +328,7 @@ perf_scenarios = [
     PerfScenario(
         snapshot=giant_unpartitioned_assets_2_random_runs,
         n_freshness_policies=0,
-        max_execution_time_seconds=20,
+        max_execution_time_seconds=10,
     ),
     PerfScenario(
         snapshot=giant_unpartitioned_assets_2_random_runs,
@@ -343,7 +343,7 @@ perf_scenarios = [
     PerfScenario(
         snapshot=large_unpartitioned_assets_2_random_runs,
         n_freshness_policies=100,
-        max_execution_time_seconds=15,
+        max_execution_time_seconds=10,
     ),
     PerfScenario(
         snapshot=large_all_partitioned_assets_2_partition_keys,
