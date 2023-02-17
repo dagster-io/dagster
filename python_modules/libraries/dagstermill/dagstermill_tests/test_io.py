@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from dagster import job
+from dagster import job, repository
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagstermill.examples.repository import hello_world
 
@@ -14,6 +14,10 @@ def test_yes_output_notebook_no_file_manager():
         @job
         def _job():
             hello_world()
+
+        @repository
+        def _repo():
+            return [_job]
 
 
 @pytest.mark.notebook_test
