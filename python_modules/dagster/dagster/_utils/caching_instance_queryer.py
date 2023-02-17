@@ -30,7 +30,7 @@ from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
 from dagster._core.storage.pipeline_run import (
-    IN_PROGRESS_RUN_STATUSES,
+    FINISHED_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     RunRecord,
@@ -685,11 +685,18 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         }
 
     @cached_method
-    def _get_in_progress_run_ids(self) -> Sequence[str]:
+    def _get_in_progress_run_ids(self, current_time: datetime.datetime) -> Sequence[str]:
         return [
             record.pipeline_run.run_id
             for record in self._instance.get_run_records(
-                filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES), limit=25
+                filters=RunsFilter(
+                    statuses=[
+                        status for status in DagsterRunStatus if status not in FINISHED_STATUSES
+                    ],
+                    # ignore old runs that may be stuck in an unfinished state
+                    updated_after=current_time - datetime.timedelta(days=1),
+                ),
+                limit=25,
             )
         ]
 
@@ -763,7 +770,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """
         in_progress_times: Dict[AssetKey, datetime.datetime] = {}
 
-        for run_id in self._get_in_progress_run_ids():
+        for run_id in self._get_in_progress_run_ids(current_time=current_time):
             if not self.is_asset_in_run(run_id=run_id, asset=asset_key):
                 continue
 
