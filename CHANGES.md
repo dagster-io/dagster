@@ -41,6 +41,7 @@ def send_emails_job():
 ### Breaking Changes
 
 - Removed the experimental, undocumented `asset_key`, `asset_partitions`, and `asset_partitions_defs` arguments on `Out`.
+- `@multi_asset` no longer accepts `Out` values in the dictionary passed to its `outs` argument. This was experimental and deprecated. Instead, use `AssetOut`.
 - The experimental, undocumented `top_level_resources` argument to the `repository` decorator has been renamed to `_top_level_resources` to emphasize that it should not be set manually.
 
 ### Community Contributions
