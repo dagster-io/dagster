@@ -1074,7 +1074,7 @@ def _build_invocation_context_with_included_resources(
         # pylint: disable=protected-access
         return build_op_context(
             resources=all_resources,
-            config=context.solid_config,
+            config=context.op_config,
             resources_config=context._resources_config,
             instance=context._instance,
             partition_key=context._partition_key,

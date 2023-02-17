@@ -71,7 +71,7 @@ def test_only_aliased_solids():
 def test_aliased_configs():
     @solid(input_defs=[], config_schema=Int)
     def load_constant(context):
-        return context.solid_config
+        return context.op_config
 
     pipeline = PipelineDefinition(
         solid_defs=[load_constant],

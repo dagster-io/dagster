@@ -6,7 +6,7 @@ def test_configured_solids_and_resources():
     # idiomatic usage
     @solid(config_schema={"greeting": str}, required_resource_keys={"animal", "plant"})
     def emit_greet_creature(context):
-        greeting = context.solid_config["greeting"]
+        greeting = context.op_config["greeting"]
         return f"{greeting}, {context.resources.animal}, {context.resources.plant}"
 
     emit_greet_salutation = emit_greet_creature.configured(

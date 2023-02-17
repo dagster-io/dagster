@@ -209,7 +209,7 @@ def test_warning_for_conditional_output(capsys):
         output_defs=[OutputDefinition(Any, is_required=False)],
     )
     def maybe(context):
-        if context.solid_config["return"]:
+        if context.op_config["return"]:
             return 3
 
     result = execute_solid(maybe, run_config={"solids": {"maybe": {"config": {"return": False}}}})

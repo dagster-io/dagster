@@ -22,7 +22,7 @@ def test_successful_file_handle_to_s3(mock_s3_bucket):
     file_handle = S3FileHandle(mock_s3_bucket.name, "some-key/foo")
     result = create_file_handle_job(file_handle).execute_in_process(
         run_config={
-            "solids": {
+            "ops": {
                 "file_handle_to_s3": {"config": {"Bucket": mock_s3_bucket.name, "Key": "some-key"}}
             },
             "resources": {"file_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}},

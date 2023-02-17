@@ -38,7 +38,7 @@ def _send_kbd_int(temp_files):
 
 @solid(config_schema={"tempfile": Field(String)})
 def write_a_file(context):
-    with open(context.solid_config["tempfile"], "w", encoding="utf8") as ff:
+    with open(context.op_config["tempfile"], "w", encoding="utf8") as ff:
         ff.write("yup")
 
     start_time = time.time()
@@ -150,7 +150,7 @@ def test_interrupt_resource_teardown():
 
     @solid(config_schema={"tempfile": Field(String)}, required_resource_keys={"a"})
     def write_a_file_resource_solid(context):
-        with open(context.solid_config["tempfile"], "w", encoding="utf8") as ff:
+        with open(context.op_config["tempfile"], "w", encoding="utf8") as ff:
             ff.write("yup")
 
         while True:

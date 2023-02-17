@@ -111,9 +111,9 @@ def docker_mode_defs():
     },
 )
 def multiply_the_word(context, word):
-    if context.solid_config.get("should_segfault"):
+    if context.op_config.get("should_segfault"):
         segfault()
-    return word * context.solid_config["factor"]
+    return word * context.op_config["factor"]
 
 
 @solid(
@@ -121,8 +121,8 @@ def multiply_the_word(context, word):
     config_schema={"factor": IntSource, "sleep_time": IntSource},
 )
 def multiply_the_word_slow(context, word):
-    time.sleep(context.solid_config["sleep_time"])
-    return word * context.solid_config["factor"]
+    time.sleep(context.op_config["sleep_time"])
+    return word * context.op_config["factor"]
 
 
 @lambda_solid(input_defs=[InputDefinition("word")])
@@ -145,7 +145,7 @@ def always_fail(context, word):
     config_schema={"factor": IntSource},
 )
 def multiply_the_word_op(context, word):
-    return word * context.solid_config["factor"]
+    return word * context.op_config["factor"]
 
 
 @op(ins={"word": In()})
@@ -169,7 +169,7 @@ def hanging_solid(_):
 
 @solid(config_schema={"looking_for": str})
 def get_environment_solid(context):
-    return os.environ.get(context.solid_config["looking_for"])
+    return os.environ.get(context.op_config["looking_for"])
 
 
 @pipeline(
@@ -634,7 +634,7 @@ def define_hard_failer():
             output_defs=[OutputDefinition(Int)],
         )
         def hard_fail_or_0(context):
-            if context.solid_config["fail"]:
+            if context.op_config["fail"]:
                 segfault()
             return 0
 

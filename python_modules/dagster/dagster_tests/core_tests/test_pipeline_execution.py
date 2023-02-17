@@ -800,7 +800,7 @@ def retry_pipeline():
         },
     )
     def return_one(context):
-        if context.solid_config["fail"]:
+        if context.op_config["fail"]:
             raise Exception("FAILURE")
         return 1
 

@@ -21,7 +21,7 @@ def pipe(input_str):
 
 @solid(config_schema=Field(String, is_required=False))
 def scalar_config_solid(context):
-    yield Output(context.solid_config)
+    yield Output(context.op_config)
 
 
 @graph(
@@ -253,7 +253,7 @@ def test_config_mapper_throws_nested():
 def test_composite_config_field():
     @solid(config_schema={"inner": Field(String)})
     def inner_solid(context):
-        return context.solid_config["inner"]
+        return context.op_config["inner"]
 
     @graph(
         config=ConfigMapping(
@@ -276,7 +276,7 @@ def test_composite_config_field():
 def test_nested_composite_config_field():
     @solid(config_schema={"inner": Field(String)})
     def inner_solid(context):
-        return context.solid_config["inner"]
+        return context.op_config["inner"]
 
     @graph(
         config=ConfigMapping(
@@ -313,7 +313,7 @@ def test_nested_with_inputs():
         config_schema={"basic_key": Field(String)},
     )
     def basic(context, some_input):
-        yield Output(context.solid_config["basic_key"] + " - " + some_input)
+        yield Output(context.op_config["basic_key"] + " - " + some_input)
 
     @graph(
         input_defs=[InputDefinition("some_input", String)],
@@ -368,8 +368,8 @@ def test_wrap_none_config_and_inputs():
     def basic(context, input_a, input_b):
         res = ".".join(
             [
-                context.solid_config["config_field_a"],
-                context.solid_config["config_field_b"],
+                context.op_config["config_field_a"],
+                context.op_config["config_field_b"],
                 input_a,
                 input_b,
             ]
@@ -485,8 +485,8 @@ def test_wrap_all_config_no_inputs():
     def basic(context, input_a, input_b):
         res = ".".join(
             [
-                context.solid_config["config_field_a"],
-                context.solid_config["config_field_b"],
+                context.op_config["config_field_a"],
+                context.op_config["config_field_b"],
                 input_a,
                 input_b,
             ]
@@ -606,8 +606,8 @@ def test_wrap_all_config_one_input():
     def basic(context, input_a, input_b):
         res = ".".join(
             [
-                context.solid_config["config_field_a"],
-                context.solid_config["config_field_b"],
+                context.op_config["config_field_a"],
+                context.op_config["config_field_b"],
                 input_a,
                 input_b,
             ]
@@ -716,8 +716,8 @@ def test_wrap_all_config_and_inputs():
     def basic(context, input_a, input_b):
         res = ".".join(
             [
-                context.solid_config["config_field_a"],
-                context.solid_config["config_field_b"],
+                context.op_config["config_field_a"],
+                context.op_config["config_field_b"],
                 input_a,
                 input_b,
             ]

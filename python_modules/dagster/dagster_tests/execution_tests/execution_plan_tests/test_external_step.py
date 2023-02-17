@@ -276,7 +276,7 @@ def define_sleepy_pipeline():
         required_resource_keys=set(["first_step_launcher"]),
     )
     def sleepy_solid(context):
-        with open(context.solid_config["tempfile"], "w", encoding="utf8") as ff:
+        with open(context.op_config["tempfile"], "w", encoding="utf8") as ff:
             ff.write("yup")
         start_time = time.time()
         while True:

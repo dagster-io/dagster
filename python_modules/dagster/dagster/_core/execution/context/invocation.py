@@ -66,7 +66,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
     def __init__(
         self,
-        solid_config: Any,
+        op_config: Any,
         resources_dict: Mapping[str, Any],
         resources_config: Mapping[str, Any],
         instance: Optional[DagsterInstance],
@@ -76,7 +76,7 @@ class UnboundOpExecutionContext(OpExecutionContext):
         from dagster._core.execution.api import ephemeral_instance_if_missing
         from dagster._core.execution.context_creation_pipeline import initialize_console_manager
 
-        self._solid_config = solid_config
+        self._op_config = op_config
         self._mapping_key = mapping_key
 
         self._instance_provided = (
@@ -123,8 +123,8 @@ class UnboundOpExecutionContext(OpExecutionContext):
             self._instance_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
     @property
-    def solid_config(self) -> Any:
-        return self._solid_config
+    def op_config(self) -> Any:
+        return self._op_config
 
     @property
     def resources(self) -> Resources:
@@ -239,11 +239,11 @@ class UnboundOpExecutionContext(OpExecutionContext):
 
         from dagster._core.definitions.resource_invocation import resolve_bound_config
 
-        solid_config = resolve_bound_config(self.solid_config, op_def)
+        op_config = resolve_bound_config(self.op_config, op_def)
 
         return BoundOpExecutionContext(
             op_def=op_def,
-            op_config=solid_config,
+            op_config=op_config,
             resources=self.resources,
             resources_config=self._resources_config,
             instance=self.instance,
@@ -377,7 +377,7 @@ class BoundOpExecutionContext(OpExecutionContext):
         self._partition_key = partition_key
 
     @property
-    def solid_config(self) -> Any:
+    def op_config(self) -> Any:
         return self._op_config
 
     @property
@@ -671,7 +671,7 @@ def build_solid_context(
         resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can be
             either values or resource definitions.
         solid_config (Optional[Any]): The solid config to provide to the context. The value provided
-            here will be available as ``context.solid_config``.
+            here will be available as ``context.op_config``.
         resources_config (Optional[Dict[str, Any]]): Configuration for any resource definitions
             provided to the resources arg. The configuration under a specific key should match the
             resource under a specific key in the resources dictionary.
@@ -700,7 +700,7 @@ def build_solid_context(
         resources_config=check.opt_mapping_param(
             resources_config, "resources_config", key_type=str
         ),
-        solid_config=solid_config,
+        op_config=solid_config,
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
         partition_key=check.opt_str_param(partition_key, "partition_key"),
         mapping_key=check.opt_str_param(mapping_key, "mapping_key"),

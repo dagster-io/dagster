@@ -16,7 +16,7 @@ from dagster_celery_k8s import celery_k8s_job_executor
 
 @solid(input_defs=[InputDefinition("word", str)], config_schema={"factor": int})
 def multiply_the_word(context, word):
-    return word * context.solid_config["factor"]
+    return word * context.op_config["factor"]
 
 
 @solid(input_defs=[InputDefinition("word")])

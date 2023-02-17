@@ -313,8 +313,8 @@ def solid(
                 config_schema={'str_value' : Field(str)}
             )
             def hello_world(context, foo):
-                # context.solid_config is a dictionary with 'str_value' key
-                return foo + context.solid_config['str_value']
+                # context.op_config is a dictionary with 'str_value' key
+                return foo + context.op_config['str_value']
 
     """
     # This case is for when decorator is used bare, without arguments. e.g. @solid versus @solid()
