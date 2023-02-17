@@ -871,6 +871,10 @@
             "path": "/_apidocs/libraries/dagster-celery-k8s"
           },
           {
+            "title": "Census (dagster-census)",
+            "path": "/_apidocs/libraries/dagster-census"
+          },
+          {
             "title": "Dask (dagster-dask)",
             "path": "/_apidocs/libraries/dagster-dask"
           },

@@ -62,16 +62,17 @@ from .utils import generate_materialization
     tags={"kind": "census"},
 )
 def census_trigger_sync_op(context):
-    """
-    Executes a Census sync for a given ``sync_id``, and polls until that sync
-    completes, raising an error if it is unsuccessful. It outputs a CensusOutput which contains
-    the details of the Census sync after the sync successfully completes, as well as details
-    about which tables the sync updates.
+    """Executes a Census sync for a given ``sync_id``, and polls until that sync completes, raising
+    an error if it is unsuccessful.
+
+    It outputs a CensusOutput which contains the details of the Census sync after the sync
+    successfully completes, as well as details about which tables the sync updates.
 
     It requires the use of the :py:class:`~dagster_census.census_resource`, which allows it to
     communicate with the census API.
 
-    Examples:
+    **Examples:**
+
     .. code-block:: python
 
         from dagster import job

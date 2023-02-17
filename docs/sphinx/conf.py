@@ -25,6 +25,7 @@ paths = [
     "../../python_modules/libraries/dagster-azure",
     "../../python_modules/libraries/dagster-celery",
     "../../python_modules/libraries/dagster-celery-docker",
+    "../../python_modules/libraries/dagster-census",
     "../../python_modules/libraries/dagster-dask",
     "../../python_modules/libraries/dagster-datadog",
     "../../python_modules/libraries/dagster-datahub",

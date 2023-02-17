@@ -31,6 +31,7 @@
    sections/api/apidocs/libraries/dagster-celery
    sections/api/apidocs/libraries/dagster-celery-docker
    sections/api/apidocs/libraries/dagster-celery-k8s
+   sections/api/apidocs/libraries/dagster-census
    sections/api/apidocs/libraries/dagster-dask
    sections/api/apidocs/libraries/dagster-databricks
    sections/api/apidocs/libraries/dagster-datadog
