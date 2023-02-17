@@ -34,7 +34,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
     """
 
-    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame):
+    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, _):
         """Stores the pandas DataFrame in BigQuery."""
         with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
 
@@ -59,7 +59,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             }
         )
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
+    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
         result = pandas_gbq.read_gbq(
             BigQueryClient.get_select_statement(table_slice), project_id=table_slice.database

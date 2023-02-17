@@ -10,7 +10,6 @@ from dagster import InputContext, OutputContext, asset, materialize
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
 from dagster_gcp.bigquery.io_manager import (
     BigQueryClient,
-    _connect_bigquery,
     _get_cleanup_statement,
     build_bigquery_io_manager,
 )
@@ -185,13 +184,12 @@ def test_get_cleanup_statement_multi_partitioned():
 
 
 class FakeHandler(DbTypeHandler[int]):
-    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: int):
-        bq = _connect_bigquery(context)
-        bq.query(
+    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: int, connection):
+        connection.query(
             f"SELECT * FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
         ).result()
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> int:
+    def load_input(self, context: InputContext, table_slice: TableSlice, connection) -> int:
         return 7
 
     @property

@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import tempfile
+from contextlib import contextmanager
 from typing import Sequence, cast
 
 from dagster import Field, IOManagerDefinition, Noneable, OutputContext, StringSource, io_manager
@@ -150,7 +151,7 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
                     "Resource config error: gcp_credentials config for BigQuery IO manager cannot"
                     " be used if GOOGLE_APPLICATION_CREDENTIALS environment variable is set."
                 )
-            with tempfile.NamedTemporaryFile("w+", delete=False) as f:
+            with tempfile.NamedTemporaryFile("w+") as f:
                 temp_file_name = f.name
                 json.dump(
                     json.loads(
@@ -158,12 +159,12 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
                     ),
                     f,
                 )
+                f.flush()
                 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file_name
-            try:
-                yield mgr
-            finally:
-                os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
-                os.remove(temp_file_name)
+                try:
+                    yield mgr
+                finally:
+                    os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
         else:
             yield mgr
 
@@ -172,10 +173,9 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
 
 class BigQueryClient(DbClient):
     @staticmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
-        conn = _connect_bigquery(context)
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
-            conn.query(_get_cleanup_statement(table_slice)).result()
+            connection.query(_get_cleanup_statement(table_slice)).result()
         except NotFound:
             # table doesn't exist yet, so ignore the error
             pass
@@ -200,16 +200,18 @@ class BigQueryClient(DbClient):
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
 
     @staticmethod
-    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
-        bq_client = _connect_bigquery(context)
-        bq_client.query(f"CREATE SCHEMA IF NOT EXISTS {table_slice.schema}").result()
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        connection.query(f"CREATE SCHEMA IF NOT EXISTS {table_slice.schema}").result()
 
+    @staticmethod
+    @contextmanager
+    def connect(context, _):
+        conn = bigquery.Client(
+            project=context.resource_config.get("project"),
+            location=context.resource_config.get("location"),
+        )
 
-def _connect_bigquery(context) -> bigquery.Client:
-    return bigquery.Client(
-        project=context.resource_config.get("project"),
-        location=context.resource_config.get("location"),
-    )
+        yield conn
 
 
 def _get_cleanup_statement(table_slice: TableSlice) -> str:
