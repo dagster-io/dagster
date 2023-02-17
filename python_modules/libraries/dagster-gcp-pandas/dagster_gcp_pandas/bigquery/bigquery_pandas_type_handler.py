@@ -72,7 +72,9 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         return [pd.DataFrame]
 
 
-bigquery_pandas_io_manager = build_bigquery_io_manager([BigQueryPandasTypeHandler()])
+bigquery_pandas_io_manager = build_bigquery_io_manager(
+    [BigQueryPandasTypeHandler()], default_load_type=pd.DataFrame
+)
 bigquery_pandas_io_manager.__doc__ = """
 An IO manager definition that reads inputs from and writes pandas DataFrames to BigQuery.
 

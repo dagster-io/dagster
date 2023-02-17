@@ -3,7 +3,7 @@ import json
 import os
 import tempfile
 from contextlib import contextmanager
-from typing import Sequence, cast
+from typing import Optional, Sequence, Type, cast
 
 from dagster import Field, IOManagerDefinition, Noneable, OutputContext, StringSource, io_manager
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -21,13 +21,17 @@ from google.cloud import bigquery
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
+def build_bigquery_io_manager(
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+) -> IOManagerDefinition:
     """
     Builds an I/O manager definition that reads inputs from and writes outputs to BigQuery.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
             slices of BigQuery tables and an in-memory type - e.g. a Pandas DataFrame.
+            If only one DbTypeHandler is provided, it will be used as the default_load_type.
+        default_load_type (Type): When an input has no type annotation, load it as this type.
 
     Returns:
         IOManagerDefinition
@@ -144,6 +148,7 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
             io_manager_name="BigQueryIOManager",
             database=init_context.resource_config["project"],
             schema=init_context.resource_config.get("dataset"),
+            default_load_type=default_load_type,
         )
         if init_context.resource_config.get("gcp_credentials"):
             if os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is not None:
