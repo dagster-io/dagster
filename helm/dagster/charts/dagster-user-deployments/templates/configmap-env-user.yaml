@@ -9,8 +9,12 @@ metadata:
     release: {{ $.Release.Name }}
     heritage: {{ $.Release.Service }}
 data:
+  # This is a list by default, but for backcompat it can be a map. If it's a list, the env is applied directly
+  # to the container.
+  {{- if and ($deployment.env) (kindIs "map" $deployment.env) }}
   {{- range $name, $value := $deployment.env }}
   {{ $name }}: {{ $value | quote }}
+  {{- end }}
   {{- end }}
 ---
 {{ end }}
