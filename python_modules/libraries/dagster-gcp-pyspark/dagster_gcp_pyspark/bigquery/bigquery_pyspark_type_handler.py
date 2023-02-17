@@ -53,7 +53,7 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
     """
 
     def handle_output(
-        self, context: OutputContext, table_slice: TableSlice, obj: DataFrame
+        self, context: OutputContext, table_slice: TableSlice, obj: DataFrame, _
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_bigquery_options(context.resource_config, table_slice)
 
@@ -72,7 +72,7 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
             ),
         }
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> DataFrame:
+    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:
         options = _get_bigquery_options(context.resource_config, table_slice)
 
         spark = SparkSession.builder.getOrCreate()
@@ -85,7 +85,9 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
         return [DataFrame]
 
 
-bigquery_pyspark_io_manager = build_bigquery_io_manager([BigQueryPySparkTypeHandler()])
+bigquery_pyspark_io_manager = build_bigquery_io_manager(
+    [BigQueryPySparkTypeHandler()], default_load_type=DataFrame
+)
 bigquery_pyspark_io_manager.__doc__ = """
 # TODO - docs
 An IO manager definition that reads inputs from and writes PySpark DataFrames to Snowflake.
