@@ -19,6 +19,7 @@ from dagster._annotations import experimental
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
+    DagsterUnknownPartitionError,
 )
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import (
@@ -32,6 +33,7 @@ from .partition import (
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,
+    Partition,
 )
 from .time_window_partitions import TimeWindowPartitionsDefinition
 
@@ -209,6 +211,37 @@ class MultiPartitionsDefinition(PartitionsDefinition):
     @property
     def partitions_defs(self) -> Sequence[PartitionDimensionDefinition]:
         return self._partitions_defs
+
+    def get_partition(
+        self,
+        partition_key: str,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Partition:
+        if not isinstance(partition_key, MultiPartitionKey):
+            check.failed("get_partition can only be called with a MultiPartitionKey")
+
+        if partition_key.keys_by_dimension.keys() != set(self.partition_dimension_names):
+            raise DagsterUnknownPartitionError(
+                f"Invalid partition key {partition_key}. The dimensions of the partition key are"
+                " not the dimensions of the partitions definition."
+            )
+
+        partitions_by_dimension: Dict[str, Partition] = {}
+        for dimension in self.partitions_defs:
+            partition = dimension.partitions_def.get_partition(
+                partition_key.keys_by_dimension[dimension.name],
+                current_time=current_time,
+                dynamic_partitions_store=dynamic_partitions_store,
+            )
+            if not partition:
+                check.failed(
+                    "Invalid partition key {partition_key}. The partition key does not exist in the"
+                    " partitions definition."
+                )
+            partitions_by_dimension[dimension.name] = partition
+
+        return Partition(value=partitions_by_dimension, name=partition_key)
 
     def get_partitions(
         self,
