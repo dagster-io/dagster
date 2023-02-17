@@ -53,7 +53,7 @@ def test_struct_config_permissive():
         # Can pull out config dict to access permissive fields
         assert config.dict() == {"a_string": "foo", "an_int": 2, "a_bool": True}
 
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
     assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
 

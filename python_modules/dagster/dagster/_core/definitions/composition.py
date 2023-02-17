@@ -423,7 +423,7 @@ class PendingNodeInvocation:
 
     def __call__(self, *args, **kwargs) -> Any:
         from ..execution.context.invocation import UnboundOpExecutionContext
-        from .decorators.solid_decorator import DecoratedOpFunction
+        from .decorators.op_decorator import DecoratedOpFunction
         from .solid_invocation import op_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
@@ -1048,7 +1048,7 @@ def do_composition(
             the user has not explicitly provided the output definitions.
             This should be removed in 0.11.0.
     """
-    from .decorators.solid_decorator import (
+    from .decorators.op_decorator import (
         NoContextDecoratedOpFunction,
         resolve_checked_solid_fn_inputs,
     )

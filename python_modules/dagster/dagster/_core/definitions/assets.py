@@ -216,7 +216,7 @@ class AssetsDefinition(ResourceAddable):
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
-        from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+        from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
         from dagster._core.execution.context.compute import OpExecutionContext
 
         from .graph_definition import GraphDefinition
