@@ -9,12 +9,12 @@ from dagster import (
     graph,
 )
 from dagster._core.definitions.config import ConfigMapping
-from dagster._legacy import InputDefinition, execute_pipeline, lambda_solid, pipeline, solid
+from dagster._legacy import InputDefinition, execute_pipeline, pipeline, solid
 
 
 # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
 # no longer true? refactor these tests?
-@lambda_solid(input_defs=[InputDefinition("input_str")])
+@solid(input_defs=[InputDefinition("input_str")])
 def pipe(input_str):
     return input_str
 
@@ -850,7 +850,7 @@ def test_nested_empty_config():
 
 
 def test_nested_empty_config_input():
-    @lambda_solid
+    @solid
     def number(num):
         return num
 

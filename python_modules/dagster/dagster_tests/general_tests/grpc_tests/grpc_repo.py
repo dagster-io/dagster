@@ -6,18 +6,17 @@ from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
     PartitionSetDefinition,
-    lambda_solid,
     pipeline,
     solid,
 )
 
 
-@lambda_solid
+@solid
 def do_something():
     return 1
 
 
-@lambda_solid
+@solid
 def do_input(x):
     return x
 

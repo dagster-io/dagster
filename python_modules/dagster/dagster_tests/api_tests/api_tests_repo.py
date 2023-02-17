@@ -10,18 +10,17 @@ from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
     PartitionSetDefinition,
-    lambda_solid,
     pipeline,
     solid,
 )
 
 
-@lambda_solid
+@solid
 def do_something():
     return 1
 
 
-@lambda_solid
+@solid
 def do_input(x):
     return x
 
@@ -31,7 +30,7 @@ def foo_pipeline():
     do_input(do_something())
 
 
-@lambda_solid
+@solid
 def forever_solid():
     while True:
         time.sleep(10)

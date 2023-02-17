@@ -7,7 +7,6 @@ from dagster._legacy import (
     ModeDefinition,
     OutputDefinition,
     default_executors,
-    lambda_solid,
     pipeline,
     solid,
 )
@@ -50,7 +49,7 @@ def emit_values(_context):
     yield Output(2, "value_two")
 
 
-@lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+@solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
 def subtract(num_one, num_two):
     return num_one - num_two
 
@@ -100,13 +99,13 @@ def test_optional_outputs():
     bar.alias("third_consumer")(input_arg=foo_res.out_3)
 
 
-@lambda_solid
+@solid
 def fails():
     raise Exception("argjhgjh")
 
 
-@lambda_solid
-def should_never_execute(_):
+@solid
+def should_never_execute(foo):  # pylint: disable=unused-argument
     assert False  # should never execute
 
 
@@ -115,7 +114,7 @@ def test_fails():
     should_never_execute(fails())
 
 
-@lambda_solid
+@solid
 def retry_request():
     raise RetryRequested()
 

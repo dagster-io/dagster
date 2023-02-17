@@ -130,7 +130,6 @@ from .decorators import (
     hook_decorator as hook_decorator,
     hourly_schedule as hourly_schedule,
     job as job,
-    lambda_solid as lambda_solid,
     monthly_schedule as monthly_schedule,
     multi_asset as multi_asset,
     op as op,

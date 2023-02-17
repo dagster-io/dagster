@@ -34,7 +34,6 @@ from dagster._legacy import (
     ModeDefinition,
     OutputDefinition,
     default_executors,
-    lambda_solid,
     pipeline,
     solid,
 )
@@ -125,7 +124,7 @@ def multiply_the_word_slow(context, word):
     return word * context.op_config["factor"]
 
 
-@lambda_solid(input_defs=[InputDefinition("word")])
+@solid(input_defs=[InputDefinition("word")])
 def count_letters(word):
     counts = defaultdict(int)
     for letter in word:
@@ -156,7 +155,7 @@ def count_letters_op(word):
     return dict(counts)
 
 
-@lambda_solid()
+@solid()
 def error_solid():
     raise Exception("Unusual error")
 

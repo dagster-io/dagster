@@ -1,21 +1,15 @@
 from collections import defaultdict
 
 from dagster import DependencyDefinition, Int, NodeInvocation
-from dagster._legacy import (
-    InputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    solid,
-)
+from dagster._legacy import InputDefinition, PipelineDefinition, execute_pipeline, solid
 
 
 def test_aliased_solids():
-    @lambda_solid()
+    @solid()
     def first():
         return ["first"]
 
-    @lambda_solid(input_defs=[InputDefinition(name="prev")])
+    @solid(input_defs=[InputDefinition(name="prev")])
     def not_first(prev):
         return prev + ["not_first"]
 
@@ -43,11 +37,11 @@ def test_aliased_solids():
 
 
 def test_only_aliased_solids():
-    @lambda_solid()
+    @solid()
     def first():
         return ["first"]
 
-    @lambda_solid(input_defs=[InputDefinition(name="prev")])
+    @solid(input_defs=[InputDefinition(name="prev")])
     def not_first(prev):
         return prev + ["not_first"]
 
