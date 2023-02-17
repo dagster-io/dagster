@@ -83,6 +83,13 @@ def _make_dagster_package(package_name: str):
                 "underscore_name": package_name_underscore,
             },
         },
+        "__init__.py": {
+            "path": os.path.join(src_path, "__init__.py"),
+            "has_todos": False,
+            "kwargs": {
+                "hyphen_name": package_name,
+            },
+        },
     }
 
     has_todos = []
@@ -95,12 +102,6 @@ def _make_dagster_package(package_name: str):
 
         if vars["has_todos"]:
             has_todos.append(vars["path"])
-
-    # src __init__.py
-    path = os.path.join(src_path, "__init__.py")
-    print(f"Writing {path}")
-    with open(path, "w"):
-        pass
 
     # test __init__.py
     path = os.path.join(tests_path, "__init__.py")
