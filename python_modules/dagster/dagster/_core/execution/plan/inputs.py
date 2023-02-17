@@ -161,7 +161,7 @@ class FromSourceAsset(
             else asset_layer.io_manager_key_for_asset(input_asset_key)
         )
 
-        op_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
+        op_config = step_context.resolved_run_config.ops.get(str(self.solid_handle))
         config_data = op_config.inputs.get(self.input_name) if op_config else None
 
         loader = getattr(step_context.resources, input_manager_key)
@@ -214,7 +214,7 @@ class FromSourceAsset(
             input_manager_key
         ]
 
-        op_config = check.not_none(resolved_run_config.solids.get(op.name))
+        op_config = check.not_none(resolved_run_config.ops.get(op.name))
         input_config = op_config.inputs.get(self.input_name)
         resource_entry = check.not_none(resolved_run_config.resources.get(input_manager_key))
         resource_config = resource_entry.config
@@ -304,7 +304,7 @@ class FromRootInputManager(
 
         input_def = step_context.solid_def.input_def_named(input_def.name)
 
-        solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
+        solid_config = step_context.resolved_run_config.ops.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
         input_manager_key = check.not_none(
@@ -355,7 +355,7 @@ class FromRootInputManager(
             resolved_run_config.mode
         ).resource_defs[input_manager_key]
 
-        solid_config = resolved_run_config.solids[solid.name]
+        solid_config = resolved_run_config.ops[solid.name]
         input_config = solid_config.inputs.get(self.input_name)
         resource_config = check.not_none(
             resolved_run_config.resources.get(input_manager_key)
@@ -464,7 +464,7 @@ class FromStepOutput(
         resource_config = step_context.resolved_run_config.resources[resolved_io_manager_key].config
         resources = build_resources_for_manager(resolved_io_manager_key, step_context)
 
-        solid_config = step_context.resolved_run_config.solids.get(str(step_context.solid_handle))
+        solid_config = step_context.resolved_run_config.ops.get(str(step_context.solid_handle))
         config_data = solid_config.inputs.get(input_def.name) if solid_config else None
 
         return step_context.for_input_manager(
@@ -592,7 +592,7 @@ class FromConfig(
         including the root.
         """
         if self.solid_handle:
-            op_config = resolved_run_config.solids.get(str(self.solid_handle))
+            op_config = resolved_run_config.ops.get(str(self.solid_handle))
             return op_config.inputs.get(self.input_name) if op_config else None
         else:
             input_config = resolved_run_config.inputs

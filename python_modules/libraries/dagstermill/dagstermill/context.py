@@ -211,7 +211,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         if self._op_config:
             return self._op_config
 
-        op_config = self.resolved_run_config.solids.get(self.solid_name)
+        op_config = self.resolved_run_config.ops.get(self.solid_name)
         return op_config.config if op_config else None
 
 

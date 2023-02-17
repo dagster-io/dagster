@@ -816,7 +816,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def op_config(self) -> Any:
-        op_config = self.resolved_run_config.solids.get(str(self.solid_handle))
+        op_config = self.resolved_run_config.ops.get(str(self.solid_handle))
         return op_config.config if op_config else None
 
     @property
