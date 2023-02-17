@@ -276,33 +276,51 @@ Once the schedule is started, the schedule will begin executing immediately if y
 
 ## Testing schedules
 
-### Via the UI
+<TabGroup>
+<TabItem name="Via Dagit">
+
+### Via Dagit
+
+In Dagit, you can manually trigger a test evaluation of a schedule using a mock evaluation time and view the results.
 
 On the overview page for a particular schedule, there is a `Test schedule` button. Clicking this button will perform a test evaluation of your schedule for a provided mock evaluation time, and show you the results of that evaluation.
 
-<Image
-src="/images/concepts/partitions-schedules-sensors/test-schedule-button.png"
-width={320}
-height={128}
-/>
+1. Click **Overview > Schedules**.
 
-When the button is clicked, you are provided to select among a dropdown of mock scheduled execution times. Schedules are defined on a cadence, and the times provided in this dropdown are in the past and future along that cadence. The schedule being tested here runs at a cadence of every day at x time, and so I see 5 evaluation times in the future along that cadence, and 5 evaluation times in the past along that cadence.
+2. Click the schedule you want to test.
 
-<Image
-src="/images/concepts/partitions-schedules-sensors/select-timestamp-page.png"
-width={896}
-height={449}
-/>
+3. Click the **Test Schedule** button, located near the top right corner of the page:
 
-Upon selecting an evaluation time and clicking the `Evaluate` button, the schedule will evaluate, and the following window will show the result of that evaluation. If the evaluation was successful and a run request was produced, you have the option to open the launchpad pre-scaffolded with the config corresponding to that run request.
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/test-schedule-button.png"
+   width={320}
+   height={128}
+   />
 
-<Image
-src="/images/concepts/partitions-schedules-sensors/eval-schedule-result-page.png"
-width={896}
-height={449}
-/>
+4. You'll be prompted to select a mock schedule evaluation time. As schedules are defined on a cadence, the evaluation times provided in the dropdown are past and future times along that cadence.
 
-### Via python
+   For example, let's say you're testing a schedule with a cadence of `"Every day at X time"`. In the dropdown, you'd see five evaluation times in the future and five evaluation times in the past along that cadence.
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/select-timestamp-page.png"
+   width={896}
+   height={449}
+   />
+
+5. After selecting an evaluation time, click the **Evaluate** button. A window containing the result of the evaluation will display:
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/eval-schedule-result-page.png"
+   width={896}
+   height={449}
+   />
+
+   If the evaluation was successful and a run request was produced, you can open the launchpad pre-scaffolded with the config corresponding to that run request.
+
+</TabItem>
+<TabItem name="Via Python">
+
+### Via Python
 
 To test a function decorated by the <PyObject object="schedule" decorator /> decorator, you can invoke the schedule definition like it's a regular Python function. The invocation will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function. Below is a test for the `configurable_job_schedule` that we defined in [an earlier section](#schedules-that-provide-custom-run-config-and-tags).
 
@@ -321,6 +339,9 @@ def test_configurable_job_schedule():
 ```
 
 If your `@schedule`-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
+
+</TabItem>
+</TabGroup>
 
 ---
 
