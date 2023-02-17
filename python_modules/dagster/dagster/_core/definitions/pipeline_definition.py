@@ -332,6 +332,14 @@ class PipelineDefinition:
             requirements = self._get_mode_requirements(mode_def)
             ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
 
+    def is_missing_required_resources(self) -> bool:
+        for mode_def in self._mode_definitions:
+            requirements = self._get_mode_requirements(mode_def)
+            for requirement in requirements:
+                if not requirement.resources_contain_key(mode_def.resource_defs):
+                    return True
+        return False
+
     @property
     def name(self) -> str:
         return self._name

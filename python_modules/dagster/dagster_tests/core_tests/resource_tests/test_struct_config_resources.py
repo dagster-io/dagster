@@ -6,9 +6,20 @@ import sys
 import tempfile
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Mapping
+from typing import Any, Callable, List, cast
 
 import pytest
-from dagster import IOManager, asset, job, op, repository, resource
+from dagster import (
+    IOManager,
+    JobDefinition,
+    ScheduleDefinition,
+    asset,
+    job,
+    op,
+    repository,
+    resource,
+    sensor,
+)
 from dagster._check import CheckError
 from dagster._config.field import Field
 from dagster._config.field_utils import EnvVar
@@ -1335,7 +1346,7 @@ def test_extending_resource_nesting() -> None:
     assert executed["yes"]
 
 
-def test_structured_resource_bind_resource_to_job_at_defn_time_err() -> None:
+def test_bind_resource_to_job_at_defn_time_err() -> None:
     out_txt = []
 
     class WriterResource(ConfigurableResource):
@@ -1378,7 +1389,7 @@ def test_structured_resource_bind_resource_to_job_at_defn_time_err() -> None:
         )
 
 
-def test_structured_resource_bind_resource_to_job_at_defn_time() -> None:
+def test_bind_resource_to_job_at_defn_time() -> None:
     out_txt = []
 
     class WriterResource(ConfigurableResource):
@@ -1419,7 +1430,7 @@ def test_structured_resource_bind_resource_to_job_at_defn_time() -> None:
     assert out_txt == ["msg: hello, world!"]
 
 
-def test_structured_resource_bind_resource_to_job_at_defn_time_override() -> None:
+def test_bind_resource_to_job_at_defn_time_override() -> None:
     out_txt = []
 
     class WriterResource(ConfigurableResource):
@@ -1458,3 +1469,57 @@ def test_structured_resource_bind_resource_to_job_at_defn_time_override() -> Non
 
     assert defs.get_job_def("hello_world_job_no_override").execute_in_process().success
     assert out_txt == ["definitions says: hello, world!"]
+
+
+def test_bind_resource_to_sensor_job() -> None:
+    out_txt = []
+
+    class WriterResource(ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    @op
+    def hello_world_op(writer: WriterResource):
+        writer.output("hello, world!")
+
+    @job
+    def hello_world_job():
+        hello_world_op()
+
+    @sensor(job=hello_world_job)
+    def hello_world_sensor():
+        ...
+
+    hello_world_schedule = ScheduleDefinition(
+        name="hello_world_schedule", cron_schedule="* * * * *", job=hello_world_job
+    )
+
+    # Bind the resource to the job at definition time and validate that it works
+    defs = Definitions(
+        jobs=[hello_world_job],
+        schedules=[hello_world_schedule],
+        sensors=[hello_world_sensor],
+        resources={
+            "writer": WriterResource(prefix="msg: "),
+        },
+    )
+
+    assert (
+        cast(JobDefinition, defs.get_sensor_def("hello_world_sensor").job)
+        .execute_in_process()
+        .success
+    )
+    assert out_txt == ["msg: hello, world!"]
+
+    out_txt.clear()
+
+    assert (
+        cast(JobDefinition, defs.get_schedule_def("hello_world_schedule").job)
+        .execute_in_process()
+        .success
+    )
+    assert out_txt == ["msg: hello, world!"]
+
+    out_txt.clear()

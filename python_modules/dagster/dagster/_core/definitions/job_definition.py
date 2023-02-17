@@ -111,7 +111,6 @@ class JobDefinition(PipelineDefinition):
         _executor_def_specified: Optional[bool] = None,
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
-        _definitions_resources_bound: bool = False,
     ):
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
         from dagster._loggers import default_loggers
@@ -242,9 +241,6 @@ class JobDefinition(PipelineDefinition):
                     f" '{input_name}', but job has no top-level input with that name."
                 )
 
-        should_validate_resource_requirements = (
-            _definitions_resources_bound or did_user_provide_resources
-        )
         super(JobDefinition, self).__init__(
             name=name,
             description=description,
@@ -258,7 +254,7 @@ class JobDefinition(PipelineDefinition):
             graph_def=graph_def,
             version_strategy=version_strategy,
             asset_layer=asset_layer or _infer_asset_layer_from_source_asset_deps(graph_def),
-            _should_validate_resource_requirements=should_validate_resource_requirements,
+            _should_validate_resource_requirements=did_user_provide_resources,
         )
 
     @property
@@ -708,7 +704,6 @@ class JobDefinition(PipelineDefinition):
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=self._logger_defs_specified,
             _preset_defs=self._preset_defs,
-            _definitions_resources_bound=False,
         )
 
         update_wrapper(job_def, self, updated=())

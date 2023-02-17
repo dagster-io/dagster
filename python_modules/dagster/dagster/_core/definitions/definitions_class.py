@@ -1,4 +1,14 @@
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Sequence, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+)
 
 import dagster._check as check
 from dagster._annotations import experimental, public
@@ -85,6 +95,65 @@ def create_repository_using_definitions_args(
     )
 
 
+class _AttachedObjects(NamedTuple):
+    jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]
+    schedules: Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    sensors: Iterable[SensorDefinition]
+
+
+def _attach_resources_to_jobs(
+    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
+    schedules: Optional[
+        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    ],
+    sensors: Optional[Iterable[SensorDefinition]],
+    resource_defs: Mapping[str, Any],
+) -> _AttachedObjects:
+    """
+    Given a list of jobs, schedules, and sensors along with top-level resource definitions,
+    attach the resource definitions to the jobs, schedules, and sensors which require them.
+    """
+    jobs = jobs or []
+    schedules = schedules or []
+    sensors = sensors or []
+
+    # Find unsatisfied jobs
+    unsatisfied_jobs = [
+        job
+        for job in jobs
+        if isinstance(job, JobDefinition) and job.is_missing_required_resources()
+    ]
+
+    # Create a mapping of job id to a version of the job with the resource defs bound
+    unsatisfied_job_to_resource_bound_job = {
+        id(job): job.with_top_level_resources(resource_defs)
+        for job in jobs
+        if job in unsatisfied_jobs
+    }
+
+    # Update all jobs to use the resource bound version
+    jobs_with_resources = [
+        unsatisfied_job_to_resource_bound_job[id(job)] if job in unsatisfied_jobs else job
+        for job in jobs
+    ]
+
+    # Update all schedules and sensors to use the resource bound version
+    updated_schedules = [
+        schedule.with_updated_job(unsatisfied_job_to_resource_bound_job[id(schedule.job)])
+        if (isinstance(schedule, ScheduleDefinition) and schedule.job in unsatisfied_jobs)
+        else schedule
+        for schedule in schedules
+    ]
+    updated_sensors = [
+        sensor.with_updated_job(unsatisfied_job_to_resource_bound_job[id(sensor.job)])
+        if sensor.job in unsatisfied_jobs
+        else sensor
+        for sensor in sensors
+    ]
+
+    return _AttachedObjects(jobs_with_resources, updated_schedules, updated_sensors)
+
+
 def _create_repository_using_definitions_args(
     name: str,
     assets: Optional[
@@ -133,14 +202,11 @@ def _create_repository_using_definitions_args(
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
-    jobs_with_resources = (
-        [
-            job.with_top_level_resources(resource_defs) if isinstance(job, JobDefinition) else job
-            for job in jobs
-        ]
-        if jobs
-        else []
-    )
+    (
+        jobs_with_resources,
+        schedules_with_resources,
+        sensors_with_resources,
+    ) = _attach_resources_to_jobs(jobs, schedules, sensors, resource_defs)
 
     @repository(
         name=name,
@@ -151,8 +217,8 @@ def _create_repository_using_definitions_args(
     def created_repo():
         return [
             *with_resources(assets or [], resource_defs),
-            *(schedules or []),
-            *(sensors or []),
+            *(schedules_with_resources),
+            *(sensors_with_resources),
             *(jobs_with_resources),
         ]
 

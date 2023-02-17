@@ -380,6 +380,23 @@ class SensorDefinition:
             the sensor condition is met. This can be provided instead of specifying a job.
     """
 
+    def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
+        """Returns a copy of this schedule with the job replaced.
+
+        Args:
+            job (Union[GraphDefinition, JobDefinition]): The job that should execute when this
+                schedule runs.
+        """
+        return SensorDefinition(
+            name=self.name,
+            evaluation_fn=self._evaluation_fn,
+            minimum_interval_seconds=self.minimum_interval_seconds,
+            description=self.description,
+            job=new_job,
+            default_status=self.default_status,
+            asset_selection=self.asset_selection,
+        )
+
     def __init__(
         self,
         name: Optional[str] = None,

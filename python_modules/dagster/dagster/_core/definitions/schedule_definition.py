@@ -429,6 +429,25 @@ class ScheduleDefinition:
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 
+    def with_updated_job(self, new_job: ExecutableDefinition) -> "ScheduleDefinition":
+        """Returns a copy of this schedule with the job replaced.
+
+        Args:
+            job (Union[GraphDefinition, JobDefinition]): The job that should execute when this
+                schedule runs.
+        """
+        return ScheduleDefinition(
+            name=self.name,
+            cron_schedule=self._cron_schedule,
+            job_name=self.job_name,
+            environment_vars=self.environment_vars,
+            execution_timezone=self.execution_timezone,
+            execution_fn=self._execution_fn,
+            description=self.description,
+            job=new_job,
+            default_status=self.default_status,
+        )
+
     def __init__(
         self,
         name: Optional[str] = None,
@@ -479,6 +498,7 @@ class ScheduleDefinition:
         self._environment_vars = check.opt_mapping_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
+
         self._execution_timezone = check.opt_str_param(execution_timezone, "execution_timezone")
 
         if execution_fn and (run_config_fn or tags_fn or should_execute or tags or run_config):
@@ -522,6 +542,8 @@ class ScheduleDefinition:
                 tags_fn = check.opt_callable_param(
                     tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
                 )
+            self._tags_fn = tags_fn
+            self._tags = tags
 
             _should_execute: ScheduleShouldExecuteFunction = check.opt_callable_param(
                 should_execute, "should_execute", default=lambda _context: True
