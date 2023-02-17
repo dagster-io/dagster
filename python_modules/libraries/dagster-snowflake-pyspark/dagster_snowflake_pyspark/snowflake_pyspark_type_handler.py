@@ -63,7 +63,7 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
     """
 
     def handle_output(
-        self, context: OutputContext, table_slice: TableSlice, obj: DataFrame
+        self, context: OutputContext, table_slice: TableSlice, obj: DataFrame, _
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_snowflake_options(context.resource_config, table_slice)
 
@@ -84,7 +84,7 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
             ),
         }
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> DataFrame:
+    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:
         options = _get_snowflake_options(context.resource_config, table_slice)
 
         spark = SparkSession.builder.getOrCreate()

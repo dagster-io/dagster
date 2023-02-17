@@ -1,4 +1,5 @@
-from typing import Sequence, cast
+from contextlib import contextmanager
+from typing import Mapping, Sequence, cast
 
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -140,32 +141,34 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
 class SnowflakeDbClient(DbClient):
     @staticmethod
-    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
+    @contextmanager
+    def connect(context, table_slice):
         no_schema_config = (
             {k: v for k, v in context.resource_config.items() if k != "schema"}
             if context.resource_config
             else {}
         )
         with SnowflakeConnection(
-            dict(schema=table_slice.schema, **no_schema_config), context.log
-        ).get_connection() as con:
-            con.execute_string(f"create schema if not exists {table_slice.schema};")
+            dict(
+                schema=table_slice.schema,
+                connector="sqlalchemy",
+                **cast(Mapping[str, str], no_schema_config),
+            ),
+            context.log,
+        ).get_connection(raw_conn=False) as conn:
+            yield conn
 
     @staticmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
-        no_schema_config = (
-            {k: v for k, v in context.resource_config.items() if k != "schema"}
-            if context.resource_config
-            else {}
-        )
-        with SnowflakeConnection(
-            dict(schema=table_slice.schema, **no_schema_config), context.log
-        ).get_connection() as con:
-            try:
-                con.execute_string(_get_cleanup_statement(table_slice))
-            except ProgrammingError:
-                # table doesn't exist yet, so ignore the error
-                pass
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        connection.execute(f"create schema if not exists {table_slice.schema};")
+
+    @staticmethod
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        try:
+            connection.execute(_get_cleanup_statement(table_slice))
+        except ProgrammingError:
+            # table doesn't exist yet, so ignore the error
+            pass
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:

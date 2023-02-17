@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from typing import (
     Any,
     Dict,
@@ -50,12 +51,12 @@ class TableSlice(NamedTuple):
 class DbTypeHandler(ABC, Generic[T]):
     @abstractmethod
     def handle_output(
-        self, context: OutputContext, table_slice: TableSlice, obj: T
+        self, context: OutputContext, table_slice: TableSlice, obj: T, connection
     ) -> Optional[Mapping[str, RawMetadataValue]]:
         """Stores the given object at the given table in the given schema."""
 
     @abstractmethod
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> T:
+    def load_input(self, context: InputContext, table_slice: TableSlice, connection) -> T:
         """Loads the contents of the given table in the given schema."""
 
     @property
@@ -67,7 +68,7 @@ class DbTypeHandler(ABC, Generic[T]):
 class DbClient:
     @staticmethod
     @abstractmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         ...
 
     @staticmethod
@@ -76,7 +77,13 @@ class DbClient:
         ...
 
     @staticmethod
-    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
+    @abstractmethod
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        ...
+
+    @staticmethod
+    @contextmanager
+    def connect(context: Union[OutputContext, InputContext], table_slice: TableSlice):
         ...
 
 
@@ -115,12 +122,14 @@ class DbIOManager(IOManager):
             obj_type = type(obj)
             self._check_supported_type(obj_type)
 
-            self._db_client.delete_table_slice(context, table_slice)
+            with self._db_client.connect(context, table_slice) as conn:
+                self._db_client.ensure_schema_exists(context, table_slice, conn)
+                self._db_client.delete_table_slice(context, table_slice, conn)
 
-            self._db_client.ensure_schema_exists(context, table_slice)
-            handler_metadata = (
-                self._handlers_by_type[obj_type].handle_output(context, table_slice, obj) or {}
-            )
+                handler_metadata = (
+                    self._handlers_by_type[obj_type].handle_output(context, table_slice, obj, conn)
+                    or {}
+                )
         else:
             check.invariant(
                 context.dagster_type.is_nothing,
@@ -140,9 +149,10 @@ class DbIOManager(IOManager):
         obj_type = context.dagster_type.typing_type
         self._check_supported_type(obj_type)
 
-        return self._handlers_by_type[obj_type].load_input(
-            context, self._get_table_slice(context, cast(OutputContext, context.upstream_output))
-        )
+        table_slice = self._get_table_slice(context, cast(OutputContext, context.upstream_output))
+
+        with self._db_client.connect(context, table_slice) as conn:
+            return self._handlers_by_type[obj_type].load_input(context, table_slice, conn)
 
     def _get_partition_value(
         self, partition_def: PartitionsDefinition, partition_key: str
