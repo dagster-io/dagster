@@ -963,9 +963,9 @@ class DependencyStructure:
         if not node_input.node.definition.input_supports_dynamic_output_dep(node_input.input_name):
             raise DagsterInvalidDefinitionError(
                 f"{node_input.node.describe_node()} cannot be downstream of dynamic output"
-                f' "{node_output.describe()}" since input "{node_input.input_name}" maps to a node'
-                " that is already downstream of another dynamic output. Nodes cannot be downstream"
-                " of more than one dynamic output"
+                f' "{node_output.describe()}" since input "{node_input.input_name}" maps to a'
+                " node that is already downstream of another dynamic output. Nodes cannot be"
+                " downstream of more than one dynamic output"
             )
 
         if self._collect_index.get(node_input.node_name):

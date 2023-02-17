@@ -615,12 +615,16 @@ class AssetsDefinition(ResourceAddable):
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(self._keys_by_input_name[input_name])
 
-    def infer_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
+    def infer_partition_mapping(
+        self, upstream_asset_key: AssetKey, upstream_partitions_def: Optional[PartitionsDefinition]
+    ) -> PartitionMapping:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            partition_mapping = self._partition_mappings.get(in_asset_key)
-            return infer_partition_mapping(partition_mapping, self._partitions_def)
+            partition_mapping = self._partition_mappings.get(upstream_asset_key)
+            return infer_partition_mapping(
+                partition_mapping, self._partitions_def, upstream_partitions_def
+            )
 
     def get_output_name_for_asset_key(self, key: AssetKey) -> str:
         for output_name, asset_key in self.keys_by_output_name.items():

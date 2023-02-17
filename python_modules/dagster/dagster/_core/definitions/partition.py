@@ -278,11 +278,6 @@ class PartitionsDefinition(ABC, Generic[T]):
         else:
             return None
 
-    def get_default_partition_mapping(self):
-        from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
-
-        return IdentityPartitionMapping()
-
     def get_partition_keys_in_range(
         self,
         partition_key_range: PartitionKeyRange,
