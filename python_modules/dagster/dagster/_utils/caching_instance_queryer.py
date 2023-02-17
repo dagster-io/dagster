@@ -563,7 +563,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             return {asset_key: (record_id, record_timestamp)}
 
         # grab the existing upstream data times already calculated for this record (if any)
-        if asset_graph.freshness_policies_by_key.get(asset_key) is not None:
+        if (
+            self._use_known_used_data
+            and asset_graph.freshness_policies_by_key.get(asset_key) is not None
+        ):
             known_data = self.get_known_used_data(asset_key, record_id)
             if known_data:
                 return known_data
