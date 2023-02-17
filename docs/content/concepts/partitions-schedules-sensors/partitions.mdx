@@ -157,7 +157,7 @@ def images(context):
     ...
 ```
 
-For a given dynamic partition set, partition keys can be added and removed. One common pattern is detecting the presence of a new partition through a [sensor](concepts/partitions-schedules-sensors/sensors#sensors), adding the partition, and then triggering a run for that partition:
+For a given dynamic partition set, partition keys can be added and removed. One common pattern is detecting the presence of a new partition through a [sensor](/concepts/partitions-schedules-sensors/sensors), adding the partition, and then triggering a run for that partition:
 
 ```python file=/concepts/partitions_schedules_sensors/dynamic_partitioned_asset.py startafter=start_dynamic_partitions_2 endbefore=end_dynamic_partitions_2
 images_job = define_asset_job(
@@ -189,9 +189,9 @@ To view all partitions for an asset, open the **Definition** tab of the asset's 
 In the following image, the partitions bar is entirely gray. This is because none of the partitions have been materialized:
 
 <Image
-  src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-asset.png"
-  width={2662}
-  height={1618}
+src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-asset.png"
+width={2662}
+height={1618}
 />
 
 ### Materializing partitioned assets
@@ -201,25 +201,25 @@ When you materialize a partitioned asset, you choose which partitions to materia
 **Note**: If you choose more than one partition, the [Dagster daemon](/deployment/dagster-daemon) needs to be running to queue the multiple runs.
 
 <Image
-  src="/images/concepts/partitions-schedules-sensors/partitions/rematerialize-partition.png"
-  width={2662}
-  height={1618}
+src="/images/concepts/partitions-schedules-sensors/partitions/rematerialize-partition.png"
+width={2662}
+height={1618}
 />
 
 After you've materialized a partition, it will show up as green in the partitions bar:
 
 <Image
-  src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset.png"
-  width={2662}
-  height={1618}
+src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset.png"
+width={2662}
+height={1618}
 />
 
 To view materializations by partition, navigate to the **Activity** tab:
 
 <Image
-  src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset-activity.png"
-  width={2662}
-  height={1618}
+src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset-activity.png"
+width={2662}
+height={1618}
 />
 
 ### Partition dependencies
@@ -367,10 +367,10 @@ def do_stuff_partitioned():
 In Dagit, you can view runs by partition in the **Partitions tab** of a **Job** page:
 
 <Image
-  alt="Partitions Tab"
-  src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-job.png"
-  width={2662}
-  height={1618}
+alt="Partitions Tab"
+src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-job.png"
+width={2662}
+height={1618}
 />
 
 In the "Run Matrix", each column corresponds to one of the partitions in the job. The time listed corresponds to the start time of the partition. Each row corresponds to one of the steps in the job. You can click on an individual box to navigate to logs and run information for the step.
@@ -380,10 +380,10 @@ You can view and use partitions in the Dagit Launchpad tab for a job. In the top
 In the screenshot below, we select the `2020-01-02` partition, and we can see that the run config for the partition has been populated in the editor.
 
 <Image
-  alt="Partitions in Dagit Launchpad"
-  src="/images/concepts/partitions-schedules-sensors/partitions/launchpad.png"
-  width={2662}
-  height={1618}
+alt="Partitions in Dagit Launchpad"
+src="/images/concepts/partitions-schedules-sensors/partitions/launchpad.png"
+width={2662}
+height={1618}
 />
 
 In addition to the <PyObject object="daily_partitioned_config" decorator /> decorator, Dagster also provides <PyObject object="monthly_partitioned_config" decorator />, <PyObject object="weekly_partitioned_config" decorator />, <PyObject object="hourly_partitioned_config" decorator />. See the API docs for each of these decorators for more information on how partitions are built based on different `start_date`, `minute_offset`, `hour_offset`, and `day_offset` inputs.
