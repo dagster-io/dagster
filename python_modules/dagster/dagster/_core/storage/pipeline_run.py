@@ -186,7 +186,7 @@ class DagsterRunSerializer(DefaultNamedTupleSerializer):
             for key, value in storage_dict.items()
         }
         # called by the serdes layer, delegates to helper method with expanded kwargs
-        return pipeline_run_from_storage(**unpacked_dict)
+        return dagster_run_from_storage(**unpacked_dict)
 
     @classmethod
     def value_to_storage_dict(
@@ -205,7 +205,7 @@ class DagsterRunSerializer(DefaultNamedTupleSerializer):
         return storage
 
 
-def pipeline_run_from_storage(
+def dagster_run_from_storage(
     pipeline_name=None,
     run_id=None,
     run_config=None,
