@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from typing import Optional, Sequence, Type, cast
+
 import duckdb
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 from dagster._core.definitions.time_window_partitions import TimeWindow

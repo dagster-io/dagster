@@ -1,5 +1,6 @@
 from contextlib import contextmanager
-from typing import Mapping, Sequence, cast, Type
+from typing import Mapping, Optional, Sequence, Type, cast
+
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
