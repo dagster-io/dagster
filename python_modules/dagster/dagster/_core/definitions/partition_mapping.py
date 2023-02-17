@@ -1,7 +1,19 @@
 import collections.abc
+import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Collection, Mapping, NamedTuple, Optional, Sequence, Tuple, Type, Union, cast
+from typing import (
+    Collection,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
@@ -18,6 +30,7 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.cached_method import cached_method
 
 
@@ -313,24 +326,19 @@ class MultiToSingleDimensionPartitionMapping(
                 " dimension of the MultiPartitionsDefinition."
             )
 
-        multipartitions_def = next(
-            iter(
-                {
-                    partitions_def
-                    for partitions_def in [upstream_partitions_def, downstream_partitions_def]
-                    if isinstance(partitions_def, MultiPartitionsDefinition)
-                }
-            )
+        multipartitions_def = cast(
+            MultiPartitionsDefinition,
+            (
+                upstream_partitions_def
+                if isinstance(upstream_partitions_def, MultiPartitionsDefinition)
+                else downstream_partitions_def
+            ),
         )
 
-        single_dimension_partitions_def = next(
-            iter(
-                {
-                    upstream_partitions_def,
-                    downstream_partitions_def,
-                }
-                - {multipartitions_def}
-            )
+        single_dimension_partitions_def = (
+            upstream_partitions_def
+            if not isinstance(upstream_partitions_def, MultiPartitionsDefinition)
+            else downstream_partitions_def
         )
 
         if self.partition_dimension_name is None:
@@ -414,7 +422,7 @@ class MultiToSingleDimensionPartitionMapping(
         self,
         partitions_subset: PartitionsSubset,
         partition_dimension_name: str,
-    ):
+    ) -> Set[str]:
         upstream_partitions = set()
         for partition_key in partitions_subset.get_partition_keys():
             if not isinstance(partition_key, MultiPartitionKey):
@@ -679,7 +687,9 @@ def infer_partition_mapping(
         if _can_infer_single_to_multi_partition_mapping(
             upstream_partitions_def, downstream_partitions_def
         ):
-            return MultiToSingleDimensionPartitionMapping()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=ExperimentalWarning)
+                return MultiToSingleDimensionPartitionMapping()
         elif isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition) and isinstance(
             downstream_partitions_def, TimeWindowPartitionsDefinition
         ):

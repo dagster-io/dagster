@@ -18,6 +18,7 @@ from dagster import (
     MultiToSingleDimensionPartitionMapping,
     Output,
     PartitionsDefinition,
+    SourceAsset,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
@@ -666,20 +667,17 @@ def test_multipartitions_def_partition_mapping_infer_single_dim_to_multi():
             assert context.has_asset_partitions
             assert context.asset_partition_keys == ["a"]
 
-    upstream_job = build_assets_job(
-        "upstream_job",
-        assets=[upstream],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    materialize(
+        [upstream],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="a",
     )
-    upstream_job.execute_in_process(partition_key="a")
 
-    downstream_job = build_assets_job(
-        "downstream_job",
-        assets=[downstream],
-        source_assets=[upstream],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    materialize(
+        [downstream, SourceAsset(AssetKey("upstream"), partitions_def=abc_def)],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key=MultiPartitionKey({"abc": "a", "123": "1"}),
     )
-    downstream_job.execute_in_process(partition_key=MultiPartitionKey({"abc": "a", "123": "1"}))
 
 
 def test_multipartitions_def_partition_mapping_infer_multi_to_single_dim():
@@ -721,18 +719,15 @@ def test_multipartitions_def_partition_mapping_infer_multi_to_single_dim():
         def load_input(self, context):
             assert set(context.asset_partition_keys) == a_multipartition_keys
 
-    upstream_job = build_assets_job(
-        "upstream_job",
-        assets=[upstream],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
-    )
     for pk in a_multipartition_keys:
-        upstream_job.execute_in_process(partition_key=pk)
+        materialize(
+            [upstream],
+            resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+            partition_key=pk,
+        )
 
-    downstream_job = build_assets_job(
-        "downstream_job",
-        assets=[downstream],
-        source_assets=[upstream],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    materialize(
+        [downstream, SourceAsset(AssetKey("upstream"), partitions_def=composite)],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="a",
     )
-    downstream_job.execute_in_process(partition_key="a")
