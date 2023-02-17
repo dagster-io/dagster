@@ -694,7 +694,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         status for status in DagsterRunStatus if status not in FINISHED_STATUSES
                     ],
                     # ignore old runs that may be stuck in an unfinished state
-                    updated_after=current_time - datetime.timedelta(days=1),
+                    created_after=current_time - datetime.timedelta(days=1),
                 ),
                 limit=25,
             )
