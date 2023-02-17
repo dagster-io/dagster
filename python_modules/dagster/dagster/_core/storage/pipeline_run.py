@@ -669,8 +669,6 @@ class RunsFilter(
 
 
 register_serdes_tuple_fallbacks({"PipelineRunsFilter": RunsFilter})
-# DEPRECATED - keeping around for backcompat reasons (some folks might have imported directly)
-PipelineRunsFilter = RunsFilter
 
 
 class JobBucket(NamedTuple):
