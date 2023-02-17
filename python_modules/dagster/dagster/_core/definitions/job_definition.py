@@ -111,6 +111,7 @@ class JobDefinition(PipelineDefinition):
         _executor_def_specified: Optional[bool] = None,
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
+        _definitions_resources_bound: bool = False,
     ):
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
         from dagster._loggers import default_loggers
@@ -173,6 +174,7 @@ class JobDefinition(PipelineDefinition):
             _preset_defs, "preset_defs", of_type=PresetDefinition
         )
 
+        did_user_provide_resources = bool(resource_defs)
         if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
@@ -240,6 +242,9 @@ class JobDefinition(PipelineDefinition):
                     f" '{input_name}', but job has no top-level input with that name."
                 )
 
+        should_validate_resource_requirements = (
+            _definitions_resources_bound or did_user_provide_resources
+        )
         super(JobDefinition, self).__init__(
             name=name,
             description=description,
@@ -253,6 +258,7 @@ class JobDefinition(PipelineDefinition):
             graph_def=graph_def,
             version_strategy=version_strategy,
             asset_layer=asset_layer or _infer_asset_layer_from_source_asset_deps(graph_def),
+            _should_validate_resource_requirements=should_validate_resource_requirements,
         )
 
     @property
@@ -669,6 +675,39 @@ class JobDefinition(PipelineDefinition):
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=self._logger_defs_specified,
             _preset_defs=self._preset_defs,
+        )
+
+        update_wrapper(job_def, self, updated=())
+
+        return job_def
+
+    @public
+    def with_top_level_resources(
+        self, resource_defs: Mapping[str, ResourceDefinition]
+    ) -> "JobDefinition":
+        """Apply a set of resources to all op instances within the job."""
+        resource_defs = check.dict_param(resource_defs, "resource_defs", key_type=str)
+
+        job_def = JobDefinition(
+            name=self.name,
+            graph_def=self._graph_def,
+            resource_defs={
+                **resource_defs,
+                **self.resource_defs,
+            },
+            logger_defs=dict(self.loggers),
+            executor_def=self.executor_def,
+            config=self.partitioned_config or self.config_mapping,
+            tags=self.tags,
+            hook_defs=self.hook_defs,
+            description=self._description,
+            op_retry_policy=self._solid_retry_policy,
+            asset_layer=self.asset_layer,
+            _subset_selection_data=self._subset_selection_data,
+            _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=self._logger_defs_specified,
+            _preset_defs=self._preset_defs,
+            _definitions_resources_bound=False,
         )
 
         update_wrapper(job_def, self, updated=())

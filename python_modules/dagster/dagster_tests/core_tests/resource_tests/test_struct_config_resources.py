@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Mapping
 
 import pytest
-from dagster import IOManager, asset, job, op, resource
+from dagster import IOManager, asset, job, op, repository, resource
 from dagster._check import CheckError
 from dagster._config.field import Field
 from dagster._config.field_utils import EnvVar
@@ -22,10 +22,13 @@ from dagster._config.structured_config import (
 )
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.repository_definition.repository_data_builder import (
+    build_caching_repository_data_from_dict,
+)
 from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_config import RunConfig
-from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
@@ -1330,3 +1333,128 @@ def test_extending_resource_nesting() -> None:
     )
 
     assert executed["yes"]
+
+
+def test_structured_resource_bind_resource_to_job_at_defn_time_err() -> None:
+    out_txt = []
+
+    class WriterResource(ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    @op
+    def hello_world_op(writer: WriterResource):
+        writer.output("hello, world!")
+
+    @job
+    def hello_world_job():
+        hello_world_op()
+
+    # Validate that jobs without bound resources error at repository construction time
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'writer' required by op 'hello_world_op' was not provided",
+    ):
+        build_caching_repository_data_from_dict({"jobs": {"hello_world_job": hello_world_job}})
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'writer' required by op 'hello_world_op' was not provided",
+    ):
+
+        @repository
+        def my_repo():
+            return [hello_world_job]
+
+    # Validate that this also happens with Definitions
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'writer' required by op 'hello_world_op' was not provided",
+    ):
+        Definitions(
+            jobs=[hello_world_job],
+        )
+
+
+def test_structured_resource_bind_resource_to_job_at_defn_time() -> None:
+    out_txt = []
+
+    class WriterResource(ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    @op
+    def hello_world_op(writer: WriterResource):
+        writer.output("hello, world!")
+
+    @job
+    def hello_world_job():
+        hello_world_op()
+
+    # Bind the resource to the job at definition time and validate that it works
+    defs = Definitions(
+        jobs=[hello_world_job],
+        resources={
+            "writer": WriterResource(prefix=""),
+        },
+    )
+
+    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert out_txt == ["hello, world!"]
+
+    out_txt.clear()
+
+    defs = Definitions(
+        jobs=[hello_world_job],
+        resources={
+            "writer": WriterResource(prefix="msg: "),
+        },
+    )
+
+    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert out_txt == ["msg: hello, world!"]
+
+
+def test_structured_resource_bind_resource_to_job_at_defn_time_override() -> None:
+    out_txt = []
+
+    class WriterResource(ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    @op
+    def hello_world_op(writer: WriterResource):
+        writer.output("hello, world!")
+
+    # Binding the resource to the job at definition time should not override the resource
+    @job(
+        resource_defs={
+            "writer": WriterResource(prefix="job says: "),
+        }
+    )
+    def hello_world_job_with_override():
+        hello_world_op()
+
+    @job
+    def hello_world_job_no_override():
+        hello_world_op()
+
+    defs = Definitions(
+        jobs=[hello_world_job_with_override, hello_world_job_no_override],
+        resources={
+            "writer": WriterResource(prefix="definitions says: "),
+        },
+    )
+
+    assert defs.get_job_def("hello_world_job_with_override").execute_in_process().success
+    assert out_txt == ["job says: hello, world!"]
+    out_txt.clear()
+
+    assert defs.get_job_def("hello_world_job_no_override").execute_in_process().success
+    assert out_txt == ["definitions says: hello, world!"]

@@ -133,6 +133,16 @@ def _create_repository_using_definitions_args(
 
     check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
+    jobs_with_resources = (
+        [
+            job.with_top_level_resources(resource_defs)
+            for job in jobs
+            if isinstance(job, JobDefinition)
+        ]
+        if jobs
+        else []
+    )
+
     @repository(
         name=name,
         default_executor_def=executor_def,
@@ -144,7 +154,7 @@ def _create_repository_using_definitions_args(
             *with_resources(assets or [], resource_defs),
             *(schedules or []),
             *(sensors or []),
-            *(jobs or []),
+            *(jobs_with_resources),
         ]
 
     return created_repo

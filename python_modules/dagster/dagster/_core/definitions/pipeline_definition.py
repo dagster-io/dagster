@@ -1,4 +1,4 @@
-from functools import update_wrapper
+`from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -51,7 +51,7 @@ from .mode import ModeDefinition
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .preset import PresetDefinition
-from .resource_requirement import ensure_requirements_satisfied
+from .resource_requirement import ResourceRequirement, ensure_requirements_satisfied
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
@@ -193,6 +193,7 @@ class PipelineDefinition:
         version_strategy: Optional[VersionStrategy] = None,
         asset_layer: Optional[AssetLayer] = None,
         metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        _should_validate_resource_requirements: bool = True,
     ):
         # If a graph is specified directly use it
         if isinstance(graph_def, GraphDefinition):
@@ -278,7 +279,7 @@ class PipelineDefinition:
         resource_requirements = {}
         for mode_def in self._mode_definitions:
             resource_requirements[mode_def.name] = self._get_resource_requirements_for_mode(
-                mode_def
+                mode_def, _should_validate_resource_requirements
             )
         self._resource_requirements = resource_requirements
 
@@ -299,9 +300,24 @@ class PipelineDefinition:
 
         self._graph_def.get_inputs_must_be_resolved_top_level(self._asset_layer)
 
-    def _get_resource_requirements_for_mode(self, mode_def: ModeDefinition) -> Set[str]:
+    def _get_resource_requirements_for_mode(
+        self, mode_def: ModeDefinition, validate_requirements: bool = False
+    ) -> Set[str]:
         from ..execution.resources_init import get_transitive_required_resource_keys
 
+        requirements = self._get_mode_requirements(mode_def)
+        if validate_requirements:
+            ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
+        required_keys = {requirement.key for requirement in requirements}
+
+        if validate_requirements:
+            return required_keys.union(
+                get_transitive_required_resource_keys(required_keys, mode_def.resource_defs)
+            )
+        else:
+            return required_keys
+
+    def _get_mode_requirements(self, mode_def: ModeDefinition) -> Sequence[ResourceRequirement]:
         requirements = list(self._graph_def.get_resource_requirements(self.asset_layer))
         for hook_def in self._hook_defs:
             requirements += list(
@@ -309,11 +325,12 @@ class PipelineDefinition:
                     outer_context=f"{self.target_type} '{self._name}'"
                 )
             )
-        ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
-        required_keys = {requirement.key for requirement in requirements}
-        return required_keys.union(
-            get_transitive_required_resource_keys(required_keys, mode_def.resource_defs)
-        )
+        return requirements
+
+    def validate_resource_requirements_satisfied(self) -> None:
+        for mode_def in self._mode_definitions:
+            requirements = self._get_mode_requirements(mode_def)
+            ensure_requirements_satisfied(mode_def.resource_defs, requirements, mode_def.name)
 
     @property
     def name(self) -> str:
