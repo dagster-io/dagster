@@ -301,7 +301,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         """
         Launch a run in an ECS task.
         """
-        run = context.pipeline_run
+        run = context.dagster_run
         container_context = EcsContainerContext.create_for_run(run, self)
 
         pipeline_origin = check.not_none(context.pipeline_code_origin)

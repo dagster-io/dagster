@@ -332,9 +332,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         run = check.not_none(instance.get_run_by_id(run.run_id))
 
         try:
-            instance.run_launcher.launch_run(
-                LaunchRunContext(pipeline_run=run, workspace=workspace)
-            )
+            instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
         except Exception as e:
             error = serializable_error_info_from_exc_info(sys.exc_info())
 

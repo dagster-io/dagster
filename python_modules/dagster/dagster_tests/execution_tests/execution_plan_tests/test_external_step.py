@@ -337,8 +337,8 @@ def test_step_context_to_step_run_ref():
         step_context = initialize_step_context("", instance)
         step = step_context.step
         step_run_ref = step_context_to_step_run_ref(step_context)
-        assert step_run_ref.run_config == step_context.pipeline_run.run_config
-        assert step_run_ref.run_id == step_context.pipeline_run.run_id
+        assert step_run_ref.run_config == step_context.dagster_run.run_config
+        assert step_run_ref.run_id == step_context.dagster_run.run_id
 
         rehydrated_step_context = step_run_ref_to_step_context(step_run_ref, instance)
         rehydrated_step = rehydrated_step_context.step

@@ -100,20 +100,20 @@ class IPlanContext(ABC):
         return self.plan_data.pipeline
 
     @property
-    def pipeline_run(self) -> DagsterRun:
-        return self.plan_data.pipeline_run
+    def dagster_run(self) -> DagsterRun:
+        return self.plan_data.dagster_run
 
     @property
     def run_id(self) -> str:
-        return self.pipeline_run.run_id
+        return self.dagster_run.run_id
 
     @property
     def run_config(self) -> Mapping[str, object]:
-        return self.pipeline_run.run_config
+        return self.dagster_run.run_config
 
     @property
     def pipeline_name(self) -> str:
-        return self.pipeline_run.pipeline_name
+        return self.dagster_run.pipeline_name
 
     @property
     def job_name(self) -> str:
@@ -165,7 +165,7 @@ class PlanData(NamedTuple):
     """
 
     pipeline: IPipeline
-    pipeline_run: DagsterRun
+    dagster_run: DagsterRun
     instance: "DagsterInstance"
     execution_plan: "ExecutionPlan"
     raise_on_error: bool = False
@@ -349,7 +349,7 @@ class PlanExecutionContext(IPlanContext):
             get_multipartition_key_from_tags,
         )
 
-        tags = self._plan_data.pipeline_run.tags
+        tags = self._plan_data.dagster_run.tags
 
         is_multipartitioned = any(
             [tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]
@@ -370,7 +370,7 @@ class PlanExecutionContext(IPlanContext):
             get_multipartition_key_from_tags,
         )
 
-        tags = self._plan_data.pipeline_run.tags
+        tags = self._plan_data.dagster_run.tags
         if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
             multipartition_key = get_multipartition_key_from_tags(tags)
             return PartitionKeyRange(multipartition_key, multipartition_key)
@@ -410,11 +410,11 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def has_partition_key(self) -> bool:
-        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags
+        return PARTITION_NAME_TAG in self._plan_data.dagster_run.tags
 
     @property
     def has_partition_key_range(self) -> bool:
-        return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.pipeline_run.tags
+        return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.dagster_run.tags
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(
@@ -768,28 +768,28 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def _should_load_from_previous_runs(self, step_output_handle: StepOutputHandle) -> bool:
         # should not load if not a re-execution
-        if self.pipeline_run.parent_run_id is None:
+        if self.dagster_run.parent_run_id is None:
             return False
         # should not load if re-executing the entire pipeline
-        if self.pipeline_run.step_keys_to_execute is None:
+        if self.dagster_run.step_keys_to_execute is None:
             return False
 
         # should not load if the entire dynamic step is being executed in the current run
         handle = StepHandle.parse_from_key(step_output_handle.step_key)
         if (
             isinstance(handle, ResolvedFromDynamicStepHandle)
-            and handle.unresolved_form.to_key() in self.pipeline_run.step_keys_to_execute
+            and handle.unresolved_form.to_key() in self.dagster_run.step_keys_to_execute
         ):
             return False
 
         # should not load if this step is being executed in the current run
-        return step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
+        return step_output_handle.step_key not in self.dagster_run.step_keys_to_execute
 
     def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> Optional[str]:
         if self._should_load_from_previous_runs(step_output_handle):
             return self._get_source_run_id_from_logs(step_output_handle)
         else:
-            return self.pipeline_run.run_id
+            return self.dagster_run.run_id
 
     def capture_step_exception(self, exception: BaseException):
         self._step_exception = check.inst_param(exception, "exception", BaseException)

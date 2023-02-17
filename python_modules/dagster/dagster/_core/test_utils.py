@@ -303,7 +303,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
         super().__init__()
 
     def launch_run(self, context):
-        run = context.pipeline_run
+        run = context.dagster_run
         check.inst_param(run, "run", DagsterRun)
         check.invariant(run.status == DagsterRunStatus.STARTING)
 
