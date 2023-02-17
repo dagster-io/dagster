@@ -168,7 +168,6 @@ class DbIOManager(IOManager):
         with self._db_client.connect(context, table_slice) as conn:
             return self._handlers_by_type[load_type].load_input(context, table_slice, conn)
 
-
     def _get_partition_value(
         self, partition_def: PartitionsDefinition, partition_key: str
     ) -> Union[TimeWindow, str]:
