@@ -110,6 +110,6 @@ def test_dbt_asset_selection_with_state():
     ).resolve_inner(asset_graph)
 
     assert actual_keys == {
-        AssetKey(["sort_cold_cereals_by_calories"]),
-        AssetKey(["least_caloric"]),
+        AssetKey(["cold_schema", "sort_cold_cereals_by_calories"]),
+        AssetKey(["subdir_schema", "least_caloric"]),
     }
