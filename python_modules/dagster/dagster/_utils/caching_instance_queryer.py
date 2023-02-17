@@ -49,8 +49,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     instance which will attempt to limit redundant expensive calls.
     """
 
-    def __init__(self, instance: "DagsterInstance"):
+    def __init__(self, instance: "DagsterInstance", use_known_used_data: bool = False):
         self._instance = instance
+        self._use_known_used_data = use_known_used_data
 
         self._latest_materialization_record_cache: Dict[AssetKeyPartitionKey, EventLogRecord] = {}
         # if we try to fetch the latest materialization record after a given cursor and don't find
@@ -672,9 +673,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             record_timestamp=record.event_log_entry.timestamp,
             record_tags=frozendict(record.asset_materialization.tags or {}),
         )
-        if asset_graph.freshness_policies_by_key.get(
-            record.asset_key
-        ) is not None and not asset_graph.is_partitioned(record.asset_key):
+        if (
+            self._use_known_used_data
+            and asset_graph.freshness_policies_by_key.get(record.asset_key) is not None
+            and not asset_graph.is_partitioned(record.asset_key)
+        ):
             self.set_known_used_data(record, new_known_data=data)
 
         return {
