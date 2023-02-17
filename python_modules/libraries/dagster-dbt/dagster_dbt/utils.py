@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import (
+    AbstractSet,
     Any,
     Callable,
     Dict,
@@ -9,9 +10,7 @@ from typing import (
     Sequence,
     Union,
     cast,
-    AbstractSet,
 )
-from dagster._core.errors import DagsterInvalidSubsetError
 
 import dateutil
 from dagster import (
