@@ -1,4 +1,17 @@
-from typing import Any, Callable, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
+from pathlib import Path
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+    AbstractSet,
+)
+from dagster._core.errors import DagsterInvalidSubsetError
 
 import dateutil
 from dagster import (
@@ -228,3 +241,83 @@ def generate_materializations(
         ),
     ):
         yield check.inst(cast(AssetMaterialization, event), AssetMaterialization)
+
+
+def select_unique_ids_from_manifest(
+    select: str,
+    exclude: str,
+    state_path: Optional[str] = None,
+    manifest_path: Optional[str] = None,
+    manifest_json: Optional[Mapping[str, Any]] = None,
+) -> AbstractSet[str]:
+    """Method to apply a selection string to an existing manifest.json file."""
+    try:
+        import dbt.flags as flags
+        import dbt.graph.cli as graph_cli
+        import dbt.graph.selector as graph_selector
+        from dbt.contracts.graph.manifest import Manifest, WritableManifest
+        from dbt.contracts.state import PreviousState
+        from dbt.graph import SelectionSpec
+        from dbt.graph.selector_spec import IndirectSelection
+        from networkx import DiGraph
+
+    except ImportError as e:
+        raise check.CheckError(
+            "In order to use the `select` argument on load_assets_from_dbt_manifest, you must have"
+            "`dbt-core >= 1.0.0` and `networkx` installed."
+        ) from e
+
+    if state_path is not None:
+        previous_state = PreviousState(
+            path=Path(state_path),
+            current_path=Path("/tmp/null") if manifest_path is None else Path(manifest_path),
+        )
+    else:
+        previous_state = None
+
+    if manifest_path is not None:
+        manifest = WritableManifest.read_and_check_versions(manifest_path)
+        child_map = WritableManifest.child_map
+    elif manifest_json is not None:
+
+        class _DictShim(dict):
+            """Shim to enable hydrating a dictionary into a dot-accessible object."""
+
+            def __getattr__(self, item):
+                ret = super().get(item)
+                # allow recursive access e.g. foo.bar.baz
+                return _DictShim(ret) if isinstance(ret, dict) else ret
+
+        manifest = Manifest(
+            # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
+            nodes={
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()
+            },
+            sources={
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
+            },
+            metrics={
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()
+            },
+            exposures={
+                unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()
+            },
+        )
+        child_map = manifest_json["child_map"]
+    else:
+        check.failed("Must provide either a manifest_path or manifest_json.")
+    graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
+
+    # create a parsed selection from the select string
+    flags.INDIRECT_SELECTION = IndirectSelection.Eager
+    parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
+
+    if exclude:
+        parsed_spec = graph_cli.SelectionDifference(
+            components=[parsed_spec, graph_cli.parse_union([exclude], True)]
+        )
+
+    # execute this selection against the graph
+    selector = graph_selector.NodeSelector(graph, manifest, previous_state=previous_state)
+    selected, _ = selector.select_nodes(parsed_spec)
+    return selected

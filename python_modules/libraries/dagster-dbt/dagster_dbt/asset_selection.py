@@ -8,8 +8,8 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster_dbt.asset_defs import (
     _get_node_asset_key,
     _is_non_asset_node,
-    _select_unique_ids_from_manifest_json,
 )
+from dagster_dbt.utils import select_unique_ids_from_manifest
 
 
 @experimental
@@ -26,6 +26,10 @@ class DbtManifestAssetSelection(AssetSelection):
             dictionary of dbt metadata and returns the AssetKey that you want to represent a given
             model or source. If you pass in a custom function to `load_assets_from_dbt_manifest`,
             you must also pass in the same function here.
+        state_path: (Optional[str]): The path to a folder containing the manifest.json file representing
+            the previous state of your dbt project. Providing this path will allow you to select
+            dbt assets using the `state:` selector. To learn more, see the
+            [dbt docs](https://docs.getdbt.com/reference/node-selection/methods#the-state-method).
 
     Example:
         .. code-block:: python
@@ -46,13 +50,14 @@ class DbtManifestAssetSelection(AssetSelection):
 
     def __init__(
         self,
-        manifest_json: Mapping[str, Any],
-        select: str,
+        manifest_json: Optional[Mapping[str, Any]] = None,
+        select: str = "*",
         exclude: str = "",
         resource_types: Optional[Sequence[str]] = None,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
+        manifest_path: Optional[str] = None,
+        state_path: Optional[str] = None,
     ):
-        self.manifest_json = check.dict_param(manifest_json, "manifest_json")
         self.select = check.str_param(select, "select")
         self.exclude = check.str_param(exclude, "exclude")
         self.resource_types = check.opt_list_param(
@@ -62,6 +67,15 @@ class DbtManifestAssetSelection(AssetSelection):
             node_info_to_asset_key, "node_info_to_asset_key"
         )
 
+        self.manifest_json = check.dict_param(manifest_json, "manifest_json")
+        self.manifest_path = check.opt_str_param(manifest_path, "manifest_path")
+        if manifest_json and manifest_path:
+            check.failed("Must provide either manifest_json or manifest_path, not both")
+        if not manifest_json and not manifest_path:
+            check.failed("Must provide either manifest_json or manifest_path")
+
+        self.state_path = check.opt_str_param(state_path, "state_path")
+
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         dbt_nodes = {
             **self.manifest_json["nodes"],
@@ -70,8 +84,12 @@ class DbtManifestAssetSelection(AssetSelection):
             **self.manifest_json["exposures"],
         }
         keys = set()
-        for unique_id in _select_unique_ids_from_manifest_json(
-            manifest_json=self.manifest_json, select=self.select, exclude=self.exclude
+        for unique_id in select_unique_ids_from_manifest(
+            select=self.select,
+            exclude=self.exclude,
+            state_path=self.state_path,
+            manifest_path=self.manifest_path,
+            manifest_json=self.manifest_json,
         ):
             node_info = dbt_nodes[unique_id]
             if node_info["resource_type"] in self.resource_types and not _is_non_asset_node(

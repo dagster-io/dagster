@@ -87,3 +87,27 @@ def test_dbt_asset_selection(select, exclude, expected_asset_names):
     ).resolve_inner(asset_graph)
 
     assert expected_keys == actual_keys
+
+
+def test_dbt_asset_selection_with_state():
+    """Changes from previous state to sample_manifest.json:
+    - sort_cold_cereals_by_calories has an updated definition
+    - added subdir/least_caloric
+
+    So we expect state:modified to select both of those assets.
+    """
+    manifest_path = file_relative_path(__file__, "sample_manifest.json")
+
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json)
+    asset_graph = AssetGraph.from_assets(dbt_assets)
+
+    actual_keys = DbtManifestAssetSelection(
+        manifest_path=manifest_path,
+        select="state:modified",
+        state_path=file_relative_path(__file__, "sample_previous_state"),
+    ).resolve_inner(asset_graph)
+
+    assert actual_keys == {
+        AssetKey(["sort_cold_cereals_by_calories"]),
+        AssetKey(["least_caloric"]),
+    }
