@@ -1,2 +1,2 @@
 include LICENSE
-include dagster_gcp_pandas/py.typed
+recursive-include dagster_gcp_pandas *.py
