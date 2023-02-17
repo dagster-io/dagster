@@ -12,20 +12,20 @@ from dagster import (
     DailyPartitionsDefinition,
     In,
     MetadataValue,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     Nothing,
     Output,
     PartitionMapping,
     PartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    define_asset_job,
     graph,
     job,
     materialize,
     op,
     with_resources,
-    MultiPartitionsDefinition,
-    define_asset_job,
-    MultiPartitionKey,
 )
 from dagster._core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
 from dagster._core.definitions.partition import PartitionsSubset
@@ -35,6 +35,8 @@ from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import instance_for_test
+from dagster._utils import file_relative_path
+from dagster._utils.test import copy_directory
 
 
 def define_pipeline(io_manager):
@@ -542,3 +544,57 @@ def test_multipartitions_fs_io_manager():
             filter(lambda evt: evt.is_handled_output, result.all_node_events)
         )
         assert len(handled_output_events) == 2
+
+
+def test_backcompat_multipartitions_fs_io_manager():
+    path = file_relative_path(
+        __file__, "./compat_tests/backcompat_multipartitions_fs_io_manager/storage/"
+    )
+    with copy_directory(path) as test_dir:
+        io_manager_def = fs_io_manager.configured({"base_dir": test_dir})
+
+        composite = MultiPartitionsDefinition(
+            {
+                "abc": StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"]),
+                "date": DailyPartitionsDefinition(start_date="2020-01-01"),
+            }
+        )
+
+        @asset(
+            partitions_def=composite,
+            io_manager_def=io_manager_def,
+        )
+        def multipartitioned(context):
+            return 1
+
+        @asset(
+            partitions_def=composite,
+            io_manager_def=io_manager_def,
+        )
+        def downstream_of_multipartitioned(multipartitioned):
+            return 1
+
+        my_job = define_asset_job(
+            "my_job", [multipartitioned, downstream_of_multipartitioned]
+        ).resolve([multipartitioned, downstream_of_multipartitioned], [])
+        result = my_job.execute_in_process(
+            partition_key=MultiPartitionKey({"abc": "c", "date": "2020-04-22"}),
+            asset_selection=[AssetKey("downstream_of_multipartitioned")],
+        )
+        assert result.success
+
+        result = my_job.execute_in_process(
+            partition_key=MultiPartitionKey({"abc": "c", "date": "2020-04-22"}),
+        )
+        assert result.success
+        materializations = result.asset_materializations_for_node("multipartitioned")
+        assert len(materializations) == 1
+
+        get_path_metadata_entry = lambda materialization: next(
+            iter([me for me in materialization.metadata_entries if me.label == "path"])
+        )
+        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).entry_data.path
+
+        materializations = result.asset_materializations_for_node("downstream_of_multipartitioned")
+        assert len(materializations) == 1
+        assert "c/2020-04-22" in get_path_metadata_entry(materializations[0]).entry_data.path

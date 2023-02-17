@@ -1,17 +1,13 @@
 from abc import abstractmethod
-<<<<<<< HEAD
-from typing import Any, Dict, Mapping, Union
-=======
-from typing import Any, Dict, Union, Optional
->>>>>>> 48a0cce183 (first stab)
+from typing import Any, Dict, Mapping, Optional, Union
 
 from upath import UPath
 
 from dagster import (
     InputContext,
     MetadataValue,
-    OutputContext,
     MultiPartitionKey,
+    OutputContext,
     _check as check,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
@@ -143,7 +139,7 @@ class UPathIOManager(MemoizableIOManager):
         except FileNotFoundError as e:
             if backcompat_path is not None:
                 context.log.debug(
-                    "Attempting to load file from multipartitions backcompat path:"
+                    f"File not found at {path}. Attempting to load file from backcompat path:"
                     f" {backcompat_path}"
                 )
                 obj = self.load_from_path(context=context, path=backcompat_path)
