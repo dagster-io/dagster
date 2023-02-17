@@ -260,7 +260,10 @@ export function partitionStatusGivenRanges(ranges: Range[], totalKeyCount: numbe
  * Given a set of ranges that specify materialized regions and a selection of interest, returns the
  * ranges required to represent the ranges clipped to the selection (within the selected area only.)
  */
-function rangesClippedToSelection(ranges: Range[], selection: PartitionDimensionSelectionRange[]) {
+export function rangesClippedToSelection(
+  ranges: Range[],
+  selection: PartitionDimensionSelectionRange[],
+) {
   return ranges.flatMap((range) => rangeClippedToSelection(range, selection));
 }
 
@@ -308,14 +311,14 @@ function removeSubrangesAndJoin(ranges: Range[]): Range[] {
 
 // In a follow-up, maybe we make these two data structures share a signature
 
-function keyCountInRanges(ranges: Range[]) {
+export function keyCountInRanges(ranges: Range[]) {
   let count = 0;
   for (const range of ranges) {
     count += range.end.idx - range.start.idx + 1;
   }
   return count;
 }
-function keyCountInSelection(ranges: PartitionDimensionSelectionRange[]) {
+export function keyCountInSelection(ranges: PartitionDimensionSelectionRange[]) {
   let count = 0;
   for (const range of ranges) {
     count += range[1].idx - range[0].idx + 1;
