@@ -107,7 +107,7 @@ def host_mode_execution_context_event_generator(
         )
 
     log_manager = DagsterLogManager.create(
-        loggers=loggers, pipeline_run=pipeline_run, instance=instance
+        loggers=loggers, dagster_run=pipeline_run, instance=instance
     )
 
     try:
@@ -214,7 +214,7 @@ def execute_run_host_mode(
             pipeline=pipeline,
             execution_plan=execution_plan,
             run_config=pipeline_run.run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
             instance=instance,
             raise_on_error=raise_on_error,
             executor_defs=executor_defs,

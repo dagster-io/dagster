@@ -657,7 +657,7 @@ def test_resource_init_failure():
         execute_plan(
             execution_plan,
             InMemoryPipeline(the_job),
-            pipeline_run=run,
+            dagster_run=run,
             instance=instance,
         )
 

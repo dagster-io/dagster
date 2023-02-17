@@ -713,7 +713,7 @@ class RunRecord(
         return super(RunRecord, cls).__new__(
             cls,
             storage_id=check.int_param(storage_id, "storage_id"),
-            dagster_run=check.inst_param(dagster_run, "pipeline_run", DagsterRun),
+            dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
             create_timestamp=check.inst_param(create_timestamp, "create_timestamp", datetime),
             update_timestamp=check.inst_param(update_timestamp, "update_timestamp", datetime),
             # start_time and end_time fields will be populated once the run has started and ended, respectively, but will be None beforehand.
@@ -721,6 +721,7 @@ class RunRecord(
             end_time=check.opt_float_param(end_time, "end_time"),
         )
 
+    @property
     def pipeline_run(self) -> DagsterRun:
         return self.dagster_run
 
