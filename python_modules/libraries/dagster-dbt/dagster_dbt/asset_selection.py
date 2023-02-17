@@ -1,3 +1,4 @@
+import json
 from typing import AbstractSet, Any, Callable, Mapping, Optional, Sequence
 
 import dagster._check as check
@@ -67,12 +68,19 @@ class DbtManifestAssetSelection(AssetSelection):
             node_info_to_asset_key, "node_info_to_asset_key"
         )
 
-        self.manifest_json = check.dict_param(manifest_json, "manifest_json")
         self.manifest_path = check.opt_str_param(manifest_path, "manifest_path")
-        if manifest_json and manifest_path:
-            check.failed("Must provide either manifest_json or manifest_path, not both")
-        if not manifest_json and not manifest_path:
-            check.failed("Must provide either manifest_json or manifest_path")
+        if manifest_json:
+            check.param_invariant(
+                not manifest_path,
+                "manifest_path",
+                "Cannot provide both manifest_json and manifest_path",
+            )
+            self.manifest_json = check.opt_mapping_param(manifest_json, "manifest_json")
+        elif self.manifest_path:
+            with open(self.manifest_path, "r") as f:
+                self.manifest_json = check.opt_mapping_param(json.load(f), "manifest_json")
+        else:
+            check.failed("Must provide either manifest_json or manifest_path.")
 
         self.state_path = check.opt_str_param(state_path, "state_path")
 

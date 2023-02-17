@@ -277,7 +277,7 @@ def select_unique_ids_from_manifest(
 
     if manifest_path is not None:
         manifest = WritableManifest.read_and_check_versions(manifest_path)
-        child_map = WritableManifest.child_map
+        child_map = manifest.child_map
     elif manifest_json is not None:
 
         class _DictShim(dict):

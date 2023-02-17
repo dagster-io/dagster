@@ -97,6 +97,8 @@ def test_dbt_asset_selection_with_state():
     So we expect state:modified to select both of those assets.
     """
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
+    with open(manifest_path, "r", encoding="utf8") as f:
+        manifest_json = json.load(f)
 
     dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json)
     asset_graph = AssetGraph.from_assets(dbt_assets)
