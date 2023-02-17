@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Sequence, cast
+from typing import Optional, Sequence, Type, cast
 
 import duckdb
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
@@ -16,13 +16,17 @@ from dagster._utils.backoff import backoff
 DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
+def build_duckdb_io_manager(
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+) -> IOManagerDefinition:
     """
     Builds an IO manager definition that reads inputs from and writes outputs to DuckDB.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
-            DuckDB tables and an in-memory type - e.g. a Pandas DataFrame.
+            DuckDB tables and an in-memory type - e.g. a Pandas DataFrame. If only
+            one DbTypeHandler is provided, it will be used as teh default_load_type.
+        default_load_type (Type): When an input has no type annotation, load it as this type.
 
     Returns:
         IOManagerDefinition
@@ -97,6 +101,7 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
             io_manager_name="DuckDBIOManager",
             database=init_context.resource_config["database"],
             schema=init_context.resource_config.get("schema"),
+            default_load_type=default_load_type,
         )
 
     return duckdb_io_manager
