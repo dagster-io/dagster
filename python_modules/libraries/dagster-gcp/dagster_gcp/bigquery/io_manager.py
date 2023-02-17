@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import tempfile
@@ -115,7 +116,9 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
                 description=(
                     "GCP authentication credentials. If provided, a temporary file will be created"
                     " with the credentials and GOOGLE_APPLICATION_CREDENTIALS will be set to the"
-                    " temporary file."
+                    " temporary file. To avoid issues with newlines in the keys, you must base64"
+                    " encode the key. You can retrieve the base64 encoded with this shell command:"
+                    " cat $GOOGLE_AUTH_CREDENTIALS | base64 "
                 ),
             ),
         }
@@ -150,7 +153,10 @@ def build_bigquery_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManag
             with tempfile.NamedTemporaryFile("w+", delete=False) as f:
                 temp_file_name = f.name
                 json.dump(
-                    json.loads(init_context.resource_config.get("gcp_credentials")), temp_file_name
+                    json.loads(
+                        base64.b64decode(init_context.resource_config.get("gcp_credentials"))
+                    ),
+                    f,
                 )
                 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file_name
             try:

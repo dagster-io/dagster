@@ -1,9 +1,11 @@
+import base64
 import os
 import uuid
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Iterator
 
+import pytest
 from dagster import InputContext, OutputContext, asset, materialize
 from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
 from dagster_gcp.bigquery.io_manager import (
@@ -197,7 +199,7 @@ class FakeHandler(DbTypeHandler[int]):
         return [int]
 
 
-# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 def test_authenticate_via_config():
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
@@ -215,12 +217,17 @@ def test_authenticate_via_config():
         old_gcp_creds_file = os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
         assert old_gcp_creds_file is not None
 
+        passed = False
+
         try:
             with open(old_gcp_creds_file, "r") as f:
                 gcp_creds = f.read()
 
             bq_io_manager = build_bigquery_io_manager([FakeHandler()]).configured(
-                {**SHARED_BUILDKITE_BQ_CONFIG, "gcp_credentials": gcp_creds}
+                {
+                    **SHARED_BUILDKITE_BQ_CONFIG,
+                    "gcp_credentials": base64.b64encode(str.encode(gcp_creds)).decode(),
+                }
             )
             resource_defs = {"io_manager": bq_io_manager}
 
@@ -230,9 +237,10 @@ def test_authenticate_via_config():
                 [test_asset],
                 resources=resource_defs,
             )
+            passed = result.success
 
             assert os.getenv("GOOGLE_APPLICATION_CREDENTIALS") is None
             assert not os.path.exists(asset_info["gcp_creds_file"])
         finally:
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_gcp_creds_file
-            assert result.success
+            assert passed
