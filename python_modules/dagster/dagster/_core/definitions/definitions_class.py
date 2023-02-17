@@ -135,9 +135,8 @@ def _create_repository_using_definitions_args(
 
     jobs_with_resources = (
         [
-            job.with_top_level_resources(resource_defs)
+            job.with_top_level_resources(resource_defs) if isinstance(job, JobDefinition) else job
             for job in jobs
-            if isinstance(job, JobDefinition)
         ]
         if jobs
         else []

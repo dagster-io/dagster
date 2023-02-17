@@ -689,7 +689,7 @@ class JobDefinition(PipelineDefinition):
         resource_defs = check.dict_param(resource_defs, "resource_defs", key_type=str)
 
         job_def = JobDefinition(
-            name=self.name,
+            name=self._name,
             graph_def=self._graph_def,
             resource_defs={
                 **resource_defs,
@@ -698,12 +698,13 @@ class JobDefinition(PipelineDefinition):
             logger_defs=dict(self.loggers),
             executor_def=self.executor_def,
             config=self.partitioned_config or self.config_mapping,
-            tags=self.tags,
-            hook_defs=self.hook_defs,
             description=self._description,
-            op_retry_policy=self._solid_retry_policy,
-            asset_layer=self.asset_layer,
+            tags=self._tags,
+            hook_defs=self._hook_defs,
+            version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
+            asset_layer=self._asset_layer,
+            _metadata_entries=self._metadata_entries,
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=self._logger_defs_specified,
             _preset_defs=self._preset_defs,

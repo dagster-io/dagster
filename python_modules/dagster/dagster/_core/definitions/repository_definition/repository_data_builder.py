@@ -349,10 +349,6 @@ def build_caching_repository_data_from_dict(
             f" {', '.join(duplicate_keys)}"
         )
 
-    for pipeline_or_job in repository_definitions["jobs"].values():
-        if isinstance(pipeline_or_job, PipelineDefinition):
-            pipeline_or_job.validate_resource_requirements_satisfied()
-
     # merge jobs in to pipelines while they are just implemented as pipelines
     for key, job in repository_definitions["jobs"].items():
         if key in repository_definitions["pipelines"]:
@@ -373,6 +369,10 @@ def build_caching_repository_data_from_dict(
             raise DagsterInvalidDefinitionError(
                 f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
             )
+
+    for pipeline_or_job in repository_definitions["jobs"].values():
+        if isinstance(pipeline_or_job, PipelineDefinition):
+            pipeline_or_job.validate_resource_requirements_satisfied()
 
     return CachingRepositoryData(
         **repository_definitions,
