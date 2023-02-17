@@ -306,7 +306,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/docs_snippets",
         pytest_extra_cmds=docs_snippets_extra_cmds,
-        run_mypy=False,
         unsupported_python_versions=[
             # dependency on 3.9-incompatible extension libs
             AvailablePythonVersion.V3_9,
@@ -340,6 +339,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "scheduler_tests_old_pendulum",
             "execution_tests",
             "storage_tests",
+            "type_signature_tests",
             "definitions_tests",
             "asset_defs_tests",
             "launcher_tests",
@@ -367,9 +367,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_extra_cmds=dbt_extra_cmds,
-        # dbt-core no longer supports does not yet support python 3.10
+        # dbt-core does not yet support python 3.10
         unsupported_python_versions=[
             AvailablePythonVersion.V3_10,
+        ],
+        pytest_tox_factors=[
+            "dbt_13X",
+            "dbt_14X",
         ],
     ),
     PackageSpec(
@@ -461,6 +465,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-snowflake-pandas",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
     ),
+    PackageSpec(
+        "python_modules/libraries/dagster-snowflake-pyspark",
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
+    ),
     PackageSpec("python_modules/libraries/dagster-postgres", pytest_extra_cmds=postgres_extra_cmds),
     PackageSpec(
         "python_modules/libraries/dagster-twilio",
@@ -476,5 +484,4 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ".buildkite/dagster-buildkite",
         run_pytest=False,
     ),
-    PackageSpec("scripts", run_pytest=False),
 ]

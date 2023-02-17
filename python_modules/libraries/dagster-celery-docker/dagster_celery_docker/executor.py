@@ -193,7 +193,7 @@ class CeleryDockerExecutor(Executor):
 def _submit_task_docker(app, plan_context, step, queue, priority, known_state):
     execute_step_args = ExecuteStepArgs(
         pipeline_origin=plan_context.reconstructable_pipeline.get_python_origin(),
-        pipeline_run_id=plan_context.pipeline_run.run_id,
+        pipeline_run_id=plan_context.dagster_run.run_id,
         step_keys_to_execute=[step.key],
         instance_ref=plan_context.instance.get_ref(),
         retry_mode=plan_context.executor.retries.for_inner_plan(),

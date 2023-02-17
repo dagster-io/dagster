@@ -21,7 +21,7 @@ from .output import DynamicOutputDefinition
 if TYPE_CHECKING:
     from ..execution.context.invocation import BoundOpExecutionContext, UnboundOpExecutionContext
     from .composition import PendingNodeInvocation
-    from .decorators.solid_decorator import DecoratedOpFunction
+    from .decorators.op_decorator import DecoratedOpFunction
     from .op_definition import OpDefinition
     from .output import OutputDefinition
 
@@ -32,7 +32,7 @@ def op_invocation_result(
     *args,
     **kwargs,
 ) -> Any:
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
     from dagster._core.execution.context.invocation import build_solid_context
 
     from .composition import PendingNodeInvocation
@@ -286,10 +286,14 @@ def _type_check_output_wrapper(
                     and output_def.is_required
                     and not output_def.is_dynamic
                 ):
-                    raise DagsterInvariantViolationError(
-                        f"Invocation of {solid_def.node_type_str} '{context.alias}' did not return"
-                        f" an output for non-optional output '{output_def.name}'"
-                    )
+                    if output_def.dagster_type.is_nothing:
+                        # implicitly yield None as we do in execute_step
+                        yield Output(output_name=output_def.name, value=None)
+                    else:
+                        raise DagsterInvariantViolationError(
+                            f"Invocation of {solid_def.node_type_str} '{context.alias}' did not"
+                            f" return an output for non-optional output '{output_def.name}'"
+                        )
 
         return type_check_gen(result)
 

@@ -23,7 +23,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils import file_relative_path
 from sqlalchemy import inspect
 
@@ -61,7 +61,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
         instance = DagsterInstance.from_config(tempdir)
 
-        @solid
+        @op
         def noop_solid(_):
             pass
 
@@ -118,7 +118,7 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
 
         instance = DagsterInstance.from_config(tempdir)
 
-        @solid
+        @op
         def asset_solid(_):
             yield AssetMaterialization(
                 asset_key=AssetKey(["path", "to", "asset"]), partition="partition_1"
@@ -157,7 +157,7 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
 
         instance = DagsterInstance.from_config(tempdir)
 
-        @solid
+        @op
         def simple_solid(_):
             return 1
 
@@ -280,7 +280,7 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         # migration-required column.
         assert len(instance.get_runs()) == 1
 
-        @solid
+        @op
         def basic():
             pass
 
@@ -315,7 +315,7 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
         file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/postgres/pg_dump.txt"),
     )
 
-    @solid
+    @op
     def asset_solid(_):
         yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield Output(1)
@@ -774,3 +774,34 @@ def test_add_cached_status_data_column(hostname, conn_string):
             instance.upgrade()
             assert instance.can_cache_asset_status_data() is True
             assert {"cached_status_data"} <= get_columns(instance, "asset_keys")
+
+
+def test_add_dynamic_partitions_table(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__,
+            "snapshot_1_0_17_pre_add_cached_status_data_column/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "dynamic_partitions" not in get_tables(instance)
+
+            instance.wipe()
+
+            with pytest.raises(DagsterInvalidInvocationError, match="does not exist"):
+                instance.get_dynamic_partitions("foo")
+
+            instance.upgrade()
+            assert "dynamic_partitions" in get_tables(instance)
+            assert instance.get_dynamic_partitions("foo") == []

@@ -75,17 +75,17 @@ class HookContext:
     def pipeline_name(self) -> str:
         return self.job_name
 
-    @public  # type: ignore
+    @public
     @property
     def job_name(self) -> str:
         return self._step_execution_context.job_name
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> str:
         return self._step_execution_context.run_id
 
-    @public  # type: ignore
+    @public
     @property
     def hook_def(self) -> HookDefinition:
         return self._hook_def
@@ -102,29 +102,29 @@ class HookContext:
         )
         return self._step_execution_context.step
 
-    @public  # type: ignore
+    @public
     @property
     def step_key(self) -> str:
         return self._step_execution_context.step.key
 
-    @public  # type: ignore
+    @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> "Resources":
         return self._resources
 
     @property
     def solid_config(self) -> Any:
-        solid_config = self._step_execution_context.resolved_run_config.solids.get(
-            str(self._step_execution_context.step.solid_handle)
+        solid_config = self._step_execution_context.resolved_run_config.ops.get(
+            str(self._step_execution_context.step.node_handle)
         )
         return solid_config.config if solid_config else None
 
-    @public  # type: ignore
+    @public
     @property
     def op_config(self) -> Any:
         return self.solid_config
@@ -132,7 +132,7 @@ class HookContext:
     # Because of the fact that we directly use the log manager of the step, if a user calls
     # hook_context.log.with_tags, then they will end up mutating the step's logging tags as well.
     # This is not problematic because the hook only runs after the step has been completed.
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> DagsterLogManager:
         return self._step_execution_context.log
@@ -146,9 +146,9 @@ class HookContext:
         """
         return self.op_exception
 
-    @public  # type: ignore
+    @public
     @property
-    def op_exception(self):
+    def op_exception(self) -> Optional[BaseException]:
         exc = self._step_execution_context.step_exception
 
         if isinstance(exc, RetryRequestedFromPolicy):
@@ -184,7 +184,7 @@ class HookContext:
 
         return results
 
-    @public  # type: ignore
+    @public
     @property
     def op_output_values(self):
         return self.solid_output_values
@@ -209,7 +209,7 @@ class UnboundHookContext(HookContext):
             def temp_graph():
                 op()
 
-            self._op = temp_graph.solids[0]
+            self._op = temp_graph.nodes[0]
 
         # Open resource context manager
         self._resource_defs = wrap_resources_for_execution(resources)
@@ -229,7 +229,7 @@ class UnboundHookContext(HookContext):
         self._cm_scope_entered = True
         return self
 
-    def __exit__(self, *exc):
+    def __exit__(self, *exc: Any):
         self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
 
     def __del__(self):
@@ -417,7 +417,7 @@ def build_hook_context(
 
     return UnboundHookContext(
         resources=check.opt_mapping_param(resources, "resources", key_type=str),
-        op=op,  # type: ignore[arg-type] # (mypy bug)
+        op=op,
         run_id=check.opt_str_param(run_id, "run_id"),
         job_name=check.opt_str_param(job_name, "job_name"),
         op_exception=check.opt_inst_param(op_exception, "op_exception", Exception),

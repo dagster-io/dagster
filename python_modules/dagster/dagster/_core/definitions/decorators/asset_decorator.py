@@ -1,4 +1,5 @@
 import warnings
+from inspect import Parameter
 from typing import (
     AbstractSet,
     Any,
@@ -22,7 +23,6 @@ from dagster._core.definitions.resource_output import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
-from dagster._seven import funcsigs
 from dagster._utils.backcompat import (
     ExperimentalWarning,
     deprecation_warning,
@@ -170,23 +170,8 @@ def asset(
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
     """
-    if compute_fn is not None:
-        return _Asset()(compute_fn)
 
-    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        check.invariant(
-            not (io_manager_key and io_manager_def),
-            (
-                "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please"
-                " provide one or the other. "
-            ),
-        )
-        if resource_defs is not None:
-            experimental_arg_warning("resource_defs", "asset")
-
-        if io_manager_def is not None:
-            experimental_arg_warning("io_manager_def", "asset")
-
+    def create_asset():
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
@@ -207,7 +192,26 @@ def asset(
             freshness_policy=freshness_policy,
             retry_policy=retry_policy,
             code_version=code_version,
-        )(fn)
+        )
+
+    if compute_fn is not None:
+        return create_asset()(compute_fn)
+
+    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
+        check.invariant(
+            not (io_manager_key and io_manager_def),
+            (
+                "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please"
+                " provide one or the other. "
+            ),
+        )
+        if resource_defs is not None:
+            experimental_arg_warning("resource_defs", "asset")
+
+        if io_manager_def is not None:
+            experimental_arg_warning("io_manager_def", "asset")
+
+        return create_asset()(fn)
 
     return inner
 
@@ -415,7 +419,7 @@ def multi_asset(
         resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
     )
     _config_schema = check.opt_mapping_param(
-        config_schema,  # type: ignore
+        config_schema,
         "config_schema",
         additional_message="Only dicts are supported for asset config_schema.",
     )
@@ -565,11 +569,9 @@ def build_asset_ins(
     input_params = new_input_args
 
     non_var_input_param_names = [
-        param.name
-        for param in new_input_args
-        if param.kind == funcsigs.Parameter.POSITIONAL_OR_KEYWORD
+        param.name for param in new_input_args if param.kind == Parameter.POSITIONAL_OR_KEYWORD
     ]
-    has_kwargs = any(param.kind == funcsigs.Parameter.VAR_KEYWORD for param in new_input_args)
+    has_kwargs = any(param.kind == Parameter.VAR_KEYWORD for param in new_input_args)
 
     all_input_names = set(non_var_input_param_names) | asset_ins.keys()
 
@@ -615,29 +617,16 @@ def build_asset_ins(
     return ins_by_asset_key
 
 
-def build_asset_outs(
-    asset_outs: Mapping[str, Union[Out, AssetOut]]
-) -> Mapping[AssetKey, Tuple[str, Out]]:
+def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tuple[str, Out]]:
     """
     Creates a mapping from AssetKey to (name of output, Out object).
     """
     outs_by_asset_key: Dict[AssetKey, Tuple[str, Out]] = {}
     for output_name, asset_out in asset_outs.items():
-        if isinstance(asset_out, AssetOut):
-            out = asset_out.to_out()
-            asset_key = asset_out.key or AssetKey(
-                list(filter(None, [*(asset_out.key_prefix or []), output_name]))
-            )
-        elif isinstance(asset_out, Out):
-            out = asset_out
-            if isinstance(asset_out.asset_key, AssetKey):
-                asset_key = asset_out.asset_key
-            elif asset_out.asset_key is None:
-                asset_key = AssetKey(output_name)
-            else:
-                check.failed("Expected AssetKey or None")
-        else:
-            check.failed("Expected Out or AssetOut")
+        out = asset_out.to_out()
+        asset_key = asset_out.key or AssetKey(
+            list(filter(None, [*(asset_out.key_prefix or []), output_name]))
+        )
 
         outs_by_asset_key[asset_key] = (output_name.replace("-", "_"), out)
 

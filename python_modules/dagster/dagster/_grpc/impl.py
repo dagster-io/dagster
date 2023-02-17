@@ -265,14 +265,14 @@ def get_external_schedule_execution(
     repo_def: RepositoryDefinition,
     instance_ref: Optional[InstanceRef],
     schedule_name: str,
-    scheduled_execution_timestamp: float,
-    scheduled_execution_timezone: str,
+    scheduled_execution_timestamp: Optional[float],
+    scheduled_execution_timezone: Optional[str],
 ):
     schedule_def = repo_def.get_schedule_def(schedule_name)
     scheduled_execution_time = (
         pendulum.from_timestamp(
             scheduled_execution_timestamp,
-            tz=scheduled_execution_timezone,
+            tz=check.not_none(scheduled_execution_timezone),
         )
         if scheduled_execution_timestamp
         else None
@@ -336,9 +336,10 @@ def get_partition_config(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
     partition_name: str,
+    instance: Optional[DagsterInstance] = None,
 ):
     partition_set_def = repo_def.get_partition_set_def(partition_set_name)
-    partition = partition_set_def.get_partition(partition_name)
+    partition = partition_set_def.get_partition(partition_name, instance)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -384,9 +385,11 @@ def get_partition_tags(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
     partition_name: str,
+    instance: Optional[DagsterInstance] = None,
 ):
     partition_set_def = repo_def.get_partition_set_def(partition_set_name)
-    partition = partition_set_def.get_partition(partition_name)
+
+    partition = partition_set_def.get_partition(partition_name, dynamic_partitions_store=instance)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -434,6 +437,7 @@ def get_partition_set_execution_param_data(
     repo_definition: RepositoryDefinition,
     partition_set_name: str,
     partition_names: Sequence[str],
+    instance: Optional[DagsterInstance] = None,
 ) -> Union[ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData]:
     partition_set_def = repo_definition.get_partition_set_def(partition_set_name)
     try:
@@ -441,7 +445,7 @@ def get_partition_set_execution_param_data(
             PartitionExecutionError,
             lambda: f"Error occurred during the partition generation for {_get_target_for_partition_execution_error(partition_set_def)}",
         ):
-            all_partitions = partition_set_def.get_partitions()
+            all_partitions = partition_set_def.get_partitions(dynamic_partitions_store=instance)
         partitions = [
             partition for partition in all_partitions if partition.name in partition_names
         ]

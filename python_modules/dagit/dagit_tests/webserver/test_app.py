@@ -10,7 +10,9 @@ from dagster import (
     op,
 )
 from dagster._core.events import DagsterEventType
+from dagster._serdes import unpack_value
 from dagster._seven import json
+from dagster._utils.error import SerializableErrorInfo
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from starlette.testclient import TestClient
 
@@ -113,7 +115,9 @@ def test_graphql_get(instance, test_client: TestClient):  # pylint: disable=unus
 def test_graphql_invalid_json(instance, test_client: TestClient):  # pylint: disable=unused-argument
     # base case
     response = test_client.post(
-        "/graphql", content='{"query": "foo}', headers={"Content-Type": "application/json"}
+        "/graphql",
+        content='{"query": "foo}',
+        headers={"Content-Type": "application/json"},
     )
 
     print(str(response.text))
@@ -177,6 +181,18 @@ def test_graphql_post(test_client: TestClient):
         params={"query": "{__invalid}"},
     )
     assert response.status_code == 400, response.text
+
+
+def test_graphql_error(test_client: TestClient):
+    response = test_client.post(
+        "/graphql",
+        params={"query": "{test{alwaysException}}"},
+    )
+    assert response.status_code == 500, response.text
+    error = response.json()["errors"][0]
+    serdes_err = error["extensions"]["errorInfo"]
+    original_err = unpack_value(serdes_err)
+    assert isinstance(original_err, SerializableErrorInfo)
 
 
 def test_graphql_ws_error(test_client: TestClient):

@@ -4,8 +4,9 @@ import pytest
 from click.testing import CliRunner
 from dagster import AssetKey, AssetMaterialization, Output
 from dagster._cli.asset import asset_wipe_command
+from dagster._core.definitions import op
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._seven import json
 
 
@@ -19,13 +20,13 @@ def mock_instance_runner():
             yield instance, runner
 
 
-@solid
+@op
 def solid_one(_):
     yield AssetMaterialization(asset_key=AssetKey("asset_1"))
     yield Output(1)
 
 
-@solid
+@op
 def solid_two(_):
     yield AssetMaterialization(asset_key=AssetKey("asset_2"))
     yield AssetMaterialization(asset_key=AssetKey(["path", "to", "asset_3"]))
@@ -33,7 +34,7 @@ def solid_two(_):
     yield Output(1)
 
 
-@solid
+@op
 def solid_normalization(_):
     yield AssetMaterialization(asset_key="path/to-asset_5")
     yield Output(1)

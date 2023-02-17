@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import Optional
 
@@ -75,7 +76,7 @@ def test_decorated_op_function():
     def an_old_config_op():
         pass
 
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
     assert not DecoratedOpFunction(an_old_config_op).has_config_arg()
     assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
@@ -97,7 +98,7 @@ def test_struct_config():
         assert config.a_string == "foo"
         assert config.an_int == 2
 
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
     assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
 
@@ -190,7 +191,7 @@ def test_primitive_struct_config():
         executed["yes"] = True
         assert config == "foo"
 
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
     assert DecoratedOpFunction(a_str_op).has_config_arg()
 
@@ -278,7 +279,7 @@ def test_nested_struct_config():
         assert config.a_nested_value.an_int == 2
         assert config.a_bool is True
 
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
     assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
 
@@ -570,3 +571,45 @@ def test_schema_aliased_field():
     # use the alias in config space
     assert a_job.execute_in_process({"ops": {"an_op": {"config": {"schema": "bar"}}}}).success
     assert executed["yes"]
+
+
+def test_env_var():
+    os.environ["ENV_VARIABLE_FOR_TEST"] = "foo"
+    os.environ["ENV_VARIABLE_FOR_TEST_INT"] = "2"
+    try:
+
+        class AnAssetConfig(Config):
+            a_string: str
+            an_int: int
+
+        executed = {}
+
+        @asset
+        def my_asset(config: AnAssetConfig):
+            assert config.a_string == "foo"
+            assert config.an_int == 2
+            executed["yes"] = True
+
+        assert (
+            build_assets_job(
+                "blah",
+                [my_asset],
+                config={
+                    "ops": {
+                        "my_asset": {
+                            "config": {
+                                "a_string": {"env": "ENV_VARIABLE_FOR_TEST"},
+                                "an_int": {"env": "ENV_VARIABLE_FOR_TEST_INT"},
+                            }
+                        }
+                    }
+                },
+            )
+            .execute_in_process()
+            .success
+        )
+
+        assert executed["yes"]
+    finally:
+        del os.environ["ENV_VARIABLE_FOR_TEST"]
+        del os.environ["ENV_VARIABLE_FOR_TEST_INT"]

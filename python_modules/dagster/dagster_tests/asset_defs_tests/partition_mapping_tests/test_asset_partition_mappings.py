@@ -6,12 +6,12 @@ from dagster import (
     AllPartitionMapping,
     AssetIn,
     AssetMaterialization,
+    AssetOut,
     AssetsDefinition,
     DailyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
     LastPartitionMapping,
-    Out,
     Output,
     PartitionsDefinition,
     StaticPartitionsDefinition,
@@ -58,6 +58,7 @@ def test_filter_mapping_partitions_dep():
             ],  # pylint: disable=unused-argument
             upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
         ) -> PartitionKeyRange:
+            assert downstream_partition_key_range is not None
             return PartitionKeyRange(
                 f"{self.hemisphere}|{downstream_partition_key_range.start}",
                 f"{self.hemisphere}|{downstream_partition_key_range.end}",
@@ -125,6 +126,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
             assert downstream_partitions_def
             assert upstream_partitions_def
 
+            assert downstream_partition_key_range is not None
             start, end = downstream_partition_key_range
             return PartitionKeyRange(str(max(1, int(start) - 1)), end)
 
@@ -195,6 +197,7 @@ def test_asset_partitions_time_window_non_identity_partition_mapping():
         ) -> PartitionKeyRange:
             del downstream_partitions_def, upstream_partitions_def
 
+            assert downstream_partition_key_range is not None
             start, end = downstream_partition_key_range
             assert start == "2020-01-02"
             assert end == "2020-01-02"
@@ -257,6 +260,7 @@ def test_multi_asset_non_identity_partition_mapping():
             assert downstream_partitions_def
             assert upstream_partitions_def
 
+            assert downstream_partition_key_range is not None
             start, end = downstream_partition_key_range
             return PartitionKeyRange(str(max(1, int(start) - 1)), end)
 
@@ -278,8 +282,8 @@ def test_multi_asset_non_identity_partition_mapping():
 
     @multi_asset(
         outs={
-            "out1": Out(asset_key=AssetKey("upstream_asset_1")),
-            "out2": Out(asset_key=AssetKey("upstream_asset_2")),
+            "out1": AssetOut(key=AssetKey("upstream_asset_1")),
+            "out2": AssetOut(key=AssetKey("upstream_asset_2")),
         },
         partitions_def=upstream_partitions_def,
     )
@@ -346,6 +350,7 @@ def test_from_graph():
             ],  # pylint: disable=unused-argument
             upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
         ) -> PartitionKeyRange:
+            assert downstream_partition_key_range is not None
             self.upstream_calls += 1
             return downstream_partition_key_range
 
@@ -403,7 +408,7 @@ def test_from_graph():
     )
     assert my_job.execute_in_process(partition_key="a").success
     assert partition_mapping.downstream_calls == 0
-    assert partition_mapping.upstream_calls == 3
+    assert partition_mapping.upstream_calls == 2
 
 
 def test_non_partitioned_depends_on_last_partition():
@@ -498,6 +503,7 @@ def test_partition_keys_in_range():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-09-11"))
     def upstream(context):
         assert context.asset_partition_keys_for_output("result") == ["2022-09-11"]
+        assert context.asset_partition_keys_for_output() == ["2022-09-11"]
 
     @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2022-09-11"))
     def downstream(context, upstream):  # pylint: disable=unused-argument

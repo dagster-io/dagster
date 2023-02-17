@@ -166,7 +166,7 @@ class DagsterType(RequiresResources):
             check.opt_mapping_param(metadata, "metadata", key_type=str), metadata_entries
         )
 
-    @public  # type: ignore
+    @public
     def type_check(self, context: "TypeCheckContext", value: object) -> TypeCheck:
         retval = self._type_check_fn(context, value)
 
@@ -197,20 +197,20 @@ class DagsterType(RequiresResources):
 
     @property
     def metadata_entries(self) -> t.Sequence[MetadataEntry]:
-        return self._metadata_entries  # type: ignore
+        return self._metadata_entries
 
-    @public  # type: ignore
+    @public
     @property
     def required_resource_keys(self) -> TypingAbstractSet[str]:
         return self._required_resource_keys
 
-    @public  # type: ignore
+    @public
     @property
     def display_name(self) -> str:
         """Either the name or key (if name is `None`) of the type, overridden in many subclasses."""
         return cast(str, self._name or self.key)
 
-    @public  # type: ignore
+    @public
     @property
     def unique_name(self) -> t.Optional[str]:
         """The unique name of this type. Can be None if the type is not unique, such as container types.
@@ -222,22 +222,22 @@ class DagsterType(RequiresResources):
         )
         return self._name
 
-    @public  # type: ignore
+    @public
     @property
     def has_unique_name(self) -> bool:
         return self._name is not None
 
-    @public  # type: ignore
+    @public
     @property
     def typing_type(self) -> t.Any:
         return self._typing_type
 
-    @public  # type: ignore
+    @public
     @property
     def loader(self) -> t.Optional[DagsterTypeLoader]:
         return self._loader
 
-    @public  # type: ignore
+    @public
     @property
     def description(self) -> t.Optional[str]:
         return self._description
@@ -578,9 +578,9 @@ class PythonObjectDagsterType(DagsterType):
             typing_type = t.Union[python_type]  # type: ignore
 
         else:
-            self.python_type = check.class_param(python_type, "python_type")  # type: ignore
+            self.python_type = check.class_param(python_type, "python_type")
             self.type_str = cast(str, python_type.__name__)
-            typing_type = self.python_type  # type: ignore
+            typing_type = self.python_type
         name = check.opt_str_param(name, "name", self.type_str)
         key = check.opt_str_param(key, "key", name)
         super(PythonObjectDagsterType, self).__init__(
@@ -637,7 +637,7 @@ class OptionalType(DagsterType):
             type_check_fn=self.type_check_method,
             loader=_create_nullable_input_schema(inner_type),
             # This throws a type error with Py
-            typing_type=t.Optional[inner_type.typing_type],  # type: ignore
+            typing_type=t.Optional[inner_type.typing_type],
         )
 
     @property
@@ -699,7 +699,7 @@ class ListType(DagsterType):
             kind=DagsterTypeKind.LIST,
             type_check_fn=self.type_check_method,
             loader=_create_list_input_schema(inner_type),
-            typing_type=t.List[inner_type.typing_type],  # type: ignore
+            typing_type=t.List[inner_type.typing_type],
         )
 
     @property

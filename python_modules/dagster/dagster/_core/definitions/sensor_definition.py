@@ -15,7 +15,6 @@ from typing import (
 )
 
 import pendulum
-from typing_extensions import TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
@@ -30,7 +29,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._serdes import whitelist_for_serdes
 
-from ..decorator_utils import get_function_params
+from ..decorator_utils import get_function_params, has_at_least_one_parameter
 from .asset_selection import AssetSelection
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
@@ -48,6 +47,16 @@ if TYPE_CHECKING:
 class DefaultSensorStatus(Enum):
     RUNNING = "RUNNING"
     STOPPED = "STOPPED"
+
+
+@whitelist_for_serdes
+class SensorType(Enum):
+    STANDARD = "STANDARD"
+    RUN_STATUS = "RUN_STATUS"
+    ASSET = "ASSET"
+    MULTI_ASSET = "MULTI_ASSET"
+    FRESHNESS_POLICY = "FRESHNESS_POLICY"
+    UNKNOWN = "UNKNOWN"
 
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
@@ -123,7 +132,7 @@ class SensorEvaluationContext:
         self._exit_stack.close()
         self._logger = None
 
-    @public  # type: ignore
+    @public
     @property
     def instance(self) -> DagsterInstance:
         # self._instance_ref should only ever be None when this SensorEvaluationContext was
@@ -143,17 +152,17 @@ class SensorEvaluationContext:
     def instance_ref(self) -> Optional[InstanceRef]:
         return self._instance_ref
 
-    @public  # type: ignore
+    @public
     @property
     def last_completion_time(self) -> Optional[float]:
         return self._last_completion_time
 
-    @public  # type: ignore
+    @public
     @property
     def last_run_key(self) -> Optional[str]:
         return self._last_run_key
 
-    @public  # type: ignore
+    @public
     @property
     def cursor(self) -> Optional[str]:
         """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
@@ -172,12 +181,12 @@ class SensorEvaluationContext:
         """
         self._cursor = check.opt_str_param(cursor, "cursor")
 
-    @public  # type: ignore
+    @public
     @property
     def repository_name(self) -> Optional[str]:
         return self._repository_name
 
-    @public  # type: ignore
+    @public
     @property
     def repository_def(self) -> Optional["RepositoryDefinition"]:
         return self._repository_def
@@ -231,12 +240,6 @@ SensorEvaluationFunction = Callable[
 ]
 
 
-def is_context_provided(
-    fn: "RawSensorEvaluationFunction",
-) -> TypeGuard[Callable[[SensorEvaluationContext], "RawSensorEvaluationFunctionReturn"]]:
-    return len(get_function_params(fn)) == 1
-
-
 class SensorDefinition:
     """Define a sensor that initiates a set of runs based on some external state.
 
@@ -251,8 +254,8 @@ class SensorDefinition:
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[GraphDefinition, JobDefinition]): The job to execute when this sensor fires.
-        jobs (Optional[Sequence[GraphDefinition, JobDefinition]]): (experimental) A list of jobs to execute when this sensor fires.
+        job (Optional[GraphDefinition, JobDefinition, UnresolvedAssetJob]): The job to execute when this sensor fires.
+        jobs (Optional[Sequence[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): (experimental) A list of jobs to execute when this sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         asset_selection (AssetSelection): (Experimental) an asset selection to launch a run for if
@@ -337,7 +340,7 @@ class SensorDefinition:
         )
 
     def __call__(self, *args, **kwargs):
-        if is_context_provided(self._raw_fn):
+        if has_at_least_one_parameter(self._raw_fn):
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Sensor evaluation function expected context argument, but no context argument "
@@ -373,19 +376,19 @@ class SensorDefinition:
                     "invocation."
                 )
 
-            return self._raw_fn()  # type: ignore [TypeGuard limitation]
+            return self._raw_fn()
 
-    @public  # type: ignore
+    @public
     @property
     def name(self) -> str:
         return self._name
 
-    @public  # type: ignore
+    @public
     @property
     def description(self) -> Optional[str]:
         return self._description
 
-    @public  # type: ignore
+    @public
     @property
     def minimum_interval_seconds(self) -> Optional[int]:
         return self._min_interval
@@ -394,7 +397,7 @@ class SensorDefinition:
     def targets(self) -> Sequence[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets
 
-    @public  # type: ignore
+    @public
     @property
     def job(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
         if self._targets:
@@ -405,6 +408,10 @@ class SensorDefinition:
                     "Job property not available when SensorDefinition has multiple jobs."
                 )
         raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
+
+    @property
+    def sensor_type(self) -> SensorType:
+        return SensorType.STANDARD
 
     def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
         """Evaluate sensor using the provided context.
@@ -516,7 +523,7 @@ class SensorDefinition:
     def _target(self) -> Optional[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets[0] if self._targets else None
 
-    @public  # type: ignore
+    @public
     @property
     def job_name(self) -> Optional[str]:
         if len(self._targets) > 1:
@@ -526,7 +533,7 @@ class SensorDefinition:
             )
         return self._targets[0].pipeline_name
 
-    @public  # type: ignore
+    @public
     @property
     def default_status(self) -> DefaultSensorStatus:
         return self._default_status
@@ -582,7 +589,7 @@ def wrap_sensor_evaluation(
     fn: RawSensorEvaluationFunction,
 ) -> SensorEvaluationFunction:
     def _wrapped_fn(context: SensorEvaluationContext):
-        if is_context_provided(fn):
+        if has_at_least_one_parameter(fn):
             result = fn(context)
         else:
             result = fn()  # type: ignore

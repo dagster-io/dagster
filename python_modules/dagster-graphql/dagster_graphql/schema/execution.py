@@ -4,7 +4,7 @@ from dagster._core.host_representation import ExternalExecutionPlan
 from dagster._core.snap import ExecutionStepInputSnap, ExecutionStepOutputSnap, ExecutionStepSnap
 
 from .metadata import GrapheneMetadataItemDefinition
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneExecutionStepOutput(graphene.ObjectType):
@@ -19,7 +19,7 @@ class GrapheneExecutionStepOutput(graphene.ObjectType):
             step_output_snap, "step_output_snap", ExecutionStepOutputSnap
         )
 
-    def resolve_name(self, _graphene_info):
+    def resolve_name(self, _graphene_info: ResolveInfo):
         return self._step_output_snap.name
 
 
@@ -39,10 +39,10 @@ class GrapheneExecutionStepInput(graphene.ObjectType):
             external_execution_plan, "external_execution_plan", ExternalExecutionPlan
         )
 
-    def resolve_name(self, _graphene_info):
+    def resolve_name(self, _graphene_info: ResolveInfo):
         return self._step_input_snap.name
 
-    def resolve_dependsOn(self, _graphene_info):
+    def resolve_dependsOn(self, _graphene_info: ResolveInfo):
         return [
             GrapheneExecutionStep(
                 self._external_execution_plan,
@@ -98,28 +98,28 @@ class GrapheneExecutionStep(graphene.ObjectType):
             execution_step_snap, "execution_step_snap", ExecutionStepSnap
         )
 
-    def resolve_metadata(self, _graphene_info):
+    def resolve_metadata(self, _graphene_info: ResolveInfo):
         return [
             GrapheneMetadataItemDefinition(key=mdi.key, value=mdi.value)
             for mdi in self._step_snap.metadata_items
         ]
 
-    def resolve_inputs(self, _graphene_info):
+    def resolve_inputs(self, _graphene_info: ResolveInfo):
         return [
             GrapheneExecutionStepInput(inp, self._external_execution_plan)
             for inp in self._step_snap.inputs
         ]
 
-    def resolve_outputs(self, _graphene_info):
+    def resolve_outputs(self, _graphene_info: ResolveInfo):
         return [GrapheneExecutionStepOutput(out) for out in self._step_snap.outputs]
 
-    def resolve_key(self, _graphene_info):
+    def resolve_key(self, _graphene_info: ResolveInfo):
         return self._step_snap.key
 
-    def resolve_solidHandleID(self, _graphene_info):
+    def resolve_solidHandleID(self, _graphene_info: ResolveInfo):
         return self._step_snap.solid_handle_id
 
-    def resolve_kind(self, _graphene_info):
+    def resolve_kind(self, _graphene_info: ResolveInfo):
         return self._step_snap.kind.value
 
 
@@ -136,7 +136,7 @@ class GrapheneExecutionPlan(graphene.ObjectType):
             external_execution_plan, external_execution_plan, ExternalExecutionPlan
         )
 
-    def resolve_steps(self, _graphene_info):
+    def resolve_steps(self, _graphene_info: ResolveInfo):
         return [
             GrapheneExecutionStep(
                 self._external_execution_plan,
@@ -145,7 +145,7 @@ class GrapheneExecutionPlan(graphene.ObjectType):
             for step in self._external_execution_plan.get_steps_in_plan()
         ]
 
-    def resolve_artifactsPersisted(self, _graphene_info):
+    def resolve_artifactsPersisted(self, _graphene_info: ResolveInfo):
         return self._external_execution_plan.execution_plan_snapshot.artifacts_persisted
 
 

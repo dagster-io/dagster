@@ -1,6 +1,6 @@
 from typing import Iterator, List, Optional, cast
 
-import kubernetes
+import kubernetes.config
 from dagster import (
     Field,
     IntSource,
@@ -35,25 +35,27 @@ from .job import (
     get_user_defined_k8s_config,
 )
 
+_K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
+    DagsterK8sJobConfig.config_type_job(),
+    {
+        "job_namespace": Field(StringSource, is_required=False),
+        "retries": get_retries_config(),
+        "max_concurrent": Field(
+            IntSource,
+            is_required=False,
+            description=(
+                "Limit on the number of pods that will run concurrently within the scope "
+                "of a Dagster run. Note that this limit is per run, not global."
+            ),
+        ),
+        "tag_concurrency_limits": get_tag_concurrency_limits_config(),
+    },
+)
+
 
 @executor(
     name="k8s",
-    config_schema=merge_dicts(
-        DagsterK8sJobConfig.config_type_job(),
-        {
-            "job_namespace": Field(StringSource, is_required=False),
-            "retries": get_retries_config(),
-            "max_concurrent": Field(
-                IntSource,
-                is_required=False,
-                description=(
-                    "Limit on the number of pods that will run concurrently within the scope "
-                    "of a Dagster run. Note that this limit is per run, not global."
-                ),
-            ),
-            "tag_concurrency_limits": get_tag_concurrency_limits_config(),
-        },
-    ),
+    config_schema=_K8S_EXECUTOR_CONFIG_SCHEMA,
     requirements=multiple_process_executor_requirements(),
 )
 def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
@@ -167,21 +169,30 @@ class K8sStepHandler(StepHandler):
             batch_api_override=k8s_client_batch_api
         )
 
-    def _get_container_context(self, step_handler_context: StepHandlerContext):
-        run_target = K8sContainerContext.create_for_run(
-            step_handler_context.pipeline_run,
-            cast(K8sRunLauncher, step_handler_context.instance.run_launcher),
+    def _get_step_key(self, step_handler_context: StepHandlerContext) -> str:
+        step_keys_to_execute = cast(
+            List[str], step_handler_context.execute_step_args.step_keys_to_execute
         )
-        return run_target.merge(self._executor_container_context)
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
+        return step_keys_to_execute[0]
+
+    def _get_container_context(self, step_handler_context: StepHandlerContext):
+        step_key = self._get_step_key(step_handler_context)
+
+        context = K8sContainerContext.create_for_run(
+            step_handler_context.dagster_run,
+            cast(K8sRunLauncher, step_handler_context.instance.run_launcher),
+            include_run_tags=False,  # For now don't include job-level dagster-k8s/config tags in step pods
+        )
+        context = context.merge(self._executor_container_context)
+
+        user_defined_k8s_config = get_user_defined_k8s_config(
+            frozentags(step_handler_context.step_tags[step_key])
+        )
+        return context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config.to_dict()))
 
     def _get_k8s_step_job_name(self, step_handler_context: StepHandlerContext):
-        if (
-            step_handler_context.execute_step_args.step_keys_to_execute is None
-            or len(step_handler_context.execute_step_args.step_keys_to_execute) != 1
-        ):
-            check.failed("Expected step_keys_to_execute to contain single entry")
-
-        step_key = next(iter(step_handler_context.execute_step_args.step_keys_to_execute))
+        step_key = self._get_step_key(step_handler_context)
 
         name_key = get_k8s_job_name(
             step_handler_context.execute_step_args.pipeline_run_id,
@@ -196,11 +207,7 @@ class K8sStepHandler(StepHandler):
         return "dagster-step-%s" % (name_key)
 
     def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
-        step_keys_to_execute = cast(
-            List[str], step_handler_context.execute_step_args.step_keys_to_execute
-        )
-        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
-        step_key = step_keys_to_execute[0]
+        step_key = self._get_step_key(step_handler_context)
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
         pod_name = job_name
@@ -223,19 +230,15 @@ class K8sStepHandler(StepHandler):
         if not job_config.job_image:
             raise Exception("No image included in either executor config or the job")
 
-        user_defined_k8s_config = get_user_defined_k8s_config(
-            frozentags(step_handler_context.step_tags[step_key])
-        )
-
         job = construct_dagster_k8s_job(
             job_config=job_config,
             args=args,
             job_name=job_name,
             pod_name=pod_name,
             component="step_worker",
-            user_defined_k8s_config=user_defined_k8s_config,
+            user_defined_k8s_config=container_context.get_run_user_defined_k8s_config(),
             labels={
-                "dagster/job": step_handler_context.pipeline_run.pipeline_name,
+                "dagster/job": step_handler_context.dagster_run.pipeline_name,
                 "dagster/op": step_key,
                 "dagster/run-id": step_handler_context.execute_step_args.pipeline_run_id,
             },
@@ -243,7 +246,7 @@ class K8sStepHandler(StepHandler):
                 *step_handler_context.execute_step_args.get_command_env(),
                 {
                     "name": "DAGSTER_RUN_JOB_NAME",
-                    "value": step_handler_context.pipeline_run.pipeline_name,
+                    "value": step_handler_context.dagster_run.pipeline_name,
                 },
                 {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
             ],
@@ -262,11 +265,7 @@ class K8sStepHandler(StepHandler):
         )
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
-        step_keys_to_execute = cast(
-            List[str], step_handler_context.execute_step_args.step_keys_to_execute
-        )
-        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
-        step_key = step_keys_to_execute[0]
+        step_key = self._get_step_key(step_handler_context)
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
 
@@ -284,11 +283,7 @@ class K8sStepHandler(StepHandler):
         return CheckStepHealthResult.healthy()
 
     def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
-        step_keys_to_execute = cast(
-            List[str], step_handler_context.execute_step_args.step_keys_to_execute
-        )
-        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
-        step_key = step_keys_to_execute[0]
+        step_key = self._get_step_key(step_handler_context)
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
         container_context = self._get_container_context(step_handler_context)

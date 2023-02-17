@@ -1,11 +1,11 @@
 # pylint: disable=unused-argument
 
-from dagster import In, job, op
-from dagster._config.structured_config import StructuredConfigIOManager
+from dagster import Definitions, In, asset, job, op
+from dagster._config.structured_config import ConfigurableIOManager, ConfigurableResource
 
 
 def test_load_input_handle_output():
-    class MyIOManager(StructuredConfigIOManager):
+    class MyIOManager(ConfigurableIOManager):
         def handle_output(self, context, obj):
             pass
 
@@ -44,3 +44,117 @@ def test_load_input_handle_output():
     check_input_managers.execute_in_process()
     assert did_run["first_op"]
     assert did_run["second_op"]
+
+
+def test_runtime_config():
+    out_txt = []
+
+    class MyIOManager(ConfigurableIOManager):
+        prefix: str
+
+        def handle_output(self, context, obj):
+            out_txt.append(f"{self.prefix}{obj}")
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    @asset
+    def hello_world_asset():
+        return "hello, world!"
+
+    defs = Definitions(
+        assets=[hello_world_asset],
+        resources={"io_manager": MyIOManager.configure_at_launch()},
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process({"resources": {"io_manager": {"config": {"prefix": ""}}}})
+        .success
+    )
+    assert out_txt == ["hello, world!"]
+
+    out_txt.clear()
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process({"resources": {"io_manager": {"config": {"prefix": "greeting: "}}}})
+        .success
+    )
+    assert out_txt == ["greeting: hello, world!"]
+
+
+def test_nested_resources():
+    out_txt = []
+
+    class IOConfigResource(ConfigurableResource):
+        prefix: str
+
+    class MyIOManager(ConfigurableIOManager):
+        config: IOConfigResource
+
+        def handle_output(self, context, obj):
+            out_txt.append(f"{self.config.prefix}{obj}")
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    @asset
+    def hello_world_asset():
+        return "hello, world!"
+
+    defs = Definitions(
+        assets=[hello_world_asset],
+        resources={
+            "io_manager": MyIOManager(config=IOConfigResource(prefix="greeting: ")),
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert out_txt == ["greeting: hello, world!"]
+
+
+def test_nested_resources_runtime_config():
+    out_txt = []
+
+    class IOConfigResource(ConfigurableResource):
+        prefix: str
+
+    class MyIOManager(ConfigurableIOManager):
+        config: IOConfigResource
+
+        def handle_output(self, context, obj):
+            out_txt.append(f"{self.config.prefix}{obj}")
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    @asset
+    def hello_world_asset():
+        return "hello, world!"
+
+    io_config = IOConfigResource.configure_at_launch()
+
+    defs = Definitions(
+        assets=[hello_world_asset],
+        resources={
+            "io_config": io_config,
+            "io_manager": MyIOManager(config=io_config),
+        },
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process({"resources": {"io_config": {"config": {"prefix": ""}}}})
+        .success
+    )
+    assert out_txt == ["hello, world!"]
+
+    out_txt.clear()
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process({"resources": {"io_config": {"config": {"prefix": "greeting: "}}}})
+        .success
+    )
+    assert out_txt == ["greeting: hello, world!"]

@@ -144,7 +144,8 @@
         ]
       },
       {
-        "title": "Schedules, Sensors, & Partitions",
+        "title": "Schedules & Sensors",
+        "path": "/concepts/partitions-schedules-sensors/schedules",
         "children": [
           {
             "title": "Schedules",
@@ -157,7 +158,13 @@
           {
             "title": "Asset Sensors",
             "path": "/concepts/partitions-schedules-sensors/asset-sensors"
-          },
+          }
+        ]
+      },
+      {
+        "title": "Partitions & Backfills",
+        "path": "/concepts/partitions-schedules-sensors/partitions",
+        "children": [
           {
             "title": "Partitions",
             "path": "/concepts/partitions-schedules-sensors/partitions"
@@ -644,6 +651,14 @@
         "path": "/guides/general",
         "children": [
           {
+            "title": "Running Dagster locally",
+            "path": "/guides/running-dagster-locally"
+          },
+          {
+            "title": "Understanding assets, ops, and graphs",
+            "path": "/guides/dagster/how-assets-relate-to-ops-and-graphs"
+          },
+          {
             "title": "Enriching with Software-defined assets",
             "path": "/guides/dagster/enriching-with-software-defined-assets"
           },
@@ -721,6 +736,10 @@
           {
             "title": "Airbyte ingestion as code",
             "path": "/guides/dagster/airbyte-ingestion-as-code"
+          },
+          {
+            "title": "Asset versioning and caching",
+            "path": "/guides/dagster/asset-versioning-and-caching"
           }
         ]
       }
@@ -964,6 +983,10 @@
             "path": "/_apidocs/libraries/dagster-snowflake-pandas"
           },
           {
+            "title": "Snowflake + PySpark (dagster-snowflake-pyspark)",
+            "path": "/_apidocs/libraries/dagster-snowflake-pyspark"
+          },
+          {
             "title": "Spark (dagster-spark)",
             "path": "/_apidocs/libraries/dagster-spark"
           },
@@ -974,6 +997,10 @@
           {
             "title": "Twilio (dagster-twilio)",
             "path": "/_apidocs/libraries/dagster-twilio"
+          },
+          {
+            "title": "Weights & Biases (dagster-wandb)",
+            "path": "/_apidocs/libraries/dagster-wandb"
           }
         ]
       }

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import warnings
 from collections import namedtuple
@@ -36,7 +37,7 @@ from .tasks import (
     get_task_definition_dict_from_current_task,
     get_task_kwargs_from_current_task,
 )
-from .utils import sanitize_family, task_definitions_match
+from .utils import get_task_logs, sanitize_family, task_definitions_match
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
@@ -300,7 +301,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         """
         Launch a run in an ECS task.
         """
-        run = context.pipeline_run
+        run = context.dagster_run
         container_context = EcsContainerContext.create_for_run(run, self)
 
         pipeline_origin = check.not_none(context.pipeline_code_origin)
@@ -449,7 +450,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
     def _get_run_task_definition_family(self, run) -> str:
         return sanitize_family(
-            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name  # type: ignore
+            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
         )
 
     def _get_container_name(self, container_context) -> str:
@@ -591,6 +592,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
     def check_run_worker_health(self, run: DagsterRun):
         tags = self._get_run_tags(run.run_id)
+        container_context = EcsContainerContext.create_for_run(run, self)
 
         if not (tags.arn and tags.cluster):
             return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
@@ -613,13 +615,37 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     container_str = "Containers"
                 else:
                     container_str = "Container"
+
+                logs = []
+
+                try:
+                    logs = get_task_logs(
+                        self.ecs,
+                        logs_client=self.logs,
+                        cluster=tags.cluster,
+                        task_arn=tags.arn,
+                        container_name=self._get_container_name(container_context),
+                    )
+                except:
+                    logging.exception(
+                        "Error trying to get logs for failed task {task_arn}".format(
+                            task_arn=tags.arn,
+                        )
+                    )
+
+                logs_text = (
+                    ("Task logs:\n" + "\n".join(logs))
+                    if logs
+                    else "Check the logs for the failed task for details."
+                )
+
                 return CheckRunHealthResult(
                     WorkerStatus.FAILED,
                     (
-                        f"ECS task failed. Stop code: {t.get('stopCode')}. Stop reason:"
-                        f" {t.get('stoppedReason')}."
+                        f"ECS task {t.get('taskArn')} failed. Stop code: {t.get('stopCode')}. Stop"
+                        f" reason: {t.get('stoppedReason')}."
                         f" {container_str} {[c.get('name') for c in failed_containers]} failed."
-                        f" Check the logs for task {t.get('taskArn')} for details."
+                        f" {logs_text}"
                     ),
                 )
 

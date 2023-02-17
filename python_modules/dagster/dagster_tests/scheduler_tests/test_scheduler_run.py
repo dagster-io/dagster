@@ -236,7 +236,7 @@ NUM_CALLS = {"sync": 0, "async": 0}
 
 
 def get_passes_on_retry_schedule(key):
-    @daily_schedule(  # type: ignore
+    @daily_schedule(
         pipeline_name="the_job",
         start_date=_COUPLE_DAYS_AGO,
         execution_timezone="UTC",
@@ -314,7 +314,7 @@ def wrong_config_schedule(_date):
     execution_timezone="UTC",
 )
 def empty_schedule(_date):
-    pass  # No RunRequests
+    return []
 
 
 def define_multi_run_schedule():
@@ -799,9 +799,11 @@ def test_schedule_without_timezone(instance, executor):
             workspace_load_target=workspace_load_target(),
             instance=instance,
         ) as workspace_context:
-            external_repo = next(
+            repo_location = next(
                 iter(workspace_context.create_request_context().get_workspace_snapshot().values())
-            ).repository_location.get_repository("the_repo")
+            ).repository_location
+            assert repo_location is not None
+            external_repo = repo_location.get_repository("the_repo")
             external_schedule = external_repo.get_external_schedule(
                 "daily_schedule_without_timezone"
             )

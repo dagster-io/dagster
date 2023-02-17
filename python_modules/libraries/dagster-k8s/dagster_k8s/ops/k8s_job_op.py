@@ -1,7 +1,8 @@
 import time
 from typing import Any, Dict, List, Optional
 
-import kubernetes
+import kubernetes.config
+import kubernetes.watch
 from dagster import Field, In, Noneable, Nothing, OpExecutionContext, Permissive, StringSource, op
 from dagster._annotations import experimental
 from dagster._utils.merger import merge_dicts
@@ -201,11 +202,14 @@ def execute_k8s_job(
         context.instance.run_launcher
         if isinstance(context.instance.run_launcher, K8sRunLauncher)
         else None,
+        include_run_tags=True,
     )
 
     container_config = container_config.copy() if container_config else {}
     if command:
         container_config["command"] = command
+
+    container_name = container_config.get("name", "dagster")
 
     op_container_context = K8sContainerContext(
         image_pull_policy=image_pull_policy,
@@ -252,7 +256,7 @@ def execute_k8s_job(
         resources=container_context.resources,
     )
 
-    job_name = get_k8s_job_name(context.run_id, context.op.name)
+    job_name = get_k8s_job_name(context.run_id, context.get_step_execution_context().step.key)
 
     retry_number = context.retry_number
     if retry_number > 0:
@@ -315,7 +319,10 @@ def execute_k8s_job(
     api_client.wait_for_pod(pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time)
 
     log_stream = watch.stream(
-        api_client.core_api.read_namespaced_pod_log, name=pod_to_watch, namespace=namespace
+        api_client.core_api.read_namespaced_pod_log,
+        name=pod_to_watch,
+        namespace=namespace,
+        container=container_name,
     )
 
     while True:
@@ -351,15 +358,15 @@ def k8s_job_op(context):
       - You want to run the rest of a Dagster job using a specific executor, and only a single
         op in k8s.
 
-    You can create your own op with the same implementation by calling the `execute_k8s_job` function
-    inside your own op.
-
     For example:
 
     .. literalinclude:: ../../../../../../python_modules/libraries/dagster-k8s/dagster_k8s_tests/unit_tests/test_example_k8s_job_op.py
       :start-after: start_marker
       :end-before: end_marker
       :language: python
+
+    You can create your own op with the same implementation by calling the `execute_k8s_job` function
+    inside your own op.
 
     The service account that is used to run this job should have the following RBAC permissions:
 

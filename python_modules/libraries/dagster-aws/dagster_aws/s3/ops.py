@@ -67,8 +67,8 @@ def last_key(key: str) -> str:
     required_resource_keys={"s3", "file_manager"},
 )
 def file_handle_to_s3(context, file_handle):
-    bucket = context.solid_config["Bucket"]
-    key = context.solid_config["Key"]
+    bucket = context.op_config["Bucket"]
+    key = context.op_config["Key"]
 
     with context.resources.file_manager.read(file_handle, "rb") as fileobj:
         context.resources.s3.upload_fileobj(fileobj, bucket, key)

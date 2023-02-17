@@ -58,6 +58,12 @@ class UPathIOManager(MemoizableIOManager):
     def has_output(self, context: OutputContext) -> bool:
         return self._get_path(context).exists()
 
+    def _with_extension(self, path: UPath) -> UPath:
+        # Can't just call path.with_suffix(self.extension) because if
+        # self.extension is "" then this trims off any extension that
+        # was in the path previously.
+        return path.parent / (path.name + self.extension)
+
     def _get_path_without_extension(self, context: Union[InputContext, OutputContext]) -> UPath:
         if context.has_asset_key:
             # we are dealing with an asset
@@ -75,7 +81,8 @@ class UPathIOManager(MemoizableIOManager):
         Returns the I/O path for a given context.
         Should not be used with partitions (use `_get_paths_for_partitions` instead).
         """
-        return self._get_path_without_extension(context).with_suffix(self.extension)
+        path = self._get_path_without_extension(context)
+        return self._with_extension(path)
 
     def _get_paths_for_partitions(
         self, context: Union[InputContext, OutputContext]
@@ -92,7 +99,7 @@ class UPathIOManager(MemoizableIOManager):
         partition_keys = context.asset_partition_keys
         asset_path = self._get_path_without_extension(context)
         return {
-            partition_key: (asset_path / partition_key).with_suffix(self.extension)
+            partition_key: self._with_extension(asset_path / partition_key)
             for partition_key in partition_keys
         }
 

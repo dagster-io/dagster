@@ -1,7 +1,9 @@
 import logging
 
-from dagster_airflow.operators.util import invoke_steps_within_python_operator
-from dagster_airflow.vendor.python_operator import PythonOperator
+from dagster_airflow.operators.util import (  # type: ignore  # (old airflow)
+    invoke_steps_within_python_operator,
+)
+from dagster_airflow.vendor.python_operator import PythonOperator  # type: ignore  # (old airflow)
 
 # Template for creating a custom dagster operator that wraps Airflow PythonOperator.
 # To use, copy this file and stub out lines 14 - 17 with custom logic

@@ -6,7 +6,7 @@ from ..package_spec import PackageSpec
 from ..python_version import AvailablePythonVersion
 from ..utils import (
     BuildkiteStep,
-    GroupStep,
+    BuildkiteTopLevelStep,
     connect_sibling_docker_container,
     library_version_from_core_version,
     network_buildkite_container,
@@ -40,7 +40,7 @@ def build_integration_steps() -> List[BuildkiteStep]:
 # ########################
 
 
-def build_backcompat_suite_steps() -> List[GroupStep]:
+def build_backcompat_suite_steps() -> List[BuildkiteTopLevelStep]:
     tox_factors = [
         "dagit-latest-release",
         "dagit-earliest-release",
@@ -118,7 +118,7 @@ def _get_library_version(version: str) -> str:
 # ########################
 
 
-def build_celery_k8s_suite_steps() -> List[GroupStep]:
+def build_celery_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
     pytest_tox_factors = [
         "-default",
         "-markusercodedeploymentsubchart",
@@ -182,7 +182,7 @@ def build_integration_suite_steps(
     pytest_tox_factors: Optional[List[str]],
     pytest_extra_cmds: Optional[Callable] = None,
     queue=None,
-) -> List[GroupStep]:
+) -> List[BuildkiteTopLevelStep]:
     pytest_extra_cmds = pytest_extra_cmds or default_integration_suite_pytest_extra_cmds
     return PackageSpec(
         directory,

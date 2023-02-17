@@ -1,7 +1,7 @@
 import os
 import pickle
 import uuid
-from typing import Any, Mapping, Optional
+from typing import AbstractSet, Any, Mapping, Optional, cast
 
 from dagster import (
     AssetMaterialization,
@@ -10,11 +10,13 @@ from dagster import (
     Failure,
     LoggerDefinition,
     ResourceDefinition,
+    StepExecutionContext,
     TypeCheck,
     _check as check,
 )
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
+from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
@@ -24,19 +26,21 @@ from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import scoped_pipeline_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.resources_init import (
     get_required_resource_keys_to_init,
     resource_initialization_event_generator,
 )
 from dagster._core.instance import DagsterInstance
+from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
-from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import Materialization, ModeDefinition, PipelineDefinition
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
-from dagster._utils import EventGenerationManager, ensure_gen
-from dagster._utils.backcompat import canonicalize_backcompat_args, deprecation_warning
+from dagster._utils import EventGenerationManager
+from dagster._utils.backcompat import deprecation_warning
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
@@ -64,22 +68,22 @@ class DagstermillResourceEventGenerationManager(EventGenerationManager):
 class Manager:
     def __init__(self):
         self.pipeline = None
-        self.solid_def = None
-        self.in_pipeline = False
-        self.marshal_dir = None
+        self.op_def: Optional[NodeDefinition] = None
+        self.in_pipeline: bool = False
+        self.marshal_dir: Optional[str] = None
         self.context = None
         self.resource_manager = None
 
     def _setup_resources(
         self,
-        resource_defs,
-        resource_configs,
-        log_manager,
-        execution_plan,
-        pipeline_run,
-        resource_keys_to_init,
-        instance,
-        emit_persistent_events,
+        resource_defs: Mapping[str, ResourceDefinition],
+        resource_configs: Mapping[str, ResourceConfig],
+        log_manager: DagsterLogManager,
+        execution_plan: Optional[ExecutionPlan],
+        pipeline_run: Optional[DagsterRun],
+        resource_keys_to_init: Optional[AbstractSet[str]],
+        instance: Optional[DagsterInstance],
+        emit_persistent_events: Optional[bool],
     ):
         """
         Drop-in replacement for
@@ -103,14 +107,14 @@ class Manager:
 
     def reconstitute_pipeline_context(
         self,
-        output_log_path=None,
-        marshal_dir=None,
-        run_config=None,
-        executable_dict=None,
-        pipeline_run_dict=None,
-        solid_handle_kwargs=None,
-        instance_ref_dict=None,
-        step_key=None,
+        executable_dict: Mapping[str, Any],
+        pipeline_run_dict: Mapping[str, DagsterRun],
+        node_handle_kwargs: Mapping[str, Any],
+        instance_ref_dict: Mapping[str, Any],
+        step_key: str,
+        output_log_path: Optional[str] = None,
+        marshal_dir: Optional[str] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
     ):
         """Reconstitutes a context for dagstermill-managed execution.
 
@@ -125,11 +129,11 @@ class Manager:
         """
         check.opt_str_param(output_log_path, "output_log_path")
         check.opt_str_param(marshal_dir, "marshal_dir")
-        run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
-        check.dict_param(pipeline_run_dict, "pipeline_run_dict")
-        check.dict_param(executable_dict, "executable_dict")
-        check.dict_param(solid_handle_kwargs, "solid_handle_kwargs")
-        check.dict_param(instance_ref_dict, "instance_ref_dict")
+        run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
+        check.mapping_param(pipeline_run_dict, "pipeline_run_dict")
+        check.mapping_param(executable_dict, "executable_dict")
+        check.mapping_param(node_handle_kwargs, "node_handle_kwargs")
+        check.mapping_param(instance_ref_dict, "instance_ref_dict")
         check.str_param(step_key, "step_key")
 
         pipeline = ReconstructablePipeline.from_dict(executable_dict)
@@ -145,13 +149,13 @@ class Manager:
 
         pipeline_run = unpack_value(pipeline_run_dict)
 
-        solid_handle = NodeHandle.from_dict(solid_handle_kwargs)
-        solid = pipeline_def.get_solid(solid_handle)
-        solid_def = solid.definition
+        node_handle = NodeHandle.from_dict(node_handle_kwargs)
+        op = pipeline_def.get_solid(node_handle)
+        op_def = op.definition
 
         self.marshal_dir = marshal_dir
         self.in_pipeline = True
-        self.solid_def = solid_def
+        self.op_def = op_def
         self.pipeline = pipeline
 
         resolved_run_config = ResolvedRunConfig.build(
@@ -177,15 +181,20 @@ class Manager:
             self.context = DagstermillRuntimeExecutionContext(
                 pipeline_context=pipeline_context,
                 pipeline_def=pipeline_def,
-                solid_config=run_config.get("ops", {}).get(solid.name, {}).get("config"),
+                op_config=run_config.get("ops", {}).get(op.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
                     pipeline_def,
                     resolved_run_config,
                 ),
-                solid_name=solid.name,
-                solid_handle=solid_handle,
-                step_context=pipeline_context.for_step(execution_plan.get_step_by_key(step_key)),
+                op_name=op.name,
+                node_handle=node_handle,
+                step_context=cast(
+                    StepExecutionContext,
+                    pipeline_context.for_step(
+                        cast(ExecutionStep, execution_plan.get_step_by_key(step_key))
+                    ),
+                ),
             )
 
         return self.context
@@ -195,7 +204,6 @@ class Manager:
         op_config: Any = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-        solid_config: Any = None,
         mode_def: Optional[ModeDefinition] = None,
         run_config: Optional[dict] = None,
     ) -> DagstermillExecutionContext:
@@ -227,10 +235,6 @@ class Manager:
                 " `dagstermill.get_context`. Please provide one or the other."
             )
 
-        solid_config = canonicalize_backcompat_args(
-            op_config, "op_config", solid_config, "solid_config", "0.17.0"
-        )
-
         if mode_def:
             deprecation_warning(
                 "mode_def argument to dagstermill.get_context",
@@ -256,15 +260,15 @@ class Manager:
             resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
             mode_def = ModeDefinition(logger_defs=logger_defs, resource_defs=resource_defs)
 
-        solid_def = OpDefinition(
-            name="this_solid",
+        op_def = OpDefinition(
+            name="this_op",
             compute_fn=lambda *args, **kwargs: None,
-            description="Ephemeral solid constructed by dagstermill.get_context()",
+            description="Ephemeral op constructed by dagstermill.get_context()",
             required_resource_keys=mode_def.resource_key_set,
         )
 
         pipeline_def = PipelineDefinition(
-            [solid_def], mode_defs=[mode_def], name="ephemeral_dagstermill_pipeline"
+            [op_def], mode_defs=[mode_def], name="ephemeral_dagstermill_pipeline"
         )
 
         run_id = make_new_run_id()
@@ -283,7 +287,7 @@ class Manager:
         )
 
         self.in_pipeline = False
-        self.solid_def = solid_def
+        self.op_def = op_def
         self.pipeline = pipeline_def
 
         resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode_def.name)
@@ -302,14 +306,14 @@ class Manager:
             self.context = DagstermillExecutionContext(
                 pipeline_context=pipeline_context,
                 pipeline_def=pipeline_def,
-                solid_config=solid_config,
+                op_config=op_config,
                 resource_keys_to_init=get_required_resource_keys_to_init(
                     execution_plan,
                     pipeline_def,
                     resolved_run_config,
                 ),
-                solid_name=solid_def.name,
-                solid_handle=NodeHandle(solid_def.name, parent=None),
+                op_name=op_def.name,
+                node_handle=NodeHandle(op_def.name, parent=None),
             )
 
         return self.context
@@ -329,10 +333,10 @@ class Manager:
         # deferred import for perf
         import scrapbook
 
-        if not self.solid_def.has_output(output_name):
+        if not self.op_def.has_output(output_name):
             raise DagstermillError(
-                f"Op {self.solid_def.name} does not have output named {output_name}.Expected one of"
-                f" {[str(output_def.name) for output_def in self.solid_def.output_defs]}"
+                f"Op {self.op_def.name} does not have output named {output_name}.Expected one of"
+                f" {[str(output_def.name) for output_def in self.op_def.output_defs]}"
             )
 
         # pass output value cross process boundary using io manager
@@ -400,12 +404,13 @@ class Manager:
 
     def load_input_parameter(self, input_name: str):
         # load input from source
-        step_context = self.context._step_context  # pylint: disable=protected-access
+        dm_context = check.not_none(self.context)
+        if not isinstance(dm_context, DagstermillRuntimeExecutionContext):
+            check.failed("Expected DagstermillRuntimeExecutionContext")
+        step_context = dm_context.step_context  # pylint: disable=protected-access
         step_input = step_context.step.step_input_named(input_name)
-        input_def = step_context.solid_def.input_def_named(input_name)
-        for event_or_input_value in ensure_gen(
-            step_input.source.load_input_object(step_context, input_def)
-        ):
+        input_def = step_context.op_def.input_def_named(input_name)
+        for event_or_input_value in step_input.source.load_input_object(step_context, input_def):
             if isinstance(event_or_input_value, DagsterEvent):
                 continue
             else:

@@ -40,7 +40,7 @@ def test_create_pipeline_with_bad_solids_list():
         match=r'Param "node_defs" is not one of \[\'Sequence\'\]',
     ):
         GraphDefinition(
-            name="a_pipeline", node_defs=define_stub_solid("stub", [{"a key": "a value"}])  # type: ignore
+            name="a_pipeline", node_defs=define_stub_solid("stub", [{"a key": "a value"}])
         )
 
 

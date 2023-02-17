@@ -28,7 +28,7 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
             "ops": {
                 "read_materialization": {
                     "config": {
-                        "asset_key": asset_event.dagster_event.asset_key.path,
+                        "asset_key": asset_event.dagster_event.asset_key.path,  # type: ignore
                     }
                 }
             }
@@ -50,14 +50,14 @@ from dagster import FreshnessPolicySensorContext, freshness_policy_sensor
 
 @freshness_policy_sensor(asset_selection=AssetSelection.all())
 def my_freshness_alerting_sensor(context: FreshnessPolicySensorContext):
-    if context.current_minutes_late is None or context.previous_minutes_late is None:
+    if context.minutes_late is None or context.previous_minutes_late is None:
         return
 
-    if context.current_minutes_late >= 10 and context.previous_minutes_late < 10:
+    if context.minutes_late >= 10 and context.previous_minutes_late < 10:
         send_alert(
             f"Asset with key {context.asset_key} is now more than 10 minutes late."
         )
-    elif context.current_minutes_late == 0 and context.previous_minutes_late >= 10:
+    elif context.minutes_late == 0 and context.previous_minutes_late >= 10:
         send_alert(f"Asset with key {context.asset_key} is now on time.")
 
 

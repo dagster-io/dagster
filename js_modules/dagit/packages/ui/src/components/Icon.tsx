@@ -77,6 +77,7 @@ import menu from '../icon-svgs/menu.svg';
 import menu_book from '../icon-svgs/menu_book.svg';
 import more_horiz from '../icon-svgs/more_horiz.svg';
 import nightlight from '../icon-svgs/nightlight.svg';
+import no_access from '../icon-svgs/no_access.svg';
 import observation from '../icon-svgs/observation.svg';
 import open_in_new from '../icon-svgs/open_in_new.svg';
 import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
@@ -102,6 +103,7 @@ import source_asset from '../icon-svgs/source_asset.svg';
 import speed from '../icon-svgs/speed.svg';
 import splitscreen from '../icon-svgs/splitscreen.svg';
 import star from '../icon-svgs/star.svg';
+import star_outline from '../icon-svgs/star_outline.svg';
 import subtract from '../icon-svgs/subtract.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
 import table_view from '../icon-svgs/table_view.svg';
@@ -239,6 +241,7 @@ export const Icons = {
   menu_book,
   more_horiz,
   nightlight,
+  no_access,
   people,
   refresh,
   replay,
@@ -252,6 +255,7 @@ export const Icons = {
   speed,
   splitscreen,
   star,
+  star_outline,
   sync_problem,
   table_view,
   timer,

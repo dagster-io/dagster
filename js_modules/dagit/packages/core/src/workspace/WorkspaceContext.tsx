@@ -90,6 +90,10 @@ const ROOT_WORKSPACE_QUERY = gql`
     isReloadSupported
     serverId
     name
+    dagsterLibraryVersions {
+      name
+      version
+    }
     repositories {
       id
       ...WorkspaceRepository
@@ -121,6 +125,9 @@ const ROOT_WORKSPACE_QUERY = gql`
     }
     assetGroups {
       groupName
+    }
+    allTopLevelResourceDetails {
+      name
     }
     ...RepositoryInfoFragment
   }

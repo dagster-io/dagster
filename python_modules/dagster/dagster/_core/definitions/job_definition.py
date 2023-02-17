@@ -31,11 +31,13 @@ from dagster._core.definitions.dependency import (
     MultiDependencyDefinition,
     Node,
     NodeHandle,
+    NodeInputHandle,
     NodeInvocation,
     NodeOutput,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
@@ -46,8 +48,9 @@ from dagster._core.errors import (
 )
 from dagster._core.selector.subset_selector import (
     AssetSelectionData,
-    LeafNodeSelection,
     OpSelectionData,
+    SelectionTreeBranch,
+    SelectionTreeLeaf,
     parse_op_selection,
 )
 from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
@@ -242,7 +245,7 @@ class JobDefinition(PipelineDefinition):
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
             version_strategy=version_strategy,
-            asset_layer=asset_layer,
+            asset_layer=asset_layer or _infer_asset_layer_from_source_asset_deps(graph_def),
         )
 
     @property
@@ -256,27 +259,27 @@ class JobDefinition(PipelineDefinition):
     def describe_target(self):
         return f"{self.target_type} '{self.name}'"
 
-    @public  # type: ignore
+    @public
     @property
     def executor_def(self) -> ExecutorDefinition:
         return self.get_mode_definition().executor_defs[0]
 
-    @public  # type: ignore
+    @public
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
         return self.get_mode_definition().resource_defs
 
-    @public  # type: ignore
+    @public
     @property
     def partitioned_config(self) -> Optional[PartitionedConfig]:
         return self.get_mode_definition().partitioned_config
 
-    @public  # type: ignore
+    @public
     @property
     def config_mapping(self) -> Optional[ConfigMapping]:
         return self.get_mode_definition().config_mapping
 
-    @public  # type: ignore
+    @public
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         return self.get_mode_definition().loggers
@@ -387,7 +390,7 @@ class JobDefinition(PipelineDefinition):
                     " partitioned config"
                 )
 
-            partition = partition_set.get_partition(partition_key)
+            partition = partition_set.get_partition(partition_key, instance)
             run_config = (
                 run_config if run_config else partition_set.run_config_for_partition(partition)
             )
@@ -430,7 +433,7 @@ class JobDefinition(PipelineDefinition):
         self,
         op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> Self:  # type: ignore  # fmt: skip
+    ) -> Self:
         check.invariant(
             not (op_selection and asset_selection),
             (
@@ -448,7 +451,7 @@ class JobDefinition(PipelineDefinition):
     def _get_job_def_for_asset_selection(
         self,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-    ) -> Self:  # type: ignore  # fmt: skip
+    ) -> Self:
         asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
 
         nonexistent_assets = [
@@ -494,7 +497,7 @@ class JobDefinition(PipelineDefinition):
     def _get_job_def_for_op_selection(
         self,
         op_selection: Optional[Sequence[str]] = None,
-    ) -> Self:  # type: ignore  # fmt: skip
+    ) -> Self:
         if not op_selection:
             return self
 
@@ -567,7 +570,7 @@ class JobDefinition(PipelineDefinition):
 
         return self._cached_partition_set
 
-    @public  # type: ignore
+    @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         mode = self.get_mode_definition()
@@ -584,6 +587,7 @@ class JobDefinition(PipelineDefinition):
         tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
+        instance: Optional["DagsterInstance"] = None,
     ) -> RunRequest:
         """
         Creates a RunRequest object for a run that processes the given partition.
@@ -607,7 +611,14 @@ class JobDefinition(PipelineDefinition):
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        partition = partition_set.get_partition(partition_key)
+        if isinstance(partition_set.partitions_def, DynamicPartitionsDefinition):
+            if not instance:
+                check.failed(
+                    "Must provide a dagster instance when calling run_request_for_partition on a "
+                    "dynamic partition set"
+                )
+
+        partition = partition_set.get_partition(partition_key, instance)
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags
@@ -747,7 +758,7 @@ def _dep_key_of(node: Node) -> NodeInvocation:
 
 def get_subselected_graph_definition(
     graph: GraphDefinition,
-    resolved_op_selection_dict: Mapping,
+    resolved_op_selection_dict: SelectionTreeBranch,
     parent_handle: Optional[NodeHandle] = None,
 ) -> SubselectedGraphDefinition:
     deps: Dict[
@@ -757,7 +768,7 @@ def get_subselected_graph_definition(
 
     selected_nodes: List[Tuple[str, NodeDefinition]] = []
 
-    for node in graph.solids_in_topological_order:
+    for node in graph.nodes_in_topological_order:
         node_handle = NodeHandle(node.name, parent=parent_handle)
         # skip if the node isn't selected
         if node.name not in resolved_op_selection_dict:
@@ -765,13 +776,11 @@ def get_subselected_graph_definition(
 
         # rebuild graph if any nodes inside the graph are selected
         definition: Union[SubselectedGraphDefinition, NodeDefinition]
-        if (
-            isinstance(node, GraphNode)
-            and resolved_op_selection_dict[node.name] is not LeafNodeSelection
-        ):
+        selection_node = resolved_op_selection_dict[node.name]
+        if isinstance(node, GraphNode) and not isinstance(selection_node, SelectionTreeLeaf):
             definition = get_subselected_graph_definition(
                 node.definition,
-                resolved_op_selection_dict[node.name],
+                selection_node,
                 parent_handle=node_handle,
             )
         # use definition if the node as a whole is selected. this includes selecting the entire graph
@@ -795,7 +804,7 @@ def get_subselected_graph_definition(
                     deps[_dep_key_of(node)][
                         node_input.input_def.name
                     ] = DynamicCollectDependencyDefinition(
-                        solid_name=node_output.node.name,
+                        node_name=node_output.node.name,
                         output_name=node_output.output_def.name,
                     )
             elif graph.dependency_structure.has_fan_in_deps(node_input):
@@ -821,14 +830,14 @@ def get_subselected_graph_definition(
     # filter out unselected input/output mapping
     new_input_mappings = list(
         filter(
-            lambda input_mapping: input_mapping.maps_to.solid_name
+            lambda input_mapping: input_mapping.maps_to.node_name
             in [name for name, _ in selected_nodes],
             graph._input_mappings,  # pylint: disable=protected-access
         )
     )
     new_output_mappings = list(
         filter(
-            lambda output_mapping: output_mapping.maps_from.solid_name
+            lambda output_mapping: output_mapping.maps_from.node_name
             in [name for name, _ in selected_nodes],
             graph._output_mappings,  # pylint: disable=protected-access
         )
@@ -873,7 +882,7 @@ def default_job_io_manager(init_context: "InitResourceContext"):
                 ),
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
-                return resources.io_manager  # type: ignore
+                return resources.io_manager
         except Exception as e:
             if not silence_failures:
                 raise
@@ -914,7 +923,7 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
                 ),
             )
             with build_resources({"io_manager": attr}, instance=init_context.instance) as resources:
-                return resources.io_manager  # type: ignore
+                return resources.io_manager
         except Exception as e:
             if not silence_failures:
                 raise
@@ -1002,4 +1011,54 @@ def get_run_config_schema_for_job(
         )
         .get_run_config_schema("default")
         .run_config_schema_type
+    )
+
+
+def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) -> AssetLayer:
+    """
+    For non-asset jobs that have some inputs that are fed from SourceAssets, constructs an
+    AssetLayer that includes those SourceAssets.
+    """
+    asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
+    source_assets_list = []
+    source_asset_keys_set = set()
+    io_manager_keys_by_asset_key: Mapping[AssetKey, str] = {}
+
+    # each entry is a graph definition and its handle relative to the job root
+    stack: List[Tuple[GraphDefinition, Optional[NodeHandle]]] = [(job_graph_def, None)]
+
+    while stack:
+        graph_def, parent_node_handle = stack.pop()
+
+        for node_name, input_source_assets in graph_def.node_input_source_assets.items():
+            node_handle = NodeHandle(node_name, parent_node_handle)
+            for input_name, source_asset in input_source_assets.items():
+                if source_asset.key not in source_asset_keys_set:
+                    source_asset_keys_set.add(source_asset.key)
+                    source_assets_list.append(source_asset)
+
+                input_handle = NodeInputHandle(node_handle, input_name)
+                asset_keys_by_node_input_handle[input_handle] = source_asset.key
+                for resolved_input_handle in graph_def.node_dict[
+                    node_name
+                ].definition.resolve_input_to_destinations(input_handle):
+                    asset_keys_by_node_input_handle[resolved_input_handle] = source_asset.key
+
+                if source_asset.io_manager_key:
+                    io_manager_keys_by_asset_key[source_asset.key] = source_asset.io_manager_key
+
+        for node_name, node in graph_def.node_dict.items():
+            if isinstance(node.definition, GraphDefinition):
+                stack.append((node.definition, NodeHandle(node_name, parent_node_handle)))
+
+    return AssetLayer(
+        asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
+        asset_info_by_node_output_handle={},
+        asset_deps={},
+        dependency_node_handles_by_asset_key={},
+        assets_defs=[],
+        source_asset_defs=source_assets_list,
+        io_manager_keys_by_asset_key=io_manager_keys_by_asset_key,
+        node_output_handles_to_dep_asset_keys={},
+        partition_mappings_by_asset_dep={},
     )

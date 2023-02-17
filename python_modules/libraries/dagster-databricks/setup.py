@@ -21,7 +21,7 @@ setup(
     author="Elementl",
     author_email="hello@elementl.com",
     license="Apache-2.0",
-    description="Package for Databricks-specific Dagster framework solid and resource components.",
+    description="Package for Databricks-specific Dagster framework op and resource components.",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-databricks",
     classifiers=[
         "Programming Language :: Python :: 3.7",
@@ -36,7 +36,8 @@ setup(
     install_requires=[
         f"dagster{pin}",
         f"dagster-pyspark{pin}",
-        "databricks_api",
+        "databricks-cli~=0.17",
+        "databricks_api",  # Divest from this library in the future since it is unnecessary indirection.
     ],
     zip_safe=False,
 )

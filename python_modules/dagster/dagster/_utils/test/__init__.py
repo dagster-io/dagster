@@ -19,7 +19,7 @@ from dagster._core.definitions import (
     OpDefinition,
     OutputMapping,
     PipelineDefinition,
-    lambda_solid,
+    op,
 )
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
@@ -126,7 +126,7 @@ def build_pipeline_with_input_stubs(
                 input_value,
             )
             stub_solid_defs.append(stub_solid_def)
-            deps[_dep_key_of(solid)][input_name] = DependencyDefinition(stub_solid_def.name)  # type: ignore
+            deps[_dep_key_of(solid)][input_name] = DependencyDefinition(stub_solid_def.name)
 
     return PipelineDefinition(
         name=pipeline_def.name + "_stubbed",
@@ -368,7 +368,7 @@ def execute_solid(
     solid_defs = [solid_def]
 
     def create_value_solid(input_name, input_value):
-        @lambda_solid(name=input_name)
+        @op(name=input_name)
         def input_solid():
             return input_value
 

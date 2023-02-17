@@ -24,15 +24,15 @@ DATAPROC_CONFIG_SCHEMA = {
 
 
 def _dataproc_compute(context):
-    job_config = context.solid_config["job_config"]
-    job_timeout = context.solid_config["job_timeout_in_seconds"]
+    job_config = context.op_config["job_config"]
+    job_timeout = context.op_config["job_timeout_in_seconds"]
 
     context.log.info(
         "submitting job with config: %s and timeout of: %d seconds"
         % (str(json.dumps(job_config)), job_timeout)
     )
 
-    if context.solid_config["job_scoped_cluster"]:
+    if context.op_config["job_scoped_cluster"]:
         # Cluster context manager, creates and then deletes cluster
         with context.resources.dataproc.cluster_context_manager() as cluster:
             # Submit the job specified by this solid to the cluster defined by the associated resource

@@ -85,7 +85,7 @@ def inner_plan_execution_iterator(
                         try:
                             step_stack.enter_context(
                                 pipeline_context.instance.compute_log_manager.watch(
-                                    step_context.pipeline_run, step_context.step.key
+                                    step_context.dagster_run, step_context.step.key
                                 )
                             )
                             yield DagsterEvent.legacy_compute_log_step_event(step_context)
@@ -136,7 +136,9 @@ def inner_plan_execution_iterator(
                 yield from _handle_compute_log_teardown_error(pipeline_context, sys.exc_info())
 
 
-def _handle_compute_log_setup_error(context, exc_info):
+def _handle_compute_log_setup_error(
+    context: PlanExecutionContext, exc_info
+) -> Iterator[DagsterEvent]:
     yield DagsterEvent.engine_event(
         plan_context=context,
         message="Exception while setting up compute log capture",
@@ -144,7 +146,9 @@ def _handle_compute_log_setup_error(context, exc_info):
     )
 
 
-def _handle_compute_log_teardown_error(context, exc_info):
+def _handle_compute_log_teardown_error(
+    context: PlanExecutionContext, exc_info
+) -> Iterator[DagsterEvent]:
     yield DagsterEvent.engine_event(
         plan_context=context,
         message="Exception while cleaning up compute log capture",
@@ -156,7 +160,7 @@ def _trigger_hook(
     step_context: StepExecutionContext, step_event_list: Sequence[DagsterEvent]
 ) -> Iterator[DagsterEvent]:
     """Trigger hooks and record hook's operatonal events."""
-    hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.solid_handle)
+    hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.node_handle)
     # when the solid doesn't have a hook configured
     if hook_defs is None:
         return

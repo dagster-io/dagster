@@ -360,35 +360,27 @@ def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
     return resolved_type
 
 
-class InputPointer(NamedTuple("_InputPointer", [("solid_name", str), ("input_name", str)])):
-    def __new__(cls, solid_name: str, input_name: str):
+class InputPointer(NamedTuple("_InputPointer", [("node_name", str), ("input_name", str)])):
+    def __new__(cls, node_name: str, input_name: str):
         return super(InputPointer, cls).__new__(
             cls,
-            check.str_param(solid_name, "solid_name"),
+            check.str_param(node_name, "node_name"),
             check.str_param(input_name, "input_name"),
         )
-
-    @property
-    def node_name(self) -> str:
-        return self.solid_name
 
 
 class FanInInputPointer(
     NamedTuple(
-        "_FanInInputPointer", [("solid_name", str), ("input_name", str), ("fan_in_index", int)]
+        "_FanInInputPointer", [("node_name", str), ("input_name", str), ("fan_in_index", int)]
     )
 ):
-    def __new__(cls, solid_name: str, input_name: str, fan_in_index: int):
+    def __new__(cls, node_name: str, input_name: str, fan_in_index: int):
         return super(FanInInputPointer, cls).__new__(
             cls,
-            check.str_param(solid_name, "solid_name"),
+            check.str_param(node_name, "node_name"),
             check.str_param(input_name, "input_name"),
             check.int_param(fan_in_index, "fan_in_index"),
         )
-
-    @property
-    def node_name(self) -> str:
-        return self.solid_name
 
 
 class InputMapping(NamedTuple):
@@ -450,9 +442,7 @@ class InputMapping(NamedTuple):
 
     def describe(self) -> str:
         idx = self.maps_to.fan_in_index if isinstance(self.maps_to, FanInInputPointer) else ""
-        return (
-            f"{self.graph_input_name} -> {self.maps_to.solid_name}:{self.maps_to.input_name}{idx}"
-        )
+        return f"{self.graph_input_name} -> {self.maps_to.node_name}:{self.maps_to.input_name}{idx}"
 
     def get_definition(self) -> "InputDefinition":
         return InputDefinition(
@@ -540,7 +530,7 @@ class In(
             default_value=default_value,
             root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
-            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),  # type: ignore  # (mypy bug)
+            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
             asset_partitions=asset_partitions,
             input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
         )

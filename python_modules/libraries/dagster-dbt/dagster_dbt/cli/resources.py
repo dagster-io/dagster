@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional, Sequence, Set
+from typing import Any, Iterator, Mapping, Optional, Sequence, Set
 
 import dagster._check as check
 from dagster import Permissive, resource
@@ -8,7 +8,13 @@ from dagster._utils.merger import merge_dicts
 from ..dbt_resource import DbtResource
 from .constants import CLI_COMMON_FLAGS_CONFIG_SCHEMA, CLI_COMMON_OPTIONS_CONFIG_SCHEMA
 from .types import DbtCliOutput
-from .utils import execute_cli, parse_manifest, parse_run_results, remove_run_results
+from .utils import (
+    execute_cli,
+    execute_cli_stream,
+    parse_manifest,
+    parse_run_results,
+    remove_run_results,
+)
 
 
 class DbtCliResource(DbtResource):
@@ -59,6 +65,20 @@ class DbtCliResource(DbtResource):
         """
         return {"models", "exclude", "select"}
 
+    def _get_flags_dict(self, kwargs) -> Mapping[str, Any]:
+        extra_flags = {} if kwargs is None else kwargs
+
+        # remove default flags that are declared as "strict" and not explicitly passed in
+        default_flags = {
+            k: v
+            for k, v in self.default_flags.items()
+            if not (k in self.strict_flags and k not in extra_flags)
+        }
+
+        return merge_dicts(
+            default_flags, self._format_params(extra_flags, replace_underscores=True)
+        )
+
     @public
     def cli(self, command: str, **kwargs) -> DbtCliOutput:
         """
@@ -74,23 +94,10 @@ class DbtCliResource(DbtResource):
                 parsed log output as well as the contents of run_results.json (if applicable).
         """
         command = check.str_param(command, "command")
-        extra_flags = {} if kwargs is None else kwargs
-
-        # remove default flags that are declared as "strict" and not explicitly passed in
-        default_flags = {
-            k: v
-            for k, v in self.default_flags.items()
-            if not (k in self.strict_flags and k not in extra_flags)
-        }
-
-        flags = merge_dicts(
-            default_flags, self._format_params(extra_flags, replace_underscores=True)
-        )
-
         return execute_cli(
             executable=self._executable,
             command=command,
-            flags_dict=flags,
+            flags_dict=self._get_flags_dict(kwargs),
             log=self.logger,
             warn_error=self._warn_error,
             ignore_handled_error=self._ignore_handled_error,
@@ -99,6 +106,29 @@ class DbtCliResource(DbtResource):
             json_log_format=self._json_log_format,
             capture_logs=self._capture_logs,
         )
+
+    def cli_stream_json(self, command: str, **kwargs) -> Iterator[Mapping[str, Any]]:
+        """
+        Executes a dbt CLI command. Params passed in as keyword arguments will be merged with the
+            default flags that were configured on resource initialization (if any) overriding the
+            default values if necessary.
+
+        Args:
+            command (str): The command you wish to run (e.g. 'run', 'test', 'docs generate', etc.)
+        """
+        check.invariant(self._json_log_format, "Cannot stream JSON if json_log_format is False.")
+        for event in execute_cli_stream(
+            executable=self._executable,
+            command=command,
+            flags_dict=self._get_flags_dict(kwargs),
+            log=self.logger,
+            warn_error=self._warn_error,
+            ignore_handled_error=self._ignore_handled_error,
+            json_log_format=self._json_log_format,
+            capture_logs=self._capture_logs,
+        ):
+            if event.parsed_json_line is not None:
+                yield event.parsed_json_line
 
     @public
     def compile(

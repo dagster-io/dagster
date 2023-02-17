@@ -2,7 +2,14 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
-from dagster import InputContext, IOManager, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster import (
+    InputContext,
+    IOManager,
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableSchema,
+)
 from pandas import (
     DataFrame as PandasDataFrame,
     read_sql,
@@ -46,7 +53,7 @@ class SnowflakeIOManager(IOManager):
         self._config = config
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
-        schema, table = context.asset_key.path[-2], context.asset_key.path[-1]  # type: ignore
+        schema, table = context.asset_key.path[-2], context.asset_key.path[-1]
 
         time_window = context.asset_partitions_time_window if context.has_asset_partitions else None
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -63,7 +70,10 @@ class SnowflakeIOManager(IOManager):
                 df = read_sql(f"SELECT * FROM {context.name} LIMIT 5", con=con)
                 num_rows = con.execute(f"SELECT COUNT(*) FROM {context.name}").fetchone()
 
-            metadata = {"data_sample": MetadataValue.md(df.to_markdown()), "rows": num_rows}
+            metadata = {
+                "data_sample": MetadataValue.md(df.to_markdown()),
+                "rows": num_rows,
+            }
         else:
             raise Exception(
                 "SnowflakeIOManager only supports pandas DataFrames and spark DataFrames"
@@ -160,7 +170,7 @@ class SnowflakeIOManager(IOManager):
                 ),
                 con=con,
             )
-            result.columns = map(str.lower, result.columns)
+            result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
             return result
 
     def _get_select_statement(

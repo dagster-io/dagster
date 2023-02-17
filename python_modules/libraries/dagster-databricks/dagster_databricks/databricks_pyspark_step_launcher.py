@@ -24,6 +24,7 @@ from dagster._core.execution.plan.external_step import (
 from dagster._serdes import deserialize_value
 from dagster._utils.backoff import backoff
 from dagster_pyspark.utils import build_pyspark_zip
+from databricks_cli.sdk import JobsService
 from requests import HTTPError
 
 from dagster_databricks import databricks_step_main
@@ -238,7 +239,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         step_run_ref = step_context_to_step_run_ref(
             step_context, self.local_dagster_job_package_path
         )
-        run_id = step_context.pipeline_run.run_id
+        run_id = step_context.dagster_run.run_id
         log = step_context.log
 
         step_key = step_run_ref.step_key
@@ -349,7 +350,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             # allow for retry if we get malformed data
             return backoff(
                 fn=_get_step_records,
-                retry_on=(pickle.UnpicklingError, gzip.BadGzipFile, zlib.error, EOFError),
+                retry_on=(pickle.UnpicklingError, OSError, zlib.error, EOFError),
                 max_retries=4,
             )
         # if you poll before the Databricks process has had a chance to create the file,
@@ -366,7 +367,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         # Retrieve run info
         cluster_id = None
         for i in range(1, request_retries + 1):
-            run_info = self.databricks_runner.client.get_run(databricks_run_id)
+            run_info = JobsService(self.databricks_runner.client.api_client).get_run(
+                databricks_run_id
+            )
             # if a new job cluster is created, the cluster_instance key may not be immediately present in the run response
             try:
                 cluster_id = run_info["cluster_instance"]["cluster_id"]

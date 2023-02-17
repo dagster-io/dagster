@@ -1,6 +1,17 @@
 import asyncio
 import inspect
-from typing import Any, AsyncGenerator, Callable, Iterator, List, Mapping, Sequence, Set, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Iterator,
+    List,
+    Mapping,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
 from typing_extensions import TypeAlias
 
@@ -27,7 +38,9 @@ from dagster._utils import iterate_with_context
 from .outputs import StepOutput, StepOutputProperties
 from .utils import op_execution_error_boundary
 
-SolidOutputUnion: TypeAlias = Union[
+T = TypeVar("T")
+
+OpOutputUnion: TypeAlias = Union[
     DynamicOutput[Any],
     Output[Any],
     AssetMaterialization,
@@ -48,7 +61,7 @@ def create_step_outputs(
     config_output_names: Set[str] = set()
     current_handle = handle
     while current_handle:
-        solid_config = resolved_run_config.solids[current_handle.to_string()]
+        solid_config = resolved_run_config.ops[current_handle.to_string()]
         current_handle = current_handle.parent
         config_output_names = config_output_names.union(solid_config.outputs.output_names)
 
@@ -72,7 +85,7 @@ def create_step_outputs(
     return step_outputs
 
 
-def _validate_event(event: Any, step_context: StepExecutionContext) -> SolidOutputUnion:
+def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputUnion:
     if not isinstance(
         event,
         (
@@ -98,14 +111,14 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> SolidOutp
             ).format(
                 described_node=step_context.describe_op(),
                 type_=type(event),
-                node_type=step_context.solid_def.node_type_str,
+                node_type=step_context.op_def.node_type_str,
             )
         )
 
     return event
 
 
-def gen_from_async_gen(async_gen: AsyncGenerator) -> Iterator:
+def gen_from_async_gen(async_gen: AsyncIterator[T]) -> Iterator[T]:
     loop = asyncio.get_event_loop()
     while True:
         try:
@@ -116,7 +129,7 @@ def gen_from_async_gen(async_gen: AsyncGenerator) -> Iterator:
 
 def _yield_compute_results(
     step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: Callable
-) -> Iterator[SolidOutputUnion]:
+) -> Iterator[OpOutputUnion]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
     context = OpExecutionContext(step_context)
@@ -130,7 +143,7 @@ def _yield_compute_results(
                 "its results"
             ).format(
                 described_node=step_context.describe_op(),
-                node_type=step_context.solid_def.node_type_str,
+                node_type=step_context.op_def.node_type_str,
             )
         )
 
@@ -148,7 +161,7 @@ def _yield_compute_results(
             msg_fn=lambda: f"Error occurred while executing {op_label}:",
             step_context=step_context,
             step_key=step_context.step.key,
-            op_def_name=step_context.solid_def.name,
+            op_def_name=step_context.op_def.name,
             op_name=step_context.solid.name,
         ),
         user_event_generator,
@@ -163,9 +176,9 @@ def _yield_compute_results(
 
 def execute_core_compute(
     step_context: StepExecutionContext, inputs: Mapping[str, Any], compute_fn: OpComputeFunction
-) -> Iterator[SolidOutputUnion]:
+) -> Iterator[OpOutputUnion]:
     """
-    Execute the user-specified compute for the solid. Wrap in an error boundary and do
+    Execute the user-specified compute for the op. Wrap in an error boundary and do
     all relevant logging and metrics tracking.
     """
     check.inst_param(step_context, "step_context", StepExecutionContext)
@@ -183,6 +196,6 @@ def execute_core_compute(
     omitted_outputs = solid_output_names.difference(emitted_result_names)
     if omitted_outputs:
         step_context.log.info(
-            f"{step_context.solid_def.node_type_str} '{str(step.solid_handle)}' did not fire "
+            f"{step_context.op_def.node_type_str} '{str(step.node_handle)}' did not fire "
             f"outputs {repr(omitted_outputs)}"
         )

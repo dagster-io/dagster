@@ -2,6 +2,7 @@ from typing import Iterator, Optional, cast
 
 import dagster._check as check
 import docker
+import docker.errors
 from dagster import Field, IntSource, executor
 from dagster._annotations import experimental
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
@@ -120,7 +121,7 @@ class DockerStepHandler(StepHandler):
         from . import DockerRunLauncher
 
         image = cast(
-            PipelinePythonOrigin, step_handler_context.pipeline_run.pipeline_code_origin
+            PipelinePythonOrigin, step_handler_context.dagster_run.pipeline_code_origin
         ).repository_origin.container_image
         if not image:
             image = self._image
@@ -143,7 +144,7 @@ class DockerStepHandler(StepHandler):
 
         run_launcher = step_handler_context.instance.run_launcher
         run_target = DockerContainerContext.create_for_run(
-            step_handler_context.pipeline_run,
+            step_handler_context.dagster_run,
             run_launcher if isinstance(run_launcher, DockerRunLauncher) else None,
         )
 
@@ -200,7 +201,7 @@ class DockerStepHandler(StepHandler):
         step_key = step_keys_to_execute[0]
 
         env_vars = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
-        env_vars["DAGSTER_RUN_JOB_NAME"] = step_handler_context.pipeline_run.job_name
+        env_vars["DAGSTER_RUN_JOB_NAME"] = step_handler_context.dagster_run.job_name
         env_vars["DAGSTER_RUN_STEP_KEY"] = step_key
         return client.containers.create(
             step_image,

@@ -12,7 +12,13 @@ from dagster_buildkite.python_packages import PythonPackages, changed_filetypes
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
 from .steps.tox import build_tox_step
-from .utils import BuildkiteLeafStep, GroupStep, is_feature_branch
+from .utils import (
+    BuildkiteLeafStep,
+    BuildkiteTopLevelStep,
+    GroupStep,
+    is_command_step,
+    is_feature_branch,
+)
 
 _CORE_PACKAGES = [
     "python_modules/dagster",
@@ -26,7 +32,6 @@ _INFRASTRUCTURE_PACKAGES = [
     "python_modules/automation",
     "python_modules/dagster-test",
     "python_modules/docs/dagit-screenshot",
-    "scripts",
 ]
 
 
@@ -98,8 +103,6 @@ class PackageSpec:
         timeout_in_minutes (int, optional): Fail after this many minutes.
         queue (BuildkiteQueue, optional): Schedule steps to this queue.
         run_pytest (bool, optional): Whether to run pytest. Enabled by default.
-        run_mypy (bool, optional): Whether to run mypy. Runs in the highest available supported
-            Python version. Enabled by default.
     """
 
     directory: str
@@ -115,7 +118,6 @@ class PackageSpec:
     timeout_in_minutes: Optional[int] = None
     queue: Optional[BuildkiteQueue] = None
     run_pytest: bool = True
-    run_mypy: bool = True
 
     def __post_init__(self):
         if not self.name:
@@ -127,7 +129,7 @@ class PackageSpec:
         self._should_skip = None
         self._skip_reason = None
 
-    def build_steps(self) -> List[GroupStep]:
+    def build_steps(self) -> List[BuildkiteTopLevelStep]:
         base_name = self.name or os.path.basename(self.directory)
         steps: List[BuildkiteLeafStep] = []
 
@@ -190,26 +192,22 @@ class PackageSpec:
                         )
                     )
 
-        if self.run_mypy:
-            steps.append(
-                build_tox_step(
-                    self.directory,
-                    "mypy",
-                    base_label=base_name,
-                    command_type="mypy",
-                    python_version=supported_python_versions[-1],
-                    skip_reason=self.skip_reason,
-                )
-            )
-
         emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]  # type: ignore[index]
-        return [
-            GroupStep(
-                group=f"{emoji} {base_name}",
-                key=base_name,
-                steps=steps,
-            )
-        ]
+        if len(steps) >= 2:
+            return [
+                GroupStep(
+                    group=f"{emoji} {base_name}",
+                    key=base_name,
+                    steps=steps,
+                )
+            ]
+        elif len(steps) == 1:
+            only_step = steps[0]
+            if not is_command_step(only_step):
+                raise ValueError("Expected only step to be a CommandStep")
+            return [only_step]
+        else:
+            return []
 
     @property
     def requirements(self):

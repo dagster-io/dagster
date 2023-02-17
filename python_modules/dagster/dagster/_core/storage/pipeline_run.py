@@ -37,7 +37,6 @@ from dagster._serdes.serdes import (
 
 from .tags import (
     BACKFILL_ID_TAG,
-    PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
@@ -46,7 +45,11 @@ from .tags import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.partition import Partition, PartitionSetDefinition
+    from dagster._core.definitions.partition import (
+        Partition,
+        PartitionSetDefinition,
+    )
+    from dagster._core.host_representation.external import ExternalSchedule, ExternalSensor
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
 
@@ -427,7 +430,7 @@ class DagsterRun(
             ),
         )
 
-    def with_status(self, status: DagsterRunStatus) -> Self:  # type: ignore  # fmt: skip
+    def with_status(self, status: DagsterRunStatus) -> Self:
         if status == DagsterRunStatus.QUEUED:
             # Placing this with the other imports causes a cyclic import
             # https://github.com/dagster-io/dagster/issues/3181
@@ -441,25 +444,25 @@ class DagsterRun(
 
         return self._replace(status=status)
 
-    def with_job_origin(self, origin: "ExternalPipelineOrigin") -> Self:  # type: ignore  # fmt: skip
+    def with_job_origin(self, origin: "ExternalPipelineOrigin") -> Self:
         from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
         check.inst_param(origin, "origin", ExternalPipelineOrigin)
         return self._replace(external_pipeline_origin=origin)
 
-    def with_mode(self, mode: str) -> Self:  # type: ignore  # fmt: skip
+    def with_mode(self, mode: str) -> Self:
         return self._replace(mode=mode)
 
-    def with_tags(self, tags: Mapping[str, str]) -> Self:  # type: ignore  # fmt: skip
+    def with_tags(self, tags: Mapping[str, str]) -> Self:
         return self._replace(tags=tags)
 
-    def get_root_run_id(self):
+    def get_root_run_id(self) -> Optional[str]:
         return self.tags.get(ROOT_RUN_ID_TAG)
 
-    def get_parent_run_id(self):
+    def get_parent_run_id(self) -> Optional[str]:
         return self.tags.get(PARENT_RUN_ID_TAG)
 
-    def tags_for_storage(self):
+    def tags_for_storage(self) -> Mapping[str, str]:
         repository_tags = {}
         if self.external_pipeline_origin:
             # tag the run with a label containing the repository name / location name, to allow for
@@ -473,27 +476,27 @@ class DagsterRun(
 
         return {**repository_tags, **self.tags}
 
-    @public  # type: ignore
+    @public
     @property
-    def is_finished(self):
+    def is_finished(self) -> bool:
         return self.status in FINISHED_STATUSES
 
-    @public  # type: ignore
+    @public
     @property
     def is_success(self) -> bool:
         return self.status == DagsterRunStatus.SUCCESS
 
-    @public  # type: ignore
+    @public
     @property
     def is_failure(self) -> bool:
         return self.status == DagsterRunStatus.FAILURE
 
-    @public  # type: ignore
+    @public
     @property
     def is_failure_or_canceled(self):
         return self.status == DagsterRunStatus.FAILURE or self.status == DagsterRunStatus.CANCELED
 
-    @public  # type: ignore
+    @public
     @property
     def is_resume_retry(self) -> bool:
         return self.tags.get(RESUME_RETRY_TAG) == "true"
@@ -503,7 +506,7 @@ class DagsterRun(
         # Compat
         return self.parent_run_id
 
-    @public  # type: ignore
+    @public
     @property
     def job_name(self) -> str:
         return self.pipeline_name
@@ -524,17 +527,8 @@ class DagsterRun(
     def tags_for_partition_set(
         partition_set: "PartitionSetDefinition", partition: "Partition"
     ) -> Mapping[str, str]:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionKey,
-            get_tags_from_multi_partition_key,
-        )
-
         tags = {PARTITION_SET_TAG: partition_set.name}
-        if isinstance(partition.name, MultiPartitionKey):
-            tags.update(get_tags_from_multi_partition_key(partition.name))
-        else:
-            tags[PARTITION_NAME_TAG] = partition.name
-
+        tags.update(partition_set.partitions_def.get_tags_for_partition_key(partition.name))
         return tags
 
 
@@ -652,29 +646,29 @@ class RunsFilter(
         )
 
     @property
-    def pipeline_name(self):
+    def pipeline_name(self) -> Optional[str]:
         return self.job_name
 
     @staticmethod
-    def for_schedule(schedule):
+    def for_schedule(schedule: "ExternalSchedule") -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_schedule(schedule))
 
     @staticmethod
-    def for_partition(partition_set, partition):
+    def for_partition(
+        partition_set: "PartitionSetDefinition", partition: "Partition"
+    ) -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_partition_set(partition_set, partition))
 
     @staticmethod
-    def for_sensor(sensor):
+    def for_sensor(sensor: "ExternalSensor") -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_sensor(sensor))
 
     @staticmethod
-    def for_backfill(backfill_id):
+    def for_backfill(backfill_id: str) -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_id))
 
 
 register_serdes_tuple_fallbacks({"PipelineRunsFilter": RunsFilter})
-# DEPRECATED - keeping around for backcompat reasons (some folks might have imported directly)
-PipelineRunsFilter = RunsFilter
 
 
 class JobBucket(NamedTuple):
@@ -709,12 +703,12 @@ class RunRecord(
 
     def __new__(
         cls,
-        storage_id,
-        pipeline_run,
-        create_timestamp,
-        update_timestamp,
-        start_time=None,
-        end_time=None,
+        storage_id: int,
+        pipeline_run: DagsterRun,
+        create_timestamp: datetime,
+        update_timestamp: datetime,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
     ):
         return super(RunRecord, cls).__new__(
             cls,
@@ -726,6 +720,10 @@ class RunRecord(
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
         )
+
+    @property
+    def dagster_run(self) -> DagsterRun:
+        return self.pipeline_run
 
 
 @whitelist_for_serdes

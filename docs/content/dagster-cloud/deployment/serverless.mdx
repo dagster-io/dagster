@@ -76,10 +76,19 @@ dagster-cloud configure
 
 You can also configure the `dagster-cloud` tool noninteractively; see [the CLI docs](/dagster-cloud/developing-testing/dagster-cloud-cli#environment-variables-and-cli-options) for more information.
 
+Add `dagster-cloud` as a dependency to `my-dagster-project/setup.py`:
+
+```python
+install_requires=[
+    "dagster",
+    "dagster-cloud",    # add this line
+    "dagster-airbyte",
+```
+
 Finally, deploy your project with Dagster Cloud Serverless:
 
 ```shell
-dagster-cloud serverless deploy-python-executable \
+dagster-cloud serverless deploy-python-executable ./my-dagster-project \
   --location-name example \
   --package-name assets_modern_data_stack
 ```
@@ -285,7 +294,7 @@ Unlike Hybrid, Serverless Deployments on Dagster Cloud require direct access to 
 
 Dagster Cloud Serverless offers two settings for run isolation: isolated and non-isolated. Non-isolated runs are for iterating quickly and trade off isolation for speed. Isolated runs are for production and compute heavy Assets/Jobs.
 
-### Isolated runs
+### Isolated runs (default)
 
 Isolated runs each take place in their own container with their own compute resources: 4 cpu cores and 16GB of RAM.
 
@@ -315,7 +324,7 @@ Non-isolated runs provide a faster start time by using a standing, shared contai
 
 They have fewer compute resources: 0.25 vCPU cores and 1GB of RAM. These resources are shared with other processes for a code location like sensors. As a result, it's recommended to use isolated runs for compute intensive jobs and asset materializations.
 
-While launching runs from the Launchpad, leave `Isolate run environment` unchecked to launch a non-isolated run. Materializing assets from the UI also defaults to non-isolated.
+While launching runs from the Launchpad, uncheck `Isolate run environment`. When materializing an asset, shift-click `Materialize all` and uncheck it in the modal.
 
 <Image
 alt="The isolated run toggle in Dagster Cloud"

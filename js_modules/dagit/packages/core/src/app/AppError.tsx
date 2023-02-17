@@ -7,9 +7,20 @@ import * as React from 'react';
 
 import {showCustomAlert} from './CustomAlertProvider';
 
+interface DagsterSerializableErrorInfo {
+  message: string;
+  stack: string[];
+  cls_name: string | null;
+  cause: DagsterSerializableErrorInfo | null;
+  context: DagsterSerializableErrorInfo | null;
+}
+
 interface DagsterGraphQLError extends GraphQLError {
-  stack_trace: string[];
-  cause?: DagsterGraphQLError;
+  extensions:
+    | {
+        errorInfo?: DagsterSerializableErrorInfo;
+      }
+    | undefined;
 }
 
 const ErrorToaster = Toaster.create({position: 'top-right'});
@@ -53,24 +64,26 @@ interface AppStackTraceLinkProps {
 
 const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
   const title = 'Error';
-  const stackTraceContent = error.stack_trace ? (
+  const stackTrace = error?.extensions?.errorInfo?.stack;
+  const cause = error?.extensions?.errorInfo?.cause;
+  const stackTraceContent = stackTrace ? (
     <>
       {'\n\n'}
       Stack Trace:
       {'\n'}
-      {error.stack_trace.join('')}
+      {stackTrace.join('')}
     </>
   ) : null;
-  const causeContent = error.cause ? (
+  const causeContent = cause ? (
     <>
       {'\n'}
       The above exception was the direct cause of the following exception:
       {'\n\n'}
-      Message: {error.cause.message}
+      Message: {cause.message}
       {'\n\n'}
       Stack Trace:
       {'\n'}
-      {error.cause.stack_trace.join('')}
+      {cause.stack.join('')}
     </>
   ) : null;
   const instructions = (
@@ -138,4 +151,42 @@ const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
       View error info
     </span>
   );
+};
+
+const IGNORED_CONSOLE_ERRORS = [
+  'The above error occurred',
+  'NetworkError when attempting to fetch resource',
+  "Can't perform a React state update on an unmounted component",
+];
+
+export const setupErrorToasts = () => {
+  const original = console.error;
+  Object.defineProperty(console, 'error', {
+    value: (...args: any[]) => {
+      original.apply(console, args);
+
+      const msg = `${args[0]}`;
+      if (!IGNORED_CONSOLE_ERRORS.some((ignored) => msg.includes(ignored))) {
+        ErrorToaster.show({
+          intent: 'danger',
+          message: (
+            <div
+              style={{whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'hidden'}}
+            >{`console.error: ${msg}`}</div>
+          ),
+        });
+      }
+    },
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    ErrorToaster.show({
+      intent: 'danger',
+      message: (
+        <div
+          style={{whiteSpace: 'pre-wrap'}}
+        >{`Unhandled Rejection: ${event.reason}\nView console for details.`}</div>
+      ),
+    });
+  });
 };

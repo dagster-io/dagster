@@ -25,7 +25,7 @@ export const NextTick = (props: Props) => {
       if (scheduleState.status === InstigationStatus.RUNNING) {
         return {
           executionTimezone,
-          earliest: Math.min(...futureTicks.results.map(({timestamp}) => timestamp)),
+          earliest: Math.min(...futureTicks.results.map(({timestamp}) => timestamp!)),
         };
       }
       return null;

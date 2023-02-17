@@ -89,7 +89,7 @@ setup(
         "tomli",
         "tqdm",
         "typing_extensions>=4.0.1",
-        "sqlalchemy>=1.0",
+        "sqlalchemy>=1.0,<2.0.0",
         "toposort>=1.0",
         "watchdog>=0.8.3",
         'psutil >= 1.0; platform_system=="Windows"',
@@ -107,7 +107,6 @@ setup(
             "grpcio-tools>=1.32.0,<1.44.0",  # related to above grpcio pins
             "mock==3.0.5",
             "objgraph",
-            "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
             "pytest-cov==2.10.1",
             "pytest-dependency==0.5.1",
             "pytest-mock==3.3.1",
@@ -125,6 +124,11 @@ setup(
         ],
         "mypy": [
             "mypy==0.991",
+        ],
+        "pyright": [
+            "pyright==1.1.293",
+            ### Stub packages
+            "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
             "types-certifi",  # version will be resolved against certifi
             "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs
@@ -133,7 +137,6 @@ setup(
             "types-mock",  # version will be resolved against mock
             "types-paramiko",  # version will be resolved against paramiko
             "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
-            "types-protobuf<=3.19.21",  # version will be resolved against protobuf (3.19.22 introduced breaking change)
             "types-pyOpenSSL",  # version will be resolved against pyOpenSSL
             "types-python-dateutil",  # version will be resolved against python-dateutil
             "types-PyYAML",  # version will be resolved against PyYAML
@@ -141,12 +144,13 @@ setup(
             "types-requests",  # version will be resolved against requests
             "types-simplejson",  # version will be resolved against simplejson
             "types-six",  # needed but not specified by grpcio
+            "types-sqlalchemy",  # version will be resolved against sqlalchemy
             "types-tabulate",  # version will be resolved against tabulate
             "types-tzlocal",  # version will be resolved against tzlocal
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.0.212",
+            "ruff==0.0.241",
         ],
     },
     entry_points={

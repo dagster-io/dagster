@@ -1,9 +1,10 @@
-from dagster._legacy import ModeDefinition, execute_solid, solid
+from dagster import op
+from dagster._legacy import ModeDefinition, execute_solid
 from dagster_aws.ecr import fake_ecr_public_resource
 
 
 def test_ecr_public_get_login_password():
-    @solid(required_resource_keys={"ecr_public"})
+    @op(required_resource_keys={"ecr_public"})
     def ecr_public_solid(context):
         return context.resources.ecr_public.get_login_password()
 

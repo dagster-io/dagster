@@ -21,7 +21,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import (
@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
 
     from .composition import PendingNodeInvocation
-    from .decorators.solid_decorator import DecoratedOpFunction
+    from .decorators.op_decorator import DecoratedOpFunction
 
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
@@ -125,7 +125,7 @@ class OpDefinition(NodeDefinition):
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
     ):
-        from .decorators.solid_decorator import DecoratedOpFunction, resolve_checked_solid_fn_inputs
+        from .decorators.op_decorator import DecoratedOpFunction, resolve_checked_solid_fn_inputs
 
         ins = check.opt_mapping_param(ins, "ins")
         input_defs = [
@@ -184,17 +184,17 @@ class OpDefinition(NodeDefinition):
     def is_graph_job_op_node(self) -> bool:
         return True
 
-    @public  # type: ignore
+    @public
     @property
     def name(self) -> str:
         return super(OpDefinition, self).name
 
-    @public  # type: ignore
+    @public
     @property
     def ins(self) -> Mapping[str, In]:
         return {input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
 
-    @public  # type: ignore
+    @public
     @property
     def outs(self) -> Mapping[str, Out]:
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
@@ -203,28 +203,28 @@ class OpDefinition(NodeDefinition):
     def compute_fn(self) -> Union[Callable[..., Any], "DecoratedOpFunction"]:
         return self._compute_fn
 
-    @public  # type: ignore
+    @public
     @property
     def config_schema(self) -> IDefinitionConfigSchema:
         return self._config_schema
 
-    @public  # type: ignore
+    @public
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset(self._required_resource_keys)
 
-    @public  # type: ignore
+    @public
     @property
     def version(self) -> Optional[str]:
         deprecation_warning("`version` property on OpDefinition", "2.0")
         return self._version
 
-    @public  # type: ignore
+    @public
     @property
     def retry_policy(self) -> Optional[RetryPolicy]:
         return self._retry_policy
 
-    @public  # type: ignore
+    @public
     @property
     def tags(self) -> Mapping[str, str]:
         return super(OpDefinition, self).tags
@@ -246,7 +246,7 @@ class OpDefinition(NodeDefinition):
         return super(OpDefinition, self).with_retry_policy(retry_policy)
 
     def is_from_decorator(self) -> bool:
-        from .decorators.solid_decorator import DecoratedOpFunction
+        from .decorators.op_decorator import DecoratedOpFunction
 
         return isinstance(self._compute_fn, DecoratedOpFunction)
 
@@ -264,7 +264,7 @@ class OpDefinition(NodeDefinition):
     def iterate_node_defs(self) -> Iterator[NodeDefinition]:
         yield self
 
-    def iterate_solid_defs(self) -> Iterator["OpDefinition"]:
+    def iterate_op_defs(self) -> Iterator["OpDefinition"]:
         yield self
 
     T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
@@ -377,10 +377,15 @@ class OpDefinition(NodeDefinition):
                 output_name=output_def.name,
             )
 
+    def resolve_input_to_destinations(
+        self, input_handle: NodeInputHandle
+    ) -> Sequence[NodeInputHandle]:
+        return [input_handle]
+
     def __call__(self, *args, **kwargs) -> Any:
         from ..execution.context.invocation import UnboundOpExecutionContext
         from .composition import is_in_composition
-        from .decorators.solid_decorator import DecoratedOpFunction
+        from .decorators.op_decorator import DecoratedOpFunction
 
         if is_in_composition():
             return super(OpDefinition, self).__call__(*args, **kwargs)
@@ -438,7 +443,7 @@ def _resolve_output_defs_from_outs(
     outs: Optional[Mapping[str, Out]],
     default_code_version: Optional[str],
 ) -> Sequence[OutputDefinition]:
-    from .decorators.solid_decorator import DecoratedOpFunction
+    from .decorators.op_decorator import DecoratedOpFunction
 
     if isinstance(compute_fn, DecoratedOpFunction):
         inferred_output_props = infer_output_props(compute_fn.decorated_fn)

@@ -402,7 +402,7 @@ class DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
@@ -510,23 +510,23 @@ class DagsterEvent(
         solid_handle = cast(NodeHandle, self.solid_handle)
         return solid_handle.name
 
-    @public  # type: ignore
+    @public
     @property
     def event_type(self) -> DagsterEventType:
         """DagsterEventType: The type of this event."""
         return DagsterEventType(self.event_type_value)
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_event(self) -> bool:
         return self.event_type in STEP_EVENTS
 
-    @public  # type: ignore
+    @public
     @property
     def is_hook_event(self) -> bool:
         return self.event_type in HOOK_EVENTS
 
-    @public  # type: ignore
+    @public
     @property
     def is_alert_event(self) -> bool:
         return self.event_type in ALERT_EVENTS
@@ -537,42 +537,42 @@ class DagsterEvent(
 
         return StepKind(self.step_kind_value)
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_success(self) -> bool:
         return self.event_type == DagsterEventType.STEP_SUCCESS
 
-    @public  # type: ignore
+    @public
     @property
     def is_successful_output(self) -> bool:
         return self.event_type == DagsterEventType.STEP_OUTPUT
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_start(self) -> bool:
         return self.event_type == DagsterEventType.STEP_START
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_failure(self) -> bool:
         return self.event_type == DagsterEventType.STEP_FAILURE
 
-    @public  # type: ignore
+    @public
     @property
     def is_resource_init_failure(self) -> bool:
         return self.event_type == DagsterEventType.RESOURCE_INIT_FAILURE
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_skipped(self) -> bool:
         return self.event_type == DagsterEventType.STEP_SKIPPED
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_up_for_retry(self) -> bool:
         return self.event_type == DagsterEventType.STEP_UP_FOR_RETRY
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_restarted(self) -> bool:
         return self.event_type == DagsterEventType.STEP_RESTARTED
@@ -589,7 +589,7 @@ class DagsterEvent(
     def is_run_failure(self) -> bool:
         return self.event_type == DagsterEventType.RUN_FAILURE
 
-    @public  # type: ignore
+    @public
     @property
     def is_failure(self) -> bool:
         return self.event_type in FAILURE_EVENTS
@@ -598,42 +598,42 @@ class DagsterEvent(
     def is_pipeline_event(self) -> bool:
         return self.event_type in PIPELINE_EVENTS
 
-    @public  # type: ignore
+    @public
     @property
     def is_engine_event(self) -> bool:
         return self.event_type == DagsterEventType.ENGINE_EVENT
 
-    @public  # type: ignore
+    @public
     @property
     def is_handled_output(self) -> bool:
         return self.event_type == DagsterEventType.HANDLED_OUTPUT
 
-    @public  # type: ignore
+    @public
     @property
     def is_loaded_input(self) -> bool:
         return self.event_type == DagsterEventType.LOADED_INPUT
 
-    @public  # type: ignore
+    @public
     @property
     def is_step_materialization(self) -> bool:
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION
 
-    @public  # type: ignore
+    @public
     @property
     def is_expectation_result(self) -> bool:
         return self.event_type == DagsterEventType.STEP_EXPECTATION_RESULT
 
-    @public  # type: ignore
+    @public
     @property
     def is_asset_observation(self) -> bool:
         return self.event_type == DagsterEventType.ASSET_OBSERVATION
 
-    @public  # type: ignore
+    @public
     @property
     def is_asset_materialization_planned(self) -> bool:
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
 
-    @public  # type: ignore
+    @public
     @property
     def asset_key(self) -> Optional[AssetKey]:
         if self.event_type == DagsterEventType.ASSET_MATERIALIZATION:
@@ -645,7 +645,7 @@ class DagsterEvent(
         else:
             return None
 
-    @public  # type: ignore
+    @public
     @property
     def partition(self) -> Optional[str]:
         if self.event_type == DagsterEventType.ASSET_MATERIALIZATION:
@@ -829,7 +829,7 @@ class DagsterEvent(
     def step_input_event(
         step_context: StepExecutionContext, step_input_data: "StepInputData"
     ) -> "DagsterEvent":
-        input_def = step_context.solid_def.input_def_named(step_input_data.input_name)
+        input_def = step_context.op_def.input_def_named(step_input_data.input_name)
 
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_INPUT,
@@ -896,12 +896,11 @@ class DagsterEvent(
     def asset_materialization(
         step_context: IStepContext,
         materialization: Union[AssetMaterialization, Materialization],
-        asset_lineage: Optional[Sequence[AssetLineageInfo]] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
             step_context=step_context,
-            event_specific_data=StepMaterializationData(materialization, asset_lineage),
+            event_specific_data=StepMaterializationData(materialization),
             message=materialization.description
             if materialization.description
             else "Materialized value{label_clause}.".format(
@@ -1300,7 +1299,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             message=(
@@ -1324,7 +1323,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             event_specific_data=_validate_event_specific_data(
@@ -1349,7 +1348,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             message=(

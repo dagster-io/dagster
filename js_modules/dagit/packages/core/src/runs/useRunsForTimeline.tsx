@@ -125,7 +125,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
           for (const schedule of schedules) {
             if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
               schedule.futureTicks.results.forEach(({timestamp}) => {
-                const startTime = timestamp * 1000;
+                const startTime = timestamp! * 1000;
                 if (startTime > now && overlap({start, end}, {start: startTime, end: startTime})) {
                   jobTicks.push({
                     id: `${schedule.pipelineName}-future-run-${timestamp}`,

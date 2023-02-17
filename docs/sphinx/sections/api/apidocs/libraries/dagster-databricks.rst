@@ -23,3 +23,12 @@ APIs
   :annotation: ResourceDefinition
 
 .. autoclass:: dagster_databricks.DatabricksError
+
+Resources
+=========
+
+.. autoclass:: DatabricksClient
+  :members:
+
+.. autoconfigurable:: databricks_client
+  :annotation: ResourceDefinition

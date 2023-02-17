@@ -1,7 +1,8 @@
 import dask.dataframe as dd
 import pytest
-from dagster import file_relative_path
-from dagster._legacy import InputDefinition, execute_solid, solid
+from dagster import file_relative_path, op
+from dagster._core.definitions.input import In
+from dagster._legacy import execute_solid
 from dagster_dask import DataFrame
 from dagster_dask.data_frame import DataFrameReadTypes, DataFrameToTypes
 from dagster_dask.utils import DataFrameUtilities
@@ -22,7 +23,7 @@ def create_dask_df():
     ],
 )
 def test_dataframe_inputs(file_type):
-    @solid(input_defs=[InputDefinition(dagster_type=DataFrame, name="input_df")])
+    @op(ins={"input_df": In(DataFrame)})
     def return_df(_, input_df):
         return input_df
 

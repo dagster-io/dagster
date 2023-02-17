@@ -16,6 +16,10 @@ export enum DagsterTag {
   RootRunId = 'dagster/root_run_id',
   ScheduleName = 'dagster/schedule_name',
   SensorName = 'dagster/sensor_name',
+  AssetPartitionRangeStart = 'dagster/asset_partition_range_start',
+  AssetPartitionRangeEnd = 'dagster/asset_partition_range_end',
+  AssetEventLogicalVersion = 'dagster/logical_version',
+  AssetEventCodeVersion = 'dagster/code_version',
 
   // Hidden tags (using ".dagster" HIDDEN_TAG_PREFIX)
   RepositoryLabelTag = '.dagster/repository',

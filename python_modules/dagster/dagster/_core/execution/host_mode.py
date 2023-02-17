@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Optional, Sequence
+from typing import Iterator, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._config import Field, process_config
@@ -18,6 +18,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
@@ -32,13 +33,18 @@ from .context.system import PlanData, PlanOrchestrationContext
 from .context_creation_pipeline import PlanOrchestrationContextManager
 
 
-def _get_host_mode_executor(recon_pipeline, run_config, executor_defs, instance):
+def _get_host_mode_executor(
+    recon_pipeline: ReconstructablePipeline,
+    run_config: Mapping[str, object],
+    executor_defs: Sequence[ExecutorDefinition],
+    instance: DagsterInstance,
+) -> Executor:
     execution_config = run_config.get("execution", {})
     execution_config_type = Field(
         selector_for_named_defs(executor_defs), default_value={executor_defs[0].name: {}}
     ).config_type
 
-    config_evr = process_config(execution_config_type, execution_config)
+    config_evr = process_config(execution_config_type, execution_config)  # type: ignore  # (config typing)
     if not config_evr.success:
         raise DagsterInvalidConfigError(
             "Error processing execution config {}".format(execution_config),
@@ -56,24 +62,24 @@ def _get_host_mode_executor(recon_pipeline, run_config, executor_defs, instance)
     init_context = InitExecutorContext(
         job=recon_pipeline,
         executor_def=executor_def,
-        executor_config=executor_config["config"],
+        executor_config=executor_config["config"],  # type: ignore  # (config typing)
         instance=instance,
     )
     check_cross_process_constraints(init_context)
-    return executor_def.executor_creation_fn(init_context)
+    return executor_def.executor_creation_fn(init_context)  # type: ignore  # (possible none)
 
 
 def host_mode_execution_context_event_generator(
-    pipeline,
-    execution_plan,
-    run_config,
-    pipeline_run,
-    instance,
-    raise_on_error,
-    executor_defs,
-    output_capture,
+    pipeline: ReconstructablePipeline,
+    execution_plan: ExecutionPlan,
+    run_config: Mapping[str, object],
+    pipeline_run: DagsterRun,
+    instance: DagsterInstance,
+    raise_on_error: bool,
+    executor_defs: Sequence[ExecutorDefinition],
+    output_capture: None,
     resume_from_failure: bool = False,
-):
+) -> Iterator[Union[PlanOrchestrationContext, DagsterEvent]]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
 
@@ -109,7 +115,7 @@ def host_mode_execution_context_event_generator(
         execution_context = PlanOrchestrationContext(
             plan_data=PlanData(
                 pipeline=pipeline,
-                pipeline_run=pipeline_run,
+                dagster_run=pipeline_run,
                 instance=instance,
                 execution_plan=execution_plan,
                 raise_on_error=raise_on_error,
@@ -161,7 +167,7 @@ def execute_run_host_mode(
     instance: DagsterInstance,
     executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
     raise_on_error: bool = False,
-):
+) -> Sequence[DagsterEvent]:
     check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
     check.inst_param(pipeline_run, "pipeline_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)

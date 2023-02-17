@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Any,
     Iterator,
     List,
     Mapping,
@@ -15,9 +14,10 @@ from typing import (
     cast,
 )
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 from dagster._core.definitions import InputDefinition, NodeHandle, PipelineDefinition
-from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.definitions.version_strategy import ResourceVersionContext
@@ -30,7 +30,6 @@ from dagster._core.errors import (
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import ensure_gen
 
 from .objects import TypeCheckData
 from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
@@ -41,17 +40,9 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.storage.input_manager import InputManager
 
-
-def _get_asset_lineage_from_fns(
-    context, asset_key_fn, asset_partitions_fn
-) -> Optional[AssetLineageInfo]:
-    asset_key = asset_key_fn(context)
-    if not asset_key:
-        return None
-    return AssetLineageInfo(
-        asset_key=asset_key,
-        partitions=asset_partitions_fn(context),
-    )
+StepInputUnion: TypeAlias = Union[
+    "StepInput", "UnresolvedMappedStepInput", "UnresolvedCollectStepInput"
+]
 
 
 @whitelist_for_serdes
@@ -76,7 +67,7 @@ class StepInput(
 ):
     """Holds information for how to prepare an input for an ExecutionStep."""
 
-    def __new__(cls, name, dagster_type_key, source):
+    def __new__(cls, name: str, dagster_type_key: str, source: "StepInputSource"):
         return super(StepInput, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -85,7 +76,7 @@ class StepInput(
         )
 
     @property
-    def dependency_keys(self) -> Set[str]:
+    def dependency_keys(self) -> AbstractSet[str]:
         return self.source.step_key_dependencies
 
     def get_step_output_handle_dependencies(self) -> Sequence[StepOutputHandle]:
@@ -121,13 +112,6 @@ class StepInputSource(ABC):
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> AbstractSet[str]:
         return set()
-
-    def get_asset_lineage(
-        self,
-        _step_context: "StepExecutionContext",
-        _input_def: InputDefinition,
-    ) -> Sequence[AssetLineageInfo]:
-        return []
 
     @abstractmethod
     def compute_version(
@@ -177,7 +161,7 @@ class FromSourceAsset(
             else asset_layer.io_manager_key_for_asset(input_asset_key)
         )
 
-        op_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
+        op_config = step_context.resolved_run_config.ops.get(str(self.solid_handle))
         config_data = op_config.inputs.get(self.input_name) if op_config else None
 
         loader = getattr(step_context.resources, input_manager_key)
@@ -216,18 +200,23 @@ class FromSourceAsset(
             ],
         )
 
-    def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
+    def compute_version(
+        self,
+        step_versions: Mapping[str, Optional[str]],
+        pipeline_def: PipelineDefinition,
+        resolved_run_config: ResolvedRunConfig,
+    ) -> Optional[str]:
         from ..resolve_versions import check_valid_version, resolve_config_version
 
         op = pipeline_def.get_solid(self.solid_handle)
-        input_manager_key = check.not_none(op.input_def_named(self.input_name).input_manager_key)  # type: ignore  # fmt: skip
+        input_manager_key = check.not_none(op.input_def_named(self.input_name).input_manager_key)
         io_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
             input_manager_key
         ]
 
-        op_config = check.not_none(resolved_run_config.solids.get(op.name))  # type: ignore  # fmt: skip
+        op_config = check.not_none(resolved_run_config.ops.get(op.name))
         input_config = op_config.inputs.get(self.input_name)
-        resource_entry = check.not_none(resolved_run_config.resources.get(input_manager_key))  # type: ignore  # fmt: skip
+        resource_entry = check.not_none(resolved_run_config.resources.get(input_manager_key))
         resource_config = resource_entry.config
 
         version_context = ResourceVersionContext(
@@ -267,7 +256,13 @@ class FromSourceAsset(
                     " using FromSourceAsset"
                 ),
             )
-        input_manager_key = pipeline_def.asset_layer.io_manager_key_for_asset(input_asset_key)
+
+        input_def = pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
+        if input_def.input_manager_key is not None:
+            input_manager_key = input_def.input_manager_key
+        else:
+            input_manager_key = pipeline_def.asset_layer.io_manager_key_for_asset(input_asset_key)
+
         if input_manager_key is None:
             check.failed(
                 f"Must have an io_manager associated with asset {input_asset_key} to load it using"
@@ -299,17 +294,17 @@ class FromRootInputManager(
         from dagster._core.events import DagsterEvent
 
         check.invariant(
-            step_context.solid_handle == self.solid_handle and input_def.name == self.input_name,
+            step_context.node_handle == self.solid_handle and input_def.name == self.input_name,
             (
                 "RootInputManager source must be op input and not one along composition mapping. "
-                f"Loading for op {step_context.solid_handle}.{input_def.name} "
+                f"Loading for op {step_context.node_handle}.{input_def.name} "
                 f"but source is {self.solid_handle}.{self.input_name}."
             ),
         )
 
-        input_def = step_context.solid_def.input_def_named(input_def.name)
+        input_def = step_context.op_def.input_def_named(input_def.name)
 
-        solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
+        solid_config = step_context.resolved_run_config.ops.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
         input_manager_key = check.not_none(
@@ -360,7 +355,7 @@ class FromRootInputManager(
             resolved_run_config.mode
         ).resource_defs[input_manager_key]
 
-        solid_config = resolved_run_config.solids[solid.name]
+        solid_config = resolved_run_config.ops[solid.name]
         input_config = solid_config.inputs.get(self.input_name)
         resource_config = check.not_none(
             resolved_run_config.resources.get(input_manager_key)
@@ -456,14 +451,20 @@ class FromStepOutput(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
+        io_manager_key: Optional[str] = None,
     ) -> "InputContext":
-        io_manager_key = step_context.execution_plan.get_manager_key(
-            self.step_output_handle, step_context.pipeline_def
+        resolved_io_manager_key = (
+            step_context.execution_plan.get_manager_key(
+                self.step_output_handle, step_context.pipeline_def
+            )
+            if io_manager_key is None
+            else io_manager_key
         )
-        resource_config = step_context.resolved_run_config.resources[io_manager_key].config
-        resources = build_resources_for_manager(io_manager_key, step_context)
 
-        solid_config = step_context.resolved_run_config.solids.get(str(step_context.solid_handle))
+        resource_config = step_context.resolved_run_config.resources[resolved_io_manager_key].config
+        resources = build_resources_for_manager(resolved_io_manager_key, step_context)
+
+        solid_config = step_context.resolved_run_config.ops.get(str(step_context.node_handle))
         config_data = solid_config.inputs.get(input_def.name) if solid_config else None
 
         return step_context.for_input_manager(
@@ -513,7 +514,9 @@ class FromStepOutput(
                     f'"{manager_key}" is an IOManager.'
                 ),
             )
-        load_input_context = self.get_load_context(step_context, input_def)
+        load_input_context = self.get_load_context(
+            step_context, input_def, io_manager_key=manager_key
+        )
         yield from _load_input_with_input_manager(input_manager, load_input_context)
 
         metadata_entries = load_input_context.consume_metadata_entries()
@@ -547,35 +550,6 @@ class FromStepOutput(
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
-
-    def get_asset_lineage(
-        self,
-        step_context: "StepExecutionContext",
-        input_def: InputDefinition,
-    ) -> Sequence[AssetLineageInfo]:
-        load_context = self.get_load_context(step_context, input_def)
-
-        # check input_def
-        if input_def.is_asset:
-            lineage_info = _get_asset_lineage_from_fns(
-                load_context, input_def.get_asset_key, input_def.get_asset_partitions
-            )
-            return [lineage_info] if lineage_info else []
-
-        # check output_def
-        upstream_output = step_context.execution_plan.get_step_output(self.step_output_handle)
-        if upstream_output.is_asset:
-            output_def = step_context.pipeline_def.get_solid(
-                upstream_output.solid_handle
-            ).output_def_named(upstream_output.name)
-            lineage_info = _get_asset_lineage_from_fns(
-                load_context.upstream_output,
-                output_def.get_asset_key,
-                output_def.get_asset_partitions,
-            )
-            return [lineage_info] if lineage_info else []
-
-        return []
 
 
 @whitelist_for_serdes
@@ -618,7 +592,7 @@ class FromConfig(
         including the root.
         """
         if self.solid_handle:
-            op_config = resolved_run_config.solids.get(str(self.solid_handle))
+            op_config = resolved_run_config.ops.get(str(self.solid_handle))
             return op_config.inputs.get(self.input_name) if op_config else None
         else:
             input_config = resolved_run_config.inputs
@@ -628,7 +602,7 @@ class FromConfig(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-    ) -> Any:
+    ) -> Iterator[object]:
         with user_code_error_boundary(
             DagsterTypeLoadingError,
             msg_fn=lambda: f'Error occurred while loading input "{self.input_name}" of step "{step_context.step.key}":',
@@ -637,7 +611,7 @@ class FromConfig(
             dagster_type = self.get_associated_input_def(step_context.pipeline_def).dagster_type
             config_data = self.get_associated_config(step_context.resolved_run_config)
             loader = check.not_none(dagster_type.loader)
-            return loader.construct_from_config_value(
+            yield loader.construct_from_config_value(
                 step_context.get_type_loader_context(), config_data
             )
 
@@ -676,8 +650,8 @@ class FromDirectInputValue(
         )
 
     def load_input_object(
-        self, step_context: "StepExecutionContext", _input_def: InputDefinition
-    ) -> Any:
+        self, step_context: "StepExecutionContext", input_def: InputDefinition
+    ) -> Iterator[object]:
         pipeline_def = step_context.pipeline_def
         if not pipeline_def.is_job:
             raise DagsterInvariantViolationError(
@@ -685,7 +659,7 @@ class FromDirectInputValue(
             )
 
         job_def = cast(JobDefinition, pipeline_def)
-        return job_def.get_direct_input_value(self.input_name)
+        yield job_def.get_direct_input_value(self.input_name)
 
     def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
         return set()
@@ -726,8 +700,8 @@ class FromDefaultValue(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-    ):
-        return self._load_value(step_context.pipeline_def)
+    ) -> Iterator[object]:
+        yield self._load_value(step_context.pipeline_def)
 
     def compute_version(
         self,
@@ -778,7 +752,7 @@ class FromMultipleSources(
         )
 
     @property
-    def step_key_dependencies(self):
+    def step_key_dependencies(self) -> AbstractSet[str]:
         keys = set()
         for source in self.sources:
             keys.update(source.step_key_dependencies)
@@ -786,8 +760,8 @@ class FromMultipleSources(
         return keys
 
     @property
-    def step_output_handle_dependencies(self):
-        handles = []
+    def step_output_handle_dependencies(self) -> Sequence[StepOutputHandle]:
+        handles: List[StepOutputHandle] = []
         for source in self.sources:
             handles.extend(source.step_output_handle_dependencies)
 
@@ -797,7 +771,7 @@ class FromMultipleSources(
         self,
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
-    ):
+    ) -> Iterator[object]:
         from dagster._core.events import DagsterEvent
 
         values = []
@@ -817,9 +791,7 @@ class FromMultipleSources(
             ):
                 continue
 
-            for event_or_input_value in ensure_gen(
-                inner_source.load_input_object(step_context, input_def)
-            ):
+            for event_or_input_value in inner_source.load_input_object(step_context, input_def):
                 if isinstance(event_or_input_value, DagsterEvent):
                     yield event_or_input_value
                 else:
@@ -833,22 +805,18 @@ class FromMultipleSources(
             resource_keys = resource_keys.union(source.required_resource_keys(pipeline_def))
         return resource_keys
 
-    def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
+    def compute_version(
+        self,
+        step_versions: Mapping[str, Optional[str]],
+        pipeline_def: PipelineDefinition,
+        resolved_run_config: ResolvedRunConfig,
+    ) -> Optional[str]:
         return join_and_hash(
             *[
                 inner_source.compute_version(step_versions, pipeline_def, resolved_run_config)
                 for inner_source in self.sources
             ]
         )
-
-    def get_asset_lineage(
-        self, step_context: "StepExecutionContext", input_def: InputDefinition
-    ) -> Sequence[AssetLineageInfo]:
-        return [
-            relation
-            for source in self.sources
-            for relation in source.get_asset_lineage(step_context, input_def)
-        ]
 
 
 def _load_input_with_input_manager(
@@ -919,7 +887,7 @@ class FromPendingDynamicStepOutput(
     def resolved_by_output_name(self) -> str:
         return self.step_output_handle.output_name
 
-    def resolve(self, mapping_key) -> FromStepOutput:
+    def resolve(self, mapping_key: str) -> FromStepOutput:
         check.str_param(mapping_key, "mapping_key")
         return FromStepOutput(
             step_output_handle=StepOutputHandle(

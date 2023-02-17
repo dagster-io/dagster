@@ -45,6 +45,7 @@ paths = [
     "../../python_modules/libraries/dagster-slack",
     "../../python_modules/libraries/dagster-snowflake",
     "../../python_modules/libraries/dagster-snowflake-pandas",
+    "../../python_modules/libraries/dagster-snowflake-pyspark",
     "../../python_modules/libraries/dagster-spark",
     "../../python_modules/libraries/dagster-ssh",
     "../../python_modules/libraries/dagster-twilio",
@@ -58,6 +59,7 @@ paths = [
     "../../python_modules/libraries/dagster-duckdb",
     "../../python_modules/libraries/dagster-duckdb-pandas",
     "../../python_modules/libraries/dagster-duckdb-pyspark",
+    "../../python_modules/libraries/dagster-wandb",
     ### autodoc_dagster extension
     "./_ext",
 ]
@@ -127,6 +129,7 @@ autodoc_mock_imports = [
     "croniter",
     "dask",
     "databricks_api",
+    "databricks_cli",
     "datadog",
     "docker",
     "docker_image",
@@ -148,6 +151,7 @@ autodoc_mock_imports = [
     "sshtunnel",
     "toposort",
     "twilio",
+    "wandb",
 ]
 
 autodoc_typehints = "none"

@@ -16,7 +16,7 @@ from dagster import (
     TypeCheckContext,
 )
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .version import __version__
 
@@ -36,7 +36,7 @@ from .version import __version__
 if TYPE_CHECKING:
     ValidatableDataFrame = pd.DataFrame
 
-check_dagster_package_version("dagster-pandera", __version__)
+DagsterLibraryRegistry.register("dagster-pandera", __version__)
 
 # ########################
 # ##### VALID DATAFRAME CLASSES
@@ -96,7 +96,7 @@ def pandera_schema_to_dagster_type(
 
     name = _extract_name_from_pandera_schema(schema)
     norm_schema = (
-        schema.to_schema()  # type: ignore[attr-defined]
+        schema.to_schema()
         if isinstance(schema, type) and issubclass(schema, pa.SchemaModel)
         else schema
     )
@@ -110,6 +110,7 @@ def pandera_schema_to_dagster_type(
         metadata_entries=[
             MetadataEntry("schema", value=MetadataValue.table_schema(tschema)),
         ],
+        typing_type=pd.DataFrame,
     )
 
 
@@ -117,13 +118,13 @@ def pandera_schema_to_dagster_type(
 _anonymous_schema_name_generator = (f"DagsterPanderaDataframe{i}" for i in itertools.count(start=1))
 
 
-def _extract_name_from_pandera_schema(  # type: ignore[return]
+def _extract_name_from_pandera_schema(
     schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
 ) -> str:
     if isinstance(schema, type) and issubclass(schema, pa.SchemaModel):
         return (
-            getattr(schema.Config, "title", None)  # type: ignore[attr-defined]
-            or getattr(schema.Config, "name", None)  # type: ignore[attr-defined]
+            getattr(schema.Config, "title", None)
+            or getattr(schema.Config, "name", None)
             or schema.__name__
         )
     elif isinstance(schema, pa.DataFrameSchema):

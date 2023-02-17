@@ -581,13 +581,13 @@ def test_nested_optional_with_no_default():
 def test_config_defaults():
     @op(config_schema={"sum": Int})
     def two(_context):
-        assert _context.solid_config["sum"] == 6
-        return _context.solid_config["sum"]
+        assert _context.op_config["sum"] == 6
+        return _context.op_config["sum"]
 
     @op(config_schema={"sum": Int})
     def one(_context, prev_sum):
         assert prev_sum == 6
-        return prev_sum + _context.solid_config["sum"]
+        return prev_sum + _context.op_config["sum"]
 
     # addition_graph
     def addition_graph_config_fn(config):

@@ -17,6 +17,7 @@ from dagster import (
     UrlMetadataValue,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.decorators import op
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,
@@ -30,7 +31,7 @@ from dagster._core.definitions.metadata.table import (
     TableSchema,
 )
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils import frozendict
 
 
@@ -55,7 +56,7 @@ def test_metadata_entry_construction():
 
 
 def test_metadata_asset_materialization():
-    @solid(output_defs=[])
+    @op(out={})
     def the_solid(_context):
         yield AssetMaterialization(
             asset_key="foo",
@@ -96,7 +97,7 @@ def test_metadata_asset_materialization():
 
 
 def test_metadata_asset_observation():
-    @solid(output_defs=[])
+    @op(out={})
     def the_solid(_context):
         yield AssetObservation(
             asset_key="foo",
@@ -133,7 +134,7 @@ def test_metadata_asset_observation():
 
 
 def test_unknown_metadata_value():
-    @solid(output_defs=[])
+    @op
     def the_solid(context):
         yield AssetMaterialization(
             asset_key="foo",
@@ -191,7 +192,7 @@ def test_parse_path_metadata():
 
 
 def test_bad_json_metadata_value():
-    @solid(output_defs=[])
+    @op
     def the_solid(context):
         yield AssetMaterialization(
             asset_key="foo",
@@ -223,7 +224,7 @@ def test_table_metadata_value_schema_inference():
         ),
     )
 
-    schema = table_metadata_entry.entry_data.schema  # type: ignore
+    schema = table_metadata_entry.entry_data.schema
     assert isinstance(schema, TableSchema)
     assert schema.columns == [
         TableColumn(name="name", type="string"),
@@ -252,7 +253,7 @@ bad_values = frozendict(
 
 def test_table_column_keys():
     with pytest.raises(TypeError):
-        TableColumn(bad_key="foo", description="bar", type="string")  # type: ignore
+        TableColumn(bad_key="foo", description="bar", type="string")
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_column"].items()))
@@ -270,7 +271,7 @@ def test_table_column_values(key, value):
 
 def test_table_constraints_keys():
     with pytest.raises(TypeError):
-        TableColumn(bad_key="foo")  # type: ignore
+        TableColumn(bad_key="foo")
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_constraints"].items()))
@@ -283,7 +284,7 @@ def test_table_constraints(key, value):
 
 def test_table_column_constraints_keys():
     with pytest.raises(TypeError):
-        TableColumnConstraints(bad_key="foo")  # type: ignore
+        TableColumnConstraints(bad_key="foo")
 
 
 # minimum and maximum aren't checked because they depend on the type of the column
@@ -301,7 +302,7 @@ def test_table_column_constraints_values(key, value):
 
 def test_table_schema_keys():
     with pytest.raises(TypeError):
-        TableSchema(bad_key="foo")  # type: ignore
+        TableSchema(bad_key="foo")
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_schema"].items()))
@@ -360,7 +361,7 @@ def test_table_schema_from_name_type_dict():
 
 
 def test_bool_metadata_value():
-    @solid(output_defs=[])
+    @op(out={})
     def the_solid():
         yield AssetMaterialization(
             asset_key="foo",

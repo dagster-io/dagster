@@ -20,7 +20,7 @@ from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ScopedResourcesBuilder,
-    is_context_provided,
+    has_at_least_one_parameter,
 )
 from dagster._core.errors import (
     DagsterInvariantViolationError,
@@ -309,7 +309,7 @@ def single_resource_generation_manager(
 ) -> EventGenerationManager:
     generator = single_resource_event_generator(context, resource_name, resource_def)
     # EventGenerationManager needs to be renamed/generalized so that it doesn't only take event generators
-    return EventGenerationManager(generator, InitializedResource)  # type: ignore
+    return EventGenerationManager(generator, InitializedResource)
 
 
 def single_resource_event_generator(
@@ -326,7 +326,7 @@ def single_resource_event_generator(
                 with time_execution_scope() as timer_result:
                     resource_or_gen = (
                         resource_def.resource_fn(context)
-                        if is_context_provided(resource_def.resource_fn)
+                        if has_at_least_one_parameter(resource_def.resource_fn)
                         else resource_def.resource_fn()  # type: ignore[call-arg]
                     )
 
@@ -373,7 +373,7 @@ def get_required_resource_keys_to_init(
         if step_handle not in execution_plan.step_handles_to_execute:
             continue
 
-        hook_defs = pipeline_def.get_all_hooks_for_handle(step.solid_handle)
+        hook_defs = pipeline_def.get_all_hooks_for_handle(step.node_handle)
         for hook_def in hook_defs:
             resource_keys = resource_keys.union(hook_def.required_resource_keys)
 
@@ -407,8 +407,8 @@ def get_required_resource_keys_for_step(
     resource_keys: Set[str] = set()
 
     # add all the solid compute resource keys
-    solid_def = pipeline_def.get_solid(execution_step.solid_handle).definition
-    resource_keys = resource_keys.union(solid_def.required_resource_keys)
+    solid_def = pipeline_def.get_solid(execution_step.node_handle).definition
+    resource_keys = resource_keys.union(solid_def.required_resource_keys)  # type: ignore  # (should be OpDefinition)
 
     # add input type, input loader, and input io manager resource keys
     for step_input in execution_step.step_inputs:

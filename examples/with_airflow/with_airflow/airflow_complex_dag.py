@@ -1,4 +1,4 @@
-# pylint: disable=pointless-statement
+# pyright: reportUnusedExpression=none
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -21,6 +21,8 @@
 Example Airflow DAG that shows the complex DAG structure.
 """
 
+# Type errors ignored because some of these imports target deprecated modules for compatibility with
+# airflow 1.x and 2.x.
 from airflow import models
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.python_operator import PythonOperator

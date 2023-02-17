@@ -238,7 +238,7 @@ def dagster_type_loader(
             )
 
         return _create_type_loader_for_decorator(
-            config_type, func, required_resource_keys, loader_version, external_version_fn  # type: ignore  # mypy bug
+            config_type, func, required_resource_keys, loader_version, external_version_fn
         )
 
     return wrapper

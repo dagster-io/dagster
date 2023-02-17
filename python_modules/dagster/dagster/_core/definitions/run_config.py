@@ -1,4 +1,15 @@
-from typing import AbstractSet, Any, Iterator, Mapping, NamedTuple, Optional, Sequence, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Iterator,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
 
 from dagster._config import (
     ALL_CONFIG_BUILTINS,
@@ -31,6 +42,9 @@ from .logger_definition import LoggerDefinition
 from .mode import ModeDefinition
 from .op_definition import NodeDefinition, OpDefinition
 from .resource_definition import ResourceDefinition
+
+if TYPE_CHECKING:
+    from .source_asset import SourceAsset
 
 
 def define_resource_dictionary_cls(
@@ -163,6 +177,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
             resource_defs=creation_data.mode_definition.resource_defs,
             solid_ignored=False,
             direct_inputs=creation_data.direct_inputs,
+            input_source_assets={},
             asset_layer=creation_data.asset_layer,
             is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
         ),
@@ -183,6 +198,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
                 resource_defs=creation_data.mode_definition.resource_defs,
                 is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
                 asset_layer=creation_data.asset_layer,
+                node_input_source_assets=creation_data.graph_def.node_input_source_assets,
             ),
             description="Configure runtime parameters for ops or assets.",
         )
@@ -214,6 +230,7 @@ def get_inputs_field(
     solid_ignored: bool,
     asset_layer: AssetLayer,
     is_using_graph_job_op_apis: bool,
+    input_source_assets: Mapping[str, "SourceAsset"],
     direct_inputs: Optional[Mapping[str, Any]] = None,
 ):
     direct_inputs = check.opt_mapping_param(direct_inputs, "direct_inputs")
@@ -231,6 +248,8 @@ def get_inputs_field(
         ):
             input_field = None
         elif name in direct_inputs and not has_upstream:
+            input_field = None
+        elif name in input_source_assets and not has_upstream:
             input_field = None
         elif inp.root_manager_key and not has_upstream:
             input_field = get_input_manager_input_field(solid, inp, resource_defs)
@@ -420,6 +439,7 @@ def construct_leaf_solid_config(
     ignored: bool,
     is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
+    input_source_assets: Mapping[str, "SourceAsset"],
 ) -> Optional[Field]:
     return solid_config_field(
         {
@@ -431,6 +451,7 @@ def construct_leaf_solid_config(
                 ignored,
                 asset_layer,
                 is_using_graph_job_op_apis,
+                input_source_assets,
             ),
             "outputs": get_outputs_field(solid, resource_defs),
             "config": config_schema.as_field() if config_schema else None,
@@ -448,6 +469,7 @@ def define_isolid_field(
     ignored: bool,
     is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
+    input_source_assets: Mapping[str, "SourceAsset"],
 ) -> Optional[Field]:
     # All solids regardless of compositing status get the same inputs and outputs
     # config. The only thing the varies is on extra element of configuration
@@ -469,6 +491,7 @@ def define_isolid_field(
             ignored,
             is_using_graph_job_op_apis,
             asset_layer,
+            input_source_assets,
         )
 
     graph_def = solid.definition.ensure_graph_def()
@@ -486,6 +509,7 @@ def define_isolid_field(
             ignored,
             is_using_graph_job_op_apis,
             asset_layer,
+            input_source_assets,
         )
         # This case omits a 'solids' key, thus if a composite solid is `configured` or has a field
         # mapping, the user cannot stub any config, inputs, or outputs for inner (child) solids.
@@ -499,18 +523,20 @@ def define_isolid_field(
                 ignored,
                 asset_layer,
                 is_using_graph_job_op_apis,
+                input_source_assets,
             ),
             "outputs": get_outputs_field(solid, resource_defs),
         }
         nodes_field = Field(
             define_solid_dictionary_cls(
-                solids=graph_def.solids,
+                solids=graph_def.nodes,
                 ignored_solids=None,
                 dependency_structure=graph_def.dependency_structure,
                 parent_handle=handle,
                 resource_defs=resource_defs,
                 is_using_graph_job_op_apis=is_using_graph_job_op_apis,
                 asset_layer=asset_layer,
+                node_input_source_assets=graph_def.node_input_source_assets,
             )
         )
         if is_using_graph_job_op_apis:
@@ -530,8 +556,28 @@ def define_solid_dictionary_cls(
     resource_defs: Mapping[str, ResourceDefinition],
     is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
+    node_input_source_assets: Mapping[str, Mapping[str, "SourceAsset"]],
     parent_handle: Optional[NodeHandle] = None,
 ) -> Shape:
+    """
+    Examples of what this method is used to generate the schema for:
+      1.
+          inputs: ...
+          ops:
+        >    op1: ...
+        >    op2: ...
+
+      2.
+          inputs:
+          ops:
+            graph1: ...
+              inputs: ...
+              ops:
+        >       op1: ...
+        >       inner_graph: ...
+
+
+    """
     ignored_solids = check.opt_sequence_param(ignored_solids, "ignored_solids", of_type=Node)
 
     fields = {}
@@ -544,6 +590,7 @@ def define_solid_dictionary_cls(
             ignored=False,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
             asset_layer=asset_layer,
+            input_source_assets=node_input_source_assets.get(solid.name, {}),
         )
 
         if solid_field:
@@ -558,6 +605,7 @@ def define_solid_dictionary_cls(
             ignored=True,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
             asset_layer=asset_layer,
+            input_source_assets=node_input_source_assets.get(solid.name, {}),
         )
         if solid_field:
             fields[solid.name] = solid_field
@@ -571,7 +619,7 @@ def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigTy
         if node_def.has_config_field:
             yield from node_def.get_config_field().config_type.type_iterator()
     elif isinstance(node_def, GraphDefinition):
-        for solid in node_def.solids:
+        for solid in node_def.nodes:
             yield from iterate_node_def_config_types(solid.definition)
 
     else:

@@ -89,7 +89,7 @@ def resolve_step_versions(
         if not is_executable_step(step):  # type: ignore
             continue
 
-        solid_def = pipeline_def.get_solid(step.solid_handle).definition
+        solid_def = pipeline_def.get_solid(step.node_handle).definition
 
         input_version_dict = {
             input_name: step_input.source.compute_version(
@@ -105,15 +105,15 @@ def resolve_step_versions(
                 )
         input_versions = [version for version in input_version_dict.values()]
 
-        solid_name = str(step.solid_handle)
+        solid_name = str(step.node_handle)
 
-        solid_config = resolved_run_config.solids[solid_name].config
+        solid_config = resolved_run_config.ops[solid_name].config
 
         solid_def_version = None
-        if solid_def.version is not None:
-            solid_def_version = solid_def.version
+        if solid_def.version is not None:  # type: ignore  # (should be OpDefinition)
+            solid_def_version = solid_def.version  # type: ignore  # (should be OpDefinition)
         elif pipeline_def.version_strategy is not None:
-            version_context = OpVersionContext(op_def=solid_def, op_config=solid_config)
+            version_context = OpVersionContext(op_def=solid_def, op_config=solid_config)  # type: ignore  # (should be OpDefinition)
             solid_def_version = pipeline_def.version_strategy.get_op_version(version_context)
 
         if solid_def_version is None:
@@ -128,7 +128,7 @@ def resolve_step_versions(
         solid_config_version = resolve_config_version(solid_config)
 
         resource_versions_for_solid = []
-        for resource_key in solid_def.required_resource_keys:
+        for resource_key in solid_def.required_resource_keys:  # type: ignore  # (should be OpDefinition)
             if resource_key not in resource_versions:
                 resource_config = resolved_run_config.resources[resource_key].config
                 resource_config_version = resolve_config_version(resource_config)

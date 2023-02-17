@@ -1,7 +1,5 @@
-# pyright: strict
-
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Callable, List, Sequence, Set, Union, cast
+from typing import AbstractSet, Callable, List, Optional, Sequence, Set, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import JobDefinition, NodeHandle
@@ -16,6 +14,7 @@ from dagster._core.events import (
     StepExpectationResultData,
     StepMaterializationData,
 )
+from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.step import StepKind
 from dagster._core.storage.pipeline_run import DagsterRun
 
@@ -86,7 +85,7 @@ class ExecutionResult(ABC):
             )
         # Resolve the first layer of mapping
         output_mapping = graph_def.get_output_mapping(output_name)
-        mapped_node = graph_def.solid_named(output_mapping.maps_from.solid_name)
+        mapped_node = graph_def.node_named(output_mapping.maps_from.node_name)
         origin_output_def, origin_handle = mapped_node.definition.resolve_output_to_origin(
             output_mapping.maps_from.output_name,
             NodeHandle(mapped_node.name, None),
@@ -98,7 +97,7 @@ class ExecutionResult(ABC):
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> object:
         # resolve handle of node that node_str is referring to
         target_handle = NodeHandle.from_string(node_str)
-        target_node_def = self.job_def.graph.get_solid(target_handle).definition
+        target_node_def = self.job_def.graph.get_node(target_handle).definition
         origin_output_def, origin_handle = target_node_def.resolve_output_to_origin(
             output_name, NodeHandle.from_string(node_str)
         )
@@ -200,3 +199,16 @@ class ExecutionResult(ABC):
             cast(StepExpectationResultData, event.event_specific_data).expectation_result
             for event in expectation_result_events
         ]
+
+    def retry_attempts_for_node(self, node_str: str) -> int:
+        count = 0
+        for event in self.events_for_node(node_str):
+            if event.event_type == DagsterEventType.STEP_RESTARTED:
+                count += 1
+        return count
+
+    def failure_data_for_node(self, node_str: str) -> Optional[StepFailureData]:
+        for event in self.events_for_node(node_str):
+            if event.event_type == DagsterEventType.STEP_FAILURE:
+                return event.step_failure_data
+        return None

@@ -5,6 +5,7 @@ import styled, {createGlobalStyle} from 'styled-components/macro';
 
 import {Box} from './Box';
 import {Colors} from './Colors';
+import {ErrorBoundary} from './ErrorBoundary';
 import {Group} from './Group';
 import {IconName, Icon} from './Icon';
 
@@ -27,7 +28,7 @@ export const Dialog: React.FC<Props> = (props) => {
       className="dagit-dialog"
     >
       {title ? <DialogHeader icon={icon} label={title} /> : null}
-      {children}
+      <ErrorBoundary region="dialog">{children}</ErrorBoundary>
     </BlueprintDialog>
   );
 };

@@ -76,6 +76,7 @@ class _Pipeline:
             solid_defs,
             config_mapping,
             positional_inputs,
+            node_input_source_assets,
         ) = do_composition(
             "@pipeline",
             self.name,
@@ -98,6 +99,7 @@ class _Pipeline:
                 output_mappings=output_mappings,
                 config=config_mapping,
                 positional_inputs=positional_inputs,
+                node_input_source_assets=node_input_source_assets,
             ),
             tags=self.tags,
             description=self.description or format_docstring_for_description(fn),
@@ -186,16 +188,6 @@ def pipeline(
             def emit_two_four(_) -> int:
                 yield Output(2, "two")
                 yield Output(4, "four")
-
-
-            @lambda_solid
-            def add_one(num: int) -> int:
-                return num + 1
-
-
-            @lambda_solid
-            def mult_two(num: int) -> int:
-                return num * 2
 
 
             @pipeline

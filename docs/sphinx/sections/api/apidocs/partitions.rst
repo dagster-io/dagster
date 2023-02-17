@@ -59,7 +59,7 @@ Partitioned Schedules
 .. autofunction:: build_schedule_from_partitioned_job
     :noindex:
 
-Partition Mapping (Experimental)
+Partition Mapping
 ================================
 
 .. autoclass:: PartitionMapping

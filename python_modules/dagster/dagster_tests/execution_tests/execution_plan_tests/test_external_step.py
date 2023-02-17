@@ -55,7 +55,6 @@ from dagster._legacy import (
     execute_pipeline_iterator,
     pipeline,
     reexecute_pipeline,
-    solid,
 )
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
@@ -105,7 +104,7 @@ def _define_failing_job(has_policy: bool, is_explicit: bool = True):
             if is_explicit:
                 raise Failure(description="some failure description", metadata={"foo": 1.23})
             else:
-                _ = "x" + 1  # type: ignore
+                _ = "x" + 1
         return context.retry_number
 
     @job(
@@ -225,14 +224,14 @@ def define_basic_job_last_launched():
 
 
 def define_basic_pipeline():
-    @solid(
+    @op(
         required_resource_keys=set(["first_step_launcher"]),
         config_schema={"a": Field(str)},
     )
     def return_two(_):
         return 2
 
-    @solid(required_resource_keys=set(["second_step_launcher"]))
+    @op(required_resource_keys=set(["second_step_launcher"]))
     def add_one(_, num):
         return num + 1
 
@@ -271,12 +270,12 @@ def define_basic_pipeline():
 
 
 def define_sleepy_pipeline():
-    @solid(
+    @op(
         config_schema={"tempfile": Field(String)},
         required_resource_keys=set(["first_step_launcher"]),
     )
     def sleepy_solid(context):
-        with open(context.solid_config["tempfile"], "w", encoding="utf8") as ff:
+        with open(context.op_config["tempfile"], "w", encoding="utf8") as ff:
             ff.write("yup")
         start_time = time.time()
         while True:
@@ -337,8 +336,8 @@ def test_step_context_to_step_run_ref():
         step_context = initialize_step_context("", instance)
         step = step_context.step
         step_run_ref = step_context_to_step_run_ref(step_context)
-        assert step_run_ref.run_config == step_context.pipeline_run.run_config
-        assert step_run_ref.run_id == step_context.pipeline_run.run_id
+        assert step_run_ref.run_config == step_context.dagster_run.run_config
+        assert step_run_ref.run_id == step_context.dagster_run.run_id
 
         rehydrated_step_context = step_run_ref_to_step_context(step_run_ref, instance)
         rehydrated_step = rehydrated_step_context.step
@@ -346,7 +345,7 @@ def test_step_context_to_step_run_ref():
         assert rehydrated_step.step_inputs == step.step_inputs
         assert rehydrated_step.step_outputs == step.step_outputs
         assert rehydrated_step.kind == step.kind
-        assert rehydrated_step.solid_handle.name == step.solid_handle.name
+        assert rehydrated_step.node_handle.name == step.node_handle.name
         assert rehydrated_step.logging_tags == step.logging_tags
         assert rehydrated_step.tags == step.tags
 

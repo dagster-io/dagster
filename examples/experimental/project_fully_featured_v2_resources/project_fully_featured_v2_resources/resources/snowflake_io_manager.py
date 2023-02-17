@@ -2,7 +2,8 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
-from dagster import InputContext, IOManager, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._config.structured_config import ConfigurableIOManager
 from pandas import (
     DataFrame as PandasDataFrame,
     read_sql,
@@ -36,17 +37,24 @@ def connect_snowflake(config, schema="public"):
             conn.close()
 
 
-class SnowflakeIOManager(IOManager):
+class SnowflakeIOManager(ConfigurableIOManager):
     """
     This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
     the data will be written to a Snowflake table specified by metadata on the relevant Out.
     """
 
-    def __init__(self, config):
-        self._config = config
+    account: str
+    user: str
+    password: str
+    database: str
+    warehouse: str
+
+    @property
+    def _config(self):
+        return self.dict()
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
-        schema, table = context.asset_key.path[-2], context.asset_key.path[-1]  # type: ignore
+        schema, table = context.asset_key.path[-2], context.asset_key.path[-1]
 
         time_window = context.asset_partitions_time_window if context.has_asset_partitions else None
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -160,7 +168,7 @@ class SnowflakeIOManager(IOManager):
                 ),
                 con=con,
             )
-            result.columns = map(str.lower, result.columns)
+            result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
             return result
 
     def _get_select_statement(

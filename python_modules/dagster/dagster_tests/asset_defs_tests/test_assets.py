@@ -129,6 +129,41 @@ def test_retain_freshness_policy():
     )
 
 
+def test_graph_backed_retain_freshness_policy():
+    fpa = FreshnessPolicy(maximum_lag_minutes=24.5)
+    fpb = FreshnessPolicy(
+        maximum_lag_minutes=30.5, cron_schedule="0 0 * * *", cron_schedule_timezone="US/Eastern"
+    )
+
+    @op
+    def foo():
+        return 1
+
+    @op
+    def bar(inp):
+        return inp + 1
+
+    @graph(out={"a": GraphOut(), "b": GraphOut(), "c": GraphOut()})
+    def my_graph():
+        f = foo()
+        return bar(f), bar(f), bar(f)
+
+    my_graph_asset = AssetsDefinition.from_graph(
+        my_graph, freshness_policies_by_output_name={"a": fpa, "b": fpb}
+    )
+
+    replaced = my_graph_asset.with_prefix_or_group(
+        output_asset_key_replacements={
+            AssetKey("a"): AssetKey("aa"),
+            AssetKey("b"): AssetKey("bb"),
+            AssetKey("c"): AssetKey("cc"),
+        }
+    )
+    assert replaced.freshness_policies_by_key[AssetKey("aa")] == fpa
+    assert replaced.freshness_policies_by_key[AssetKey("bb")] == fpb
+    assert replaced.freshness_policies_by_key.get(AssetKey("cc")) is None
+
+
 def test_retain_metadata_graph():
     @op
     def foo():
@@ -275,14 +310,18 @@ def test_to_source_assets():
     def my_asset():
         ...
 
-    assert my_asset.to_source_assets() == [
-        SourceAsset(
-            AssetKey(["my_asset"]),
-            metadata={"a": "b"},
-            io_manager_key="abc",
-            description="blablabla",
-        )
-    ]
+    assert (
+        my_asset.to_source_assets()
+        == [my_asset.to_source_asset()]
+        == [
+            SourceAsset(
+                AssetKey(["my_asset"]),
+                metadata={"a": "b"},
+                io_manager_key="abc",
+                description="blablabla",
+            )
+        ]
+    )
 
     @multi_asset(
         outs={
@@ -304,20 +343,28 @@ def test_to_source_assets():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
+    my_asset_name_source_asset = SourceAsset(
+        AssetKey(["my_asset_name"]),
+        metadata={"a": "b"},
+        io_manager_key="abc",
+        description="blablabla",
+    )
+    my_other_asset_source_asset = SourceAsset(
+        AssetKey(["my_other_asset"]),
+        metadata={"c": "d"},
+        io_manager_key="def",
+        description="ablablabl",
+    )
+
     assert my_multi_asset.to_source_assets() == [
-        SourceAsset(
-            AssetKey(["my_asset_name"]),
-            metadata={"a": "b"},
-            io_manager_key="abc",
-            description="blablabla",
-        ),
-        SourceAsset(
-            AssetKey(["my_other_asset"]),
-            metadata={"c": "d"},
-            io_manager_key="def",
-            description="ablablabl",
-        ),
+        my_asset_name_source_asset,
+        my_other_asset_source_asset,
     ]
+
+    assert (
+        my_multi_asset.to_source_asset(AssetKey(["my_other_asset"])) == my_other_asset_source_asset
+    )
+    assert my_multi_asset.to_source_asset("my_other_asset") == my_other_asset_source_asset
 
 
 def test_coerced_asset_keys():
@@ -516,8 +563,8 @@ def test_multi_asset_resources_execution():
 
     @multi_asset(
         outs={
-            "key1": Out(asset_key=AssetKey("key1"), io_manager_key="foo"),
-            "key2": Out(asset_key=AssetKey("key2"), io_manager_key="bar"),
+            "key1": AssetOut(key=AssetKey("key1"), io_manager_key="foo"),
+            "key2": AssetOut(key=AssetKey("key2"), io_manager_key="bar"),
         },
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )

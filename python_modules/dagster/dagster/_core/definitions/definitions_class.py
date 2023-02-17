@@ -2,11 +2,15 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Sequence, Ty
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._config.structured_config import (
+    attach_resource_id_to_key_mapping,
+)
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
+from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
 from dagster._utils.cached_method import cached_method
 
@@ -14,6 +18,7 @@ from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
 from .decorators import repository
 from .job_definition import JobDefinition
+from .partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from .repository_definition import (
     SINGLETON_REPOSITORY_NAME,
     PendingRepositoryDefinition,
@@ -34,17 +39,39 @@ def create_repository_using_definitions_args(
     assets: Optional[
         Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
     ] = None,
-    schedules: Optional[Iterable[ScheduleDefinition]] = None,
+    schedules: Optional[
+        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    ] = None,
     sensors: Optional[Iterable[SensorDefinition]] = None,
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
     resources: Optional[Mapping[str, Any]] = None,
-    executor: Optional[ExecutorDefinition] = None,
+    executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
     """
-    For users who, for the time being, want to continue to use multiple named repositories in
-    a single code location, you can use this function. The behavior (e.g. applying resources to
-    all assets) are identical to :py:class:`Definitions` but this returns a named repository.
+    Create a named repository using the same arguments as :py:class:`Definitions`. In older
+    versions of Dagster, repositories were the mechanism for organizing assets, schedules, sensors,
+    and jobs. There could be many repositories per code location. This was a complicated ontology but
+    gave users a way to organize code locations that contained large numbers of heterogenous definitions.
+
+    As a stopgap for those who both want to 1) use the new :py:class:`Definitions` API and 2) but still
+    want multiple logical groups of assets in the same code location, we have introduced this function.
+
+    Example usage:
+
+    .. code-block:: python
+
+        named_repo = create_repository_using_definitions_args(
+            name="a_repo",
+            assets=[asset_one, asset_two],
+            schedules=[a_schedule],
+            sensors=[a_sensor],
+            jobs=[a_job],
+            resources={
+                "a_resource": some_resource,
+            }
+        )
+
     """
     return _create_repository_using_definitions_args(
         name=name,
@@ -63,42 +90,54 @@ def _create_repository_using_definitions_args(
     assets: Optional[
         Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
     ] = None,
-    schedules: Optional[Iterable[ScheduleDefinition]] = None,
+    schedules: Optional[
+        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    ] = None,
     sensors: Optional[Iterable[SensorDefinition]] = None,
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
     resources: Optional[Mapping[str, Any]] = None,
-    executor: Optional[ExecutorDefinition] = None,
+    executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
 ):
-    if assets:
-        check.iterable_param(
-            assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
-        )
+    check.opt_iterable_param(
+        assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
+    )
+    check.opt_iterable_param(
+        schedules, "schedules", (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition)
+    )
+    check.opt_iterable_param(sensors, "sensors", SensorDefinition)
+    check.opt_iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
 
-    if schedules:
-        check.iterable_param(schedules, "schedules", ScheduleDefinition)
+    check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor))
 
-    if sensors:
-        check.iterable_param(sensors, "sensors", SensorDefinition)
+    executor_def = (
+        executor
+        if isinstance(executor, ExecutorDefinition) or executor is None
+        else ExecutorDefinition.hardcoded_executor(executor)
+    )
 
-    if jobs:
-        check.iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
+    # Generate a mapping from each top-level resource instance ID to its resource key
+    resource_key_mapping = {id(v): k for k, v in resources.items()} if resources else {}
 
-    if resources:
-        check.mapping_param(resources, "resources", key_type=str)
+    # Provide this mapping to each resource instance so that it can be used to resolve
+    # nested resources
+    resources_with_key_mapping = (
+        {
+            k: attach_resource_id_to_key_mapping(v, resource_key_mapping)
+            for k, v in resources.items()
+        }
+        if resources
+        else {}
+    )
+    resource_defs = wrap_resources_for_execution(resources_with_key_mapping)
 
-    if executor:
-        check.inst_param(executor, "executor", ExecutorDefinition)
-
-    if loggers:
-        check.mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
-
-    resource_defs = wrap_resources_for_execution(resources or {})
+    check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
     @repository(
         name=name,
-        default_executor_def=executor,
+        default_executor_def=executor_def,
         default_logger_defs=loggers,
+        _top_level_resources=resource_defs,
     )
     def created_repo():
         return [
@@ -123,7 +162,7 @@ class Definitions:
             Or they can by directly instantiating :py:class:`AssetsDefinition`,
             :py:class:`SourceAsset`, or :py:class:`CacheableAssetsDefinition`.
 
-        schedules (Optional[Iterable[ScheduleDefinition]]):
+        schedules (Optional[Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]]):
             List of schedules.
 
         sensors (Optional[Iterable[SensorDefinition]]):
@@ -146,13 +185,12 @@ class Definitions:
             resources already bound using :py:func:`with_resources <with_resources>` will
             override this dictionary.
 
-        executor (Optional[ExecutorDefinition]):
-            Default executor for jobs. Individual jobs
-            can override this and define their own executors by setting the executor
-            on :py:func:`@job <job>` or :py:func:`define_asset_job <define_asset_job>`
+        executor (Optional[Union[ExecutorDefinition, Executor]]):
+            Default executor for jobs. Individual jobs can override this and define their own executors
+            by setting the executor on :py:func:`@job <job>` or :py:func:`define_asset_job <define_asset_job>`
             explicitly. This executor will also be used for materializing assets directly
-            outside of the context of jobs.
-
+            outside of the context of jobs. If an :py:class:`Executor` is passed, it is coerced into
+            an :py:class:`ExecutorDefinition`.
 
         loggers (Optional[Mapping[str, LoggerDefinition]):
             Default loggers for jobs. Individual jobs
@@ -203,11 +241,13 @@ class Definitions:
         assets: Optional[
             Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
         ] = None,
-        schedules: Optional[Iterable[ScheduleDefinition]] = None,
+        schedules: Optional[
+            Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+        ] = None,
         sensors: Optional[Iterable[SensorDefinition]] = None,
         jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
         resources: Optional[Mapping[str, Any]] = None,
-        executor: Optional[ExecutorDefinition] = None,
+        executor: Optional[Union[ExecutorDefinition, Executor]] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     ):
         self._created_pending_or_normal_repo = _create_repository_using_definitions_args(

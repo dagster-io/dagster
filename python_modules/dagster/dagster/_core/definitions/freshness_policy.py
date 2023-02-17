@@ -2,11 +2,16 @@ import datetime
 from typing import AbstractSet, FrozenSet, Mapping, NamedTuple, Optional
 
 import pendulum
-from croniter import croniter
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.schedules import (
+    cron_string_iterator,
+    is_valid_cron_schedule,
+    reverse_cron_string_iterator,
+)
 
 from .events import AssetKey
 
@@ -25,6 +30,7 @@ class FreshnessPolicy(
         [
             ("maximum_lag_minutes", float),
             ("cron_schedule", Optional[str]),
+            ("cron_schedule_timezone", Optional[str]),
         ],
     )
 ):
@@ -62,6 +68,10 @@ class FreshnessPolicy(
         cron_schedule (Optional[str]): A cron schedule string (e.g. ``"0 1 * * *"``) specifying a
             series of times by which the `maximum_lag_minutes` constraint must be satisfied. If
             no cron schedule is provided, then this constraint must be satisfied at all times.
+        cron_schedule_timezone (Optional[str]): Timezone in which the cron schedule should be evaluated.
+            If not specified, defaults to UTC. Supported strings for timezones are the ones provided
+            by the `IANA time zone database <https://www.iana.org/time-zones>` - e.g.
+            "America/Los_Angeles".
 
     .. code-block:: python
 
@@ -77,14 +87,56 @@ class FreshnessPolicy(
 
     """
 
-    def __new__(cls, *, maximum_lag_minutes: float, cron_schedule: Optional[str] = None):
+    def __new__(
+        cls,
+        *,
+        maximum_lag_minutes: float,
+        cron_schedule: Optional[str] = None,
+        cron_schedule_timezone: Optional[str] = None,
+    ):
+        if cron_schedule is not None:
+            if not is_valid_cron_schedule(cron_schedule):
+                raise DagsterInvalidDefinitionError(f"Invalid cron schedule '{cron_schedule}'.")
+            check.param_invariant(
+                is_valid_cron_schedule(cron_schedule),
+                "cron_schedule",
+                f"Invalid cron schedule '{cron_schedule}'.",
+            )
+        if cron_schedule_timezone is not None:
+            check.param_invariant(
+                cron_schedule is not None,
+                "cron_schedule_timezone",
+                "Cannot specify cron_schedule_timezone without a cron_schedule.",
+            )
+            try:
+                # Verify that the timezone can be loaded
+                pendulum.tz.timezone(cron_schedule_timezone)  # type: ignore
+            except Exception as e:
+                raise DagsterInvalidDefinitionError(
+                    "Invalid cron schedule timezone '{cron_schedule_timezone}'.   "
+                ) from e
         return super(FreshnessPolicy, cls).__new__(
             cls,
             maximum_lag_minutes=float(
                 check.numeric_param(maximum_lag_minutes, "maximum_lag_minutes")
             ),
             cron_schedule=check.opt_str_param(cron_schedule, "cron_schedule"),
+            cron_schedule_timezone=check.opt_str_param(
+                cron_schedule_timezone, "cron_schedule_timezone"
+            ),
         )
+
+    @classmethod
+    def _create(cls, *args):
+        """
+        Pickle requires a method with positional arguments to construct
+        instances of a class. Since the constructor for this class has
+        keyword arguments only, we define this method to be used by pickle.
+        """
+        return cls(maximum_lag_minutes=args[0], cron_schedule=args[1])
+
+    def __reduce__(self):
+        return (self._create, (self.maximum_lag_minutes, self.cron_schedule))
 
     @property
     def maximum_lag_delta(self) -> datetime.timedelta:
@@ -110,8 +162,10 @@ class FreshnessPolicy(
 
         # get an iterator of times to evaluate these constraints at
         if self.cron_schedule:
-            constraint_ticks = croniter(
-                self.cron_schedule, window_start, ret_type=datetime.datetime
+            constraint_ticks = cron_string_iterator(
+                start_timestamp=window_start.timestamp(),
+                cron_string=self.cron_schedule,
+                execution_timezone=self.cron_schedule_timezone,
             )
         else:
             # this constraint must be satisfied at all points in time, so generate a series of
@@ -144,7 +198,7 @@ class FreshnessPolicy(
 
     def minutes_late(
         self,
-        evaluation_time: Optional[datetime.datetime],
+        evaluation_time: datetime.datetime,
         used_data_times: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> Optional[float]:
         """Returns a number of minutes past the specified freshness policy that this asset currently
@@ -160,14 +214,14 @@ class FreshnessPolicy(
         """
         if self.cron_schedule:
             # most recent cron schedule tick
-            schedule_ticks = croniter(
-                self.cron_schedule, evaluation_time, ret_type=datetime.datetime, is_prev=True
+            schedule_ticks = reverse_cron_string_iterator(
+                end_timestamp=evaluation_time.timestamp(),
+                cron_string=self.cron_schedule,
+                execution_timezone=self.cron_schedule_timezone,
             )
             evaluation_tick = next(schedule_ticks)
-        elif evaluation_time is not None:
-            evaluation_tick = evaluation_time
         else:
-            check.failed("Must provide an evaluation time if not using a cron schedule")
+            evaluation_tick = evaluation_time
 
         minutes_late = 0.0
         for used_data_time in used_data_times.values():

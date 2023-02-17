@@ -43,6 +43,11 @@ export type RootWorkspaceQuery = {
                 isReloadSupported: boolean;
                 serverId: string | null;
                 name: string;
+                dagsterLibraryVersions: Array<{
+                  __typename: 'DagsterLibraryVersion';
+                  name: string;
+                  version: string;
+                }> | null;
                 repositories: Array<{
                   __typename: 'Repository';
                   id: string;
@@ -94,6 +99,7 @@ export type RootWorkspaceQuery = {
                     pipelineName: string;
                   }>;
                   assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
+                  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
                   location: {__typename: 'RepositoryLocation'; id: string; name: string};
                   displayMetadata: Array<{
                     __typename: 'RepositoryMetadata';
@@ -131,6 +137,11 @@ export type WorkspaceLocationNodeFragment = {
         isReloadSupported: boolean;
         serverId: string | null;
         name: string;
+        dagsterLibraryVersions: Array<{
+          __typename: 'DagsterLibraryVersion';
+          name: string;
+          version: string;
+        }> | null;
         repositories: Array<{
           __typename: 'Repository';
           id: string;
@@ -178,6 +189,7 @@ export type WorkspaceLocationNodeFragment = {
             pipelineName: string;
           }>;
           assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
+          allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
           displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
         }>;
@@ -197,6 +209,11 @@ export type WorkspaceLocationFragment = {
   isReloadSupported: boolean;
   serverId: string | null;
   name: string;
+  dagsterLibraryVersions: Array<{
+    __typename: 'DagsterLibraryVersion';
+    name: string;
+    version: string;
+  }> | null;
   repositories: Array<{
     __typename: 'Repository';
     id: string;
@@ -244,6 +261,7 @@ export type WorkspaceLocationFragment = {
       pipelineName: string;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
+    allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
     displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
   }>;
@@ -296,6 +314,7 @@ export type WorkspaceRepositoryFragment = {
     pipelineName: string;
   }>;
   assetGroups: Array<{__typename: 'AssetGroup'; groupName: string}>;
+  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; name: string}>;
   location: {__typename: 'RepositoryLocation'; id: string; name: string};
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };

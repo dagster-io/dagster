@@ -6,12 +6,13 @@ from typing import Optional, Tuple
 import pytest
 from dagster import (
     AssetKey,
+    AssetOut,
     AssetsDefinition,
+    DagsterInstance,
     DailyPartitionsDefinition,
     In,
     MetadataValue,
     Nothing,
-    Out,
     Output,
     PartitionMapping,
     PartitionsDefinition,
@@ -28,7 +29,7 @@ from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.instance import DagsterInstance
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import instance_for_test
 
@@ -288,11 +289,15 @@ def test_fs_io_manager_partitioned_no_partitions():
                 self,
                 downstream_partitions_subset: Optional[PartitionsSubset],
                 upstream_partitions_def: PartitionsDefinition,
+                dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ) -> PartitionsSubset:
                 return upstream_partitions_def.empty_subset()
 
             def get_downstream_partitions_for_partitions(
-                self, upstream_partitions_subset, downstream_partitions_def
+                self,
+                upstream_partitions_subset,
+                downstream_partitions_def,
+                dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ):
                 raise NotImplementedError()
 
@@ -341,8 +346,8 @@ def test_fs_io_manager_partitioned_multi_asset():
         @multi_asset(
             partitions_def=partitions,
             outs={
-                "out_1": Out(asset_key=AssetKey("upstream_asset_1")),
-                "out_2": Out(asset_key=AssetKey("upstream_asset_2")),
+                "out_1": AssetOut(key=AssetKey("upstream_asset_1")),
+                "out_2": AssetOut(key=AssetKey("upstream_asset_2")),
             },
         )
         def upstream_asset() -> Tuple[Output[int], Output[int]]:

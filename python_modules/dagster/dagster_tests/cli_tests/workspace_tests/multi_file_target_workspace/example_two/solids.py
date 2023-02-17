@@ -1,6 +1,7 @@
-from dagster._legacy import solid
+# type: ignore
+from dagster._core.definitions import op
 
 
-@solid
+@op
 def example_two_solid(_):
     pass

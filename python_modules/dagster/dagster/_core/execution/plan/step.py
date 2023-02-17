@@ -72,7 +72,7 @@ class IExecutionStep:
 
     @property
     @abstractmethod
-    def solid_handle(self) -> "NodeHandle":
+    def node_handle(self) -> "NodeHandle":
         pass
 
     @property
@@ -173,12 +173,12 @@ class ExecutionStep(
         )
 
     @property
-    def solid_handle(self) -> "NodeHandle":
+    def node_handle(self) -> "NodeHandle":
         return self.handle.solid_handle
 
     @property
     def solid_name(self) -> str:
-        return self.solid_handle.name
+        return self.node_handle.name
 
     @property
     def kind(self) -> StepKind:
@@ -214,14 +214,14 @@ class ExecutionStep(
             deps.update(inp.dependency_keys)
         return deps
 
-    def get_mapping_key(self):
+    def get_mapping_key(self) -> Optional[str]:
         if isinstance(self.handle, ResolvedFromDynamicStepHandle):
             return self.handle.mapping_key
 
         return None
 
 
-class UnresolvedMappedExecutionStep(  # type: ignore
+class UnresolvedMappedExecutionStep(
     NamedTuple(
         "_UnresolvedMappedExecutionStep",
         [
@@ -264,7 +264,7 @@ class UnresolvedMappedExecutionStep(  # type: ignore
         )
 
     @property
-    def solid_handle(self) -> "NodeHandle":
+    def node_handle(self) -> "NodeHandle":
         return self.handle.solid_handle
 
     @property
@@ -381,7 +381,7 @@ def _resolved_input(
     return step_input.resolve(map_key)
 
 
-class UnresolvedCollectExecutionStep(  # type: ignore
+class UnresolvedCollectExecutionStep(
     NamedTuple(
         "_UnresolvedCollectExecutionStep",
         [
@@ -424,7 +424,7 @@ class UnresolvedCollectExecutionStep(  # type: ignore
         )
 
     @property
-    def solid_handle(self) -> "NodeHandle":
+    def node_handle(self) -> "NodeHandle":
         return self.handle.solid_handle
 
     @property

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequ
 import dagster._check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.run_request import RunRequest
+from dagster._core.instance import DagsterInstance
 from dagster._core.selector.subset_selector import parse_clause
 
 from .asset_layer import build_asset_selection_job
@@ -21,6 +22,7 @@ if TYPE_CHECKING:
         PartitionSetDefinition,
         SourceAsset,
     )
+    from dagster._core.definitions.asset_graph import InternalAssetGraph
 
 
 class UnresolvedAssetJobDefinition(
@@ -83,7 +85,7 @@ class UnresolvedAssetJobDefinition(
         )
         run_config_fn = (
             partitioned_config
-            and partitioned_config.run_config_for_partition_fn  # type: ignore
+            and partitioned_config.run_config_for_partition_fn
             or (lambda _: cast(Dict[str, str], {}))
         )
         return PartitionSetDefinition(
@@ -101,6 +103,7 @@ class UnresolvedAssetJobDefinition(
         tags: Optional[Mapping[str, str]] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
+        instance: Optional[DagsterInstance] = None,
     ) -> RunRequest:
         """
         Creates a RunRequest object for a run that processes the given partition.
@@ -120,11 +123,22 @@ class UnresolvedAssetJobDefinition(
         Returns:
             RunRequest: an object that requests a run to process the given partition.
         """
+        from dagster._core.definitions.partition import (
+            DynamicPartitionsDefinition,
+        )
+
         partition_set = self.get_partition_set_def()
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
-        partition = partition_set.get_partition(partition_key)
+        if isinstance(partition_set.partitions_def, DynamicPartitionsDefinition):
+            if not instance:
+                check.failed(
+                    "Must provide a dagster instance when calling run_request_for_partition on a "
+                    "dynamic partition set"
+                )
+
+        partition = partition_set.get_partition(partition_key, instance)
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags
@@ -143,13 +157,35 @@ class UnresolvedAssetJobDefinition(
 
     def resolve(
         self,
-        assets: Sequence["AssetsDefinition"],
-        source_assets: Sequence["SourceAsset"],
+        assets: Optional[Sequence["AssetsDefinition"]] = None,
+        source_assets: Optional[Sequence["SourceAsset"]] = None,
         default_executor_def: Optional["ExecutorDefinition"] = None,
+        asset_graph: Optional["InternalAssetGraph"] = None,
     ) -> "JobDefinition":
         """
         Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
+
+        The assets and source_assets arguments are deprecated. Although they were never technically
+        public, a lot of users use them, so going to wait until a minor release to get rid of them.
         """
+        from dagster._core.definitions.asset_graph import AssetGraph
+
+        if asset_graph is not None:
+            if assets is not None or source_assets is not None:
+                check.failed(
+                    "If providing asset_graph, can't also provide assets and source_assets, and"
+                    " vice-versa."
+                )
+            assets = asset_graph.assets
+            source_assets = asset_graph.source_assets
+        else:
+            if assets is None or source_assets is None:
+                check.failed(
+                    "If asset_graph is not provided, must provide both assets and source_assets"
+                )
+
+            asset_graph = AssetGraph.from_assets([*assets, *source_assets])
+
         return build_asset_selection_job(
             name=self.name,
             assets=assets,
@@ -157,7 +193,7 @@ class UnresolvedAssetJobDefinition(
             source_assets=source_assets,
             description=self.description,
             tags=self.tags,
-            asset_selection=self.selection.resolve([*assets, *source_assets]),
+            asset_selection=self.selection.resolve(asset_graph),
             partitions_def=self.partitions_def,
             executor_def=self.executor_def or default_executor_def,
         )

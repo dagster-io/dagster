@@ -7,6 +7,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster._core.workspace.workspace import IWorkspace
@@ -116,11 +117,27 @@ class PartitionBackfill(
 
         return self.partition_set_origin.partition_set_name
 
-    def get_num_partitions(self, workspace: IWorkspace) -> int:
+    def is_valid_serialization(self, workspace: IWorkspace) -> bool:
         if self.serialized_asset_backfill_data is not None:
-            asset_backfill_data = AssetBackfillData.from_serialized(
+            return AssetBackfillData.is_valid_serialization(
                 self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
             )
+        else:
+            return True
+
+    def get_num_partitions(self, workspace: IWorkspace) -> int:
+        if not self.is_valid_serialization(workspace):
+            return 0
+
+        if self.serialized_asset_backfill_data is not None:
+            try:
+                asset_backfill_data = AssetBackfillData.from_serialized(
+                    self.serialized_asset_backfill_data,
+                    ExternalAssetGraph.from_workspace(workspace),
+                )
+            except DagsterDefinitionChangedDeserializationError:
+                return 0
+
             return asset_backfill_data.get_num_partitions()
         else:
             if self.partition_names is None:
@@ -129,10 +146,18 @@ class PartitionBackfill(
             return len(self.partition_names)
 
     def get_partition_names(self, workspace: IWorkspace) -> Sequence[str]:
+        if not self.is_valid_serialization(workspace):
+            return []
+
         if self.serialized_asset_backfill_data is not None:
-            asset_backfill_data = AssetBackfillData.from_serialized(
-                self.serialized_asset_backfill_data, ExternalAssetGraph.from_workspace(workspace)
-            )
+            try:
+                asset_backfill_data = AssetBackfillData.from_serialized(
+                    self.serialized_asset_backfill_data,
+                    ExternalAssetGraph.from_workspace(workspace),
+                )
+            except DagsterDefinitionChangedDeserializationError:
+                return []
+
             return asset_backfill_data.get_partition_names()
         else:
             if self.partition_names is None:

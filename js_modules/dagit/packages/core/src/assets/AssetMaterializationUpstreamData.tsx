@@ -112,7 +112,7 @@ export const AssetMaterializationUpstreamData: React.FC<{
   );
 };
 
-const ASSET_MATERIALIZATION_UPSTREAM_QUERY = gql`
+export const ASSET_MATERIALIZATION_UPSTREAM_QUERY = gql`
   query AssetMaterializationUpstreamQuery($assetKey: AssetKeyInput!, $timestamp: String!) {
     assetNodeOrError(assetKey: $assetKey) {
       __typename

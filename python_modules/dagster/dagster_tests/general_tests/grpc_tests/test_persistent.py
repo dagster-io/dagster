@@ -35,6 +35,7 @@ from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_da
 from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, find_free_port
 from dagster._utils.error import SerializableErrorInfo
+from dagster.version import __version__ as dagster_version
 
 
 def _get_ipc_output_file():
@@ -829,6 +830,7 @@ def test_load_with_container_context(capfd):
         assert list_repositories_response.entry_point == ["dagster"]
         assert list_repositories_response.executable_path == sys.executable
         assert list_repositories_response.container_context == container_context
+        assert list_repositories_response.dagster_library_versions == {"dagster": dagster_version}
 
     finally:
         process.terminate()

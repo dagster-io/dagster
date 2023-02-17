@@ -175,18 +175,18 @@ def test_success_hook_cm_resource(hook_decorator, is_event_list_hook):
     decorator = hook_decorator(required_resource_keys={"cm"})
     if is_event_list_hook:
 
-        def my_hook_cm_resource(context, _):
+        def my_hook_cm_resource_1(context, _):
             assert context.resources.cm == "foo"
             assert entered == ["try"]
 
-        hook = decorator(my_hook_cm_resource)
+        hook = decorator(my_hook_cm_resource_1)
     else:
 
-        def my_hook_cm_resource(context):  # type: ignore[misc]
+        def my_hook_cm_resource_2(context):
             assert context.resources.cm == "foo"
             assert entered == ["try"]
 
-        hook = decorator(my_hook_cm_resource)
+        hook = decorator(my_hook_cm_resource_2)
 
     with build_hook_context(resources={"cm": cm_resource}) as context:
         if is_event_list_hook:
@@ -214,7 +214,7 @@ def test_hook_invocation_with_solid():
     @success_hook
     def basic_hook(context):
         assert context.op.name == "foo"
-        assert len(context.op.graph_definition.solids) == 1
+        assert len(context.op.graph_definition.nodes) == 1
 
     @op
     def foo():

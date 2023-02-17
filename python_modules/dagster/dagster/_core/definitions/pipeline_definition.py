@@ -5,6 +5,7 @@ from typing import (
     Any,
     Dict,
     FrozenSet,
+    Iterable,
     Iterator,
     Mapping,
     Optional,
@@ -23,6 +24,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.types.dagster_type import DagsterType
 from dagster._core.utils import str_format_set
 from dagster._utils import frozentags
 from dagster._utils.backcompat import experimental_class_warning
@@ -269,7 +271,7 @@ class PipelineDefinition:
             self._preset_dict[preset.name] = preset
 
         self._asset_layer = check.opt_inst_param(
-            asset_layer, "asset_layer", AssetLayer, default=AssetLayer.from_graph(self.graph)
+            asset_layer, "asset_layer", AssetLayer, default=AssetLayer()
         )
 
         resource_requirements = {}
@@ -456,30 +458,30 @@ class PipelineDefinition:
         check.str_param(name, "name")
         return name in self._all_node_defs
 
-    def get_solid(self, handle):
-        return self._graph_def.get_solid(handle)
+    def get_solid(self, handle: NodeHandle) -> Node:
+        return self._graph_def.get_node(handle)
 
-    def has_solid_named(self, name):
-        return self._graph_def.has_solid_named(name)
+    def has_solid_named(self, name: str) -> bool:
+        return self._graph_def.has_node_named(name)
 
-    def solid_named(self, name):
-        return self._graph_def.solid_named(name)
-
-    @property
-    def solids(self):
-        return self._graph_def.solids
+    def solid_named(self, name: str) -> Node:
+        return self._graph_def.node_named(name)
 
     @property
-    def solids_in_topological_order(self):
-        return self._graph_def.solids_in_topological_order
+    def solids(self) -> Sequence[Node]:
+        return self._graph_def.nodes
 
-    def all_dagster_types(self):
+    @property
+    def solids_in_topological_order(self) -> Sequence[Node]:
+        return self._graph_def.nodes_in_topological_order
+
+    def all_dagster_types(self) -> Iterable[DagsterType]:
         return self._graph_def.all_dagster_types()
 
-    def has_dagster_type(self, name):
+    def has_dagster_type(self, name: str) -> bool:
         return self._graph_def.has_dagster_type(name)
 
-    def dagster_type_named(self, name):
+    def dagster_type_named(self, name: str) -> DagsterType:
         return self._graph_def.dagster_type_named(name)
 
     def get_pipeline_subset_def(
@@ -573,7 +575,7 @@ class PipelineDefinition:
 
         # hooks on top-level solid
         name = lineage.pop()
-        solid = self._graph_def.solid_named(name)
+        solid = self._graph_def.node_named(name)
         hook_defs = hook_defs.union(solid.hook_defs)
 
         # hooks on non-top-level solids
@@ -581,7 +583,7 @@ class PipelineDefinition:
             name = lineage.pop()
             # While lineage is non-empty, definition is guaranteed to be a graph
             definition = cast(GraphDefinition, solid.definition)
-            solid = definition.solid_named(name)
+            solid = definition.node_named(name)
             hook_defs = hook_defs.union(solid.hook_defs)
 
         # hooks applied to a pipeline definition will run on every solid
@@ -689,7 +691,7 @@ def _get_pipeline_subset_def(
     check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
     graph = pipeline_def.graph
     for solid_name in solids_to_execute:
-        if not graph.has_solid_named(solid_name):
+        if not graph.has_node_named(solid_name):
             raise DagsterInvalidSubsetError(
                 "{target_type} {pipeline_name} has no {node_type} named {name}.".format(
                     target_type=pipeline_def.target_type,
@@ -701,7 +703,7 @@ def _get_pipeline_subset_def(
 
     # go in topo order to ensure deps dict is ordered
     solids = list(
-        filter(lambda solid: solid.name in solids_to_execute, graph.solids_in_topological_order)
+        filter(lambda solid: solid.name in solids_to_execute, graph.nodes_in_topological_order)
     )
 
     deps: Dict[
@@ -723,7 +725,7 @@ def _get_pipeline_subset_def(
                     deps[_dep_key_of(node)][
                         node_input.input_def.name
                     ] = DynamicCollectDependencyDefinition(
-                        solid_name=node_output.node.name,
+                        node_name=node_output.node.name,
                         output_name=node_output.output_def.name,
                     )
             elif graph.dependency_structure.has_fan_in_deps(node_input):
@@ -816,7 +818,7 @@ def _create_run_config_schema(
 
             ignored_solids = [
                 solid
-                for solid in parent_job.graph.solids
+                for solid in parent_job.graph.nodes
                 if not pipeline_def.has_solid_named(solid.name)
             ]
     elif pipeline_def.is_subset_pipeline:
@@ -825,7 +827,7 @@ def _create_run_config_schema(
 
         ignored_solids = [
             solid
-            for solid in pipeline_def.parent_pipeline_def.graph.solids
+            for solid in pipeline_def.parent_pipeline_def.graph.nodes
             if not pipeline_def.has_solid_named(solid.name)
         ]
     else:
@@ -834,7 +836,7 @@ def _create_run_config_schema(
     run_config_schema_type = define_run_config_schema_type(
         RunConfigSchemaCreationData(
             pipeline_name=pipeline_def.name,
-            solids=pipeline_def.graph.solids,
+            solids=pipeline_def.graph.nodes,
             graph_def=pipeline_def.graph,
             dependency_structure=pipeline_def.graph.dependency_structure,
             mode_definition=mode_definition,

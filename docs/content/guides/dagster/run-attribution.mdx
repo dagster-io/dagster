@@ -27,6 +27,7 @@ from dagster._core.storage.pipeline_run import DagsterRun
 class CustomRunCoordinator(QueuedRunCoordinator):
     def submit_run(self, context: SubmitRunContext) -> DagsterRun:
         desired_header = context.get_request_header(CUSTOM_HEADER_NAME)
+        ...
 ```
 
 Then we can parse the relevant header (in this case, called the `jwt_claims_header`) with any custom hook. In the following example, we're decoding a JWT header which contains the user's email.

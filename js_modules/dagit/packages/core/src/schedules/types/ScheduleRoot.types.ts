@@ -75,8 +75,8 @@ export type ScheduleRootQuery = {
           }>;
         };
         futureTicks: {
-          __typename: 'FutureInstigationTicks';
-          results: Array<{__typename: 'FutureInstigationTick'; timestamp: number}>;
+          __typename: 'DryRunInstigationTicks';
+          results: Array<{__typename: 'DryRunInstigationTick'; timestamp: number | null}>;
         };
       }
     | {__typename: 'ScheduleNotFoundError'; message: string};

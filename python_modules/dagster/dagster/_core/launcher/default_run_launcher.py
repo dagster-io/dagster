@@ -98,7 +98,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             GrpcServerRepositoryLocation,
         )
 
-        run = context.pipeline_run
+        run = context.dagster_run
 
         check.inst_param(run, "run", DagsterRun)
 
@@ -214,7 +214,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def dispose(self):
         # defer for perf
-        from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+        from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
         from dagster._core.host_representation.repository_location import (
             GrpcServerRepositoryLocation,
         )
@@ -224,6 +224,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         for location in self._locations_to_wait_for:
             if isinstance(location, GrpcServerRepositoryLocation) and isinstance(
-                location.grpc_server_registry, ProcessGrpcServerRegistry
+                location.grpc_server_registry, GrpcServerRegistry
             ):
                 location.grpc_server_registry.wait_for_processes()

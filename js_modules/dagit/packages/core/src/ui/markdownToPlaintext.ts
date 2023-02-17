@@ -15,7 +15,7 @@ export const markdownToPlaintext = (md: string) => {
   }
 
   // Clean up escaping left behind.
-  const str = Remark.processSync(md).toString().replaceAll(/\\/g, '').trim();
+  const str = Remark.processSync(md).toString().replace(/\\/g, '').trim();
   markdownCache.set(md, str);
 
   return str;

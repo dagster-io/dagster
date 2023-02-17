@@ -2,15 +2,18 @@ import logging
 import sys
 import time
 from enum import Enum
-from typing import Optional
+from typing import Callable, Optional, TypeVar
 
-import kubernetes
+import kubernetes.client
+import kubernetes.client.rest
 from dagster import (
     DagsterInstance,
     _check as check,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from kubernetes.client.models import V1JobStatus
+
+T = TypeVar("T")
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
@@ -75,15 +78,17 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
     503,  # Service unavailable
     504,  # Gateway timeout
     500,  # Internal server error
+    # typically not transient, but some k8s clusters raise it transiently: https://github.com/aws/containers-roadmap/issues/1810
+    401,  # Authorization Failure
 ]
 
 
 def k8s_api_retry(
-    fn,
-    max_retries,
-    timeout,
+    fn: Callable[..., T],
+    max_retries: int,
+    timeout: float,
     msg_fn=lambda: "Unexpected error encountered in Kubernetes API Client.",
-):
+) -> T:
     check.callable_param(fn, "fn")
     check.int_param(max_retries, "max_retries")
     check.numeric_param(timeout, "timeout")
@@ -117,6 +122,7 @@ def k8s_api_retry(
                     k8s_api_exception=e,
                     original_exc_info=sys.exc_info(),
                 ) from e
+    check.failed("Unreachable.")
 
 
 class KubernetesWaitingReasons:
@@ -573,7 +579,9 @@ class DagsterKubernetesClient:
             else:
                 raise DagsterK8sError("Should not get here, unknown pod state")
 
-    def retrieve_pod_logs(self, pod_name: str, namespace: str) -> str:
+    def retrieve_pod_logs(
+        self, pod_name: str, namespace: str, container_name: Optional[str] = None
+    ) -> str:
         """Retrieves the raw pod logs for the pod named `pod_name` from Kubernetes.
 
         Args:
@@ -592,5 +600,5 @@ class DagsterKubernetesClient:
         #
         # https://github.com/kubernetes-client/python/issues/811
         return self.core_api.read_namespaced_pod_log(
-            name=pod_name, namespace=namespace, _preload_content=False
+            name=pod_name, namespace=namespace, container=container_name, _preload_content=False
         ).data.decode("utf-8")

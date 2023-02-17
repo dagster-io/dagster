@@ -8,6 +8,7 @@ from dagster import (
     ScheduleDefinition,
     SourceAsset,
     asset,
+    build_schedule_from_partitioned_job,
     create_repository_using_definitions_args,
     define_asset_job,
     materialize,
@@ -35,6 +36,7 @@ from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
@@ -56,7 +58,7 @@ def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefi
 
 
 def test_basic_asset():
-    assert Definitions  # type: ignore
+    assert Definitions
 
     @asset
     def an_asset():
@@ -143,6 +145,10 @@ def test_with_resource_binding():
         resources={"foo": ResourceDefinition.hardcoded_resource("wrapped")},
     )
     repo = resolve_pending_repo_if_required(defs)
+
+    assert len(repo.get_top_level_resources()) == 1
+    assert "foo" in repo.get_top_level_resources()
+
     asset_job = repo.get_all_jobs()[0]
     asset_job.execute_in_process()
     assert executed["yes"]
@@ -161,6 +167,10 @@ def test_resource_coercion():
         resources={"foo": "object-to-coerce"},
     )
     repo = resolve_pending_repo_if_required(defs)
+
+    assert len(repo.get_top_level_resources()) == 1
+    assert "foo" in repo.get_top_level_resources()
+
     asset_job = repo.get_all_jobs()[0]
     asset_job.execute_in_process()
     assert executed["yes"]
@@ -252,7 +262,7 @@ def test_io_manager_coercion():
 def test_bad_executor():
     with pytest.raises(CheckError):
         # ignoring type to catch runtime error
-        Definitions(executor="not an executor")  # type: ignore
+        Definitions(executor="not an executor")
 
 
 def test_custom_executor_in_definitions():
@@ -294,13 +304,13 @@ def test_bad_logger_key():
 
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
-        Definitions(loggers={1: a_logger})  # type: ignore
+        Definitions(loggers={1: a_logger})
 
 
 def test_bad_logger_value():
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
-        Definitions(loggers={"not_a_logger": "not_a_logger"})  # type: ignore
+        Definitions(loggers={"not_a_logger": "not_a_logger"})
 
 
 def test_kitchen_sink_on_create_helper_and_definitions():
@@ -494,7 +504,7 @@ def test_implicit_global_job_with_partitioned_asset():
         [AssetKey("hourly_partition_asset"), AssetKey("unpartitioned_asset")]
     )
 
-    with pytest.raises(DagsterInvariantViolationError):  # type: ignore
+    with pytest.raises(DagsterInvariantViolationError):
         defs.get_implicit_global_asset_job_def()
 
 
@@ -511,3 +521,49 @@ def test_implicit_job_with_source_assets():
     assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
     assert defs.has_implicit_global_asset_job_def()
     assert defs.get_implicit_global_asset_job_def()
+
+
+def test_unresolved_partitioned_asset_schedule():
+    partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        ...
+
+    job1 = define_asset_job("job1")
+    schedule1 = build_schedule_from_partitioned_job(job1)
+
+    defs_with_explicit_job = Definitions(jobs=[job1], schedules=[schedule1], assets=[asset1])
+    assert defs_with_explicit_job.get_job_def("job1").name == "job1"
+    assert defs_with_explicit_job.get_job_def("job1").partitions_def == partitions_def
+    assert defs_with_explicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
+
+    defs_with_implicit_job = Definitions(schedules=[schedule1], assets=[asset1])
+    defs_with_implicit_job = Definitions(jobs=[job1], schedules=[schedule1], assets=[asset1])
+    assert defs_with_implicit_job.get_job_def("job1").name == "job1"
+    assert defs_with_implicit_job.get_job_def("job1").partitions_def == partitions_def
+    assert defs_with_implicit_job.get_schedule_def("job1_schedule").cron_schedule == "0 0 * * *"
+
+
+def test_bare_executor():
+    @asset
+    def an_asset():
+        ...
+
+    class DummyExecutor(Executor):
+        def execute(self, plan_context, execution_plan):
+            ...
+
+        @property
+        def retries(self):
+            ...
+
+    executor_inst = DummyExecutor()
+
+    defs = Definitions(assets=[an_asset], executor=executor_inst)
+
+    job = defs.get_implicit_global_asset_job_def()
+    assert isinstance(job, JobDefinition)
+
+    # ignore typecheck because we know our implementation doesn't use the context
+    assert job.executor_def.executor_creation_fn(None) is executor_inst

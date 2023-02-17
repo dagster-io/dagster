@@ -15,7 +15,7 @@ YAML_STR_TAG = "tag:yaml.org,2002:str"
 class _CanRemoveImplicitResolver:
     # Adds a "remove_implicit_resolver" method that can be used to selectively
     # disable default PyYAML resolvers
-    # type: ignore
+
     @classmethod
     def remove_implicit_resolver(cls, tag):
         # See https://github.com/yaml/pyyaml/blob/master/lib/yaml/resolver.py#L26 for inspiration

@@ -20,9 +20,10 @@ from typing import (
     Set,
     Tuple,
     TypeVar,
+    Union,
 )
 
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import Final, Literal, TypeAlias
 
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
@@ -37,6 +38,7 @@ if TYPE_CHECKING:
 
 MAX_NUM = sys.maxsize
 
+T = TypeVar("T")
 T_Hashable = TypeVar("T_Hashable", bound=Hashable)
 Direction: TypeAlias = Literal["downstream", "upstream"]
 DependencyGraph: TypeAlias = Mapping[Direction, Mapping[T_Hashable, AbstractSet[T_Hashable]]]
@@ -108,7 +110,7 @@ class AssetSelectionData(
 
 def generate_asset_dep_graph(
     assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
-) -> DependencyGraph:
+) -> DependencyGraph[AssetKey]:
     from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 
     resolved_asset_deps = ResolvedAssetDependencies(assets_defs, source_assets)
@@ -172,7 +174,7 @@ def generate_dep_graph(pipeline_def: "PipelineDefinition") -> DependencyGraph[st
         downstream_dep = dependency_structure.output_to_downstream_inputs_for_node(item_name)
         for downstreams in downstream_dep.values():
             for down in downstreams:
-                graph["downstream"][item_name].add(down.solid_name)
+                graph["downstream"][item_name].add(down.node_name)
 
     return graph
 
@@ -216,7 +218,7 @@ class Traverser(Generic[T_Hashable]):
 
 def fetch_connected(
     item: T_Hashable,
-    graph: DependencyGraph,
+    graph: DependencyGraph[T_Hashable],
     *,
     direction: Direction,
     depth: Optional[int] = None,
@@ -230,7 +232,7 @@ def fetch_connected(
 
 
 def fetch_sinks(
-    graph: DependencyGraph, within_selection: AbstractSet[T_Hashable]
+    graph: DependencyGraph[T_Hashable], within_selection: AbstractSet[T_Hashable]
 ) -> AbstractSet[T_Hashable]:
     """
     A sink is an asset that has no downstream dependencies within the provided selection.
@@ -246,15 +248,15 @@ def fetch_sinks(
 
 
 def fetch_sources(
-    graph: DependencyGraph, within_selection: AbstractSet[T_Hashable]
+    graph: DependencyGraph[T_Hashable], within_selection: AbstractSet[T_Hashable]
 ) -> AbstractSet[T_Hashable]:
     """
     A source is a node that has no upstream dependencies within the provided selection.
     It can have other dependencies outside of the selection.
     """
-    dp = {}
+    dp: Dict[T_Hashable, bool] = {}
 
-    def has_upstream_within_selection(node):
+    def has_upstream_within_selection(node: T_Hashable) -> bool:
         if node not in dp:
             dp[node] = any(
                 parent_node in within_selection or has_upstream_within_selection(parent_node)
@@ -267,7 +269,7 @@ def fetch_sources(
 
 def fetch_connected_assets_definitions(
     asset: "AssetsDefinition",
-    graph: DependencyGraph,
+    graph: DependencyGraph[str],
     name_to_definition_map: Mapping[str, "AssetsDefinition"],
     *,
     direction: Direction,
@@ -317,7 +319,9 @@ def parse_items_from_selection(selection: Sequence[str]) -> Sequence[str]:
 
 
 def clause_to_subset(
-    graph: DependencyGraph, clause: str, item_name_to_item_fn: Callable[[str], T_Hashable]
+    graph: DependencyGraph[T_Hashable],
+    clause: str,
+    item_name_to_item_fn: Callable[[str], T_Hashable],
 ) -> Sequence[T_Hashable]:
     """Take a selection query and return a list of the selected and qualified items.
 
@@ -332,9 +336,6 @@ def clause_to_subset(
         subset_list (List[T]): a list of selected and qualified items, empty if input is
             invalid.
     """
-    # parse clause
-    if not isinstance(clause, str):
-        return []
     parts = parse_clause(clause)
     if parts is None:
         return []
@@ -354,26 +355,35 @@ def clause_to_subset(
     return subset_list
 
 
-class LeafNodeSelection:
+class SelectionTreeLeaf:
     """Marker for no further nesting selection needed."""
 
 
-def convert_dot_seperated_string_to_dict(
-    tree: Dict[str, Any], splits: Sequence[str]
-) -> Dict[str, Any]:
+SelectionTreeBranch: TypeAlias = Dict[str, "SelectionTree"]
+SelectionTree: TypeAlias = Union[SelectionTreeBranch, SelectionTreeLeaf]
+
+SELECTION_TREE_LEAF_NODE: Final = SelectionTreeLeaf()
+
+
+def convert_dot_separated_string_to_selection_tree(
+    tree: SelectionTreeBranch, splits: Sequence[str]
+) -> SelectionTreeBranch:
     # For example:
-    # "subgraph.subsubgraph.return_one" => {"subgraph": {"subsubgraph": {"return_one": None}}}
+    # "subgraph.subsubgraph.return_one" => {"subgraph": {"subsubgraph": {"return_one":
+    # SELECTION_TREE_LEAF_NODE}}}
     key = splits[0]
     if len(splits) == 1:
-        tree[key] = LeafNodeSelection
+        tree[key] = SELECTION_TREE_LEAF_NODE
     else:
-        tree[key] = convert_dot_seperated_string_to_dict(
-            tree[key] if key in tree else {}, splits[1:]
-        )
+        curr_node = tree.get(key, {})
+        assert not isinstance(curr_node, SelectionTreeLeaf), "Invalid selection tree"
+        tree[key] = convert_dot_separated_string_to_selection_tree(curr_node, splits[1:])
     return tree
 
 
-def parse_op_selection(job_def: "JobDefinition", op_selection: Sequence[str]) -> Mapping[str, Any]:
+def parse_op_selection(
+    job_def: "JobDefinition", op_selection: Sequence[str]
+) -> SelectionTreeBranch:
     """Parse  an op selection into a nested dictionary.
 
     Examples:
@@ -389,11 +399,13 @@ def parse_op_selection(job_def: "JobDefinition", op_selection: Sequence[str]) ->
     if any(["." in item for item in op_selection]):
         resolved_op_selection_dict: Dict[str, Any] = {}
         for item in op_selection:
-            convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
+            convert_dot_separated_string_to_selection_tree(
+                resolved_op_selection_dict, splits=item.split(".")
+            )
         return resolved_op_selection_dict
 
     return {
-        top_level_op: LeafNodeSelection
+        top_level_op: SELECTION_TREE_LEAF_NODE
         for top_level_op in parse_solid_selection(job_def, op_selection)
     }
 
@@ -528,7 +540,7 @@ def parse_asset_selection(
 
     # special case: select *
     if len(asset_selection) == 1 and asset_selection[0] == "*":
-        return set().union(*(ad.keys for ad in assets_defs))
+        return {key for ad in assets_defs for key in ad.keys}
 
     graph = generate_asset_dep_graph(assets_defs, source_assets)
     assets_set: Set[AssetKey] = set()

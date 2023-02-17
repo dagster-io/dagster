@@ -1,7 +1,7 @@
 import datetime
 import json
+from collections import defaultdict
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Dict,
     Iterable,
@@ -15,15 +15,22 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.logical_version import get_input_event_pointer_tag_key
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType
+from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
+from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
 from dagster._core.storage.pipeline_run import (
-    IN_PROGRESS_RUN_STATUSES,
+    FINISHED_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     RunRecord,
@@ -34,13 +41,10 @@ from dagster._core.utils import frozendict
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 
-if TYPE_CHECKING:
-    from dagster import DagsterInstance
-
 USED_DATA_TAG = ".dagster/used_data"
 
 
-class CachingInstanceQueryer:
+class CachingInstanceQueryer(DynamicPartitionsStore):
     """Provides utility functions for querying for asset-materialization related data from the
     instance which will attempt to limit redundant expensive calls.
     """
@@ -54,9 +58,80 @@ class CachingInstanceQueryer:
         # materialization record for a >= cursor, we don't need to query the instance
         self._no_materializations_after_cursor_cache: Dict[AssetKeyPartitionKey, int] = {}
 
+        self._asset_record_cache: Dict[AssetKey, Optional[AssetRecord]] = {}
+        self._asset_partition_count_cache: Dict[
+            Optional[int], Dict[AssetKey, Mapping[str, int]]
+        ] = defaultdict(dict)
+
+        self._dynamic_partitions_cache: Dict[str, Sequence[str]] = {}
+
     @property
     def instance(self) -> "DagsterInstance":
         return self._instance
+
+    def prefetch_for_keys(self, asset_keys: Sequence[AssetKey], after_cursor: Optional[int]):
+        """For performance, batches together queries for selected assets"""
+        asset_records = self.instance.get_asset_records(asset_keys)
+        for asset_record in asset_records:
+            self._asset_record_cache[asset_record.asset_entry.asset_key] = asset_record
+
+        # based on those asset records, fill in our caches with values of the latest materailization
+        # records per key
+        for asset_key in asset_keys:
+            # we just prefetched all the asset records, so if it's not in the cache, there are
+            # no materializations for this key
+            asset_record = self._asset_record_cache.get(asset_key)
+            if asset_record is None:
+                self._asset_record_cache[asset_key] = None
+
+            last_materialization_record = (
+                asset_record.asset_entry.last_materialization_record if asset_record else None
+            )
+            if asset_record is None or last_materialization_record is None:
+                self._no_materializations_after_cursor_cache[
+                    AssetKeyPartitionKey(asset_key=asset_key)
+                ] = -1
+            else:
+                asset_partition = AssetKeyPartitionKey(
+                    asset_key=asset_record.asset_entry.asset_key,
+                    partition_key=last_materialization_record.partition_key,
+                )
+
+                self._latest_materialization_record_cache[
+                    asset_partition
+                ] = last_materialization_record
+                self._no_materializations_after_cursor_cache[
+                    asset_partition
+                ] = last_materialization_record.storage_id
+
+                # also cache the answer to queries that do not specify a partition
+                self._latest_materialization_record_cache[
+                    AssetKeyPartitionKey(asset_key=asset_key)
+                ] = last_materialization_record
+                self._no_materializations_after_cursor_cache[
+                    AssetKeyPartitionKey(asset_key=asset_key)
+                ] = last_materialization_record.storage_id
+
+        # fill in the cache for partitioned assets
+        self._asset_partition_count_cache[after_cursor] = dict(
+            self._instance.get_materialization_count_by_partition(
+                asset_keys=asset_keys,
+                after_cursor=after_cursor,
+            )
+        )
+        self._asset_partition_count_cache[None] = dict(
+            self._instance.get_materialization_count_by_partition(
+                asset_keys=asset_keys,
+                after_cursor=None,
+            )
+        )
+
+    def get_asset_record(self, asset_key: AssetKey) -> Optional[AssetRecord]:
+        if asset_key not in self._asset_record_cache:
+            self._asset_record_cache[asset_key] = next(
+                iter(self.instance.get_asset_records([asset_key])), None
+            )
+        return self._asset_record_cache[asset_key]
 
     def is_asset_in_run(self, run_id: str, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
         run = self._get_run_by_id(run_id=run_id)
@@ -83,10 +158,7 @@ class CachingInstanceQueryer:
 
     @cached_method
     def _get_run_record_by_id(self, run_id: str) -> Optional[RunRecord]:
-        return next(
-            iter(self._instance.get_run_records(filters=RunsFilter(run_ids=[run_id]), limit=1)),
-            None,
-        )
+        return self._instance.get_run_record_by_id(run_id)
 
     @cached_method
     def _get_planned_materializations_for_run_from_events(
@@ -150,8 +222,20 @@ class CachingInstanceQueryer:
         else:
             asset_partition = asset
 
-        # fancy caching only applies to after_cursor
+        # no materialization exists for this asset partition
+        if (
+            asset_partition.partition_key is not None
+            and asset_partition.asset_key in self._asset_partition_count_cache[None]
+            and asset_partition.partition_key
+            not in self._asset_partition_count_cache[None][asset_partition.asset_key]
+        ):
+            return None
+
         if before_cursor is not None:
+            latest_record = self._latest_materialization_record_cache.get(asset_partition)
+            if latest_record is not None and latest_record.storage_id < before_cursor:
+                return latest_record
+
             return self._get_materialization_record(
                 asset_partition=asset_partition,
                 after_cursor=after_cursor,
@@ -165,10 +249,7 @@ class CachingInstanceQueryer:
             else:
                 return None
         elif asset_partition in self._no_materializations_after_cursor_cache:
-            if (
-                after_cursor is not None
-                and after_cursor >= self._no_materializations_after_cursor_cache[asset_partition]
-            ):
+            if (after_cursor or 0) >= self._no_materializations_after_cursor_cache[asset_partition]:
                 return None
 
         record = self._get_materialization_record(
@@ -224,6 +305,33 @@ class CachingInstanceQueryer:
             )
         )
 
+    def get_materialized_partition_counts(
+        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+    ) -> Mapping[str, int]:
+        if (
+            after_cursor not in self._asset_partition_count_cache
+            or asset_key not in self._asset_partition_count_cache[after_cursor]
+        ):
+            self._asset_partition_count_cache[after_cursor][
+                asset_key
+            ] = self.instance.get_materialization_count_by_partition(
+                asset_keys=[asset_key], after_cursor=after_cursor
+            )[
+                asset_key
+            ]
+        return self._asset_partition_count_cache[after_cursor][asset_key]
+
+    def get_materialized_partitions(
+        self, asset_key: AssetKey, after_cursor: Optional[int] = None
+    ) -> Iterable[str]:
+        return [
+            partition_key
+            for partition_key, count in self.get_materialized_partition_counts(
+                asset_key, after_cursor
+            ).items()
+            if count > 0
+        ]
+
     @cached_method
     def is_reconciled(
         self,
@@ -244,8 +352,13 @@ class CachingInstanceQueryer:
             return False
 
         for parent in asset_graph.get_parents_partitions(
-            asset_partition.asset_key, asset_partition.partition_key
+            self,
+            asset_partition.asset_key,
+            asset_partition.partition_key,
         ):
+            if asset_graph.is_source(parent.asset_key):
+                continue
+
             if (
                 self.get_latest_materialization_record(
                     parent, after_cursor=latest_materialization_record.storage_id
@@ -262,7 +375,7 @@ class CachingInstanceQueryer:
     def set_known_used_data(
         self,
         record: EventLogRecord,
-        new_known_data: Dict[AssetKey, Tuple[Optional[int], Optional[float]]],
+        new_known_data: Mapping[AssetKey, Tuple[Optional[int], Optional[float]]],
     ):
         event_log_storage = self._instance.event_log_storage
         if (
@@ -300,20 +413,148 @@ class CachingInstanceQueryer:
 
             serialized_times = tags_list[0].get(USED_DATA_TAG, "{}")
             return {
-                AssetKey.from_user_string(key): tuple(value)  # type:ignore
+                AssetKey.from_user_string(key): tuple(value)
                 for key, value in json.loads(serialized_times).items()
             }
         return {}
 
-    @cached_method
-    def _calculate_used_data(
+    def _calculate_time_partitioned_asset_data_time(
+        self,
+        asset_key: AssetKey,
+        asset_graph: AssetGraph,
+        cursor: int,
+        partitions_def: TimeWindowPartitionsDefinition,
+    ) -> Optional[datetime.datetime]:
+        """Returns the time up until which all available data has been consumed for this asset
+
+        At a high level, this algorithm works as follows:
+
+        First, calculate the subset of partitions that have been materialized up until this point
+        in time (ignoring the cursor). This is done by querying the asset status cache if it is
+        available, otherwise by using a (slower) get_materialization_count_by_partition query.
+
+        Next, we calculate the set of partitions that are net-new since the cursor. This is done by
+        comparing the count of materializations before after the cursor to the total count of
+        materializations.
+
+        Finally, we calculate the minimum time window of the net-new partitions. This time window
+        did not exist at the time of the cursor, so we know that we have all data up until the
+        beginning of that time window, or all data up until the end of the first filled time window
+        in the total set, whichever is less.
+        """
+        from dagster._core.storage.partition_status_cache import (
+            get_and_update_asset_status_cache_value,
+        )
+
+        if self.instance.can_cache_asset_status_data():
+            # this is the current state of the asset, not the state of the asset at the time of record_id
+            status_cache_value = get_and_update_asset_status_cache_value(
+                instance=self._instance,
+                asset_key=asset_key,
+                partitions_def=partitions_def,
+            )
+            partition_subset = (
+                status_cache_value.deserialize_materialized_partition_subsets(
+                    partitions_def=partitions_def
+                )
+                if status_cache_value
+                else partitions_def.empty_subset()
+            )
+        else:
+            # if we can't use the asset status cache, then we get the subset by querying for the
+            # existing partitions
+            partition_subset = partitions_def.empty_subset().with_partition_keys(
+                self.get_materialized_partitions(asset_key)
+            )
+
+        if not isinstance(partition_subset, TimeWindowPartitionsSubset):
+            check.failed(f"Invalid partition subset {type(partition_subset)}")
+
+        sorted_time_windows = sorted(partition_subset.included_time_windows)
+        # no time windows, no data
+        if len(sorted_time_windows) == 0:
+            return None
+        first_filled_time_window = sorted_time_windows[0]
+
+        first_available_time_window = partitions_def.get_first_partition_window()
+        if first_available_time_window is None:
+            return None
+
+        # if the first partition has not been filled
+        if first_available_time_window.start < first_filled_time_window.start:
+            return None
+
+        # there are no events for this asset after the cursor
+        asset_record = self.get_asset_record(asset_key)
+        if (
+            asset_record is not None
+            and asset_record.asset_entry is not None
+            and asset_record.asset_entry.last_materialization_record is not None
+            and asset_record.asset_entry.last_materialization_record.storage_id <= cursor
+        ):
+            return first_filled_time_window.end
+
+        # get a per-partition count of the new materializations
+        new_partition_counts = self.get_materialized_partition_counts(
+            asset_key, after_cursor=cursor
+        )
+
+        total_partition_counts = self.get_materialized_partition_counts(asset_key)
+
+        # these are the partitions that did not exist before this record was created
+        net_new_partitions = {
+            partition_key
+            for partition_key, new_count in new_partition_counts.items()
+            if new_count == total_partition_counts.get(partition_key)
+        }
+
+        # there are new materializations, but they don't fill any new partitions
+        if not net_new_partitions:
+            return first_filled_time_window.end
+
+        # the oldest time window that was newly filled
+        oldest_net_new_time_window = min(
+            partitions_def.time_window_for_partition_key(partition_key)
+            for partition_key in net_new_partitions
+        )
+
+        # only factor in the oldest net new time window if it breaks the current first filled time window
+        return min(
+            oldest_net_new_time_window.start,
+            first_filled_time_window.end,
+        )
+
+    def _calculate_used_data_time_partitioned(
         self,
         asset_graph: AssetGraph,
         asset_key: AssetKey,
-        record_id: Optional[int],
+        cursor: int,
+        partitions_def: TimeWindowPartitionsDefinition,
+    ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
+        """Returns the data time (i.e. the time up to which the asset has incorporated all available
+        data) for a time-partitioned asset. This method takes into account all partitions that were
+        materialized for this asset up to the provided cursor.
+        """
+        partition_data_time = self._calculate_time_partitioned_asset_data_time(
+            asset_key=asset_key,
+            asset_graph=asset_graph,
+            cursor=cursor,
+            partitions_def=partitions_def,
+        )
+        partition_data_timestamp = partition_data_time.timestamp() if partition_data_time else None
+
+        root_keys = AssetSelection.keys(asset_key).upstream().sources().resolve(asset_graph)
+        return {key: (None, partition_data_timestamp) for key in root_keys}
+
+    @cached_method
+    def _calculate_used_data_unpartitioned(
+        self,
+        asset_graph: AssetGraph,
+        asset_key: AssetKey,
+        record_id: int,
         record_timestamp: Optional[float],
         record_tags: Mapping[str, str],
-    ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
+    ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
         if record_id is None:
             return {key: (None, None) for key in asset_graph.get_non_source_roots(asset_key)}
 
@@ -376,6 +617,35 @@ class CachingInstanceQueryer:
 
         return known_data
 
+    @cached_method
+    def _calculate_used_data(
+        self,
+        asset_graph: AssetGraph,
+        asset_key: AssetKey,
+        record_id: Optional[int],
+        record_timestamp: Optional[float],
+        record_tags: Mapping[str, str],
+    ) -> Mapping[AssetKey, Tuple[Optional[int], Optional[float]]]:
+        if record_id is None:
+            return {key: (None, None) for key in asset_graph.get_non_source_roots(asset_key)}
+
+        partitions_def = asset_graph.get_partitions_def(asset_key)
+        if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            return self._calculate_used_data_time_partitioned(
+                asset_graph=asset_graph,
+                asset_key=asset_key,
+                cursor=record_id,
+                partitions_def=partitions_def,
+            )
+        else:
+            return self._calculate_used_data_unpartitioned(
+                asset_graph=asset_graph,
+                asset_key=asset_key,
+                record_id=record_id,
+                record_timestamp=record_timestamp,
+                record_tags=record_tags,
+            )
+
     def get_used_data_times_for_record(
         self,
         asset_graph: AssetGraph,
@@ -402,7 +672,9 @@ class CachingInstanceQueryer:
             record_timestamp=record.event_log_entry.timestamp,
             record_tags=frozendict(record.asset_materialization.tags or {}),
         )
-        if asset_graph.freshness_policies_by_key.get(record.asset_key) is not None:
+        if asset_graph.freshness_policies_by_key.get(
+            record.asset_key
+        ) is not None and not asset_graph.is_partitioned(record.asset_key):
             self.set_known_used_data(record, new_known_data=data)
 
         return {
@@ -413,11 +685,18 @@ class CachingInstanceQueryer:
         }
 
     @cached_method
-    def _get_in_progress_run_ids(self) -> Sequence[str]:
+    def _get_in_progress_run_ids(self, current_time: datetime.datetime) -> Sequence[str]:
         return [
             record.pipeline_run.run_id
             for record in self._instance.get_run_records(
-                filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES), limit=25
+                filters=RunsFilter(
+                    statuses=[
+                        status for status in DagsterRunStatus if status not in FINISHED_STATUSES
+                    ],
+                    # ignore old runs that may be stuck in an unfinished state
+                    created_after=current_time - datetime.timedelta(days=1),
+                ),
+                limit=25,
             )
         ]
 
@@ -491,7 +770,7 @@ class CachingInstanceQueryer:
         """
         in_progress_times: Dict[AssetKey, datetime.datetime] = {}
 
-        for run_id in self._get_in_progress_run_ids():
+        for run_id in self._get_in_progress_run_ids(current_time=current_time):
             if not self.is_asset_in_run(run_id=run_id, asset=asset_key):
                 continue
 
@@ -515,8 +794,7 @@ class CachingInstanceQueryer:
         the expected data times for that asset once the run completed. Otherwise, returns an empty
         mapping.
         """
-        asset_records = self._instance.get_asset_records([asset_key])
-        asset_record = next(iter(asset_records), None)
+        asset_record = self.get_asset_record(asset_key)
 
         # no latest run
         if asset_record is None or asset_record.asset_entry.last_run_id is None:
@@ -589,3 +867,12 @@ class CachingInstanceQueryer:
             return records[0].storage_id
         else:
             return None
+
+    def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
+        if partitions_def_name in self._dynamic_partitions_cache:
+            return self._dynamic_partitions_cache[partitions_def_name]
+
+        self._dynamic_partitions_cache[partitions_def_name] = self.instance.get_dynamic_partitions(
+            partitions_def_name
+        )
+        return self._dynamic_partitions_cache[partitions_def_name]

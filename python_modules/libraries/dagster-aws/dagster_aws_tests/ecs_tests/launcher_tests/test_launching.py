@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 
 import copy
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 import dagster_aws
@@ -9,6 +10,7 @@ from botocore.exceptions import ClientError
 from dagster._check import CheckError
 from dagster._core.code_pointer import FileCodePointer
 from dagster._core.events import MetadataEntry
+from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
 from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
@@ -767,8 +769,25 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
         instance.launch_run(run.run_id, workspace)
 
 
-def test_status(ecs, instance, workspace, run):
-    instance.launch_run(run.run_id, workspace)
+def test_status(
+    ecs,
+    instance_with_log_group,
+    pipeline,
+    external_pipeline,
+    cloudwatch_client,
+    log_group,
+):
+    instance = instance_with_log_group
+
+    run = instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+    )
+
+    instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=None))
+
+    assert instance.run_launcher.logs == cloudwatch_client
 
     # Reach into StubbedEcs and grab the task
     # so we can modify its status. This is kind of complicated
@@ -777,6 +796,8 @@ def test_status(ecs, instance, workspace, run):
     # using cluster and arn as keys - instead of a dict of lists?
     task_arn = instance.get_run_by_id(run.run_id).tags["ecs/task_arn"]
     task = [task for task in ecs.storage.tasks["default"] if task["taskArn"] == task_arn][0]
+
+    task_id = task_arn.split("/")[-1]
 
     for status in RUNNING_STATUSES:
         task["lastStatus"] = status
@@ -789,7 +810,41 @@ def test_status(ecs, instance, workspace, run):
         assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.SUCCESS
 
         task["containers"][0]["exitCode"] = 1
-        assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.FAILED
+        # Without logs (or on a failure fetching logs) the health check sitll fails
+
+        failure_health_check = instance.run_launcher.check_run_worker_health(run)
+        assert failure_health_check.status == WorkerStatus.FAILED
+        assert (
+            failure_health_check.msg
+            == f"ECS task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
+            " failed. Check the logs for the failed task for details."
+        )
+
+        # with logs, the failure includes the run worker logs
+
+        family = instance.run_launcher._get_run_task_definition_family(run)
+        log_stream = f"{family}/run/{task_id}"
+        cloudwatch_client.create_log_stream(logGroupName=log_group, logStreamName=log_stream)
+
+        cloudwatch_client.put_log_events(
+            logGroupName=log_group,
+            logStreamName=log_stream,
+            logEvents=[
+                {"timestamp": int(time.time() * 1000), "message": "Oops something bad happened"}
+            ],
+        )
+
+        failure_health_check = instance.run_launcher.check_run_worker_health(run)
+        assert failure_health_check.status == WorkerStatus.FAILED
+
+        assert (
+            failure_health_check.msg
+            == f"ECS task {task_arn} failed. Stop code: None. Stop reason: None. Container ['run']"
+            " failed. Task logs:\nOops something bad happened"
+        )
+
+        # Failure includes logs
+        assert "Task logs:\nOops something bad happened" in failure_health_check.msg
 
     task["lastStatus"] = "foo"
     assert instance.run_launcher.check_run_worker_health(run).status == WorkerStatus.UNKNOWN

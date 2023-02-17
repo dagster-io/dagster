@@ -40,7 +40,7 @@ from psycopg2.extensions import Notify
 from .utils import create_pg_connection
 
 
-def get_wakeup_fd():
+def get_wakeup_fd() -> int:
     pipe_r, pipe_w = os.pipe()
     if "win" not in sys.platform:
         import fcntl
@@ -56,7 +56,7 @@ def _empty_handler(_signal, _frame):
     pass
 
 
-def quote_table_name(name):
+def quote_table_name(name: str) -> str:
     return '"{}"'.format(name)
 
 
@@ -68,7 +68,7 @@ def start_listening(connection, channels):
         curs.execute(listens)
 
 
-def construct_signals(arg):
+def construct_signals(arg) -> signal.Signals:
     # function exists to consolidate and scope pylint directive
     return signal.Signals(arg)  # pylint: disable=no-member
 
@@ -108,7 +108,7 @@ def await_pg_notifications(
     )
 
     with create_pg_connection(engine) as conn:
-        connection = conn.connection.connection  # DBAPI connection
+        connection = conn.connection.connection  # DBAPI connection  # type: ignore
 
         if channels:
             start_listening(connection, channels)

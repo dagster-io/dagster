@@ -1,6 +1,5 @@
 import inspect
 import warnings
-from collections import defaultdict
 from typing import (
     AbstractSet,
     Any,
@@ -9,7 +8,6 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Union,
     cast,
@@ -26,8 +24,8 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
-from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
-from dagster._core.definitions.events import AssetLineageInfo, DynamicOutput
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
     DEFAULT_LOGICAL_VERSION,
@@ -66,18 +64,18 @@ from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandl
 from dagster._core.execution.resolve_versions import resolve_step_output_versions
 from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
-from dagster._utils import ensure_gen, iterate_with_context
+from dagster._utils import iterate_with_context
 from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
 from dagster._utils.timing import time_execution_scope
 
-from .compute import SolidOutputUnion
-from .compute_generator import create_solid_compute_wrapper
+from .compute import OpOutputUnion
+from .compute_generator import create_op_compute_wrapper
 from .utils import op_execution_error_boundary
 
 
 def _step_output_error_checked_user_event_sequence(
-    step_context: StepExecutionContext, user_event_sequence: Iterator[SolidOutputUnion]
-) -> Iterator[SolidOutputUnion]:
+    step_context: StepExecutionContext, user_event_sequence: Iterator[OpOutputUnion]
+) -> Iterator[OpOutputUnion]:
     """
     Process the event sequence to check for invariant violations in the event
     sequence related to Output events emitted from the compute_fn.
@@ -164,7 +162,7 @@ def _step_output_error_checked_user_event_sequence(
         yield output
 
     for step_output in step.step_outputs:
-        step_output_def = step_context.solid_def.output_def_named(step_output.name)
+        step_output_def = step_context.op_def.output_def_named(step_output.name)
         if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
             if step_output_def.dagster_type.is_nothing:
                 step_context.log.info(
@@ -225,7 +223,7 @@ def _type_checked_event_sequence_for_input(
     check.str_param(input_name, "input_name")
 
     step_input = step_context.step.step_input_named(input_name)
-    input_def = step_context.solid_def.input_def_named(step_input.name)
+    input_def = step_context.op_def.input_def_named(step_input.name)
 
     check.invariant(
         input_def.name == input_name,
@@ -270,7 +268,7 @@ def _type_check_output(
     check.inst_param(output, "output", (Output, DynamicOutput))
 
     step_output = step_context.step.step_output_named(output.output_name)
-    step_output_def = step_context.solid_def.output_def_named(step_output.name)
+    step_output_def = step_context.op_def.output_def_named(step_output.name)
 
     dagster_type = step_output_def.dagster_type
     type_check_context = step_context.for_type(dagster_type)
@@ -335,15 +333,13 @@ def core_dagster_event_sequence_for_step(
         step_context.fetch_external_input_asset_records()
 
     for step_input in step_context.step.step_inputs:
-        input_def = step_context.solid_def.input_def_named(step_input.name)
+        input_def = step_context.op_def.input_def_named(step_input.name)
         dagster_type = input_def.dagster_type
 
         if dagster_type.is_nothing:
             continue
 
-        for event_or_input_value in ensure_gen(
-            step_input.source.load_input_object(step_context, input_def)
-        ):
+        for event_or_input_value in step_input.source.load_input_object(step_context, input_def):
             if isinstance(event_or_input_value, DagsterEvent):
                 yield event_or_input_value
             else:
@@ -356,17 +352,15 @@ def core_dagster_event_sequence_for_step(
         ):
             yield evt
 
-    input_lineage = step_context.get_input_lineage()
-
     # The core execution loop expects a compute generator in a specific format: a generator that
     # takes a context and dictionary of inputs as input, yields output events. If a solid definition
     # was generated from the @solid or @lambda_solid decorator, then compute_fn needs to be coerced
     # into this format. If the solid definition was created directly, then it is expected that the
     # compute_fn is already in this format.
-    if isinstance(step_context.solid_def.compute_fn, DecoratedOpFunction):
-        core_gen = create_solid_compute_wrapper(step_context.solid_def)
+    if isinstance(step_context.op_def.compute_fn, DecoratedOpFunction):
+        core_gen = create_op_compute_wrapper(step_context.op_def)
     else:
-        core_gen = step_context.solid_def.compute_fn
+        core_gen = step_context.op_def.compute_fn
 
     with time_execution_scope() as timer_result:
         user_event_sequence = check.generator(
@@ -385,12 +379,12 @@ def core_dagster_event_sequence_for_step(
             if isinstance(user_event, DagsterEvent):
                 yield user_event
             elif isinstance(user_event, (Output, DynamicOutput)):
-                for evt in _type_check_and_store_output(step_context, user_event, input_lineage):
+                for evt in _type_check_and_store_output(step_context, user_event):
                     yield evt
             # for now, I'm ignoring AssetMaterializations yielded manually, but we might want
             # to do something with these in the above path eventually
             elif isinstance(user_event, (AssetMaterialization, Materialization)):
-                yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)
+                yield DagsterEvent.asset_materialization(step_context, user_event)
             elif isinstance(user_event, AssetObservation):
                 yield DagsterEvent.asset_observation(step_context, user_event)
             elif isinstance(user_event, ExpectationResult):
@@ -408,13 +402,10 @@ def core_dagster_event_sequence_for_step(
 
 
 def _type_check_and_store_output(
-    step_context: StepExecutionContext,
-    output: Union[DynamicOutput, Output],
-    input_lineage: Sequence[AssetLineageInfo],
+    step_context: StepExecutionContext, output: Union[DynamicOutput, Output]
 ) -> Iterator[DagsterEvent]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
-    check.sequence_param(input_lineage, "input_lineage", AssetLineageInfo)
 
     mapping_key = output.mapping_key if isinstance(output, DynamicOutput) else None
 
@@ -441,7 +432,7 @@ def _type_check_and_store_output(
     for output_event in _type_check_output(step_context, step_output_handle, output, version):
         yield output_event
 
-    for evt in _store_output(step_context, step_output_handle, output, input_lineage):
+    for evt in _store_output(step_context, step_output_handle, output):
         yield evt
 
     for evt in _create_type_materializations(step_context, output.output_name, output.value):
@@ -462,25 +453,6 @@ def _asset_key_and_partitions_for_output(
         )
 
     return None, set()
-
-
-def _dedup_asset_lineage(asset_lineage: Sequence[AssetLineageInfo]) -> Sequence[AssetLineageInfo]:
-    """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
-    information. Duplicates can occur naturally when calculating transitive dependencies from solids
-    with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will
-    inherit all dependencies from all of the solid Inputs).
-    """
-    key_partition_mapping: Dict[AssetKey, Set[str]] = defaultdict(set)
-
-    for lineage_info in asset_lineage:
-        if not lineage_info.partitions:
-            key_partition_mapping[lineage_info.asset_key] |= set()
-        for partition in lineage_info.partitions:
-            key_partition_mapping[lineage_info.asset_key].add(partition)
-    return [
-        AssetLineageInfo(asset_key=asset_key, partitions=partitions)
-        for asset_key, partitions in key_partition_mapping.items()
-    ]
 
 
 def _get_output_asset_materializations(
@@ -570,7 +542,7 @@ def _build_logical_version_tags(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Dict[str, str]:
     asset_layer = step_context.pipeline_def.asset_layer
-    code_version = asset_layer.code_version_for_asset(asset_key) or step_context.pipeline_run.run_id
+    code_version = asset_layer.code_version_for_asset(asset_key) or step_context.dagster_run.run_id
     input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
     tags: Dict[str, str] = {}
     tags[CODE_VERSION_TAG_KEY] = code_version
@@ -601,9 +573,8 @@ def _store_output(
     step_context: StepExecutionContext,
     step_output_handle: StepOutputHandle,
     output: Union[Output, DynamicOutput],
-    input_lineage: Sequence[AssetLineageInfo],
 ) -> Iterator[DagsterEvent]:
-    output_def = step_context.solid_def.output_def_named(step_output_handle.output_name)
+    output_def = step_context.op_def.output_def_named(step_output_handle.output_name)
     output_manager = step_context.get_io_manager(step_output_handle)
     output_context = step_context.get_output_context(step_output_handle)
 
@@ -684,7 +655,7 @@ def _store_output(
                     partition=materialization.partition,
                     metadata=None,
                 )
-        yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
+        yield DagsterEvent.asset_materialization(step_context, materialization)
 
     asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
     if asset_key:
@@ -696,11 +667,7 @@ def _store_output(
             manager_metadata_entries,
             step_context,
         ):
-            yield DagsterEvent.asset_materialization(
-                step_context,
-                materialization,
-                input_lineage,
-            )
+            yield DagsterEvent.asset_materialization(step_context, materialization)
 
     yield DagsterEvent.handled_output(
         step_context,
@@ -717,11 +684,11 @@ def _create_type_materializations(
 ) -> Iterator[DagsterEvent]:
     """If the output has any dagster type materializers, runs them."""
     step = step_context.step
-    current_handle = step.solid_handle
+    current_handle = step.node_handle
 
     # check for output mappings at every point up the composition hierarchy
     while current_handle:
-        solid_config = step_context.resolved_run_config.solids.get(current_handle.to_string())
+        solid_config = step_context.resolved_run_config.ops.get(current_handle.to_string())
         current_handle = current_handle.parent
 
         if solid_config is None:
@@ -734,10 +701,10 @@ def _create_type_materializations(
                 step_output = step.step_output_named(output_name)
                 with user_code_error_boundary(
                     DagsterTypeMaterializationError,
-                    msg_fn=lambda: f'Error occurred during output materialization:\n    output name: "{output_name}"\n    solid invocation: "{step_context.solid.name}"\n    solid definition: "{step_context.solid_def.name}"',
+                    msg_fn=lambda: f'Error occurred during output materialization:\n    output name: "{output_name}"\n    solid invocation: "{step_context.solid.name}"\n    solid definition: "{step_context.op_def.name}"',
                     log_manager=step_context.log,
                 ):
-                    output_def = step_context.solid_def.output_def_named(step_output.name)
+                    output_def = step_context.op_def.output_def_named(step_output.name)
                     dagster_type = output_def.dagster_type
                     materializer = dagster_type.materializer
                     if materializer is None:

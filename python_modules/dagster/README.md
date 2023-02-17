@@ -5,7 +5,7 @@
   </a>
   <br /><br />
   <a target="_blank" href="https://twitter.com/dagster" style="background:none">
-    <img src="https://img.shields.io/twitter/follow/dagster?labelColor=4F43DD&color=163B36&logo=twitter&style=flat">
+    <img src="https://img.shields.io/badge/twitter-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=twitter" />
   </a>
   <a target="_blank" href="https://dagster.io/slack" style="background:none">
     <img src="https://img.shields.io/badge/slack-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=slack" />

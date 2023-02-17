@@ -3,6 +3,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import airbyte from './optag-images/airbyte.svg';
+import databricks from './optag-images/databricks.svg';
 import dbt from './optag-images/dbt.svg';
 import duckdb from './optag-images/duckdb.svg';
 import fivetran from './optag-images/fivetran.svg';
@@ -17,6 +18,7 @@ import slack from './optag-images/slack.svg';
 import snowflake from './optag-images/snowflake.svg';
 import sql from './optag-images/sql.svg';
 import tensorflow from './optag-images/tensorflow.svg';
+import weights_and_biases from './optag-images/weights_and_biases.svg';
 
 export interface IOpTag {
   label: string;
@@ -30,7 +32,7 @@ interface OpTagsProps {
   reduceText?: boolean;
 }
 
-const KNOWN_TAGS = {
+export const KNOWN_TAGS = {
   jupyter: {
     color: '#4E4E4E',
     icon: jupyter,
@@ -110,6 +112,15 @@ const KNOWN_TAGS = {
     color: '#B821FF',
     icon: sql,
     content: 'SQL',
+  },
+  wandb: {
+    color: '#FCB119',
+    content: <img src={weights_and_biases} alt="Weights & Biases logo" role="img" />,
+  },
+  databricks: {
+    color: '#FD3820',
+    icon: databricks,
+    content: 'Databricks',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };

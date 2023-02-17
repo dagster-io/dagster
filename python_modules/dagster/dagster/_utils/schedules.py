@@ -45,28 +45,29 @@ def cron_string_iterator(
     for _ in range(-start_offset):
         next_date = date_iter.get_prev(datetime.datetime)
 
-    cron_parts, _ = croniter.expand(cron_string)
+    cron_parts, nth_weekday_of_month = croniter.expand(cron_string)
 
     is_numeric = [len(part) == 1 and part[0] != "*" for part in cron_parts]
     is_wildcard = [len(part) == 1 and part[0] == "*" for part in cron_parts]
 
+    delta_fn = None
+    should_hour_change = False
+
     # Special-case common intervals (hourly/daily/weekly/monthly) since croniter iteration can be
     # much slower than adding a fixed interval
-    if all(is_numeric[0:3]) and all(is_wildcard[3:]):  # monthly
-        delta_fn = lambda d, num: d.add(months=num)
-        should_hour_change = False
-    elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
-        delta_fn = lambda d, num: d.add(weeks=num)
-        should_hour_change = False
-    elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
-        delta_fn = lambda d, num: d.add(days=num)
-        should_hour_change = False
-    elif is_numeric[0] and all(is_wildcard[1:]):  # hourly
-        delta_fn = lambda d, num: d.add(hours=num)
-        should_hour_change = True
-    else:
-        delta_fn = None
-        should_hour_change = False
+    if not nth_weekday_of_month:
+        if all(is_numeric[0:3]) and all(is_wildcard[3:]):  # monthly
+            delta_fn = lambda d, num: d.add(months=num)
+            should_hour_change = False
+        elif all(is_numeric[0:2]) and is_numeric[4] and all(is_wildcard[2:4]):  # weekly
+            delta_fn = lambda d, num: d.add(weeks=num)
+            should_hour_change = False
+        elif all(is_numeric[0:2]) and all(is_wildcard[2:]):  # daily
+            delta_fn = lambda d, num: d.add(days=num)
+            should_hour_change = False
+        elif is_numeric[0] and all(is_wildcard[1:]):  # hourly
+            delta_fn = lambda d, num: d.add(hours=num)
+            should_hour_change = True
 
     if delta_fn is not None:
         # Use pendulums for intervals when possible
@@ -180,6 +181,7 @@ def schedule_execution_time_iterator(
     start_timestamp: float,
     cron_schedule: Union[str, Sequence[str]],
     execution_timezone: Optional[str],
+    ascending: bool = True,
 ) -> Iterator[datetime.datetime]:
     """Generator of execution datetimes >= start_timestamp for the given schedule.
 
@@ -191,10 +193,16 @@ def schedule_execution_time_iterator(
     check.invariant(is_valid_cron_schedule(cron_schedule))
 
     if isinstance(cron_schedule, str):
-        yield from cron_string_iterator(start_timestamp, cron_schedule, execution_timezone)
+        yield from cron_string_iterator(
+            start_timestamp, cron_schedule, execution_timezone
+        ) if ascending else reverse_cron_string_iterator(
+            start_timestamp, cron_schedule, execution_timezone
+        )
     else:
         iterators = [
             cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+            if ascending
+            else reverse_cron_string_iterator(start_timestamp, cron_string, execution_timezone)
             for cron_string in cron_schedule
         ]
         next_dates = [next(it) for it in iterators]

@@ -21,7 +21,7 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import 
 
 @op(config_schema={"fail": bool})
 def foo(context):
-    if context.solid_config["fail"]:
+    if context.op_config["fail"]:
         raise Exception("This will always fail!")
 
 

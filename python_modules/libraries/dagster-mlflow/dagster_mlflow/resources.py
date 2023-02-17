@@ -99,7 +99,7 @@ class MlFlow(metaclass=MlflowMeta):
         to the same Mlflow run, even when multiprocess executors are used.
         """
         # Get the run id
-        run_id = self._get_current_run_id()  # pylint: disable=no-member
+        run_id = self._get_current_run_id()
         self._set_active_run(run_id=run_id)
         self._set_all_tags()
 
@@ -134,7 +134,7 @@ class MlFlow(metaclass=MlflowMeta):
                 filter_string=f"tags.dagster_run_id='{dagster_run_id}'",
             )
             if not current_run_df.empty:
-                return current_run_df.run_id.values[0]  # pylint: disable=no-member
+                return current_run_df.run_id.values[0]
 
     def _set_active_run(self, run_id=None):
         """

@@ -1,5 +1,5 @@
 from datetime import datetime, time
-from typing import Callable, Optional, Sequence
+from typing import Optional, Sequence
 
 import pendulum
 import pytest
@@ -731,42 +731,6 @@ def test_time_partitions_hourly_partitions(
         assert_expected_partitions(partitions.get_partitions(), expected_partitions)
 
 
-@pytest.mark.parametrize(
-    argnames=["partition_fn"],
-    argvalues=[
-        (lambda _current_time: [Partition("a_partition")],),
-        (lambda _current_time: [Partition(x) for x in range(10)],),
-    ],
-)
-def test_dynamic_partitions_partitions(
-    partition_fn: Callable[[Optional[datetime]], Sequence[Partition]]
-):
-    partitions = DynamicPartitionsDefinition(partition_fn)
-
-    assert [(p.name, p.value) for p in partitions.get_partitions()] == [
-        (p.name, p.value) for p in partition_fn(None)
-    ]
-
-    assert partitions.get_partition_keys() == [p.name for p in partition_fn(None)]
-
-
-@pytest.mark.parametrize(
-    argnames=["partition_fn"],
-    argvalues=[
-        (lambda _current_time: ["a_partition"],),
-        (lambda _current_time: [str(x) for x in range(10)],),
-    ],
-)
-def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], Sequence[str]]):
-    partitions = DynamicPartitionsDefinition(partition_fn)
-
-    assert [(p.name, p.value) for p in partitions.get_partitions()] == [
-        (p, p) for p in partition_fn(None)
-    ]
-
-    assert partitions.get_partition_keys() == partition_fn(None)
-
-
 def test_partitions_def_to_string():
     hourly = HourlyPartitionsDefinition(
         start_date="Tue Jan 11 1:30PM", timezone="America/Los_Angeles", fmt="%a %b %d %I:%M%p"
@@ -782,6 +746,9 @@ def test_partitions_def_to_string():
     dynamic_fn = lambda _current_time: ["a_partition"]
     dynamic = DynamicPartitionsDefinition(dynamic_fn)
     assert str(dynamic) == "'a_partition'"
+
+    dynamic = DynamicPartitionsDefinition(name="foo")
+    assert str(dynamic) == "Dynamic partitions definition foo"
 
 
 def test_static_partition_keys_in_range():

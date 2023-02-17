@@ -1,7 +1,7 @@
 import json
 from unittest import mock
 
-from dagster import reconstructable
+from dagster import job, reconstructable
 from dagster._core.host_representation import RepositoryHandle
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.launcher.base import WorkerStatus
@@ -13,7 +13,6 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ExecuteRunArgs
-from dagster._legacy import pipeline
 from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
 from dagster._utils.merger import merge_dicts
 from dagster_k8s import K8sRunLauncher
@@ -148,8 +147,9 @@ def test_launcher_with_container_context(kubeconfig_file):
 
         container = kwargs["body"].spec.template.spec.containers[0]
 
-        resources = container.resources
-        assert resources.to_dict() == {
+        resources = container.resources.to_dict()
+        resources.pop("claims", None)
+        assert resources == {
             "limits": {"memory": "64Mi", "cpu": "250m"},
             "requests": {"memory": "32Mi", "cpu": "125m"},
         }
@@ -350,7 +350,10 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         container = kwargs["body"].spec.template.spec.containers[0]
 
         job_resources = container.resources
-        assert job_resources.to_dict() == expected_resources
+        resolved_resources = job_resources.to_dict()
+        resolved_resources.pop("claims", None)  # remove claims if returned
+        assert resolved_resources == expected_resources
+
         assert DAGSTER_PG_PASSWORD_ENV_VAR in [env.name for env in container.env]
         assert "DAGSTER_RUN_JOB_NAME" in [env.name for env in container.env]
 
@@ -489,7 +492,7 @@ def test_no_postgres(kubeconfig_file):
         ]
 
 
-@pipeline
+@job
 def fake_pipeline():
     pass
 

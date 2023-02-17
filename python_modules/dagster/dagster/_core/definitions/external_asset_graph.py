@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 class ExternalAssetGraph(AssetGraph):
     def __init__(
         self,
-        asset_dep_graph: DependencyGraph,
+        asset_dep_graph: DependencyGraph[AssetKey],
         source_asset_keys: AbstractSet[AssetKey],
         partitions_defs_by_key: Mapping[AssetKey, Optional[PartitionsDefinition]],
         partition_mappings_by_key: Mapping[AssetKey, Optional[Mapping[AssetKey, PartitionMapping]]],
@@ -38,6 +38,7 @@ class ExternalAssetGraph(AssetGraph):
         required_multi_asset_sets_by_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         repo_handles_by_key: Mapping[AssetKey, RepositoryHandle],
         job_names_by_key: Mapping[AssetKey, Sequence[str]],
+        code_versions_by_key: Mapping[AssetKey, Optional[str]],
     ):
         super().__init__(
             asset_dep_graph=asset_dep_graph,
@@ -47,6 +48,7 @@ class ExternalAssetGraph(AssetGraph):
             group_names_by_key=group_names_by_key,
             freshness_policies_by_key=freshness_policies_by_key,
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
+            code_versions_by_key=code_versions_by_key,
         )
         self._repo_handles_by_key = repo_handles_by_key
         self._job_names_by_key = job_names_by_key
@@ -89,9 +91,9 @@ class ExternalAssetGraph(AssetGraph):
         cls,
         repo_handle_external_asset_nodes: Sequence[Tuple[RepositoryHandle, "ExternalAssetNode"]],
     ) -> "ExternalAssetGraph":
-        upstream = {}
-        source_asset_keys = set()
-        partitions_defs_by_key = {}
+        upstream: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+        source_asset_keys: Set[AssetKey] = set()
+        partitions_defs_by_key: Dict[AssetKey, Optional[PartitionsDefinition]] = {}
         partition_mappings_by_key: Dict[AssetKey, Dict[AssetKey, PartitionMapping]] = defaultdict(
             defaultdict
         )
@@ -105,6 +107,11 @@ class ExternalAssetGraph(AssetGraph):
         }
         job_names_by_key = {
             node.asset_key: node.job_names
+            for _, node in repo_handle_external_asset_nodes
+            if not node.is_source
+        }
+        code_versions_by_key = {
+            node.asset_key: node.code_version
             for _, node in repo_handle_external_asset_nodes
             if not node.is_source
         }
@@ -161,6 +168,7 @@ class ExternalAssetGraph(AssetGraph):
             required_multi_asset_sets_by_key=required_multi_asset_sets_by_key,
             repo_handles_by_key=repo_handles_by_key,
             job_names_by_key=job_names_by_key,
+            code_versions_by_key=code_versions_by_key,
         )
 
     @property
@@ -172,3 +180,6 @@ class ExternalAssetGraph(AssetGraph):
 
     def get_job_names(self, asset_key: AssetKey) -> Iterable[str]:
         return self._job_names_by_key[asset_key]
+
+    def get_asset_keys_for_job(self, job_name: str) -> Sequence[AssetKey]:
+        return [k for k in self.all_asset_keys if job_name in self.get_job_names(k)]

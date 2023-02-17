@@ -19,15 +19,22 @@ export type AssetNodeLiveFragment = {
     __typename: 'FreshnessPolicy';
     maximumLagMinutes: number;
     cronSchedule: string | null;
+    cronScheduleTimezone: string | null;
   } | null;
   freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
   assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
+  partitionStats: {
+    __typename: 'PartitionStats';
+    numMaterialized: number;
+    numPartitions: number;
+  } | null;
 };
 
 export type AssetNodeLiveFreshnessPolicyFragment = {
   __typename: 'FreshnessPolicy';
   maximumLagMinutes: number;
   cronSchedule: string | null;
+  cronScheduleTimezone: string | null;
 };
 
 export type AssetNodeLiveFreshnessInfoFragment = {

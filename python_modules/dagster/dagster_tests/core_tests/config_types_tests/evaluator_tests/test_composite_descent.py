@@ -9,17 +9,19 @@ from dagster import (
     String,
     configured,
     mem_io_manager,
+    op,
 )
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.input import In
 from dagster._core.system_config.composite_descent import composite_descent
-from dagster._legacy import InputDefinition, execute_pipeline, lambda_solid, pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline
 
 
 def test_single_level_pipeline():
-    @solid(config_schema=int)
+    @op(config_schema=int)
     def return_int(context):
-        return context.solid_config
+        return context.op_config
 
     @pipeline
     def return_int_pipeline():
@@ -32,9 +34,9 @@ def test_single_level_pipeline():
 
 
 def test_single_solid_pipeline_composite_descent():
-    @solid(config_schema=int)
+    @op(config_schema=int)
     def return_int(context):
-        return context.solid_config
+        return context.op_config
 
     @pipeline
     def return_int_pipeline():
@@ -55,9 +57,9 @@ def test_single_solid_pipeline_composite_descent():
 
 
 def test_single_layer_pipeline_composite_descent():
-    @solid(config_schema=int)
+    @op(config_schema=int)
     def return_int(context):
-        return context.solid_config
+        return context.op_config
 
     @graph
     def return_int_passthrough():
@@ -88,9 +90,9 @@ def test_single_layer_pipeline_composite_descent():
 
 
 def test_single_layer_pipeline_hardcoded_config_mapping():
-    @solid(config_schema=int)
+    @op(config_schema=int)
     def return_int(context):
-        return context.solid_config
+        return context.op_config
 
     @graph(
         config=ConfigMapping(
@@ -114,9 +116,9 @@ def test_single_layer_pipeline_hardcoded_config_mapping():
 
 
 def test_single_layer_pipeline_computed_config_mapping():
-    @solid(config_schema=int)
+    @op(config_schema=int)
     def return_int(context):
-        return context.solid_config
+        return context.op_config
 
     def _config_fn(cfg):
         return {"return_int": {"config": cfg["number"] + 1}}
@@ -139,9 +141,9 @@ def test_single_layer_pipeline_computed_config_mapping():
 
 
 def test_mix_layer_computed_mapping():
-    @solid(config_schema=int)
+    @op(config_schema=int)
     def return_int(context):
-        return context.solid_config
+        return context.op_config
 
     @graph(
         config=ConfigMapping(
@@ -247,7 +249,7 @@ def test_mix_layer_computed_mapping():
 
 
 def test_nested_input_via_config_mapping():
-    @solid
+    @op
     def add_one(_, num):
         return num + 1
 
@@ -275,7 +277,7 @@ def test_nested_input_via_config_mapping():
 
 
 def test_double_nested_input_via_config_mapping():
-    @lambda_solid
+    @op
     def number(num):
         return num
 
@@ -313,21 +315,21 @@ def test_double_nested_input_via_config_mapping():
 
 
 def test_provide_one_of_two_inputs_via_config():
-    @solid(
+    @op(
         config_schema={
             "config_field_a": Field(String),
             "config_field_b": Field(String),
         },
-        input_defs=[
-            InputDefinition("input_a", String),
-            InputDefinition("input_b", String),
-        ],
+        ins={
+            "input_a": In(String),
+            "input_b": In(String),
+        },
     )
     def basic(context, input_a, input_b):
         res = ".".join(
             [
-                context.solid_config["config_field_a"],
-                context.solid_config["config_field_b"],
+                context.op_config["config_field_a"],
+                context.op_config["config_field_b"],
                 input_a,
                 input_b,
             ]
@@ -335,7 +337,7 @@ def test_provide_one_of_two_inputs_via_config():
         yield Output(res)
 
     @graph(
-        input_defs=[InputDefinition("input_a", String)],
+        ins={"input_a": In(String)},
         config=ConfigMapping(
             config_schema={
                 "config_field_a": Field(String),
@@ -376,14 +378,14 @@ def test_provide_one_of_two_inputs_via_config():
     )
 
 
-@solid(config_schema=Field(String, is_required=False))
+@op(config_schema=Field(String, is_required=False))
 def scalar_config_solid(context):
-    yield Output(context.solid_config)
+    yield Output(context.op_config)
 
 
-@solid(config_schema=Field(String, is_required=True))
+@op(config_schema=Field(String, is_required=True))
 def required_scalar_config_solid(context):
-    yield Output(context.solid_config)
+    yield Output(context.op_config)
 
 
 @graph(
@@ -506,9 +508,9 @@ def test_config_mapped_enum():
         ],
     )
 
-    @solid(config_schema={"enum": DagsterEnumType})
+    @op(config_schema={"enum": DagsterEnumType})
     def return_enum(context):
-        return context.solid_config["enum"]
+        return context.op_config["enum"]
 
     @graph(
         config=ConfigMapping(
@@ -541,9 +543,9 @@ def test_config_mapped_enum():
         == TestPythonEnum.OTHER
     )
 
-    @solid(config_schema={"num": int})
+    @op(config_schema={"num": int})
     def return_int(context):
-        return context.solid_config["num"]
+        return context.op_config["num"]
 
     @graph(
         config=ConfigMapping(
@@ -580,9 +582,9 @@ def test_config_mapped_enum():
 
 
 def test_single_level_pipeline_with_configured_solid():
-    @solid(config_schema=int)
+    @op(config_schema=int)
     def return_int(context):
-        return context.solid_config
+        return context.op_config
 
     return_int_5 = configured(return_int, name="return_int_5")(5)
 
@@ -597,9 +599,9 @@ def test_single_level_pipeline_with_configured_solid():
 
 
 def test_configured_solid_with_inputs():
-    @solid(config_schema=str, input_defs=[InputDefinition("x", int)])
+    @op(config_schema=str, ins={"x": In(int)})
     def return_int(context, x):
-        assert context.solid_config == "config sentinel"
+        assert context.op_config == "config sentinel"
         return x
 
     return_int_configured = configured(return_int, name="return_int_configured")("config sentinel")
@@ -617,9 +619,9 @@ def test_configured_solid_with_inputs():
 
 
 def test_single_level_pipeline_with_complex_configured_solid_within_composite():
-    @solid(config_schema={"age": int, "name": str})
+    @op(config_schema={"age": int, "name": str})
     def introduce(context):
-        return "{name} is {age} years old".format(**context.solid_config)
+        return "{name} is {age} years old".format(**context.op_config)
 
     @configured(introduce, {"age": int})
     def introduce_aj(config):
@@ -650,9 +652,9 @@ def test_single_level_pipeline_with_complex_configured_solid_within_composite():
 
 
 def test_single_level_pipeline_with_complex_configured_solid():
-    @solid(config_schema={"age": int, "name": str})
+    @op(config_schema={"age": int, "name": str})
     def introduce(context):
-        return "{name} is {age} years old".format(**context.solid_config)
+        return "{name} is {age} years old".format(**context.op_config)
 
     introduce_aj = configured(introduce, name="introduce_aj")({"age": 20, "name": "AJ"})
 
@@ -667,9 +669,9 @@ def test_single_level_pipeline_with_complex_configured_solid():
 
 
 def test_single_level_pipeline_with_complex_configured_solid_nested():
-    @solid(config_schema={"age": int, "name": str})
+    @op(config_schema={"age": int, "name": str})
     def introduce(context):
-        return "{name} is {age} years old".format(**context.solid_config)
+        return "{name} is {age} years old".format(**context.op_config)
 
     @configured(introduce, {"age": int})
     def introduce_aj(config):
@@ -688,11 +690,11 @@ def test_single_level_pipeline_with_complex_configured_solid_nested():
 
 
 def test_single_level_pipeline_with_configured_graph():
-    @solid(config_schema={"inner": int})
+    @op(config_schema={"inner": int})
     def multiply_by_two(context):
-        return context.solid_config["inner"] * 2
+        return context.op_config["inner"] * 2
 
-    @solid
+    @op
     def add(_context, lhs, rhs):
         return lhs + rhs
 
@@ -723,11 +725,11 @@ def test_single_level_pipeline_with_configured_graph():
 
 
 def test_single_level_pipeline_with_configured_decorated_graph():
-    @solid(config_schema={"inner": int})
+    @op(config_schema={"inner": int})
     def multiply_by_two(context):
-        return context.solid_config["inner"] * 2
+        return context.op_config["inner"] * 2
 
-    @solid
+    @op
     def add(_context, lhs, rhs):
         return lhs + rhs
 
@@ -762,20 +764,23 @@ def test_single_level_pipeline_with_configured_decorated_graph():
 
 
 def test_configured_graph_with_inputs():
-    @solid(config_schema=str, input_defs=[InputDefinition("x", int)])
+    @op(config_schema=str, ins={"x": In(int)})
     def return_int(context, x):
-        assert context.solid_config == "inner config sentinel"
+        assert context.op_config == "inner config sentinel"
         return x
 
     return_int_x = configured(return_int, name="return_int_x")("inner config sentinel")
 
-    @solid(config_schema=str)
+    @op(config_schema=str)
     def add(context, lhs, rhs):
-        assert context.solid_config == "outer config sentinel"
+        assert context.op_config == "outer config sentinel"
         return lhs + rhs
 
     @graph(
-        input_defs=[InputDefinition("x", int), InputDefinition("y", int)],
+        ins={
+            "x": In(int),
+            "y": In(int),
+        },
         config=ConfigMapping(
             config_schema={"outer": str},
             config_fn=lambda cfg: {"add": {"config": cfg["outer"]}},
@@ -802,9 +807,9 @@ def test_configured_graph_with_inputs():
 
 
 def test_configured_graph_cannot_stub_inner_solids_config():
-    @solid(config_schema=int)
+    @op(config_schema=int)
     def return_int(context, x):
-        return context.solid_config + x
+        return context.op_config + x
 
     @graph(
         config=ConfigMapping(
@@ -837,7 +842,7 @@ def test_configured_graph_cannot_stub_inner_solids_config():
 
 
 def test_configuring_graph_with_no_config_mapping():
-    @solid
+    @op
     def return_run_id(context):
         return context.run_id
 

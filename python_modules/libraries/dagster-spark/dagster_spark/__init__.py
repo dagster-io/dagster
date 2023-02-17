@@ -1,4 +1,4 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 from .configs import define_spark_config as define_spark_config
 from .ops import create_spark_op as create_spark_op
@@ -7,4 +7,4 @@ from .types import SparkOpError as SparkOpError
 from .utils import construct_spark_shell_command as construct_spark_shell_command
 from .version import __version__ as __version__
 
-check_dagster_package_version("dagster-spark", __version__)
+DagsterLibraryRegistry.register("dagster-spark", __version__)

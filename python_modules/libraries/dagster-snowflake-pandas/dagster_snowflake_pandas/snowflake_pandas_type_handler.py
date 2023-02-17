@@ -1,29 +1,13 @@
-from typing import Mapping, Union, cast
+from typing import Mapping
 
 import pandas as pd
+import pandas.core.dtypes.common as pd_core_dtypes_common
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from snowflake.connector.pandas_tools import pd_writer
-
-
-def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice: TableSlice):
-    no_schema_config = (
-        {k: v for k, v in context.resource_config.items() if k != "schema"}
-        if context.resource_config
-        else {}
-    )
-    return SnowflakeConnection(
-        dict(
-            schema=table_slice.schema,
-            connector="sqlalchemy",
-            **cast(Mapping[str, str], no_schema_config),
-        ),
-        context.log,
-    ).get_connection(raw_conn=False)
 
 
 def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
@@ -31,7 +15,7 @@ def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
     Converts columns of data of type pd.Timestamp to string so that it can be stored in
     snowflake.
     """
-    if pd.core.dtypes.common.is_datetime_or_timedelta_dtype(s):
+    if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):  # type: ignore  # (bad stubs)
         return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
     else:
         return s
@@ -47,7 +31,7 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
     """
     if isinstance(s[0], str):
         try:
-            return pd.to_datetime(s.values)
+            return pd.to_datetime(s.values)  # type: ignore  # (bad stubs)
         except ValueError:
             return s
     else:
@@ -72,23 +56,20 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     """
 
     def handle_output(
-        self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame
+        self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, connection
     ) -> Mapping[str, RawMetadataValue]:
         from snowflake import connector  # pylint: disable=no-name-in-module
 
         connector.paramstyle = "pyformat"
-        with _connect_snowflake(context, table_slice) as con:
-            with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
-            with_uppercase_cols = with_uppercase_cols.apply(
-                _convert_timestamp_to_string, axis="index"
-            )
-            with_uppercase_cols.to_sql(
-                table_slice.table,
-                con=con.engine,
-                if_exists="append",
-                index=False,
-                method=pd_writer,
-            )
+        with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
+        with_uppercase_cols = with_uppercase_cols.apply(_convert_timestamp_to_string, axis="index")
+        with_uppercase_cols.to_sql(
+            table_slice.table,
+            con=connection.engine,
+            if_exists="append",
+            index=False,
+            method=pd_writer,
+        )
 
         return {
             "row_count": obj.shape[0],
@@ -102,12 +83,15 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             ),
         }
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
-        with _connect_snowflake(context, table_slice) as con:
-            result = pd.read_sql(sql=SnowflakeDbClient.get_select_statement(table_slice), con=con)
-            result = result.apply(_convert_string_to_timestamp, axis="index")
-            result.columns = map(str.lower, result.columns)
-            return result
+    def load_input(
+        self, context: InputContext, table_slice: TableSlice, connection
+    ) -> pd.DataFrame:
+        result = pd.read_sql(
+            sql=SnowflakeDbClient.get_select_statement(table_slice), con=connection
+        )
+        result = result.apply(_convert_string_to_timestamp, axis="index")
+        result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
+        return result
 
     @property
     def supported_types(self):

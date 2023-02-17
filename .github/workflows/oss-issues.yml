@@ -17,7 +17,7 @@ jobs:
         with:
           app_id: ${{ secrets.PROJECT_AUTOMATION_APP_ID }}
           private_key: ${{ secrets.PROJECT_AUTOMATION_APP_PEM }}
-      
+
       - name: Get project data
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
@@ -27,29 +27,22 @@ jobs:
           gh api graphql -f query='
             query($org: String!, $number: Int!) {
               organization(login: $org){
-                projectNext(number: $number) {
+                projectV2(number: $number) {
                   id
-                  fields(first:20) {
-                    nodes {
-                      id
-                      name
-                      settings
-                    }
-                  }
                 }
               }
             }' -f org=$ORGANIZATION -F number=$PROJECT_NUMBER > project_data.json
 
-          echo 'PROJECT_ID='$(jq '.data.organization.projectNext.id' project_data.json) >> $GITHUB_ENV
+          echo 'PROJECT_ID='$(jq '.data.organization.projectV2.id' project_data.json) >> $GITHUB_ENV
 
       - name: Add new issue to project
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
           gh api graphql -f query='
-            mutation($project:ID!, $issue:ID!) { 
-              addProjectNextItem(input: {projectId: $project, contentId: $issue}) { 
-                projectNextItem { 
+            mutation($project:ID!, $issue:ID!) {
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
                   id
                 }
               }

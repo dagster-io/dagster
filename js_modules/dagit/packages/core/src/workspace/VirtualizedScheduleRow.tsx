@@ -150,7 +150,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                   >
                     Next tick:&nbsp;
                     <TimestampDisplay
-                      timestamp={scheduleData.scheduleState.nextTick.timestamp}
+                      timestamp={scheduleData.scheduleState.nextTick.timestamp!}
                       timezone={scheduleData.executionTimezone}
                       timeFormat={{showSeconds: false, showTimezone: true}}
                     />

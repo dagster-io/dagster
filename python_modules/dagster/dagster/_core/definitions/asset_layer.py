@@ -1,4 +1,3 @@
-import warnings
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -21,7 +20,6 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidSubsetError
 from .config import ConfigMapping
@@ -84,29 +82,6 @@ class AssetOutputInfo(
         )
 
 
-def _resolve_input_to_destinations(
-    name: str, node_def: NodeDefinition, handle: NodeHandle
-) -> Sequence[NodeInputHandle]:
-    """
-    Recursively follow input mappings to find all op inputs for a graph input.
-    """
-    if not isinstance(node_def, GraphDefinition):
-        # must be in the op definition
-        return [NodeInputHandle(node_handle=handle, input_name=name)]
-    all_destinations: List[NodeInputHandle] = []
-    for mapping in node_def.input_mappings:
-        if mapping.graph_input_name != name:
-            continue
-        # recurse into graph structure
-        all_destinations += _resolve_input_to_destinations(
-            # update name to be the mapped input name
-            name=mapping.maps_to.input_name,
-            node_def=node_def.solid_named(mapping.maps_to.solid_name).definition,
-            handle=NodeHandle(mapping.maps_to.solid_name, parent=handle),
-        )
-    return all_destinations
-
-
 def _resolve_output_to_destinations(
     output_name: str, node_def: NodeDefinition, handle: NodeHandle
 ) -> Sequence[NodeInputHandle]:
@@ -119,26 +94,26 @@ def _resolve_output_to_destinations(
         if mapping.graph_output_name != output_name:
             continue
         output_pointer = mapping.maps_from
-        output_node = node_def.solid_named(output_pointer.solid_name)
+        output_node = node_def.node_named(output_pointer.node_name)
 
         all_destinations.extend(
             _resolve_output_to_destinations(
                 output_pointer.output_name,
                 output_node.definition,
-                NodeHandle(output_pointer.solid_name, parent=handle),
+                NodeHandle(output_pointer.node_name, parent=handle),
             )
         )
 
         output_def = output_node.definition.output_def_named(output_pointer.output_name)
         downstream_input_handles = (
             node_def.dependency_structure.output_to_downstream_inputs_for_node(
-                output_pointer.solid_name
+                output_pointer.node_name
             ).get(NodeOutput(output_node, output_def), [])
         )
         for input_handle in downstream_input_handles:
             all_destinations.append(
                 NodeInputHandle(
-                    NodeHandle(input_handle.solid_name, parent=handle), input_handle.input_name
+                    NodeHandle(input_handle.node_name, parent=handle), input_handle.input_name
                 )
             )
 
@@ -177,7 +152,7 @@ def _build_graph_dependencies(
             )
             outputs_by_graph_handle[curr_node_handle] = {
                 mapping.graph_output_name: NodeOutputHandle(
-                    NodeHandle(mapping.maps_from.solid_name, parent=curr_node_handle),
+                    NodeHandle(mapping.maps_from.node_name, parent=curr_node_handle),
                     mapping.maps_from.output_name,
                 )
                 for mapping in sub_node.definition.output_mappings
@@ -383,73 +358,6 @@ def asset_key_to_dep_node_handles(
     return dep_node_set_by_asset_key, dep_node_outputs_by_asset_key
 
 
-def _asset_mappings_for_node(
-    node_def: NodeDefinition, node_handle: Optional[NodeHandle]
-) -> Tuple[
-    Mapping[NodeInputHandle, AssetKey],
-    Mapping[NodeOutputHandle, AssetOutputInfo],
-    Mapping[AssetKey, AbstractSet[AssetKey]],
-    Mapping[AssetKey, str],
-]:
-    """
-    Recursively iterate through all the sub-nodes of a Node to find any ops with asset info
-    encoded on their inputs/outputs.
-    """
-    check.inst_param(node_def, "node_def", NodeDefinition)
-    check.opt_inst_param(node_handle, "node_handle", NodeHandle)
-
-    asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
-    asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
-    asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
-    io_manager_by_asset: Dict[AssetKey, str] = {}
-    if not isinstance(node_def, GraphDefinition):
-        # must be in an op (or solid)
-        if node_handle is None:
-            check.failed("Must have node_handle for non-graph NodeDefinition")
-
-        input_asset_keys: Set[AssetKey] = set()
-
-        for input_def in node_def.input_defs:
-            input_key = input_def.hardcoded_asset_key
-            if input_key:
-                input_asset_keys.add(input_key)
-                input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_def.name)
-                asset_key_by_input[input_handle] = input_key
-
-        for output_def in node_def.output_defs:
-            output_key = output_def.hardcoded_asset_key
-            if output_key:
-                output_handle = NodeOutputHandle(node_handle, output_def.name)
-                asset_info_by_output[output_handle] = AssetOutputInfo(
-                    key=output_key,
-                    partitions_fn=output_def.get_asset_partitions,
-                    partitions_def=output_def.asset_partitions_def,
-                    code_version=output_def.code_version,
-                )
-                # assume output depends on all inputs
-                asset_deps[output_key] = input_asset_keys
-
-                io_manager_by_asset[output_key] = output_def.io_manager_key
-    else:
-        # keep recursing through structure
-        for sub_node_name, sub_node in node_def.node_dict.items():
-            (
-                n_asset_key_by_input,
-                n_asset_info_by_output,
-                n_asset_deps,
-                n_io_manager_by_asset,
-            ) = _asset_mappings_for_node(
-                node_def=sub_node.definition,
-                node_handle=NodeHandle(sub_node_name, parent=node_handle),
-            )
-            asset_key_by_input.update(n_asset_key_by_input)
-            asset_info_by_output.update(n_asset_info_by_output)
-            asset_deps.update(n_asset_deps)
-            io_manager_by_asset.update(n_io_manager_by_asset)
-
-    return asset_key_by_input, asset_info_by_output, asset_deps, io_manager_by_asset
-
-
 class AssetLayer:
     """
     Stores all of the asset-related information for a Dagster job / pipeline. Maps each
@@ -553,20 +461,6 @@ class AssetLayer:
         self._partition_mappings_by_asset_dep = partition_mappings_by_asset_dep or {}
 
     @staticmethod
-    def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
-        """Scrape asset info off of InputDefinition/OutputDefinition instances."""
-        check.inst_param(graph_def, "graph_def", GraphDefinition)
-        asset_by_input, asset_by_output, asset_deps, io_manager_by_asset = _asset_mappings_for_node(
-            graph_def, None
-        )
-        return AssetLayer(
-            asset_keys_by_node_input_handle=asset_by_input,
-            asset_info_by_node_output_handle=asset_by_output,
-            asset_deps=asset_deps,
-            io_manager_keys_by_asset_key=io_manager_by_asset,
-        )
-
-    @staticmethod
     def from_graph_and_assets_node_mapping(
         graph_def: GraphDefinition,
         assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
@@ -610,11 +504,10 @@ class AssetLayer:
                 resolved_asset_key = resolved_asset_deps.get_resolved_asset_key_for_input(
                     assets_def, input_name
                 )
-                asset_key_by_input[NodeInputHandle(node_handle, input_name)] = resolved_asset_key
+                input_handle = NodeInputHandle(node_handle, input_name)
+                asset_key_by_input[input_handle] = resolved_asset_key
                 # resolve graph input to list of op inputs that consume it
-                node_input_handles = _resolve_input_to_destinations(
-                    input_name, assets_def.node_def, node_handle
-                )
+                node_input_handles = assets_def.node_def.resolve_input_to_destinations(input_handle)
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = resolved_asset_key
 
@@ -642,7 +535,10 @@ class AssetLayer:
                     return set(
                         cast(
                             PartitionsDefinition, context.asset_partitions_def
-                        ).get_partition_keys_in_range(context.asset_partition_key_range)
+                        ).get_partition_keys_in_range(
+                            context.asset_partition_key_range,
+                            dynamic_partitions_store=context.step_context.instance,
+                        )
                     )
 
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(
@@ -886,33 +782,31 @@ def build_asset_selection_job(
     # We should disallow simultaneous selection of assets and source assets (but for
     # backcompat we will simply ignore the source asset selection if any regular assets are
     # selected).
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=ExperimentalWarning)
-        if len(included_assets) > 0:
-            asset_job = build_assets_job(
-                name=name,
-                assets=included_assets,
-                config=config,
-                source_assets=[*source_assets, *excluded_assets],
-                resource_defs=resource_defs,
-                executor_def=executor_def,
-                partitions_def=partitions_def,
-                description=description,
-                tags=tags,
-                _asset_selection_data=asset_selection_data,
-            )
-        else:
-            asset_job = build_source_asset_observation_job(
-                name=name,
-                source_assets=included_source_assets,
-                config=config,
-                resource_defs=resource_defs,
-                executor_def=executor_def,
-                partitions_def=partitions_def,
-                description=description,
-                tags=tags,
-                _asset_selection_data=asset_selection_data,
-            )
+    if len(included_assets) > 0:
+        asset_job = build_assets_job(
+            name=name,
+            assets=included_assets,
+            config=config,
+            source_assets=[*source_assets, *excluded_assets],
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            partitions_def=partitions_def,
+            description=description,
+            tags=tags,
+            _asset_selection_data=asset_selection_data,
+        )
+    else:
+        asset_job = build_source_asset_observation_job(
+            name=name,
+            source_assets=included_source_assets,
+            config=config,
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            partitions_def=partitions_def,
+            description=description,
+            tags=tags,
+            _asset_selection_data=asset_selection_data,
+        )
 
     return asset_job
 

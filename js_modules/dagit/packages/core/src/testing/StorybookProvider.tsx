@@ -2,6 +2,7 @@ import {loader} from 'graphql.macro';
 import * as React from 'react';
 import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
 
+import {CustomAlertProvider} from '../app/CustomAlertProvider';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
@@ -19,6 +20,7 @@ export const StorybookProvider: React.FC<Props> = (props) => {
   return (
     <MemoryRouter {...routerProps}>
       <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>
+        <CustomAlertProvider />
         <WorkspaceProvider>{props.children}</WorkspaceProvider>
       </ApolloTestProvider>
     </MemoryRouter>

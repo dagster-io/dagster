@@ -42,7 +42,7 @@ from typing import (
 )
 
 import packaging.version
-from typing_extensions import Literal
+from typing_extensions import Literal, TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
@@ -67,13 +67,27 @@ PICKLE_PROTOCOL = 4
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
+PrintFn: TypeAlias = Callable[[Any], None]
+
 
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
 # version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
 def library_version_from_core_version(core_version: str) -> str:
-    release = parse_package_version(core_version).release
+    parsed_version = parse_package_version(core_version)
+
+    release = parsed_version.release
     if release[0] >= 1:
-        return ".".join(["0", str(16 + release[1]), str(release[2])])
+        library_version = ".".join(["0", str(16 + release[1]), str(release[2])])
+
+        if parsed_version.is_prerelease:
+            library_version = library_version + "".join(
+                [str(pre) for pre in check.not_none(parsed_version.pre)]
+            )
+
+        if parsed_version.is_postrelease:
+            library_version = library_version + "post" + str(parsed_version.post)
+
+        return library_version
     else:
         return core_version
 
@@ -217,10 +231,10 @@ class frozendict(dict):
 
     __setitem__ = __readonly__
     __delitem__ = __readonly__
-    pop = __readonly__  # type: ignore[assignment]
+    pop = __readonly__
     popitem = __readonly__
     clear = __readonly__
-    update = __readonly__  # type: ignore[assignment]
+    update = __readonly__
     setdefault = __readonly__  # type: ignore[assignment]
     del __readonly__
 
@@ -244,7 +258,7 @@ class frozenlist(list):
     def __setstate__(self, state):
         self.__init__(state)
 
-    __setitem__ = __readonly__  # type: ignore[assignment]
+    __setitem__ = __readonly__
     __delitem__ = __readonly__
     append = __readonly__
     clear = __readonly__
@@ -260,12 +274,12 @@ class frozenlist(list):
 
 
 @overload
-def make_readonly_value(value: List[T]) -> Sequence[T]:  # type: ignore
+def make_readonly_value(value: List[T]) -> Sequence[T]:
     ...
 
 
 @overload
-def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:  # type: ignore
+def make_readonly_value(value: Dict[T, U]) -> Mapping[T, U]:
     ...
 
 
@@ -461,7 +475,7 @@ def iterate_with_context(
         yield next_output
 
 
-def datetime_as_float(dt):
+def datetime_as_float(dt: datetime.datetime) -> float:
     check.inst_param(dt, "dt", datetime.datetime)
     return float((dt - EPOCH).total_seconds())
 
@@ -503,7 +517,7 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
 
     def __init__(
         self,
-        generator: Generator[Union["DagsterEvent", T_GeneratedContext], None, None],
+        generator: Iterator[Union["DagsterEvent", T_GeneratedContext]],
         object_cls: Type[T_GeneratedContext],
         require_object: Optional[bool] = True,
     ):

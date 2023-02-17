@@ -14,6 +14,8 @@ By the end of the tutorial, you will:
 - Make a Snowflake table available in Dagster
 - Load Snowflake tables in downstream assets
 
+This guide focuses on storing and loading Pandas DataFrames in Snowflake. Dagster also supports using PySpark DataFrames with Snowflake. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the Snowflake I/O manager with PySpark DataFrames in the [reference guide](/integrations/snowflake/reference).
+
 ---
 
 ## Prerequisites
@@ -36,7 +38,9 @@ To complete this tutorial, you'll need:
     height={72}
     />
 
-  - **Snowflake credentials**: This includes a username and a password. The Snowflake I/O manager can read these values from environment variables. In this guide, we store the username and password as `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`, respectively.
+  - **Snowflake credentials**: You can authenticate with Snowflake two ways: with a username and password, or with a username and private key.
+
+    The Snowflake I/O manager can read all of these authentication values from environment variables. In this guide, we use password authentication and store the username and password as `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`, respectively.
 
     ```shell
     export SNOWFLAKE_USER=<your username>
@@ -45,11 +49,13 @@ To complete this tutorial, you'll need:
 
     Refer to the [Using environment variables and secrets guide](/guides/dagster/using-environment-variables-and-secrets) for more info.
 
+    For more information on authenticating with a private key, see [Authenticating with a private key](/integrations/snowflake/reference#authenticating-using-a-private-key) in the Snowflake reference guide.
+
 ---
 
 ## Step 1: Configure the Snowflake I/O manager
 
-The Snowflake I/O manager requires some configuration to connect to your Snowflake instance. The `account`, `user` and `password` are required to connect with Snowflake. Additionally, you need to specify a `database` to where all the tables should be stored.
+The Snowflake I/O manager requires some configuration to connect to your Snowflake instance. The `account`, `user` are required to connect with Snowflake. One method of authentication is required. You can use a password or a private key. Additionally, you need to specify a `database` to where all the tables should be stored.
 
 You can also provide some optional configuration to further customize the Snowflake I/O manager. You can specify a `warehouse` and `schema` where data should be stored, and a `role` for the I/O manager.
 
@@ -65,7 +71,9 @@ defs = Definitions(
             {
                 "account": "abc1234.us-east-1",  # required
                 "user": {"env": "SNOWFLAKE_USER"},  # required
-                "password": {"env": "SNOWFLAKE_PASSWORD"},  # required
+                "password": {
+                    "env": "SNOWFLAKE_PASSWORD"
+                },  # password or private key required
                 "database": "FLOWERS",  # required
                 "role": "writer",  # optional, defaults to the default role for the account
                 "warehouse": "PLANTS",  # optional, defaults to default warehouse for the account
@@ -78,9 +86,9 @@ defs = Definitions(
 
 With this configuration, if you materialized an asset called `iris_dataset`, the Snowflake I/O manager would be permissioned with the role `writer` and would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
 
-Finally, in the <PyObject object="Definitions" /> object, we assign the `snowflake_pandas_io_manager` to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
+Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_snowflake_pandas" object="snowflake_pandas_io_manager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
-For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake" object="build_snowflake_io_manager" /> API documentation.
+For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake_pandas" object="snowflake_pandas_io_manager" /> API documentation.
 
 ---
 
@@ -219,6 +227,8 @@ defs = Definitions(
 ---
 
 ## Related
+
+For more Snowflake features, refer to the [Snowflake reference](/integrations/snowflake/reference).
 
 For more information on software-defined assets, refer to the [Assets tutorial](/tutorial/assets/defining-an-asset) or the [Assets concept documentation](/concepts/assets/software-defined-assets).
 

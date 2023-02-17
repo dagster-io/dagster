@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from enum import Enum
-from typing import Callable, NamedTuple, Optional
+from typing import Callable, Iterator, NamedTuple, Optional
+
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.instance import MayHaveInstanceWeakref
@@ -49,7 +51,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
     """
 
     @contextmanager
-    def watch(self, pipeline_run, step_key=None):
+    def watch(self, pipeline_run: DagsterRun, step_key: Optional[str] = None) -> Iterator[None]:
         """
         Watch the stdout/stderr for a given execution for a given run_id / step_key and persist it.
 
@@ -71,7 +73,9 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
 
     @contextmanager
     @abstractmethod
-    def _watch_logs(self, pipeline_run, step_key=None):
+    def _watch_logs(
+        self, pipeline_run: DagsterRun, step_key: Optional[str] = None
+    ) -> Iterator[None]:
         """
         Method to watch the stdout/stderr logs for a given run_id / step_key.  Kept separate from
         blessed `watch` method, which triggers all the start/finish hooks that are necessary to
@@ -82,7 +86,8 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
             step_key (Optional[String]): The step_key for a compute step
         """
 
-    def get_local_path(self, run_id, key, io_type):
+    @abstractmethod
+    def get_local_path(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
         """Get the local path of the logfile for a given execution step.  This determines the
         location on the local filesystem to which stdout/stderr will be rerouted.
 
@@ -95,9 +100,10 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         Returns:
             str
         """
+        ...
 
     @abstractmethod
-    def is_watch_completed(self, run_id, key):
+    def is_watch_completed(self, run_id: str, key: str) -> bool:
         """Flag indicating when computation for a given execution step has completed.
 
         Args:
@@ -109,7 +115,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def on_watch_start(self, pipeline_run, step_key):
+    def on_watch_start(self, pipeline_run: DagsterRun, step_key: Optional[str]) -> None:
         """Hook called when starting to watch compute logs.
 
         Args:
@@ -118,7 +124,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def on_watch_finish(self, pipeline_run, step_key):
+    def on_watch_finish(self, pipeline_run: DagsterRun, step_key: Optional[str]) -> None:
         """Hook called when computation for a given execution step is finished.
 
         Args:
@@ -127,7 +133,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def download_url(self, run_id, key, io_type):
+    def download_url(self, run_id: str, key: str, io_type: ComputeIOType) -> str:
         """Get a URL where the logs can be downloaded.
 
         Args:
@@ -141,7 +147,12 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def read_logs_file(
-        self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ
+        self,
+        run_id: str,
+        key: str,
+        io_type: ComputeIOType,
+        cursor: int = 0,
+        max_bytes: int = MAX_BYTES_FILE_READ,
     ) -> ComputeLogFileData:
         """Get compute log data for a given compute step.
 
@@ -156,7 +167,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
             ComputeLogFileData
         """
 
-    def enabled(self, _pipeline_run, _step_key):
+    def enabled(self, _pipeline_run: DagsterRun, _step_key: Optional[str]) -> bool:
         """Hook for disabling compute log capture.
 
         Args:
@@ -168,7 +179,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         return True
 
     @abstractmethod
-    def on_subscribe(self, subscription):
+    def on_subscribe(self, subscription: "ComputeLogSubscription") -> None:
         """Hook for managing streaming subscriptions for log data from `dagit`.
 
         Args:
@@ -176,10 +187,12 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
                 back data to the subscriber
         """
 
-    def on_unsubscribe(self, subscription):
+    def on_unsubscribe(self, subscription: "ComputeLogSubscription") -> None:
         pass
 
-    def observable(self, run_id, key, io_type, cursor=None) -> "ComputeLogSubscription":
+    def observable(
+        self, run_id: str, key: str, io_type: ComputeIOType, cursor: Optional[str] = None
+    ) -> "ComputeLogSubscription":
         """Return a ComputeLogSubscription which streams back log data from the execution logs for a given
         compute step.
 
@@ -198,13 +211,13 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         check.opt_str_param(cursor, "cursor")
 
         if cursor:
-            cursor = int(cursor)
+            cursor = int(cursor)  # type: ignore   # (var reassigned diff type)
         else:
-            cursor = 0
+            cursor = 0  # type: ignore  # (var reassigned diff type)
 
-        subscription = ComputeLogSubscription(self, run_id, key, io_type, cursor)
+        subscription = ComputeLogSubscription(self, run_id, key, io_type, cursor)  # type: ignore  # (var reassigned diff type)
         self.on_subscribe(subscription)
-        return subscription  # pylint: disable=E1101
+        return subscription
 
     def dispose(self):
         pass
@@ -218,10 +231,10 @@ class ComputeLogSubscription:
     def __init__(
         self,
         manager: ComputeLogManager,
-        run_id,
-        key,
-        io_type,
-        cursor,
+        run_id: str,
+        key: str,
+        io_type: ComputeIOType,
+        cursor: int,
     ):
         self.manager = manager
         self.run_id = run_id
@@ -231,19 +244,19 @@ class ComputeLogSubscription:
         self.observer: Optional[Callable[[ComputeLogFileData], None]] = None
         self.is_complete = False
 
-    def __call__(self, observer: Callable[[ComputeLogFileData], None]):
+    def __call__(self, observer: Callable[[ComputeLogFileData], None]) -> Self:
         self.observer = observer
         self.fetch()
         if self.manager.is_watch_completed(self.run_id, self.key):
             self.complete()
         return self
 
-    def dispose(self):
+    def dispose(self) -> None:
         # called when the connection gets closed, allowing the observer to get GC'ed
         self.observer = None
         self.manager.on_unsubscribe(self)
 
-    def fetch(self):
+    def fetch(self) -> None:
         if not self.observer:
             return
 
@@ -261,7 +274,7 @@ class ComputeLogSubscription:
                 self.cursor = update.cursor
             should_fetch = update.data and len(update.data.encode("utf-8")) >= MAX_BYTES_CHUNK_READ
 
-    def complete(self):
+    def complete(self) -> None:
         self.is_complete = True
         if not self.observer:
             return

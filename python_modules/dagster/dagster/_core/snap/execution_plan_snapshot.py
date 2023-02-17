@@ -28,7 +28,7 @@ from dagster._utils.error import SerializableErrorInfo
 CURRENT_SNAPSHOT_VERSION = 1
 
 
-def create_execution_plan_snapshot_id(execution_plan_snapshot) -> str:
+def create_execution_plan_snapshot_id(execution_plan_snapshot: "ExecutionPlanSnapshot") -> str:
     check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
     return create_snapshot_id(execution_plan_snapshot)
 
@@ -281,7 +281,7 @@ def _snapshot_from_execution_step(execution_step: IExecutionStep) -> ExecutionSt
             list(map(_snapshot_from_step_output, execution_step.step_outputs)),
             key=lambda so: so.name,
         ),
-        solid_handle_id=execution_step.solid_handle.to_string(),
+        solid_handle_id=execution_step.node_handle.to_string(),
         kind=execution_step.kind,
         metadata_items=sorted(
             [

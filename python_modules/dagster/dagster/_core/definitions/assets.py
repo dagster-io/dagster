@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -22,7 +23,9 @@ from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.selector.subset_selector import SelectionTree
 from dagster._utils.backcompat import (
     ExperimentalWarning,
     deprecation_warning,
@@ -31,7 +34,7 @@ from dagster._utils.backcompat import (
 from dagster._utils.merger import merge_dicts
 
 from .dependency import NodeHandle
-from .events import AssetKey, CoercibleToAssetKeyPrefix
+from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
@@ -187,9 +190,16 @@ class AssetsDefinition(ResourceAddable):
 
         for key, freshness_policy in (freshness_policies_by_key or {}).items():
             check.param_invariant(
-                not (freshness_policy and self._partitions_def),
+                not (
+                    freshness_policy
+                    and self._partitions_def is not None
+                    and not isinstance(self._partitions_def, TimeWindowPartitionsDefinition)
+                ),
                 "freshness_policies_by_key",
-                "FreshnessPolicies are currently unsupported for partitioned assets.",
+                (
+                    "FreshnessPolicies are currently unsupported for assets with partitions of type"
+                    f" {type(self._partitions_def)}."
+                ),
             )
 
         self._freshness_policies_by_key = check.opt_mapping_param(
@@ -206,7 +216,7 @@ class AssetsDefinition(ResourceAddable):
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
-        from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+        from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
         from dagster._core.execution.context.compute import OpExecutionContext
 
         from .graph_definition import GraphDefinition
@@ -248,6 +258,7 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
         """
@@ -288,6 +299,10 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
+            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, FreshnessPolicy]]): Defines a
+                FreshnessPolicy to be associated with some or all of the output assets for this node.
+                Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
+                to the associated asset.
         """
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
@@ -301,6 +316,7 @@ class AssetsDefinition(ResourceAddable):
             resource_defs=resource_defs,
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
+            freshness_policies_by_output_name=freshness_policies_by_output_name,
             key_prefix=key_prefix,
             can_subset=can_subset,
         )
@@ -318,6 +334,7 @@ class AssetsDefinition(ResourceAddable):
         group_name: Optional[str] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from an OpDefinition.
@@ -353,6 +370,10 @@ class AssetsDefinition(ResourceAddable):
                 be associated with each of the output assets for this node. Keys are names of the
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
+            freshness_policies_by_output_name_ouptut_name (Optional[Mapping[str, FreshnessPolicy]]): Defines a
+                FreshnessPolicy to be associated with some or all of the output assets for this node.
+                Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
+                to the associated asset.
         """
         return AssetsDefinition._from_node(
             node_def=op_def,
@@ -363,6 +384,7 @@ class AssetsDefinition(ResourceAddable):
             group_name=group_name,
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
+            freshness_policies_by_output_name=freshness_policies_by_output_name,
             key_prefix=key_prefix,
         )
 
@@ -378,6 +400,7 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        freshness_policies_by_output_name: Optional[Mapping[str, FreshnessPolicy]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         can_subset: bool = False,
     ) -> "AssetsDefinition":
@@ -401,7 +424,7 @@ class AssetsDefinition(ResourceAddable):
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
 
-        transformed_internal_asset_deps = {}
+        transformed_internal_asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         if internal_asset_deps:
             for output_name, asset_keys in internal_asset_deps.items():
                 check.invariant(
@@ -456,20 +479,26 @@ class AssetsDefinition(ResourceAddable):
             }
             if metadata_by_output_name
             else None,
+            freshness_policies_by_key={
+                keys_by_output_name[output_name]: freshness_policy
+                for output_name, freshness_policy in freshness_policies_by_output_name.items()
+            }
+            if freshness_policies_by_output_name
+            else None,
             can_subset=can_subset,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def can_subset(self) -> bool:
         return self._can_subset
 
-    @public  # type: ignore
+    @public
     @property
     def group_names_by_key(self) -> Mapping[AssetKey, str]:
         return self._group_names_by_key
 
-    @public  # type: ignore
+    @public
     @property
     def op(self) -> OpDefinition:
         check.invariant(
@@ -478,12 +507,12 @@ class AssetsDefinition(ResourceAddable):
         )
         return cast(OpDefinition, self._node_def)
 
-    @public  # type: ignore
+    @public
     @property
     def node_def(self) -> NodeDefinition:
         return self._node_def
 
-    @public  # type: ignore
+    @public
     @property
     def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
         return self._asset_deps
@@ -492,7 +521,7 @@ class AssetsDefinition(ResourceAddable):
     def input_names(self) -> Iterable[str]:
         return self.keys_by_input_name.keys()
 
-    @public  # type: ignore
+    @public
     @property
     def key(self) -> AssetKey:
         check.invariant(
@@ -510,12 +539,12 @@ class AssetsDefinition(ResourceAddable):
         )
         return self.key
 
-    @public  # type: ignore
+    @public
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
         return dict(self._resource_defs)
 
-    @public  # type: ignore
+    @public
     @property
     def keys(self) -> AbstractSet[AssetKey]:
         return self._selected_asset_keys
@@ -527,11 +556,11 @@ class AssetsDefinition(ResourceAddable):
         )
         return self.keys
 
-    @public  # type: ignore
+    @public
     @property
     def dependency_keys(self) -> Iterable[AssetKey]:
         # the input asset keys that are directly upstream of a selected asset key
-        upstream_keys = set().union(*(self.asset_deps[key] for key in self.keys))
+        upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
         input_keys = set(self._keys_by_input_name.values())
         return upstream_keys.intersection(input_keys)
 
@@ -553,7 +582,7 @@ class AssetsDefinition(ResourceAddable):
 
     @property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
-        upstream_keys = set().union(*(self.asset_deps[key] for key in self.keys))
+        upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
         return {
             name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }
@@ -562,18 +591,22 @@ class AssetsDefinition(ResourceAddable):
     def freshness_policies_by_key(self) -> Mapping[AssetKey, FreshnessPolicy]:
         return self._freshness_policies_by_key
 
-    @public  # type: ignore
+    @public
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
 
     @property
-    def metadata_by_key(self):
+    def metadata_by_key(self) -> Mapping[AssetKey, MetadataUserInput]:
         return self._metadata_by_key
 
     @property
-    def code_versions_by_key(self):
+    def code_versions_by_key(self) -> Mapping[AssetKey, Optional[str]]:
         return self._code_versions_by_key
+
+    @property
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+        return self._partition_mappings
 
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
@@ -602,7 +635,7 @@ class AssetsDefinition(ResourceAddable):
         returns the op def within the graph that produces the given asset key.
         """
         output_name = self.get_output_name_for_asset_key(key)
-        return cast(OpDefinition, self.node_def.resolve_output_to_origin_op_def(output_name))
+        return self.node_def.resolve_output_to_origin_op_def(output_name)
 
     def with_prefix_or_group(
         self,
@@ -694,7 +727,9 @@ class AssetsDefinition(ResourceAddable):
         selected_asset_keys: AbstractSet[AssetKey],
     ):
         from dagster._core.definitions.graph_definition import GraphDefinition
-        from dagster._core.selector.subset_selector import convert_dot_seperated_string_to_dict
+        from dagster._core.selector.subset_selector import (
+            convert_dot_separated_string_to_selection_tree,
+        )
 
         from .job_definition import get_subselected_graph_definition
 
@@ -707,7 +742,7 @@ class AssetsDefinition(ResourceAddable):
         dep_node_handles_by_asset_key = get_dep_node_handles_of_graph_backed_asset(
             self.node_def, self
         )
-        op_selection = []
+        op_selection: List[str] = []
         for asset_key in selected_asset_keys:
             dep_node_handles = dep_node_handles_by_asset_key[asset_key]
             for dep_node_handle in dep_node_handles:
@@ -718,11 +753,13 @@ class AssetsDefinition(ResourceAddable):
         # generate the selected assets. The ops should all be nested within a top-level graph
         # node in the original job.
 
-        resolved_op_selection_dict: Dict = {}
+        op_selection_tree: SelectionTree = {}
         for item in op_selection:
-            convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
+            convert_dot_separated_string_to_selection_tree(
+                op_selection_tree, splits=item.split(".")
+            )
 
-        return get_subselected_graph_definition(self.node_def, resolved_op_selection_dict)
+        return get_subselected_graph_definition(self.node_def, op_selection_tree)
 
     def subset_for(
         self,
@@ -815,28 +852,67 @@ class AssetsDefinition(ResourceAddable):
             )
 
     def to_source_assets(self) -> Sequence[SourceAsset]:
-        result = []
+        return [
+            self._output_to_source_asset(output_name)
+            for output_name in self.keys_by_output_name.keys()
+        ]
+
+    @public
+    def to_source_asset(self, key: Optional[CoercibleToAssetKey] = None) -> SourceAsset:
+        """
+        Returns a representation of this asset as a :py:class:`SourceAsset`.
+
+        If this is a multi-asset, the "key" argument allows selecting which asset to return a
+        SourceAsset representation of.
+
+        Args:
+            key (Optional[Union[str, Sequence[str], AssetKey]]]): If this is a multi-asset, select
+                which asset to return a SourceAsset representation of. If not a multi-asset, this
+                can be left as None.
+
+        Returns:
+            SourceAsset
+        """
+        if len(self.keys) > 1:
+            check.invariant(
+                key is not None,
+                "The 'key' argument is required when there are multiple assets to choose from",
+            )
+
+        if key is not None:
+            resolved_key = AssetKey.from_coerceable(key)
+            check.invariant(
+                resolved_key in self.keys, f"Key {resolved_key} not found in AssetsDefinition"
+            )
+        else:
+            resolved_key = self.key
+
+        output_names = [
+            output_name
+            for output_name, ak in self.keys_by_output_name.items()
+            if ak == resolved_key
+        ]
+        check.invariant(len(output_names) == 1)
+        return self._output_to_source_asset(output_names[0])
+
+    def _output_to_source_asset(self, output_name: str) -> SourceAsset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            for output_name, asset_key in self.keys_by_output_name.items():
-                # This could maybe be sped up by batching
-                output_def = self.node_def.resolve_output_to_origin(
-                    output_name, NodeHandle(self.node_def.name, parent=None)
-                )[0]
-                result.append(
-                    SourceAsset(
-                        key=asset_key,
-                        metadata=output_def.metadata,
-                        io_manager_key=output_def.io_manager_key,
-                        description=output_def.description,
-                        resource_defs=self.resource_defs,
-                        partitions_def=self.partitions_def,
-                        group_name=self.group_names_by_key[asset_key],
-                    )
-                )
+            output_def = self.node_def.resolve_output_to_origin(
+                output_name, NodeHandle(self.node_def.name, parent=None)
+            )[0]
+            key = self._keys_by_output_name[output_name]
 
-            return result
+            return SourceAsset(
+                key=key,
+                metadata=output_def.metadata,
+                io_manager_key=output_def.io_manager_key,
+                description=output_def.description,
+                resource_defs=self.resource_defs,
+                partitions_def=self.partitions_def,
+                group_name=self.group_names_by_key[key],
+            )
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
         output_name = self.get_output_name_for_asset_key(key)
@@ -849,7 +925,7 @@ class AssetsDefinition(ResourceAddable):
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
 
-    @public  # type: ignore
+    @public
     @property
     def required_resource_keys(self) -> Set[str]:
         return {requirement.key for requirement in self.get_resource_requirements()}
@@ -859,7 +935,7 @@ class AssetsDefinition(ResourceAddable):
             return f"AssetsDefinition with key {self.asset_key.to_string()}"
         else:
             asset_keys = ", ".join(
-                sorted(list([asset_key.to_string() for asset_key in self.asset_keys]))
+                sorted(([asset_key.to_string() for asset_key in self.asset_keys]))
             )
             return f"AssetsDefinition with keys {asset_keys}"
 
@@ -998,7 +1074,7 @@ def _build_invocation_context_with_included_resources(
         # pylint: disable=protected-access
         return build_op_context(
             resources=all_resources,
-            config=context.solid_config,
+            config=context.op_config,
             resources_config=context._resources_config,
             instance=context._instance,
             partition_key=context._partition_key,
@@ -1012,7 +1088,7 @@ def _build_invocation_context_with_included_resources(
 
 def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[str]] = None):
     """Ensure that all leaf nodes are mapped to graph outputs."""
-    from dagster._core.definitions.graph_definition import GraphDefinition, _create_adjacency_lists
+    from dagster._core.definitions.graph_definition import GraphDefinition, create_adjacency_lists
 
     prefix = check.opt_sequence_param(prefix, "prefix")
 
@@ -1022,14 +1098,14 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
             _validate_graph_def(inner_node_def, prefix=[*prefix, graph_def.name])
 
     # leaf nodes have no downstream nodes
-    forward_edges, _ = _create_adjacency_lists(graph_def.solids, graph_def.dependency_structure)
+    forward_edges, _ = create_adjacency_lists(graph_def.nodes, graph_def.dependency_structure)
     leaf_nodes = {
         node_name for node_name, downstream_nodes in forward_edges.items() if not downstream_nodes
     }
 
     # set of nodes that have outputs mapped to a graph output
     mapped_output_nodes = {
-        output_mapping.maps_from.solid_name for output_mapping in graph_def.output_mappings
+        output_mapping.maps_from.node_name for output_mapping in graph_def.output_mappings
     }
 
     # leaf nodes which do not have an associated mapped output

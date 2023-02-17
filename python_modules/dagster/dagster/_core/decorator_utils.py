@@ -1,7 +1,12 @@
 import textwrap
-from typing import Any, Callable, Optional, Sequence, Set
+from inspect import Parameter, signature
+from typing import Any, Callable, Optional, Sequence, Set, TypeVar, Union
 
-from dagster._seven import funcsigs
+from typing_extensions import Concatenate, ParamSpec, TypeGuard
+
+R = TypeVar("R")
+T = TypeVar("T")
+P = ParamSpec("P")
 
 
 def get_valid_name_permutations(param_name: str) -> Set[str]:
@@ -14,12 +19,12 @@ def get_valid_name_permutations(param_name: str) -> Set[str]:
     }
 
 
-def _is_param_valid(param: funcsigs.Parameter, expected_positional: str) -> bool:
+def _is_param_valid(param: Parameter, expected_positional: str) -> bool:
     # The "*" character indicates that we permit any name for this positional parameter.
     if expected_positional == "*":
         return True
 
-    possible_kinds = {funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY}
+    possible_kinds = {Parameter.POSITIONAL_OR_KEYWORD, Parameter.POSITIONAL_ONLY}
 
     return (
         param.name in get_valid_name_permutations(expected_positional)
@@ -27,12 +32,12 @@ def _is_param_valid(param: funcsigs.Parameter, expected_positional: str) -> bool
     )
 
 
-def get_function_params(fn: Callable[..., Any]) -> Sequence[funcsigs.Parameter]:
-    return list(funcsigs.signature(fn).parameters.values())
+def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
+    return list(signature(fn).parameters.values())
 
 
 def validate_expected_params(
-    params: Sequence[funcsigs.Parameter], expected_params: Sequence[str]
+    params: Sequence[Parameter], expected_params: Sequence[str]
 ) -> Optional[str]:
     """Returns first missing positional, if any, otherwise None."""
     expected_idx = 0
@@ -43,20 +48,20 @@ def validate_expected_params(
     return None
 
 
-def is_required_param(param: funcsigs.Parameter) -> bool:
-    return param.default == funcsigs.Parameter.empty
+def is_required_param(param: Parameter) -> bool:
+    return param.default == Parameter.empty
 
 
-def positional_arg_name_list(params: Sequence[funcsigs.Parameter]) -> Sequence[str]:
+def positional_arg_name_list(params: Sequence[Parameter]) -> Sequence[str]:
     accepted_param_types = {
-        funcsigs.Parameter.POSITIONAL_OR_KEYWORD,
-        funcsigs.Parameter.POSITIONAL_ONLY,
+        Parameter.POSITIONAL_OR_KEYWORD,
+        Parameter.POSITIONAL_ONLY,
     }
     return [p.name for p in params if p.kind in accepted_param_types]
 
 
-def param_is_var_keyword(param: funcsigs.Parameter) -> bool:
-    return param.kind == funcsigs.Parameter.VAR_KEYWORD
+def param_is_var_keyword(param: Parameter) -> bool:
+    return param.kind == Parameter.VAR_KEYWORD
 
 
 def format_docstring_for_description(fn: Callable) -> Optional[str]:
@@ -75,3 +80,13 @@ def format_docstring_for_description(fn: Callable) -> Optional[str]:
                 )
     else:
         return None
+
+
+# Type-ignores are used throughout the codebase when this function returns False to ignore the type
+# error arising from assuming
+# When/if `StrictTypeGuard` is supported, we can drop `is_context_not_provided` since a False from
+# `has_at_least_one_parameter` will be sufficient.
+def has_at_least_one_parameter(
+    fn: Union[Callable[Concatenate[T, P], R], Callable[P, R]],
+) -> TypeGuard[Callable[Concatenate[T, P], R]]:
+    return len(get_function_params(fn)) >= 1

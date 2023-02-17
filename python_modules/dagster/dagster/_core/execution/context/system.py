@@ -5,7 +5,6 @@ so we have a different layer of objects that encode the explicit public API
 in the user_context module.
 """
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -16,7 +15,6 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Set,
     Union,
     cast,
@@ -102,20 +100,20 @@ class IPlanContext(ABC):
         return self.plan_data.pipeline
 
     @property
-    def pipeline_run(self) -> DagsterRun:
-        return self.plan_data.pipeline_run
+    def dagster_run(self) -> DagsterRun:
+        return self.plan_data.dagster_run
 
     @property
     def run_id(self) -> str:
-        return self.pipeline_run.run_id
+        return self.dagster_run.run_id
 
     @property
     def run_config(self) -> Mapping[str, object]:
-        return self.pipeline_run.run_config
+        return self.dagster_run.run_config
 
     @property
     def pipeline_name(self) -> str:
-        return self.pipeline_run.pipeline_name
+        return self.dagster_run.pipeline_name
 
     @property
     def job_name(self) -> str:
@@ -134,7 +132,7 @@ class IPlanContext(ABC):
         return self.plan_data.retry_mode
 
     @property
-    def execution_plan(self):
+    def execution_plan(self) -> "ExecutionPlan":
         return self.plan_data.execution_plan
 
     @property
@@ -167,7 +165,7 @@ class PlanData(NamedTuple):
     """
 
     pipeline: IPipeline
-    pipeline_run: DagsterRun
+    dagster_run: DagsterRun
     instance: "DagsterInstance"
     execution_plan: "ExecutionPlan"
     raise_on_error: bool = False
@@ -197,7 +195,7 @@ class IStepContext(IPlanContext):
 
     @property
     @abstractmethod
-    def solid_handle(self) -> "NodeHandle":
+    def node_handle(self) -> "NodeHandle":
         raise NotImplementedError()
 
 
@@ -212,7 +210,7 @@ class PlanOrchestrationContext(IPlanContext):
         plan_data: PlanData,
         log_manager: DagsterLogManager,
         executor: Executor,
-        output_capture: Optional[Mapping[StepOutputHandle, Any]],
+        output_capture: Optional[Dict[StepOutputHandle, Any]],
         resume_from_failure: bool = False,
     ):
         self._plan_data = plan_data
@@ -242,7 +240,7 @@ class PlanOrchestrationContext(IPlanContext):
         return self._executor
 
     @property
-    def output_capture(self) -> Optional[Mapping[StepOutputHandle, Any]]:
+    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
         return self._output_capture
 
     def for_step(self, step: ExecutionStep) -> "IStepContext":
@@ -266,7 +264,14 @@ class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
     information.
     """
 
-    def __init__(self, plan_data, log_manager, executor, step, output_capture):
+    def __init__(
+        self,
+        plan_data: PlanData,
+        log_manager: DagsterLogManager,
+        executor: Executor,
+        step: ExecutionStep,
+        output_capture: Optional[Dict[StepOutputHandle, Any]],
+    ):
         super(StepOrchestrationContext, self).__init__(
             plan_data, log_manager, executor, output_capture
         )
@@ -277,8 +282,8 @@ class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
         return self._step
 
     @property
-    def solid_handle(self) -> "NodeHandle":
-        return self.step.solid_handle
+    def node_handle(self) -> "NodeHandle":
+        return self.step.node_handle
 
 
 class PlanExecutionContext(IPlanContext):
@@ -344,18 +349,20 @@ class PlanExecutionContext(IPlanContext):
             get_multipartition_key_from_tags,
         )
 
-        tags = self._plan_data.pipeline_run.tags
+        tags = self._plan_data.dagster_run.tags
 
+        is_multipartitioned = any(
+            [tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]
+        )
         check.invariant(
-            PARTITION_NAME_TAG in tags
-            or any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]),
+            PARTITION_NAME_TAG in tags or is_multipartitioned,
             "Tried to access partition_key for a non-partitioned run",
         )
 
-        if PARTITION_NAME_TAG in tags:
-            return tags[PARTITION_NAME_TAG]
+        if is_multipartitioned:
+            return get_multipartition_key_from_tags(tags)
 
-        return get_multipartition_key_from_tags(tags)
+        return tags[PARTITION_NAME_TAG]
 
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
@@ -363,13 +370,13 @@ class PlanExecutionContext(IPlanContext):
             get_multipartition_key_from_tags,
         )
 
-        tags = self._plan_data.pipeline_run.tags
+        tags = self._plan_data.dagster_run.tags
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            multipartition_key = get_multipartition_key_from_tags(tags)
+            return PartitionKeyRange(multipartition_key, multipartition_key)
+
         partition_key = tags.get(PARTITION_NAME_TAG)
         if partition_key is not None:
-            return PartitionKeyRange(partition_key, partition_key)
-
-        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
-            partition_key = get_multipartition_key_from_tags(tags)
             return PartitionKeyRange(partition_key, partition_key)
 
         partition_key_range_start = tags.get(ASSET_PARTITION_RANGE_START_TAG)
@@ -403,16 +410,11 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def has_partition_key(self) -> bool:
-        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags or any(
-            [
-                tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
-                for tag in self._plan_data.pipeline_run.tags.keys()
-            ]
-        )
+        return PARTITION_NAME_TAG in self._plan_data.dagster_run.tags
 
     @property
     def has_partition_key_range(self) -> bool:
-        return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.pipeline_run.tags
+        return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.dagster_run.tags
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(
@@ -466,7 +468,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             raise DagsterInvariantViolationError(
                 "Multiple required resources for {described_op} have inherited StepLauncher"
                 "There should be at most one step launcher resource per {node_type}.".format(
-                    described_op=self.describe_op(), node_type=self.solid_def.node_type_str
+                    described_op=self.describe_op(), node_type=self.op_def.node_type_str
                 )
             )
         elif len(step_launcher_resources) == 1:
@@ -478,7 +480,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         # Enable step output capture if there are any hooks which will receive them.
         # Expect in the future that hooks may control whether or not they get outputs,
         # but for now presence of any will cause output capture.
-        if self.pipeline_def.get_all_hooks_for_handle(self.solid_handle):
+        if self.pipeline_def.get_all_hooks_for_handle(self.node_handle):
             self._step_output_capture = {}
 
         self._output_metadata: Dict[str, Any] = {}
@@ -493,8 +495,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step
 
     @property
-    def solid_handle(self) -> "NodeHandle":
-        return self.step.solid_handle
+    def node_handle(self) -> "NodeHandle":
+        return self.step.node_handle
 
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
@@ -509,16 +511,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step_launcher
 
     @property
-    def solid_def(self) -> OpDefinition:
-        return self.solid.definition.ensure_op_def()
-
-    @property
     def op_def(self) -> OpDefinition:
-        check.invariant(
-            isinstance(self.solid_def, OpDefinition),
-            "Attempted to call op_def property for solid definition.",
-        )
-        return cast(OpDefinition, self.solid_def)
+        return self.solid.definition.ensure_op_def()
 
     @property
     def pipeline_def(self) -> PipelineDefinition:
@@ -538,19 +532,19 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def solid(self) -> "Node":
-        return self.pipeline_def.get_solid(self._step.solid_handle)
+        return self.pipeline_def.get_solid(self._step.node_handle)
 
     @property
     def solid_retry_policy(self) -> Optional[RetryPolicy]:
-        return self.pipeline_def.get_retry_policy_for_handle(self.solid_handle)
+        return self.pipeline_def.get_retry_policy_for_handle(self.node_handle)
 
-    def describe_op(self):
-        if isinstance(self.solid_def, OpDefinition):
-            return f'op "{str(self.solid_handle)}"'
+    def describe_op(self) -> str:
+        if isinstance(self.op_def, OpDefinition):
+            return f'op "{str(self.node_handle)}"'
 
-        return f'solid "{str(self.solid_handle)}"'
+        return f'solid "{str(self.node_handle)}"'
 
-    def get_io_manager(self, step_output_handle) -> IOManager:
+    def get_io_manager(self, step_output_handle: StepOutputHandle) -> IOManager:
         step_output = self.execution_plan.get_step_output(step_output_handle)
         io_manager_key = (
             self.pipeline_def.get_solid(step_output.solid_handle)
@@ -561,7 +555,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         output_manager = getattr(self.resources, io_manager_key)
         return check.inst(output_manager, IOManager)
 
-    def get_output_context(self, step_output_handle) -> OutputContext:
+    def get_output_context(self, step_output_handle: StepOutputHandle) -> OutputContext:
         return get_output_context(
             self.execution_plan,
             self.pipeline_def,
@@ -611,7 +605,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             upstream_output = artificial_output_context
 
         asset_key = self.pipeline_def.asset_layer.asset_key_for_input(
-            node_handle=self.solid_handle, input_name=name
+            node_handle=self.node_handle, input_name=name
         )
         asset_partitions_subset = (
             self.asset_partitions_subset_for_input(name)
@@ -625,7 +619,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return InputContext(
             job_name=self.pipeline_def.name,
             name=name,
-            solid_def=self.solid_def,
+            op_def=self.op_def,
             config=config,
             metadata=metadata,
             upstream_output=upstream_output,
@@ -691,8 +685,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         output_name: Optional[str] = None,
         mapping_key: Optional[str] = None,
     ) -> None:
-        if output_name is None and len(self.solid_def.output_defs) == 1:
-            output_def = self.solid_def.output_defs[0]
+        if output_name is None and len(self.op_def.output_defs) == 1:
+            output_def = self.op_def.output_defs[0]
             output_name = output_def.name
         elif output_name is None:
             raise DagsterInvariantViolationError(
@@ -701,7 +695,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 " `context.add_output_metadata`."
             )
         else:
-            output_def = self.solid_def.output_def_named(output_name)
+            output_def = self.op_def.output_def_named(output_name)
 
         if self.has_seen_output(output_name, mapping_key):
             output_desc = (
@@ -710,13 +704,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 else f"output '{output_def.name}' with mapping_key '{mapping_key}'"
             )
             raise DagsterInvariantViolationError(
-                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log output"
+                f"In {self.op_def.node_type_str} '{self.solid.name}', attempted to log output"
                 f" metadata for {output_desc} which has already been yielded. Metadata must be"
                 " logged before the output is yielded."
             )
         if output_def.is_dynamic and not mapping_key:
             raise DagsterInvariantViolationError(
-                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata"
+                f"In {self.op_def.node_type_str} '{self.solid.name}', attempted to log metadata"
                 f" for dynamic output '{output_def.name}' without providing a mapping key. When"
                 " logging metadata for a dynamic output, it is necessary to provide a mapping key."
             )
@@ -724,7 +718,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if output_name in self._output_metadata:
             if not mapping_key or mapping_key in self._output_metadata[output_name]:
                 raise DagsterInvariantViolationError(
-                    f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log"
+                    f"In {self.op_def.node_type_str} '{self.solid.name}', attempted to log"
                     f" metadata for output '{output_name}' more than once."
                 )
         if mapping_key:
@@ -774,28 +768,28 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def _should_load_from_previous_runs(self, step_output_handle: StepOutputHandle) -> bool:
         # should not load if not a re-execution
-        if self.pipeline_run.parent_run_id is None:
+        if self.dagster_run.parent_run_id is None:
             return False
         # should not load if re-executing the entire pipeline
-        if self.pipeline_run.step_keys_to_execute is None:
+        if self.dagster_run.step_keys_to_execute is None:
             return False
 
         # should not load if the entire dynamic step is being executed in the current run
         handle = StepHandle.parse_from_key(step_output_handle.step_key)
         if (
             isinstance(handle, ResolvedFromDynamicStepHandle)
-            and handle.unresolved_form.to_key() in self.pipeline_run.step_keys_to_execute
+            and handle.unresolved_form.to_key() in self.dagster_run.step_keys_to_execute
         ):
             return False
 
         # should not load if this step is being executed in the current run
-        return step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
+        return step_output_handle.step_key not in self.dagster_run.step_keys_to_execute
 
     def _get_source_run_id(self, step_output_handle: StepOutputHandle) -> Optional[str]:
         if self._should_load_from_previous_runs(step_output_handle):
             return self._get_source_run_id_from_logs(step_output_handle)
         else:
-            return self.pipeline_run.run_id
+            return self.dagster_run.run_id
 
     def capture_step_exception(self, exception: BaseException):
         self._step_exception = check.inst_param(exception, "exception", BaseException)
@@ -814,8 +808,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def op_config(self) -> Any:
-        solid_config = self.resolved_run_config.solids.get(str(self.solid_handle))
-        return solid_config.config if solid_config else None
+        op_config = self.resolved_run_config.ops.get(str(self.node_handle))
+        return op_config.config if op_config else None
 
     @property
     def step_materializes_assets(self) -> bool:
@@ -824,7 +818,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             return False
         else:
             asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
-                self.solid_handle, step_outputs[0].name
+                self.node_handle, step_outputs[0].name
             )
             return asset_info is not None
 
@@ -850,7 +844,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         output_keys: List[AssetKey] = []
         for step_output in self.step.step_outputs:
             asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
-                self.solid_handle, step_output.name
+                self.node_handle, step_output.name
             )
             if asset_info is None or not asset_info.is_required:
                 continue
@@ -893,8 +887,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(self.solid_handle)
-        upstream_asset_key = asset_layer.asset_key_for_input(self.solid_handle, input_name)
+        assets_def = asset_layer.assets_def_for_node(self.node_handle)
+        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
 
         return (
             upstream_asset_key is not None
@@ -904,7 +898,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
         subset = self.asset_partitions_subset_for_input(input_name)
-        partition_key_ranges = subset.get_partition_key_ranges()
+        partition_key_ranges = subset.get_partition_key_ranges(
+            dynamic_partitions_store=self.instance
+        )
 
         if len(partition_key_ranges) != 1:
             check.failed(
@@ -918,8 +914,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def asset_partitions_subset_for_input(self, input_name: str) -> PartitionsSubset:
         asset_layer = self.pipeline_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(self.solid_handle)
-        upstream_asset_key = asset_layer.asset_key_for_input(self.solid_handle, input_name)
+        assets_def = asset_layer.assets_def_for_node(self.node_handle)
+        upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
 
         if upstream_asset_key is not None:
             upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
@@ -928,20 +924,21 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 partitions_def = assets_def.partitions_def
                 partitions_subset = (
                     partitions_def.empty_subset().with_partition_key_range(
-                        self.asset_partition_key_range
+                        self.asset_partition_key_range, dynamic_partitions_store=self.instance
                     )
                     if partitions_def
                     else None
                 )
                 partition_mapping = infer_partition_mapping(
                     asset_layer.partition_mapping_for_node_input(
-                        self.solid_handle, upstream_asset_key
+                        self.node_handle, upstream_asset_key
                     ),
                     partitions_def,
                 )
                 return partition_mapping.get_upstream_partitions_for_partitions(
                     partitions_subset,
                     upstream_asset_partitions_def,
+                    dynamic_partitions_store=self.instance,
                 )
 
         check.failed("The input has no asset partitions")
@@ -958,7 +955,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def _partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
         asset_info = self.pipeline_def.asset_layer.asset_info_for_output(
-            node_handle=self.solid_handle, output_name=output_name
+            node_handle=self.node_handle, output_name=output_name
         )
         if asset_info:
             return asset_info.partitions_def
@@ -1008,24 +1005,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         partition_key_range = self.asset_partition_key_range_for_output(output_name)
         return TimeWindow(
             # mypy thinks partitions_def is <nothing> here because ????
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,  # type: ignore
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
-
-    def get_input_lineage(self) -> Sequence[AssetLineageInfo]:
-        if not self._input_lineage:
-            for step_input in self.step.step_inputs:
-                input_def = self.solid_def.input_def_named(step_input.name)
-                dagster_type = input_def.dagster_type
-
-                if dagster_type.is_nothing:
-                    continue
-
-                self._input_lineage.extend(step_input.source.get_asset_lineage(self, input_def))
-
-        self._input_lineage = _dedup_asset_lineage(self._input_lineage)
-
-        return self._input_lineage
 
     def get_type_materializer_context(self) -> "DagsterTypeMaterializerContext":
         return DagsterTypeMaterializerContext(
@@ -1048,25 +1030,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
 
-def _dedup_asset_lineage(asset_lineage: Sequence[AssetLineageInfo]) -> List[AssetLineageInfo]:
-    """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
-    information. Duplicates can occur naturally when calculating transitive dependencies from solids
-    with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will
-    inherit all dependencies from all of the solid Inputs).
-    """
-    key_partition_mapping: Dict[AssetKey, Set[str]] = defaultdict(set)
-
-    for lineage_info in asset_lineage:
-        if not lineage_info.partitions:
-            key_partition_mapping[lineage_info.asset_key] |= set()
-        for partition in lineage_info.partitions:
-            key_partition_mapping[lineage_info.asset_key].add(partition)
-    return [
-        AssetLineageInfo(asset_key=asset_key, partitions=partitions)
-        for asset_key, partitions in key_partition_mapping.items()
-    ]
-
-
 class TypeCheckContext:
     """The ``context`` object available to a type check function on a DagsterType.
 
@@ -1087,17 +1050,17 @@ class TypeCheckContext:
         self._log = log_manager
         self._resources = scoped_resources_builder.build(dagster_type.required_resource_keys)
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> "Resources":
         return self._resources
 
-    @public  # type: ignore
+    @public
     @property
     def run_id(self) -> str:
         return self._run_id
 
-    @public  # type: ignore
+    @public
     @property
     def log(self) -> DagsterLogManager:
         return self._log
@@ -1109,20 +1072,20 @@ class DagsterTypeMaterializerContext(StepExecutionContext):
     Users should not construct this object directly.
     """
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> "Resources":
         """The resources available to the type materializer, specified by the `required_resource_keys` argument of the decorator.
         """
         return super(DagsterTypeMaterializerContext, self).resources
 
-    @public  # type: ignore
+    @public
     @property
     def job_def(self) -> "JobDefinition":
         """The underlying job definition being executed."""
         return super(DagsterTypeMaterializerContext, self).job_def
 
-    @public  # type: ignore
+    @public
     @property
     def op_def(self) -> "OpDefinition":
         """The op for which type materialization is occurring."""
@@ -1135,20 +1098,20 @@ class DagsterTypeLoaderContext(StepExecutionContext):
     Users should not construct this object directly.
     """
 
-    @public  # type: ignore
+    @public
     @property
     def resources(self) -> "Resources":
         """The resources available to the type loader, specified by the `required_resource_keys` argument of the decorator.
         """
         return super(DagsterTypeLoaderContext, self).resources
 
-    @public  # type: ignore
+    @public
     @property
     def job_def(self) -> "JobDefinition":
         """The underlying job definition being executed."""
         return super(DagsterTypeLoaderContext, self).job_def
 
-    @public  # type: ignore
+    @public
     @property
     def op_def(self) -> "OpDefinition":
         """The op for which type loading is occurring."""

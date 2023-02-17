@@ -2,7 +2,12 @@ from collections import defaultdict
 from typing import AbstractSet, Any, Dict, Iterable, Mapping, Optional, Set, Union, cast
 
 from dagster import _check as check
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition import (
+    PartitionsDefinition,
+    PartitionsSubset,
+)
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
+from dagster._core.instance import DynamicPartitionsStore
 
 from .asset_graph import AssetGraph
 from .events import AssetKey, AssetKeyPartitionKey
@@ -69,6 +74,14 @@ class AssetGraphSubset:
         return {
             "partitions_subsets_by_asset_key": {
                 key.to_user_string(): value.serialize()
+                for key, value in self.partitions_subsets_by_asset_key.items()
+            },
+            "serializable_partitions_def_ids_by_asset_key": {
+                key.to_user_string(): value.partitions_def.serializable_unique_identifier
+                for key, value in self.partitions_subsets_by_asset_key.items()
+            },
+            "partitions_def_class_names_by_asset_key": {
+                key.to_user_string(): value.partitions_def.__class__.__name__
                 for key, value in self.partitions_subsets_by_asset_key.items()
             },
             "non_partitioned_asset_keys": [
@@ -152,13 +165,48 @@ class AssetGraphSubset:
         )
 
     @classmethod
+    def can_deserialize(cls, serialized_dict: Mapping[str, Any], asset_graph: AssetGraph) -> bool:
+        serializable_partitions_ids = serialized_dict.get(
+            "serializable_partitions_def_ids_by_asset_key", {}
+        )
+
+        partitions_def_class_names_by_asset_key = serialized_dict.get(
+            "partitions_def_class_names_by_asset_key", {}
+        )
+
+        for key, value in serialized_dict["partitions_subsets_by_asset_key"].items():
+            asset_key = AssetKey.from_user_string(key)
+            partitions_def = asset_graph.get_partitions_def(asset_key)
+
+            if partitions_def is None:
+                # Asset had a partitions definition at storage time, but no longer does
+                return False
+
+            if not partitions_def.can_deserialize_subset(
+                value,
+                serialized_partitions_def_unique_id=serializable_partitions_ids.get(key),
+                serialized_partitions_def_class_name=partitions_def_class_names_by_asset_key.get(
+                    key
+                ),
+            ):
+                return False
+
+        return True
+
+    @classmethod
     def from_storage_dict(
         cls, serialized_dict: Mapping[str, Any], asset_graph: AssetGraph
     ) -> "AssetGraphSubset":
         partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
         for key, value in serialized_dict["partitions_subsets_by_asset_key"].items():
             asset_key = AssetKey.from_user_string(key)
-            partitions_def = cast(PartitionsDefinition, asset_graph.get_partitions_def(asset_key))
+            partitions_def = asset_graph.get_partitions_def(asset_key)
+
+            if partitions_def is None:
+                raise DagsterDefinitionChangedDeserializationError(
+                    f"Asset {key} had a PartitionsDefinition at storage-time, but no longer does"
+                )
+
             partitions_subsets_by_asset_key[asset_key] = partitions_def.deserialize_subset(value)
 
         non_partitioned_asset_keys = {
@@ -170,7 +218,9 @@ class AssetGraphSubset:
         )
 
     @classmethod
-    def all(cls, asset_graph: AssetGraph) -> "AssetGraphSubset":
+    def all(
+        cls, asset_graph: AssetGraph, dynamic_partitions_store: DynamicPartitionsStore
+    ) -> "AssetGraphSubset":
         partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
         non_partitioned_asset_keys: Set[AssetKey] = set()
 
@@ -180,7 +230,9 @@ class AssetGraphSubset:
                 partitions_subsets_by_asset_key[
                     asset_key
                 ] = partitions_def.empty_subset().with_partition_keys(
-                    partitions_def.get_partition_keys()
+                    partitions_def.get_partition_keys(
+                        dynamic_partitions_store=dynamic_partitions_store
+                    )
                 )
             else:
                 non_partitioned_asset_keys.add(asset_key)

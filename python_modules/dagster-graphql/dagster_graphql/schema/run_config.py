@@ -1,3 +1,5 @@
+from typing import Any, Optional
+
 import dagster._check as check
 import graphene
 from dagster._core.host_representation import RepresentedPipeline
@@ -12,7 +14,7 @@ from .errors import (
 )
 from .pipelines.config_result import GraphenePipelineConfigValidationResult
 from .runs import GrapheneRunConfigData, parse_run_config_input
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneRunConfigSchema(graphene.ObjectType):
@@ -32,7 +34,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
 
     isRunConfigValid = graphene.Field(
         graphene.NonNull(GraphenePipelineConfigValidationResult),
-        args={"runConfigData": graphene.Argument(GrapheneRunConfigData)},
+        runConfigData=graphene.Argument(GrapheneRunConfigData),
         description="""Parse a particular run config result. The return value
         either indicates that the validation succeeded by returning
         `PipelineConfigValidationValid` or that there are configuration errors
@@ -55,7 +57,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
         )
         self._mode = check.str_param(mode, "mode")
 
-    def resolve_allConfigTypes(self, _graphene_info):
+    def resolve_allConfigTypes(self, _graphene_info: ResolveInfo):
         return sorted(
             list(
                 map(
@@ -68,18 +70,22 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
             key=lambda ct: ct.key,
         )
 
-    def resolve_rootConfigType(self, _graphene_info):
+    def resolve_rootConfigType(self, _graphene_info: ResolveInfo):
         return to_config_type(
             self._represented_pipeline.config_schema_snapshot,
             self._represented_pipeline.get_mode_def_snap(self._mode).root_config_key,
         )
 
-    def resolve_isRunConfigValid(self, graphene_info, **kwargs):
+    def resolve_isRunConfigValid(
+        self,
+        graphene_info: ResolveInfo,
+        runConfigData: Optional[Any] = None,  # custom scalar (GrapheneRunConfigData)
+    ):
         return resolve_is_run_config_valid(
             graphene_info,
             self._represented_pipeline,
             self._mode,
-            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=False),
+            parse_run_config_input(runConfigData or {}, raise_on_error=False),
         )
 
 

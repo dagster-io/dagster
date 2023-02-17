@@ -1,8 +1,12 @@
-from typing import Optional
+from typing import Any, ContextManager, Mapping, Optional
 
 import dagster._check as check
 import sqlalchemy as db
+import sqlalchemy.dialects as db_dialects
+import sqlalchemy.pool as db_pool
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.event_api import EventHandlerFn
 from dagster._core.events import ASSET_EVENTS
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.config import pg_config
@@ -15,12 +19,14 @@ from dagster._core.storage.event_log import (
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.sql import (
+    AlembicVersion,
     check_alembic_revision,
     create_engine,
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_as
+from sqlalchemy.engine import Connection
 
 from ..utils import (
     create_pg_connection,
@@ -64,7 +70,12 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     """
 
-    def __init__(self, postgres_url, should_autocreate_tables=True, inst_data=None):
+    def __init__(
+        self,
+        postgres_url: str,
+        should_autocreate_tables: bool = True,
+        inst_data: Optional[ConfigurableClassData] = None,
+    ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = check.str_param(postgres_url, "postgres_url")
         self.should_autocreate_tables = check.bool_param(
@@ -75,7 +86,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
-            self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
+            self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
         )
 
         # lazy init
@@ -94,13 +105,13 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         super().__init__()
 
-    def _init_db(self):
+    def _init_db(self) -> None:
         with self._connect() as conn:
             with conn.begin():
                 SqlEventLogStorageMetadata.create_all(conn)
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
-    def optimize_for_dagit(self, statement_timeout, pool_recycle):
+    def optimize_for_dagit(self, statement_timeout: int, pool_recycle: int) -> None:
         # When running in dagit, hold an open connection and set statement_timeout
         existing_options = self._engine.url.query.get("options")
         timeout_option = pg_statement_timeout(statement_timeout)
@@ -116,21 +127,23 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             pool_recycle=pool_recycle,
         )
 
-    def upgrade(self):
+    def upgrade(self) -> None:
         alembic_config = pg_alembic_config(__file__)
         with self._connect() as conn:
             run_alembic_upgrade(alembic_config, conn)
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return pg_config()
 
     @staticmethod
-    def from_config_value(inst_data, config_value):
+    def from_config_value(
+        inst_data: Optional[ConfigurableClassData], config_value: Mapping[str, Any]
+    ) -> "PostgresEventLogStorage":
         return PostgresEventLogStorage(
             inst_data=inst_data,
             postgres_url=pg_url_from_config(config_value),
@@ -138,9 +151,11 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         )
 
     @staticmethod
-    def create_clean_storage(conn_string, should_autocreate_tables=True):
+    def create_clean_storage(
+        conn_string: str, should_autocreate_tables: bool = True
+    ) -> "PostgresEventLogStorage":
         engine = create_engine(
-            conn_string, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
+            conn_string, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
         )
         try:
             SqlEventLogStorageMetadata.drop_all(engine)
@@ -149,7 +164,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         return PostgresEventLogStorage(conn_string, should_autocreate_tables)
 
-    def store_event(self, event):
+    def store_event(self, event: EventLogEntry) -> None:
         """Store an event corresponding to a pipeline run.
 
         Args:
@@ -167,24 +182,25 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             result.close()
             conn.execute(
                 """NOTIFY {channel}, %s; """.format(channel=CHANNEL_NAME),
-                (res[0] + "_" + str(res[1]),),
+                (res[0] + "_" + str(res[1]),),  # type: ignore
             )
+            event_id = res[1]  # type: ignore
 
         if (
             event.is_dagster_event
             and event.dagster_event_type in ASSET_EVENTS
-            and event.dagster_event.asset_key
+            and event.dagster_event.asset_key  # type: ignore
         ):
-            self.store_asset_event(event)
+            self.store_asset_event(event, event_id)
 
-            if res[1] is None:
+            if event_id is None:
                 raise DagsterInvariantViolationError(
                     "Cannot store asset event tags for null event id."
                 )
 
-            self.store_asset_event_tags(event, res[1])
+            self.store_asset_event_tags(event, event_id)
 
-    def store_asset_event(self, event: EventLogEntry):
+    def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)
         if not (event.dagster_event and event.dagster_event.asset_key):
             return
@@ -219,9 +235,11 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # run id for a set of assets in one roundtrip call to event log storage.
         # https://github.com/dagster-io/dagster/pull/7319
 
-        values = self._get_asset_entry_values(event, self.has_secondary_index(ASSET_KEY_INDEX_COLS))
+        values = self._get_asset_entry_values(
+            event, event_id, self.has_secondary_index(ASSET_KEY_INDEX_COLS)
+        )
         with self.index_connection() as conn:
-            query = db.dialects.postgresql.insert(AssetKeyTable).values(
+            query = db_dialects.postgresql.insert(AssetKeyTable).values(
                 asset_key=event.dagster_event.asset_key.to_string(),
                 **values,
             )
@@ -234,31 +252,36 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 query = query.on_conflict_do_nothing()
             conn.execute(query)
 
-    def _connect(self):
+    def _connect(self) -> ContextManager[Connection]:
         return create_pg_connection(self._engine)
 
-    def run_connection(self, run_id=None):
+    def run_connection(self, run_id: Optional[str] = None) -> ContextManager[Connection]:
         return self._connect()
 
-    def index_connection(self):
+    def index_connection(self) -> ContextManager[Connection]:
         return self._connect()
 
     def has_table(self, table_name: str) -> bool:
         return bool(self._engine.dialect.has_table(self._engine.connect(), table_name))
 
-    def has_secondary_index(self, name):
+    def has_secondary_index(self, name: str) -> bool:
         if name not in self._secondary_index_cache:
             self._secondary_index_cache[name] = super(
                 PostgresEventLogStorage, self
             ).has_secondary_index(name)
         return self._secondary_index_cache[name]
 
-    def enable_secondary_index(self, name):
+    def enable_secondary_index(self, name: str) -> None:
         super(PostgresEventLogStorage, self).enable_secondary_index(name)
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 
-    def watch(self, run_id, cursor, callback):
+    def watch(
+        self,
+        run_id: str,
+        cursor: Optional[str],
+        callback: EventHandlerFn,
+    ) -> None:
         if cursor and EventLogCursor.parse(cursor).is_offset_cursor():
             check.failed("Cannot call `watch` with an offset cursor")
 
@@ -278,25 +301,25 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     SqlEventLogStorageTable.c.id == cursor
                 ),
             )
-            return deserialize_as(cursor_res.scalar(), EventLogEntry)
+            return deserialize_as(cursor_res.scalar(), EventLogEntry)  # type: ignore
 
-    def end_watch(self, run_id, handler):
+    def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
         if self._event_watcher is None:
             return
 
         self._event_watcher.unwatch_run(run_id, handler)
 
-    def __del__(self):
+    def __del__(self) -> None:
         # Keep the inherent limitations of __del__ in Python in mind!
         self.dispose()
 
-    def dispose(self):
+    def dispose(self) -> None:
         if not self._disposed:
             self._disposed = True
             if self._event_watcher:
                 self._event_watcher.close()
 
-    def alembic_version(self):
+    def alembic_version(self) -> AlembicVersion:
         alembic_config = pg_alembic_config(__file__)
         with self._connect() as conn:
             return check_alembic_revision(alembic_config, conn)

@@ -1,9 +1,11 @@
+from typing import List
+
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
 from dagster._utils.error import SerializableErrorInfo
 
-from .util import non_null_list
+from .util import ResolveInfo, non_null_list
 
 
 class GrapheneError(graphene.Interface):
@@ -112,8 +114,8 @@ class GraphenePythonError(graphene.ObjectType):
         )
         return self._className
 
-    def resolve_causes(self, _graphene_info):
-        causes = []
+    def resolve_causes(self, _graphene_info: ResolveInfo):
+        causes: List[GraphenePythonError] = []
         current_error = self._cause
         while current_error and len(causes) < 10:  # Sanity check the depth of the causes
             causes.append(GraphenePythonError(current_error))
@@ -416,6 +418,19 @@ class GrapheneScheduleNotFoundError(graphene.ObjectType):
         self.message = f"Schedule {self.schedule_name} could not be found."
 
 
+class GrapheneResourceNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "ResourceNotFoundError"
+
+    resource_name = graphene.NonNull(graphene.String)
+
+    def __init__(self, resource_name):
+        super().__init__()
+        self.resource_name = check.str_param(resource_name, "resource_name")
+        self.message = f"Top-level resource {self.resource_name} could not be found."
+
+
 class GrapheneSensorNotFoundError(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneError,)
@@ -425,7 +440,7 @@ class GrapheneSensorNotFoundError(graphene.ObjectType):
 
     def __init__(self, sensor_name):
         super().__init__()
-        self.name = check.str_param(sensor_name, "sensor_name")
+        self.sensor_name = check.str_param(sensor_name, "sensor_name")
         self.message = f"Could not find `{sensor_name}` in the currently loaded repository."
 
 
@@ -504,6 +519,7 @@ types = [
     GrapheneReloadNotSupported,
     GrapheneRepositoryLocationNotFound,
     GrapheneRepositoryNotFoundError,
+    GrapheneResourceNotFoundError,
     GrapheneRunGroupNotFoundError,
     GrapheneRunNotFoundError,
     GrapheneScheduleNotFoundError,

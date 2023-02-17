@@ -7,6 +7,7 @@ from typing_extensions import Protocol, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.logical_version import LOGICAL_VERSION_TAG_KEY, LogicalVersion
 from dagster._core.definitions.metadata import (
@@ -119,8 +120,8 @@ class SourceAsset(ResourceAddable):
             metadata, [], allow_invalid=True
         )
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
-        self._io_manager_def = check.opt_inst_param(  # type: ignore
-            io_manager_def, "io_manager_def", IOManagerDefinition  # type: ignore
+        self._io_manager_def = check.opt_inst_param(
+            io_manager_def, "io_manager_def", IOManagerDefinition
         )
         if self._io_manager_def:
             if not io_manager_key:
@@ -146,7 +147,7 @@ class SourceAsset(ResourceAddable):
         self.observe_fn = check.opt_callable_param(observe_fn, "observe_fn")
         self._node_def = None
 
-    @public  # type: ignore
+    @public
     @property
     def metadata(self) -> MetadataMapping:
         # PartitionMetadataEntry (unstable API) case is unhandled
@@ -163,7 +164,7 @@ class SourceAsset(ResourceAddable):
             self.resource_defs.get(io_manager_key) if io_manager_key else None,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def op(self) -> OpDefinition:
         check.invariant(
@@ -172,46 +173,47 @@ class SourceAsset(ResourceAddable):
         )
         return cast(OpDefinition, self.node_def)
 
-    @public  # type: ignore
+    @public
     @property
     def is_observable(self) -> bool:
         return self.node_def is not None
 
+    def _get_op_def_compute_fn(self, observe_fn: SourceAssetObserveFunction):
+        from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+
+        observe_fn_has_context = has_at_least_one_parameter(observe_fn)
+
+        def fn(context: OpExecutionContext):
+            logical_version = observe_fn(context) if observe_fn_has_context else observe_fn()  # type: ignore
+
+            check.inst(
+                logical_version,
+                LogicalVersion,
+                "Source asset observation function must return a LogicalVersion",
+            )
+            tags = {LOGICAL_VERSION_TAG_KEY: logical_version.value}
+            context.log_event(
+                AssetObservation(
+                    asset_key=self.key,
+                    tags=tags,
+                )
+            )
+
+        return DecoratedOpFunction(fn)
+
     @property
     def node_def(self) -> Optional[OpDefinition]:
         """Op that generates observation metadata for a source asset."""
-        from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
-
         if self.observe_fn is None:
             return None
-        elif self._node_def is None:
-            observe_fn = self.observe_fn
 
-            def fn(context: OpExecutionContext):
-                logical_version = observe_fn(context)  # type: ignore
-                check.inst(
-                    logical_version,
-                    LogicalVersion,
-                    "Source asset observation function must return a LogicalVersion",
-                )
-                tags = {LOGICAL_VERSION_TAG_KEY: logical_version.value}
-                context.log_event(
-                    AssetObservation(
-                        asset_key=self.key,
-                        tags=tags,
-                    )
-                )
-
-            compute_fn = DecoratedOpFunction(decorated_fn=fn)
-
+        if self._node_def is None:
             self._node_def = OpDefinition(
-                compute_fn=compute_fn,
+                compute_fn=self._get_op_def_compute_fn(self.observe_fn),
                 name="__".join(self.key.path).replace("-", "_"),
                 description=self.description,
             )
-            return self._node_def
-        else:
-            return self._node_def
+        return self._node_def
 
     def with_resources(self, resource_defs) -> "SourceAsset":
         from dagster._core.execution.resources_init import get_transitive_required_resource_keys

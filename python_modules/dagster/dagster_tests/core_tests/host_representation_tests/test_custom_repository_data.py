@@ -43,6 +43,9 @@ class TestDynamicRepositoryData(RepositoryData):
         self._num_calls = self._num_calls + 1
         return [define_foo_pipeline(self._num_calls)]
 
+    def get_top_level_resources(self):
+        return {}
+
 
 @repository
 def bar_repo():

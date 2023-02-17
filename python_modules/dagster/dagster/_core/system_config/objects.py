@@ -99,7 +99,7 @@ class ResolvedRunConfig(
     NamedTuple(
         "_ResolvedRunConfig",
         [
-            ("solids", Mapping[str, OpConfig]),
+            ("ops", Mapping[str, OpConfig]),
             ("execution", "ExecutionConfig"),
             ("resources", Mapping[str, ResourceConfig]),
             ("loggers", Mapping[str, Mapping[str, object]]),
@@ -111,7 +111,7 @@ class ResolvedRunConfig(
 ):
     def __new__(
         cls,
-        solids: Optional[Mapping[str, OpConfig]] = None,
+        ops: Optional[Mapping[str, OpConfig]] = None,
         execution: Optional["ExecutionConfig"] = None,
         resources: Optional[Mapping[str, ResourceConfig]] = None,
         loggers: Optional[Mapping[str, Mapping[str, object]]] = None,
@@ -130,7 +130,7 @@ class ResolvedRunConfig(
 
         return super(ResolvedRunConfig, cls).__new__(
             cls,
-            solids=check.opt_mapping_param(solids, "solids", key_type=str, value_type=OpConfig),
+            ops=check.opt_mapping_param(ops, "ops", key_type=str, value_type=OpConfig),
             execution=execution,
             resources=resources,
             loggers=check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=Mapping),
@@ -216,7 +216,7 @@ class ResolvedRunConfig(
         input_configs = config_value.get("inputs", {})
 
         return ResolvedRunConfig(
-            solids=solid_config_dict,
+            ops=solid_config_dict,
             execution=ExecutionConfig.from_dict(config_mapped_execution_configs),
             loggers=config_mapped_logger_configs,
             original_config_dict=run_config,
@@ -229,7 +229,7 @@ class ResolvedRunConfig(
         env_dict: Dict[str, Mapping[str, object]] = {}
 
         solid_configs: Dict[str, object] = {}
-        for solid_name, solid_config in self.solids.items():
+        for solid_name, solid_config in self.ops.items():
             solid_configs[solid_name] = {
                 "config": solid_config.config,
                 "inputs": solid_config.inputs,

@@ -5,7 +5,7 @@ from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
 from dagster import Definitions
 
-from .assets import comments, items, stories
+from ..assets import comments, items, stories
 from .clone_and_drop_db import clone_prod
 
 snowflake_config = {

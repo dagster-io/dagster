@@ -10,7 +10,7 @@ with DAG(
         "retries": 1,
     },
     description="A simple tutorial DAG",
-    schedule=timedelta(days=1),
+    schedule_interval=timedelta(days=1),
     start_date=datetime(2021, 1, 1),
     catchup=False,
     tags=["example"],
@@ -40,4 +40,4 @@ with DAG(
         bash_command=templated_command,
     )
 
-    t1 >> [t2, t3]
+    t1 >> [t2, t3]  # type: ignore

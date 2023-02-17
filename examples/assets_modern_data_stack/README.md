@@ -57,10 +57,10 @@ To install this example and its Python dependencies, run:
 pip install -e ".[dev]"
 ```
 
-Then, start the Dagit web server:
+Then, start the Dagster UI web server:
 
 ```
-dagit
+dagster dev
 ```
 
 Open http://localhost:3000 with your browser to see the project.
@@ -133,33 +133,6 @@ Or from the left nav or on each job page:
 
 <p align="center">
     <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/more-reload-left-nav.png" />
-</p>
-
-</details>
-
-### Running daemon locally
-
-If you're running Dagster locally and trying to set up schedules, you will see a warning that your daemon isn’t running.
-
-<details><summary>👈 Expand to learn how to set up a local daemon</summary>
-
-<p align="center">
-    <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/yuhan/11-11-quickstart_1/_add_quickstart_basic_etl_as_the_very_basic_template/docs/next/public/images/quickstarts/basic/step-3-3-daemon-warning.png?raw=true" />
-</p>
-
-If you want to enable Dagster [Schedules](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) for your jobs, start the [Dagster Daemon](https://docs.dagster.io/deployment/dagster-daemon) process in the same folder as your `workspace.yaml` file, but in a different shell or terminal.
-
-The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. Note: using directories within /tmp may cause issues. See [Dagster Instance default local behavior](https://docs.dagster.io/deployment/dagster-instance#default-local-behavior) for more details.
-
-In this case, go to the project root directory and run:
-```bash
-dagster-daemon run
-```
-
-Once your Dagster Daemon is running, the schedules that are turned on will start running.
-
-<p align="center">
-    <img height="500" src="https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/images/quickstarts/basic/step-3-4-daemon-on.png?raw=true" />
 </p>
 
 </details>

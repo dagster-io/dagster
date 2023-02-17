@@ -1,18 +1,15 @@
 import pytest
 from dagster import DagsterInvalidConfigError, DependencyDefinition, List, NodeInvocation, String
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    solid,
-)
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
+from dagster._legacy import PipelineDefinition, execute_pipeline
 
 
 def test_string_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition("string_input", String)])
+    @op(ins={"string_input": In(String)})
     def str_as_input(_context, string_input):
         assert string_input == "foo"
         called["yup"] = True
@@ -33,7 +30,7 @@ def test_string_from_inputs():
 def test_string_from_aliased_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition("string_input", String)])
+    @op(ins={"string_input": In(String)})
     def str_as_input(_context, string_input):
         assert string_input == "foo"
         called["yup"] = True
@@ -56,7 +53,7 @@ def test_string_from_aliased_inputs():
 def test_string_missing_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition("string_input", String)])
+    @op(ins={"string_input": In(String)})
     def str_as_input(_context, string_input):  # pylint: disable=W0613
         called["yup"] = True
 
@@ -78,11 +75,11 @@ def test_string_missing_inputs():
 def test_string_missing_input_collision():
     called = {}
 
-    @solid(output_defs=[OutputDefinition(String)])
+    @op(out=Out(String))
     def str_as_output(_context):
         return "bar"
 
-    @solid(input_defs=[InputDefinition("string_input", String)])
+    @op(ins={"string_input": In(String)})
     def str_as_input(_context, string_input):  # pylint: disable=W0613
         called["yup"] = True
 
@@ -107,7 +104,7 @@ def test_string_missing_input_collision():
 def test_composite_input_type():
     called = {}
 
-    @solid(input_defs=[InputDefinition("list_string_input", List[String])])
+    @op(ins={"list_string_input": In(List[String])})
     def str_as_input(_context, list_string_input):
         assert list_string_input == ["foo"]
         called["yup"] = True

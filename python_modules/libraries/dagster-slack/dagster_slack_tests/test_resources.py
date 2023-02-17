@@ -1,13 +1,14 @@
 import json
 
-from dagster._legacy import ModeDefinition, execute_solid, solid
+from dagster import op
+from dagster._legacy import ModeDefinition, execute_solid
 from dagster_slack import slack_resource
 from mock import patch
 
 
 @patch("slack_sdk.WebClient.api_call")
 def test_slack_resource(mock_api_call):
-    @solid(required_resource_keys={"slack"})
+    @op(required_resource_keys={"slack"})
     def slack_solid(context):
         assert context.resources.slack
         body = {"ok": True}

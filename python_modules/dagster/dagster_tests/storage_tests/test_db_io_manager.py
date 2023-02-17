@@ -4,13 +4,14 @@ from unittest.mock import MagicMock
 import pytest
 from dagster import AssetKey, InputContext, OutputContext, build_output_context
 from dagster._check import CheckError
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
-    TablePartition,
+    TablePartitionDimension,
     TableSlice,
 )
 from dagster._core.types.dagster_type import resolve_dagster_type
@@ -30,10 +31,10 @@ class IntHandler(DbTypeHandler[int]):
         self.handle_input_calls = []
         self.handle_output_calls = []
 
-    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: int):
+    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: int, connection):
         self.handle_output_calls.append((context, table_slice, obj))
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> int:
+    def load_input(self, context: InputContext, table_slice: TableSlice, connection) -> int:
         self.handle_input_calls.append((context, table_slice))
         return 7
 
@@ -47,10 +48,10 @@ class StringHandler(DbTypeHandler[str]):
         self.handle_input_calls = []
         self.handle_output_calls = []
 
-    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: str):
+    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: str, connection):
         self.handle_output_calls.append((context, table_slice, obj))
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> str:
+    def load_input(self, context: InputContext, table_slice: TableSlice, connection) -> str:
         self.handle_input_calls.append((context, table_slice))
         return "8"
 
@@ -72,7 +73,10 @@ def build_db_io_manager(type_handlers, db_client, resource_config_override=None)
 
 def test_asset_out():
     handler = IntHandler()
-    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
+    connect_mock = MagicMock()
+    db_client = MagicMock(
+        spec=DbClient, get_select_statement=MagicMock(return_value=""), connect=connect_mock
+    )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
@@ -88,9 +92,13 @@ def test_asset_out():
     assert manager.load_input(input_context) == 7
 
     assert len(handler.handle_output_calls) == 1
-    table_slice = TableSlice(database="database_abc", schema="schema1", table="table1")
+    table_slice = TableSlice(
+        database="database_abc", schema="schema1", table="table1", partition_dimensions=[]
+    )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
-    db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
+    db_client.delete_table_slice.assert_called_once_with(
+        output_context, table_slice, connect_mock().__enter__()
+    )
 
     assert len(handler.handle_input_calls) == 1
     assert handler.handle_input_calls[0][1] == table_slice
@@ -98,7 +106,10 @@ def test_asset_out():
 
 def test_asset_out_columns():
     handler = IntHandler()
-    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
+    connect_mock = MagicMock()
+    db_client = MagicMock(
+        spec=DbClient, get_select_statement=MagicMock(return_value=""), connect=connect_mock
+    )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
@@ -114,27 +125,43 @@ def test_asset_out_columns():
     assert manager.load_input(input_context) == 7
 
     assert len(handler.handle_output_calls) == 1
-    table_slice = TableSlice(database="database_abc", schema="schema1", table="table1")
+    table_slice = TableSlice(
+        database="database_abc", schema="schema1", table="table1", partition_dimensions=[]
+    )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
-    db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
+    db_client.delete_table_slice.assert_called_once_with(
+        output_context, table_slice, connect_mock().__enter__()
+    )
 
     assert len(handler.handle_input_calls) == 1
     assert handler.handle_input_calls[0][1] == TableSlice(
-        database="database_abc", schema="schema1", table="table1", columns=["apple", "banana"]
+        database="database_abc",
+        schema="schema1",
+        table="table1",
+        columns=["apple", "banana"],
+        partition_dimensions=[],
     )
 
 
 def test_asset_out_partitioned():
     handler = IntHandler()
-    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
+    connect_mock = MagicMock()
+    db_client = MagicMock(
+        spec=DbClient, get_select_statement=MagicMock(return_value=""), connect=connect_mock
+    )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
+    partitions_def = DailyPartitionsDefinition(start_date="2020-01-02")
+    partitions_def.time_window_for_partition_key = MagicMock(
+        return_value=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3))
+    )
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,
         asset_partition_key="2020-01-02",
         asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
         metadata={"partition_expr": "abc"},
+        asset_partitions_def=partitions_def,
     )
     manager.handle_output(output_context, 5)
     input_context = MagicMock(
@@ -145,6 +172,7 @@ def test_asset_out_partitioned():
         asset_partition_key="2020-01-02",
         asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
         metadata=None,
+        asset_partitions_def=partitions_def,
     )
     assert manager.load_input(input_context) == 7
 
@@ -153,12 +181,66 @@ def test_asset_out_partitioned():
         database="database_abc",
         schema="schema1",
         table="table1",
-        partition=TablePartition(
-            time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)), partition_expr="abc"
-        ),
+        partition_dimensions=[
+            TablePartitionDimension(
+                partition=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
+                partition_expr="abc",
+            )
+        ],
     )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
-    db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
+    db_client.delete_table_slice.assert_called_once_with(
+        output_context, table_slice, connect_mock().__enter__()
+    )
+
+    assert len(handler.handle_input_calls) == 1
+    assert handler.handle_input_calls[0][1] == table_slice
+
+
+def test_asset_out_static_partitioned():
+    handler = IntHandler()
+    connect_mock = MagicMock()
+    db_client = MagicMock(
+        spec=DbClient, get_select_statement=MagicMock(return_value=""), connect=connect_mock
+    )
+    manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
+    asset_key = AssetKey(["schema1", "table1"])
+    partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
+    output_context = MagicMock(
+        asset_key=asset_key,
+        resource_config=resource_config,
+        asset_partition_key="red",
+        metadata={"partition_expr": "abc"},
+        asset_partitions_def=partitions_def,
+    )
+    manager.handle_output(output_context, 5)
+    input_context = MagicMock(
+        asset_key=asset_key,
+        upstream_output=output_context,
+        resource_config=resource_config,
+        dagster_type=resolve_dagster_type(int),
+        asset_partition_key="red",
+        metadata=None,
+        asset_partitions_def=partitions_def,
+    )
+    assert manager.load_input(input_context) == 7
+
+    assert len(handler.handle_output_calls) == 1
+    table_slice = TableSlice(
+        database="database_abc",
+        schema="schema1",
+        table="table1",
+        partition_dimensions=[
+            TablePartitionDimension(
+                partition="red",
+                partition_expr="abc",
+            )
+        ],
+    )
+    assert handler.handle_output_calls[0][1:] == (table_slice, 5)
+    db_client.delete_table_slice.assert_called_once_with(
+        output_context, table_slice, connect_mock().__enter__()
+    )
 
     assert len(handler.handle_input_calls) == 1
     assert handler.handle_input_calls[0][1] == table_slice
@@ -167,16 +249,23 @@ def test_asset_out_partitioned():
 def test_different_output_and_input_types():
     int_handler = IntHandler()
     str_handler = StringHandler()
-    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
+    connect_mock = MagicMock()
+    db_client = MagicMock(
+        spec=DbClient, get_select_statement=MagicMock(return_value=""), connect=connect_mock
+    )
     manager = build_db_io_manager(type_handlers=[int_handler, str_handler], db_client=db_client)
     asset_key = AssetKey(["schema1", "table1"])
     output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
     manager.handle_output(output_context, 5)
     assert len(int_handler.handle_output_calls) == 1
     assert len(str_handler.handle_output_calls) == 0
-    table_slice = TableSlice(database="database_abc", schema="schema1", table="table1")
+    table_slice = TableSlice(
+        database="database_abc", schema="schema1", table="table1", partition_dimensions=[]
+    )
     assert int_handler.handle_output_calls[0][1:] == (table_slice, 5)
-    db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
+    db_client.delete_table_slice.assert_called_once_with(
+        output_context, table_slice, connect_mock().__enter__()
+    )
 
     input_context = MagicMock(
         asset_key=asset_key,
@@ -195,7 +284,10 @@ def test_different_output_and_input_types():
 
 def test_non_asset_out():
     handler = IntHandler()
-    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
+    connect_mock = MagicMock()
+    db_client = MagicMock(
+        spec=DbClient, get_select_statement=MagicMock(return_value=""), connect=connect_mock
+    )
     manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
     output_context = build_output_context(
         name="table1", metadata={"schema": "schema1"}, resource_config=resource_config
@@ -212,9 +304,13 @@ def test_non_asset_out():
     assert manager.load_input(input_context) == 7
 
     assert len(handler.handle_output_calls) == 1
-    table_slice = TableSlice(database="database_abc", schema="schema1", table="table1")
+    table_slice = TableSlice(
+        database="database_abc", schema="schema1", table="table1", partition_dimensions=[]
+    )
     assert handler.handle_output_calls[0][1:] == (table_slice, 5)
-    db_client.delete_table_slice.assert_called_once_with(output_context, table_slice)
+    db_client.delete_table_slice.assert_called_once_with(
+        output_context, table_slice, connect_mock().__enter__()
+    )
 
     assert len(handler.handle_input_calls) == 1
     assert handler.handle_input_calls[0][1] == table_slice

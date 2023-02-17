@@ -1,4 +1,4 @@
-import {Box, Colors, Tabs} from '@dagster-io/ui';
+import {Box, Colors, Tabs, ErrorBoundary} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
@@ -111,7 +111,9 @@ export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
         </Tabs>
       </Box>
       <RightInfoPanelContent>
-        {TabDefinitions.find((t) => t.key === activeTab)?.content()}
+        <ErrorBoundary region="tab" resetErrorOnChange={[activeTab, explorerPath]}>
+          {TabDefinitions.find((t) => t.key === activeTab)?.content()}
+        </ErrorBoundary>
       </RightInfoPanelContent>
     </>
   );

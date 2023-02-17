@@ -85,17 +85,17 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
 
             return logger_invocation_result(self, context)
 
-    @public  # type: ignore
+    @public
     @property
     def logger_fn(self) -> "InitLoggerFunction":
         return self._logger_fn
 
-    @public  # type: ignore
+    @public
     @property
     def config_schema(self) -> Any:
         return self._config_schema
 
-    @public  # type: ignore
+    @public
     @property
     def description(self) -> Optional[str]:
         return self._description

@@ -1,11 +1,13 @@
-from typing import Sequence
+from contextlib import contextmanager
+from typing import Mapping, Sequence, cast
 
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
     DbIOManager,
     DbTypeHandler,
-    TablePartition,
+    TablePartitionDimension,
     TableSlice,
 )
 from snowflake.connector import ProgrammingError
@@ -31,6 +33,8 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
             from dagster_snowflake import build_snowflake_io_manager
             from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+            from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
+            from dagster import Definitions
 
             @asset(
                 key_prefix=["my_schema"]  # will be used as the schema in snowflake
@@ -38,17 +42,18 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
                 ...
 
-            snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
-            @repository
-            def my_repo():
-                return with_resources(
-                    [my_table],
-                    {"io_manager": snowflake_io_manager.configured({
+            snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()])
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "io_manager": snowflake_pandas_io_manager.configured({
                         "database": "my_database",
                         "account" : {"env": "SNOWFLAKE_ACCOUNT"}
                         ...
-                    })}
-                )
+                    })
+                }
+            )
 
         If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
         the IO Manager. For assets, the schema will be determined from the asset key.
@@ -136,30 +141,51 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
 class SnowflakeDbClient(DbClient):
     @staticmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
+    @contextmanager
+    def connect(context, table_slice):
         no_schema_config = (
             {k: v for k, v in context.resource_config.items() if k != "schema"}
             if context.resource_config
             else {}
         )
         with SnowflakeConnection(
-            dict(schema=table_slice.schema, **no_schema_config), context.log  # type: ignore
-        ).get_connection() as con:
-            try:
-                con.execute_string(_get_cleanup_statement(table_slice))
-            except ProgrammingError:
-                # table doesn't exist yet, so ignore the error
-                pass
+            dict(
+                schema=table_slice.schema,
+                connector="sqlalchemy",
+                **cast(Mapping[str, str], no_schema_config),
+            ),
+            context.log,
+        ).get_connection(raw_conn=False) as conn:
+            yield conn
+
+    @staticmethod
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        connection.execute(f"create schema if not exists {table_slice.schema};")
+
+    @staticmethod
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        try:
+            connection.execute(_get_cleanup_statement(table_slice))
+        except ProgrammingError:
+            # table doesn't exist yet, so ignore the error
+            pass
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
-        if table_slice.partition:
-            return (
+        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+            query = (
                 f"SELECT {col_str} FROM"
-                f" {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
-                + _time_window_where_clause(table_slice.partition)
+                f" {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
             )
+            partition_where = " AND\n".join(
+                _static_where_clause(partition_dimension)
+                if isinstance(partition_dimension.partition, str)
+                else _time_window_where_clause(partition_dimension)
+                for partition_dimension in table_slice.partition_dimensions
+            )
+
+            return query + partition_where
         else:
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
 
@@ -169,19 +195,30 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.partition:
-        return (
-            f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}\n"
-            + _time_window_where_clause(table_slice.partition)
+    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        query = (
+            f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
         )
+        partition_where = " AND\n".join(
+            _static_where_clause(partition_dimension)
+            if isinstance(partition_dimension.partition, str)
+            else _time_window_where_clause(partition_dimension)
+            for partition_dimension in table_slice.partition_dimensions
+        )
+        return query + partition_where
     else:
         return f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"
 
 
-def _time_window_where_clause(table_partition: TablePartition) -> str:
-    start_dt, end_dt = table_partition.time_window
+def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
+    partition = cast(TimeWindow, table_partition.partition)
+    start_dt, end_dt = partition
     start_dt_str = start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     end_dt_str = end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)
     # Snowflake BETWEEN is inclusive; start <= partition expr <= end. We don't want to remove the next partition so we instead
     # write this as start <= partition expr < end.
-    return f"""WHERE {table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+    return f"""{table_partition.partition_expr} >= '{start_dt_str}' AND {table_partition.partition_expr} < '{end_dt_str}'"""
+
+
+def _static_where_clause(table_partition: TablePartitionDimension) -> str:
+    return f"""{table_partition.partition_expr} = '{table_partition.partition}'"""

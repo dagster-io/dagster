@@ -3,7 +3,11 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
-from datetime import datetime, time, timedelta
+from datetime import (
+    datetime,
+    time,
+    timedelta,
+)
 from enum import Enum
 from typing import (
     Any,
@@ -16,6 +20,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -29,9 +34,12 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.target import ExecutableDefinition
+from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster._utils import frozenlist
+from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import schedule_execution_time_iterator
 
@@ -215,8 +223,22 @@ class ScheduleType(Enum):
 
 
 class PartitionsDefinition(ABC, Generic[T]):
+    """
+    Defines a set of partitions, which can be attached to a software-defined asset or job.
+
+    Abstract class with implementations for different kinds of partitions.
+    """
+
+    @property
+    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
+        return DefaultPartitionsSubset
+
     @abstractmethod
-    def get_partitions(self, current_time: Optional[datetime] = None) -> Sequence[Partition[T]]:
+    def get_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[Partition[T]]:
         ...
 
     def __str__(self) -> str:
@@ -224,18 +246,33 @@ class PartitionsDefinition(ABC, Generic[T]):
         return joined_keys
 
     @public
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
-        return [partition.name for partition in self.get_partitions(current_time)]
+    def get_partition_keys(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[str]:
+        return [
+            partition.name
+            for partition in self.get_partitions(current_time, dynamic_partitions_store)
+        ]
 
-    def get_last_partition_key(self, current_time: Optional[datetime] = None) -> Optional[str]:
-        partitions = self.get_partitions(current_time)
+    def get_last_partition_key(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Optional[str]:
+        partitions = self.get_partitions(current_time, dynamic_partitions_store)
         if partitions:
             return partitions[-1].name
         else:
             return None
 
-    def get_first_partition_key(self, current_time: Optional[datetime] = None) -> Optional[str]:
-        partitions = self.get_partitions(current_time)
+    def get_first_partition_key(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Optional[str]:
+        partitions = self.get_partitions(current_time, dynamic_partitions_store)
         if partitions:
             return partitions[0].name
         else:
@@ -246,8 +283,12 @@ class PartitionsDefinition(ABC, Generic[T]):
 
         return IdentityPartitionMapping()
 
-    def get_partition_keys_in_range(self, partition_key_range: PartitionKeyRange) -> Sequence[str]:
-        partition_keys = self.get_partition_keys()
+    def get_partition_keys_in_range(
+        self,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[str]:
+        partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
 
         keys_exist = {
             partition_key_range.start: partition_key_range.start in partition_keys,
@@ -268,37 +309,84 @@ class PartitionsDefinition(ABC, Generic[T]):
         ]
 
     def empty_subset(self) -> "PartitionsSubset":
-        return DefaultPartitionsSubset(self, set())
+        return self.partitions_subset_class.empty_subset(self)
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
-        return DefaultPartitionsSubset.from_serialized(self, serialized)
+        return self.partitions_subset_class.from_serialized(self, serialized)
+
+    def can_deserialize_subset(
+        self,
+        serialized: str,
+        serialized_partitions_def_unique_id: Optional[str],
+        serialized_partitions_def_class_name: Optional[str],
+    ) -> bool:
+        return self.partitions_subset_class.can_deserialize(
+            self,
+            serialized,
+            serialized_partitions_def_unique_id,
+            serialized_partitions_def_class_name,
+        )
 
     @property
     def serializable_unique_identifier(self) -> str:
         return hashlib.sha1(json.dumps(self.get_partition_keys()).encode("utf-8")).hexdigest()
 
+    def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
+        tags = {PARTITION_NAME_TAG: partition_key}
+        return tags
+
+    def get_num_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> int:
+        return len(self.get_partition_keys(current_time, dynamic_partitions_store))
+
+
+def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]) -> None:
+    for partition_key in partition_keys:
+        found_invalid_substrs = [
+            invalid_substr
+            for invalid_substr in INVALID_PARTITION_SUBSTRINGS
+            if invalid_substr in partition_key
+        ]
+        if found_invalid_substrs:
+            raise DagsterInvalidDefinitionError(
+                f"{found_invalid_substrs} are invalid substrings in a partition key"
+            )
+
 
 class StaticPartitionsDefinition(
-    PartitionsDefinition[str],
+    PartitionsDefinition[str]
 ):  # pylint: disable=unsubscriptable-object
+    """
+    A statically-defined set of partitions.
+
+    Example:
+        .. code-block:: python
+
+            from dagster import StaticPartitionsDefinition, asset
+
+            oceans_partitions_def = StaticPartitionsDefinition(
+                ["arctic", "atlantic", "indian", "pacific", "southern"]
+            )
+
+            @asset(partitions_def=oceans_partitions_defs)
+            def ml_model_for_each_ocean():
+                ...
+    """
+
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
-        for partition_key in partition_keys:
-            found_invalid_substrs = [
-                invalid_substr
-                for invalid_substr in INVALID_PARTITION_SUBSTRINGS
-                if invalid_substr in partition_key
-            ]
-            if found_invalid_substrs:
-                raise DagsterInvalidDefinitionError(
-                    f"{found_invalid_substrs} are invalid substrings in a partition key"
-                )
+        raise_error_on_invalid_partition_key_substring(partition_keys)
 
         self._partitions = [Partition(key) for key in partition_keys]
 
     def get_partitions(
-        self, current_time: Optional[datetime] = None  # pylint: disable=unused-argument
+        self,
+        current_time: Optional[datetime] = None,  # pylint: disable=unused-argument
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[Partition[str]]:
         return self._partitions
 
@@ -391,7 +479,9 @@ class ScheduleTimeBasedPartitionsDefinition(
         )
 
     def get_partitions(
-        self, current_time: Optional[datetime] = None
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[Partition[datetime]]:
         check.opt_inst_param(current_time, "current_time", datetime)
 
@@ -458,25 +548,159 @@ class DynamicPartitionsDefinition(
             (
                 "partition_fn",
                 PublicAttr[
-                    Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
+                    Optional[
+                        Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
+                    ]
                 ],
-            )
+            ),
+            ("name", PublicAttr[Optional[str]]),
         ],
     ),
 ):
+    """
+    A partitions definition whose partition keys can be dynamically added and removed.
+
+    This is useful for cases where the set of partitions is not known at definition time,
+    but is instead determined at runtime.
+
+    Partitions can be added and removed using the `add_partitions` and `remove_partitions` methods.
+
+    Args:
+        name (Optional[str]): (Experimental) The name of the partitions definition.
+        partition_fn (Optional[Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]]):
+            A function that returns the current set of partitions. This argument is deprecated and
+            will be removed in 2.0.0.
+
+    Examples:
+        .. code-block:: python
+
+            foo = DynamicPartitionsDefinition(name="foo")
+
+            @sensor(job=my_job)
+            def my_sensor(context):
+                foo.add_partitions([partition_key], instance=context.instance)
+                return my_job.run_request_for_partition(partition_key, instance=context.instance)
+
+    """
+
     def __new__(  # pylint: disable=arguments-differ
-        cls, partition_fn: Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
+        cls,
+        partition_fn: Optional[
+            Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
+        ] = None,
+        name: Optional[str] = None,
     ):
+        partition_fn = check.opt_callable_param(partition_fn, "partition_fn")
+        name = check.opt_str_param(name, "name")
+
+        if name:
+            experimental_arg_warning("name", "DynamicPartitionsDefinition.__new__")
+
+        if partition_fn:
+            deprecation_warning(
+                "partition_fn", "2.0.0", "Provide partition definition name instead."
+            )
+
+        if partition_fn is None and name is None:
+            raise DagsterInvalidDefinitionError(
+                "Must provide either partition_fn or name to DynamicPartitionsDefinition."
+            )
+
+        if partition_fn and name:
+            raise DagsterInvalidDefinitionError(
+                "Cannot provide both partition_fn and name to DynamicPartitionsDefinition."
+            )
+
         return super(DynamicPartitionsDefinition, cls).__new__(
-            cls, check.callable_param(partition_fn, "partition_fn")
+            cls,
+            partition_fn=check.opt_callable_param(partition_fn, "partition_fn"),
+            name=check.opt_str_param(name, "name"),
         )
 
-    def get_partitions(self, current_time: Optional[datetime] = None) -> Sequence[Partition]:
-        partitions = self.partition_fn(current_time)
-        if all(isinstance(partition, Partition) for partition in partitions):
-            return cast(Sequence[Partition], partitions)
+    def _validated_name(self) -> str:
+        if self.name is None:
+            check.failed(
+                "Dynamic partitions definition must have a name to fetch dynamic partitions"
+            )
+        return self.name
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, DynamicPartitionsDefinition)
+            and self.name == other.name
+            and self.partition_fn == other.partition_fn
+        )
+
+    def __hash__(self):
+        return hash(tuple(self.__repr__()))
+
+    def __str__(self) -> str:
+        if self.name:
+            return f"Dynamic partitions definition {self._validated_name()}"
         else:
-            return [Partition(p) for p in partitions]
+            return super().__str__()
+
+    @property
+    def serializable_unique_identifier(self) -> str:
+        if not self.name:
+            return super().serializable_unique_identifier
+
+        return hashlib.sha1(self.__repr__().encode("utf-8")).hexdigest()
+
+    def get_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[Partition]:
+        if self.partition_fn:
+            partitions = self.partition_fn(current_time)
+            if all(isinstance(partition, Partition) for partition in partitions):
+                return cast(Sequence[Partition], partitions)
+            else:
+                return [Partition(p) for p in partitions]
+        else:
+            check.opt_inst_param(
+                dynamic_partitions_store, "dynamic_partitions_store", DynamicPartitionsStore
+            )
+
+            if dynamic_partitions_store is None:
+                check.failed(
+                    "The instance is not available to load partitions. You may be seeing this error"
+                    " when using dynamic partitions with a version of dagit or dagster-cloud that"
+                    " is older than 1.1.18."
+                )
+
+            partitions = dynamic_partitions_store.get_dynamic_partitions(
+                partitions_def_name=self._validated_name()
+            )
+            return [Partition(key) for key in partitions]
+
+    def add_partitions(self, partition_keys: Sequence[str], instance: DagsterInstance) -> None:
+        """
+        Add partitions to the specified partition definition.
+        Does not add any partitions that already exist.
+        """
+        check.sequence_param(partition_keys, "partition_keys", of_type=str)
+        check.inst_param(instance, "instance", DagsterInstance)
+
+        instance.add_dynamic_partitions(self._validated_name(), partition_keys)
+
+    def has_partition(self, partition_key: str, instance: DagsterInstance) -> bool:
+        """
+        Checks if a partition key exists for the partitions definition.
+        """
+        check.str_param(partition_key, "partition_key")
+        check.inst_param(instance, "instance", DagsterInstance)
+        return instance.has_dynamic_partition(self._validated_name(), partition_key)
+
+    def delete_partition(self, partition_key: str, instance: DagsterInstance) -> None:
+        """
+        Delete a partition for the specified partition definition.
+        If the partition does not exist, exits silently.
+        """
+        check.str_param(partition_key, "partition_key")
+        check.inst_param(instance, "instance", DagsterInstance)
+        instance.delete_dynamic_partition(self._validated_name(), partition_key)
 
 
 class PartitionSetDefinition(Generic[T]):
@@ -545,10 +769,10 @@ class PartitionSetDefinition(Generic[T]):
         )
         self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
         # Type ignores workaround for mypy bug "cannot assign to a method"
-        self._user_defined_run_config_fn_for_partition = check.callable_param(  # type: ignore
+        self._user_defined_run_config_fn_for_partition = check.callable_param(
             run_config_fn_for_partition, "run_config_fn_for_partition"
         )
-        self._user_defined_tags_fn_for_partition = check.callable_param(  # type: ignore
+        self._user_defined_tags_fn_for_partition = check.callable_param(
             tags_fn_for_partition, "tags_fn_for_partition"
         )
         if partitions_def is not None:
@@ -579,7 +803,7 @@ class PartitionSetDefinition(Generic[T]):
             if not current_time:
                 current_time = pendulum.now("UTC")
 
-            check.callable_param(partition_fn, "partition_fn")  # type: ignore
+            check.callable_param(partition_fn, "partition_fn")
 
             if partition_fn_param_count == 1:
                 obj_list = cast(
@@ -618,36 +842,53 @@ class PartitionSetDefinition(Generic[T]):
     def mode(self) -> Optional[str]:
         return self._mode
 
+    @property
+    def partitions_def(self) -> PartitionsDefinition:
+        return self._partitions_def
+
     def run_config_for_partition(self, partition: Partition[T]) -> Mapping[str, Any]:
-        return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))  # type: ignore
+        return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))
 
     def tags_for_partition(self, partition: Partition[T]) -> Mapping[str, str]:
         user_tags = validate_tags(
-            self._user_defined_tags_fn_for_partition(partition), allow_reserved_tags=False  # type: ignore
+            self._user_defined_tags_fn_for_partition(partition), allow_reserved_tags=False
         )
         tags = merge_dicts(user_tags, DagsterRun.tags_for_partition_set(self, partition))
 
         return tags
 
-    def get_partitions(self, current_time: Optional[datetime] = None) -> Sequence[Partition[T]]:
+    def get_partitions(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[Partition[T]]:
         """Return the set of known partitions.
 
         Arguments:
             current_time (Optional[datetime]): The evaluation time for the partition function, which
                 is passed through to the ``partition_fn`` (if it accepts a parameter).  Defaults to
                 the current time in UTC.
-        """
-        return self._partitions_def.get_partitions(current_time)
 
-    def get_partition(self, name: str) -> Partition[T]:
-        for partition in self.get_partitions():
+        """
+        return self._partitions_def.get_partitions(
+            current_time, dynamic_partitions_store=dynamic_partitions_store
+        )
+
+    def get_partition(
+        self, name: str, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
+    ) -> Partition[T]:
+        for partition in self.get_partitions(dynamic_partitions_store=dynamic_partitions_store):
             if partition.name == name:
                 return partition
 
         raise DagsterUnknownPartitionError(f"Could not find a partition with key `{name}`")
 
-    def get_partition_names(self, current_time: Optional[datetime] = None) -> Sequence[str]:
-        return [part.name for part in self.get_partitions(current_time)]
+    def get_partition_names(
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[str]:
+        return [part.name for part in self.get_partitions(current_time, dynamic_partitions_store)]
 
     def create_schedule_definition(
         self,
@@ -850,7 +1091,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
                 )
             date = check.opt_inst_param(kwargs[date_param_name], date_param_name, datetime)
 
-        return self._decorated_fn(date)
+        return self._decorated_fn(date)  # type: ignore
 
     def get_partition_set(self) -> PartitionSetDefinition:
         return self._partition_set
@@ -880,17 +1121,17 @@ class PartitionedConfig(Generic[T]):
             tags_for_partition_fn, "tags_for_partition_fn"
         )
 
-    @public  # type: ignore
+    @public
     @property
     def partitions_def(self) -> PartitionsDefinition[T]:  # pylint: disable=unsubscriptable-object
         return self._partitions
 
-    @public  # type: ignore
+    @public
     @property
     def run_config_for_partition_fn(self) -> Callable[[Partition[T]], Mapping[str, Any]]:
         return self._run_config_for_partition_fn
 
-    @public  # type: ignore
+    @public
     @property
     def tags_for_partition_fn(self) -> Optional[Callable[[Partition[T]], Mapping[str, str]]]:
         return self._tags_for_partition_fn
@@ -963,6 +1204,9 @@ def static_partitioned_config(
     Args:
         partition_keys (Sequence[str]): A list of valid partition keys, which serve as the range of
             values that can be provided to the decorated run config function.
+        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
+            accepts a partition key and returns a dictionary of tags to attach to runs for that
+            partition.
 
     Returns:
         PartitionedConfig
@@ -1005,6 +1249,9 @@ def dynamic_partitioned_config(
         partition_fn (Callable[[datetime.datetime], Sequence[str]]): A function that generates a
             list of valid partition keys, which serve as the range of values that can be provided
             to the decorated run config function.
+        tags_for_partition_fn (Optional[Callable[[str], Mapping[str, str]]]): A function that
+            accepts a partition key and returns a dictionary of tags to attach to runs for that
+            partition.
 
     Returns:
         PartitionedConfig
@@ -1051,7 +1298,9 @@ class PartitionsSubset(ABC):
 
     @abstractmethod
     def get_partition_keys_not_in_subset(
-        self, current_time: Optional[datetime] = None
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Iterable[str]:
         raise NotImplementedError()
 
@@ -1061,7 +1310,9 @@ class PartitionsSubset(ABC):
 
     @abstractmethod
     def get_partition_key_ranges(
-        self, current_time: Optional[datetime] = None
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
         raise NotImplementedError()
 
@@ -1070,10 +1321,14 @@ class PartitionsSubset(ABC):
         raise NotImplementedError()
 
     def with_partition_key_range(
-        self, partition_key_range: PartitionKeyRange
+        self,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "PartitionsSubset":
         return self.with_partition_keys(
-            self.partitions_def.get_partition_keys_in_range(partition_key_range)
+            self.partitions_def.get_partition_keys_in_range(
+                partition_key_range, dynamic_partitions_store=dynamic_partitions_store
+            )
         )
 
     @abstractmethod
@@ -1085,6 +1340,17 @@ class PartitionsSubset(ABC):
     def from_serialized(
         cls, partitions_def: PartitionsDefinition, serialized: str
     ) -> "PartitionsSubset":
+        raise NotImplementedError()
+
+    @classmethod
+    @abstractmethod
+    def can_deserialize(
+        cls,
+        partitions_def: PartitionsDefinition,
+        serialized: str,
+        serialized_partitions_def_unique_id: Optional[str],
+        serialized_partitions_def_class_name: Optional[str],
+    ) -> bool:
         raise NotImplementedError()
 
     @property
@@ -1100,6 +1366,11 @@ class PartitionsSubset(ABC):
     def __contains__(self, value) -> bool:
         raise NotImplementedError()
 
+    @classmethod
+    @abstractmethod
+    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
+        raise NotImplementedError()
+
 
 class DefaultPartitionsSubset(PartitionsSubset):
     # Every time we change the serialization format, we should increment the version number.
@@ -1112,19 +1383,30 @@ class DefaultPartitionsSubset(PartitionsSubset):
         self._subset = subset or set()
 
     def get_partition_keys_not_in_subset(
-        self, current_time: Optional[datetime] = None
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Iterable[str]:
         return (
-            set(self._partitions_def.get_partition_keys(current_time=current_time)) - self._subset
+            set(
+                self._partitions_def.get_partition_keys(
+                    current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+                )
+            )
+            - self._subset
         )
 
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Iterable[str]:
         return self._subset
 
     def get_partition_key_ranges(
-        self, current_time: Optional[datetime] = None
+        self,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
-        partition_keys = self._partitions_def.get_partition_keys(current_time)
+        partition_keys = self._partitions_def.get_partition_keys(
+            current_time, dynamic_partitions_store=dynamic_partitions_store
+        )
         cur_range_start = None
         cur_range_end = None
         result = []
@@ -1147,13 +1429,6 @@ class DefaultPartitionsSubset(PartitionsSubset):
         return DefaultPartitionsSubset(
             self._partitions_def,
             self._subset | set(partition_keys),
-        )
-
-    def with_partition_key_range(
-        self, partition_key_range: PartitionKeyRange
-    ) -> "PartitionsSubset":
-        return self.with_partition_keys(
-            self._partitions_def.get_partition_keys_in_range(partition_key_range)
         )
 
     def serialize(self) -> str:
@@ -1179,6 +1454,22 @@ class DefaultPartitionsSubset(PartitionsSubset):
                 )
             return cls(subset=set(data.get("subset")), partitions_def=partitions_def)
 
+    @classmethod
+    def can_deserialize(
+        cls,
+        partitions_def: PartitionsDefinition,
+        serialized: str,
+        serialized_partitions_def_unique_id: Optional[str],
+        serialized_partitions_def_class_name: Optional[str],
+    ) -> bool:
+        if serialized_partitions_def_class_name is not None:
+            return serialized_partitions_def_class_name == partitions_def.__class__.__name__
+
+        data = json.loads(serialized)
+        return isinstance(data, list) or (
+            data.get("subset") is not None and data.get("version") == cls.SERIALIZATION_VERSION
+        )
+
     @property
     def partitions_def(self) -> PartitionsDefinition:
         return self._partitions_def
@@ -1200,3 +1491,7 @@ class DefaultPartitionsSubset(PartitionsSubset):
         return (
             f"DefaultPartitionsSubset(subset={self._subset}, partitions_def={self._partitions_def})"
         )
+
+    @classmethod
+    def empty_subset(cls, partitions_def: PartitionsDefinition) -> "PartitionsSubset":
+        return cls(partitions_def=partitions_def)

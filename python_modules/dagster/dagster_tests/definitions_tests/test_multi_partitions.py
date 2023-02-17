@@ -6,10 +6,12 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     EventRecordsFilter,
+    IOManager,
     MultiPartitionKey,
     StaticPartitionsDefinition,
     asset,
     define_asset_job,
+    materialize,
     repository,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -313,4 +315,38 @@ def test_multipartitions_subset_addition(initial, added):
     )
     assert added_subset.get_partition_keys_not_in_subset(current_time=current_day) == set(
         expected_keys_not_in_updated_subset
+    )
+
+
+def test_asset_partition_key_is_multipartition_key():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert isinstance(context.asset_partition_key, MultiPartitionKey)
+
+        def load_input(self, context):
+            assert isinstance(context.asset_partition_key, MultiPartitionKey)
+            return 1
+
+    partitions_def = MultiPartitionsDefinition(
+        {"a": StaticPartitionsDefinition(["a"]), "b": StaticPartitionsDefinition(["b"])}
+    )
+
+    @asset(
+        partitions_def=partitions_def,
+        io_manager_key="my_io_manager",
+    )
+    def my_asset(context):
+        return 1
+
+    @asset(
+        partitions_def=partitions_def,
+        io_manager_key="my_io_manager",
+    )
+    def asset2(context, my_asset):
+        return 2
+
+    materialize(
+        [my_asset, asset2],
+        resources={"my_io_manager": MyIOManager()},
+        partition_key="a|b",
     )

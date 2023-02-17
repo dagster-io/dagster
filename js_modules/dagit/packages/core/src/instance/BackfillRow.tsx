@@ -131,10 +131,14 @@ export const BackfillRow = ({
         )}
       </td>
       <td>
-        {counts ? (
-          <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
+        {backfill.isValidSerialization ? (
+          counts ? (
+            <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
+          ) : (
+            <LoadingOrNone queryResult={queryResult} />
+          )
         ) : (
-          <LoadingOrNone queryResult={queryResult} />
+          <p>A partitions definition has changed since this backfill ran.</p>
         )}
       </td>
       <td>
@@ -253,7 +257,9 @@ const BackfillRunStatus = ({
   return statuses ? (
     <PartitionStatus
       partitionNames={backfill.partitionNames}
-      partitionStateForKey={(key) => runStatusToPartitionState(statuses[key])}
+      partitionStateForKey={(key, _) =>
+        runStatusToPartitionState(statuses.filter((s) => s.partitionName === key)[0].runStatus)
+      }
       splitPartitions={true}
       onClick={(partitionName) => {
         const entry = statuses.find((r) => r.partitionName === partitionName);

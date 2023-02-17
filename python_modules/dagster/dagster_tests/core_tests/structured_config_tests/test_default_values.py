@@ -17,7 +17,7 @@ def test_default_values():
         assert config.an_int == 2
         executed["yes"] = True
 
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
     assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
 
@@ -44,7 +44,7 @@ def test_default_value_primitive():
         assert config == "foo"
         executed["yes"] = True
 
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
     assert DecoratedOpFunction(a_primitive_config_op).has_config_arg()
 
@@ -108,7 +108,7 @@ def test_default_values_nested():
         assert config.another_nested.a_float == 1.0
         executed["yes"] = True
 
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
     assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
 

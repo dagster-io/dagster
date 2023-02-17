@@ -1,8 +1,6 @@
-from dagster._core.utils import check_dagster_package_version
+from dagster._core.libraries import DagsterLibraryRegistry
 
 try:
-    import dagster_managed_elements  # noqa: F401
-
     from .managed import (
         AirbyteConnection as AirbyteConnection,
         AirbyteDestination as AirbyteDestination,
@@ -30,4 +28,4 @@ from .resources import (
 from .types import AirbyteOutput as AirbyteOutput
 from .version import __version__ as __version__
 
-check_dagster_package_version("dagster-airbyte", __version__)
+DagsterLibraryRegistry.register("dagster-airbyte", __version__)

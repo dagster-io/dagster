@@ -4,15 +4,21 @@ host processes and user processes. They should contain no
 business logic or clever indexing. Use the classes in external.py
 for that.
 """
+import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
 
 import pendulum
 
 from dagster import (
     StaticPartitionsDefinition,
     _check as check,
+)
+from dagster._config.snap import (
+    ConfigFieldSnap,
+    ConfigSchemaSnapshot,
+    snap_from_config_type,
 )
 from dagster._core.definitions import (
     JobDefinition,
@@ -27,23 +33,34 @@ from dagster._core.definitions import (
 from dagster._core.definitions.asset_layer import AssetOutputInfo
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.assets_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import NodeOutputHandle
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import PartitionScheduleDefinition, ScheduleType
+from dagster._core.definitions.partition import (
+    DynamicPartitionsDefinition,
+    PartitionScheduleDefinition,
+    ScheduleType,
+)
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
     get_builtin_partition_mapping_types,
 )
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    SensorDefinition,
+    SensorType,
+)
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import PipelineSnapshot
+from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -60,6 +77,7 @@ class ExternalRepositoryData(
             ("external_asset_graph_data", Sequence["ExternalAssetNode"]),
             ("external_pipeline_datas", Optional[Sequence["ExternalPipelineData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
+            ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
         ],
     )
 ):
@@ -72,6 +90,7 @@ class ExternalRepositoryData(
         external_asset_graph_data: Optional[Sequence["ExternalAssetNode"]] = None,
         external_pipeline_datas: Optional[Sequence["ExternalPipelineData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
+        external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -99,6 +118,9 @@ class ExternalRepositoryData(
             ),
             external_job_refs=check.opt_nullable_sequence_param(
                 external_job_refs, "external_job_refs", of_type=ExternalJobRef
+            ),
+            external_resource_data=check.opt_nullable_sequence_param(
+                external_resource_data, "external_resource_data", of_type=ExternalResourceData
             ),
         )
 
@@ -401,7 +423,10 @@ class ExternalSensorMetadata(
 class ExternalSensorDataSerializer(DefaultNamedTupleSerializer):
     @classmethod
     def skip_when_empty(cls) -> Set[str]:
-        return {"default_status"}  # Maintain stable snapshot ID for back-compat purposes
+        return {
+            "default_status",
+            "sensor_type",
+        }  # Maintain stable snapshot ID for back-compat purposes
 
 
 @whitelist_for_serdes(serializer=ExternalSensorDataSerializer)
@@ -418,6 +443,7 @@ class ExternalSensorData(
             ("target_dict", Mapping[str, ExternalTargetData]),
             ("metadata", Optional[ExternalSensorMetadata]),
             ("default_status", Optional[DefaultSensorStatus]),
+            ("sensor_type", Optional[SensorType]),
         ],
     )
 ):
@@ -432,6 +458,7 @@ class ExternalSensorData(
         target_dict: Optional[Mapping[str, ExternalTargetData]] = None,
         metadata: Optional[ExternalSensorMetadata] = None,
         default_status: Optional[DefaultSensorStatus] = None,
+        sensor_type: Optional[SensorType] = None,
     ):
         if pipeline_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
@@ -465,6 +492,7 @@ class ExternalSensorData(
             default_status=DefaultSensorStatus.RUNNING
             if default_status == DefaultSensorStatus.RUNNING
             else None,
+            sensor_type=sensor_type,
         )
 
 
@@ -614,10 +642,17 @@ class ExternalStaticPartitionsDefinitionData(
 class ExternalPartitionDimensionDefinition(
     NamedTuple(
         "_ExternalPartitionDimensionDefinition",
-        [("name", str), ("external_partitions_def_data", ExternalPartitionsDefinitionData)],
+        [
+            ("name", str),
+            ("external_partitions_def_data", ExternalPartitionsDefinitionData),
+        ],
     )
 ):
-    def __new__(cls, name: str, external_partitions_def_data: ExternalPartitionsDefinitionData):
+    def __new__(
+        cls,
+        name: str,
+        external_partitions_def_data: ExternalPartitionsDefinitionData,
+    ):
         return super(ExternalPartitionDimensionDefinition, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -649,6 +684,15 @@ class ExternalMultiPartitionsDefinitionData(
                 for partition_dimension in self.external_partition_dimension_definitions
             }
         )
+
+
+@whitelist_for_serdes
+class ExternalDynamicPartitionsDefinitionData(
+    ExternalPartitionsDefinitionData,
+    NamedTuple("_ExternalDynamicPartitionsDefinitionData", [("name", str)]),
+):
+    def get_partitions_definition(self):
+        return DynamicPartitionsDefinition(name=self.name)
 
 
 @whitelist_for_serdes
@@ -834,6 +878,53 @@ class ExternalAssetDependedBy(
 
 
 @whitelist_for_serdes
+class ExternalResourceData(
+    NamedTuple(
+        "_ExternalResourceData",
+        [
+            ("name", str),
+            ("resource_snapshot", ResourceDefSnap),
+            ("configured_values", Dict[str, str]),
+            ("config_field_snaps", List[ConfigFieldSnap]),
+            ("config_schema_snap", ConfigSchemaSnapshot),
+        ],
+    )
+):
+    """
+    Serializable data associated with a top-level resource in a Repository, e.g. one bound using the Definitions API.
+
+    Includes information about the resource definition and config schema, user-passed values, etc.
+    """
+
+    def __new__(
+        cls,
+        name: str,
+        resource_snapshot: ResourceDefSnap,
+        configured_values: Mapping[str, str],
+        config_field_snaps: Sequence[ConfigFieldSnap],
+        config_schema_snap: ConfigSchemaSnapshot,
+    ):
+        return super(ExternalResourceData, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            resource_snapshot=check.inst_param(
+                resource_snapshot, "resource_snapshot", ResourceDefSnap
+            ),
+            configured_values=dict(
+                check.mapping_param(
+                    configured_values, "configured_values", key_type=str, value_type=str
+                )
+            ),
+            config_field_snaps=check.list_param(
+                config_field_snaps, "config_field_snaps", of_type=ConfigFieldSnap
+            ),
+            config_schema_snap=check.inst_param(
+                config_schema_snap, "config_schema_snap", ConfigSchemaSnapshot
+            ),
+        )
+
+
+@whitelist_for_serdes
 class ExternalAssetNode(
     NamedTuple(
         "_ExternalAssetNode",
@@ -961,6 +1052,8 @@ def external_repository_data_from_def(
         )
         job_refs = None
 
+    resource_datas = repository_def.get_top_level_resources()
+
     return ExternalRepositoryData(
         name=repository_def.name,
         external_schedule_datas=sorted(
@@ -983,6 +1076,13 @@ def external_repository_data_from_def(
         ),
         external_pipeline_datas=pipeline_datas,
         external_job_refs=job_refs,
+        external_resource_data=sorted(
+            [
+                external_resource_data_from_def(res_name, res_data)
+                for res_name, res_data in resource_datas.items()
+            ],
+            key=lambda rd: rd.name,
+        ),
     )
 
 
@@ -1084,13 +1184,18 @@ def external_asset_graph_from_defs(
                     group_name=source_asset.group_name,
                     is_source=True,
                     is_observable=source_asset.is_observable,
+                    partitions_def_data=external_partitions_definition_from_def(
+                        source_asset.partitions_def
+                    )
+                    if source_asset.partitions_def
+                    else None,
                 )
             )
 
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():
         node_output_handle, job_def = node_tuple_list[0]
 
-        node_def = job_def.graph.get_solid(node_output_handle.node_handle).definition
+        node_def = job_def.graph.get_node(node_output_handle.node_handle).definition
         output_def = node_def.output_def_named(node_output_handle.output_name)
 
         asset_info = asset_info_by_asset_key[asset_key]
@@ -1136,7 +1241,7 @@ def external_asset_graph_from_defs(
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
                 code_version=code_version_by_asset_key.get(asset_key),
-                op_description=node_def.description or output_def.description,
+                op_description=output_def.description or node_def.description,
                 node_definition_name=node_def.name,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,
@@ -1189,6 +1294,44 @@ def external_job_ref_from_def(pipeline_def: PipelineDefinition) -> ExternalJobRe
     )
 
 
+def external_resource_data_from_def(
+    name: str, resource_def: ResourceDefinition
+) -> ExternalResourceData:
+    check.inst_param(resource_def, "resource_def", ResourceDefinition)
+
+    # Once values on a resource object are bound, the config schema for those fields is no
+    # longer visible. We walk up the list of parent schemas to find the base, unconfigured
+    # schema so we can display all fields in the UI.
+    unconfigured_config_schema = resource_def.config_schema
+    while (
+        isinstance(unconfigured_config_schema, ConfiguredDefinitionConfigSchema)
+        and unconfigured_config_schema.parent_def.config_schema
+    ):
+        unconfigured_config_schema = unconfigured_config_schema.parent_def.config_schema
+
+    config_type = check.not_none(unconfigured_config_schema.config_type)
+    unconfigured_config_type_snap = snap_from_config_type(config_type)
+
+    # Right now, .configured sets the default value of the top-level Field
+    # we parse the JSON and break it out into defaults for each individual nested Field
+    # for display in the UI
+    configured_values_expanded = cast(
+        Mapping[str, Any],
+        json.loads(resource_def.config_schema.default_value_as_json_str)
+        if resource_def.config_schema.default_provided
+        else {},
+    )
+    configured_values = {k: json.dumps(v) for k, v in configured_values_expanded.items()}
+
+    return ExternalResourceData(
+        name=name,
+        resource_snapshot=build_resource_def_snap(name, resource_def),
+        configured_values=configured_values,
+        config_field_snaps=unconfigured_config_type_snap.fields or [],
+        config_schema_snap=config_type.get_schema_snapshot(),
+    )
+
+
 def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> ExternalScheduleData:
     check.inst_param(schedule_def, "schedule_def", ScheduleDefinition)
     return ExternalScheduleData(
@@ -1216,9 +1359,12 @@ def external_partitions_definition_from_def(
         return external_static_partitions_definition_from_def(partitions_def)
     elif isinstance(partitions_def, MultiPartitionsDefinition):
         return external_multi_partitions_definition_from_def(partitions_def)
+    elif isinstance(partitions_def, DynamicPartitionsDefinition):
+        return external_dynamic_partitions_definition_from_def(partitions_def)
     else:
         raise DagsterInvalidDefinitionError(
-            "Only static, time window, and multi-dimensional partitions are currently supported."
+            "Only static, time window, multi-dimensional partitions, and dynamic partitions"
+            " definitions with a name parameter are currently supported."
         )
 
 
@@ -1265,11 +1411,23 @@ def external_multi_partitions_definition_from_def(
     return ExternalMultiPartitionsDefinitionData(
         external_partition_dimension_definitions=[
             ExternalPartitionDimensionDefinition(
-                dimension.name, external_partitions_definition_from_def(dimension.partitions_def)
+                dimension.name,
+                external_partitions_definition_from_def(dimension.partitions_def),
             )
             for dimension in partitions_def.partitions_defs
         ]
     )
+
+
+def external_dynamic_partitions_definition_from_def(
+    partitions_def: DynamicPartitionsDefinition,
+) -> ExternalDynamicPartitionsDefinitionData:
+    check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)
+    if partitions_def.name is None:
+        raise DagsterInvalidDefinitionError(
+            "Dagit does not support dynamic partitions definitions without a name parameter."
+        )
+    return ExternalDynamicPartitionsDefinitionData(name=partitions_def.name)
 
 
 def external_partition_set_data_from_def(
@@ -1332,6 +1490,7 @@ def external_sensor_data_from_def(
         description=sensor_def.description,
         metadata=ExternalSensorMetadata(asset_keys=asset_keys),
         default_status=sensor_def.default_status,
+        sensor_type=sensor_def.sensor_type,
     )
 
 

@@ -11,6 +11,7 @@ from .sensor_definition import (
     RawSensorEvaluationFunctionReturn,
     SensorDefinition,
     SensorEvaluationContext,
+    SensorType,
 )
 from .target import ExecutableDefinition
 from .utils import check_valid_name
@@ -84,6 +85,9 @@ class AssetSensorDefinition(SensorDefinition):
                 )
 
                 if not event_records:
+                    yield SkipReason(
+                        f"No new materialization events found for asset key {self._asset_key}"
+                    )
                     return
 
                 event_record = event_records[0]
@@ -110,7 +114,11 @@ class AssetSensorDefinition(SensorDefinition):
             default_status=default_status,
         )
 
-    @public  # type: ignore
+    @public
     @property
     def asset_key(self):
         return self._asset_key
+
+    @property
+    def sensor_type(self) -> SensorType:
+        return SensorType.ASSET

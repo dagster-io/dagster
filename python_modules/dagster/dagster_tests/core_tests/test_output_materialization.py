@@ -9,44 +9,42 @@ from dagster import (
     Output,
     String,
     dagster_type_materializer,
+    graph,
+    op,
 )
+from dagster._core.definitions.input import In
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.output import Out
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.step import StepKind
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    solid,
-)
+from dagster._legacy import PipelineDefinition, execute_pipeline
 from dagster._utils.test import get_temp_file_name, get_temp_file_names
 
 
 def single_int_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int))
-    def return_one():
+    @op
+    def return_one() -> int:
         return 1
 
     return PipelineDefinition(name="single_int_output_pipeline", solid_defs=[return_one])
 
 
 def single_string_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(String))
-    def return_foo():
+    @op
+    def return_foo() -> str:
         return "foo"
 
     return PipelineDefinition(name="single_string_output_pipeline", solid_defs=[return_foo])
 
 
 def multiple_output_pipeline():
-    @solid(
-        output_defs=[
-            OutputDefinition(Int, "number"),
-            OutputDefinition(String, "string"),
-        ]
+    @op(
+        out={
+            "number": Out(Int),
+            "string": Out(String),
+        }
     )
     def return_one_and_foo(_context):
         yield Output(1, "number")
@@ -56,7 +54,7 @@ def multiple_output_pipeline():
 
 
 def single_int_named_output_pipeline():
-    @solid(output_defs=[OutputDefinition(Int, name="named")])
+    @op(out={"named": Out(Int)})
     def return_named_one():
         return 1
 
@@ -66,7 +64,7 @@ def single_int_named_output_pipeline():
 
 
 def no_input_no_output_pipeline():
-    @solid(output_defs=[])
+    @op
     def take_nothing_return_nothing(_context):
         pass
 
@@ -75,14 +73,16 @@ def no_input_no_output_pipeline():
     )
 
 
-def one_input_no_output_pipeline():
-    @solid(input_defs=[InputDefinition("dummy")], output_defs=[])
+def one_input_no_output_job():
+    @op(ins={"dummy": In()}, out={})
     def take_input_return_nothing(_context, **_kwargs):
         pass
 
-    return PipelineDefinition(
-        name="one_input_no_output_pipeline", solid_defs=[take_input_return_nothing]
-    )
+    @graph
+    def the_graph():
+        take_input_return_nothing()
+
+    return JobDefinition(name="one_input_no_output_job", graph_def=the_graph)
 
 
 def test_basic_json_default_output_config_schema():
@@ -91,8 +91,8 @@ def test_basic_json_default_output_config_schema():
         {"solids": {"return_one": {"outputs": [{"result": {"json": {"path": "foo"}}}]}}},
     )
 
-    assert env.solids["return_one"]
-    assert env.solids["return_one"].outputs.type_materializer_specs == [
+    assert env.ops["return_one"]
+    assert env.ops["return_one"].outputs.type_materializer_specs == [
         {"result": {"json": {"path": "foo"}}}
     ]
 
@@ -103,8 +103,8 @@ def test_basic_json_named_output_config_schema():
         {"solids": {"return_named_one": {"outputs": [{"named": {"json": {"path": "foo"}}}]}}},
     )
 
-    assert env.solids["return_named_one"]
-    assert env.solids["return_named_one"].outputs.type_materializer_specs == [
+    assert env.ops["return_named_one"]
+    assert env.ops["return_named_one"].outputs.type_materializer_specs == [
         {"named": {"json": {"path": "foo"}}}
     ]
 
@@ -140,15 +140,15 @@ def test_no_outputs_no_inputs_config_schema():
 
 def test_no_outputs_one_input_config_schema():
     assert ResolvedRunConfig.build(
-        one_input_no_output_pipeline(),
+        one_input_no_output_job(),
         {"solids": {"take_input_return_nothing": {"inputs": {"dummy": {"value": "value"}}}}},
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_context:
         ResolvedRunConfig.build(
-            one_input_no_output_pipeline(),
+            one_input_no_output_job(),
             {
-                "solids": {
+                "ops": {
                     "take_input_return_nothing": {
                         "inputs": {"dummy": {"value": "value"}},
                         "outputs": {},
@@ -160,7 +160,7 @@ def test_no_outputs_one_input_config_schema():
     assert len(exc_context.value.errors) == 1
     exp_msg = (
         'Error 1: Received unexpected config entry "outputs" at path'
-        " root:solids:take_input_return_nothing"
+        " root:ops:take_input_return_nothing"
     )
     assert exp_msg in exc_context.value.message
 
@@ -348,7 +348,7 @@ def yield_two_materializations(*_args, **_kwargs):
 def test_basic_yield_multiple_materializations():
     SomeDagsterType = create_any_type(name="SomeType", materializer=yield_two_materializations)
 
-    @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
+    @op(out=Out(SomeDagsterType))
     def return_one():
         return 1
 
@@ -380,7 +380,7 @@ def return_int(*_args, **_kwargs):
 def test_basic_bad_output_materialization():
     SomeDagsterType = create_any_type(name="SomeType", materializer=return_int)
 
-    @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
+    @op(out=Out(SomeDagsterType))
     def return_one():
         return 1
 

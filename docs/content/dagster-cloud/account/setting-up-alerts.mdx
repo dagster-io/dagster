@@ -14,10 +14,12 @@ In this guide, we'll walk you through configuring job alerts in Dagster Cloud.
 
 Alert policies define which events will trigger an alert, the conditions under which an alert will be sent, and how the alert will be sent.
 
-Currently, alerts can be triggered by job run failure/success, or schedule/sensor tick failure.
+Currently, alerts can be triggered by job run failure/success, schedule/sensor tick failure, code location load error, and agent downtime.
 
 - **Job run based alert policies** include a set of configured tags. If an alert policy has no configured tags, all jobs will be eligible for that alert. Otherwise, only jobs that contain all the tags for a given alert policy are eligible for that alert.
 - **Alert policies created for schedule/sensor tick failure will apply to all schedules/sensors**. However, you will only receive alerts when the schedule/sensor changes from a state of succeeding to failing, so subsequent failures will not trigger new alerts.
+- **Code location error alert policies** will trigger when a code location fails to load due to an error.
+- **Agent downtime alert policies** will trigger when a Hybrid agent stops heartbeating.
 
 Alert policies are configured on a per deployment basis. For example, alerts configured in a `prod` deployment are only applicable to jobs in that deployment.
 
@@ -41,13 +43,13 @@ Currently, Slack and email notifications are supported.
 
 1. Sign in to your Dagster Cloud account.
 
-2. Click the **user menu (your icon) > Cloud Settings**.
+2. In the top navigation, click **Deployment**
 
 3. Click the **Alerts** tab.
 
 4. Click **+ Create alert policy**.
 
-5. From the **Alert Policy Type** drop-down, select **Run Alert** or **Schedule/Sensor Alert**.
+5. From the **Alert Policy type** drop-down, select **Run alert**, **Schedule/Sensor alert**, **Code location error alert**, or **Agent downtime alert**.
 
 6. In the **Create alert policy** window, fill in the following:
 

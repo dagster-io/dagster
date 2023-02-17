@@ -5,7 +5,8 @@ import responses
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from dagster._legacy import ModeDefinition, execute_solid, solid
+from dagster import op
+from dagster._legacy import ModeDefinition, execute_solid
 from dagster_github import github_resource
 from dagster_github.resources import GithubResource
 
@@ -22,7 +23,7 @@ FAKE_PRIVATE_RSA_KEY = (
 
 @responses.activate
 def test_github_resource_get_installations():
-    @solid(required_resource_keys={"github"})
+    @op(required_resource_keys={"github"})
     def github_solid(context):
         assert context.resources.github
         with responses.RequestsMock() as rsps:
@@ -54,7 +55,7 @@ def test_github_resource_get_installations():
 
 @responses.activate
 def test_github_resource_get_installations_with_hostname():
-    @solid(required_resource_keys={"github"})
+    @op(required_resource_keys={"github"})
     def github_solid(context):
         assert context.resources.github
         with responses.RequestsMock() as rsps:
@@ -87,7 +88,7 @@ def test_github_resource_get_installations_with_hostname():
 
 @responses.activate
 def test_github_resource_create_issue():
-    @solid(required_resource_keys={"github"})
+    @op(required_resource_keys={"github"})
     def github_solid(context):
         assert context.resources.github
         with responses.RequestsMock() as rsps:
@@ -141,7 +142,7 @@ def test_github_resource_create_issue():
 
 @responses.activate
 def test_github_resource_execute():
-    @solid(required_resource_keys={"github"})
+    @op(required_resource_keys={"github"})
     def github_solid(context):
         assert context.resources.github
         with responses.RequestsMock() as rsps:

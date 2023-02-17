@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 import re
 
 import pandas as pd
@@ -80,7 +79,7 @@ def sample_schema_model(**config_attrs):
             cls, series: pa.typing.Series[str]
         ) -> pa.typing.Series[bool]:
             """Two words separated by underscore."""
-            return series.str.split("_", expand=True).shape[1] == 2
+            return series.str.split("_", expand=True).shape[1] == 2  # type: ignore  # (bad stubs)
 
         @pa.dataframe_check
         def a_gt_b(cls, df):  # pylint: disable=no-self-argument

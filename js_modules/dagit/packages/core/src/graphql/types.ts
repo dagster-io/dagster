@@ -193,6 +193,7 @@ export type AssetNode = {
   jobNames: Array<Scalars['String']>;
   jobs: Array<Pipeline>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
+  materializedPartitions: MaterializedPartitions;
   metadataEntries: Array<MetadataEntry>;
   op: Maybe<SolidDefinition>;
   opName: Maybe<Scalars['String']>;
@@ -201,7 +202,7 @@ export type AssetNode = {
   partitionDefinition: Maybe<PartitionDefinition>;
   partitionKeys: Array<Scalars['String']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
-  partitionMaterializationCounts: PartitionMaterializationCounts;
+  partitionStats: Maybe<PartitionStats>;
   projectedLogicalVersion: Maybe<Scalars['String']>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
@@ -226,6 +227,11 @@ export type AssetNodeAssetObservationsArgs = {
 
 export type AssetNodeLatestMaterializationByPartitionArgs = {
   partitions?: InputMaybe<Array<InputMaybe<Scalars['String']>>>;
+};
+
+export type AssetNodePartitionKeysByDimensionArgs = {
+  endIdx?: InputMaybe<Scalars['Int']>;
+  startIdx?: InputMaybe<Scalars['Int']>;
 };
 
 export type AssetNodeDefinitionCollision = {
@@ -384,6 +390,12 @@ export type ConfigTypeOrError =
   | PythonError
   | RegularConfigType;
 
+export type ConfiguredValue = {
+  __typename: 'ConfiguredValue';
+  key: Scalars['String'];
+  value: Scalars['String'];
+};
+
 export type ConflictingExecutionParamsError = Error & {
   __typename: 'ConflictingExecutionParamsError';
   message: Scalars['String'];
@@ -424,6 +436,8 @@ export type DagitMutation = {
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   resumePartitionBackfill: ResumeBackfillResult;
+  scheduleDryRun: ScheduleDryRunResult;
+  sensorDryRun: SensorDryRunResult;
   setNuxSeen: Scalars['Boolean'];
   setSensorCursor: SensorOrError;
   shutdownRepositoryLocation: ShutdownRepositoryLocationMutationResult;
@@ -485,6 +499,16 @@ export type DagitMutationResumePartitionBackfillArgs = {
   backfillId: Scalars['String'];
 };
 
+export type DagitMutationScheduleDryRunArgs = {
+  selectorData: ScheduleSelector;
+  timestamp?: InputMaybe<Scalars['Float']>;
+};
+
+export type DagitMutationSensorDryRunArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  selectorData: SensorSelector;
+};
+
 export type DagitMutationSetSensorCursorArgs = {
   cursor?: InputMaybe<Scalars['String']>;
   sensorSelector: SensorSelector;
@@ -528,6 +552,7 @@ export type DagitMutationWipeAssetsArgs = {
 
 export type DagitQuery = {
   __typename: 'DagitQuery';
+  allTopLevelResourceDetailsOrError: ResourcesOrError;
   assetNodeDefinitionCollisions: Array<AssetNodeDefinitionCollision>;
   assetNodeOrError: AssetNodeOrError;
   assetNodes: Array<AssetNode>;
@@ -566,9 +591,15 @@ export type DagitQuery = {
   sensorOrError: SensorOrError;
   sensorsOrError: SensorsOrError;
   shouldShowNux: Scalars['Boolean'];
+  test: Maybe<TestFields>;
+  topLevelResourceDetailsOrError: ResourceDetailsOrError;
   unloadableInstigationStatesOrError: InstigationStatesOrError;
   version: Scalars['String'];
   workspaceOrError: WorkspaceOrError;
+};
+
+export type DagitQueryAllTopLevelResourceDetailsOrErrorArgs = {
+  repositorySelector: RepositorySelector;
 };
 
 export type DagitQueryAssetNodeDefinitionCollisionsArgs = {
@@ -724,6 +755,10 @@ export type DagitQuerySensorsOrErrorArgs = {
   repositorySelector: RepositorySelector;
 };
 
+export type DagitQueryTopLevelResourceDetailsOrErrorArgs = {
+  resourceSelector: ResourceSelector;
+};
+
 export type DagitQueryUnloadableInstigationStatesOrErrorArgs = {
   instigationType?: InputMaybe<InstigationType>;
 };
@@ -801,6 +836,12 @@ export enum DagsterEventType {
   STEP_WORKER_STARTING = 'STEP_WORKER_STARTING',
 }
 
+export type DagsterLibraryVersion = {
+  __typename: 'DagsterLibraryVersion';
+  name: Scalars['String'];
+  version: Scalars['String'];
+};
+
 export type DagsterRunEvent =
   | AlertFailureEvent
   | AlertStartEvent
@@ -867,6 +908,12 @@ export type DagsterTypeOrError =
   | PythonError
   | RegularDagsterType;
 
+export type DefaultPartitions = {
+  __typename: 'DefaultPartitions';
+  materializedPartitions: Array<Scalars['String']>;
+  unmaterializedPartitions: Array<Scalars['String']>;
+};
+
 export type DeletePipelineRunResult =
   | DeletePipelineRunSuccess
   | PythonError
@@ -886,6 +933,7 @@ export type DeleteRunMutation = {
 export type DimensionDefinitionType = {
   __typename: 'DimensionDefinitionType';
   description: Scalars['String'];
+  isPrimaryDimension: Scalars['Boolean'];
   name: Scalars['String'];
   type: PartitionDefinitionType;
 };
@@ -900,6 +948,18 @@ export type DisplayableEvent = {
   description: Maybe<Scalars['String']>;
   label: Maybe<Scalars['String']>;
   metadataEntries: Array<MetadataEntry>;
+};
+
+export type DryRunInstigationTick = {
+  __typename: 'DryRunInstigationTick';
+  evaluationResult: Maybe<TickEvaluation>;
+  timestamp: Maybe<Scalars['Float']>;
+};
+
+export type DryRunInstigationTicks = {
+  __typename: 'DryRunInstigationTicks';
+  cursor: Scalars['Float'];
+  results: Array<DryRunInstigationTick>;
 };
 
 export type EngineEvent = DisplayableEvent &
@@ -1010,6 +1070,12 @@ export type EventConnection = {
 };
 
 export type EventConnectionOrError = EventConnection | PythonError | RunNotFoundError;
+
+export type EventTag = {
+  __typename: 'EventTag';
+  key: Scalars['String'];
+  value: Scalars['String'];
+};
 
 export type ExecutionMetadata = {
   parentRunId?: InputMaybe<Scalars['String']>;
@@ -1220,19 +1286,8 @@ export type FloatMetadataEntry = MetadataEntry & {
 export type FreshnessPolicy = {
   __typename: 'FreshnessPolicy';
   cronSchedule: Maybe<Scalars['String']>;
+  cronScheduleTimezone: Maybe<Scalars['String']>;
   maximumLagMinutes: Scalars['Float'];
-};
-
-export type FutureInstigationTick = {
-  __typename: 'FutureInstigationTick';
-  evaluationResult: Maybe<TickEvaluation>;
-  timestamp: Scalars['Float'];
-};
-
-export type FutureInstigationTicks = {
-  __typename: 'FutureInstigationTicks';
-  cursor: Scalars['Float'];
-  results: Array<FutureInstigationTick>;
 };
 
 export type Graph = SolidContainer & {
@@ -1435,7 +1490,7 @@ export type InstigationState = {
   id: Scalars['ID'];
   instigationType: InstigationType;
   name: Scalars['String'];
-  nextTick: Maybe<FutureInstigationTick>;
+  nextTick: Maybe<DryRunInstigationTick>;
   repositoryLocationName: Scalars['String'];
   repositoryName: Scalars['String'];
   repositoryOrigin: RepositoryOrigin;
@@ -1832,16 +1887,6 @@ export type MarshalledOutput = {
   outputName: Scalars['String'];
 };
 
-export type MaterializationCountGroupedByDimension = {
-  __typename: 'MaterializationCountGroupedByDimension';
-  materializationCountsGrouped: Array<Array<Scalars['Int']>>;
-};
-
-export type MaterializationCountSingleDimension = {
-  __typename: 'MaterializationCountSingleDimension';
-  materializationCounts: Array<Scalars['Int']>;
-};
-
 export type MaterializationEvent = DisplayableEvent &
   MessageEvent &
   StepEvent & {
@@ -1860,6 +1905,7 @@ export type MaterializationEvent = DisplayableEvent &
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
     stepStats: RunStepStats;
+    tags: Array<EventTag>;
     timestamp: Scalars['String'];
   };
 
@@ -1869,6 +1915,17 @@ export type MaterializationUpstreamDataVersion = {
   downstreamAssetKey: AssetKey;
   timestamp: Scalars['String'];
 };
+
+export type MaterializedPartitionRange2D = {
+  __typename: 'MaterializedPartitionRange2D';
+  primaryDimEndKey: Scalars['String'];
+  primaryDimEndTime: Maybe<Scalars['Float']>;
+  primaryDimStartKey: Scalars['String'];
+  primaryDimStartTime: Maybe<Scalars['Float']>;
+  secondaryDim: PartitionStatus1D;
+};
+
+export type MaterializedPartitions = DefaultPartitions | MultiPartitions | TimePartitions;
 
 export type MessageEvent = {
   eventType: Maybe<DagsterEventType>;
@@ -1927,6 +1984,12 @@ export type ModeNotFoundError = Error & {
   __typename: 'ModeNotFoundError';
   message: Scalars['String'];
   mode: Scalars['String'];
+};
+
+export type MultiPartitions = {
+  __typename: 'MultiPartitions';
+  primaryDimensionName: Scalars['String'];
+  ranges: Array<MaterializedPartitionRange2D>;
 };
 
 export type NoModeProvidedError = Error & {
@@ -2028,6 +2091,7 @@ export type ObservationEvent = DisplayableEvent &
     solidHandleID: Maybe<Scalars['String']>;
     stepKey: Maybe<Scalars['String']>;
     stepStats: RunStepStats;
+    tags: Array<EventTag>;
     timestamp: Scalars['String'];
   };
 
@@ -2078,6 +2142,7 @@ export type PartitionBackfill = {
   backfillId: Scalars['String'];
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
+  isValidSerialization: Scalars['Boolean'];
   numCancelable: Scalars['Int'];
   numPartitions: Scalars['Int'];
   partitionNames: Array<Scalars['String']>;
@@ -2113,18 +2178,16 @@ export type PartitionDefinition = {
   __typename: 'PartitionDefinition';
   description: Scalars['String'];
   dimensionTypes: Array<DimensionDefinitionType>;
+  timeWindowMetadata: Maybe<TimePartitionsDefinitionMetadata>;
   type: PartitionDefinitionType;
 };
 
 export enum PartitionDefinitionType {
+  DYNAMIC = 'DYNAMIC',
   MULTIPARTITIONED = 'MULTIPARTITIONED',
   STATIC = 'STATIC',
   TIME_WINDOW = 'TIME_WINDOW',
 }
-
-export type PartitionMaterializationCounts =
-  | MaterializationCountGroupedByDimension
-  | MaterializationCountSingleDimension;
 
 export type PartitionRun = {
   __typename: 'PartitionRun';
@@ -2190,6 +2253,12 @@ export type PartitionSets = {
 
 export type PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError;
 
+export type PartitionStats = {
+  __typename: 'PartitionStats';
+  numMaterialized: Scalars['Int'];
+  numPartitions: Scalars['Int'];
+};
+
 export type PartitionStatus = {
   __typename: 'PartitionStatus';
   id: Scalars['String'];
@@ -2198,6 +2267,8 @@ export type PartitionStatus = {
   runId: Maybe<Scalars['String']>;
   runStatus: Maybe<RunStatus>;
 };
+
+export type PartitionStatus1D = DefaultPartitions | TimePartitions;
 
 export type PartitionStatusCounts = {
   __typename: 'PartitionStatusCounts';
@@ -2593,6 +2664,7 @@ export type RepositoriesOrError = PythonError | RepositoryConnection;
 
 export type Repository = {
   __typename: 'Repository';
+  allTopLevelResourceDetails: Array<ResourceDetails>;
   assetGroups: Array<AssetGroup>;
   assetNodes: Array<AssetNode>;
   displayMetadata: Array<RepositoryMetadata>;
@@ -2620,6 +2692,7 @@ export type RepositoryConnection = {
 
 export type RepositoryLocation = {
   __typename: 'RepositoryLocation';
+  dagsterLibraryVersions: Maybe<Array<DagsterLibraryVersion>>;
   environmentPath: Maybe<Scalars['String']>;
   id: Scalars['ID'];
   isReloadSupported: Scalars['Boolean'];
@@ -2674,6 +2747,21 @@ export type Resource = {
   description: Maybe<Scalars['String']>;
   name: Scalars['String'];
 };
+
+export type ResourceDetails = {
+  __typename: 'ResourceDetails';
+  configFields: Array<ConfigTypeField>;
+  configuredValues: Array<ConfiguredValue>;
+  description: Maybe<Scalars['String']>;
+  name: Scalars['String'];
+};
+
+export type ResourceDetailsList = {
+  __typename: 'ResourceDetailsList';
+  results: Array<ResourceDetails>;
+};
+
+export type ResourceDetailsOrError = PythonError | ResourceDetails | ResourceNotFoundError;
 
 export type ResourceInitFailureEvent = DisplayableEvent &
   ErrorEvent &
@@ -2734,10 +2822,24 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
     timestamp: Scalars['String'];
   };
 
+export type ResourceNotFoundError = Error & {
+  __typename: 'ResourceNotFoundError';
+  message: Scalars['String'];
+  resourceName: Scalars['String'];
+};
+
 export type ResourceRequirement = {
   __typename: 'ResourceRequirement';
   resourceKey: Scalars['String'];
 };
+
+export type ResourceSelector = {
+  repositoryLocationName: Scalars['String'];
+  repositoryName: Scalars['String'];
+  resourceName: Scalars['String'];
+};
+
+export type ResourcesOrError = PythonError | RepositoryNotFoundError | ResourceDetailsList;
 
 export type ResumeBackfillResult = PythonError | ResumeBackfillSuccess | UnauthorizedError;
 
@@ -3071,13 +3173,14 @@ export type Schedule = {
   cronSchedule: Scalars['String'];
   description: Maybe<Scalars['String']>;
   executionTimezone: Maybe<Scalars['String']>;
-  futureTick: FutureInstigationTick;
-  futureTicks: FutureInstigationTicks;
+  futureTick: DryRunInstigationTick;
+  futureTicks: DryRunInstigationTicks;
   id: Scalars['ID'];
   mode: Scalars['String'];
   name: Scalars['String'];
   partitionSet: Maybe<PartitionSet>;
   pipelineName: Scalars['String'];
+  potentialTickTimestamps: Array<Scalars['Float']>;
   scheduleState: InstigationState;
   solidSelection: Maybe<Array<Maybe<Scalars['String']>>>;
 };
@@ -3092,11 +3195,19 @@ export type ScheduleFutureTicksArgs = {
   until?: InputMaybe<Scalars['Float']>;
 };
 
+export type SchedulePotentialTickTimestampsArgs = {
+  lowerLimit?: InputMaybe<Scalars['Int']>;
+  startTimestamp?: InputMaybe<Scalars['Float']>;
+  upperLimit?: InputMaybe<Scalars['Int']>;
+};
+
 export type ScheduleData = {
   __typename: 'ScheduleData';
   cronSchedule: Scalars['String'];
   startTimestamp: Maybe<Scalars['Float']>;
 };
+
+export type ScheduleDryRunResult = DryRunInstigationTick | PythonError | ScheduleNotFoundError;
 
 export type ScheduleMutationResult = PythonError | ScheduleStateResult | UnauthorizedError;
 
@@ -3181,8 +3292,9 @@ export type Sensor = {
   metadata: SensorMetadata;
   minIntervalSeconds: Scalars['Int'];
   name: Scalars['String'];
-  nextTick: Maybe<FutureInstigationTick>;
+  nextTick: Maybe<DryRunInstigationTick>;
   sensorState: InstigationState;
+  sensorType: SensorType;
   targets: Maybe<Array<Target>>;
 };
 
@@ -3192,6 +3304,8 @@ export type SensorData = {
   lastRunKey: Maybe<Scalars['String']>;
   lastTickTimestamp: Maybe<Scalars['Float']>;
 };
+
+export type SensorDryRunResult = DryRunInstigationTick | PythonError | SensorNotFoundError;
 
 export type SensorMetadata = {
   __typename: 'SensorMetadata';
@@ -3211,6 +3325,15 @@ export type SensorSelector = {
   repositoryName: Scalars['String'];
   sensorName: Scalars['String'];
 };
+
+export enum SensorType {
+  ASSET = 'ASSET',
+  FRESHNESS_POLICY = 'FRESHNESS_POLICY',
+  MULTI_ASSET = 'MULTI_ASSET',
+  RUN_STATUS = 'RUN_STATUS',
+  STANDARD = 'STANDARD',
+  UNKNOWN = 'UNKNOWN',
+}
 
 export type Sensors = {
   __typename: 'Sensors';
@@ -3498,6 +3621,11 @@ export type TerminateRunSuccess = TerminatePipelineExecutionSuccess & {
   run: Run;
 };
 
+export type TestFields = {
+  __typename: 'TestFields';
+  alwaysException: Maybe<Scalars['String']>;
+};
+
 export type TextMetadataEntry = MetadataEntry & {
   __typename: 'TextMetadataEntry';
   description: Maybe<Scalars['String']>;
@@ -3507,9 +3635,31 @@ export type TextMetadataEntry = MetadataEntry & {
 
 export type TickEvaluation = {
   __typename: 'TickEvaluation';
+  cursor: Maybe<Scalars['String']>;
   error: Maybe<PythonError>;
-  runRequests: Maybe<Array<Maybe<RunRequest>>>;
+  runRequests: Maybe<Array<RunRequest>>;
   skipReason: Maybe<Scalars['String']>;
+};
+
+export type TimePartitionRange = {
+  __typename: 'TimePartitionRange';
+  endKey: Scalars['String'];
+  endTime: Scalars['Float'];
+  startKey: Scalars['String'];
+  startTime: Scalars['Float'];
+};
+
+export type TimePartitions = {
+  __typename: 'TimePartitions';
+  ranges: Array<TimePartitionRange>;
+};
+
+export type TimePartitionsDefinitionMetadata = {
+  __typename: 'TimePartitionsDefinitionMetadata';
+  endKey: Scalars['String'];
+  endTime: Scalars['Float'];
+  startKey: Scalars['String'];
+  startTime: Scalars['Float'];
 };
 
 export type TypeCheck = DisplayableEvent & {
