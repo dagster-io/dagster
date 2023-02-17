@@ -41,19 +41,18 @@ from dagster._legacy import (
     PresetDefinition,
     execute_pipeline,
     pipeline,
-    solid,
 )
 from dagster._utils import file_relative_path
 from dagster._utils.merger import merge_dicts
 from dagster.version import __version__
 
 
-@solid
+@op
 def do_something():
     return 1
 
 
-@solid
+@op
 def do_input(x):
     return x
 
@@ -190,7 +189,7 @@ def define_bar_sensors():
     return {"foo_sensor": foo_sensor}
 
 
-@solid(version="foo")
+@op(version="foo")
 def my_solid():
     return 5
 
@@ -230,12 +229,12 @@ def bar():
     }
 
 
-@solid
+@op
 def spew(context):
     context.log.info("HELLO WORLD")
 
 
-@solid
+@op
 def fail(context):
     raise Exception("I AM SUPPOSED TO FAIL")
 

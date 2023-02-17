@@ -14,6 +14,9 @@ from dagster import (
     multiprocess_executor,
     reconstructable,
 )
+from dagster._core.definitions import op
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
@@ -21,12 +24,9 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
     PresetDefinition,
     execute_pipeline,
     pipeline,
-    solid,
 )
 from dagster._utils import safe_tempfile_path, segfault
 
@@ -116,19 +116,19 @@ def test_forkserver_preload():
 
 
 def define_diamond_pipeline():
-    @solid
+    @op
     def return_two():
         return 2
 
-    @solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def add_three(num):
         return num + 3
 
-    @solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def mult_three(num):
         return num * 3
 
-    @solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
+    @op(ins={"left": In(), "right": In()})
     def adder(left, right):
         return left + right
 
@@ -153,11 +153,11 @@ def define_diamond_pipeline():
 
 
 def define_in_mem_pipeline():
-    @solid
+    @op
     def return_two():
         return 2
 
-    @solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def add_three(num):
         return num + 3
 
@@ -169,11 +169,11 @@ def define_in_mem_pipeline():
 
 
 def define_error_pipeline():
-    @solid
+    @op
     def should_never_execute(_x):
         assert False  # this should never execute
 
-    @solid
+    @op
     def throw_error():
         raise Exception("bad programmer")
 
@@ -265,7 +265,7 @@ def test_solid_selection():
 
 
 def define_subdag_pipeline():
-    @solid(config_schema=Field(String))
+    @op(config_schema=Field(String))
     def waiter(context):
         done = False
         while not done:
@@ -273,8 +273,8 @@ def define_subdag_pipeline():
             if os.path.isfile(context.op_config):
                 return
 
-    @solid(
-        input_defs=[InputDefinition("after", Nothing)],
+    @op(
+        ins={"after": In(Nothing)},
         config_schema=Field(String),
     )
     def writer(context):
@@ -282,9 +282,9 @@ def define_subdag_pipeline():
             fd.write("1")
         return
 
-    @solid(
-        input_defs=[InputDefinition("after", Nothing)],
-        output_defs=[OutputDefinition(Nothing)],
+    @op(
+        ins={"after": In(Nothing)},
+        out=Out(Nothing),
     )
     def noop():
         pass
@@ -352,17 +352,17 @@ def test_ephemeral_event_log():
         assert result.result_for_node("adder").output_value() == 11
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(name="option_1", is_required=False),
-        OutputDefinition(name="option_2", is_required=False),
-    ]
+@op(
+    out={
+        "option_1": Out(is_required=False),
+        "option_2": Out(is_required=False),
+    }
 )
 def either_or(_context):
     yield Output(1, "option_1")
 
 
-@solid
+@op
 def echo(x):
     return x
 
@@ -393,7 +393,7 @@ def test_optional_outputs():
         assert len([event for event in multi_result.step_event_list if event.is_step_skipped]) == 2
 
 
-@solid
+@op
 def throw():
     raise Failure(
         description="it Failure",
@@ -429,7 +429,7 @@ def test_failure_multiprocessing():
         assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
 
 
-@solid
+@op
 def sys_exit(context):
     context.log.info("Informational message")
     print("Crashy output to stdout")  # pylint: disable=print-call
@@ -484,7 +484,7 @@ def test_crash_multiprocessing():
 
 
 # segfault test
-@solid
+@op
 def segfault_solid(context):
     context.log.info("Informational message")
     print("Crashy output to stdout")  # pylint: disable=print-call

@@ -19,15 +19,14 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.output import GraphOut
 from dagster._core.errors import DagsterMaxRetriesExceededError
-from dagster._legacy import solid
 
 
 def get_solids():
-    @solid
+    @op
     def emit_one():
         return 1
 
-    @solid
+    @op
     def add(x, y):
         return x + y
 
@@ -107,7 +106,7 @@ def test_execute_graph():
 
 
 def test_graph_with_required_resources():
-    @solid(required_resource_keys={"a"})
+    @op(required_resource_keys={"a"})
     def basic_reqs(context):
         return context.resources.a
 
@@ -128,7 +127,7 @@ def test_graph_with_required_resources():
 
 def test_executor_config_ignored_by_execute_in_process():
     # Ensure that execute_in_process is able to properly ignore provided executor config.
-    @solid
+    @op
     def my_solid():
         return 0
 

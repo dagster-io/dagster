@@ -11,8 +11,9 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.decorators import op
 from dagster._core.utils import coerce_valid_log_level
-from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
 from dagster._utils.test import execute_solids_within_pipeline
 
 from dagster_tests.general_tests.test_legacy_repository import (
@@ -48,7 +49,7 @@ def test_error_on_invalid_resource_key():
 
 
 def test_mode_from_resources():
-    @solid(required_resource_keys={"three"})
+    @op(required_resource_keys={"three"})
     def ret_three(context):
         return context.resources.three
 
@@ -170,7 +171,7 @@ def test_mode_with_resource_deps():
     def resource_a():
         return 1
 
-    @solid(required_resource_keys={"a"})
+    @op(required_resource_keys={"a"})
     def requires_a(context):
         called["count"] += 1
         assert context.resources.a == 1
@@ -195,7 +196,7 @@ def test_mode_with_resource_deps():
             mode_defs=[ModeDefinition(resource_defs={"ab": resource_a})],
         )
 
-    @solid(required_resource_keys={"a"})
+    @op(required_resource_keys={"a"})
     def no_deps(context):
         called["count"] += 1
         assert context.resources.a == 1
@@ -218,7 +219,7 @@ def test_subset_with_mode_definitions():
     def resource_a():
         return 1
 
-    @solid(required_resource_keys={"a"})
+    @op(required_resource_keys={"a"})
     def requires_a(context):
         called["a"] += 1
         assert context.resources.a == 1
@@ -227,7 +228,7 @@ def test_subset_with_mode_definitions():
     def resource_b():
         return 2
 
-    @solid(required_resource_keys={"b"})
+    @op(required_resource_keys={"b"})
     def requires_b(context):
         called["b"] += 1
         assert context.resources.b == 2
@@ -270,7 +271,7 @@ def define_multi_mode_with_loggers_pipeline():
         logger_.setLevel(coerce_valid_log_level(init_context.logger_config["log_level"]))
         return logger_
 
-    @solid
+    @op
     def return_six(context):
         context.log.critical("Here we are")
         return 6

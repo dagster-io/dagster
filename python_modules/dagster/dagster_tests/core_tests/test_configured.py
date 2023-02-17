@@ -1,10 +1,11 @@
 from dagster import resource
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._core.definitions.decorators import op
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 def test_configured_solids_and_resources():
     # idiomatic usage
-    @solid(config_schema={"greeting": str}, required_resource_keys={"animal", "plant"})
+    @op(config_schema={"greeting": str}, required_resource_keys={"animal", "plant"})
     def emit_greet_creature(context):
         greeting = context.op_config["greeting"]
         return f"{greeting}, {context.resources.animal}, {context.resources.plant}"

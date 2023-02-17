@@ -16,6 +16,7 @@ from dagster import (
     fs_io_manager,
 )
 from dagster._config import Array, Field
+from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (
@@ -29,7 +30,7 @@ from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
-from dagster._legacy import ModeDefinition, pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline
 from dagster._serdes import ConfigurableClass
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
@@ -76,7 +77,7 @@ def nesting_graph_pipeline(depth, num_children, *args, **kwargs):
     Total number of solids will be num_children ^ depth
     """
 
-    @solid
+    @op
     def leaf_node(_):
         return 1
 

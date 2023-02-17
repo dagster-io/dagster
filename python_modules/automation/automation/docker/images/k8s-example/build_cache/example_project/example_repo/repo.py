@@ -1,25 +1,24 @@
 import os
 from collections import Counter
 
-from dagster import file_relative_path, repository
+from dagster import In, file_relative_path, repository
+from dagster._core.definitions.decorators import op
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
     PresetDefinition,
     default_executors,
     pipeline,
-    solid,
 )
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_celery_k8s import celery_k8s_job_executor
 
 
-@solid(input_defs=[InputDefinition("word", str)], config_schema={"factor": int})
+@op(ins={"word": In()}, config_schema={"factor": int})
 def multiply_the_word(context, word):
     return word * context.op_config["factor"]
 
 
-@solid(input_defs=[InputDefinition("word")])
+@op(ins={"word": In()})
 def count_letters(_context, word):
     return dict(Counter(word))
 

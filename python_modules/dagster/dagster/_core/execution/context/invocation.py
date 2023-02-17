@@ -15,7 +15,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.composition import PendingNodeInvocation
-from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetMaterialization,

@@ -24,7 +24,7 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
-from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,

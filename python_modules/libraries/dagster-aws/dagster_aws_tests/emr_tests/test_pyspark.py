@@ -5,16 +5,16 @@ from unittest import mock
 
 import pytest
 from dagster import reconstructable
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.input import In
 from dagster._core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.definitions.output import Out
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     execute_pipeline,
     pipeline,
-    solid,
 )
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.test import create_test_pipeline_execution_context
@@ -38,8 +38,8 @@ BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG = {
 }
 
 
-@solid(
-    output_defs=[OutputDefinition(DataFrame)],
+@op(
+    out=Out(DataFrame),
     required_resource_keys={"pyspark_step_launcher", "pyspark"},
 )
 def make_df_solid(context):
@@ -52,12 +52,12 @@ def make_df_solid(context):
     return context.resources.pyspark.spark_session.createDataFrame(rows, schema)
 
 
-@solid(
+@op(
     name="blah",
     description="this is a test",
     config_schema={"foo": str, "bar": int},
-    input_defs=[InputDefinition("people", DataFrame)],
-    output_defs=[OutputDefinition(DataFrame)],
+    ins={"people": In(DataFrame)},
+    out=Out(DataFrame),
     required_resource_keys={"pyspark_step_launcher"},
 )
 def filter_df_solid(_, people):
@@ -92,7 +92,7 @@ def define_pyspark_pipe():
     return pyspark_pipe
 
 
-@solid(
+@op(
     required_resource_keys={"pyspark_step_launcher", "pyspark"},
 )
 def do_nothing_solid(_):

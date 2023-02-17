@@ -1,3 +1,5 @@
+from dagster._core.definitions.decorators import op
+
 """
 Repository of test pipelines.
 """
@@ -5,7 +7,7 @@ Repository of test pipelines.
 import pytest
 from dagster import Int, fs_io_manager, repository, resource
 from dagster._check import CheckError
-from dagster._legacy import ModeDefinition, PipelineDefinition, PresetDefinition, solid
+from dagster._legacy import ModeDefinition, PipelineDefinition, PresetDefinition
 from dagster._utils import file_relative_path
 
 
@@ -14,7 +16,7 @@ def define_empty_pipeline():
 
 
 def define_single_mode_pipeline():
-    @solid
+    @op
     def return_two(_context):
         return 2
 
@@ -26,7 +28,7 @@ def define_single_mode_pipeline():
 
 
 def define_multi_mode_pipeline():
-    @solid
+    @op
     def return_three(_context):
         return 3
 
@@ -55,7 +57,7 @@ def define_multi_mode_with_resources_pipeline():
             + init_context.resource_config["num_two"]
         )
 
-    @solid(required_resource_keys={"op"})
+    @op(required_resource_keys={"op"})
     def apply_to_three(context):
         return context.resources.op(3)
 

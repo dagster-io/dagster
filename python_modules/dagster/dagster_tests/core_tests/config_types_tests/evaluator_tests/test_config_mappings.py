@@ -8,18 +8,20 @@ from dagster import (
     String,
     graph,
 )
+from dagster._core.definitions import op
 from dagster._core.definitions.config import ConfigMapping
-from dagster._legacy import InputDefinition, execute_pipeline, pipeline, solid
+from dagster._core.definitions.input import In
+from dagster._legacy import execute_pipeline, pipeline
 
 
 # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
 # no longer true? refactor these tests?
-@solid(input_defs=[InputDefinition("input_str")])
+@op
 def pipe(input_str):
     return input_str
 
 
-@solid(config_schema=Field(String, is_required=False))
+@op(config_schema=Field(String, is_required=False))
 def scalar_config_solid(context):
     yield Output(context.op_config)
 
@@ -251,7 +253,7 @@ def test_config_mapper_throws_nested():
 
 
 def test_composite_config_field():
-    @solid(config_schema={"inner": Field(String)})
+    @op(config_schema={"inner": Field(String)})
     def inner_solid(context):
         return context.op_config["inner"]
 
@@ -274,7 +276,7 @@ def test_composite_config_field():
 
 
 def test_nested_composite_config_field():
-    @solid(config_schema={"inner": Field(String)})
+    @op(config_schema={"inner": Field(String)})
     def inner_solid(context):
         return context.op_config["inner"]
 
@@ -308,15 +310,15 @@ def test_nested_composite_config_field():
 
 
 def test_nested_with_inputs():
-    @solid(
-        input_defs=[InputDefinition("some_input", String)],
+    @op(
+        ins={"some_input": In(String)},
         config_schema={"basic_key": Field(String)},
     )
     def basic(context, some_input):
         yield Output(context.op_config["basic_key"] + " - " + some_input)
 
     @graph(
-        input_defs=[InputDefinition("some_input", String)],
+        ins={"some_input": In(String)},
         config=ConfigMapping(
             config_fn=lambda cfg: {
                 "basic": {"config": {"basic_key": "override." + cfg["inner_first"]}}
@@ -355,15 +357,15 @@ def test_nested_with_inputs():
 
 
 def test_wrap_none_config_and_inputs():
-    @solid(
+    @op(
         config_schema={
             "config_field_a": Field(String),
             "config_field_b": Field(String),
         },
-        input_defs=[
-            InputDefinition("input_a", String),
-            InputDefinition("input_b", String),
-        ],
+        ins={
+            "input_a": In(String),
+            "input_b": In(String),
+        },
     )
     def basic(context, input_a, input_b):
         res = ".".join(
@@ -472,15 +474,15 @@ def test_wrap_none_config_and_inputs():
 
 
 def test_wrap_all_config_no_inputs():
-    @solid(
+    @op(
         config_schema={
             "config_field_a": Field(String),
             "config_field_b": Field(String),
         },
-        input_defs=[
-            InputDefinition("input_a", String),
-            InputDefinition("input_b", String),
-        ],
+        ins={
+            "input_a": In(String),
+            "input_b": In(String),
+        },
     )
     def basic(context, input_a, input_b):
         res = ".".join(
@@ -494,10 +496,10 @@ def test_wrap_all_config_no_inputs():
         yield Output(res)
 
     @graph(
-        input_defs=[
-            InputDefinition("input_a", String),
-            InputDefinition("input_b", String),
-        ],
+        ins={
+            "input_a": In(String),
+            "input_b": In(String),
+        },
         config=ConfigMapping(
             config_fn=lambda cfg: {
                 "basic": {
@@ -593,15 +595,15 @@ def test_wrap_all_config_no_inputs():
 
 
 def test_wrap_all_config_one_input():
-    @solid(
+    @op(
         config_schema={
             "config_field_a": Field(String),
             "config_field_b": Field(String),
         },
-        input_defs=[
-            InputDefinition("input_a", String),
-            InputDefinition("input_b", String),
-        ],
+        ins={
+            "input_a": In(String),
+            "input_b": In(String),
+        },
     )
     def basic(context, input_a, input_b):
         res = ".".join(
@@ -615,7 +617,7 @@ def test_wrap_all_config_one_input():
         yield Output(res)
 
     @graph(
-        input_defs=[InputDefinition("input_a", String)],
+        ins={"input_a": In(String)},
         config=ConfigMapping(
             config_fn=lambda cfg: {
                 "basic": {
@@ -703,15 +705,15 @@ def test_wrap_all_config_one_input():
 
 
 def test_wrap_all_config_and_inputs():
-    @solid(
+    @op(
         config_schema={
             "config_field_a": Field(String),
             "config_field_b": Field(String),
         },
-        input_defs=[
-            InputDefinition("input_a", String),
-            InputDefinition("input_b", String),
-        ],
+        ins={
+            "input_a": In(String),
+            "input_b": In(String),
+        },
     )
     def basic(context, input_a, input_b):
         res = ".".join(
@@ -850,7 +852,7 @@ def test_nested_empty_config():
 
 
 def test_nested_empty_config_input():
-    @solid
+    @op
     def number(num):
         return num
 

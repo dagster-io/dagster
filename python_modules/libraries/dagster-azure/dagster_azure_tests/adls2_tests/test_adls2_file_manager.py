@@ -2,13 +2,12 @@ import uuid
 from unittest import mock
 
 from dagster import ResourceDefinition, build_op_context, configured, op
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     execute_pipeline,
     pipeline,
-    solid,
 )
 from dagster_azure.adls2 import (
     ADLS2FileHandle,
@@ -97,15 +96,15 @@ def create_adls2_key(run_id, step_key, output_name):
 def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
     bar_bytes = b"bar"
 
-    @solid(
-        output_defs=[OutputDefinition(ADLS2FileHandle)],
+    @op(
+        out=Out(ADLS2FileHandle),
         required_resource_keys={"file_manager"},
     )
     def emit_file(context):
         return context.resources.file_manager.write_data(bar_bytes)
 
-    @solid(
-        input_defs=[InputDefinition("file_handle", ADLS2FileHandle)],
+    @op(
+        ins={"file_handle": In(ADLS2FileHandle)},
         required_resource_keys={"file_manager"},
     )
     def accept_file(context, file_handle):

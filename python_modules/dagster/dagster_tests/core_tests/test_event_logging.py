@@ -2,9 +2,10 @@ import logging
 from collections import defaultdict
 
 from dagster import DagsterEvent
+from dagster._core.definitions.decorators import op
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry, construct_event_logger
-from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_as
 
@@ -61,7 +62,7 @@ def test_empty_pipeline():
 def test_single_solid_pipeline_success():
     events = defaultdict(list)
 
-    @solid
+    @op
     def solid_one():
         return 1
 
@@ -98,7 +99,7 @@ def test_single_solid_pipeline_success():
 def test_single_solid_pipeline_failure():
     events = defaultdict(list)
 
-    @solid
+    @op
     def solid_one():
         raise Exception("nope")
 
@@ -129,7 +130,7 @@ def test_single_solid_pipeline_failure():
 
 
 def define_simple():
-    @solid
+    @op
     def yes():
         return "yes"
 

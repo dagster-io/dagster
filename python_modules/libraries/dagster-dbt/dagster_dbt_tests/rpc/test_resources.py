@@ -1,6 +1,7 @@
 import pytest
 import responses
-from dagster._legacy import ModeDefinition, execute_solid, solid
+from dagster import op
+from dagster._legacy import ModeDefinition, execute_solid
 from dagster_dbt import (
     DbtRpcOutput,
     DbtRpcResource,
@@ -89,7 +90,7 @@ def test_poll(client):
 def test_dbt_rpc_resource():
     it = {}
 
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def a_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcResource)
         assert context.resources.dbt_rpc.host == "<default host>"
@@ -109,7 +110,7 @@ def test_dbt_rpc_resource():
 def test_local_dbt_rpc_resource():
     it = {}
 
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def a_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcResource)
         assert context.resources.dbt_rpc.host == "0.0.0.0"
@@ -123,7 +124,7 @@ def test_local_dbt_rpc_resource():
 def test_dbt_rpc_sync_resource():
     it = {}
 
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def a_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncResource)
         assert context.resources.dbt_rpc.host == "<default host>"
@@ -153,7 +154,7 @@ def test_dbt_rpc_sync_resource():
 def test_dbt_rpc_resource_status(
     dbt_rpc_server, client_class, resource
 ):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
         out = context.resources.dbt_rpc.status()
@@ -177,7 +178,7 @@ def test_dbt_rpc_resource_status(
 def test_dbt_rpc_resource_is_not_waiting(
     dbt_rpc_server,
 ):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcResource)
         out = context.resources.dbt_rpc.cli("run")
@@ -208,7 +209,7 @@ def test_dbt_rpc_resource_is_not_waiting(
 def test_dbt_rpc_sync_resource_is_waiting(
     dbt_rpc_server,
 ):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncResource)
         out = context.resources.dbt_rpc.cli("run")
@@ -243,7 +244,7 @@ def test_dbt_rpc_sync_resource_is_waiting(
 def test_dbt_rpc_resource_cli(
     dbt_rpc_server, client_class, resource
 ):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
         out = context.resources.dbt_rpc.cli("run")
@@ -271,7 +272,7 @@ def test_dbt_rpc_resource_cli(
 def test_dbt_rpc_resource_run(
     dbt_rpc_server, client_class, resource
 ):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
         out = context.resources.dbt_rpc.run(["sort_by_calories"])
@@ -299,7 +300,7 @@ def test_dbt_rpc_resource_run(
 def test_dbt_rpc_resource_generate_docs(
     dbt_rpc_server, client_class, resource
 ):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
         out = context.resources.dbt_rpc.generate_docs(True)
@@ -327,7 +328,7 @@ def test_dbt_rpc_resource_generate_docs(
 def test_dbt_rpc_resource_run_operation(
     dbt_rpc_server, client_class, resource
 ):  # pylint: disable=unused-argument
-    @solid(required_resource_keys={"dbt_rpc"})
+    @op(required_resource_keys={"dbt_rpc"})
     def compile_solid(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
         out = context.resources.dbt_rpc.run_operation("log_macro", {"msg": "hello world"})

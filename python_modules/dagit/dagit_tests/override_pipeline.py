@@ -1,13 +1,14 @@
-from dagster import Int, repository
-from dagster._legacy import InputDefinition, OutputDefinition, pipeline, solid
+from dagster import In, Out, repository
+from dagster._core.definitions.decorators import op
+from dagster._legacy import pipeline
 
 
-@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+@op(ins={"num": In(int)}, out=Out(int))
 def add_one(num):
     return num + 1
 
 
-@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+@op(ins={"num": In(int)}, out=Out(int))
 def mult_two(num):
     return num * 2
 

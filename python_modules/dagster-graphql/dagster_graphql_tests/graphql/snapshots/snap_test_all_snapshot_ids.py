@@ -40808,9 +40808,15 @@ snapshots[
         "input_dep_snaps": [
           {
             "__class__": "InputDependencySnap",
-            "input_name": "should_fail",
+            "input_name": "y",
             "is_dynamic_collect": false,
-            "upstream_output_snaps": []
+            "upstream_output_snaps": [
+              {
+                "__class__": "OutputHandleSnap",
+                "output_name": "result",
+                "solid_name": "emit"
+              }
+            ]
           },
           {
             "__class__": "InputDependencySnap",
@@ -40826,15 +40832,9 @@ snapshots[
           },
           {
             "__class__": "InputDependencySnap",
-            "input_name": "y",
+            "input_name": "should_fail",
             "is_dynamic_collect": false,
-            "upstream_output_snaps": [
-              {
-                "__class__": "OutputHandleSnap",
-                "output_name": "result",
-                "solid_name": "emit"
-              }
-            ]
+            "upstream_output_snaps": []
           }
         ],
         "is_dynamic_mapped": true,
@@ -41018,7 +41018,7 @@ snapshots[
             "__class__": "InputDefSnap",
             "dagster_type_key": "Any",
             "description": null,
-            "name": "should_fail"
+            "name": "y"
           },
           {
             "__class__": "InputDefSnap",
@@ -41030,7 +41030,7 @@ snapshots[
             "__class__": "InputDefSnap",
             "dagster_type_key": "Any",
             "description": null,
-            "name": "y"
+            "name": "should_fail"
           }
         ],
         "name": "multiply_inputs",
@@ -41086,7 +41086,7 @@ snapshots[
   "tags": {}
 }"""
 
-snapshots["test_all_snapshot_ids 32"] = "7c75909d3e94645d8a78a7963758ec595a54c0b7"
+snapshots["test_all_snapshot_ids 32"] = "798c525af1dfaa71d8606b0b31efc161feddc5ae"
 
 snapshots[
     "test_all_snapshot_ids 33"
@@ -51137,7 +51137,7 @@ snapshots[
         "output_def_snaps": [
           {
             "__class__": "OutputDefSnap",
-            "dagster_type_key": "Any",
+            "dagster_type_key": "Int",
             "description": null,
             "is_dynamic": false,
             "is_required": true,
@@ -51152,7 +51152,7 @@ snapshots[
   "tags": {}
 }"""
 
-snapshots["test_all_snapshot_ids 46"] = "e78c1397ba89786fe43e7a202f003d33347c020e"
+snapshots["test_all_snapshot_ids 46"] = "f1530a2c35d6305b16263f8af3aa5619015e7f6f"
 
 snapshots[
     "test_all_snapshot_ids 47"

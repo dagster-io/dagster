@@ -3,7 +3,7 @@ from dagster import (
     _check as check,
     op,
 )
-from dagster._legacy import InputDefinition, solid
+from dagster._core.definitions.input import In
 
 
 def _core_create_snowflake_command(dagster_decorator, decorator_name, sql, parameters=None):
@@ -12,7 +12,7 @@ def _core_create_snowflake_command(dagster_decorator, decorator_name, sql, param
 
     @dagster_decorator(
         name=f"snowflake_{decorator_name}",
-        input_defs=[InputDefinition("start", Nothing)],
+        ins={"start": In(Nothing)},
         required_resource_keys={"snowflake"},
         tags={"kind": "sql", "sql": sql},
     )
@@ -37,7 +37,7 @@ def snowflake_solid_for_query(sql, parameters=None):
     Returns:
         SolidDefinition: Returns the constructed solid definition.
     """
-    return _core_create_snowflake_command(solid, "solid", sql, parameters)
+    return _core_create_snowflake_command(op, "solid", sql, parameters)
 
 
 def snowflake_op_for_query(sql, parameters=None):

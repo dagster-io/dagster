@@ -26,7 +26,7 @@ from dagster._core.definitions import (
     Output,
     OutputDefinition,
 )
-from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation

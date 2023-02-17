@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
 
     from .composition import PendingNodeInvocation
-    from .decorators.solid_decorator import DecoratedOpFunction
+    from .decorators.op_decorator import DecoratedOpFunction
 
 OpComputeFunction: TypeAlias = Callable[..., Any]
 
@@ -125,7 +125,7 @@ class OpDefinition(NodeDefinition):
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
     ):
-        from .decorators.solid_decorator import DecoratedOpFunction, resolve_checked_solid_fn_inputs
+        from .decorators.op_decorator import DecoratedOpFunction, resolve_checked_solid_fn_inputs
 
         ins = check.opt_mapping_param(ins, "ins")
         input_defs = [
@@ -246,7 +246,7 @@ class OpDefinition(NodeDefinition):
         return super(OpDefinition, self).with_retry_policy(retry_policy)
 
     def is_from_decorator(self) -> bool:
-        from .decorators.solid_decorator import DecoratedOpFunction
+        from .decorators.op_decorator import DecoratedOpFunction
 
         return isinstance(self._compute_fn, DecoratedOpFunction)
 
@@ -385,7 +385,7 @@ class OpDefinition(NodeDefinition):
     def __call__(self, *args, **kwargs) -> Any:
         from ..execution.context.invocation import UnboundOpExecutionContext
         from .composition import is_in_composition
-        from .decorators.solid_decorator import DecoratedOpFunction
+        from .decorators.op_decorator import DecoratedOpFunction
 
         if is_in_composition():
             return super(OpDefinition, self).__call__(*args, **kwargs)
@@ -443,7 +443,7 @@ def _resolve_output_defs_from_outs(
     outs: Optional[Mapping[str, Out]],
     default_code_version: Optional[str],
 ) -> Sequence[OutputDefinition]:
-    from .decorators.solid_decorator import DecoratedOpFunction
+    from .decorators.op_decorator import DecoratedOpFunction
 
     if isinstance(compute_fn, DecoratedOpFunction):
         inferred_output_props = infer_output_props(compute_fn.decorated_fn)

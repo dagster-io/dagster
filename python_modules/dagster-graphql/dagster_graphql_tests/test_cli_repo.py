@@ -1,14 +1,14 @@
-from dagster import Int, ScheduleDefinition, repository
-from dagster._legacy import InputDefinition, OutputDefinition, pipeline, solid
+from dagster import ScheduleDefinition, op, repository
+from dagster._legacy import pipeline
 
 
-@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
-def add_one(num):
+@op
+def add_one(num: int) -> int:
     return num + 1
 
 
-@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
-def mult_two(num):
+@op
+def mult_two(num: int) -> int:
     return num * 2
 
 
@@ -17,12 +17,12 @@ def math():
     mult_two(add_one())
 
 
-@solid(config_schema={"gimme": str})
+@op(config_schema={"gimme": str})
 def needs_config(context):
     return context.op_config["gimme"]
 
 
-@solid
+@op
 def no_config():
     return "ok"
 

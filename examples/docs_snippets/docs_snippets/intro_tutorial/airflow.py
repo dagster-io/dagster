@@ -2,10 +2,11 @@ import csv
 
 import requests
 
-from dagster._legacy import pipeline, solid
+from dagster import op
+from dagster._legacy import pipeline
 
 
-@solid
+@op
 def hello_cereal(context):
     response = requests.get("https://docs.dagster.io/assets/cereal.csv")
     lines = response.text.split("\n")
