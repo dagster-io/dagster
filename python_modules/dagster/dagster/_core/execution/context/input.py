@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Union,
-    cast,
 )
 
 import dagster._check as check
@@ -83,7 +82,7 @@ class InputContext:
         *,
         name: Optional[str] = None,
         job_name: Optional[str] = None,
-        solid_def: Optional["OpDefinition"] = None,
+        op_def: Optional["OpDefinition"] = None,
         config: Optional[Any] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         upstream_output: Optional["OutputContext"] = None,
@@ -92,7 +91,6 @@ class InputContext:
         resource_config: Optional[Mapping[str, Any]] = None,
         resources: Optional[Union["Resources", Mapping[str, Any]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
-        op_def: Optional["OpDefinition"] = None,
         asset_key: Optional[AssetKey] = None,
         partition_key: Optional[str] = None,
         asset_partitions_subset: Optional[PartitionsSubset] = None,
@@ -104,10 +102,7 @@ class InputContext:
 
         self._name = name
         self._job_name = job_name
-        check.invariant(
-            solid_def is None or op_def is None, "Can't provide both a solid_def and an op_def arg"
-        )
-        self._solid_def = solid_def or op_def
+        self._op_def = op_def
         self._config = config
         self._metadata = metadata
         self._upstream_output = upstream_output
@@ -194,28 +189,16 @@ class InputContext:
     def pipeline_name(self) -> str:
         return self.job_name
 
-    @property
-    def solid_def(self) -> "OpDefinition":
-        if self._solid_def is None:
-            raise DagsterInvariantViolationError(
-                "Attempting to access solid_def, "
-                "but it was not provided when constructing the InputContext"
-            )
-
-        return self._solid_def
-
     @public
     @property
     def op_def(self) -> "OpDefinition":
-        from dagster._core.definitions import OpDefinition
-
-        if self._solid_def is None:
+        if self._op_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
                 "but it was not provided when constructing the InputContext"
             )
 
-        return cast(OpDefinition, self._solid_def)
+        return self._op_def
 
     @public
     @property

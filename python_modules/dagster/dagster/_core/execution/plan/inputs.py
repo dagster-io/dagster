@@ -294,15 +294,15 @@ class FromRootInputManager(
         from dagster._core.events import DagsterEvent
 
         check.invariant(
-            step_context.solid_handle == self.solid_handle and input_def.name == self.input_name,
+            step_context.node_handle == self.solid_handle and input_def.name == self.input_name,
             (
                 "RootInputManager source must be op input and not one along composition mapping. "
-                f"Loading for op {step_context.solid_handle}.{input_def.name} "
+                f"Loading for op {step_context.node_handle}.{input_def.name} "
                 f"but source is {self.solid_handle}.{self.input_name}."
             ),
         )
 
-        input_def = step_context.solid_def.input_def_named(input_def.name)
+        input_def = step_context.op_def.input_def_named(input_def.name)
 
         solid_config = step_context.resolved_run_config.ops.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
@@ -464,7 +464,7 @@ class FromStepOutput(
         resource_config = step_context.resolved_run_config.resources[resolved_io_manager_key].config
         resources = build_resources_for_manager(resolved_io_manager_key, step_context)
 
-        solid_config = step_context.resolved_run_config.ops.get(str(step_context.solid_handle))
+        solid_config = step_context.resolved_run_config.ops.get(str(step_context.node_handle))
         config_data = solid_config.inputs.get(input_def.name) if solid_config else None
 
         return step_context.for_input_manager(

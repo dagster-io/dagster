@@ -829,7 +829,7 @@ class DagsterEvent(
     def step_input_event(
         step_context: StepExecutionContext, step_input_data: "StepInputData"
     ) -> "DagsterEvent":
-        input_def = step_context.solid_def.input_def_named(step_input_data.input_name)
+        input_def = step_context.op_def.input_def_named(step_input_data.input_name)
 
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_INPUT,
