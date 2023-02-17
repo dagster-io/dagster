@@ -222,15 +222,32 @@ def my_directory_sensor_with_skip_reasons():
 ### Via the UI
 
 On the overview page for a particular sensor, there is a `Test sensor` button. Clicking this button will perform a test evaluation of your sensor, and show you the results of that evaluation.
-Screenshot pointing to button here.
+
+<Image
+src="/images/concepts/partitions-schedules-sensors/sensors/test-sensor-button.png"
+width={592}
+height={270}
+/>
+
 When the button is clicked, you are prompted to provide a cursor value (to learn more about cursors, check out this part of the guide). If not using cursors, you can just leave this field blank. The cursor input is pre-filled with the existing cursor for the sensor.
-Screenshot of cursor input page here.
+
+<Image
+src="/images/concepts/partitions-schedules-sensors/sensors/provide-cursor-page.png"
+width={900}
+height={454}
+/>
+
 When the `Evaluate` button is clicked, the sensor will fire, and the following window will show you the result of that evaluation, whether that be run requests, a skip reason, or a python error.
-Screenshot of successful evaluation screen here.
+
+<Image
+src="/images/concepts/partitions-schedules-sensors/sensors/eval-result-page.png"
+width={898}
+height={455}
+/>
+
 If the run was successful, then for each produced run request, you have the option of opening the launchpad pre-scaffolded with the config produced by that run request. You will also see a new computed cursor value from the evaluation, and you have the option to persist that value.
+
 Note that a test evaluation of the sensor will still run the sensor's underlying python function, meaning that any side effects contained within that sensor's function may be executed.
-
-
 
 ### Via the CLI
 

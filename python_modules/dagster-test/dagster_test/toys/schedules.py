@@ -12,6 +12,7 @@ from dagster._core.definitions.time_window_partitions import (
 
 from dagster_test.toys.longitudinal import longitudinal
 from dagster_test.toys.many_events import many_events
+from dagster_test.toys.simple_config import simple_config_job
 from dagster_test.toys.unreliable import unreliable
 
 
@@ -106,6 +107,15 @@ def longitudinal_schedule():
     return build_schedule_from_partitioned_job(job_def)
 
 
+@schedule("* * * * *", job=simple_config_job)
+def math_schedule():
+    return RunRequest(
+        run_key=str(1),
+        run_config={"ops": {"the_op": {"config": {"foo": "bar"}}}},
+        tags={"fee": "fifofum"},
+    )
+
+
 def get_toys_schedules():
     return [
         unreliable_job_test_schedule(),
@@ -115,4 +125,5 @@ def get_toys_schedules():
         monthly_materialization_schedule(),
         longitudinal_schedule(),
         configurable_job_schedule,
+        math_schedule,
     ]
