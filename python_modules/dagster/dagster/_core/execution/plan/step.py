@@ -72,7 +72,7 @@ class IExecutionStep:
 
     @property
     @abstractmethod
-    def solid_handle(self) -> "NodeHandle":
+    def node_handle(self) -> "NodeHandle":
         pass
 
     @property
@@ -173,12 +173,12 @@ class ExecutionStep(
         )
 
     @property
-    def solid_handle(self) -> "NodeHandle":
+    def node_handle(self) -> "NodeHandle":
         return self.handle.solid_handle
 
     @property
     def solid_name(self) -> str:
-        return self.solid_handle.name
+        return self.node_handle.name
 
     @property
     def kind(self) -> StepKind:
@@ -264,7 +264,7 @@ class UnresolvedMappedExecutionStep(
         )
 
     @property
-    def solid_handle(self) -> "NodeHandle":
+    def node_handle(self) -> "NodeHandle":
         return self.handle.solid_handle
 
     @property
@@ -424,7 +424,7 @@ class UnresolvedCollectExecutionStep(
         )
 
     @property
-    def solid_handle(self) -> "NodeHandle":
+    def node_handle(self) -> "NodeHandle":
         return self.handle.solid_handle
 
     @property

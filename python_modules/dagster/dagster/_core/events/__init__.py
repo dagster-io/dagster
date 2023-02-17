@@ -402,7 +402,7 @@ class DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
@@ -1299,7 +1299,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             message=(
@@ -1323,7 +1323,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             event_specific_data=_validate_event_specific_data(
@@ -1348,7 +1348,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             message=(

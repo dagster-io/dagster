@@ -373,7 +373,7 @@ def get_required_resource_keys_to_init(
         if step_handle not in execution_plan.step_handles_to_execute:
             continue
 
-        hook_defs = pipeline_def.get_all_hooks_for_handle(step.solid_handle)
+        hook_defs = pipeline_def.get_all_hooks_for_handle(step.node_handle)
         for hook_def in hook_defs:
             resource_keys = resource_keys.union(hook_def.required_resource_keys)
 
@@ -407,7 +407,7 @@ def get_required_resource_keys_for_step(
     resource_keys: Set[str] = set()
 
     # add all the solid compute resource keys
-    solid_def = pipeline_def.get_solid(execution_step.solid_handle).definition
+    solid_def = pipeline_def.get_solid(execution_step.node_handle).definition
     resource_keys = resource_keys.union(solid_def.required_resource_keys)  # type: ignore  # (should be OpDefinition)
 
     # add input type, input loader, and input io manager resource keys

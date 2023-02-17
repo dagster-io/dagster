@@ -346,7 +346,7 @@ def test_step_context_to_step_run_ref():
         assert rehydrated_step.step_inputs == step.step_inputs
         assert rehydrated_step.step_outputs == step.step_outputs
         assert rehydrated_step.kind == step.kind
-        assert rehydrated_step.solid_handle.name == step.solid_handle.name
+        assert rehydrated_step.node_handle.name == step.node_handle.name
         assert rehydrated_step.logging_tags == step.logging_tags
         assert rehydrated_step.tags == step.tags
 
