@@ -282,7 +282,7 @@ def get_partition_set_partition_runs(graphene_info: ResolveInfo, partition_set):
 
     by_partition = {}
     for record in run_records:
-        partition_name = record.pipeline_run.tags.get(PARTITION_NAME_TAG)
+        partition_name = record.dagster_run.tags.get(PARTITION_NAME_TAG)
         if not partition_name or partition_name in by_partition:
             # all_partition_set_runs is in descending order by creation time, we should ignore
             # runs for the same partition if we've already considered the partition

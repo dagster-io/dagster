@@ -42,12 +42,12 @@ def _force_mark_as_canceled(instance: DagsterInstance, run_id):
 
     reloaded_record = check.not_none(instance.get_run_record_by_id(run_id))
 
-    if not reloaded_record.pipeline_run.is_finished:
+    if not reloaded_record.dagster_run.is_finished:
         message = (
             "This pipeline was forcibly marked as canceled from outside the execution context. The "
             "computational resources created by the run may not have been fully cleaned up."
         )
-        instance.report_run_canceled(reloaded_record.pipeline_run, message=message)
+        instance.report_run_canceled(reloaded_record.dagster_run, message=message)
         reloaded_record = check.not_none(instance.get_run_record_by_id(run_id))
 
     return GrapheneTerminateRunSuccess(GrapheneRun(reloaded_record))
@@ -76,7 +76,7 @@ def terminate_pipeline_execution(graphene_info: "ResolveInfo", run_id, terminate
         assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
         return GrapheneRunNotFoundError(run_id)
 
-    run = record.pipeline_run
+    run = record.dagster_run
     graphene_run = GrapheneRun(record)
 
     location_name = (

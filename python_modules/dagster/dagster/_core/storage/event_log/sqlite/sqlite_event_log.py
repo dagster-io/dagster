@@ -335,7 +335,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         event_records = []
         for run_record in run_records:
-            run_id = run_record.pipeline_run.run_id
+            run_id = run_record.dagster_run.run_id
             with self.run_connection(run_id) as conn:
                 results = conn.execute(query).fetchall()
 

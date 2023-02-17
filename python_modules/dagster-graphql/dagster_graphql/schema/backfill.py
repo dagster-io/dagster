@@ -186,7 +186,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         from .pipelines.pipeline import GrapheneRun
 
         records = self._get_records(graphene_info)
-        return [GrapheneRun(record) for record in records if not record.pipeline_run.is_finished]
+        return [GrapheneRun(record) for record in records if not record.dagster_run.is_finished]
 
     def resolve_runs(self, graphene_info: ResolveInfo):
         from .pipelines.pipeline import GrapheneRun
