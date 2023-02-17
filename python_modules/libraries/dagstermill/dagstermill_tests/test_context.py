@@ -36,19 +36,19 @@ def test_environment_config():
 def test_pipeline_def():
     assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.name == "ephemeral_dagstermill_pipeline"
     assert len(BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.solids) == 1
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.solids[0].name == "this_solid"
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.solids[0].name == "this_op"
 
 
 def test_resources():
     assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.resources, tuple)
 
 
-def test_solid_def():
-    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.solid_def, OpDefinition)
+def test_op_def():
+    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.op_def, OpDefinition)
 
 
-def test_solid():
-    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.solid, Node)
+def test_node():
+    assert isinstance(BARE_OUT_OF_PIPELINE_CONTEXT.node, Node)
 
 
 def test_log(capsys):

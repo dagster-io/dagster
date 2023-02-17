@@ -27,8 +27,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         pipeline_context: PlanExecutionContext,
         pipeline_def: PipelineDefinition,
         resource_keys_to_init: AbstractSet[str],
-        solid_name: str,
-        solid_handle: NodeHandle,
+        op_name: str,
+        node_handle: NodeHandle,
         op_config: Any = None,
     ):
         self._pipeline_context = check.inst_param(
@@ -38,8 +38,8 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         self._resource_keys_to_init = check.set_param(
             resource_keys_to_init, "resource_keys_to_init", of_type=str
         )
-        self.solid_name = check.str_param(solid_name, "solid_name")
-        self.solid_handle = check.inst_param(solid_handle, "solid_handle", NodeHandle)
+        self.op_name = check.str_param(op_name, "op_name")
+        self.node_handle = check.inst_param(node_handle, "node_handle", NodeHandle)
         self._op_config = op_config
 
     def has_tag(self, key: str) -> bool:
@@ -172,35 +172,21 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         In interactive contexts, this may be a dagstermill-specific shim, depending whether an
         op definition was passed to ``dagstermill.get_context``.
         """
-        return cast(OpDefinition, self._pipeline_def.solid_def_named(self.solid_name))
+        return cast(OpDefinition, self._pipeline_def.solid_def_named(self.op_name))
 
     @property
-    def solid_def(self) -> OpDefinition:
-        """:class:`dagster.SolidDefinition`: The solid definition for the context.
+    def node(self) -> Node:
+        """:class:`dagster.Node`: The node for the context.
 
-        In interactive contexts, this may be a dagstermill-specific shim, depending whether a
-        solid definition was passed to ``dagstermill.get_context``.
+        In interactive contexts, this may be a dagstermill-specific shim, depending whether an
+        op definition was passed to ``dagstermill.get_context``.
         """
         deprecation_warning(
             "DagstermillExecutionContext.solid_def",
             "0.17.0",
             "use the 'op_def' property instead.",
         )
-        return cast(OpDefinition, self._pipeline_def.solid_def_named(self.solid_name))
-
-    @property
-    def solid(self) -> Node:
-        """:class:`dagster.Node`: The solid for the context.
-
-        In interactive contexts, this may be a dagstermill-specific shim, depending whether a
-        solid definition was passed to ``dagstermill.get_context``.
-        """
-        deprecation_warning(
-            "DagstermillExecutionContext.solid_def",
-            "0.17.0",
-            "use the 'op_def' property instead.",
-        )
-        return self.pipeline_def.get_solid(self.solid_handle)
+        return self.pipeline_def.get_solid(self.node_handle)
 
     @public
     @property
@@ -211,7 +197,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         if self._op_config:
             return self._op_config
 
-        op_config = self.resolved_run_config.ops.get(self.solid_name)
+        op_config = self.resolved_run_config.ops.get(self.op_name)
         return op_config.config if op_config else None
 
 
@@ -221,9 +207,9 @@ class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
         pipeline_context: PlanExecutionContext,
         pipeline_def: PipelineDefinition,
         resource_keys_to_init: AbstractSet[str],
-        solid_name: str,
+        op_name: str,
         step_context: StepExecutionContext,
-        solid_handle: NodeHandle,
+        node_handle: NodeHandle,
         op_config: Any = None,
     ):
         self._step_context = check.inst_param(step_context, "step_context", StepExecutionContext)
@@ -231,8 +217,8 @@ class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
             pipeline_context,
             pipeline_def,
             resource_keys_to_init,
-            solid_name,
-            solid_handle,
+            op_name,
+            node_handle,
             op_config,
         )
 
