@@ -1,0 +1,4 @@
+from dagster._core.libraries import DagsterLibraryRegistry
+from .version import __version__ as __version__
+
+DagsterLibraryRegistry.register("{{ hyphen_name }}", __version__)
