@@ -38,7 +38,7 @@ from dagster._core.execution.execute_in_process_result import ExecuteInProcessRe
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
 from dagster._core.storage.pipeline_run import DagsterRun
-from dagster._core.utility_solids import define_stub_solid
+from dagster._core.utility_solids import create_stub_op
 from dagster._serdes import ConfigurableClass
 
 # re-export
@@ -119,7 +119,7 @@ def build_pipeline_with_input_stubs(
 
         solid = pipeline_def.get_node_named(solid_name)
         for input_name, input_value in input_dict.items():
-            stub_solid_def = define_stub_solid(
+            stub_solid_def = create_stub_op(
                 "__stub_{solid_name}_{input_name}".format(
                     solid_name=solid_name, input_name=input_name
                 ),

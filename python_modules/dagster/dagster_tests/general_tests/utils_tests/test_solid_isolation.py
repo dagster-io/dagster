@@ -14,9 +14,9 @@ from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._core.utility_solids import (
-    create_root_solid,
-    create_solid_with_deps,
-    define_stub_solid,
+    create_op_with_deps,
+    create_root_op,
+    create_stub_op,
     input_set,
 )
 from dagster._legacy import ModeDefinition
@@ -180,11 +180,11 @@ def test_graphs():
 
 
 def test_graph_with_no_output_mappings():
-    a_source = define_stub_solid("A_source", [input_set("A_input")])
-    node_a = create_root_solid("A")
-    node_b = create_solid_with_deps("B", node_a)
-    node_c = create_solid_with_deps("C", node_a)
-    node_d = create_solid_with_deps("D", node_b, node_c)
+    a_source = create_stub_op("A_source", [input_set("A_input")])
+    node_a = create_root_op("A")
+    node_b = create_op_with_deps("B", node_a)
+    node_c = create_op_with_deps("C", node_a)
+    node_d = create_op_with_deps("D", node_b, node_c)
 
     @graph
     def diamond_graph():
