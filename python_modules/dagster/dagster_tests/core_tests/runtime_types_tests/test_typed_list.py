@@ -2,7 +2,7 @@ import typing
 
 import pytest
 from dagster import DagsterTypeCheckDidNotPass, In, Out, op
-from dagster._legacy import execute_solid
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def test_basic_list_output_pass():
@@ -10,7 +10,7 @@ def test_basic_list_output_pass():
     def emit_list():
         return [1]
 
-    assert execute_solid(emit_list).output_value() == [1]
+    assert wrap_op_in_graph_and_execute(emit_list).output_value() == [1]
 
 
 def test_basic_list_output_fail():
@@ -19,7 +19,7 @@ def test_basic_list_output_fail():
         return "foo"
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(emit_list).output_value()
+        wrap_op_in_graph_and_execute(emit_list).output_value()
 
 
 def test_basic_list_input_pass():
@@ -27,7 +27,9 @@ def test_basic_list_input_pass():
     def ingest_list(alist):
         return alist
 
-    assert execute_solid(ingest_list, input_values={"alist": [2]}).output_value() == [2]
+    assert wrap_op_in_graph_and_execute(
+        ingest_list, input_values={"alist": [2]}
+    ).output_value() == [2]
 
 
 def test_basic_list_input_fail():
@@ -36,7 +38,7 @@ def test_basic_list_input_fail():
         return alist
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(ingest_list, input_values={"alist": "foobar"})
+        wrap_op_in_graph_and_execute(ingest_list, input_values={"alist": "foobar"})
 
 
 def test_typing_list_output_pass():
@@ -44,7 +46,7 @@ def test_typing_list_output_pass():
     def emit_list():
         return [1]
 
-    assert execute_solid(emit_list).output_value() == [1]
+    assert wrap_op_in_graph_and_execute(emit_list).output_value() == [1]
 
 
 def test_typing_list_output_fail():
@@ -53,7 +55,7 @@ def test_typing_list_output_fail():
         return "foo"
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(emit_list).output_value()
+        wrap_op_in_graph_and_execute(emit_list).output_value()
 
 
 def test_typing_list_input_pass():
@@ -61,7 +63,9 @@ def test_typing_list_input_pass():
     def ingest_list(alist):
         return alist
 
-    assert execute_solid(ingest_list, input_values={"alist": [2]}).output_value() == [2]
+    assert wrap_op_in_graph_and_execute(
+        ingest_list, input_values={"alist": [2]}
+    ).output_value() == [2]
 
 
 def test_typing_list_input_fail():
@@ -70,7 +74,7 @@ def test_typing_list_input_fail():
         return alist
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(ingest_list, input_values={"alist": "foobar"})
+        wrap_op_in_graph_and_execute(ingest_list, input_values={"alist": "foobar"})
 
 
 def test_typing_list_of_int_output_pass():
@@ -78,7 +82,7 @@ def test_typing_list_of_int_output_pass():
     def emit_list():
         return [1]
 
-    assert execute_solid(emit_list).output_value() == [1]
+    assert wrap_op_in_graph_and_execute(emit_list).output_value() == [1]
 
 
 def test_typing_list_of_int_output_fail():
@@ -87,7 +91,7 @@ def test_typing_list_of_int_output_fail():
         return ["foo"]
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(emit_list).output_value()
+        wrap_op_in_graph_and_execute(emit_list).output_value()
 
 
 def test_typing_list_of_int_input_pass():
@@ -95,7 +99,9 @@ def test_typing_list_of_int_input_pass():
     def ingest_list(alist):
         return alist
 
-    assert execute_solid(ingest_list, input_values={"alist": [2]}).output_value() == [2]
+    assert wrap_op_in_graph_and_execute(
+        ingest_list, input_values={"alist": [2]}
+    ).output_value() == [2]
 
 
 def test_typing_list_of_int_input_fail():
@@ -104,7 +110,7 @@ def test_typing_list_of_int_input_fail():
         return alist
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(ingest_list, input_values={"alist": ["foobar"]})
+        wrap_op_in_graph_and_execute(ingest_list, input_values={"alist": ["foobar"]})
 
 
 LIST_LIST_INT = typing.List[typing.List[int]]
@@ -115,7 +121,7 @@ def test_typing_list_of_list_of_int_output_pass():
     def emit_list():
         return [[1, 2], [3, 4]]
 
-    assert execute_solid(emit_list).output_value() == [[1, 2], [3, 4]]
+    assert wrap_op_in_graph_and_execute(emit_list).output_value() == [[1, 2], [3, 4]]
 
 
 def test_typing_list_of_list_of_int_output_fail():
@@ -124,7 +130,7 @@ def test_typing_list_of_list_of_int_output_fail():
         return [[1, 2], [3, "4"]]
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(emit_list).output_value()
+        wrap_op_in_graph_and_execute(emit_list).output_value()
 
 
 def test_typing_list_of_list_of_int_input_pass():
@@ -132,7 +138,9 @@ def test_typing_list_of_list_of_int_input_pass():
     def ingest_list(alist):
         return alist
 
-    assert execute_solid(ingest_list, input_values={"alist": [[1, 2], [3, 4]]}).output_value() == [
+    assert wrap_op_in_graph_and_execute(
+        ingest_list, input_values={"alist": [[1, 2], [3, 4]]}
+    ).output_value() == [
         [1, 2],
         [3, 4],
     ]
@@ -144,4 +152,4 @@ def test_typing_list_of_list_of_int_input_fail():
         return alist
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(ingest_list, input_values={"alist": [[1, 2], [3, "4"]]})
+        wrap_op_in_graph_and_execute(ingest_list, input_values={"alist": [[1, 2], [3, "4"]]})

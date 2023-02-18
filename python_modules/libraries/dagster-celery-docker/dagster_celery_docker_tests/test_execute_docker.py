@@ -4,7 +4,7 @@
 import os
 from contextlib import contextmanager
 
-from dagster._legacy import execute_pipeline
+from dagster._core.execution.api import execute_job
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.postgres_instance import postgres_instance_for_test
 from dagster._utils.yaml_utils import merge_yamls
@@ -13,7 +13,7 @@ from dagster_test.test_project import (
     get_buildkite_registry_config,
     get_test_project_docker_image,
     get_test_project_environments_path,
-    get_test_project_recon_pipeline,
+    get_test_project_recon_job,
 )
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -57,24 +57,22 @@ def test_execute_celery_docker_image_on_executor_config(aws_creds):
         ),
         {
             "execution": {
-                "celery-docker": {
-                    "config": {
-                        "docker": docker_config,
-                        "config_source": {"task_always_eager": True},
-                    }
+                "config": {
+                    "docker": docker_config,
+                    "config_source": {"task_always_eager": True},
                 }
             },
         },
     )
 
     with celery_docker_postgres_instance() as instance:
-        result = execute_pipeline(
-            get_test_project_recon_pipeline("docker_celery_pipeline"),
+        with execute_job(
+            get_test_project_recon_job("docker_celery_job"),
             run_config=run_config,
             instance=instance,
-        )
-        assert result.success
-        assert result.result_for_node("get_environment_solid").output_value("result") == "here!"
+        ) as result:
+            assert result.success
+            assert result.output_for_node("get_environment") == "here!"
 
 
 def test_execute_celery_docker_image_on_pipeline_config(aws_creds):
@@ -107,21 +105,19 @@ def test_execute_celery_docker_image_on_pipeline_config(aws_creds):
         ),
         {
             "execution": {
-                "celery-docker": {
-                    "config": {
-                        "docker": docker_config,
-                        "config_source": {"task_always_eager": True},
-                    }
+                "config": {
+                    "docker": docker_config,
+                    "config_source": {"task_always_eager": True},
                 }
             },
         },
     )
 
     with celery_docker_postgres_instance() as instance:
-        result = execute_pipeline(
-            get_test_project_recon_pipeline("docker_celery_pipeline", docker_image),
+        with execute_job(
+            get_test_project_recon_job("docker_celery_job", docker_image),
             run_config=run_config,
             instance=instance,
-        )
-        assert result.success
-        assert result.result_for_node("get_environment_solid").output_value("result") == "here!"
+        ) as result:
+            assert result.success
+            assert result.output_for_node("get_environment") == "here!"

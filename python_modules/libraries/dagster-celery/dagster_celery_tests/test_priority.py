@@ -17,9 +17,10 @@ celery_mode_defs = [ModeDefinition(executor_defs=[*default_executors, celery_exe
 
 
 def test_eager_priority_pipeline():
-    with execute_eagerly_on_celery("simple_priority_pipeline") as result:
+    with execute_eagerly_on_celery("simple_priority_job") as result:
         assert result.success
-        assert list(OrderedDict.fromkeys([evt.step_key for evt in result.step_event_list])) == [
+        step_events_in_order = [event for event in result.all_events if event.is_step_event]
+        assert list(OrderedDict.fromkeys([evt.step_key for evt in step_events_in_order])) == [
             "ten",
             "nine",
             "eight",
@@ -43,7 +44,7 @@ def test_run_priority_pipeline(rabbitmq):
             # enqueue low-priority tasks
             low_thread = threading.Thread(
                 target=execute_on_thread,
-                args=("low_pipeline", low_done, instance.get_ref()),
+                args=("low_job", low_done, instance.get_ref()),
                 kwargs={
                     "tempdir": tempdir,
                     "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "-3"},
@@ -57,7 +58,7 @@ def test_run_priority_pipeline(rabbitmq):
             # enqueue hi-priority tasks
             hi_thread = threading.Thread(
                 target=execute_on_thread,
-                args=("hi_pipeline", hi_done, instance.get_ref()),
+                args=("hi_job", hi_done, instance.get_ref()),
                 kwargs={
                     "tempdir": tempdir,
                     "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "3"},
@@ -72,11 +73,11 @@ def test_run_priority_pipeline(rabbitmq):
                 while not low_done.is_set() or not hi_done.is_set():
                     time.sleep(1)
 
-                low_runs = instance.get_runs(filters=RunsFilter(pipeline_name="low_pipeline"))
+                low_runs = instance.get_runs(filters=RunsFilter(pipeline_name="low_job"))
                 assert len(low_runs) == 1
                 low_run = low_runs[0]
                 lowstats = instance.get_run_stats(low_run.run_id)
-                hi_runs = instance.get_runs(filters=RunsFilter(pipeline_name="hi_pipeline"))
+                hi_runs = instance.get_runs(filters=RunsFilter(pipeline_name="hi_job"))
                 assert len(hi_runs) == 1
                 hi_run = hi_runs[0]
                 histats = instance.get_run_stats(hi_run.run_id)

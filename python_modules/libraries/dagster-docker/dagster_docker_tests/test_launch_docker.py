@@ -17,7 +17,7 @@ from dagster_test.test_project import (
     get_buildkite_registry_config,
     get_test_project_docker_image,
     get_test_project_environments_path,
-    get_test_project_recon_pipeline,
+    get_test_project_recon_job,
     get_test_project_workspace_and_external_pipeline,
 )
 
@@ -52,9 +52,9 @@ def test_launch_docker_no_network(aws_env):
             "params": {"connect_timeout": 2},
         },
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_s3", docker_image)
+        recon_pipeline = get_test_project_recon_job("demo_job_s3", docker_image)
         with get_test_project_workspace_and_external_pipeline(
-            instance, "demo_pipeline_s3", container_image=docker_image
+            instance, "demo_job_s3", container_image=docker_image
         ) as (workspace, orig_pipeline):
             external_pipeline = ReOriginatedExternalPipelineForTest(
                 orig_pipeline,
@@ -135,9 +135,9 @@ def test_launch_docker_image_on_pipeline_config(aws_env):
                 }
             }
         ) as instance:
-            recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_s3", docker_image)
+            recon_pipeline = get_test_project_recon_job("demo_job_s3", docker_image)
             with get_test_project_workspace_and_external_pipeline(
-                instance, "demo_pipeline_s3", container_image=docker_image
+                instance, "demo_job_s3", container_image=docker_image
             ) as (workspace, orig_pipeline):
                 external_pipeline = ReOriginatedExternalPipelineForTest(
                     orig_pipeline,
@@ -199,9 +199,9 @@ def test_terminate_launched_docker_run(aws_env):
             }
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("hanging_pipeline", docker_image)
+        recon_pipeline = get_test_project_recon_job("hanging_job", docker_image)
         with get_test_project_workspace_and_external_pipeline(
-            instance, "hanging_pipeline", container_image=docker_image
+            instance, "hanging_job", container_image=docker_image
         ) as (workspace, orig_pipeline):
             external_pipeline = ReOriginatedExternalPipelineForTest(
                 orig_pipeline,
@@ -233,8 +233,8 @@ def test_terminate_launched_docker_run(aws_env):
                 run_logs,
                 [
                     ("PIPELINE_CANCELING", "Sending run termination request"),
-                    ("STEP_FAILURE", 'Execution of step "hanging_solid" failed.'),
-                    ("PIPELINE_CANCELED", 'Execution of run for "hanging_pipeline" canceled.'),
+                    ("STEP_FAILURE", 'Execution of step "hanging_op" failed.'),
+                    ("PIPELINE_CANCELED", 'Execution of run for "hanging_job" canceled.'),
                     ("ENGINE_EVENT", "Process for run exited"),
                 ],
             )
@@ -267,8 +267,8 @@ def test_launch_docker_invalid_image(aws_env):
             }
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_s3")
-        with get_test_project_workspace_and_external_pipeline(instance, "demo_pipeline_s3") as (
+        recon_pipeline = get_test_project_recon_job("demo_job_s3")
+        with get_test_project_workspace_and_external_pipeline(instance, "demo_job_s3") as (
             workspace,
             orig_pipeline,
         ):
@@ -391,11 +391,11 @@ def _test_launch(
             }
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline(
-            "demo_pipeline_s3", container_image=container_image, container_context=container_context
+        recon_pipeline = get_test_project_recon_job(
+            "demo_job_s3", container_image=container_image, container_context=container_context
         )
         with get_test_project_workspace_and_external_pipeline(
-            instance, "demo_pipeline_s3", container_image=container_image
+            instance, "demo_job_s3", container_image=container_image
         ) as (
             workspace,
             orig_pipeline,

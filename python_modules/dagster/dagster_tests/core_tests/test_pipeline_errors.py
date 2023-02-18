@@ -16,9 +16,9 @@ from dagster._core.definitions.output import Out
 from dagster._legacy import (
     PipelineDefinition,
     execute_pipeline,
-    execute_solid,
     pipeline,
 )
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
 def create_root_success_solid(name):
@@ -154,7 +154,7 @@ def test_do_not_yield_result():
         DagsterInvariantViolationError,
         match='Compute function for op "do_not_yield_result" returned an Output',
     ):
-        execute_solid(solid_inst)
+        wrap_op_in_graph_and_execute(solid_inst)
 
 
 def test_yield_non_result():
@@ -170,7 +170,7 @@ def test_yield_non_result():
             " 'str'> rather than an instance of Output, AssetMaterialization, or ExpectationResult."
         ),
     ):
-        execute_solid(yield_wrong_thing)
+        wrap_op_in_graph_and_execute(yield_wrong_thing)
 
 
 def test_single_compute_fn_returning_result():
@@ -181,7 +181,7 @@ def test_single_compute_fn_returning_result():
     )
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_solid(test_return_result)
+        wrap_op_in_graph_and_execute(test_return_result)
 
 
 def test_user_error_propogation():
