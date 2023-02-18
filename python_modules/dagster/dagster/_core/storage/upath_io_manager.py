@@ -237,3 +237,5 @@ class UPathIOManager(MemoizableIOManager):
         metadata.update(custom_metadata)  # type: ignore
 
         context.add_output_metadata(metadata)
+
+        r = context.asset_partition_key_range
