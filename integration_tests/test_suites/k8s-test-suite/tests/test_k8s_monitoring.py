@@ -27,11 +27,9 @@ def test_k8s_run_monitoring(
         load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
         {
             "execution": {
-                "k8s": {
-                    "config": {
-                        "job_namespace": user_code_namespace_for_k8s_run_launcher,
-                        "image_pull_policy": image_pull_policy(),
-                    }
+                "config": {
+                    "job_namespace": user_code_namespace_for_k8s_run_launcher,
+                    "image_pull_policy": image_pull_policy(),
                 }
             },
         },
@@ -49,7 +47,7 @@ def _launch_run_and_wait_for_resume(
     run_config,
     instance,
     namespace,
-    pipeline_name="slow_pipeline",
+    pipeline_name="slow_job_k8s",
 ):
     run_id = None
 
@@ -58,7 +56,6 @@ def _launch_run_and_wait_for_resume(
             dagit_url_for_k8s_run_launcher,
             run_config=run_config,
             pipeline_name=pipeline_name,
-            mode="k8s",
         )
 
         start_time = time.time()

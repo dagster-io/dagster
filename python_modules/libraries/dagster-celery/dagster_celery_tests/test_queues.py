@@ -16,7 +16,7 @@ def test_multiqueue(rabbitmq):
         with start_celery_worker():
             execute_thread = threading.Thread(
                 target=execute_on_thread,
-                args=("multiqueue_pipeline", done, instance.get_ref()),
+                args=("multiqueue_job", done, instance.get_ref()),
             )
             execute_thread.daemon = True
             execute_thread.start()

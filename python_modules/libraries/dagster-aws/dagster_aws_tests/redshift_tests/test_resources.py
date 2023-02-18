@@ -6,7 +6,7 @@ import boto3
 import psycopg2
 import pytest
 from dagster._core.definitions.decorators import op
-from dagster._legacy import ModeDefinition, execute_solid
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_aws.redshift import FakeRedshiftResource, fake_redshift_resource, redshift_resource
 
 REDSHIFT_ENV = {
@@ -53,10 +53,10 @@ def multi_redshift_solid(context):
 
 @mock.patch("psycopg2.connect", new_callable=mock_execute_query_conn)
 def test_single_select(redshift_connect):
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         single_redshift_solid,
         run_config=REDSHIFT_ENV,
-        mode_def=ModeDefinition(resource_defs={"redshift": redshift_resource}),
+        resources={"redshift": redshift_resource},
     )
     redshift_connect.assert_called_once_with(
         host="foo",
@@ -74,23 +74,27 @@ def test_single_select(redshift_connect):
 
 @mock.patch("psycopg2.connect", new_callable=mock_execute_query_conn)
 def test_multi_select(_redshift_connect):
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         multi_redshift_solid,
         run_config=REDSHIFT_ENV,
-        mode_def=ModeDefinition(resource_defs={"redshift": redshift_resource}),
+        resources={"redshift": redshift_resource},
     )
     assert result.success
     assert result.output_value() == [QUERY_RESULT] * 3
 
 
 def test_fake_redshift():
-    fake_mode = ModeDefinition(resource_defs={"redshift": fake_redshift_resource})
+    fake_resources = {"redshift": fake_redshift_resource}
 
-    result = execute_solid(single_redshift_solid, run_config=REDSHIFT_ENV, mode_def=fake_mode)
+    result = wrap_op_in_graph_and_execute(
+        single_redshift_solid, run_config=REDSHIFT_ENV, resources=fake_resources
+    )
     assert result.success
     assert result.output_value() == FakeRedshiftResource.QUERY_RESULT
 
-    result = execute_solid(multi_redshift_solid, run_config=REDSHIFT_ENV, mode_def=fake_mode)
+    result = wrap_op_in_graph_and_execute(
+        multi_redshift_solid, run_config=REDSHIFT_ENV, resources=fake_resources
+    )
     assert result.success
     assert result.output_value() == [FakeRedshiftResource.QUERY_RESULT] * 3
 
@@ -194,7 +198,7 @@ def test_live_redshift(s3_bucket):
         )
 
     with pytest.raises(psycopg2.InternalError):
-        execute_solid(
+        wrap_op_in_graph_and_execute(
             query,
             run_config={
                 "resources": {
@@ -209,5 +213,5 @@ def test_live_redshift(s3_bucket):
                     }
                 }
             },
-            mode_def=ModeDefinition(resource_defs={"redshift": redshift_resource}),
+            resources={"redshift": redshift_resource},
         )

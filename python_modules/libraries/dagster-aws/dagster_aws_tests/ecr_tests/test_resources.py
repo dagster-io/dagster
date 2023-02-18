@@ -1,5 +1,5 @@
 from dagster import op
-from dagster._legacy import ModeDefinition, execute_solid
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_aws.ecr import fake_ecr_public_resource
 
 
@@ -8,9 +8,9 @@ def test_ecr_public_get_login_password():
     def ecr_public_solid(context):
         return context.resources.ecr_public.get_login_password()
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         ecr_public_solid,
-        mode_def=ModeDefinition(resource_defs={"ecr_public": fake_ecr_public_resource}),
+        resources={"ecr_public": fake_ecr_public_resource},
     )
 
     assert result.output_value() == "token"
