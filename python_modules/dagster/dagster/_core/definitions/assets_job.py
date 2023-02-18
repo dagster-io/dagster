@@ -22,7 +22,13 @@ from dagster._utils.merger import merge_dicts
 from .asset_layer import AssetLayer
 from .assets import AssetsDefinition
 from .config import ConfigMapping
-from .dependency import DependencyDefinition, IDependencyDefinition, NodeHandle, NodeInvocation
+from .dependency import (
+    DependencyDefinition,
+    DependencyMapping,
+    IDependencyDefinition,
+    NodeHandle,
+    NodeInvocation,
+)
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
@@ -346,10 +352,7 @@ def _key_for_asset(asset: Union[AssetsDefinition, SourceAsset]) -> AssetKey:
 def build_node_deps(
     assets_defs: Iterable[AssetsDefinition],
     resolved_asset_deps: ResolvedAssetDependencies,
-) -> Tuple[
-    Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]],
-    Mapping[NodeHandle, AssetsDefinition],
-]:
+) -> Tuple[DependencyMapping[NodeInvocation], Mapping[NodeHandle, AssetsDefinition],]:
     # sort so that nodes get a consistent name
     assets_defs = sorted(assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
 
@@ -373,15 +376,12 @@ def build_node_deps(
         for output_name, key in assets_def.keys_by_output_name.items():
             node_alias_and_output_by_asset_key[key] = (node_alias, output_name)
 
-    deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
+    deps: Dict[NodeInvocation, Dict[str, IDependencyDefinition]] = {}
     for node_handle, assets_def in assets_defs_by_node_handle.items():
         # the key that we'll use to reference the node inside this AssetsDefinition
         node_def_name = assets_def.node_def.name
-        node_key: Union[NodeInvocation, str]
-        if node_handle.name != node_def_name:
-            node_key = NodeInvocation(node_def_name, alias=node_handle.name)
-        else:
-            node_key = node_def_name
+        alias = node_handle.name if node_handle.name != node_def_name else None
+        node_key = NodeInvocation(node_def_name, alias=alias)
         deps[node_key] = {}
 
         # connect each input of this AssetsDefinition to the proper upstream node
@@ -406,18 +406,14 @@ def build_node_deps(
 
 
 def _has_cycles(
-    deps: Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+    deps: DependencyMapping[NodeInvocation],
 ) -> bool:
     """Detect if there are cycles in a dependency dictionary."""
     try:
         node_deps: Dict[str, Set[str]] = {}
         for upstream_node, downstream_deps in deps.items():
             # handle either NodeInvocation or str
-            node_name = (
-                upstream_node.alias or upstream_node.name
-                if isinstance(upstream_node, NodeInvocation)
-                else upstream_node
-            )
+            node_name = upstream_node.alias or upstream_node.name
             node_deps[node_name] = set()
             for dep in downstream_deps.values():
                 if isinstance(dep, DependencyDefinition):

@@ -21,7 +21,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, TypeVar
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -45,6 +45,9 @@ if TYPE_CHECKING:
     from .graph_definition import GraphDefinition
     from .node_definition import NodeDefinition
     from .resource_requirement import ResourceRequirement
+
+T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
+DependencyMapping: TypeAlias = Mapping[T_DependencyKey, Mapping[str, "IDependencyDefinition"]]
 
 
 class NodeInvocation(
@@ -780,7 +783,7 @@ InputToOutputMap: TypeAlias = Dict[NodeInput, DepTypeAndOutputs]
 
 def _create_handle_dict(
     node_dict: Mapping[str, Node],
-    dep_dict: Mapping[str, Mapping[str, IDependencyDefinition]],
+    dep_dict: DependencyMapping[str],
 ) -> InputToOutputMap:
     from .composition import MappedInputPlaceholder
 
@@ -827,7 +830,9 @@ def _create_handle_dict(
 
 class DependencyStructure:
     @staticmethod
-    def from_definitions(nodes: Mapping[str, Node], dep_dict: Mapping[str, Any]):
+    def from_definitions(
+        nodes: Mapping[str, Node], dep_dict: DependencyMapping[str]
+    ) -> "DependencyStructure":
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(nodes, dep_dict))
 
     _node_input_index: DefaultDict[str, Dict[NodeInput, List[NodeOutput]]]
