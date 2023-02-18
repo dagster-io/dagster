@@ -25,7 +25,6 @@ from dagster._config.validate import process_config, validate_config
 from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
-    IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
 from dagster._core.errors import DagsterInvalidConfigError
@@ -173,7 +172,7 @@ def _process_config_values(
     return post_processed_config.value or {}
 
 
-def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSchema:
+def _curry_config_schema(schema_field: Field, data: Any) -> DefinitionConfigSchema:
     """Return a new config schema configured with the passed in data"""
     return DefinitionConfigSchema(_apply_defaults_to_schema_field(schema_field, data))
 
@@ -374,12 +373,11 @@ class ConfigurableResource(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
         )
 
-        post_processed_data = _process_config_values(
-            schema, data_without_resources, self.__class__.__name__
-        )
-        curried_schema = _curry_config_schema(schema, post_processed_data)
+        # Resolve e.g. EnvVar values
+        resolved_config_dict = config_dictionary_from_values(data_without_resources, schema)
+        curried_schema = _curry_config_schema(schema, resolved_config_dict)
 
-        Config.__init__(self, **{**post_processed_data, **resource_pointers})
+        Config.__init__(self, **{**data_without_resources, **resource_pointers})
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
@@ -393,6 +391,8 @@ class ConfigurableResource(
             config_schema=curried_schema,
             description=self.__doc__,
         )
+        self._resolved_config_dict = resolved_config_dict
+        self._schema = schema
 
     @classmethod
     def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":
@@ -402,10 +402,24 @@ class ConfigurableResource(
         """
         return PartialResource(cls, data=kwargs)
 
-    def initialize_and_run(self, context: InitResourceContext) -> TResValue:
-        # If we have any partially configured resources, we need to update them
-        # with the fully configured resources from the context
+    def _resolve_and_update_env_vars(self) -> None:
+        """
+        Processes the config dictionary to resolve any EnvVar values. This is called at runtime
+        when the resource is initialized, so the user is only shown the error if they attempt to
+        kick off a run relying on this resource.
+        """
+        post_processed_data = _process_config_values(
+            self._schema, self._resolved_config_dict, self.__class__.__name__
+        )
+        for k, v in post_processed_data.items():
+            object.__setattr__(self, k, v)
 
+    def _resolve_and_update_nested_resources(self, context: InitResourceContext) -> None:
+        """
+        Updates any nested resources with the resource values from the context.
+        In this case, populating partially configured resources or
+        resources that return plain Python types.
+        """
         partial_resources_to_update: Dict[str, Any] = {}
         if self._nested_partial_resources:
             context_with_mapping = cast(
@@ -437,6 +451,10 @@ class ConfigurableResource(
 
         for attr_name, value in to_update.items():
             object.__setattr__(self, attr_name, value)
+
+    def initialize_and_run(self, context: InitResourceContext) -> TResValue:
+        self._resolve_and_update_env_vars()
+        self._resolve_and_update_nested_resources(context)
 
         return self._create_object_fn(context)
 
