@@ -121,6 +121,15 @@ class ExecutionResult(ABC):
 
         return self._filter_events_by_handle(NodeHandle.from_string(node_name))
 
+    def is_node_success(self, node_str: str) -> bool:
+        return any(evt.is_step_success for evt in self.events_for_node(node_str))
+
+    def is_node_failed(self, node_str: str) -> bool:
+        return any(evt.is_step_failure for evt in self.events_for_node(node_str))
+
+    def is_node_skipped(self, node_str: str) -> bool:
+        return any(evt.is_step_skipped for evt in self.events_for_node(node_str))
+
     def get_job_failure_event(self) -> DagsterEvent:
         """Returns a DagsterEvent with type DagsterEventType.PIPELINE_FAILURE if it ocurred during
         execution.
