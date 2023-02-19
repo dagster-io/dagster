@@ -26,7 +26,7 @@ from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._core.types.dagster_type import (
     DagsterType,
@@ -323,10 +323,8 @@ class GraphDefinition(NodeDefinition):
 
     def node_named(self, name: str) -> Node:
         check.str_param(name, "name")
-        check.invariant(
-            name in self._node_dict,
-            f"{self._name} has no op named {name}.",
-        )
+        if name not in self._node_dict:
+            raise DagsterInvariantViolationError(f"{self._name} has no op named {name}.")
 
         return self._node_dict[name]
 

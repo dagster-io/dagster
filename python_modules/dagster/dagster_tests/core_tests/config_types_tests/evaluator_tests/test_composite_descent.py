@@ -215,7 +215,7 @@ def test_mix_layer_computed_mapping():
             resource_defs={"io_manager": mem_io_manager},
         )
 
-    assert 'Solid "layer_two_double_wrap" with definition "layer_two_double_wrap"' in str(
+    assert 'Op "layer_two_double_wrap" with definition "layer_two_double_wrap"' in str(
         exc_info.value
     )
     assert (
@@ -467,7 +467,7 @@ def test_direct_composite_descent_with_error():
     assert "In pipeline wrap_pipeline_with_error at stack layer0:layer1:" in str(exc_info.value)
 
     assert (
-        'Solid "layer1" with definition "wrap_coerce_to_wrong_type" has a configuration error.'
+        'Op "layer1" with definition "wrap_coerce_to_wrong_type" has a configuration error.'
         in str(exc_info.value)
     )
     assert 'Error 1: Invalid scalar at path root:layer2:config. Value "214"' in str(exc_info.value)
