@@ -29,12 +29,16 @@ type PartitionHealthMaterializedPartitions = Extract<
 export interface PartitionHealthData {
   assetKey: AssetKey;
   dimensions: PartitionHealthDimension[];
+
   stateForKey: (dimensionKeys: string[]) => PartitionState;
   stateForSingleDimension: (
     dimensionIdx: number,
     dimensionKey: string,
     otherDimensionSelectedKeys?: string[],
   ) => PartitionState;
+
+  rangesPrimaryDimension: PartitionHealthDimension;
+  ranges: Range[];
   rangesForSingleDimension: (
     dimensionIdx: number,
     otherDimensionSelectedRanges?: PartitionDimensionSelectionRange[] | undefined,
@@ -184,6 +188,9 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       return removeSubrangesAndJoin(ranges);
     } else if (dimensionIdx === 0 && otherDimensionSelectedRanges) {
       const otherDimensionKeyCount = keyCountInSelection(otherDimensionSelectedRanges);
+      if (otherDimensionKeyCount === 0) {
+        return [];
+      }
       const clipped = ranges
         .map((range) => {
           const subranges = range.subranges
@@ -205,6 +212,9 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       const d0KeyCount = otherDimensionSelectedRanges
         ? keyCountInSelection(otherDimensionSelectedRanges)
         : d0.partitionKeys.length;
+      if (d0KeyCount === 0) {
+        return [];
+      }
       const transitions: {idx: number; delta: number}[] = [];
       const rangesClipped = otherDimensionSelectedRanges
         ? rangesClippedToSelection(ranges, otherDimensionSelectedRanges)
@@ -224,8 +234,12 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
   const result: PartitionHealthData = {
     assetKey: loadKey,
     dimensions: __dims.map((d) => ({name: d.name, partitionKeys: d.partitionKeys})),
+
     stateForKey,
     stateForSingleDimension,
+
+    ranges,
+    rangesPrimaryDimension: dimensions[0],
     rangesForSingleDimension,
   };
 

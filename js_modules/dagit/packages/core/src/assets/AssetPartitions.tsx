@@ -75,7 +75,7 @@ export const AssetPartitions: React.FC<Props> = ({
       : [params.partition] // "|" character is allowed in 1D partition keys for historical reasons
     : [];
 
-  const ranges = selections.map((_s, idx) =>
+  const materializedRangesByDimension = selections.map((_s, idx) =>
     assetHealth
       ? assetHealth.rangesForSingleDimension(
           idx,
@@ -87,23 +87,36 @@ export const AssetPartitions: React.FC<Props> = ({
   );
 
   const dimensionKeysInSelection = (idx: number) => {
+    // Special case: If you have cleared the time selection in the top bar,
+    // clear all dimension columns, (even though you still have a dimension 2 selection)
+    if (selections[timeDimensionIdx].selectedRanges.length === 0) {
+      return [];
+    }
+
     const {dimension, selectedRanges} = selections[idx];
     const allKeys = dimension.partitionKeys;
 
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
 
-    const getSuccessKeys = () => {
-      const materializedInSelection = rangesClippedToSelection(ranges[idx], selectedRanges);
-      return materializedInSelection.flatMap((r) => allKeys.slice(r.start.idx, r.end.idx + 1));
+    const getSuccessKeys = (opts: {includePartial: boolean}) => {
+      const materializedInSelection = rangesClippedToSelection(
+        materializedRangesByDimension[idx],
+        selectedRanges,
+      );
+      return materializedInSelection.flatMap((r) =>
+        r.value === (PartitionState.SUCCESS || opts.includePartial)
+          ? allKeys.slice(r.start.idx, r.end.idx + 1)
+          : [],
+      );
     };
 
     if (isEqual(DISPLAYED_STATES, stateFilters)) {
       return getSelectionKeys();
     } else if (isEqual([PartitionState.SUCCESS], stateFilters)) {
-      return uniq(getSuccessKeys());
+      return uniq(getSuccessKeys({includePartial: true}));
     } else if (isEqual([PartitionState.MISSING], stateFilters)) {
-      return without(getSelectionKeys(), ...getSuccessKeys());
+      return without(getSelectionKeys(), ...getSuccessKeys({includePartial: false}));
     } else {
       return [];
     }
@@ -114,10 +127,17 @@ export const AssetPartitions: React.FC<Props> = ({
       .map((s) => keyCountInSelection(s.selectedRanges))
       .reduce((a, b) => (a ? a * b : b), 0);
 
-    const rangesInSelection = rangesClippedToSelection(ranges[0], selections[0].selectedRanges);
+    const rangesInSelection = rangesClippedToSelection(
+      assetHealth?.ranges || [],
+      selections[0].selectedRanges,
+    );
     const success = rangesInSelection.reduce(
       (a, b) =>
-        a + (b.end.idx - b.start.idx + 1) * (b.subranges ? keyCountInRanges(b.subranges) : 1),
+        a +
+        (b.end.idx - b.start.idx + 1) *
+          (b.subranges
+            ? keyCountInRanges(b.subranges)
+            : keyCountInSelection(selections[1].selectedRanges)),
       0,
     );
 
@@ -147,7 +167,7 @@ export const AssetPartitions: React.FC<Props> = ({
         >
           <DimensionRangeWizard
             partitionKeys={timeDimension.partitionKeys}
-            health={{ranges: ranges[timeDimensionIdx]}}
+            health={{ranges: materializedRangesByDimension[timeDimensionIdx]}}
             selected={selections[timeDimensionIdx].selectedKeys}
             setSelected={(selectedKeys) =>
               setSelections(
@@ -201,8 +221,11 @@ export const AssetPartitions: React.FC<Props> = ({
                 partitions={dimensionKeysInSelection(idx)}
                 stateForPartition={(dimensionKey) => {
                   const dimensionIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
+                  if (idx === 1 && focusedDimensionKeys[0]) {
+                    return assetHealth.stateForKey([focusedDimensionKeys[0], dimensionKey]);
+                  }
                   return (
-                    ranges[idx].find(
+                    materializedRangesByDimension[idx].find(
                       (r) => r.start.idx <= dimensionIdx && r.end.idx >= dimensionIdx,
                     )?.value || PartitionState.MISSING
                   );
@@ -212,7 +235,7 @@ export const AssetPartitions: React.FC<Props> = ({
                   const nextFocusedDimensionKeys: string[] = [];
                   for (let ii = 0; ii < idx; ii++) {
                     nextFocusedDimensionKeys.push(
-                      focusedDimensionKeys[ii] || dimensionKeysInSelection[0],
+                      focusedDimensionKeys[ii] || dimensionKeysInSelection(ii)[0],
                     );
                   }
                   if (dimensionKey) {
