@@ -18,7 +18,7 @@ from dagster._core.definitions.executor_definition import default_executors
 from dagster._core.definitions.input import In
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.events import DagsterEventType
-from dagster._core.test_utils import instance_for_test, nesting_graph_pipeline
+from dagster._core.test_utils import instance_for_test, nesting_graph_job
 from dagster._legacy import (
     ModeDefinition,
     execute_pipeline,
@@ -68,7 +68,7 @@ def test_execute_on_dask_local():
 
 
 def dask_composite_pipeline():
-    return nesting_graph_pipeline(
+    return nesting_graph_job(
         6,
         2,
         mode_defs=[

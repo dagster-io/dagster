@@ -19,6 +19,10 @@ from dagster import (
 from dagster._config import Array, Field
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.decorators.job_decorator import job
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
@@ -31,7 +35,7 @@ from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
-from dagster._legacy import ModeDefinition, pipeline
+from dagster._legacy import ModeDefinition
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
@@ -72,7 +76,7 @@ def step_output_event_filter(pipe_iterator):
             yield step_event
 
 
-def nesting_graph_pipeline(depth, num_children, *args, **kwargs):
+def nesting_graph_job(depth: int, num_children: int, *args: Any, **kwargs: Any) -> JobDefinition:
     """Creates a pipeline of nested composite solids up to "depth" layers, with a fan-out of
     num_children at each layer.
 
@@ -83,7 +87,7 @@ def nesting_graph_pipeline(depth, num_children, *args, **kwargs):
     def leaf_node(_):
         return 1
 
-    def create_wrap(inner, name):
+    def create_wrap(inner: NodeDefinition, name: str) -> GraphDefinition:
         @graph(name=name)
         def wrap():
             for i in range(num_children):
@@ -92,8 +96,8 @@ def nesting_graph_pipeline(depth, num_children, *args, **kwargs):
 
         return wrap
 
-    @pipeline(*args, **kwargs)
-    def nested_pipeline():
+    @job(*args, **kwargs)
+    def nested_job():
         comp_solid = create_wrap(leaf_node, "layer_%d" % depth)
 
         for i in range(depth):
@@ -101,7 +105,7 @@ def nesting_graph_pipeline(depth, num_children, *args, **kwargs):
 
         comp_solid.alias("outer")()
 
-    return nested_pipeline
+    return nested_job
 
 
 TEST_PIPELINE_NAME = "_test_pipeline_"

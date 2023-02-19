@@ -2,8 +2,9 @@ import pytest
 from dagster import file_relative_path
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.input import In
-from dagster._legacy import ModeDefinition, execute_solid
+from dagster._legacy import ModeDefinition
 from dagster._utils import dict_without_keys
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_pyspark import (
     DataFrame as DagsterPySparkDataFrame,
     lazy_pyspark_resource,
@@ -48,7 +49,7 @@ def test_dataframe_inputs(file_type, read, other, resource):
         options["format"] = file_type
         file_type = "other"
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         return_df,
         mode_def=ModeDefinition(resource_defs={"pyspark": resource}),
         run_config={"solids": {"return_df": {"inputs": {"input_df": {file_type: options}}}}},

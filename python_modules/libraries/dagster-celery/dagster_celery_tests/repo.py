@@ -3,7 +3,7 @@ import time
 from dagster import Int, Output, RetryRequested, VersionStrategy, fs_io_manager
 from dagster._core.definitions.decorators import op
 from dagster._core.definitions.output import Out
-from dagster._core.test_utils import nesting_graph_pipeline
+from dagster._core.test_utils import nesting_graph_job
 from dagster._legacy import (
     ModeDefinition,
     default_executors,
@@ -70,7 +70,7 @@ COMPOSITE_DEPTH = 3
 
 
 def composite_pipeline():
-    return nesting_graph_pipeline(COMPOSITE_DEPTH, 2, mode_defs=celery_mode_defs)
+    return nesting_graph_job(COMPOSITE_DEPTH, 2, mode_defs=celery_mode_defs)
 
 
 @op(

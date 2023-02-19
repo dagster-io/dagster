@@ -1,7 +1,8 @@
 import pytest
 import responses
 from dagster import op
-from dagster._legacy import ModeDefinition, execute_solid
+from dagster._legacy import ModeDefinition
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_dbt import (
     DbtRpcOutput,
     DbtRpcResource,
@@ -97,7 +98,7 @@ def test_dbt_rpc_resource():
         assert context.resources.dbt_rpc.port == 8580
         it["ran"] = True
 
-    execute_solid(
+    wrap_op_in_graph_and_execute(
         a_solid,
         ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_resource}),
         None,
@@ -117,7 +118,9 @@ def test_local_dbt_rpc_resource():
         assert context.resources.dbt_rpc.port == 8580
         it["ran"] = True
 
-    execute_solid(a_solid, ModeDefinition(resource_defs={"dbt_rpc": local_dbt_rpc_resource}))
+    wrap_op_in_graph_and_execute(
+        a_solid, ModeDefinition(resource_defs={"dbt_rpc": local_dbt_rpc_resource})
+    )
     assert it["ran"]
 
 
@@ -131,7 +134,7 @@ def test_dbt_rpc_sync_resource():
         assert context.resources.dbt_rpc.port == 8580
         it["ran"] = True
 
-    execute_solid(
+    wrap_op_in_graph_and_execute(
         a_solid,
         ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_sync_resource}),
         None,
@@ -158,7 +161,7 @@ def test_dbt_rpc_resource_status(dbt_rpc_server, client_class, resource):
         out = context.resources.dbt_rpc.status()
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         compile_solid,
         ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )
@@ -182,7 +185,7 @@ def test_dbt_rpc_resource_is_not_waiting(
         out = context.resources.dbt_rpc.cli("run")
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         cli_solid,
         ModeDefinition(
             resource_defs={"dbt_rpc": dbt_rpc_resource.configured({"host": "localhost"})}
@@ -213,7 +216,7 @@ def test_dbt_rpc_sync_resource_is_waiting(
         out = context.resources.dbt_rpc.cli("run")
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         cli_solid,
         ModeDefinition(
             resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
@@ -246,7 +249,7 @@ def test_dbt_rpc_resource_cli(dbt_rpc_server, client_class, resource):
         out = context.resources.dbt_rpc.cli("run")
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         cli_solid,
         ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )
@@ -272,7 +275,7 @@ def test_dbt_rpc_resource_run(dbt_rpc_server, client_class, resource):
         out = context.resources.dbt_rpc.run(["sort_by_calories"])
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         cli_solid,
         ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )
@@ -298,7 +301,7 @@ def test_dbt_rpc_resource_generate_docs(dbt_rpc_server, client_class, resource):
         out = context.resources.dbt_rpc.generate_docs(True)
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         compile_solid,
         ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )
@@ -324,7 +327,7 @@ def test_dbt_rpc_resource_run_operation(dbt_rpc_server, client_class, resource):
         out = context.resources.dbt_rpc.run_operation("log_macro", {"msg": "hello world"})
         return out
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         compile_solid,
         ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )

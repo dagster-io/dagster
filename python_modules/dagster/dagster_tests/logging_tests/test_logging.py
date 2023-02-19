@@ -22,9 +22,13 @@ from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, execute_solid, pipeline
+from dagster._legacy import (
+    execute_pipeline,
+    pipeline,
+)
 from dagster._loggers import colored_console_logger, default_system_loggers, json_console_logger
 from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
 REGEX_TS = r"\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}"
@@ -254,7 +258,7 @@ def test_default_context_logging():
         for logger in context.log._dagster_handler._loggers:  # noqa: SLF001
             assert logger.level == logging.DEBUG
 
-    execute_solid(default_context_solid)
+    wrap_op_in_graph_and_execute(default_context_solid)
 
     assert called["yes"]
 
@@ -278,9 +282,9 @@ def test_json_console_logger(capsys):
     def hello_world(context):
         context.log.info("Hello, world!")
 
-    execute_solid(
+    wrap_op_in_graph_and_execute(
         hello_world,
-        mode_def=ModeDefinition(logger_defs={"json": json_console_logger}),
+        logger_defs={"json": json_console_logger},
         run_config={"loggers": {"json": {"config": {}}}},
     )
 
@@ -343,9 +347,9 @@ def test_resource_logging(capsys):
         context.resources.foo()
         context.resources.bar()
 
-    execute_solid(
+    wrap_op_in_graph_and_execute(
         process,
-        mode_def=ModeDefinition(resource_defs={"foo": foo_resource, "bar": bar_resource}),
+        resources={"foo": foo_resource, "bar": bar_resource},
     )
 
     captured = capsys.readouterr()
@@ -370,7 +374,7 @@ def test_io_context_logging(capsys):
             "logged_solid", {}, {}, None, source_handle=None
         ).log.debug("test INPUT debug logging from logged_solid.")
 
-    result = execute_solid(logged_solid)
+    result = wrap_op_in_graph_and_execute(logged_solid)
     assert result.success
 
     captured = capsys.readouterr()

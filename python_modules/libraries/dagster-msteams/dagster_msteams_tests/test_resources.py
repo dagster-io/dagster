@@ -1,7 +1,8 @@
 import json
 
 from dagster import op
-from dagster._legacy import ModeDefinition, execute_solid
+from dagster._legacy import ModeDefinition
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_msteams import msteams_resource
 from mock import patch
 
@@ -20,7 +21,7 @@ def test_msteams_resource(mock_teams_post_message, json_message, teams_client):
         teams_client.post_message(json_message)
         assert mock_teams_post_message.called
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         msteams_solid,
         run_config={
             "resources": {

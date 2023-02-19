@@ -5,7 +5,7 @@ from dagster import Failure, job, op
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.output import GraphOut
-from dagster._legacy import execute_solid
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_shell import create_shell_command_op, create_shell_script_op, shell_op
 
 
@@ -13,7 +13,7 @@ from dagster_shell import create_shell_command_op, create_shell_script_op, shell
 def test_shell_command(factory):
     solid = factory('echo "this is a test message: $MY_ENV_VAR"', name="foobar")
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         solid,
         run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
     )
@@ -29,11 +29,11 @@ def test_shell_command_inherits_environment(monkeypatch, factory):
     solid = factory('echo "$OUTSIDE_ENV_VAR:$MY_ENV_VAR"', name="foobar")
 
     # inherit outside environment variables if none specified for op
-    result = execute_solid(solid)
+    result = wrap_op_in_graph_and_execute(solid)
     assert result.output_values == {"result": "foo:\n"}
 
     # also inherit outside environment variables if env vars specified for op
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         solid,
         run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "bar"}}}}},
     )
@@ -42,7 +42,7 @@ def test_shell_command_inherits_environment(monkeypatch, factory):
 
 @pytest.mark.parametrize("shell_defn,name", [(shell_op, "shell_op")])
 def test_shell(shell_defn, name):
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         shell_defn,
         input_values={"shell_command": 'echo "this is a test message: $MY_ENV_VAR"'},
         run_config={"solids": {name: {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
@@ -69,20 +69,20 @@ def test_shell_op_inside_job():
 @pytest.mark.parametrize("factory", [create_shell_command_op])
 def test_shell_command_retcode(factory):
     with pytest.raises(Failure, match="Shell command execution failed"):
-        execute_solid(factory("exit 1", name="exit_solid"))
+        wrap_op_in_graph_and_execute(factory("exit 1", name="exit_solid"))
 
 
 @pytest.mark.parametrize("shell_defn", [shell_op])
 def test_shell_solid_retcode(shell_defn):
     with pytest.raises(Failure, match="Shell command execution failed"):
-        execute_solid(shell_defn, input_values={"shell_command": "exit 1"})
+        wrap_op_in_graph_and_execute(shell_defn, input_values={"shell_command": "exit 1"})
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_op])
 def test_shell_command_stream_logs(factory):
     solid = factory('for i in 1 2 3 4 5; do echo "hello ${i}"; done', name="foobar")
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         solid,
         run_config={
             "solids": {
@@ -102,7 +102,7 @@ def test_shell_command_stream_logs(factory):
 def test_shell_script_solid(factory):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     solid = factory(os.path.join(script_dir, "test.sh"), name="foobar")
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         solid,
         run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
     )
@@ -113,7 +113,7 @@ def test_shell_script_solid(factory):
 def test_shell_script_solid_no_config(factory):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     solid = factory(os.path.join(script_dir, "test.sh"), name="foobar")
-    result = execute_solid(solid)
+    result = wrap_op_in_graph_and_execute(solid)
     assert result.output_values == {"result": "this is a test message: \n"}
 
 
@@ -132,7 +132,7 @@ def test_shell_script_solid_no_config_composite(factory):
     def composite():
         return solid()
 
-    result = execute_solid(composite)
+    result = wrap_op_in_graph_and_execute(composite)
     assert result.output_values == {"result": "this is a test message: \n"}
 
 
@@ -144,7 +144,7 @@ def test_shell_command_solid_overrides(factory):
         description="a description override",
     )
 
-    result = execute_solid(
+    result = wrap_op_in_graph_and_execute(
         solid,
         run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
     )
@@ -156,7 +156,7 @@ def test_shell_script_solid_run_time_config(factory, monkeypatch):
     monkeypatch.setattr(os, "environ", {"MY_ENV_VAR": "foobar"})
     script_dir = os.path.dirname(os.path.abspath(__file__))
     solid = factory(os.path.join(script_dir, "test.sh"), name="foobar")
-    result = execute_solid(solid)
+    result = wrap_op_in_graph_and_execute(solid)
     assert result.output_values == {"result": "this is a test message: foobar\n"}
 
 
@@ -176,5 +176,5 @@ def test_shell_script_solid_run_time_config_composite(factory, monkeypatch):
     def composite():
         return solid()
 
-    result = execute_solid(composite)
+    result = wrap_op_in_graph_and_execute(composite)
     assert result.output_values == {"result": "this is a test message: foobar\n"}

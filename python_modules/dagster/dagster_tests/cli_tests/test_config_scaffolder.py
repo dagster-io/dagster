@@ -2,13 +2,14 @@ from dagster import (
     Int,
     OpDefinition,
     ResourceDefinition,
-    String,
     _check as check,
 )
 from dagster._cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster._config import config_type
 from dagster._core.definitions import create_run_config_schema
-from dagster._legacy import ModeDefinition, PipelineDefinition
+from dagster._core.definitions.mode import ModeDefinition
+from dagster._core.types.dagster_type import String
+from dagster._legacy import PipelineDefinition
 
 
 def fail_me():
