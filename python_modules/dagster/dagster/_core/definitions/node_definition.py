@@ -13,6 +13,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.configurable import NamedConfigurableDefinition
 from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.errors import DagsterInvariantViolationError
 
 from .hook_definition import HookDefinition
 from .utils import check_valid_name, validate_tags
@@ -147,6 +148,8 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     def output_def_named(self, name: str) -> "OutputDefinition":
         check.str_param(name, "name")
+        if name not in self._output_dict:
+            raise DagsterInvariantViolationError(f"{self._name} has no output named {name}.")
         return self._output_dict[name]
 
     @abstractmethod

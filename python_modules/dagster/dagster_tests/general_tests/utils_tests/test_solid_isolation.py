@@ -9,7 +9,6 @@ from dagster import (
     op,
     resource,
 )
-from dagster._check import CheckError
 from dagster._core.definitions.decorators import graph
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
@@ -162,7 +161,7 @@ def test_graphs():
     assert result.output_for_node("hello") == "hello"
 
     with pytest.raises(
-        CheckError,
+        DagsterInvariantViolationError,
         match=re.escape("hello_graph has no op named goodbye"),
     ):
         _ = result.output_for_node("goodbye")
