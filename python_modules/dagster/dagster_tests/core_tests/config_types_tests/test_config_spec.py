@@ -43,7 +43,7 @@ def test_kitchen_sink():
     assert (
         wrap_op_in_graph_and_execute(
             kitchen_sink,
-            run_config={"solids": {"kitchen_sink": {"config": solid_config_one}}},
+            run_config={"ops": {"kitchen_sink": {"config": solid_config_one}}},
         ).output_value()
         == solid_config_one
     )
@@ -65,7 +65,7 @@ def test_kitchen_sink():
     assert (
         wrap_op_in_graph_and_execute(
             kitchen_sink,
-            run_config={"solids": {"kitchen_sink": {"config": solid_config_two}}},
+            run_config={"ops": {"kitchen_sink": {"config": solid_config_two}}},
         ).output_value()
         == solid_config_two
     )
@@ -83,7 +83,7 @@ def test_builtin_dict():
 
     assert wrap_op_in_graph_and_execute(
         builtin_dict_op,
-        run_config={"solids": {"builtin_dict_op": {"config": {"a": "b"}}}},
+        run_config={"ops": {"builtin_dict_op": {"config": {"a": "b"}}}},
     ).output_value() == {"a": "b"}
 
     assert executed["yup"]

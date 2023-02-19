@@ -2,8 +2,7 @@ import sys
 from typing import Iterator
 
 import pytest
-from dagster import file_relative_path, op, repository
-from dagster._core.definitions.decorators.job_decorator import job
+from dagster import file_relative_path, job, op, repository
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.repository_definition import RepositoryData
 from dagster._core.instance import DagsterInstance
@@ -41,7 +40,7 @@ class TestDynamicRepositoryData(RepositoryData):
     def __init__(self):
         self._num_calls = 0
 
-    # List of pipelines changes everytime get_all_pipelines is called
+    # List of jobs changes everytime get_all_jobs is called
     def get_all_pipelines(self):
         self._num_calls = self._num_calls + 1
         return [define_foo_job(self._num_calls)]
@@ -104,8 +103,8 @@ def test_repository_data_can_reload_without_restarting(
     assert not repo.has_external_job("foo_1")
     assert not repo.has_external_job("foo_2")
 
-    external_pipeline = repo.get_full_external_job("foo_3")
-    assert external_pipeline.has_solid_invocation("do_something_3")
+    external_job = repo.get_full_external_job("foo_3")
+    assert external_job.has_solid_invocation("do_something_3")
 
     # Reloading the location changes the pipeline without needing
     # to restart the server process
@@ -116,5 +115,5 @@ def test_repository_data_can_reload_without_restarting(
     assert repo.has_external_job("foo_5")
     assert not repo.has_external_job("foo_3")
 
-    external_pipeline = repo.get_full_external_job("foo_5")
-    assert external_pipeline.has_solid_invocation("do_something_5")
+    external_job = repo.get_full_external_job("foo_5")
+    assert external_job.has_solid_invocation("do_something_5")

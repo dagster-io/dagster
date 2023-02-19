@@ -1,3 +1,5 @@
+from typing import Dict
+
 import pytest
 from dagster import (
     DagsterType,
@@ -15,10 +17,11 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._core.definitions.configurable import configured
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 
 
-def get_resource_init_pipeline(resources_initted):
+def get_resource_init_job(resources_initted: Dict[str, bool]) -> JobDefinition:
     @resource
     def resource_a(_):
         resources_initted["a"] = True
@@ -83,7 +86,7 @@ def test_filter_out_resources():
 def test_selective_init_resources():
     resources_initted = {}
 
-    assert get_resource_init_pipeline(resources_initted).execute_in_process().success
+    assert get_resource_init_job(resources_initted).execute_in_process().success
 
     assert set(resources_initted.keys()) == {"a", "b"}
 
@@ -117,19 +120,19 @@ def test_selective_init_resources_only_a():
 def test_execution_plan_subset_strict_resources():
     resources_initted = {}
 
-    pipeline_def = get_resource_init_pipeline(resources_initted)
+    job_def = get_resource_init_job(resources_initted)
 
-    result = pipeline_def.execute_in_process(op_selection=["consumes_resource_b"])
+    result = job_def.execute_in_process(op_selection=["consumes_resource_b"])
 
     assert result.success
 
     assert set(resources_initted.keys()) == {"b"}
 
 
-def test_solid_selection_strict_resources():
+def test_op_selection_strict_resources():
     resources_initted = {}
 
-    selective_init_test_job = get_resource_init_pipeline(resources_initted)
+    selective_init_test_job = get_resource_init_job(resources_initted)
 
     result = selective_init_test_job.execute_in_process(op_selection=["consumes_resource_b"])
     assert result.success
@@ -137,7 +140,7 @@ def test_solid_selection_strict_resources():
     assert set(resources_initted.keys()) == {"b"}
 
 
-def test_solid_selection_with_aliases_strict_resources():
+def test_op_selection_with_aliases_strict_resources():
     resources_initted = {}
 
     @resource
@@ -174,7 +177,7 @@ def test_solid_selection_with_aliases_strict_resources():
     assert set(resources_initted.keys()) == {"a"}
 
 
-def create_composite_solid_pipeline(resources_initted):
+def create_nested_graph_job(resources_initted: Dict[str, bool]) -> JobDefinition:
     @resource
     def resource_a(_):
         resources_initted["a"] = True
@@ -224,12 +227,10 @@ def create_composite_solid_pipeline(resources_initted):
     return selective_init_composite_test_job
 
 
-def test_solid_selection_strict_resources_within_composite():
+def test_op_selection_strict_resources_within_composite():
     resources_initted = {}
 
-    result = create_composite_solid_pipeline(resources_initted).execute_in_process(
-        op_selection=["wraps_b"]
-    )
+    result = create_nested_graph_job(resources_initted).execute_in_process(op_selection=["wraps_b"])
     assert result.success
 
     assert set(resources_initted.keys()) == {"b"}
@@ -239,7 +240,7 @@ def test_execution_plan_subset_strict_resources_within_composite():
     resources_initted = {}
 
     assert (
-        create_composite_solid_pipeline(resources_initted)
+        create_nested_graph_job(resources_initted)
         .execute_in_process(op_selection=["wraps_b.consumes_resource_b"])
         .success
     )
@@ -251,7 +252,7 @@ def test_unknown_resource_composite_error():
     resources_initted = {}
 
     with pytest.raises(DagsterUnknownResourceError):
-        create_composite_solid_pipeline(resources_initted).execute_in_process(
+        create_nested_graph_job(resources_initted).execute_in_process(
             op_selection=["wraps_b_error"]
         )
 
@@ -293,7 +294,7 @@ def test_execution_plan_subset_with_aliases():
 
 
 def test_custom_type_with_resource_dependent_hydration():
-    def define_input_hydration_pipeline(should_require_resources):
+    def define_input_hydration_job(should_require_resources):
         @resource
         def resource_a(_):
             yield "A"
@@ -319,20 +320,20 @@ def test_custom_type_with_resource_dependent_hydration():
 
         return input_hydration_job
 
-    under_required_pipeline = define_input_hydration_pipeline(should_require_resources=False)
+    under_required_job = define_input_hydration_job(should_require_resources=False)
     with pytest.raises(DagsterUnknownResourceError):
-        under_required_pipeline.execute_in_process(
-            {"solids": {"input_hydration_op": {"inputs": {"custom_type": "hello"}}}},
+        under_required_job.execute_in_process(
+            {"ops": {"input_hydration_op": {"inputs": {"custom_type": "hello"}}}},
         )
 
-    sufficiently_required_pipeline = define_input_hydration_pipeline(should_require_resources=True)
-    assert sufficiently_required_pipeline.execute_in_process(
-        {"solids": {"input_hydration_op": {"inputs": {"custom_type": "hello"}}}},
+    sufficiently_required_job = define_input_hydration_job(should_require_resources=True)
+    assert sufficiently_required_job.execute_in_process(
+        {"ops": {"input_hydration_op": {"inputs": {"custom_type": "hello"}}}},
     ).success
 
 
 def test_resource_dependent_hydration_with_selective_init():
-    def get_resource_init_input_hydration_pipeline(resources_initted):
+    def get_resource_init_input_hydration_job(resources_initted):
         @resource
         def resource_a(_):
             resources_initted["a"] = True
@@ -362,14 +363,12 @@ def test_resource_dependent_hydration_with_selective_init():
         return selective_job
 
     resources_initted = {}
-    assert (
-        get_resource_init_input_hydration_pipeline(resources_initted).execute_in_process().success
-    )
+    assert get_resource_init_input_hydration_job(resources_initted).execute_in_process().success
     assert set(resources_initted.keys()) == set()
 
 
 def test_custom_type_with_resource_dependent_type_check():
-    def define_type_check_pipeline(should_require_resources):
+    def define_type_check_job(should_require_resources):
         @resource
         def resource_a(_):
             yield "A"
@@ -399,12 +398,12 @@ def test_custom_type_with_resource_dependent_type_check():
 
         return type_check_job
 
-    under_required_pipeline = define_type_check_pipeline(should_require_resources=False)
+    under_required_job = define_type_check_job(should_require_resources=False)
     with pytest.raises(DagsterUnknownResourceError):
-        under_required_pipeline.execute_in_process()
+        under_required_job.execute_in_process()
 
-    sufficiently_required_pipeline = define_type_check_pipeline(should_require_resources=True)
-    assert sufficiently_required_pipeline.execute_in_process().success
+    sufficiently_required_job = define_type_check_job(should_require_resources=True)
+    assert sufficiently_required_job.execute_in_process().success
 
 
 def test_resource_no_version():

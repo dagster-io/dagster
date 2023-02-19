@@ -1,14 +1,9 @@
 from collections import defaultdict
 
-from dagster import DependencyDefinition, Int, NodeInvocation, op
-from dagster._core.definitions.input import In
-from dagster._legacy import (
-    PipelineDefinition,
-    execute_pipeline,
-)
+from dagster import DependencyDefinition, GraphDefinition, In, Int, NodeInvocation, op
 
 
-def test_aliased_solids():
+def test_aliased_ops():
     @op()
     def first():
         return ["first"]
@@ -17,7 +12,7 @@ def test_aliased_solids():
     def not_first(prev):
         return prev + ["not_first"]
 
-    pipeline = PipelineDefinition(
+    job_def = GraphDefinition(
         node_defs=[first, not_first],
         name="test",
         dependencies={
@@ -27,12 +22,11 @@ def test_aliased_solids():
             },
             NodeInvocation("not_first", alias="third"): {"prev": DependencyDefinition("second")},
         },
-    )
+    ).to_job()
 
-    result = execute_pipeline(pipeline)
+    result = job_def.execute_in_process()
     assert result.success
-    solid_result = result.result_for_node("third")
-    assert solid_result.output_value() == [
+    assert result.output_for_node("third") == [
         "first",
         "not_first",
         "not_first",
@@ -40,7 +34,7 @@ def test_aliased_solids():
     ]
 
 
-def test_only_aliased_solids():
+def test_only_aliased_ops():
     @op()
     def first():
         return ["first"]
@@ -49,7 +43,7 @@ def test_only_aliased_solids():
     def not_first(prev):
         return prev + ["not_first"]
 
-    pipeline = PipelineDefinition(
+    job_def = GraphDefinition(
         node_defs=[first, not_first],
         name="test",
         dependencies={
@@ -58,56 +52,53 @@ def test_only_aliased_solids():
                 "prev": DependencyDefinition("the_root")
             },
         },
-    )
+    ).to_job()
 
-    result = execute_pipeline(pipeline)
+    result = job_def.execute_in_process()
     assert result.success
-    solid_result = result.result_for_node("the_consequence")
-    assert solid_result.output_value() == ["first", "not_first"]
+    assert result.output_for_node("the_consequence") == ["first", "not_first"]
 
 
 def test_aliased_configs():
-    @op(config_schema=Int)
+    @op(ins={}, config_schema=Int)
     def load_constant(context):
         return context.op_config
 
-    pipeline = PipelineDefinition(
+    job_def = GraphDefinition(
         node_defs=[load_constant],
         name="test",
         dependencies={
             NodeInvocation(load_constant.name, "load_a"): {},
             NodeInvocation(load_constant.name, "load_b"): {},
         },
-    )
+    ).to_job()
 
-    result = execute_pipeline(
-        pipeline, {"solids": {"load_a": {"config": 2}, "load_b": {"config": 3}}}
-    )
+    result = job_def.execute_in_process({"ops": {"load_a": {"config": 2}, "load_b": {"config": 3}}})
 
     assert result.success
-    assert result.result_for_node("load_a").output_value() == 2
-    assert result.result_for_node("load_b").output_value() == 3
+    assert result.output_for_node("load_a") == 2
+    assert result.output_for_node("load_b") == 3
 
 
-def test_aliased_solids_context():
+def test_aliased_ops_context():
     record = defaultdict(set)
 
     @op
     def log_things(context):
-        solid_value = context.solid.name
+        op_value = context.op.name
         op_def_value = context.op_def.name
-        record[op_def_value].add(solid_value)
+        record[op_def_value].add(op_value)
 
-    pipeline = PipelineDefinition(
+    job_def = GraphDefinition(
         node_defs=[log_things],
         name="test",
         dependencies={
             NodeInvocation("log_things", "log_a"): {},
             NodeInvocation("log_things", "log_b"): {},
         },
-    )
+    ).to_job()
 
-    result = execute_pipeline(pipeline)
+    result = job_def.execute_in_process()
     assert result.success
 
     assert dict(record) == {"log_things": set(["log_a", "log_b"])}

@@ -589,7 +589,6 @@ def test_config_defaults():
         assert prev_sum == 6
         return prev_sum + _context.op_config["sum"]
 
-    # addition_graph
     def addition_graph_config_fn(config):
         child_config = {"config": {"sum": config["a"] + config["b"] + config["c"]}}
         return {"one": child_config, "two": child_config}
@@ -680,7 +679,7 @@ def test_wrong_solid_name():
     def some_op(_):
         return None
 
-    @job(name="pipeline_wrong_op_name")
+    @job(name="job_wrong_op_name")
     def job_def():
         some_op()
 
@@ -704,7 +703,7 @@ def dummy_resource(config_schema=None):
 
 def test_wrong_resources():
     job_def = GraphDefinition(
-        name="pipeline_test_multiple_context",
+        name="job_test_multiple_context",
         node_defs=[],
     ).to_job(
         resource_defs={
@@ -729,7 +728,7 @@ def test_solid_list_config():
         assert context.op_config == value
         called["yup"] = True
 
-    @job(name="op_list_config_pipeline")
+    @job(name="op_list_config_job")
     def job_def():
         op_list_config()
 
