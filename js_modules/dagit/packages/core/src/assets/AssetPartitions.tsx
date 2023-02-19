@@ -22,8 +22,8 @@ import {usePartitionDimensionSelections} from './usePartitionDimensionSelections
 import {
   usePartitionHealthData,
   rangesClippedToSelection,
-  keyCountInSelection,
-  keyCountInRanges,
+  keyCountByStateInSelection,
+  partitionStateAtIndex,
 } from './usePartitionHealthData';
 
 interface Props {
@@ -66,28 +66,34 @@ export const AssetPartitions: React.FC<Props> = ({
       (qs.states || '').split(',').filter((s: PartitionState) => DISPLAYED_STATES.includes(s)),
   });
 
+  // Determine which axis we will show at the top of the page, if any.
   const timeDimensionIdx = selections.findIndex((s) => isTimeseriesDimension(s.dimension));
-  const timeDimension = timeDimensionIdx !== -1 ? assetHealth.dimensions[timeDimensionIdx] : null;
 
-  const focusedDimensionKeys = params.partition
-    ? selections.length > 1
-      ? params.partition.split('|').filter(Boolean)
-      : [params.partition] // "|" character is allowed in 1D partition keys for historical reasons
-    : [];
-
-  const materializedRangesByDimension = selections.map((_s, idx) =>
-    assetHealth
-      ? assetHealth.rangesForSingleDimension(
-          idx,
-          timeDimensionIdx !== -1 && idx !== timeDimensionIdx
-            ? selections[timeDimensionIdx].selectedRanges
-            : undefined,
-        )
-      : [],
+  // Get asset health on all dimensions, with the non-time dimensions scoped
+  // to the time dimension selection (so the status of partition "VA" reflects
+  // the selection you've made on the time axis.)
+  const materializedRangesByDimension = React.useMemo(
+    () =>
+      selections.map((_s, idx) =>
+        assetHealth
+          ? assetHealth.rangesForSingleDimension(
+              idx,
+              timeDimensionIdx !== -1 && idx !== timeDimensionIdx
+                ? selections[timeDimensionIdx].selectedRanges
+                : undefined,
+            )
+          : [],
+      ),
+    [assetHealth, selections, timeDimensionIdx],
   );
 
+  // This function returns the list of dimension keys INSIDE the `selections.selectedRanges`
+  // specified at the top of the page that MATCH the state filters (success / completed).
+  // There are pieces of this that could be moved to shared helpers, but we may discourage
+  // loading the full key space and shift responsibility for this to GraphQL in the future.
+  //
   const dimensionKeysInSelection = (idx: number) => {
-    // Special case: If you have cleared the time selection in the top bar,
+    // Special case: If you have cleared the time selection in the top bar, we
     // clear all dimension columns, (even though you still have a dimension 2 selection)
     if (selections[timeDimensionIdx].selectedRanges.length === 0) {
       return [];
@@ -122,32 +128,15 @@ export const AssetPartitions: React.FC<Props> = ({
     }
   };
 
-  const countsByStateInSelection = (() => {
-    const total = selections
-      .map((s) => keyCountInSelection(s.selectedRanges))
-      .reduce((a, b) => (a ? a * b : b), 0);
-
-    const rangesInSelection = rangesClippedToSelection(
-      assetHealth?.ranges || [],
-      selections[0].selectedRanges,
-    );
-    const success = rangesInSelection.reduce(
-      (a, b) =>
-        a +
-        (b.end.idx - b.start.idx + 1) *
-          (b.subranges
-            ? keyCountInRanges(b.subranges)
-            : keyCountInSelection(selections[1].selectedRanges)),
-      0,
-    );
-
-    return {
-      [PartitionState.MISSING]: total - success,
-      [PartitionState.SUCCESS]: success,
-    };
-  })();
-
+  const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);
   const countsFiltered = stateFilters.reduce((a, b) => a + countsByStateInSelection[b], 0);
+
+  const [focusedDimensionKeys, setFocusedDimensionKey] = usePartitionKeyInParams({
+    params,
+    setParams,
+    dimensionCount: selections.length,
+    defaultKeyInDimension: (dimensionIdx) => dimensionKeysInSelection(dimensionIdx)[0],
+  });
 
   return (
     <>
@@ -160,13 +149,13 @@ export const AssetPartitions: React.FC<Props> = ({
         liveData={liveData}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       />
-      {timeDimension && (
+      {timeDimensionIdx !== -1 && (
         <Box
           padding={{vertical: 16, horizontal: 24}}
           border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         >
           <DimensionRangeWizard
-            partitionKeys={timeDimension.partitionKeys}
+            partitionKeys={selections[timeDimensionIdx].dimension.partitionKeys}
             health={{ranges: materializedRangesByDimension[timeDimensionIdx]}}
             selected={selections[timeDimensionIdx].selectedKeys}
             setSelected={(selectedKeys) =>
@@ -220,31 +209,15 @@ export const AssetPartitions: React.FC<Props> = ({
               <AssetPartitionList
                 partitions={dimensionKeysInSelection(idx)}
                 stateForPartition={(dimensionKey) => {
-                  const dimensionIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
                   if (idx === 1 && focusedDimensionKeys[0]) {
                     return assetHealth.stateForKey([focusedDimensionKeys[0], dimensionKey]);
                   }
-                  return (
-                    materializedRangesByDimension[idx].find(
-                      (r) => r.start.idx <= dimensionIdx && r.end.idx >= dimensionIdx,
-                    )?.value || PartitionState.MISSING
-                  );
+                  const dimensionKeyIdx = selection.dimension.partitionKeys.indexOf(dimensionKey);
+                  return partitionStateAtIndex(materializedRangesByDimension[idx], dimensionKeyIdx);
                 }}
                 focusedDimensionKey={focusedDimensionKeys[idx]}
                 setFocusedDimensionKey={(dimensionKey) => {
-                  const nextFocusedDimensionKeys: string[] = [];
-                  for (let ii = 0; ii < idx; ii++) {
-                    nextFocusedDimensionKeys.push(
-                      focusedDimensionKeys[ii] || dimensionKeysInSelection(ii)[0],
-                    );
-                  }
-                  if (dimensionKey) {
-                    nextFocusedDimensionKeys.push(dimensionKey);
-                  }
-                  setParams({
-                    ...params,
-                    partition: nextFocusedDimensionKeys.join('|'),
-                  });
+                  setFocusedDimensionKey(idx, dimensionKey);
                 }}
               />
             )}
@@ -262,3 +235,41 @@ export const AssetPartitions: React.FC<Props> = ({
     </>
   );
 };
+
+function usePartitionKeyInParams({
+  params,
+  setParams,
+  dimensionCount,
+  defaultKeyInDimension,
+}: Pick<Props, 'params' | 'setParams'> & {
+  dimensionCount: number;
+  defaultKeyInDimension: (idx: number) => string;
+}) {
+  const focusedDimensionKeys = React.useMemo(
+    () =>
+      params.partition
+        ? dimensionCount > 1
+          ? params.partition.split('|').filter(Boolean) // 2D partition keys
+          : [params.partition] // "|" character is allowed in 1D partition keys for historical reasons
+        : [],
+    [dimensionCount, params.partition],
+  );
+
+  const setFocusedDimensionKey = (dimensionIdx: number, dimensionKey: string | undefined) => {
+    // Automatically make a selection in column 0 if the user
+    // clicked in column 1 and there is no column 0 selection.
+    const nextFocusedDimensionKeys: string[] = [];
+    for (let ii = 0; ii < dimensionIdx; ii++) {
+      nextFocusedDimensionKeys.push(focusedDimensionKeys[ii] || defaultKeyInDimension(ii));
+    }
+    if (dimensionKey) {
+      nextFocusedDimensionKeys.push(dimensionKey);
+    }
+    setParams({
+      ...params,
+      partition: nextFocusedDimensionKeys.join('|'),
+    });
+  };
+
+  return [focusedDimensionKeys, setFocusedDimensionKey] as const;
+}

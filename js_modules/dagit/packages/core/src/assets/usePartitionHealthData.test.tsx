@@ -10,7 +10,7 @@ import {
   rangesForKeys,
 } from './usePartitionHealthData';
 
-const {SUCCESS_MISSING, SUCCESS, MISSING} = PartitionState;
+const {SUCCESS, MISSING} = PartitionState;
 
 const DIMENSION_ONE_KEYS = [
   '2022-01-01',
@@ -221,9 +221,6 @@ describe('usePartitionHealthData', () => {
       expect(assetHealth.stateForKey(['2022-01-01'])).toEqual(MISSING);
       expect(assetHealth.stateForKey(['2022-01-04'])).toEqual(SUCCESS);
 
-      expect(assetHealth.stateForSingleDimension(0, '2022-01-01')).toEqual(MISSING);
-      expect(assetHealth.stateForSingleDimension(0, '2022-01-04')).toEqual(SUCCESS);
-
       expect(assetHealth.rangesForSingleDimension(0)).toEqual([
         {
           start: {idx: 3, key: '2022-01-04'},
@@ -254,17 +251,6 @@ describe('usePartitionHealthData', () => {
       // Ask for the state of a full key (cell)
       expect(assetHealth.stateForKey(['2022-01-01', 'TN'])).toEqual(MISSING);
       expect(assetHealth.stateForKey(['2022-01-04', 'NY'])).toEqual(SUCCESS);
-
-      // Ask for the state of a row
-      expect(assetHealth.stateForSingleDimension(0, '2022-01-03')).toEqual(SUCCESS_MISSING);
-      expect(assetHealth.stateForSingleDimension(0, '2022-01-04')).toEqual(SUCCESS);
-      expect(assetHealth.stateForSingleDimension(0, '2022-01-01')).toEqual(SUCCESS_MISSING);
-      expect(assetHealth.stateForSingleDimension(0, '2022-01-01', ['MN', 'NY'])).toEqual(SUCCESS);
-
-      // Ask for the state of a column
-      expect(assetHealth.stateForSingleDimension(1, 'TN')).toEqual(SUCCESS_MISSING);
-      expect(assetHealth.stateForSingleDimension(1, 'MN')).toEqual(SUCCESS);
-      expect(assetHealth.stateForSingleDimension(1, 'TN', ['2022-01-04'])).toEqual(SUCCESS);
 
       // Ask for the ranges of a row
       expect(assetHealth.rangesForSingleDimension(0)).toEqual([
@@ -369,9 +355,6 @@ describe('usePartitionHealthData', () => {
       expect(assetHealth.stateForKey(['2022-01-01', 'TN'])).toEqual(MISSING);
       expect(assetHealth.stateForKey(['2022-01-04', 'NY'])).toEqual(MISSING);
 
-      expect(assetHealth.stateForSingleDimension(0, '2022-01-03')).toEqual(MISSING);
-      expect(assetHealth.stateForSingleDimension(1, 'TN')).toEqual(MISSING);
-
       expect(assetHealth.rangesForSingleDimension(0)).toEqual([]);
       expect(
         assetHealth.rangesForSingleDimension(0, [
@@ -400,12 +383,6 @@ describe('usePartitionHealthData', () => {
       expect(assetHealth.assetKey).toEqual({path: ['asset']});
       expect(assetHealth.stateForKey(['TN', 'TN'])).toEqual(SUCCESS);
       expect(assetHealth.stateForKey(['CA', 'NY'])).toEqual(MISSING);
-      expect(assetHealth.stateForSingleDimension(0, 'CA')).toEqual(SUCCESS_MISSING);
-      expect(assetHealth.stateForSingleDimension(0, 'CA', ['TN', 'CA'])).toEqual(SUCCESS);
-      expect(assetHealth.stateForSingleDimension(0, 'CA', ['NY', 'MN'])).toEqual(MISSING);
-      expect(assetHealth.stateForSingleDimension(1, 'TN')).toEqual(SUCCESS_MISSING);
-      expect(assetHealth.stateForSingleDimension(1, 'TN', ['TN', 'CA'])).toEqual(SUCCESS);
-      expect(assetHealth.stateForSingleDimension(1, 'CA')).toEqual(SUCCESS);
     });
 
     it('should return correct (empty) data if the asset is not partitioned at all', async () => {
@@ -415,7 +392,6 @@ describe('usePartitionHealthData', () => {
 
       // These should safely no-op
       expect(assetHealth.stateForKey(['2022-01-01'])).toEqual(MISSING);
-      expect(assetHealth.stateForSingleDimension(0, '2022-01-01')).toEqual(MISSING);
     });
   });
 });
