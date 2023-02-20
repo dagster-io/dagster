@@ -36,7 +36,7 @@ from ..decorators.graph_decorator import graph
 from ..decorators.op_decorator import _Op
 from ..events import AssetKey, CoercibleToAssetKeyPrefix
 from ..input import In
-from ..output import Out
+from ..output import GraphOut, Out
 from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
@@ -743,6 +743,65 @@ class _GraphBackedAsset:
             partition_mappings=partition_mappings if partition_mappings else None,
             group_name=self.group_name,
         )
+
+
+def graph_multi_asset(
+    *,
+    outs: Mapping[str, AssetOut],
+    name: Optional[str] = None,
+    ins: Optional[Mapping[str, AssetIn]] = None,
+    partitions_def: Optional[PartitionsDefinition[object]] = None,
+    group_name: Optional[str] = None,
+    can_subset: bool = False,
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    """Create a combined definition of multiple assets that are computed using the same graph of
+    ops, and the same upstream assets.
+
+    Each argument to the decorated function references an upstream asset that this asset depends on.
+    The name of the argument designates the name of the upstream asset.
+
+    Args:
+        name (Optional[str]): The name of the graph.
+        outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
+        ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
+            about the input.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the assets.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. This
+            group name will be applied to all assets produced by this multi_asset.
+        can_subset (bool): Whether this asset's computation can emit a subset of the asset
+            keys based on the context.selected_assets argument. Defaults to False.
+    """
+
+    def inner(fn: Callable) -> AssetsDefinition:
+        partition_mappings = {
+            input_name: asset_in.partition_mapping
+            for input_name, asset_in in (ins or {}).items()
+            if asset_in.partition_mapping
+        }
+
+        asset_ins = build_asset_ins(fn, ins or {}, set())
+        keys_by_input_name = {
+            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
+        }
+        asset_outs = build_asset_outs(outs)
+        op_graph = graph(
+            name=name or fn.__name__,
+            out={out_name: GraphOut() for out_name, _ in asset_outs.values()},
+        )(fn)
+        return AssetsDefinition.from_graph(
+            op_graph,
+            keys_by_input_name=keys_by_input_name,
+            keys_by_output_name={
+                output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
+            },
+            partitions_def=partitions_def,
+            partition_mappings=partition_mappings if partition_mappings else None,
+            group_name=group_name,
+            can_subset=can_subset,
+        )
+
+    return inner
 
 
 def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tuple[str, Out]]:

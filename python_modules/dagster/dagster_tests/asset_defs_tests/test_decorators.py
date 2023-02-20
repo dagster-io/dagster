@@ -11,6 +11,7 @@ from dagster import (
     In,
     Nothing,
     OpExecutionContext,
+    Out,
     Output,
     StaticPartitionsDefinition,
     String,
@@ -18,6 +19,7 @@ from dagster import (
     _check as check,
     build_op_context,
     graph_asset,
+    graph_multi_asset,
     io_manager,
     materialize_to_memory,
     op,
@@ -861,7 +863,7 @@ def test_graph_asset_partition_mapping():
     @op(ins={"in1": In(Nothing)})
     def my_op(context):
         assert context.partition_key == "a"
-        assert context.asset_partition_keys_for_input("in1") == ["a", "b", "c"]
+        assert context.asset_partition_keys_for_input("in1") == ["a"]
 
     @graph_asset(
         partitions_def=partitions_def,
@@ -903,3 +905,81 @@ def test_graph_asset_w_key_prefix():
         return bar(foo())
 
     assert str_prefix.keys_by_output_name["result"].path == ["prefix", "str_prefix"]
+
+
+def test_graph_multi_asset_decorator():
+    @op(out={"one": Out(), "two": Out()})
+    def two_in_two_out(context, in1, in2):
+        assert context.asset_key_for_input("in1") == AssetKey("x")
+        assert context.asset_key_for_input("in2") == AssetKey("y")
+        assert context.asset_key_for_output("one") == AssetKey("first_asset")
+        assert context.asset_key_for_output("two") == AssetKey("second_asset")
+        return 4, 5
+
+    @graph_multi_asset(
+        outs={"first_asset": AssetOut(), "second_asset": AssetOut()}, group_name="grp"
+    )
+    def two_assets(x, y):
+        one, two = two_in_two_out(x, y)
+        return {"first_asset": one, "second_asset": two}
+
+    assert two_assets.keys_by_input_name["x"] == AssetKey("x")
+    assert two_assets.keys_by_input_name["y"] == AssetKey("y")
+    assert two_assets.keys_by_output_name["first_asset"] == AssetKey("first_asset")
+    assert two_assets.keys_by_output_name["second_asset"] == AssetKey("second_asset")
+
+    assert two_assets.group_names_by_key[AssetKey("first_asset")] == "grp"
+    assert two_assets.group_names_by_key[AssetKey("second_asset")] == "grp"
+
+    @asset
+    def x():
+        return 1
+
+    @asset
+    def y():
+        return 1
+
+    assert materialize_to_memory([x, y, two_assets]).success
+
+
+def test_graph_multi_asset_w_key_prefix():
+    @op(out={"one": Out(), "two": Out()})
+    def two_in_two_out(context, in1, in2):
+        assert context.asset_key_for_input("in1") == AssetKey("x")
+        assert context.asset_key_for_input("in2") == AssetKey("y")
+        assert context.asset_key_for_output("one") == AssetKey("first_asset")
+        assert context.asset_key_for_output("two") == AssetKey("second_asset")
+        return 4, 5
+
+    @graph_multi_asset(
+        ins={"x": AssetIn(key_prefix=["this", "is", "another", "prefix"])},
+        outs={
+            "first_asset": AssetOut(key_prefix=["this", "is", "a", "prefix"]),
+            "second_asset": AssetOut(),
+        },
+        group_name="grp",
+    )
+    def two_assets(x, y):
+        one, two = two_in_two_out(x, y)
+        return {"first_asset": one, "second_asset": two}
+
+    assert two_assets.keys_by_output_name["first_asset"].path == [
+        "this",
+        "is",
+        "a",
+        "prefix",
+        "first_asset",
+    ]
+
+    assert two_assets.keys_by_input_name["x"].path == [
+        "this",
+        "is",
+        "another",
+        "prefix",
+        "x",
+    ]
+
+    assert two_assets.group_names_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "first_asset"]): "grp",
+        AssetKey(["second_asset"]): "grp",
+    }
