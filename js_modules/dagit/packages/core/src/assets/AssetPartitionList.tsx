@@ -7,12 +7,18 @@ import {Inner} from '../ui/VirtualizedTable';
 
 import {AssetListRow, AssetListContainer} from './AssetEventList';
 
-export const AssetPartitionList: React.FC<{
+export interface AssetPartitionListProps {
   partitions: string[];
   stateForPartition: (dimensionKey: string) => PartitionState;
   focusedDimensionKey?: string;
   setFocusedDimensionKey?: (dimensionKey: string | undefined) => void;
-}> = ({focusedDimensionKey, setFocusedDimensionKey, partitions, stateForPartition}) => {
+}
+export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
+  focusedDimensionKey,
+  setFocusedDimensionKey,
+  partitions,
+  stateForPartition,
+}) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({

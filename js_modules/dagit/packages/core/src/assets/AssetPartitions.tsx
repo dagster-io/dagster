@@ -10,6 +10,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {PartitionStateCheckboxes} from '../partitions/PartitionStateCheckboxes';
 import {PartitionState} from '../partitions/PartitionStatus';
+import {testId} from '../testing/testId';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
@@ -25,6 +26,7 @@ import {
   keyCountByStateInSelection,
   partitionStateAtIndex,
 } from './usePartitionHealthData';
+import {usePartitionKeyInParams} from './usePartitionKeyInParams';
 
 interface Props {
   assetKey: AssetKey;
@@ -93,9 +95,12 @@ export const AssetPartitions: React.FC<Props> = ({
   // loading the full key space and shift responsibility for this to GraphQL in the future.
   //
   const dimensionKeysInSelection = (idx: number) => {
+    if (!selections[idx]) {
+      return []; // loading
+    }
     // Special case: If you have cleared the time selection in the top bar, we
     // clear all dimension columns, (even though you still have a dimension 2 selection)
-    if (selections[timeDimensionIdx].selectedRanges.length === 0) {
+    if (timeDimensionIdx !== -1 && selections[timeDimensionIdx].selectedRanges.length === 0) {
       return [];
     }
 
@@ -172,7 +177,9 @@ export const AssetPartitions: React.FC<Props> = ({
         flex={{direction: 'row', justifyContent: 'space-between'}}
         border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       >
-        <div>{countsFiltered.toLocaleString()} Partitions Selected</div>
+        <div data-testid={testId('partitions-selected')}>
+          {countsFiltered.toLocaleString()} Partitions Selected
+        </div>
         <PartitionStateCheckboxes
           counts={countsByStateInSelection}
           allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
@@ -235,41 +242,3 @@ export const AssetPartitions: React.FC<Props> = ({
     </>
   );
 };
-
-function usePartitionKeyInParams({
-  params,
-  setParams,
-  dimensionCount,
-  defaultKeyInDimension,
-}: Pick<Props, 'params' | 'setParams'> & {
-  dimensionCount: number;
-  defaultKeyInDimension: (idx: number) => string;
-}) {
-  const focusedDimensionKeys = React.useMemo(
-    () =>
-      params.partition
-        ? dimensionCount > 1
-          ? params.partition.split('|').filter(Boolean) // 2D partition keys
-          : [params.partition] // "|" character is allowed in 1D partition keys for historical reasons
-        : [],
-    [dimensionCount, params.partition],
-  );
-
-  const setFocusedDimensionKey = (dimensionIdx: number, dimensionKey: string | undefined) => {
-    // Automatically make a selection in column 0 if the user
-    // clicked in column 1 and there is no column 0 selection.
-    const nextFocusedDimensionKeys: string[] = [];
-    for (let ii = 0; ii < dimensionIdx; ii++) {
-      nextFocusedDimensionKeys.push(focusedDimensionKeys[ii] || defaultKeyInDimension(ii));
-    }
-    if (dimensionKey) {
-      nextFocusedDimensionKeys.push(dimensionKey);
-    }
-    setParams({
-      ...params,
-      partition: nextFocusedDimensionKeys.join('|'),
-    });
-  };
-
-  return [focusedDimensionKeys, setFocusedDimensionKey] as const;
-}

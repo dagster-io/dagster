@@ -32,7 +32,6 @@ export interface PartitionHealthData {
 
   stateForKey: (dimensionKeys: string[]) => PartitionState;
 
-  rangesPrimaryDimension: PartitionHealthDimension;
   ranges: Range[];
   rangesForSingleDimension: (
     dimensionIdx: number,
@@ -181,7 +180,6 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
     stateForKey,
 
     ranges,
-    rangesPrimaryDimension: dimensions[0],
     rangesForSingleDimension,
   };
 
@@ -298,13 +296,16 @@ export function keyCountByStateInSelection(
     assetHealth?.ranges || [],
     selections[0].selectedRanges,
   );
+  const secondDimensionKeyCount =
+    selections.length > 1 ? keyCountInSelection(selections[1].selectedRanges) : 1;
+
   const success = rangesInSelection.reduce(
     (a, b) =>
       a +
       (b.end.idx - b.start.idx + 1) *
         (b.subranges
-          ? keyCountInRanges(b.subranges)
-          : keyCountInSelection(selections[1].selectedRanges)),
+          ? keyCountInRanges(rangesClippedToSelection(b.subranges, selections[1].selectedRanges))
+          : secondDimensionKeyCount),
     0,
   );
 

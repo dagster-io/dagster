@@ -8,6 +8,10 @@ import {
   partitionStatusGivenRanges,
   rangeClippedToSelection,
   rangesForKeys,
+  partitionStateAtIndex,
+  keyCountByStateInSelection,
+  PartitionHealthDimension,
+  PartitionDimensionSelection,
 } from './usePartitionHealthData';
 
 const {SUCCESS, MISSING} = PartitionState;
@@ -206,6 +210,23 @@ const TWO_DIMENSIONAL_ASSET_EMPTY: PartitionHealthQuery = {
   },
 };
 
+function selectionWithSlice(
+  dim: PartitionHealthDimension,
+  start: number,
+  end: number,
+): PartitionDimensionSelection {
+  return {
+    dimension: dim,
+    selectedKeys: dim.partitionKeys.slice(start, end + 1),
+    selectedRanges: [
+      [
+        {idx: start, key: dim.partitionKeys[start]},
+        {idx: end, key: dim.partitionKeys[end]},
+      ],
+    ],
+  };
+}
+
 describe('usePartitionHealthData', () => {
   describe('loadPartitionHealthData', () => {
     it('should return an object with accessors for 1D partition data', async () => {
@@ -271,6 +292,7 @@ describe('usePartitionHealthData', () => {
         },
       ]);
 
+      // Ask for ranges of a row, clipped to a column selection
       expect(
         assetHealth.rangesForSingleDimension(0, [
           [
@@ -286,6 +308,7 @@ describe('usePartitionHealthData', () => {
         },
       ]);
 
+      // Ask for ranges of a row, clipped to a column selection
       expect(
         assetHealth.rangesForSingleDimension(0, [
           [
@@ -316,6 +339,10 @@ describe('usePartitionHealthData', () => {
         },
       ]);
 
+      // Ask for ranges of a row, clipped to an empty column selection
+      expect(assetHealth.rangesForSingleDimension(0, [])).toEqual([]);
+
+      // Ask for ranges of a column
       expect(assetHealth.rangesForSingleDimension(1)).toEqual([
         {
           start: {idx: 0, key: 'TN'},
@@ -329,6 +356,7 @@ describe('usePartitionHealthData', () => {
         },
       ]);
 
+      // Ask for ranges of a column, clipped to a row selection
       expect(
         assetHealth.rangesForSingleDimension(1, [
           [
@@ -343,6 +371,9 @@ describe('usePartitionHealthData', () => {
           value: PartitionState.SUCCESS,
         },
       ]);
+
+      // Ask for ranges of a column, clipped to an empty row selection
+      expect(assetHealth.rangesForSingleDimension(1, [])).toEqual([]);
 
       // should not crash if asked for an invalid dimension -- just return []
       expect(assetHealth.rangesForSingleDimension(2)).toEqual([]);
@@ -529,6 +560,81 @@ describe('usePartitionHealthData utilities', () => {
     });
     it('should return no ranges if no keys are provided', () => {
       expect(rangesForKeys([], KEYS)).toEqual([]);
+    });
+  });
+
+  describe('partitionStateAtIndex', () => {
+    it('should return range.value if the index is within one of the ranges, missing otherwise', () => {
+      expect(partitionStateAtIndex([A_C, G_I], 0)).toEqual(PartitionState.SUCCESS);
+      expect(partitionStateAtIndex([A_C, G_I], 6)).toEqual(PartitionState.SUCCESS);
+      expect(partitionStateAtIndex([A_C, G_I], 3)).toEqual(PartitionState.MISSING);
+      expect(partitionStateAtIndex([A_C, G_I], -1)).toEqual(PartitionState.MISSING);
+      expect(partitionStateAtIndex([A_C, G_I], 100)).toEqual(PartitionState.MISSING);
+      expect(partitionStateAtIndex([], 3)).toEqual(PartitionState.MISSING);
+      expect(partitionStateAtIndex([], -1)).toEqual(PartitionState.MISSING);
+      expect(partitionStateAtIndex([], 100)).toEqual(PartitionState.MISSING);
+      expect(
+        partitionStateAtIndex(
+          [
+            {
+              start: {idx: 0, key: 'A'},
+              end: {idx: 8, key: 'G'},
+              value: PartitionState.SUCCESS_MISSING,
+            },
+          ],
+          2,
+        ),
+      ).toEqual(PartitionState.SUCCESS_MISSING);
+    });
+  });
+
+  describe('keyCountByStateInSelection', () => {
+    it('should return correct counts in the one dimensional case', () => {
+      const one = buildPartitionHealthData(ONE_DIMENSIONAL_ASSET, {path: ['asset']});
+
+      expect(
+        keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0], 0, 5)]),
+      ).toEqual({missing: 4, success: 2});
+
+      expect(
+        keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0], 0, 2)]),
+      ).toEqual({missing: 3, success: 0});
+    });
+
+    it('should return correct counts in the two dimensional case', () => {
+      const two = buildPartitionHealthData(TWO_DIMENSIONAL_ASSET, {path: ['asset']});
+
+      expect(
+        keyCountByStateInSelection(two, [
+          selectionWithSlice(two.dimensions[0], 0, 5),
+          selectionWithSlice(two.dimensions[1], 0, 4),
+        ]),
+      ).toEqual({missing: 19, success: 11});
+
+      expect(
+        keyCountByStateInSelection(two, [
+          selectionWithSlice(two.dimensions[0], 0, 3),
+          selectionWithSlice(two.dimensions[1], 0, 3),
+        ]),
+      ).toEqual({missing: 11, success: 5});
+
+      expect(
+        keyCountByStateInSelection(two, [
+          selectionWithSlice(two.dimensions[0], 0, 5),
+          selectionWithSlice(two.dimensions[1], 4, 4),
+        ]),
+      ).toEqual({missing: 0, success: 6});
+    });
+
+    it('should return correct counts in the empty case', () => {
+      const twoEmpty = buildPartitionHealthData(TWO_DIMENSIONAL_ASSET_EMPTY, {path: ['asset']});
+
+      expect(
+        keyCountByStateInSelection(twoEmpty, [
+          selectionWithSlice(twoEmpty.dimensions[0], 0, 5),
+          selectionWithSlice(twoEmpty.dimensions[1], 0, 4),
+        ]),
+      ).toEqual({missing: 30, success: 0});
     });
   });
 });

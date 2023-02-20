@@ -33,7 +33,7 @@ the asset health bar you see is a flattened representation of the health of all 
 */
 export function mergedAssetHealth(
   assetHealth: PartitionHealthData[],
-): Omit<PartitionHealthData, 'assetKey' | 'ranges' | 'rangesPrimaryDimension'> {
+): Omit<PartitionHealthData, 'assetKey' | 'ranges'> {
   if (!assetHealth.length) {
     return {
       dimensions: [],
