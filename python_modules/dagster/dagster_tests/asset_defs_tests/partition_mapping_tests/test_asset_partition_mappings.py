@@ -9,19 +9,26 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     DailyPartitionsDefinition,
+    IdentityPartitionMapping,
     IOManager,
     IOManagerDefinition,
     LastPartitionMapping,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    MultiToSingleDimensionPartitionMapping,
     Output,
     PartitionsDefinition,
+    SourceAsset,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
+    define_asset_job,
     graph,
     materialize,
     op,
 )
 from dagster._core.definitions import asset, build_assets_job, multi_asset
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import (
@@ -586,3 +593,141 @@ def test_exported_partition_mappings_whitelisted():
     } - {PartitionMapping}
 
     assert set(get_builtin_partition_mapping_types()) == exported_partition_mapping_classes
+
+
+def test_multipartitions_def_partition_mapping_infer_identity():
+    composite = MultiPartitionsDefinition(
+        {
+            "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+        }
+    )
+
+    @asset(partitions_def=composite)
+    def upstream(context):
+        return 1
+
+    @asset(partitions_def=composite)
+    def downstream(context, upstream):
+        assert (
+            context.asset_partition_keys_for_input("upstream")
+            == context.asset_partition_keys_for_output()
+        )
+        return 1
+
+    assets_job = define_asset_job("foo", [upstream, downstream]).resolve([upstream, downstream], [])
+    asset_graph = AssetGraph.from_assets([upstream, downstream])
+
+    assert (
+        asset_graph.get_partition_mapping(upstream.key, downstream.key)
+        == IdentityPartitionMapping()
+    )
+    assert assets_job.execute_in_process(
+        partition_key=MultiPartitionKey({"abc": "a", "123": "1"})
+    ).success
+
+
+def test_multipartitions_def_partition_mapping_infer_single_dim_to_multi():
+    abc_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    composite = MultiPartitionsDefinition(
+        {
+            "abc": abc_def,
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+        }
+    )
+
+    @asset(partitions_def=abc_def)
+    def upstream(context):
+        assert context.asset_partition_keys_for_output("result") == ["a"]
+        return 1
+
+    @asset(partitions_def=composite)
+    def downstream(context, upstream):
+        assert context.asset_partition_keys_for_input("upstream") == ["a"]
+        assert context.asset_partition_keys_for_output("result") == [
+            MultiPartitionKey({"abc": "a", "123": "1"})
+        ]
+        return 1
+
+    asset_graph = AssetGraph.from_assets([upstream, downstream])
+
+    assert (
+        asset_graph.get_partition_mapping(upstream.key, downstream.key)
+        == MultiToSingleDimensionPartitionMapping()
+    )
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):  # pylint: disable=unused-argument
+            if context.asset_key == AssetKey("upstream"):
+                assert context.has_asset_partitions
+                assert context.asset_partition_keys == ["a"]
+
+        def load_input(self, context):
+            assert context.has_asset_partitions
+            assert context.asset_partition_keys == ["a"]
+
+    materialize(
+        [upstream],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="a",
+    )
+
+    materialize(
+        [downstream, SourceAsset(AssetKey("upstream"), partitions_def=abc_def)],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key=MultiPartitionKey({"abc": "a", "123": "1"}),
+    )
+
+
+def test_multipartitions_def_partition_mapping_infer_multi_to_single_dim():
+    abc_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    composite = MultiPartitionsDefinition(
+        {
+            "abc": abc_def,
+            "123": StaticPartitionsDefinition(["1", "2", "3"]),
+        }
+    )
+
+    a_multipartition_keys = {
+        MultiPartitionKey(kv)
+        for kv in [{"abc": "a", "123": "1"}, {"abc": "a", "123": "2"}, {"abc": "a", "123": "3"}]
+    }
+
+    @asset(partitions_def=composite)
+    def upstream(context):
+        return 1
+
+    @asset(partitions_def=abc_def)
+    def downstream(context, upstream):
+        assert set(context.asset_partition_keys_for_input("upstream")) == a_multipartition_keys
+        assert context.asset_partition_keys_for_output("result") == ["a"]
+        return 1
+
+    asset_graph = AssetGraph.from_assets([upstream, downstream])
+
+    assert (
+        asset_graph.get_partition_mapping(upstream.key, downstream.key)
+        == MultiToSingleDimensionPartitionMapping()
+    )
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):  # pylint: disable=unused-argument
+            pass
+
+        def load_input(self, context):
+            assert set(context.asset_partition_keys) == a_multipartition_keys
+
+    for pk in a_multipartition_keys:
+        materialize(
+            [upstream],
+            resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+            partition_key=pk,
+        )
+
+    materialize(
+        [downstream, SourceAsset(AssetKey("upstream"), partitions_def=composite)],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="a",
+    )

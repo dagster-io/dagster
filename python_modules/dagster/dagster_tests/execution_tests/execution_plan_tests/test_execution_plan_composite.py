@@ -64,7 +64,7 @@ def test_execution_plan_for_graph():
         execution_plan,
         InMemoryPipeline(composite_job),
         run_config=run_config,
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         instance=instance,
     )
 
@@ -104,7 +104,7 @@ def test_execution_plan_for_graph_with_config_mapping():
         execution_plan,
         InMemoryPipeline(composite_job_with_config_mapping),
         run_config=run_config,
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         instance=instance,
     )
 

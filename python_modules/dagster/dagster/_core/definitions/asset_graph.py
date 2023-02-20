@@ -134,9 +134,12 @@ class AssetGraph:
     def get_partition_mapping(
         self, asset_key: AssetKey, in_asset_key: AssetKey
     ) -> PartitionMapping:
-        partitions_def = self.get_partitions_def(asset_key)
         partition_mappings = self._partition_mappings_by_key.get(asset_key) or {}
-        return infer_partition_mapping(partition_mappings.get(in_asset_key), partitions_def)
+        return infer_partition_mapping(
+            partition_mappings.get(in_asset_key),
+            self.get_partitions_def(asset_key),
+            self.get_partitions_def(in_asset_key),
+        )
 
     def is_partitioned(self, asset_key: AssetKey) -> bool:
         return self.get_partitions_def(asset_key) is not None

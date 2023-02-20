@@ -69,9 +69,13 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         return [pd.DataFrame]
 
 
-duckdb_pandas_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
+duckdb_pandas_io_manager = build_duckdb_io_manager(
+    [DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
+)
 duckdb_pandas_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes pandas dataframes to DuckDB.
+An IO manager definition that reads inputs from and writes Pandas DataFrames to DuckDB. When
+using the duckdb_pandas_io_manager, any inputs and outputs without type annotations will be loaded
+as Pandas DataFrames.
 
 Returns:
     IOManagerDefinition

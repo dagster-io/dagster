@@ -66,7 +66,7 @@ def core_execute_in_process(
                 context_event_generator=orchestration_context_event_generator,
                 pipeline=pipeline,
                 execution_plan=execution_plan,
-                pipeline_run=run,
+                dagster_run=run,
                 instance=execute_instance,
                 run_config=run_config,
                 executor_defs=None,

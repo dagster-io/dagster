@@ -1,7 +1,19 @@
 import collections.abc
+import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Collection, Mapping, NamedTuple, Optional, Tuple, Type, Union, cast
+from typing import (
+    Collection,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
@@ -15,8 +27,10 @@ from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.backcompat import ExperimentalWarning
 from dagster._utils.cached_method import cached_method
 
 
@@ -267,42 +281,107 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
 
 
 @experimental
-class SingleDimensionDependencyMapping(PartitionMapping):
+@whitelist_for_serdes
+class MultiToSingleDimensionPartitionMapping(
+    PartitionMapping,
+    NamedTuple(
+        "_MultiToSingleDimensionPartitionMapping", [("partition_dimension_name", Optional[str])]
+    ),
+):
     """
-    Defines a correspondence between an upstream single-dimensional partitions definition
-    and a downstream MultiPartitionsDefinition. The upstream partitions definition must be
-    a dimension of the downstream MultiPartitionsDefinition.
+    Defines a correspondence between an single-dimensional partitions definition
+    and a MultiPartitionsDefinition. The single-dimensional partitions definition must be
+    a dimension of the MultiPartitionsDefinition.
 
-    For an upstream partition key X, this partition mapping assumes that any downstream
-    multi-partition key with X in the selected dimension is a downstream dependency.
+    This class handles the case where the upstream asset is multipartitioned and the
+    downstream asset is single dimensional, and vice versa.
+
+    For a partition key X, this partition mapping assumes that any multi-partition key with
+    X in the selected dimension is a dependency.
 
     Args:
-        partition_dimension_name (str): The name of the partition dimension in the downstream
-            MultiPartitionsDefinition that matches the upstream partitions definition.
+        partition_dimension_name (Optional[str]): The name of the partition dimension in the
+            MultiPartitionsDefinition that matches the single-dimension partitions definition.
     """
 
-    def __init__(self, partition_dimension_name: str):
-        self.partition_dimension_name = partition_dimension_name
+    def __new__(cls, partition_dimension_name: Optional[str] = None):
+        return super(MultiToSingleDimensionPartitionMapping, cls).__new__(
+            cls,
+            partition_dimension_name=check.opt_str_param(
+                partition_dimension_name, "partition_dimension_name"
+            ),
+        )
 
-    def _check_upstream_partitions_def_equals_selected_dimension(
+    def _check_partitions_defs_and_get_partition_dimension_name(
         self,
         upstream_partitions_def: PartitionsDefinition,
-        downstream_partitions_def: MultiPartitionsDefinition,
-    ) -> None:
-        matching_dimensions = [
-            partitions_def
-            for partitions_def in downstream_partitions_def.partitions_defs
-            if partitions_def.name == self.partition_dimension_name
-        ]
-        if len(matching_dimensions) != 1:
-            check.failed(f"Partition dimension '{self.partition_dimension_name}' not found")
-        matching_dimension_def = next(iter(matching_dimensions))
-
-        if upstream_partitions_def != matching_dimension_def.partitions_def:
+        downstream_partitions_def: PartitionsDefinition,
+    ) -> Tuple[PartitionsDefinition, PartitionsDefinition, str]:
+        if not _can_infer_single_to_multi_partition_mapping(
+            upstream_partitions_def, downstream_partitions_def
+        ):
             check.failed(
-                "The upstream partitions definition does not have the same partitions definition "
-                f"as dimension {matching_dimension_def.name}"
+                "This partition mapping defines a relationship between a multipartitioned and"
+                " single dimensional asset. The single dimensional partitions definition must be a"
+                " dimension of the MultiPartitionsDefinition."
             )
+
+        multipartitions_def = cast(
+            MultiPartitionsDefinition,
+            (
+                upstream_partitions_def
+                if isinstance(upstream_partitions_def, MultiPartitionsDefinition)
+                else downstream_partitions_def
+            ),
+        )
+
+        single_dimension_partitions_def = (
+            upstream_partitions_def
+            if not isinstance(upstream_partitions_def, MultiPartitionsDefinition)
+            else downstream_partitions_def
+        )
+
+        if self.partition_dimension_name is None:
+            dimension_partitions_defs = [
+                partitions_def.partitions_def
+                for partitions_def in multipartitions_def.partitions_defs
+            ]
+            if len(set(dimension_partitions_defs)) != len(dimension_partitions_defs):
+                check.failed(
+                    "Partition dimension name must be specified on the "
+                    "MultiToSingleDimensionPartitionMapping object when dimensions of a"
+                    " MultiPartitions definition share the same partitions definition."
+                )
+            matching_dimension_defs = [
+                dimension_def
+                for dimension_def in multipartitions_def.partitions_defs
+                if dimension_def.partitions_def == single_dimension_partitions_def
+            ]
+            if len(matching_dimension_defs) != 1:
+                check.failed(
+                    "No partition dimension name was specified and no dimensions of the"
+                    " MultiPartitionsDefinition match the single dimension"
+                    " PartitionsDefinition."
+                )
+            partition_dimension_name = next(iter(matching_dimension_defs)).name
+        else:
+            matching_dimensions = [
+                partitions_def
+                for partitions_def in multipartitions_def.partitions_defs
+                if partitions_def.name == self.partition_dimension_name
+            ]
+            if len(matching_dimensions) != 1:
+                check.failed(f"Partition dimension '{self.partition_dimension_name}' not found")
+            matching_dimension_def = next(iter(matching_dimensions))
+
+            if single_dimension_partitions_def != matching_dimension_def.partitions_def:
+                check.failed(
+                    "The single dimension partitions definition does not have the same partitions"
+                    f" definition as dimension {matching_dimension_def.name}"
+                )
+            partition_dimension_name = self.partition_dimension_name
+
+        return (upstream_partitions_def, downstream_partitions_def, partition_dimension_name)
 
     def get_upstream_partitions_for_partition_range(
         self,
@@ -320,28 +399,73 @@ class SingleDimensionDependencyMapping(PartitionMapping):
     ) -> PartitionKeyRange:
         raise NotImplementedError()
 
+    def _get_matching_multipartition_keys_for_single_dim_subset(
+        self,
+        partitions_subset: PartitionsSubset,
+        multipartitions_def: MultiPartitionsDefinition,
+        partition_dimension_name: str,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[str]:
+        matching_keys = []
+        for key in multipartitions_def.get_partition_keys(
+            current_time=None, dynamic_partitions_store=dynamic_partitions_store
+        ):
+            key = cast(MultiPartitionKey, key)
+            if (
+                key.keys_by_dimension[partition_dimension_name]
+                in partitions_subset.get_partition_keys()
+            ):
+                matching_keys.append(key)
+        return matching_keys
+
+    def _get_single_dim_keys_from_multipartitioned_subset(
+        self,
+        partitions_subset: PartitionsSubset,
+        partition_dimension_name: str,
+    ) -> Set[str]:
+        upstream_partitions = set()
+        for partition_key in partitions_subset.get_partition_keys():
+            if not isinstance(partition_key, MultiPartitionKey):
+                check.failed("Partition keys in subset must be MultiPartitionKeys")
+            upstream_partitions.add(partition_key.keys_by_dimension[partition_dimension_name])
+        return upstream_partitions
+
     def get_upstream_partitions_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
         upstream_partitions_def: PartitionsDefinition,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        if downstream_partitions_subset is None or not isinstance(
-            downstream_partitions_subset.partitions_def, MultiPartitionsDefinition
-        ):
+        if downstream_partitions_subset is None:
             check.failed("downstream asset is not partitioned")
 
-        self._check_upstream_partitions_def_equals_selected_dimension(
+        (
+            upstream_partitions_def,
+            _,
+            partition_dimension_name,
+        ) = self._check_partitions_defs_and_get_partition_dimension_name(
             upstream_partitions_def, downstream_partitions_subset.partitions_def
         )
-        upstream_partitions = set()
-        for partition_key in downstream_partitions_subset.get_partition_keys():
-            if not isinstance(partition_key, MultiPartitionKey):
-                check.failed(
-                    "Partition keys in downstream partition key subset must be MultiPartitionKeys"
+
+        if isinstance(upstream_partitions_def, MultiPartitionsDefinition):
+            # upstream partitions def is multipartitioned
+            # downstream partitions def has single dimension
+            return upstream_partitions_def.empty_subset().with_partition_keys(
+                self._get_matching_multipartition_keys_for_single_dim_subset(
+                    downstream_partitions_subset,
+                    cast(MultiPartitionsDefinition, upstream_partitions_def),
+                    partition_dimension_name,
+                    dynamic_partitions_store,
                 )
-            upstream_partitions.add(partition_key.keys_by_dimension[self.partition_dimension_name])
-        return upstream_partitions_def.empty_subset().with_partition_keys(upstream_partitions)
+            )
+        else:
+            # upstream partitions_def has single dimension
+            # downstream partitions def is multipartitioned
+            return upstream_partitions_def.empty_subset().with_partition_keys(
+                self._get_single_dim_keys_from_multipartitioned_subset(
+                    downstream_partitions_subset, partition_dimension_name
+                )
+            )
 
     def get_downstream_partitions_for_partitions(
         self,
@@ -349,26 +473,36 @@ class SingleDimensionDependencyMapping(PartitionMapping):
         downstream_partitions_def: PartitionsDefinition,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> PartitionsSubset:
-        if downstream_partitions_def is None or not isinstance(
-            downstream_partitions_def, MultiPartitionsDefinition
-        ):
+        if downstream_partitions_def is None:
             check.failed("downstream asset is not multi-partitioned")
 
-        self._check_upstream_partitions_def_equals_selected_dimension(
+        (
+            _,
+            downstream_partitions_def,
+            partition_dimension_name,
+        ) = self._check_partitions_defs_and_get_partition_dimension_name(
             upstream_partitions_subset.partitions_def, downstream_partitions_def
         )
 
-        upstream_keys = list(upstream_partitions_subset.get_partition_keys())
-
-        matching_keys = []
-        for key in downstream_partitions_def.get_partition_keys(
-            current_time=None, dynamic_partitions_store=dynamic_partitions_store
-        ):
-            key = cast(MultiPartitionKey, key)
-            if key.keys_by_dimension[self.partition_dimension_name] in upstream_keys:
-                matching_keys.append(key)
-
-        return downstream_partitions_def.empty_subset().with_partition_keys(set(matching_keys))
+        if isinstance(downstream_partitions_def, MultiPartitionsDefinition):
+            # upstream partitions def has single dimension
+            # downstream partitions def is multipartitioned
+            return downstream_partitions_def.empty_subset().with_partition_keys(
+                self._get_matching_multipartition_keys_for_single_dim_subset(
+                    upstream_partitions_subset,
+                    downstream_partitions_def,
+                    partition_dimension_name,
+                    dynamic_partitions_store,
+                )
+            )
+        else:
+            # upstream partitions def is multipartitioned
+            # downstream partitions def has single dimension
+            return downstream_partitions_def.empty_subset().with_partition_keys(
+                self._get_single_dim_keys_from_multipartitioned_subset(
+                    upstream_partitions_subset, partition_dimension_name
+                )
+            )
 
 
 @whitelist_for_serdes
@@ -504,13 +638,64 @@ class StaticPartitionMapping(
         raise NotImplementedError()
 
 
+def _can_infer_single_to_multi_partition_mapping(
+    upstream_partitions_def: PartitionsDefinition, downstream_partitions_def: PartitionsDefinition
+) -> bool:
+    multipartitions_defs = [
+        partitions_def
+        for partitions_def in [upstream_partitions_def, downstream_partitions_def]
+        if isinstance(partitions_def, MultiPartitionsDefinition)
+    ]
+
+    if len(multipartitions_defs) != 1:
+        return False
+
+    multipartitions_def = cast(MultiPartitionsDefinition, next(iter(multipartitions_defs)))
+
+    single_dimension_partitions_def = next(
+        iter(
+            {
+                upstream_partitions_def,
+                downstream_partitions_def,
+            }
+            - set(multipartitions_defs)
+        )
+    )
+
+    matching_dimension_defs = [
+        dimension_def
+        for dimension_def in multipartitions_def.partitions_defs
+        if dimension_def.partitions_def == single_dimension_partitions_def
+    ]
+
+    if not matching_dimension_defs:
+        return False
+
+    return True
+
+
 def infer_partition_mapping(
-    partition_mapping: Optional[PartitionMapping], partitions_def: Optional[PartitionsDefinition]
+    partition_mapping: Optional[PartitionMapping],
+    downstream_partitions_def: Optional[PartitionsDefinition],
+    upstream_partitions_def: Optional[PartitionsDefinition],
 ) -> PartitionMapping:
+    from .time_window_partition_mapping import TimeWindowPartitionMapping
+
     if partition_mapping is not None:
         return partition_mapping
-    elif partitions_def is not None:
-        return partitions_def.get_default_partition_mapping()
+    elif upstream_partitions_def and downstream_partitions_def:
+        if _can_infer_single_to_multi_partition_mapping(
+            upstream_partitions_def, downstream_partitions_def
+        ):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=ExperimentalWarning)
+                return MultiToSingleDimensionPartitionMapping()
+        elif isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition) and isinstance(
+            downstream_partitions_def, TimeWindowPartitionsDefinition
+        ):
+            return TimeWindowPartitionMapping()
+        else:
+            return IdentityPartitionMapping()
     else:
         return AllPartitionMapping()
 
@@ -524,4 +709,5 @@ def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
         LastPartitionMapping,
         StaticPartitionMapping,
         TimeWindowPartitionMapping,
+        MultiToSingleDimensionPartitionMapping,
     )

@@ -338,7 +338,7 @@ class DagsterLogManager(logging.Logger):
         loggers: Sequence[logging.Logger],
         handlers: Optional[Sequence[logging.Handler]] = None,
         instance: Optional["DagsterInstance"] = None,
-        pipeline_run: Optional["DagsterRun"] = None,
+        dagster_run: Optional["DagsterRun"] = None,
     ) -> "DagsterLogManager":
         """Create a DagsterLogManager with a set of subservient loggers."""
         handlers = check.opt_sequence_param(handlers, "handlers", of_type=logging.Handler)
@@ -359,11 +359,11 @@ class DagsterLogManager(logging.Logger):
                 for logger in managed_loggers:
                     logger.setLevel(python_log_level)
 
-        if pipeline_run:
+        if dagster_run:
             logging_metadata = DagsterLoggingMetadata(
-                run_id=pipeline_run.run_id,
-                pipeline_name=pipeline_run.pipeline_name,
-                pipeline_tags=pipeline_run.tags,
+                run_id=dagster_run.run_id,
+                pipeline_name=dagster_run.pipeline_name,
+                pipeline_tags=dagster_run.tags,
             )
         else:
             logging_metadata = DagsterLoggingMetadata()

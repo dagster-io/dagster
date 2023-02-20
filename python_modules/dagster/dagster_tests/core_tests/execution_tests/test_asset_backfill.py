@@ -179,11 +179,18 @@ def make_backfill_data(
 def get_asset_graph(
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]]
 ) -> ExternalAssetGraph:
+    assets_defs_by_key = {
+        assets_def.key: assets_def
+        for assets in assets_by_repo_name.values()
+        for assets_def in assets
+    }
     with patch(
         "dagster._core.host_representation.external_data.get_builtin_partition_mapping_types"
     ) as get_builtin_partition_mapping_types:
         get_builtin_partition_mapping_types.return_value = tuple(
-            assets_def.infer_partition_mapping(dep_key).__class__
+            assets_def.infer_partition_mapping(
+                dep_key, assets_defs_by_key[dep_key].partitions_def
+            ).__class__
             for assets in assets_by_repo_name.values()
             for assets_def in assets
             for dep_key in assets_def.dependency_keys
