@@ -34,17 +34,15 @@ To complete this tutorial, you'll need:
 
   - **GCP credentials**: You can authenticate with GCP two ways: by following GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or by providing credentials directly to the BigQuery I/O manager. In this guide, we assume that you have run one of the `gcloud auth` commands or have set `GOOGLE_APPLICATION_CREDENTIALS` as specified in the linked instructions. For more information on providing credentials directly to the BigQuery I/O manager, see [Providing credentials as configuration](TODO LINK) in the BigQuery reference guide.
 
-    The Snowflake I/O manager can read all of these authentication values from environment variables. In this guide, we use password authentication and store the username and password as `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`, respectively.
-
 ---
 
-## Step 1: Configure the Snowflake I/O manager
+## Step 1: Configure the BigQuery I/O manager
 
-The Snowflake I/O manager requires some configuration to connect to your Snowflake instance. The `account`, `user` are required to connect with Snowflake. One method of authentication is required. You can use a password or a private key. Additionally, you need to specify a `database` to where all the tables should be stored.
+The BigQuery I/O manager requires some configuration to connect to your Bigquery instance. The `project` is required to connect with BigQuery. Additionally, one method of authentication is required. You can follow the GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or see [Providing credentials as configuration](TODO LINK) in the BigQuery reference guide.
 
-You can also provide some optional configuration to further customize the Snowflake I/O manager. You can specify a `warehouse` and `schema` where data should be stored, and a `role` for the I/O manager.
+You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables.
 
-```python file=/integrations/snowflake/configuration.py startafter=start_example endbefore=end_example
+```python file=/integrations/bigquery/configuration.py startafter=start_example endbefore=end_example
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
 from dagster import Definitions
@@ -69,27 +67,27 @@ defs = Definitions(
 )
 ```
 
-With this configuration, if you materialized an asset called `iris_dataset`, the Snowflake I/O manager would be permissioned with the role `writer` and would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
+With this configuration, if you materialized an asset called `iris_dataset`, the BigQuery I/O manager would  store the data in the `IRIS.IRIS_DATASET` table in the `my-gcp-project` project. The BigQuery instance would be located in `us-east5`.
 
-Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_snowflake_pandas" object="snowflake_pandas_io_manager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
+Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_gcp_pandas" object="bigquery_pandas_io_manager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
-For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake_pandas" object="snowflake_pandas_io_manager" /> API documentation.
+For more info about each of the configuration values, refer to the <PyObject module="dagster_gcp_pandas" object="bigquery_pandas_io_manager" /> API documentation.
 
 ---
 
-## Step 2: Create tables in Snowflake
+## Step 2: Create tables in BigQuery
 
-The Snowflake I/O manager can create and update tables for your Dagster defined assets, but you can also make existing Snowflake tables available to Dagster.
+The BigQuery I/O manager can create and update tables for your Dagster defined assets, but you can also make existing BigQuery tables available to Dagster.
 
 <TabGroup>
 
-<TabItem name="Create tables in Snowflake from Dagster assets">
+<TabItem name="Create tables in BigQuery from Dagster assets">
 
-### Store a Dagster asset as a table in Snowflake
+### Store a Dagster asset as a table in BigQuery
 
-To store data in Snowflake using the Snowflake I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the Snowflake I/O Manager, like in [Step 1: Configure the Snowflake I/O manager](#step-1-configure-the-snowflake-io-manager), and Dagster will handle storing and loading your assets in Snowflake.
+To store data in BigQuery using the BigQuery I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the BigQuery I/O Manager, like in [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), and Dagster will handle storing and loading your assets in BigQuery.
 
-```python file=/integrations/snowflake/basic_example.py
+```python file=/integrations/bigquery/basic_example.py
 import pandas as pd
 
 from dagster import asset
@@ -111,7 +109,7 @@ def iris_dataset() -> pd.DataFrame:
 
 In this example, we first define our [asset](/concepts/assets/software-defined-assets). Here, we are fetching the Iris dataset as a Pandas DataFrame and renaming the columns. The type signature of the function tells the I/O manager what data type it is working with, so it is important to include the return type `pd.DataFrame`.
 
-When Dagster materializes the `iris_dataset` asset using the configuration from [Step 1: Configure the Snowflake I/O manager](#step-1-configure-the-snowflake-io-manager), the Snowflake I/O manager will create the table `FLOWERS.IRIS.IRIS_DATASET` if it does not exist and replace the contents of the table with the value returned from the `iris_dataset` asset.
+When Dagster materializes the `iris_dataset` asset using the configuration from [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), the BigQuery I/O manager will create the table `IRIS.IRIS_DATASET` if it does not exist and replace the contents of the table with the value returned from the `iris_dataset` asset.
 
 </TabItem>
 
@@ -119,28 +117,28 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 ### Make an existing table available in Dagster
 
-You may already have tables in Snowflake that you want to make available to other Dagster assets. You can create [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables. By creating a source asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
+You may already have tables in BigQuery that you want to make available to other Dagster assets. You can create [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables. By creating a source asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
 
-```python file=/integrations/snowflake/source_asset.py
+```python file=/integrations/bigquery/source_asset.py
 from dagster import SourceAsset
 
 iris_harvest_data = SourceAsset(key="iris_harvest_data")
 ```
 
-In this example, we create a <PyObject object="SourceAsset" /> for a pre-existing table - perhaps created by an external data ingestion tool - that contains data about iris harvests. To make the data available to other Dagster assets, we need to tell the Snowflake I/O manager how to find the data.
+In this example, we create a <PyObject object="SourceAsset" /> for a pre-existing table - perhaps created by an external data ingestion tool - that contains data about iris harvests. To make the data available to other Dagster assets, we need to tell the BigQuery I/O manager how to find the data.
 
-Since we supply the database and the schema in the I/O manager configuration in [Step 1: Configure the Snowflake I/O manager](#step-1-configure-the-snowflake-io-manager), we only need to provide the table name. We do this with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `FLOWERS.IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
+Since we supply the project and dataset in the I/O manager configuration in [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), we only need to provide the table name. We do this with the `key` parameter in `SourceAsset`. When the I/O manager needs to load the `iris_harvest_data` in a downstream asset, it will select the data in the `IRIS.IRIS_HARVEST_DATA` table as a Pandas DataFrame and provide it to the downstream asset.
 
 </TabItem>
 </TabGroup>
 
 ---
 
-## Step 3: Load Snowflake tables in downstream assets
+## Step 3: Load BigQuery tables in downstream assets
 
-Once you have created an asset or source asset that represents a table in Snowflake, you will likely want to create additional assets that work with the data. Dagster and the Snowflake I/O manager allow you to load the data stored in Snowflake tables into downstream assets
+Once you have created an asset or source asset that represents a table in BigQuery, you will likely want to create additional assets that work with the data. Dagster and the BigQuery I/O manager allow you to load the data stored in BigQuery tables into downstream assets
 
-```python file=/integrations/snowflake/load_downstream.py startafter=start_example endbefore=end_example
+```python file=/integrations/bigquery/load_downstream.py startafter=start_example endbefore=end_example
 import pandas as pd
 
 from dagster import asset
@@ -153,11 +151,11 @@ def iris_cleaned(iris_dataset: pd.DataFrame):
     return iris_dataset.dropna().drop_duplicates()
 ```
 
-In this example, we want to provide the `iris_dataset` asset from the [Store a Dagster asset as a table in Snowflake](#store-a-dagster-asset-as-a-table-in-snowflake) example to the `iris_cleaned` asset.
+In this example, we want to provide the `iris_dataset` asset from the [Store a Dagster asset as a table in BigQuery](#store-a-dagster-asset-as-a-table-in-bigquery) example to the `iris_cleaned` asset.
 
 In `iris_cleaned`, the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the [docs for explicitly specifying dependencies](/concepts/assets/software-defined-assets#defining-explicit-dependencies).
 
-When materializing these assets, Dagster will use the `snowflake_pandas_io_manager` to fetch the `FLOWERS.IRIS.IRIS_DATASET` as a Pandas DataFrame and pass this DataFrame as the `iris_dataset` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `snowflake_pandas_io_manager` to store the DataFrame as the `FLOWERS.IRIS.IRIS_CLEANED` table in Snowflake.
+When materializing these assets, Dagster will use the `bigquery_pandas_io_manager` to fetch the `IRIS.IRIS_DATASET` as a Pandas DataFrame and pass this DataFrame as the `iris_dataset` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `bigquery_pandas_io_manager` to store the DataFrame as the `IRIS.IRIS_CLEANED` table in BigQuery.
 
 ---
 
@@ -165,7 +163,7 @@ When materializing these assets, Dagster will use the `snowflake_pandas_io_manag
 
 When finished, your code should look like the following:
 
-```python file=/integrations/snowflake/full_example.py
+```python file=/integrations/bigquery/full_example.py
 import pandas as pd
 from dagster_snowflake_pandas import snowflake_pandas_io_manager
 
@@ -213,7 +211,7 @@ defs = Definitions(
 
 ## Related
 
-For more Snowflake features, refer to the [Snowflake reference](/integrations/snowflake/reference).
+For more BigQuery features, refer to the [BigQuery reference](/integrations/bigquery/reference).
 
 For more information on software-defined assets, refer to the [Assets tutorial](/tutorial/assets/defining-an-asset) or the [Assets concept documentation](/concepts/assets/software-defined-assets).
 

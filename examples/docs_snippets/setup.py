@@ -31,6 +31,7 @@ setup(
         "dagster-k8s",
         "dagster-postgres",
         "dagster-slack",
+        "dagster-gcp-pandas",
     ],
     extras_require={
         "full": [

@@ -8,22 +8,18 @@ def iris_dataset():
 
 # start_example
 
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_gcp_pandas import bigquery_pandas_io_manager
 
 from dagster import Definitions
 
 defs = Definitions(
     assets=[iris_dataset],
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
+        "io_manager": bigquery_pandas_io_manager.configured(
             {
-                "account": "abc1234.us-east-1",  # required
-                "user": {"env": "SNOWFLAKE_USER"},  # required
-                "password": {"env": "SNOWFLAKE_PASSWORD"},  # password or private key required
-                "database": "FLOWERS",  # required
-                "role": "writer",  # optional, defaults to the default role for the account
-                "warehouse": "PLANTS",  # optional, defaults to default warehouse for the account
-                "schema": "IRIS,",  # optional, defaults to PUBLIC
+                "project": "my-gcp-project",  # required
+                "location": "us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
+                "dataset": "IRIS",  # optional, defaults to PUBLIC
             }
         )
     },

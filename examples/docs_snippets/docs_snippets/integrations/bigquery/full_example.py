@@ -1,5 +1,5 @@
 import pandas as pd
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_gcp_pandas import bigquery_pandas_io_manager
 
 from dagster import Definitions, SourceAsset, asset
 
@@ -28,13 +28,11 @@ def iris_cleaned(iris_dataset: pd.DataFrame):
 defs = Definitions(
     assets=[iris_dataset, iris_harvest_data, iris_cleaned],
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
+        "io_manager": bigquery_pandas_io_manager.configured(
             {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "schema": "IRIS,",
+                "project": "my-gcp-project",
+                "location": "us-east5",
+                "dataset": "IRIS",
             }
         )
     },
