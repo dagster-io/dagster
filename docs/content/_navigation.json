@@ -915,6 +915,10 @@
             "path": "/_apidocs/libraries/dagster-gcp"
           },
           {
+            "title": "GCP + Pandas (dagster-gcp-pandas)",
+            "path": "/_apidocs/libraries/dagster-gcp-pandas"
+          },
+          {
             "title": "Great Expectations (dagster-ge)",
             "path": "/_apidocs/libraries/dagster-ge"
           },
