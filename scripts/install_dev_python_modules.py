@@ -59,6 +59,7 @@ def main(
         "-e python_modules/libraries/dagster-dbt",
         "-e python_modules/libraries/dagster-docker",
         "-e python_modules/libraries/dagster-gcp",
+        "-e python_modules/libraries/dagster-gcp-pandas",
         "-e python_modules/libraries/dagster-fivetran",
         "-e python_modules/libraries/dagster-k8s",
         "-e python_modules/libraries/dagster-celery-k8s",
