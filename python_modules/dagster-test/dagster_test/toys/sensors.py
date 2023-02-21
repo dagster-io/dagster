@@ -17,6 +17,7 @@ from dagster_test.toys.error_monster import error_monster_failing_job
 from dagster_test.toys.log_asset import log_asset_job
 from dagster_test.toys.log_file import log_file_job
 from dagster_test.toys.log_s3 import log_s3_job
+from dagster_test.toys.simple_config import simple_config_job
 
 
 def get_directory_files(directory_name, since=None):
@@ -138,10 +139,21 @@ def get_toys_sensors():
             },
         )
 
+    @sensor(job=simple_config_job)
+    def math_sensor(context):
+        context.update_cursor(str(int(context.cursor) + 1))
+        for i in range(3):
+            yield RunRequest(
+                run_key=str(i),
+                run_config={"ops": {"the_op": {"config": {"foo": "bar"}}}},
+                tags={"fee": "fifofum"},
+            )
+
     return [
         toy_file_sensor,
         toy_asset_sensor,
         toy_s3_sensor,
         custom_slack_on_job_failure,
         built_in_slack_on_run_failure_sensor,
+        math_sensor,
     ]

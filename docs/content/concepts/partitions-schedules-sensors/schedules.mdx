@@ -276,6 +276,52 @@ Once the schedule is started, the schedule will begin executing immediately if y
 
 ## Testing schedules
 
+<TabGroup>
+<TabItem name="Via Dagit">
+
+### Via Dagit
+
+In Dagit, you can manually trigger a test evaluation of a schedule using a mock evaluation time and view the results.
+
+On the overview page for a particular schedule, there is a `Test schedule` button. Clicking this button will perform a test evaluation of your schedule for a provided mock evaluation time, and show you the results of that evaluation.
+
+1. Click **Overview > Schedules**.
+
+2. Click the schedule you want to test.
+
+3. Click the **Test Schedule** button, located near the top right corner of the page:
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/schedules/test-schedule-button.png"
+   width={320}
+   height={128}
+   />
+
+4. You'll be prompted to select a mock schedule evaluation time. As schedules are defined on a cadence, the evaluation times provided in the dropdown are past and future times along that cadence.
+
+   For example, let's say you're testing a schedule with a cadence of `"Every day at X time"`. In the dropdown, you'd see five evaluation times in the future and five evaluation times in the past along that cadence.
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/schedules/select-timestamp-page.png"
+   width={896}
+   height={449}
+   />
+
+5. After selecting an evaluation time, click the **Evaluate** button. A window containing the result of the evaluation will display:
+
+   <Image
+   src="/images/concepts/partitions-schedules-sensors/schedules/eval-schedule-result-page.png"
+   width={896}
+   height={449}
+   />
+
+   If the evaluation was successful and a run request was produced, you can open the launchpad pre-scaffolded with the config corresponding to that run request.
+
+</TabItem>
+<TabItem name="Via Python">
+
+### Via Python
+
 To test a function decorated by the <PyObject object="schedule" decorator /> decorator, you can invoke the schedule definition like it's a regular Python function. The invocation will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function. Below is a test for the `configurable_job_schedule` that we defined in [an earlier section](#schedules-that-provide-custom-run-config-and-tags).
 
 It uses <PyObject object="build_schedule_context" /> to construct a <PyObject object="ScheduleEvaluationContext" /> to provide for the `context` parameter.
@@ -293,6 +339,9 @@ def test_configurable_job_schedule():
 ```
 
 If your `@schedule`-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
+
+</TabItem>
+</TabGroup>
 
 ---
 
