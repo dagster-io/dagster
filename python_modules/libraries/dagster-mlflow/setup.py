@@ -31,7 +31,7 @@ setup(
     packages=find_packages(exclude=["dagster_mlflow_tests*"]),
     install_requires=[
         "dagster",
-        "mlflow<=1.26.0",  # https://github.com/mlflow/mlflow/issues/5968
+        "mlflow",
         "pandas",
     ],
     zip_safe=False,
