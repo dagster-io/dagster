@@ -130,9 +130,9 @@ def build_bigquery_io_manager(
                 ),
             ),
             "temporary_gcs_bucket": Field(
-                StringSource,
+                Noneable(StringSource),
                 is_required=False,
-                default_value="",
+                default_value=None,
                 description=(
                     "When using PySpark DataFrames, optionally specify a temporary GCS bucket to"
                     " store data. If not provided, data will be directly written to BigQuery."

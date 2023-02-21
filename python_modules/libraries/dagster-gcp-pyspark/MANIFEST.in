@@ -1,3 +1,2 @@
-include README.md
 include LICENSE
-recursive-include dagster_gcp_pyspark *.py
+include dagster_gcp_pyspark/py.typed

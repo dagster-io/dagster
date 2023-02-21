@@ -93,7 +93,6 @@ Examples:
 
     .. code-block:: python
 
-        from dagster_gcp import build_bigquery_io_manager
         from dagster_bigquery_pyspark import bigquery_pyspark_io_manager
         from dagster import Definitions
 
