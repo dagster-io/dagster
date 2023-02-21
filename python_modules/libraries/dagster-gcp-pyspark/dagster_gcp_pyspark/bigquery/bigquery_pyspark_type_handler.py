@@ -146,6 +146,6 @@ Examples:
     store this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
     After the run completes, the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be
     unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
-    the base64 encoded with this shell command: cat $GOOGLE_AUTH_CREDENTIALS | base64
+    the base64 encoded with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
 
 """
