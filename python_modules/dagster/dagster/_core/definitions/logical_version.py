@@ -271,7 +271,9 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_projected_logical_version(self, *, key: AssetKey) -> LogicalVersion:
-        if self.asset_graph.is_source(key):
+        if self.asset_graph.get_partitions_def(key):
+            return UNKNOWN_LOGICAL_VERSION
+        elif self.asset_graph.is_source(key):
             event = self._instance.get_latest_logical_version_record(key, True)
             if event:
                 version = (

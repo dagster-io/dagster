@@ -147,6 +147,9 @@ GET_ASSET_LOGICAL_VERSIONS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
         assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
             id
+            assetKey {
+              path
+            }
             currentLogicalVersion
             projectedLogicalVersion
             assetMaterializations {

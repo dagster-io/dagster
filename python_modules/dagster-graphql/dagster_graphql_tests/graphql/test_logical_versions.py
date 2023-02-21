@@ -1,3 +1,5 @@
+from typing import Any, Mapping
+
 from dagster import (
     AssetIn,
     DailyPartitionsDefinition,
@@ -83,9 +85,13 @@ def get_repo_with_partitioned_self_dep_asset():
     def a(a):
         del a
 
+    @asset
+    def b(a):
+        return a
+
     @repository
     def repo():
-        return [a]
+        return [a, b]
 
     return repo
 
@@ -100,7 +106,8 @@ def test_partitioned_self_dep():
             result = _fetch_logical_versions(context, repo)
             assert result
             assert result.data
-            assert result.data["assetNodes"][0]["projectedLogicalVersion"] is None
+            assert _get_asset_node("a", result)["projectedLogicalVersion"] is None
+            assert _get_asset_node("b", result)["projectedLogicalVersion"] == "UNKNOWN"
 
 
 def _materialize_assets(context: WorkspaceRequestContext, repo: RepositoryDefinition):
@@ -125,3 +132,7 @@ def _fetch_logical_versions(context: WorkspaceRequestContext, repo: RepositoryDe
             "pipelineSelector": selector,
         },
     )
+
+
+def _get_asset_node(key: str, result: Any) -> Mapping[str, Any]:
+    return next((node for node in result.data["assetNodes"] if node["assetKey"]["path"] == [key]))
