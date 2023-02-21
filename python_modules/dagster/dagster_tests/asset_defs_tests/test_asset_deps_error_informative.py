@@ -161,8 +161,8 @@ def test_one_off_component_prefix():
 
 
 NUM_ASSETS_TO_TEST_PERF = 5000
-# As of 2/16/2023, `avg_elapsed_time_secs` is ~0.024 on a MBP
-PERF_CUTOFF_SECS = 0.05
+# As of 2/16/2023, `avg_elapsed_time_secs` is ~0.024s on a MBP, ~0.15s on BK
+PERF_CUTOFF_SECS = 0.3
 NUM_PERF_TRIALS = 10
 
 
