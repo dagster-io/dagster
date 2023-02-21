@@ -85,8 +85,7 @@ Examples:
 
     .. code-block:: python
 
-        from dagster_gcp import build_bigquery_io_manager
-        from dagster_bigquery_pandas import BigQueryPandasTypeHandler
+        from dagster_bigquery_pandas import bigquery_pandas_io_manager
         from dagster import Definitions
 
         @asset(
@@ -95,12 +94,10 @@ Examples:
         def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
 
-        bigquery_io_manager = build_bigquery_io_manager([BigQueryPandasTypeHandler()])
-
         defs = Definitions(
             assets=[my_table],
             resources={
-                "io_manager": bigquery_io_manager.configured({
+                "io_manager": bigquery_pandas_io_manager.configured({
                     "project" : {"env": "GCP_PROJECT"}
                 })
             }
@@ -141,6 +138,6 @@ Examples:
     store this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
     After the run completes, the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be
     unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
-    the base64 encoded with this shell command: cat $GOOGLE_AUTH_CREDENTIALS | base64
+    the base64 encoded with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
 
 """
