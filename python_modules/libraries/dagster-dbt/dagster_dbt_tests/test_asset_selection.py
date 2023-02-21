@@ -1,7 +1,7 @@
 import json
-from dagster._check import ParameterCheckError
 
 import pytest
+from dagster._check import ParameterCheckError
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._utils import file_relative_path
