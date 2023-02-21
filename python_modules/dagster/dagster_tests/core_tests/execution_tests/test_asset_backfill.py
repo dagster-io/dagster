@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 import pendulum
 import pytest
 from dagster import (
+    AssetKey,
     AssetsDefinition,
     DagsterInstance,
     DailyPartitionsDefinition,
@@ -70,6 +71,51 @@ assets_by_repo_name_by_scenario_name: Mapping[str, Mapping[str, Sequence[AssetsD
     "unpartitioned_after_dynamic_asset": {"repo": unpartitioned_after_dynamic_asset},
     "two_dynamic_assets": {"repo": two_dynamic_assets},
 }
+
+
+@pytest.mark.parametrize(
+    "scenario_name, partition_keys, expected_target_asset_partitions",
+    [
+        (
+            "two_assets_in_sequence_fan_in_partitions",
+            ["a_1", "a_2"],
+            [("asset1", "a_1"), ("asset1", "a_2"), ("asset2", "a")],
+        ),
+        (
+            "two_assets_in_sequence_fan_out_partitions",
+            ["a"],
+            [("asset1", "a"), ("asset2", "a_1"), ("asset2", "a_2"), ("asset2", "a_3")],
+        ),
+        (
+            "non_partitioned_after_partitioned",
+            ["2022-01-01", "2022-01-02"],
+            [("asset1", "2022-01-01"), ("asset1", "2022-01-02"), ("asset2", None)],
+        ),
+        (
+            "partitioned_after_non_partitioned",
+            ["2022-01-01", "2022-01-02"],
+            [("asset1", None), ("asset2", "2022-01-01"), ("asset2", "2022-01-02")],
+        ),
+    ],
+)
+def test_from_asset_partitions_target_subset(
+    scenario_name, partition_keys, expected_target_asset_partitions
+):
+    assets_by_repo_name = assets_by_repo_name_by_scenario_name[scenario_name]
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        partition_names=partition_keys,
+        asset_graph=asset_graph,
+        asset_selection=list(asset_graph.all_asset_keys),
+        dynamic_partitions_store=MagicMock(),
+    )
+    assert backfill_data.target_subset == AssetGraphSubset.from_asset_partition_set(
+        {
+            AssetKeyPartitionKey(AssetKey(asset_key_str), partition_key)
+            for asset_key_str, partition_key in expected_target_asset_partitions
+        },
+        asset_graph=asset_graph,
+    )
 
 
 @pytest.mark.parametrize("some_or_all", ["all", "some"])

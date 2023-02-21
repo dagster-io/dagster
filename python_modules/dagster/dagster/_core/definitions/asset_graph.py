@@ -2,6 +2,7 @@ import functools
 from collections import deque
 from heapq import heapify, heappop, heappush
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Callable,
     Dict,
@@ -28,10 +29,13 @@ from dagster._utils.cached_method import cached_method
 from .assets import AssetsDefinition
 from .events import AssetKey, AssetKeyPartitionKey
 from .freshness_policy import FreshnessPolicy
-from .partition import PartitionsDefinition
+from .partition import PartitionsDefinition, PartitionsSubset
 from .partition_mapping import PartitionMapping, infer_partition_mapping
 from .source_asset import SourceAsset
 from .time_window_partitions import TimeWindowPartitionsDefinition
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
 
 class AssetGraph:
@@ -147,6 +151,17 @@ class AssetGraph:
     def have_same_partitioning(self, asset_key1: AssetKey, asset_key2: AssetKey) -> bool:
         """Returns whether the given assets have the same partitions definition."""
         return self.get_partitions_def(asset_key1) == self.get_partitions_def(asset_key2)
+
+    def have_same_or_no_partitioning(self, asset_keys: Iterable[AssetKey]) -> bool:
+        partitions_defs = []
+        for asset_key in asset_keys:
+            partitions_def = self.get_partitions_def(asset_key)
+            if partitions_def:
+                partitions_defs.append(partitions_def)
+
+        return len(partitions_defs) <= 1 or all(
+            partitions_defs[i] == partitions_defs[0] for i in range(1, len(partitions_defs))
+        )
 
     def get_children(self, asset_key: AssetKey) -> AbstractSet[AssetKey]:
         """Returns all assets that depend on the given asset."""
@@ -353,6 +368,82 @@ class AssetGraph:
     def has_self_dependency(self, asset_key: AssetKey) -> bool:
         return asset_key in self.get_parents(asset_key)
 
+    def bfs_filter_subsets(
+        self,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        condition_fn: Callable[[AssetKey, Optional[PartitionsSubset]], bool],
+        initial_subset: "AssetGraphSubset",
+    ) -> "AssetGraphSubset":
+        """
+        Returns asset partitions within the graph that
+        - Are >= initial_asset_partitions
+        - Asset matches the condition_fn
+        - Any of their ancestors >= initial_asset_partitions match the condition_fn
+
+        Visits parents before children.
+        """
+        from .asset_graph_subset import AssetGraphSubset
+
+        all_assets = set(initial_subset.asset_keys)
+        check.invariant(
+            len(initial_subset.asset_keys) == 1, "Multiple initial assets not yet supported"
+        )
+        initial_asset_key = next(iter(initial_subset.asset_keys))
+        queue = deque([initial_asset_key])
+
+        queued_subsets_by_asset_key: Dict[AssetKey, Optional[PartitionsSubset]] = {
+            initial_asset_key: initial_subset.get_partitions_subset(initial_asset_key)
+            if self.get_partitions_def(initial_asset_key)
+            else None,
+        }
+        result = AssetGraphSubset(self)
+
+        while len(queue) > 0:
+            asset_key = queue.popleft()
+            partitions_subset = queued_subsets_by_asset_key.get(asset_key)
+
+            if condition_fn(asset_key, partitions_subset):
+                result |= AssetGraphSubset(
+                    self,
+                    non_partitioned_asset_keys={asset_key} if partitions_subset is None else set(),
+                    partitions_subsets_by_asset_key={asset_key: partitions_subset}
+                    if partitions_subset is not None
+                    else {},
+                )
+
+                for child in self.get_children(asset_key):
+                    partition_mapping = self.get_partition_mapping(child, asset_key)
+                    child_partitions_def = self.get_partitions_def(child)
+
+                    if child_partitions_def:
+                        if partitions_subset is None:
+                            child_partitions_subset = (
+                                child_partitions_def.subset_with_all_partitions()
+                            )
+                            queued_subsets_by_asset_key[child] = child_partitions_subset
+                        else:
+                            child_partitions_subset = (
+                                partition_mapping.get_downstream_partitions_for_partitions(
+                                    partitions_subset,
+                                    downstream_partitions_def=child_partitions_def,
+                                    dynamic_partitions_store=dynamic_partitions_store,
+                                )
+                            )
+                            prior_child_partitions_subset = queued_subsets_by_asset_key.get(child)
+                            queued_subsets_by_asset_key[child] = (
+                                child_partitions_subset
+                                if not prior_child_partitions_subset
+                                else child_partitions_subset | prior_child_partitions_subset
+                            )
+                    else:
+                        child_partitions_subset = None
+
+                    if child not in all_assets:
+                        queue.append(child)
+                        all_assets.add(child)
+
+        return result
+
     def bfs_filter_asset_partitions(
         self,
         dynamic_partitions_store: DynamicPartitionsStore,
@@ -365,7 +456,8 @@ class AssetGraph:
         Returns asset partitions within the graph that
         - Are >= initial_asset_partitions
         - Match the condition_fn
-        - All of their ancestors >= initial_asset_partitions match the condition_fn
+        - Any of their ancestors >= initial_asset_partitions match the condition_fn
+
         Visits parents before children.
 
         When asset partitions are part of the same non-subsettable multi-asset, they're provided all
