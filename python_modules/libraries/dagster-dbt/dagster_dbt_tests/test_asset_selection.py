@@ -1,4 +1,5 @@
 import json
+from dagster._check import ParameterCheckError
 
 import pytest
 from dagster._core.definitions.asset_graph import AssetGraph
@@ -104,7 +105,7 @@ def test_dbt_asset_selection_with_state():
     asset_graph = AssetGraph.from_assets(dbt_assets)
 
     actual_keys = DbtManifestAssetSelection(
-        manifest_path=manifest_path,
+        manifest_json_path=manifest_path,
         select="state:modified",
         state_path=file_relative_path(__file__, "sample_previous_state"),
     ).resolve_inner(asset_graph)
@@ -113,3 +114,19 @@ def test_dbt_asset_selection_with_state():
         AssetKey(["cold_schema", "sort_cold_cereals_by_calories"]),
         AssetKey(["subdir_schema", "least_caloric"]),
     }
+
+
+def test_dbt_asset_selection_with_state_wrong_argument():
+    manifest_path = file_relative_path(__file__, "sample_manifest.json")
+    with open(manifest_path, "r", encoding="utf8") as f:
+        manifest_json = json.load(f)
+
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json)
+    asset_graph = AssetGraph.from_assets(dbt_assets)
+
+    with pytest.raises(ParameterCheckError, match="state selector"):
+        DbtManifestAssetSelection(
+            manifest_json=manifest_json,
+            select="state:modified",
+            state_path=file_relative_path(__file__, "sample_previous_state"),
+        ).resolve_inner(asset_graph)

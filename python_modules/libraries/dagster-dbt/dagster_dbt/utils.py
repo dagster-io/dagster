@@ -246,7 +246,7 @@ def select_unique_ids_from_manifest(
     select: str,
     exclude: str,
     state_path: Optional[str] = None,
-    manifest_path: Optional[str] = None,
+    manifest_json_path: Optional[str] = None,
     manifest_json: Optional[Mapping[str, Any]] = None,
 ) -> AbstractSet[str]:
     """Method to apply a selection string to an existing manifest.json file."""
@@ -269,13 +269,15 @@ def select_unique_ids_from_manifest(
     if state_path is not None:
         previous_state = PreviousState(
             path=Path(state_path),
-            current_path=Path("/tmp/null") if manifest_path is None else Path(manifest_path),
+            current_path=Path("/tmp/null")
+            if manifest_json_path is None
+            else Path(manifest_json_path),
         )
     else:
         previous_state = None
 
-    if manifest_path is not None:
-        manifest = WritableManifest.read_and_check_versions(manifest_path)
+    if manifest_json_path is not None:
+        manifest = WritableManifest.read_and_check_versions(manifest_json_path)
         child_map = manifest.child_map
     elif manifest_json is not None:
 
@@ -304,7 +306,7 @@ def select_unique_ids_from_manifest(
         )
         child_map = manifest_json["child_map"]
     else:
-        check.failed("Must provide either a manifest_path or manifest_json.")
+        check.failed("Must provide either a manifest_json_path or manifest_json.")
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
 
     # create a parsed selection from the select string

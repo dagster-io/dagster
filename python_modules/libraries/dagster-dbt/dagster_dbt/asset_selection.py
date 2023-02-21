@@ -19,7 +19,10 @@ class DbtManifestAssetSelection(AssetSelection):
     string.
 
     Args:
-        manifest_json (Mapping[str, Any]): The parsed manifest.json file from your dbt project.
+        manifest_json (Mapping[str, Any]): The parsed manifest.json file from your dbt project. Must
+            provide either this argument or `manifest_json_path`.
+        manifest_json_path: (Optional[str]): The path to a manifest.json file representing the
+            current state of your dbt project. Must provide either this argument or `manifest_json`.
         select (str): A dbt-syntax selection string, e.g. tag:foo or config.materialized:table.
         exclude (str): A dbt-syntax exclude string. Defaults to "".
         resource_types (Sequence[str]): The resource types to select. Defaults to ["model"].
@@ -56,7 +59,7 @@ class DbtManifestAssetSelection(AssetSelection):
         exclude: str = "",
         resource_types: Optional[Sequence[str]] = None,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
-        manifest_path: Optional[str] = None,
+        manifest_json_path: Optional[str] = None,
         state_path: Optional[str] = None,
     ):
         self.select = check.str_param(select, "select")
@@ -68,21 +71,30 @@ class DbtManifestAssetSelection(AssetSelection):
             node_info_to_asset_key, "node_info_to_asset_key"
         )
 
-        self.manifest_path = check.opt_str_param(manifest_path, "manifest_path")
-        if manifest_json:
+        self.manifest_json = check.opt_mapping_param(manifest_json, "manifest_json")
+        self.manifest_json_path = check.opt_str_param(manifest_json_path, "manifest_json_path")
+        if self.manifest_json:
             check.param_invariant(
-                not manifest_path,
-                "manifest_path",
-                "Cannot provide both manifest_json and manifest_path",
+                not self.manifest_json_path,
+                "manifest_json_path",
+                "Cannot provide both manifest_json and manifest_json_path",
             )
-            self.manifest_json = check.opt_mapping_param(manifest_json, "manifest_json")
-        elif self.manifest_path:
-            with open(self.manifest_path, "r") as f:
+        elif self.manifest_json_path:
+            with open(self.manifest_json_path, "r") as f:
                 self.manifest_json = check.opt_mapping_param(json.load(f), "manifest_json")
         else:
-            check.failed("Must provide either manifest_json or manifest_path.")
+            check.failed("Must provide either manifest_json or manifest_json_path.")
 
         self.state_path = check.opt_str_param(state_path, "state_path")
+        if self.state_path:
+            check.param_invariant(
+                self.manifest_json_path is not None,
+                "state_path",
+                (
+                    "Must provide a manifest_json_path instead of manifest_json to use the state"
+                    " selector."
+                ),
+            )
 
     def resolve_inner(self, asset_graph: AssetGraph) -> AbstractSet[AssetKey]:
         dbt_nodes = {
@@ -96,7 +108,7 @@ class DbtManifestAssetSelection(AssetSelection):
             select=self.select,
             exclude=self.exclude,
             state_path=self.state_path,
-            manifest_path=self.manifest_path,
+            manifest_json_path=self.manifest_json_path,
             manifest_json=self.manifest_json,
         ):
             node_info = dbt_nodes[unique_id]
