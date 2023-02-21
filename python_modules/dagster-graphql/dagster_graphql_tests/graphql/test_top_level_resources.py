@@ -103,16 +103,16 @@ def test_fetch_top_level_resource(definitions_graphql_context, snapshot):
     my_resource = result.data["topLevelResourceDetailsOrError"]
 
     assert my_resource["description"] == "my description"
-    assert len(my_resource["configFields"]) == 3
+    assert len(my_resource["configFields"]) == 2
     assert sorted(my_resource["configuredValues"], key=lambda cv: cv["key"]) == [
-        {
-            "key": "a_bool",
-            "value": "true",
-            "type": "VALUE",
-        },
         {
             "key": "a_string",
             "value": '"foo"',
+            "type": "VALUE",
+        },
+        {
+            "key": "an_unset_string",
+            "value": '"defaulted"',
             "type": "VALUE",
         },
     ]
@@ -134,17 +134,17 @@ def test_fetch_top_level_resource_env_var(definitions_graphql_context, snapshot)
     my_resource = result.data["topLevelResourceDetailsOrError"]
 
     assert my_resource["description"] == "my description"
-    assert len(my_resource["configFields"]) == 3
+    assert len(my_resource["configFields"]) == 2
     assert sorted(my_resource["configuredValues"], key=lambda cv: cv["key"]) == [
-        {
-            "key": "a_bool",
-            "value": "MY_BOOL",
-            "type": "ENV_VAR",
-        },
         {
             "key": "a_string",
             "value": "MY_STRING",
             "type": "ENV_VAR",
+        },
+        {
+            "key": "an_unset_string",
+            "value": '"defaulted"',
+            "type": "VALUE",
         },
     ]
 

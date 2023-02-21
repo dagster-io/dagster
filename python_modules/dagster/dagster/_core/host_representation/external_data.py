@@ -15,7 +15,6 @@ from dagster import (
     StaticPartitionsDefinition,
     _check as check,
 )
-from dagster._config.field_utils import EnvVar
 from dagster._config.snap import (
     ConfigFieldSnap,
     ConfigSchemaSnapshot,

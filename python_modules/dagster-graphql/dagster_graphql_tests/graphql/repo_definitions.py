@@ -20,7 +20,6 @@ def my_asset():
 class MyResource(ConfigurableResource):
     """my description"""
 
-    a_bool: bool
     a_string: str = "baz"
     an_unset_string: str = "defaulted"
 
@@ -32,9 +31,8 @@ with environ({"MY_STRING": "bar", "MY_BOOL": "false"}):
             "foo": "a_string",
             "my_resource": MyResource(
                 a_string="foo",
-                a_bool=True,
             ),
-            "my_resource_env_vars": MyResource(a_string=EnvVar("MY_STRING"), a_bool=False),
+            "my_resource_env_vars": MyResource(a_string=EnvVar("MY_STRING")),
         },
     )
 
