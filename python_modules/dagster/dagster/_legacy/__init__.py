@@ -24,7 +24,6 @@ from dagster._core.execution.api import (
     reexecute_pipeline as reexecute_pipeline,
 )
 from dagster._core.execution.context.compute import OpExecutionContext as OpExecutionContext
-from dagster._core.execution.context.invocation import build_solid_context as build_solid_context
 from dagster._core.execution.results import (
     CompositeSolidExecutionResult as CompositeSolidExecutionResult,
     OpExecutionResult as OpExecutionResult,
