@@ -3,7 +3,6 @@ import json
 from datetime import datetime
 from typing import Any, List, Optional
 
-import pandas as pd
 import pendulum
 import pytest
 from dagster import (
@@ -1408,11 +1407,15 @@ def test_infer_graph_input_type_from_inner_input_mixed_fan_in():
 
 
 def test_input_manager_key_and_custom_dagster_type_resolved():
+    class CustomType:
+        def __init__(self, value):
+            self.value = value
+
     @input_manager
     def data_input_manager():
-        return pd.DataFrame([])
+        return CustomType(5)
 
-    @op(ins={"df_train": In(pd.DataFrame, input_manager_key="data_input_manager")})
+    @op(ins={"df_train": In(CustomType, input_manager_key="data_input_manager")})
     def target_extractor_op(df_train):
         return 1
 
