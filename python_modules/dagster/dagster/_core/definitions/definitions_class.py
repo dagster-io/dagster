@@ -101,7 +101,7 @@ class _AttachedObjects(NamedTuple):
     sensors: Iterable[SensorDefinition]
 
 
-def _attach_resources_to_jobs(
+def _attach_resources_to_jobs_and_instigators(
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
     schedules: Optional[
         Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
@@ -210,7 +210,7 @@ def _create_repository_using_definitions_args(
         jobs_with_resources,
         schedules_with_resources,
         sensors_with_resources,
-    ) = _attach_resources_to_jobs(jobs, schedules, sensors, resource_defs)
+    ) = _attach_resources_to_jobs_and_instigators(jobs, schedules, sensors, resource_defs)
 
     @repository(
         name=name,
