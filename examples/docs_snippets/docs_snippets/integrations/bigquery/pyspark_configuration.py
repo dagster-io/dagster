@@ -1,23 +1,20 @@
-iris_dataset = None
+iris_data = None
 
 # start_configuration
 
-from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
+from dagster_gcp_pyspark import bigquery_pyspark_io_manager
 
 from dagster import Definitions
 
 defs = Definitions(
-    assets=[iris_dataset],  # type: ignore  # (didactic)
+    assets=[iris_data],  # type: ignore  # (didactic)
     resources={
-        "io_manager": snowflake_pyspark_io_manager.configured(
+        "io_manager": bigquery_pyspark_io_manager.configured(
             {
-                "account": "abc1234.us-east-1",  # required
-                "user": {"env": "SNOWFLAKE_USER"},  # required
-                "password": {"env": "SNOWFLAKE_PASSWORD"},  # required
-                "database": "FLOWERS",  # required
-                "warehouse": "PLANTS",  # required for pyspark
-                "role": "writer",  # optional, defaults to the default role for the account
-                "schema": "IRIS",  # optional, defaults to PUBLIC
+                "project": "my-gcp-project",  # required
+                "location": "us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
+                "data": "IRIS",  # optional, defaults to PUBLIC
+                "temporary_gcs_bucket": "my-gcs-bucket",
             }
         )
     },

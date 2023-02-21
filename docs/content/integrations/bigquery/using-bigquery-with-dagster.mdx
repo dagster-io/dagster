@@ -32,42 +32,36 @@ To complete this tutorial, you'll need:
 
   - **Google Cloud Project (GCP) project name**: You can find this by logging into GCP and choosing one of the project names listed in the dropdown in the top left corner:
 
-  - **GCP credentials**: You can authenticate with GCP two ways: by following GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or by providing credentials directly to the BigQuery I/O manager. In this guide, we assume that you have run one of the `gcloud auth` commands or have set `GOOGLE_APPLICATION_CREDENTIALS` as specified in the linked instructions. For more information on providing credentials directly to the BigQuery I/O manager, see [Providing credentials as configuration](TODO LINK) in the BigQuery reference guide.
+  - **GCP credentials**: You can authenticate with GCP two ways: by following GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or by providing credentials directly to the BigQuery I/O manager. In this guide, we assume that you have run one of the `gcloud auth` commands or have set `GOOGLE_APPLICATION_CREDENTIALS` as specified in the linked instructions. For more information on providing credentials directly to the BigQuery I/O manager, see [Providing credentials as configuration](/integrations/bigquery/reference#providing-credentials-as-configuration) in the BigQuery reference guide.
 
 ---
 
 ## Step 1: Configure the BigQuery I/O manager
 
-The BigQuery I/O manager requires some configuration to connect to your Bigquery instance. The `project` is required to connect with BigQuery. Additionally, one method of authentication is required. You can follow the GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or see [Providing credentials as configuration](TODO LINK) in the BigQuery reference guide.
+The BigQuery I/O manager requires some configuration to connect to your Bigquery instance. The `project` is required to connect with BigQuery. Additionally, one method of authentication is required. You can follow the GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or see \[Providing credentials as configuration]\(TODO LINK) in the BigQuery reference guide.
 
 You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables.
 
 ```python file=/integrations/bigquery/configuration.py startafter=start_example endbefore=end_example
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_gcp_pandas import bigquery_pandas_io_manager
 
 from dagster import Definitions
 
 defs = Definitions(
-    assets=[iris_dataset],
+    assets=[iris_data],
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
+        "io_manager": bigquery_pandas_io_manager.configured(
             {
-                "account": "abc1234.us-east-1",  # required
-                "user": {"env": "SNOWFLAKE_USER"},  # required
-                "password": {
-                    "env": "SNOWFLAKE_PASSWORD"
-                },  # password or private key required
-                "database": "FLOWERS",  # required
-                "role": "writer",  # optional, defaults to the default role for the account
-                "warehouse": "PLANTS",  # optional, defaults to default warehouse for the account
-                "schema": "IRIS,",  # optional, defaults to PUBLIC
+                "project": "my-gcp-project",  # required
+                "location": "us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
+                "dataset": "IRIS",  # optional, defaults to PUBLIC
             }
         )
     },
 )
 ```
 
-With this configuration, if you materialized an asset called `iris_dataset`, the BigQuery I/O manager would  store the data in the `IRIS.IRIS_DATASET` table in the `my-gcp-project` project. The BigQuery instance would be located in `us-east5`.
+With this configuration, if you materialized an asset called `iris_data`, the BigQuery I/O manager would store the data in the `IRIS.IRIS_DATA` table in the `my-gcp-project` project. The BigQuery instance would be located in `us-east5`.
 
 Finally, in the <PyObject object="Definitions" /> object, we assign the <PyObject module="dagster_gcp_pandas" object="bigquery_pandas_io_manager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
@@ -94,7 +88,7 @@ from dagster import asset
 
 
 @asset
-def iris_dataset() -> pd.DataFrame:
+def iris_data() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
@@ -109,7 +103,7 @@ def iris_dataset() -> pd.DataFrame:
 
 In this example, we first define our [asset](/concepts/assets/software-defined-assets). Here, we are fetching the Iris dataset as a Pandas DataFrame and renaming the columns. The type signature of the function tells the I/O manager what data type it is working with, so it is important to include the return type `pd.DataFrame`.
 
-When Dagster materializes the `iris_dataset` asset using the configuration from [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), the BigQuery I/O manager will create the table `IRIS.IRIS_DATASET` if it does not exist and replace the contents of the table with the value returned from the `iris_dataset` asset.
+When Dagster materializes the `iris_data` asset using the configuration from [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), the BigQuery I/O manager will create the table `IRIS.IRIS_DATA` if it does not exist and replace the contents of the table with the value returned from the `iris_data` asset.
 
 </TabItem>
 
@@ -143,19 +137,19 @@ import pandas as pd
 
 from dagster import asset
 
-# this example uses the iris_dataset asset from Step 2
+# this example uses the iris_data asset from Step 2
 
 
 @asset
-def iris_cleaned(iris_dataset: pd.DataFrame):
-    return iris_dataset.dropna().drop_duplicates()
+def iris_cleaned(iris_data: pd.DataFrame):
+    return iris_data.dropna().drop_duplicates()
 ```
 
-In this example, we want to provide the `iris_dataset` asset from the [Store a Dagster asset as a table in BigQuery](#store-a-dagster-asset-as-a-table-in-bigquery) example to the `iris_cleaned` asset.
+In this example, we want to provide the `iris_data` asset from the [Store a Dagster asset as a table in BigQuery](#store-a-dagster-asset-as-a-table-in-bigquery) example to the `iris_cleaned` asset.
 
-In `iris_cleaned`, the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the [docs for explicitly specifying dependencies](/concepts/assets/software-defined-assets#defining-explicit-dependencies).
+In `iris_cleaned`, the `iris_data` parameter tells Dagster that the value for the `iris_data` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the [docs for explicitly specifying dependencies](/concepts/assets/software-defined-assets#defining-explicit-dependencies).
 
-When materializing these assets, Dagster will use the `bigquery_pandas_io_manager` to fetch the `IRIS.IRIS_DATASET` as a Pandas DataFrame and pass this DataFrame as the `iris_dataset` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `bigquery_pandas_io_manager` to store the DataFrame as the `IRIS.IRIS_CLEANED` table in BigQuery.
+When materializing these assets, Dagster will use the `bigquery_pandas_io_manager` to fetch the `IRIS.IRIS_DATA` as a Pandas DataFrame and pass this DataFrame as the `iris_data` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `bigquery_pandas_io_manager` to store the DataFrame as the `IRIS.IRIS_CLEANED` table in BigQuery.
 
 ---
 
@@ -165,7 +159,7 @@ When finished, your code should look like the following:
 
 ```python file=/integrations/bigquery/full_example.py
 import pandas as pd
-from dagster_snowflake_pandas import snowflake_pandas_io_manager
+from dagster_gcp_pandas import bigquery_pandas_io_manager
 
 from dagster import Definitions, SourceAsset, asset
 
@@ -173,7 +167,7 @@ iris_harvest_data = SourceAsset(key="iris_harvest_data")
 
 
 @asset
-def iris_dataset() -> pd.DataFrame:
+def iris_data() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
@@ -187,20 +181,18 @@ def iris_dataset() -> pd.DataFrame:
 
 
 @asset
-def iris_cleaned(iris_dataset: pd.DataFrame):
-    return iris_dataset.dropna().drop_duplicates()
+def iris_cleaned(iris_data: pd.DataFrame):
+    return iris_data.dropna().drop_duplicates()
 
 
 defs = Definitions(
-    assets=[iris_dataset, iris_harvest_data, iris_cleaned],
+    assets=[iris_data, iris_harvest_data, iris_cleaned],
     resources={
-        "io_manager": snowflake_pandas_io_manager.configured(
+        "io_manager": bigquery_pandas_io_manager.configured(
             {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "schema": "IRIS,",
+                "project": "my-gcp-project",
+                "location": "us-east5",
+                "dataset": "IRIS",
             }
         )
     },

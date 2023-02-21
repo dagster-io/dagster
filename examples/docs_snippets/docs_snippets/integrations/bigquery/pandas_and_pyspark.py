@@ -1,29 +1,25 @@
-iris_dataset = None
-rose_dataset = None
+iris_data = None
+rose_data = None
 
 # start_example
 
-from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler
-from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
+from dagster_gcp import build_bigquery_io_manager
+from dagster_gcp_pandas import BigQueryPandasTypeHandler
+from dagster_gcp_pyspark import BigQueryPySparkTypeHandler
 
 from dagster import Definitions
 
-snowflake_io_manager = build_snowflake_io_manager(
-    [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
+bigquery_io_manager = build_bigquery_io_manager(
+    [BigQueryPandasTypeHandler(), BigQueryPySparkTypeHandler()]
 )
 
 defs = Definitions(
-    assets=[iris_dataset, rose_dataset],  # type: ignore  # (didactic)
+    assets=[iris_data, rose_data],  # type: ignore  # (didactic)
     resources={
-        "io_manager": snowflake_io_manager.configured(
+        "io_manager": bigquery_io_manager.configured(
             {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "warehouse": "PLANTS",
-                "schema": "IRIS",
+                "project": "my-gcp-project",
+                "data": "IRIS",
             }
         )
     },

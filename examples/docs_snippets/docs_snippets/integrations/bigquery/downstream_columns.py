@@ -3,13 +3,13 @@ import pandas as pd
 from dagster import AssetIn, asset
 
 
-# this example uses the iris_dataset asset from Step 2 of the Using Dagster with Snowflake tutorial
+# this example uses the iris_data asset from Step 2 of the Using Dagster with BigQuery tutorial
 
 
 @asset(
     ins={
         "iris_sepal": AssetIn(
-            key="iris_dataset",
+            key="iris_data",
             metadata={"columns": ["Sepal length (cm)", "Sepal width (cm)"]},
         )
     }

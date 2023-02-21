@@ -7,7 +7,7 @@ iris_harvest_data = SourceAsset(key="iris_harvest_data")
 
 
 @asset
-def iris_dataset() -> pd.DataFrame:
+def iris_data() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
@@ -21,12 +21,12 @@ def iris_dataset() -> pd.DataFrame:
 
 
 @asset
-def iris_cleaned(iris_dataset: pd.DataFrame):
-    return iris_dataset.dropna().drop_duplicates()
+def iris_cleaned(iris_data: pd.DataFrame):
+    return iris_data.dropna().drop_duplicates()
 
 
 defs = Definitions(
-    assets=[iris_dataset, iris_harvest_data, iris_cleaned],
+    assets=[iris_data, iris_harvest_data, iris_cleaned],
     resources={
         "io_manager": bigquery_pandas_io_manager.configured(
             {

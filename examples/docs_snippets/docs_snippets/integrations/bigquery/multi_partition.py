@@ -23,9 +23,9 @@ from dagster import (
             ),
         }
     ),
-    metadata={"partition_expr": {"date": "TO_TIMESTAMP(time::INT)", "species": "SPECIES"}},
+    metadata={"partition_expr": {"date": "TIMESTAMP_SECONDS(time::INT)", "species": "SPECIES"}},
 )
-def iris_dataset_partitioned(context) -> pd.DataFrame:
+def iris_data_partitioned(context) -> pd.DataFrame:
     partition = partition = context.partition_key.keys_by_dimension
     species = partition["species"]
     date = partition["date"]
@@ -39,8 +39,8 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
 
 
 @asset
-def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
-    return iris_dataset_partitioned.dropna().drop_duplicates()
+def iris_cleaned(iris_data_partitioned: pd.DataFrame):
+    return iris_data_partitioned.dropna().drop_duplicates()
 
 
 # end_example

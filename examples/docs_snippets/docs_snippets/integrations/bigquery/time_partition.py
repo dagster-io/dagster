@@ -11,7 +11,7 @@ from dagster import DailyPartitionsDefinition, asset
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
-    metadata={"partition_expr": "TO_TIMESTAMP(time::INT)"},
+    metadata={"partition_expr": "TIMESTAMP_SECONDS(time::INT)"},
 )
 def iris_data_per_day(context) -> pd.DataFrame:
     partition = context.asset_partition_key_for_output()

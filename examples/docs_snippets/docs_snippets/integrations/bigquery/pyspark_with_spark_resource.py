@@ -1,5 +1,5 @@
+from dagster_gcp_pyspark import bigquery_pyspark_io_manager
 from dagster_pyspark import pyspark_resource
-from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
 from pyspark import SparkFiles
 from pyspark.sql import (
     DataFrame,
@@ -14,13 +14,11 @@ from pyspark.sql.types import (
 
 from dagster import Definitions, asset
 
-SNOWFLAKE_JARS = (
-    "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
-)
+BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
 
 
 @asset(required_resource_keys={"pyspark"})
-def iris_dataset(context) -> DataFrame:
+def iris_data(context) -> DataFrame:
     spark = context.resources.pyspark.spark_session
 
     schema = StructType(
@@ -40,20 +38,16 @@ def iris_dataset(context) -> DataFrame:
 
 
 defs = Definitions(
-    assets=[iris_dataset],
+    assets=[iris_data],
     resources={
-        "io_manager": snowflake_pyspark_io_manager.configured(
+        "io_manager": bigquery_pyspark_io_manager.configured(
             {
-                "account": "abc1234.us-east-1",
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": "FLOWERS",
-                "warehouse": "PLANTS",
-                "schema": "IRIS",
+                "project": "my-gcp-project",
+                "dataset": "IRIS",
             }
         ),
         "pyspark": pyspark_resource.configured(
-            {"spark_conf": {"spark.jars.packages": SNOWFLAKE_JARS}}
+            {"spark_conf": {"spark.jars.packages": BIGQUERY_JARS}}
         ),
     },
 )

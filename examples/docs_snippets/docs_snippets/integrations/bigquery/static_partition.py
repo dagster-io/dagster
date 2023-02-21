@@ -9,7 +9,7 @@ from dagster import StaticPartitionDefinition, asset
     partitions_def=StaticPartitionDefinition(["Iris-setosa", "Iris-virginica", "Iris-versicolor"]),
     metadata={"partition_expr": "SPECIES"},
 )
-def iris_dataset_partitioned(context) -> pd.DataFrame:
+def iris_data_partitioned(context) -> pd.DataFrame:
     species = context.asset_partition_key_for_output()
 
     full_df = pd.read_csv(
@@ -27,8 +27,8 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
 
 
 @asset
-def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
-    return iris_dataset_partitioned.dropna().drop_duplicates()
+def iris_cleaned(iris_data_partitioned: pd.DataFrame):
+    return iris_data_partitioned.dropna().drop_duplicates()
 
 
 # end_example

@@ -17,9 +17,10 @@ defs = Definitions(
     resources={
         "io_manager": bigquery_pandas_io_manager.configured(
             {
-                "project": "my-gcp-project",  # required
-                "location": "us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
-                "dataset": "IRIS",  # optional, defaults to PUBLIC
+                "project": "my-gcp-project",
+                "location": "us-east5",
+                "dataset": "IRIS",
+                "gcp_credential": {"env": "GCP_CREDS"},
             }
         )
     },

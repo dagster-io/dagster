@@ -1,4 +1,4 @@
-iris_dataset = None
+iris_data = None
 
 # start_example
 
@@ -6,12 +6,12 @@ import pandas as pd
 
 from dagster import asset
 
-# this example uses the iris_dataset asset from Step 2
+# this example uses the iris_data asset from Step 2
 
 
 @asset
-def iris_cleaned(iris_dataset: pd.DataFrame):
-    return iris_dataset.dropna().drop_duplicates()
+def iris_cleaned(iris_data: pd.DataFrame):
+    return iris_data.dropna().drop_duplicates()
 
 
 # end_example

@@ -552,6 +552,20 @@
         ]
       },
       {
+        "title": "BigQuery",
+        "path": "/integrations/bigquery",
+        "children": [
+          {
+            "title": "BigQuery + Dagster tutorial",
+            "path": "/integrations/bigquery/using-bigquery-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/bigquery/reference"
+          }
+        ]
+      },
+      {
         "title": "Databricks",
         "path": "/integrations/databricks"
       },
@@ -630,7 +644,7 @@
         "path": "/integrations/snowflake",
         "children": [
           {
-            "title": "Snowflake+ Dagster tutorial",
+            "title": "Snowflake + Dagster tutorial",
             "path": "/integrations/snowflake/using-snowflake-with-dagster"
           },
           {

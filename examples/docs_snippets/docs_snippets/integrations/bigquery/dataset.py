@@ -4,11 +4,11 @@ import pandas as pd
 
 from dagster import SourceAsset, asset
 
-daffodil_dataset = SourceAsset(key=["daffodil", "daffodil_dataset"])
+daffodil_data = SourceAsset(key=["gcp", "bigquery", "daffodil", "daffodil_data"])
 
 
-@asset(key_prefix=["iris"])
-def iris_dataset() -> pd.DataFrame:
+@asset(key_prefix=["gcp", "bigquery", "iris"])
+def iris_data() -> pd.DataFrame:
     return pd.read_csv(
         "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data",
         names=[
