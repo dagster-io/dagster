@@ -75,13 +75,13 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
         )
 
-        table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
-
         # Stamp and create tables if the main table does not exist (we can't check alembic
         # revision because alembic config may be shared with other storage classes)
-        missing_main_table = "schedules" not in table_names and "jobs" not in table_names
-        if self.should_autocreate_tables and missing_main_table:
-            retry_pg_creation_fn(self._init_db)
+        if self.should_autocreate_tables:
+            table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
+            missing_main_table = "schedules" not in table_names and "jobs" not in table_names
+            if missing_main_table:
+                retry_pg_creation_fn(self._init_db)
 
         super().__init__()
 

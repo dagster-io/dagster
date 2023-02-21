@@ -83,17 +83,17 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         )
 
         self._index_migration_cache = {}
-        table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
 
         # Stamp and create tables if the main table does not exist (we can't check alembic
         # revision because alembic config may be shared with other storage classes)
-        if self.should_autocreate_tables and "runs" not in table_names:
-            retry_pg_creation_fn(self._init_db)
-            self.migrate()
-            self.optimize()
-
-        elif "instance_info" not in table_names:
-            InstanceInfo.create(self._engine)
+        if self.should_autocreate_tables:
+            table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
+            if "runs" not in table_names:
+                retry_pg_creation_fn(self._init_db)
+                self.migrate()
+                self.optimize()
+            elif "instance_info" not in table_names:
+                InstanceInfo.create(self._engine)
 
         super().__init__()
 
