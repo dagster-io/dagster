@@ -288,6 +288,7 @@ class OpDefinition(NodeDefinition):
                 and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
                 and not input_def.root_manager_key
                 and not input_def.has_default_value
+                and not input_def.input_manager_key
             ):
                 input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
                 # If input_asset_key is present, this input can be resolved

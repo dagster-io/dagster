@@ -13,6 +13,7 @@ from dagster import (
     DynamicOutput,
     Enum,
     Field,
+    GraphOut,
     In,
     InputMapping,
     Nothing,
@@ -20,6 +21,7 @@ from dagster import (
     Permissive,
     Shape,
     graph,
+    input_manager,
     logger,
     op,
     resource,
@@ -1402,3 +1404,30 @@ def test_infer_graph_input_type_from_inner_input_mixed_fan_in():
     assert graph1.input_defs[0].dagster_type.typing_type == int
 
     assert graph1.execute_in_process(run_config={"inputs": {"in1": {"value": 5}}}).success
+
+
+def test_input_manager_key_and_custom_dagster_type_resolved():
+    class CustomType:
+        def __init__(self, value):
+            self.value = value
+
+    @input_manager
+    def data_input_manager():
+        return CustomType(5)
+
+    @op(ins={"df_train": In(CustomType, input_manager_key="data_input_manager")})
+    def target_extractor_op(df_train):
+        return 1
+
+    @graph(
+        out={"target": GraphOut()},
+    )
+    def target_extractor_graph():
+        target = target_extractor_op()
+        return target
+
+    local_target_extractor_job = target_extractor_graph.to_job(
+        name="target_extractor_job",
+        resource_defs={"data_input_manager": data_input_manager},
+    )
+    assert local_target_extractor_job.execute_in_process().success
