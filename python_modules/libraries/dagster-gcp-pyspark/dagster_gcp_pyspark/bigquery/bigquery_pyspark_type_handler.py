@@ -19,36 +19,31 @@ def _get_bigquery_options(config, table_slice: TableSlice) -> Mapping[str, str]:
 
 
 class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
-    """
-    TODO - doc strings
-    Plugin for the Snowflake I/O Manager that can store and load PySpark DataFrames as Snowflake tables.
+    """Plugin for the BigQuery I/O Manager that can store and load PySpark DataFrames as BigQuery tables.
 
     Examples:
         .. code-block:: python
 
-            from dagster_snowflake import build_snowflake_io_manager
-            from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
-            from pyspark.sql import DataFrame
-            from dagster import Definitions
+            from dagster_gcp import build_bigquery_io_manager
+            from dagster_bigquery_pyspark import BigQueryPySparkTypeHandler
+            from dagster import asset, Definitions
 
-            snowflake_io_manager = build_snowflake_io_manager([SnowflakePySparkTypeHandler()])
-
-            @asset
-            def my_asset() -> DataFrame:
+            @asset(
+                key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
+            )
+            def my_table():
                 ...
+
+            bigquery_io_manager = build_bigquery_io_manager([BigQueryPySparkTypeHandler()])
 
             defs = Definitions(
-                assets=[my_asset],
+                assets=[my_table],
                 resources={
-                    "io_manager": snowflake_io_manager.configured(...)
+                    "io_manager": bigquery_io_manager.configured({
+                        "project" : {"env": "GCP_PROJECT"}
+                    })
                 }
             )
-
-            # OR
-
-            @job(resource_defs={'io_manager': snowflake_io_manager})
-            def my_job():
-                ...
 
     """
 
@@ -89,8 +84,7 @@ bigquery_pyspark_io_manager = build_bigquery_io_manager(
     [BigQueryPySparkTypeHandler()], default_load_type=DataFrame
 )
 bigquery_pyspark_io_manager.__doc__ = """
-# TODO - docs
-An IO manager definition that reads inputs from and writes PySpark DataFrames to Snowflake.
+An IO manager definition that reads inputs from and writes PySpark DataFrames to BigQuery.
 
 Returns:
     IOManagerDefinition
@@ -99,43 +93,40 @@ Examples:
 
     .. code-block:: python
 
-        from dagster_snowflake_pyspark import snowflake_pyspark_io_manager
-        from pyspark.sql import DataFrame
+        from dagster_gcp import build_bigquery_io_manager
+        from dagster_bigquery_pyspark import bigquery_pyspark_io_manager
         from dagster import Definitions
 
         @asset(
-            key_prefix=["my_schema"]  # will be used as the schema in snowflake
+            key_prefix=["my_dataset"]  # will be used as the dataset in BigQuery
         )
-        def my_table() -> DataFrame:  # the name of the asset will be the table name
+        def my_table() -> pd.DataFrame:  # the name of the asset will be the table name
             ...
 
         defs = Definitions(
             assets=[my_table],
             resources={
-                "io_manager": snowflake_pyspark_io_manager.configured({
-                    "database": "my_database",
-                    "warehouse": "my_warehouse", # required for snowflake_pyspark_io_manager
-                    "account" : {"env": "SNOWFLAKE_ACCOUNT"},
-                    "password": {"env": "SNOWFLAKE_PASSWORD"},
-                    ...
+                "io_manager": bigquery_pyspark_io_manager.configured({
+                    "project" : {"env": "GCP_PROJECT"}
                 })
             }
         )
 
-    Note that the warehouse configuration value is required when using the snowflake_pyspark_io_manager
-
-    If you do not provide a schema, Dagster will determine a schema based on the assets and ops using
-    the IO Manager. For assets, the schema will be determined from the asset key.
-    For ops, the schema can be specified by including a "schema" entry in output metadata. If "schema" is not provided
-    via config or on the asset/op, "public" will be used for the schema.
+    You can tell Dagster in which dataset to create tables by setting the "dataset" configuration value.
+    If you do not provide a dataset as configuration to the I/O manager, Dagster will determine a dataset based
+    on the assets and ops using the I/O Manager. For assets, the dataset will be determined from the asset key,
+    as shown in the above example. The final prefix before the asset name will be used as the dataset. For example,
+    if the asset "my_table" had the key prefix ["gcp", "bigquery", "my_dataset"], the dataset "my_dataset" will be
+    used. For ops, the dataset can be specified by including a "schema" entry in output metadata. If "schema" is not provided
+    via config or on the asset/op, "public" will be used for the dataset.
 
     .. code-block:: python
 
         @op(
-            out={"my_table": Out(metadata={"schema": "my_schema"})}
+            out={"my_table": Out(metadata={"schema": "my_dataset"})}
         )
-        def make_my_table() -> DataFrame:
-            # the returned value will be stored at my_schema.my_table
+        def make_my_table() -> pd.DataFrame:
+            # the returned value will be stored at my_dataset.my_table
             ...
 
     To only use specific columns of a table as input to a downstream op or asset, add the metadata "columns" to the
@@ -146,8 +137,16 @@ Examples:
         @asset(
             ins={"my_table": AssetIn("my_table", metadata={"columns": ["a"]})}
         )
-        def my_table_a(my_table: DataFrame) -> DataFrame:
+        def my_table_a(my_table: pd.DataFrame) -> pd.DataFrame:
             # my_table will just contain the data from column "a"
             ...
+
+    If you cannot upload a file to your Dagster deployment, or otherwise cannot authenticate with
+    GCP via a standard method, (see https://cloud.google.com/docs/authentication/provide-credentials-adc),
+    you can provide a service account key as the "gcp_credentials" configuration. Dagster will
+    store this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
+    After the run completes, the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be
+    unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
+    the base64 encoded with this shell command: cat $GOOGLE_AUTH_CREDENTIALS | base64
 
 """
