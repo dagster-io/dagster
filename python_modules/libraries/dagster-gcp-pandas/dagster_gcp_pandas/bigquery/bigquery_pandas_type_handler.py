@@ -135,10 +135,12 @@ Examples:
             # my_table will just contain the data from column "a"
             ...
 
-    If you cannot authenticate with GCP via a standard method
-    (see https://cloud.google.com/docs/authentication/provide-credentials-adc), you can provide a
-    service account key as the "gcp_credentials" configuration. Dagster will store this key in a
-    temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file. After the run completes,
-    the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be unset.
+    If you cannot upload a file to your Dagster deployment, or otherwise cannot authenticate with
+    GCP via a standard method, (see https://cloud.google.com/docs/authentication/provide-credentials-adc),
+    you can provide a service account key as the "gcp_credentials" configuration. Dagster will
+    store this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
+    After the run completes, the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be
+    unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
+    the base64 encoded with this shell command: cat $GOOGLE_AUTH_CREDENTIALS | base64
 
 """

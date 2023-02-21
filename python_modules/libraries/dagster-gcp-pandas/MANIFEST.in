@@ -1,2 +1,2 @@
 include LICENSE
-include dagster_github/py.typed
+include dagster_gcp_pandas/py.typed
