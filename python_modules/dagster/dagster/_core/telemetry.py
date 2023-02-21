@@ -63,6 +63,7 @@ TELEMETRY_WHITELISTED_FUNCTIONS = {
     "execute_execute_command",
     "execute_launch_command",
     "_daemon_run_command",
+    "execute_materialize_command",
 }
 
 KNOWN_CI_ENV_VAR_KEYS = {

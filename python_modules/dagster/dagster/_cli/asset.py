@@ -1,7 +1,26 @@
+from typing import Mapping
+
 import click
 
+import dagster._check as check
+from dagster._cli.workspace.cli_target import (
+    get_repository_python_origin_from_kwargs,
+    python_origin_target_argument,
+)
 from dagster._core.definitions.events import AssetKey
+from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
+from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.selector.subset_selector import parse_asset_selection
+from dagster._core.telemetry import telemetry_wrapper
+from dagster._utils.hosted_user_process import (
+    recon_pipeline_from_origin,
+    recon_repository_from_origin,
+)
+from dagster._utils.interrupts import capture_interrupts
+
+from .utils import get_instance_for_service
 
 
 @click.group(name="asset")
@@ -9,6 +28,59 @@ def asset_cli():
     """
     Commands for working with Dagster assets.
     """
+
+
+@asset_cli.command(name="materialize", help="Execute a run to materialize a selection of assets")
+@python_origin_target_argument
+@click.option("--select", help="Asset selection to target", required=True)
+@click.option("--partition", help="Asset partition to target", required=False)
+def asset_materialize_command(**kwargs):
+    with capture_interrupts():
+        with get_instance_for_service("``dagster asset materialize``") as instance:
+            execute_materialize_command(instance, kwargs)
+
+
+@telemetry_wrapper
+def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, str]) -> None:
+    repository_origin = get_repository_python_origin_from_kwargs(kwargs)
+
+    recon_repo = recon_repository_from_origin(repository_origin)
+    repo_def = recon_repo.get_definition()
+
+    asset_keys = parse_asset_selection(
+        assets_defs=list(repo_def._assets_defs_by_key.values()),
+        source_assets=list(repo_def.source_assets_by_key.values()),
+        asset_selection=kwargs["select"].split(","),
+    )
+
+    implicit_job_def = repo_def.get_implicit_job_def_for_assets(asset_keys)
+    # If we can't find an implicit job with all the given assets, it's because they couldn't be
+    # placed into the same implicit job, because of their conflicting PartitionsDefinitions.
+    if implicit_job_def is None:
+        raise DagsterInvalidSubsetError(
+            "All selected assets must share the same PartitionsDefinition or have no"
+            " PartitionsDefinition"
+        )
+
+    reconstructable_job = recon_pipeline_from_origin(
+        PipelinePythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
+    )
+    partition = kwargs.get("partition")
+    if partition:
+        partitions_def = implicit_job_def.partitions_def
+        if partitions_def is None or all(
+            implicit_job_def.asset_layer.partitions_def_for_asset(asset_key) is None
+            for asset_key in asset_keys
+        ):
+            check.failed("Provided '--partition' option, but none of the assets are partitioned")
+
+        tags = partitions_def.get_tags_for_partition_key(partition)
+    else:
+        tags = {}
+
+    execute_job(
+        job=reconstructable_job, asset_selection=list(asset_keys), instance=instance, tags=tags
+    )
 
 
 @asset_cli.command(name="wipe")
