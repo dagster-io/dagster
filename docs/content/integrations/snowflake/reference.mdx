@@ -270,8 +270,8 @@ When materializing the above assets, a partition must be selected, as described 
 ```sql
 SELECT *
  WHERE SPECIES = 'Iris-setosa'
-   AND DATE >= '2023-01-02 00:00:00'
-   AND DATE < '2023-01-03 00:00:00'`
+   AND TO_TIMESTAMP(time::INT) >= '2023-01-02 00:00:00'
+   AND TO_TIMESTAMP(time::INT) < '2023-01-03 00:00:00'`
 ```
 
 ---
@@ -410,7 +410,7 @@ defs = Definitions(
   <code>warehouse</code> configuration is required.
 </Note>
 
-The `pyspark_io_manager` requires that a `SparkSession` be active and configured with the [Snowflake connector for Spark](https://docs.snowflake.com/en/user-guide/spark-connector.html). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
+The `snowflaek_pyspark_io_manager` requires that a `SparkSession` be active and configured with the [Snowflake connector for Spark](https://docs.snowflake.com/en/user-guide/spark-connector.html). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
 
 <TabGroup>
 <TabItem name="With the spark_resource">
