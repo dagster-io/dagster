@@ -469,6 +469,40 @@ def test_env_var_err():
         )
 
 
+def test_env_var_nested_resources() -> None:
+    class ResourceWithString(ConfigurableResource):
+        a_str: str
+
+    class OuterResource(ConfigurableResource):
+        inner: ResourceWithString
+
+    executed = {}
+
+    @asset
+    def an_asset(a_resource: OuterResource):
+        assert a_resource.inner.a_str == "SOME_VALUE"
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[an_asset],
+        resources={
+            "a_resource": OuterResource(
+                inner=ResourceWithString(
+                    a_str=EnvVar("ENV_VARIABLE_FOR_TEST"),
+                )
+            )
+        },
+    )
+
+    with environ(
+        {
+            "ENV_VARIABLE_FOR_TEST": "SOME_VALUE",
+        }
+    ):
+        assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+        assert executed["yes"]
+
+
 def test_nested_resources():
     out_txt = []
 

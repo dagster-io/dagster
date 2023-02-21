@@ -25,7 +25,6 @@ from dagster._config.validate import process_config, validate_config
 from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
-    convert_user_facing_definition_config_schema,
 )
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.init import InitResourceContext
@@ -477,13 +476,10 @@ class ConfigurableResource(
 
 def _is_fully_configured(resource: ResourceDefinition) -> bool:
     res = (
-        ConfiguredDefinitionConfigSchema(
-            resource,
-            convert_user_facing_definition_config_schema(resource.config_schema),
+        validate_config(
+            resource.config_schema.config_type,
             resource.config_schema.default_value if resource.config_schema.default_provided else {},
-        )
-        .resolve_config({})
-        .success
+        ).success
         is True
     )
 
