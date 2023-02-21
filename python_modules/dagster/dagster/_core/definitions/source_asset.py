@@ -67,7 +67,12 @@ SourceAssetObserveFunction: TypeAlias = Union[
 
 
 class SourceAsset(ResourceAddable):
-    """A SourceAsset represents an asset that will be loaded by (but not updated by) Dagster.
+    """
+    Describes an asset, but doesn't define how to compute it.
+
+    SourceAssets are used to represent assets that other assets or jobs depend on, in settings where
+    they can't be materialized themselves. SourceAssets include the information that's required to
+    load the asset.
 
     Attributes:
         key (Union[AssetKey, Sequence[str], str]): The key of the asset.
