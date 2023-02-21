@@ -16,7 +16,6 @@ type LocationStatusEntry = {
   loadStatus: RepositoryLocationLoadStatus;
   id: string;
   name: string;
-  updateTimestamp: number;
 };
 
 const POLL_INTERVAL = 5 * 1000;
@@ -95,17 +94,13 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     const currEntriesById: {[key: string]: LocationStatusEntry} = {};
     entries.forEach((entry) => {
       const previousEntry = previousEntriesById && previousEntriesById[entry.id];
-      const entryIsUpdated =
-        !previousEntry ||
-        previousEntry.updateTimestamp < entry.updateTimestamp ||
-        previousEntry.loadStatus !== entry.loadStatus;
+      const entryIsUpdated = !previousEntry || previousEntry.loadStatus !== entry.loadStatus;
       hasUpdatedEntries = hasUpdatedEntries || entryIsUpdated;
       currEntriesById[entry.id] = entryIsUpdated
         ? {
             id: entry.id,
             loadStatus: entry.loadStatus,
             name: entry.name,
-            updateTimestamp: entry.updateTimestamp,
           }
         : previousEntry;
     });
@@ -277,7 +272,6 @@ const CODE_LOCATION_STATUS_QUERY = gql`
           id
           name
           loadStatus
-          updateTimestamp
         }
       }
     }

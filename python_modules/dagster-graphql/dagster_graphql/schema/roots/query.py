@@ -464,7 +464,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return fetch_workspace(graphene_info.context)
 
     def resolve_locationStatusesOrError(self, graphene_info: ResolveInfo):
-        return fetch_location_statuses(graphene_info.context, zero_out_timestamps=True)
+        return fetch_location_statuses(graphene_info.context)
 
     def resolve_pipelineSnapshotOrError(
         self,
