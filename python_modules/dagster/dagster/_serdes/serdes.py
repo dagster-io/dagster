@@ -14,6 +14,7 @@ Why not pickle?
   (in memory, not human readable, etc) just handle the json case effectively.
 """
 
+import collections.abc
 import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -41,6 +42,7 @@ from typing_extensions import Final, TypeAlias, TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 
 from .errors import DeserializationError, SerdesUsageError, SerializationError
 
@@ -66,7 +68,6 @@ PackableValue: TypeAlias = Union[
     float,
     bool,
     None,
-    # Tuple["PackableValue", ...],
     NamedTuple,
     Set["PackableValue"],
     FrozenSet["PackableValue"],
@@ -93,9 +94,8 @@ class WhitelistMap(NamedTuple):
     def register_tuple(
         self,
         name: str,
-        nt: Optional[Type[NamedTuple]],
+        named_tuple_class: Optional[Type[NamedTuple]],
         serializer: Optional[Type["NamedTupleSerializer"]],
-        args_for_class: Mapping[str, Parameter],
     ):
         """Register a tuple in the whitelist map.
 
@@ -105,8 +105,9 @@ class WhitelistMap(NamedTuple):
                 Can be None to gracefull load previously serialized objects as None.
             serializer: The class to use when serializing and deserializing
         """
+        args_for_class = signature(named_tuple_class.__new__).parameters
         self.tuples[name] = (
-            nt,
+            named_tuple_class,
             serializer or DefaultNamedTupleSerializer,
             args_for_class,
         )
@@ -120,10 +121,10 @@ class WhitelistMap(NamedTuple):
     def register_enum(
         self,
         name: str,
-        enum: Type[Enum],
+        enum_class: Type[Enum],
         serializer: Optional[Type["EnumSerializer"]],
     ) -> None:
-        self.enums[name] = (enum, serializer or DefaultEnumSerializer)
+        self.enums[name] = (enum_class, serializer or DefaultEnumSerializer)
 
     def has_enum_entry(self, name: str) -> bool:
         return name in self.enums
@@ -219,20 +220,18 @@ def _whitelist_for_serdes(
             serializer is None or issubclass(serializer, EnumSerializer)
         ):
             whitelist_map.register_enum(klass.__name__, klass, serializer)
-        elif issubclass(klass, tuple) and (
+            return klass
+        elif is_named_tuple_subclass(klass) and (
             serializer is None or issubclass(serializer, NamedTupleSerializer)
         ):
-            nt_klass = cast(Type[NamedTuple], klass)
-            sig_params = signature(nt_klass.__new__).parameters
-            _check_serdes_tuple_class_invariants(nt_klass, sig_params)
-            whitelist_map.register_tuple(nt_klass.__name__, nt_klass, serializer, sig_params)
+            _check_serdes_tuple_class_invariants(klass)
+            whitelist_map.register_tuple(klass.__name__, klass, serializer)
             if storage_name:
                 whitelist_map.register_serialized_name(klass.__name__, storage_name)
                 whitelist_map.register_deserialized_name(storage_name, klass.__name__)
+            return klass  # type: ignore  # (NamedTuple quirk)
         else:
             raise SerdesUsageError(f"Can not whitelist class {klass} for serializer {serializer}")
-
-        return klass
 
     return __whitelist_for_serdes
 
@@ -419,13 +418,7 @@ def pack_value(val: PackableValue) -> JsonSerializableValue:
 def pack_inner_value(
     val: PackableValue, whitelist_map: WhitelistMap, descent_path: str
 ) -> JsonSerializableValue:
-    if isinstance(val, list):
-        return [
-            pack_inner_value(item, whitelist_map, f"{descent_path}[{idx}]")
-            for idx, item in enumerate(val)
-        ]
-    if isinstance(val, tuple):
-        val = cast(NamedTuple, val)
+    if is_named_tuple_instance(val):
         klass_name = val.__class__.__name__
         if not whitelist_map.has_tuple_entry(klass_name):
             raise SerializationError(
@@ -447,6 +440,13 @@ def pack_inner_value(
             )
         _, enum_serializer = whitelist_map.get_enum_entry(klass_name)
         return {"__enum__": enum_serializer.value_to_storage_str(val, whitelist_map, descent_path)}
+    if isinstance(val, (int, float, str, bool)) or val is None:
+        return val
+    if isinstance(val, collections.abc.Sequence):
+        return [
+            pack_inner_value(item, whitelist_map, f"{descent_path}[{idx}]")
+            for idx, item in enumerate(val)
+        ]
     if isinstance(val, set):
         set_path = descent_path + "{}"
         return {
@@ -463,14 +463,14 @@ def pack_inner_value(
                 for item in sorted(list(val), key=str)
             ]
         }
-    if isinstance(val, dict):
+    if isinstance(val, collections.abc.Mapping):
         return {
             key: pack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in val.items()
         }
 
     # list/dict checks above don't fully cover Sequence/Mapping
-    return val  # type: ignore
+    return val
 
 
 ###################################################################################################
@@ -489,13 +489,13 @@ def deserialize_json_to_dagster_namedtuple(
             check.str_param(json_str, "json_str"), whitelist_map=_WHITELIST_MAP
         )
 
-    if not isinstance(dagster_namedtuple, tuple):
+    if not is_named_tuple_instance(dagster_namedtuple):
         raise DeserializationError(
             "Output of deserialized json_str was not expected type of tuple. Received type"
             f" {type(dagster_namedtuple)}."
         )
 
-    return dagster_namedtuple  # type: ignore  # (tuple check is not NamedTuple check)
+    return dagster_namedtuple
 
 
 @overload
@@ -632,7 +632,6 @@ def register_serdes_tuple_fallbacks(
             class_name,
             klass,
             serializer,
-            signature(klass.__new__).parameters,
         )
 
 
@@ -660,12 +659,9 @@ def register_serdes_enum_fallbacks(
 ###################################################################################################
 
 
-def _get_dunder_new_params(sig_params: Any):
-    return list(sig_params.values())
-
-
-def _check_serdes_tuple_class_invariants(klass: Type[NamedTuple], sig_params: Any):
-    dunder_new_params = _get_dunder_new_params(sig_params)
+def _check_serdes_tuple_class_invariants(klass: Type[NamedTuple]) -> None:
+    sig_params = signature(klass.__new__).parameters
+    dunder_new_params = list(sig_params.values())
 
     cls_param = dunder_new_params[0]
 

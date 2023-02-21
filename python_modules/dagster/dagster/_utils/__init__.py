@@ -30,6 +30,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Sized,
@@ -42,7 +43,7 @@ from typing import (
 )
 
 import packaging.version
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
 import dagster._seven as seven
@@ -742,3 +743,11 @@ def iter_to_list(iterable: Iterable[T]) -> List[T]:
 
 def last_file_comp(path: str) -> str:
     return os.path.basename(os.path.normpath(path))
+
+
+def is_named_tuple_instance(obj: object) -> TypeGuard[NamedTuple]:
+    return isinstance(obj, tuple) and hasattr(obj, "_fields")
+
+
+def is_named_tuple_subclass(klass: Type[object]) -> TypeGuard[Type[NamedTuple]]:
+    return isinstance(klass, type) and issubclass(klass, tuple) and hasattr(klass, "_fields")
