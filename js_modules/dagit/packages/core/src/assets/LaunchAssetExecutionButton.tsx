@@ -26,6 +26,7 @@ import {RepoAddress} from '../workspace/types';
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {MULTIPLE_DEFINITIONS_WARNING} from './AssetDefinedInMultipleReposNotice';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
+import {partitionDefinitionsEqual} from './MultipartitioningSupport';
 import {isAssetMissing, isAssetStale} from './StaleTag';
 import {AssetKey} from './types';
 import {
@@ -50,7 +51,7 @@ type LaunchAssetsState =
     }
   | {
       type: 'partitions';
-      jobName: string;
+      target: {jobName: string; partitionSetName: string} | {pureAssetBackfill: true};
       assets: LaunchAssetExecutionAssetNodeFragment[];
       upstreamAssetKeys: AssetKey[];
       repoAddress: RepoAddress;
@@ -298,7 +299,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
           assets={state.assets}
           upstreamAssetKeys={state.upstreamAssetKeys}
           repoAddress={state.repoAddress}
-          assetJobName={state.jobName}
+          target={state.target}
           open={true}
           setOpen={() => setState({type: 'none'})}
         />
@@ -328,41 +329,27 @@ async function stateForLaunchingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
-  const repoName = repoAddressAsHumanString(repoAddress);
-
-  if (
-    !assets.every(
-      (a) =>
-        a.repository.name === repoAddress.name &&
-        a.repository.location.name === repoAddress.location,
-    )
-  ) {
-    return {
-      type: 'error',
-      error: `Assets must be in ${repoName} to be materialized together.`,
-    };
-  }
-
-  const partitionDefinition = assets.find((a) => !!a.partitionDefinition)?.partitionDefinition;
-  if (
-    assets.some(
-      (a) =>
-        a.partitionDefinition &&
-        partitionDefinition &&
-        a.partitionDefinition.description !== partitionDefinition.description,
-    )
-  ) {
-    return {
-      type: 'error',
-      error: 'Assets must share a partition definition to be materialized together.',
-    };
-  }
-
   const jobName = getCommonJob(assets, preferredJobName);
-  if (!jobName) {
+  const partitionDefinition = assets.find((a) => !!a.partitionDefinition)?.partitionDefinition;
+
+  const inSameRepo = assets.every(
+    (a) =>
+      a.repository.name === repoAddress.name && a.repository.location.name === repoAddress.location,
+  );
+  const inSameOrNoPartitionSpace = assets.every(
+    (a) =>
+      !a.partitionDefinition ||
+      !partitionDefinition ||
+      partitionDefinitionsEqual(a.partitionDefinition, partitionDefinition),
+  );
+
+  if (!inSameRepo || !inSameOrNoPartitionSpace || !jobName) {
     return {
-      type: 'error',
-      error: 'Assets must be in the same job to be materialized together.',
+      type: 'partitions',
+      assets,
+      target: {pureAssetBackfill: true},
+      upstreamAssetKeys: getUpstreamAssetKeys(assets),
+      repoAddress,
     };
   }
 
@@ -386,6 +373,7 @@ async function stateForLaunchingAssets(
     return {type: 'error', error: partitionSets.message};
   }
 
+  const partitionSetName = partitionSets.results[0]?.name;
   const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
   const resources = pipeline.modes[0].resources.filter((r) =>
     requiredResourceKeys.includes(r.name),
@@ -411,24 +399,19 @@ async function stateForLaunchingAssets(
         flattenGraphs: true,
         assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
         solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
-        base: partitionSets.results.length
-          ? {
-              partitionsSetName: partitionSets.results[0].name,
-              partitionName: null,
-              tags: [],
-            }
+        base: partitionSetName
+          ? {partitionsSetName: partitionSetName, partitionName: null, tags: []}
           : undefined,
       },
     };
   }
   if (partitionDefinition) {
-    const upstreamAssetKeys = getUpstreamAssetKeys(assets);
     return {
       type: 'partitions',
       assets,
-      jobName,
+      target: {jobName, partitionSetName},
+      upstreamAssetKeys: getUpstreamAssetKeys(assets),
       repoAddress,
-      upstreamAssetKeys,
     };
   }
   return {
