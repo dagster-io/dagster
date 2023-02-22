@@ -287,7 +287,7 @@ def test_time_window_partitioned_asset():
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in daily_partitioned
-            assert df.count() == 3
+            assert len(df.index) == 3
 
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
@@ -375,7 +375,7 @@ def test_static_partitioned_asset():
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in static_partitioned
-            assert df.count() == 3
+            assert len(df.index) == 3
 
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
@@ -467,7 +467,7 @@ def test_multi_partitioned_asset():
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in multi_partitioned
-            assert df.count() == 3
+            assert len(df.index) == 3
 
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
@@ -566,7 +566,7 @@ def test_dynamic_partitions():
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in dynamic_partitioned
-            assert df.count() == 3
+            assert len(df.index) == 3
 
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
