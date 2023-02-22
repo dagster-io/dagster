@@ -93,6 +93,23 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
             }
         )
     ),
+    "task_role_arn": Field(
+        StringSource,
+        is_required=False,
+        description=(
+            "ARN of the IAM role for launched tasks. See"
+            " https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html. "
+        ),
+    ),
+    "execution_role_arn": Field(
+        StringSource,
+        is_required=False,
+        description=(
+            "ARN of the task execution role for the ECS container and Fargate agent to make AWS API"
+            " calls on your behalf. See"
+            " https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html. "
+        ),
+    ),
     **SHARED_ECS_SCHEMA,
 }
 
@@ -108,6 +125,8 @@ class EcsContainerContext(
             ("container_name", Optional[str]),
             ("server_resources", Mapping[str, str]),
             ("run_resources", Mapping[str, str]),
+            ("task_role_arn", Optional[str]),
+            ("execution_role_arn", Optional[str]),
         ],
     )
 ):
@@ -122,6 +141,8 @@ class EcsContainerContext(
         container_name: Optional[str] = None,
         server_resources: Optional[Mapping[str, str]] = None,
         run_resources: Optional[Mapping[str, str]] = None,
+        task_role_arn: Optional[str] = None,
+        execution_role_arn: Optional[str] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
@@ -132,6 +153,8 @@ class EcsContainerContext(
             container_name=check.opt_str_param(container_name, "container_name"),
             server_resources=check.opt_mapping_param(server_resources, "server_resources"),
             run_resources=check.opt_mapping_param(run_resources, "run_resources"),
+            task_role_arn=check.opt_str_param(task_role_arn, "task_role_arn"),
+            execution_role_arn=check.opt_str_param(execution_role_arn, "execution_role_arn"),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -143,6 +166,8 @@ class EcsContainerContext(
             container_name=other.container_name or self.container_name,
             server_resources={**self.server_resources, **other.server_resources},
             run_resources={**self.run_resources, **other.run_resources},
+            task_role_arn=other.task_role_arn or self.task_role_arn,
+            execution_role_arn=other.execution_role_arn or self.execution_role_arn,
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -166,6 +191,8 @@ class EcsContainerContext(
                     env_vars=run_launcher.env_vars,
                     task_definition_arn=run_launcher.task_definition,  # run launcher converts this from short name to ARN in constructor
                     run_resources=run_launcher.run_resources,
+                    task_role_arn=run_launcher.task_role_arn,
+                    execution_role_arn=run_launcher.execution_role_arn,
                 )
             )
 
@@ -218,5 +245,7 @@ class EcsContainerContext(
                 container_name=processed_context_value.get("container_name"),
                 server_resources=processed_context_value.get("server_resources"),
                 run_resources=processed_context_value.get("run_resources"),
+                task_role_arn=processed_context_value.get("task_role_arn"),
+                execution_role_arn=processed_context_value.get("execution_role_arn"),
             )
         )

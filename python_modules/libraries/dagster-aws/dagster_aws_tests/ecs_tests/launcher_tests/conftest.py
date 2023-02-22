@@ -101,9 +101,6 @@ def task(ecs, subnet, security_group, task_definition, assign_public_ip):
 
 @pytest.fixture
 def stub_aws(ecs, ec2, secrets_manager, cloudwatch_client, monkeypatch):
-    print("ECS:" + str(ecs))
-    print("SECRETS MANAGER: " + str(secrets_manager))
-
     def mock_client(*args, **kwargs):
         if "ecs" in args:
             return ecs
@@ -388,6 +385,8 @@ def container_context_config(configured_secret):
                 "cpu": "1024",
                 "memory": "2048",
             },
+            "task_role_arn": "fake-task-role",
+            "execution_role_arn": "fake-execution-role",
         },
     }
 
@@ -413,6 +412,8 @@ def other_container_context_config(other_configured_secret):
                 "cpu": "2048",
                 "memory": "4096",
             },
+            "task_role_arn": "other-task-role",
+            "execution_role_arn": "other-fake-execution-role",
         },
     }
 
