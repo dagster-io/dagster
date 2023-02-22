@@ -100,12 +100,6 @@
                 "enabled"
             ]
         },
-        "EnvVar": {
-            "title": "EnvVar",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
-        },
         "ConfigMapEnvSource": {
             "title": "ConfigMapEnvSource",
             "type": "object",
@@ -225,20 +219,10 @@
                 },
                 "env": {
                     "title": "Env",
-                    "anyOf": [
-                        {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        },
-                        {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/EnvVar"
-                            }
-                        }
-                    ]
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "envConfigMaps": {
                     "title": "Envconfigmaps",

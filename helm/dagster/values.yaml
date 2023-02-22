@@ -308,17 +308,15 @@ dagster-user-deployments:
         enabled: true
 
       # Additional environment variables to set.
-      # These will be directly applied to the daemon container. See
-      # https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
+      # A Kubernetes ConfigMap will be created with these environment variables. See:
+      # https://kubernetes.io/docs/concepts/configuration/configmap/
       #
       # Example:
       #
       # env:
-      # - name: ENV_ONE
-      #   value: "one"
-      # - name: ENV_TWO
-      #   value: "two"
-      env: []
+      #   ENV_ONE: one
+      #   ENV_TWO: two
+      env: {}
 
       # Additional environment variables can be retrieved and set from ConfigMaps. See:
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
