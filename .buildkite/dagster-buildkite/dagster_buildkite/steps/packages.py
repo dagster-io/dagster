@@ -84,7 +84,10 @@ def _get_uncustomized_pkg_roots(root, custom_pkg_roots) -> List[str]:
 
 
 def airflow_extra_cmds(version: str, _) -> List[str]:
-    return ['export AIRFLOW_HOME="/airflow"', "mkdir -p $${AIRFLOW_HOME}"]
+    return [
+        'export AIRFLOW_HOME="/airflow"',
+        "mkdir -p $${AIRFLOW_HOME}",
+    ]
 
 
 airline_demo_extra_cmds = [

@@ -3,6 +3,7 @@ version: "3.7"
 services:
   test-postgres-db-airflow:
     image: postgres:11
+    container_name: airflow-db
     ports:
       - "5432:5432"
     environment:
