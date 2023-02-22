@@ -24,7 +24,6 @@ def _get_snowflake_options(config, table_slice: TableSlice) -> Mapping[str, str]
         "sfDatabase": config["database"],
         "sfSchema": table_slice.schema,
         "sfWarehouse": config["warehouse"],
-        "dbtable": table_slice.table,
     }
 
     return conf
@@ -70,9 +69,9 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
 
         with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
 
-        with_uppercase_cols.write.format(SNOWFLAKE_CONNECTOR).options(**options).mode(
-            "append"
-        ).save()
+        with_uppercase_cols.write.format(SNOWFLAKE_CONNECTOR).options(**options).option(
+            "dbtable", table_slice.table
+        ).mode("append").save()
 
         return {
             "dataframe_columns": MetadataValue.table_schema(

@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import pytest
 from dagster import (
+    AssetIn,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     IOManagerDefinition,
@@ -232,10 +233,11 @@ def test_time_window_partitioned_asset():
         @asset(
             partitions_def=partitions_def,
             key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
+            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
         )
-        def downstream_partitioned(daily_partitioned) -> None:
+        def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in daily_partitioned
-            assert daily_partitioned.count() == 3
+            assert df.count() == 3
 
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
@@ -288,7 +290,7 @@ def test_time_window_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_static_partitioned_asset():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
@@ -327,10 +329,11 @@ def test_static_partitioned_asset():
         @asset(
             partitions_def=partitions_def,
             key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
+            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
         )
-        def downstream_partitioned(static_partitioned) -> None:
+        def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in static_partitioned
-            assert static_partitioned.count() == 3
+            assert df.count() == 3
 
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
@@ -432,10 +435,11 @@ def test_multi_partitioned_asset():
         @asset(
             partitions_def=partitions_def,
             key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
+            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
         )
-        def downstream_partitioned(multi_partitioned) -> None:
+        def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in multi_partitioned
-            assert multi_partitioned.count() == 3
+            assert df.count() == 3
 
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
@@ -500,7 +504,7 @@ def test_multi_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
 
-@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+# @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_dynamic_partitions():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
@@ -542,10 +546,11 @@ def test_dynamic_partitions():
         @asset(
             partitions_def=dynamic_fruits,
             key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
+            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
         )
-        def downstream_partitioned(dynamic_partitioned) -> None:
+        def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in dynamic_partitioned
-            assert dynamic_partitioned.count() == 3
+            assert df.count() == 3
 
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
