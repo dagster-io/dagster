@@ -563,20 +563,10 @@
                 },
                 "env": {
                     "title": "Env",
-                    "anyOf": [
-                        {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        },
-                        {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/EnvVar"
-                            }
-                        }
-                    ]
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "envConfigMaps": {
                     "title": "Envconfigmaps",
