@@ -26,7 +26,7 @@ def docker_compose_file_fixture() -> str:
 
 
 RETRY_DELAY_SEC = 5
-STARTUP_TIME_SEC = 20
+STARTUP_TIME_SEC = 120
 
 
 @pytest.fixture(name="instance")
