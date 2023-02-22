@@ -206,6 +206,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     launchWithRangesAsTags && setMissingOnly(false);
   }, [launchWithRangesAsTags]);
 
+  React.useEffect(() => {
+    displayType === 'anchor-asset' && setMissingOnly(false);
+  }, [displayType]);
+
   const onLaunch = async () => {
     setLaunching(true);
 
@@ -378,11 +382,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             <Alert
               intent="info"
               title="Dagster will materialize all dependent asset partitions downstream of the anchor asset
-            selection."
-            >
-              If partitions in your selection have unrelated partition spaces, this backfill may
-              fail.
-            </Alert>
+            selection, using separate runs as needed."
+            />
           ) : (
             <Box flex={{justifyContent: 'space-between'}}>
               <Checkbox
@@ -511,7 +512,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         </Button>
         {launchAsBackfill && !canLaunchPartitionBackfill.enabled ? (
           <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
-            <Button disabled>{`Launch ${keysFiltered.length}-Run Backfill`}</Button>
+            <Button disabled>
+              {displayType === 'merged'
+                ? `Launch ${keysFiltered.length}-Run Backfill`
+                : 'Launch Backfill'}
+            </Button>
           </Tooltip>
         ) : (
           <Button
@@ -523,7 +528,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             {launching
               ? 'Launching...'
               : launchAsBackfill
-              ? `Launch ${keysFiltered.length}-Run Backfill`
+              ? displayType === 'merged'
+                ? `Launch ${keysFiltered.length}-Run Backfill`
+                : 'Launch Backfill'
               : `Launch 1 Run`}
           </Button>
         )}
