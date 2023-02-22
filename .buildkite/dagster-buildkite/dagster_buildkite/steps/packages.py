@@ -84,25 +84,7 @@ def _get_uncustomized_pkg_roots(root, custom_pkg_roots) -> List[str]:
 
 
 def airflow_extra_cmds(version: str, _) -> List[str]:
-    return [
-        'export AIRFLOW_HOME="/airflow"',
-        "mkdir -p $${AIRFLOW_HOME}",
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-        'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "aws ecr get-login --no-include-email --region us-west-2 | sh",
-        r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
-        + GCP_CREDS_LOCAL_FILE,
-        "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-        "pushd python_modules/libraries/dagster-airflow/dagster_airflow_tests/",
-        "docker-compose up -d --remove-orphans",
-        *network_buildkite_container("postgres"),
-        *connect_sibling_docker_container(
-            "postgres",
-            "test-postgres-db-airflow",
-            "POSTGRES_TEST_DB_HOST",
-        ),
-        "popd",
-    ]
+    return ['export AIRFLOW_HOME="/airflow"', "mkdir -p $${AIRFLOW_HOME}"]
 
 
 airline_demo_extra_cmds = [
