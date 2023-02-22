@@ -56,7 +56,8 @@ def adls2_resource(context):
     `required_resource_keys`, or it will not be initialized for the execution of their compute
     functions.
 
-    You may pass credentials to this resource using either a SAS token, a key or by
+    You may pass credentials to this resource using either a SAS token, a key or by passing the
+    `DefaultAzureCredential` object.
 
     .. code-block:: YAML
 
