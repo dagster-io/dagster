@@ -227,7 +227,7 @@ def test_time_window_partitioned_asset():
             key_prefix=schema,
             ins={"df": AssetIn([schema, table_name])},
         )
-        def downstream_partitioned(df) -> None:
+        def downstream_partitioned(df: DataFrame) -> None:
             # assert that we only get the columns created in daily_partitioned
             assert df.count() == 3
 
@@ -281,9 +281,10 @@ def test_static_partitioned_asset():
         schema_name=schema,
         column_str="COLOR string, A string, B int",
     ) as table_name:
+        partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
 
         @asset(
-            partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),
+            partitions_def=partitions_def,
             key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
             metadata={"partition_expr": "color"},
             config_schema={"value": str},
@@ -309,6 +310,15 @@ def test_static_partitioned_asset():
             df = spark.createDataFrame(data, schema=schema)
             return df
 
+        @asset(
+            partitions_def=partitions_def,
+            key_prefix=schema,
+            ins={"df": AssetIn([schema, table_name])},
+        )
+        def downstream_partitioned(df: DataFrame) -> None:
+            # assert that we only get the columns created in static_partitioned
+            assert df.count() == 3
+
         asset_full_name = f"{schema}__{table_name}"
         bq_table_path = f"{schema}.{table_name}"
 
@@ -316,7 +326,7 @@ def test_static_partitioned_asset():
         resource_defs = {"io_manager": bq_io_manager}
 
         materialize(
-            [static_partitioned],
+            [static_partitioned, downstream_partitioned],
             partition_key="red",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
@@ -328,7 +338,7 @@ def test_static_partitioned_asset():
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
-            [static_partitioned],
+            [static_partitioned, downstream_partitioned],
             partition_key="blue",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
@@ -340,7 +350,7 @@ def test_static_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
-            [static_partitioned],
+            [static_partitioned, downstream_partitioned],
             partition_key="red",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
@@ -359,14 +369,15 @@ def test_multi_partitioned_asset():
         schema_name=schema,
         column_str="COLOR string, RAW_TIME string, A string, TIME DATE",
     ) as table_name:
+        partitions_def = MultiPartitionsDefinition(
+            {
+                "time": DailyPartitionsDefinition(start_date="2022-01-01"),
+                "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+            }
+        )
 
         @asset(
-            partitions_def=MultiPartitionsDefinition(
-                {
-                    "time": DailyPartitionsDefinition(start_date="2022-01-01"),
-                    "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
-                }
-            ),
+            partitions_def=partitions_def,
             key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
             metadata={"partition_expr": {"time": "CAST(time as DATETIME)", "color": "color"}},
             config_schema={"value": str},
@@ -398,6 +409,15 @@ def test_multi_partitioned_asset():
 
             return df
 
+        @asset(
+            partitions_def=partitions_def,
+            key_prefix=schema,
+            ins={"df": AssetIn([schema, table_name])},
+        )
+        def downstream_partitioned(df: DataFrame) -> None:
+            # assert that we only get the columns created in multi_partitioned
+            assert df.count() == 3
+
         asset_full_name = f"{schema}__{table_name}"
         bq_table_path = f"{schema}.{table_name}"
 
@@ -405,7 +425,7 @@ def test_multi_partitioned_asset():
         resource_defs = {"io_manager": bq_io_manager}
 
         materialize(
-            [multi_partitioned],
+            [multi_partitioned, downstream_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
@@ -417,7 +437,7 @@ def test_multi_partitioned_asset():
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
-            [multi_partitioned],
+            [multi_partitioned, downstream_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
@@ -429,7 +449,7 @@ def test_multi_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
-            [multi_partitioned],
+            [multi_partitioned, downstream_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "red"}),
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
@@ -441,7 +461,7 @@ def test_multi_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
 
         materialize(
-            [multi_partitioned],
+            [multi_partitioned, downstream_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "4"}}}},
@@ -492,6 +512,15 @@ def test_dynamic_partitions():
             df = spark.createDataFrame(data, schema=schema)
             return df
 
+        @asset(
+            partitions_def=dynamic_fruits,
+            key_prefix=schema,
+            ins={"df": AssetIn([schema, table_name])},
+        )
+        def downstream_partitioned(df: DataFrame) -> None:
+            # assert that we only get the columns created in dynamic_partitioned
+            assert df.count() == 3
+
         asset_full_name = f"{schema}__{table_name}"
         bq_table_path = f"{schema}.{table_name}"
 
@@ -502,7 +531,7 @@ def test_dynamic_partitions():
             dynamic_fruits.add_partitions(["apple"], instance)
 
             materialize(
-                [dynamic_partitioned],
+                [dynamic_partitioned, downstream_partitioned],
                 partition_key="apple",
                 resources=resource_defs,
                 instance=instance,
@@ -517,7 +546,7 @@ def test_dynamic_partitions():
             dynamic_fruits.add_partitions(["orange"], instance)
 
             materialize(
-                [dynamic_partitioned],
+                [dynamic_partitioned, downstream_partitioned],
                 partition_key="orange",
                 resources=resource_defs,
                 instance=instance,
@@ -530,7 +559,7 @@ def test_dynamic_partitions():
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
             materialize(
-                [dynamic_partitioned],
+                [dynamic_partitioned, downstream_partitioned],
                 partition_key="apple",
                 resources=resource_defs,
                 instance=instance,
