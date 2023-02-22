@@ -15,7 +15,6 @@ export type CodeLocationStatusQuery = {
           id: string;
           name: string;
           loadStatus: Types.RepositoryLocationLoadStatus;
-          updateTimestamp: number;
         }>;
       };
 };
