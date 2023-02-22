@@ -10,6 +10,7 @@ from dagster import (
     Any,
     AssetKey,
     AssetsDefinition,
+    DagsterInstance,
     Field,
     In,
     Nothing,
@@ -27,13 +28,19 @@ from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (
+    ExternalRepository,
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._core.test_utils import step_did_not_run, step_failed, step_succeeded
+from dagster._core.test_utils import (
+    step_did_not_run,
+    step_failed,
+    step_succeeded,
+)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._legacy import ModeDefinition, pipeline
@@ -304,7 +311,11 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
             break
 
 
-def test_simple_backfill(instance, workspace_context, external_repo):
+def test_simple_backfill(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
     instance.add_backfill(
         PartitionBackfill(
@@ -333,7 +344,11 @@ def test_simple_backfill(instance, workspace_context, external_repo):
     assert three.tags[PARTITION_NAME_TAG] == "three"
 
 
-def test_canceled_backfill(instance, workspace_context, external_repo):
+def test_canceled_backfill(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
     instance.add_backfill(
         PartitionBackfill(
@@ -349,8 +364,8 @@ def test_canceled_backfill(instance, workspace_context, external_repo):
     )
     assert instance.get_runs_count() == 0
 
-    iterator = execute_backfill_iteration(
-        workspace_context, get_default_daemon_logger("BackfillDaemon")
+    iterator = iter(
+        execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon"))
     )
     next(iterator)
     assert instance.get_runs_count() == 1
@@ -359,11 +374,16 @@ def test_canceled_backfill(instance, workspace_context, external_repo):
     instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
     list(iterator)
     backfill = instance.get_backfill(backfill.backfill_id)
+    assert backfill
     assert backfill.status == BulkActionStatus.CANCELED
     assert instance.get_runs_count() == 1
 
 
-def test_failure_backfill(instance, workspace_context, external_repo):
+def test_failure_backfill(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     output_file = _failure_flag_file()
     external_partition_set = external_repo.get_external_partition_set(
         "conditionally_fail_partition_set"
@@ -464,7 +484,11 @@ def test_failure_backfill(instance, workspace_context, external_repo):
 
 
 @pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
-def test_partial_backfill(instance, workspace_context, external_repo):
+def test_partial_backfill(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     external_partition_set = external_repo.get_external_partition_set("partial_partition_set")
 
     # create full runs, where every step is executed
@@ -552,7 +576,11 @@ def test_partial_backfill(instance, workspace_context, external_repo):
     assert step_did_not_run(instance, three, "step_three")
 
 
-def test_large_backfill(instance, workspace_context, external_repo):
+def test_large_backfill(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     external_partition_set = external_repo.get_external_partition_set("large_partition_set")
     instance.add_backfill(
         PartitionBackfill(
@@ -597,7 +625,11 @@ def test_unloadable_backfill(instance, workspace_context):
     assert isinstance(backfill.error, SerializableErrorInfo)
 
 
-def test_backfill_from_partitioned_job(instance, workspace_context, external_repo):
+def test_backfill_from_partitioned_job(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     partition_name_list = [
         partition.name for partition in my_config.partitions_def.get_partitions()
     ]
@@ -621,17 +653,23 @@ def test_backfill_from_partitioned_job(instance, workspace_context, external_rep
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
 
     assert instance.get_runs_count() == 3
-    runs = reversed(instance.get_runs())
+    runs = reversed(list(instance.get_runs()))
     for idx, run in enumerate(runs):
         assert run.tags[BACKFILL_ID_TAG] == "partition_schedule_from_job"
         assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
         assert run.tags[PARTITION_SET_TAG] == "comp_always_succeed_partition_set"
 
 
-def test_backfill_with_asset_selection(instance, workspace_context, external_repo):
+def test_backfill_with_asset_selection(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
-    asset_job_name = the_repo.get_implicit_job_def_for_assets(asset_selection).name
+    job_def = the_repo.get_implicit_job_def_for_assets(asset_selection)
+    assert job_def
+    asset_job_name = job_def.name
     partition_set_name = f"{asset_job_name}_partition_set"
     external_partition_set = external_repo.get_external_partition_set(partition_set_name)
     instance.add_backfill(
@@ -655,7 +693,7 @@ def test_backfill_with_asset_selection(instance, workspace_context, external_rep
     wait_for_all_runs_to_finish(instance, timeout=30)
 
     assert instance.get_runs_count() == 3
-    runs = reversed(instance.get_runs())
+    runs = reversed(list(instance.get_runs()))
     for idx, run in enumerate(runs):
         assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
         assert run.tags[PARTITION_NAME_TAG] == partition_name_list[idx]
@@ -665,13 +703,17 @@ def test_backfill_with_asset_selection(instance, workspace_context, external_rep
         assert step_succeeded(instance, run, "bar")
     # selected
     for asset_key in asset_selection:
-        assert len(instance.run_ids_for_asset_key(asset_key)) == 3
+        assert len(list(instance.run_ids_for_asset_key(asset_key))) == 3
     # not selected
     for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
-        assert len(instance.run_ids_for_asset_key(asset_key)) == 0
+        assert len(list(instance.run_ids_for_asset_key(asset_key))) == 0
 
 
-def test_pure_asset_backfill(instance, workspace_context, external_repo):
+def test_pure_asset_backfill(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     del external_repo
 
     partition_name_list = [partition.name for partition in static_partitions.get_partitions()]
@@ -690,9 +732,9 @@ def test_pure_asset_backfill(instance, workspace_context, external_repo):
         )
     )
     assert instance.get_runs_count() == 0
-    assert (
-        instance.get_backfill("backfill_with_asset_selection").status == BulkActionStatus.REQUESTED
-    )
+    backfill = instance.get_backfill("backfill_with_asset_selection")
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 3
@@ -701,7 +743,7 @@ def test_pure_asset_backfill(instance, workspace_context, external_repo):
     wait_for_all_runs_to_finish(instance, timeout=30)
 
     assert instance.get_runs_count() == 3
-    runs = reversed(instance.get_runs())
+    runs = reversed(list(instance.get_runs()))
     for run in runs:
         assert run.tags[BACKFILL_ID_TAG] == "backfill_with_asset_selection"
         assert step_succeeded(instance, run, "foo")
@@ -709,17 +751,21 @@ def test_pure_asset_backfill(instance, workspace_context, external_repo):
         assert step_succeeded(instance, run, "bar")
     # selected
     for asset_key in asset_selection:
-        assert len(instance.run_ids_for_asset_key(asset_key)) == 3
+        assert len(list(instance.run_ids_for_asset_key(asset_key))) == 3
     # not selected
     for asset_key in [AssetKey("a2"), AssetKey("b2"), AssetKey("baz")]:
-        assert len(instance.run_ids_for_asset_key(asset_key)) == 0
+        assert len(list(instance.run_ids_for_asset_key(asset_key))) == 0
 
-    assert (
-        instance.get_backfill("backfill_with_asset_selection").status == BulkActionStatus.COMPLETED
-    )
+    backfill = instance.get_backfill("backfill_with_asset_selection")
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED
 
 
-def test_backfill_from_failure_for_subselection(instance, workspace_context, external_repo):
+def test_backfill_from_failure_for_subselection(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
     partition = parallel_failure_partition_set.get_partition("one")
     run_config = parallel_failure_partition_set.run_config_for_partition(partition)
     tags = parallel_failure_partition_set.tags_for_partition(partition)
@@ -738,7 +784,7 @@ def test_backfill_from_failure_for_subselection(instance, workspace_context, ext
 
     assert instance.get_runs_count() == 1
     wait_for_all_runs_to_finish(instance)
-    run = instance.get_runs()[0]
+    run = list(instance.get_runs())[0]
     assert run.status == DagsterRunStatus.FAILURE
 
     instance.add_backfill(
@@ -756,7 +802,7 @@ def test_backfill_from_failure_for_subselection(instance, workspace_context, ext
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 2
-    run = instance.get_runs(limit=1)[0]
+    run = list(instance.get_runs(limit=1))[0]
     assert run.solids_to_execute
     assert run.solid_selection
     assert len(run.solids_to_execute) == 2
