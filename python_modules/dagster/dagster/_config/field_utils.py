@@ -470,9 +470,7 @@ def _config_dictionary_from_values_inner(obj: Any):
         return {"env": str(obj)}
     elif isinstance(obj, Config):
         return {
-            k: _config_dictionary_from_values_inner(v)
-            for k, v in obj.dict().items()
-            if not k.startswith("_")
+            k: _config_dictionary_from_values_inner(v) for k, v in obj.config_dictionary.items()
         }
 
     return obj
@@ -481,9 +479,14 @@ def _config_dictionary_from_values_inner(obj: Any):
 def config_dictionary_from_values(
     values: Mapping[str, Any], config_field: "Field"
 ) -> Dict[str, Any]:
+    """
+    Converts a set of config values into a dictionary representation,
+    in particular converting EnvVar objects into Dagster config inputs
+    and processing data structures such as dicts, lists, and structured Config classes.
+    """
     assert ConfigTypeKind.is_shape(config_field.config_type.kind)
 
-    return cast(Dict[str, Any], _config_dictionary_from_values_inner(values))
+    return check.is_dict(_config_dictionary_from_values_inner(values))
 
 
 class EnvVar(str):

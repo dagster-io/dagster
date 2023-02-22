@@ -99,6 +99,14 @@ class Config(MakeConfigCacheable):
     Base class for Dagster configuration models.
     """
 
+    @property
+    def config_dictionary(self) -> Mapping[str, Any]:
+        """
+        Returns a dictionary representation of this config object,
+        ignoring any private fields.
+        """
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+
 
 class PermissiveConfig(Config):
     # Pydantic config for this class
@@ -406,9 +414,11 @@ class ConfigurableResource(
         Returns a new instance of the resource with the given values.
         Used when initializing a resource at runtime.
         """
-        return self.__class__(
-            **{**{k: v for k, v in self.__dict__.items() if not k.startswith("_")}, **values}
-        )
+
+        # Since Resource extends BaseModel and is a dataclass, we know that the
+        # signature of any __init__ method will always consist of the fields
+        # of this class. We can therefore safely pass in the values as kwargs.
+        return self.__class__(**{**self.config_dictionary, **values})
 
     def _resolve_and_update_env_vars(self) -> "ConfigurableResource[TResValue]":
         """
