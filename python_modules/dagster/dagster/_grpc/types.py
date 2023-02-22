@@ -329,7 +329,7 @@ class ListRepositoriesResponse(
                 if container_context is not None
                 else None
             ),
-            dagster_library_versions=check.opt_mapping_param(
+            dagster_library_versions=check.opt_nullable_mapping_param(
                 dagster_library_versions, "dagster_library_versions"
             ),
         )
