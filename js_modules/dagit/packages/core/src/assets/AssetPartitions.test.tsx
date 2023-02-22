@@ -38,16 +38,14 @@ const SingleDimensionAssetPartitions: React.FC<{assetKey: AssetKeyInput}> = ({as
       <MockedProvider
         mocks={[SingleDimensionTimePartitionHealthQuery, SingleDimensionStaticPartitionHealthQuery]}
       >
-        <div style={{height: 1000}}>
-          <AssetPartitions
-            assetKey={assetKey}
-            params={params}
-            setParams={setParams}
-            paramsTimeWindowOnly={false}
-            assetPartitionDimensions={['default']}
-            assetLastMaterializedAt={undefined}
-          />
-        </div>
+        <AssetPartitions
+          assetKey={assetKey}
+          params={params}
+          setParams={setParams}
+          paramsTimeWindowOnly={false}
+          assetPartitionDimensions={['default']}
+          assetLastMaterializedAt={undefined}
+        />
       </MockedProvider>
       <Route
         path="*"
@@ -68,23 +66,22 @@ describe('AssetPartitions', () => {
       expect(screen.queryByText('2022-06-01-01:00')).toBeVisible();
     });
 
-    await waitFor(async () => {
-      const partitionInput = screen.getByTestId('dimension-range-input');
-      await userEvent.type(partitionInput, specialChars.selectAll);
-      await userEvent.type(partitionInput, specialChars.backspace);
-      await userEvent.type(partitionInput, '[2022-11-28-20:00...2022-12-05-01:00]', {delay: 1});
-      await userEvent.tab();
-    });
+    const partitionInput = screen.getByTestId('dimension-range-input');
+    await userEvent.type(partitionInput, specialChars.selectAll);
+    await userEvent.type(partitionInput, specialChars.backspace);
+    await userEvent.type(partitionInput, '[2022-11-28-20:00...2022-12-05-01:00]');
+    await userEvent.tab();
+
     await waitFor(() => {
       // Verify that the counts update to reflect the subrange
       expect(screen.getByTestId('partitions-selected')).toHaveTextContent('150 Partitions');
-      expect(screen.getByText('Missing (135)')).toBeVisible();
-      expect(screen.getByText('Completed (15)')).toBeVisible();
-
-      // Verify that the items shown on the left update to reflect the subrange
-      expect(screen.queryByText('2022-06-01-01:00')).toBeNull();
-      expect(screen.queryByText('2022-11-28-20:00')).toBeVisible();
     });
+    expect(screen.getByText('Missing (135)')).toBeVisible();
+    expect(screen.getByText('Completed (15)')).toBeVisible();
+
+    // Verify that the items shown on the left update to reflect the subrange
+    expect(screen.queryByText('2022-06-01-01:00')).toBeNull();
+    expect(screen.queryByText('2022-11-28-20:00')).toBeVisible();
   });
 
   it('should sync time range selection to the URL', async () => {
