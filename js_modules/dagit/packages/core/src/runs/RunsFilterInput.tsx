@@ -159,17 +159,13 @@ function searchSuggestionsForRuns(
     {
       token: 'tag',
       values: () => {
-        const all: string[] = [];
         if (!selectedRunTagKey) {
-          (runTagKeys || []).forEach((key) => all.push(`${key}`));
-        } else {
-          (runTagValues || []).forEach((_) => {
-            if (_.key === selectedRunTagKey) {
-              _.values.forEach((value) => all.push(`${selectedRunTagKey}=${value}`));
-            }
-          });
+          return (runTagKeys || []).map((key) => `${key}`);
         }
-        return all;
+        return (runTagValues || [])
+          .filter(({key}) => key === selectedRunTagKey)
+          .map(({values}) => values.map((value) => `${selectedRunTagKey}=${value}`))
+          .flat();
       },
       textOnly: !selectedRunTagKey,
     },
@@ -201,22 +197,18 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
 }) => {
   const {options} = useRepositoryOptions();
   const [selectedTagKey, setSelectedTagKey] = React.useState<string | undefined>();
-  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<RunTagKeysQuery>(RUN_TAG_KEYS_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
+  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<RunTagKeysQuery>(RUN_TAG_KEYS_QUERY);
   const [fetchTagValues, {data: tagValueData}] = useLazyQuery<
     RunTagValuesQuery,
     RunTagValuesQueryVariables
   >(RUN_TAG_VALUES_QUERY, {
-    fetchPolicy: 'cache-and-network',
     variables: {tagKeys: selectedTagKey ? [selectedTagKey] : []},
   });
 
   React.useEffect(() => {
-    if (!selectedTagKey) {
-      return;
+    if (selectedTagKey) {
+      fetchTagValues();
     }
-    fetchTagValues();
   }, [selectedTagKey, fetchTagValues]);
 
   const suggestions = searchSuggestionsForRuns(
@@ -232,9 +224,9 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
     if (!text.startsWith('tag:')) {
       return;
     }
-    const tagPrefix = text.substring(4);
-    if (tagKeyData?.runTagKeys && tagKeyData?.runTagKeys.indexOf(tagPrefix) >= 0) {
-      setSelectedTagKey(tagPrefix);
+    const tagKeyText = text.slice(4);
+    if (tagKeyData?.runTagKeys && tagKeyData?.runTagKeys.includes(tagKeyText)) {
+      setSelectedTagKey(tagKeyText);
     }
   };
 
