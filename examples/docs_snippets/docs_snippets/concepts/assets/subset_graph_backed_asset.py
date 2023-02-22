@@ -1,11 +1,10 @@
 from dagster import (
-    AssetsDefinition,
+    AssetOut,
     Definitions,
-    GraphOut,
     Out,
     Output,
     define_asset_job,
-    graph,
+    graph_multi_asset,
     op,
 )
 
@@ -35,16 +34,15 @@ def baz(foo_2, bar_2):
     return foo_2 + bar_2
 
 
-@graph(out={"foo_asset": GraphOut(), "baz_asset": GraphOut()})
-def my_graph():
+@graph_multi_asset(
+    outs={"foo_asset": AssetOut(), "baz_asset": AssetOut()}, can_subset=True
+)
+def my_graph_assets():
     bar_1, bar_2 = bar()
     foo_1, foo_2 = foo(bar_1)
     return {"foo_asset": foo_1, "baz_asset": baz(foo_2, bar_2)}
 
 
-defs = Definitions(
-    assets=[AssetsDefinition.from_graph(my_graph, can_subset=True)],
-    jobs=[define_asset_job("graph_asset")],
-)
+defs = Definitions(assets=[my_graph_assets], jobs=[define_asset_job("graph_asset")])
 
 # end_graph_backed_asset_example
