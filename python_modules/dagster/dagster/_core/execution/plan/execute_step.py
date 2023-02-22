@@ -557,7 +557,7 @@ def _get_output_asset_materializations(
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
     return (
         step_context.pipeline_def.asset_layer.code_version_for_asset(asset_key)
-        or step_context.pipeline_run.run_id
+        or step_context.dagster_run.run_id
     )
 
 

@@ -23,6 +23,7 @@ from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.logical_version import LogicalVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
     MetadataEntry,
@@ -235,6 +236,8 @@ class Output(Generic[T]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
+        logical_version (Optional[LogicalVersion]): (Experimental) A logical version to manually set
+            for the asset.
     """
 
     def __init__(
@@ -254,6 +257,8 @@ class Output(Generic[T]):
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
         self._metadata_entries = normalize_metadata(metadata, metadata_entries)
+        if logical_version is not None:
+            experimental_class_param_warning("logical_version", "Output")
         self._logical_version = check.opt_inst_param(
             logical_version, "logical_version", LogicalVersion
         )
