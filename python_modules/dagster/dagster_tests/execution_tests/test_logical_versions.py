@@ -459,7 +459,7 @@ def test_stale_status() -> None:
     status_resolver = get_stale_status_resolver(instance, all_assets_v3)
     assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
     assert status_resolver.get_status_causes(asset2.key) == [
-        StaleStatusCause(StaleStatus.STALE, asset2.key, "new input: asset3"),
         StaleStatusCause(StaleStatus.STALE, asset2.key, "removed input: asset1"),
+        StaleStatusCause(StaleStatus.STALE, asset2.key, "new input: asset3"),
         StaleStatusCause(StaleStatus.STALE, asset3.key, "never materialized"),
     ]
