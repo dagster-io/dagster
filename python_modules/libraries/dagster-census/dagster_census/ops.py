@@ -66,7 +66,7 @@ def census_trigger_sync_op(context):
     an error if it is unsuccessful.
 
     It outputs a :py:class:`~dagster_census.CensusOutput` which contains the details of the Census
-    sync after the sync successfully completes and tables the sync updates.
+    sync after it successfully completes.
 
     It requires the use of the :py:class:`~dagster_census.census_resource`, which allows it to
     communicate with the Census API.
