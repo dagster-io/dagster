@@ -7,6 +7,7 @@ interface ConfirmationOptions {
   description?: React.ReactNode;
   icon?: ConfirmationDialogProps['icon'];
   intent?: ConfirmationDialogProps['intent'];
+  buttonText?: React.ReactNode;
 }
 
 interface ConfirmationDialogProps extends ConfirmationOptions {
@@ -22,6 +23,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   icon,
   title,
   intent = 'danger',
+  buttonText = 'Confirm',
   description,
   onSubmit,
   onClose,
@@ -32,7 +34,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
       <DialogFooter>
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={onSubmit} intent={intent}>
-          Confirm
+          {buttonText}
         </Button>
       </DialogFooter>
     </Dialog>
