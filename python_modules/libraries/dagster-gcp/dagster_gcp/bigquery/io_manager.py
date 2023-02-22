@@ -204,11 +204,11 @@ class BigQueryClient(DbClient):
         if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
             query = (
                 f"SELECT {col_str} FROM"
-                f" {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
+                f" `{table_slice.database}`.{table_slice.schema}.{table_slice.table} WHERE\n"
             )
             return query + _partition_where_clause(table_slice.partition_dimensions)
         else:
-            return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
+            return f"""SELECT {col_str} FROM `{table_slice.database}`.{table_slice.schema}.{table_slice.table}"""
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
@@ -232,11 +232,11 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """
     if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
         query = (
-            f"DELETE FROM {table_slice.database}.{table_slice.schema}.{table_slice.table} WHERE\n"
+            f"DELETE FROM `{table_slice.database}`.{table_slice.schema}.{table_slice.table} WHERE\n"
         )
         return query + _partition_where_clause(table_slice.partition_dimensions)
     else:
-        return f"TRUNCATE TABLE {table_slice.database}.{table_slice.schema}.{table_slice.table}"
+        return f"TRUNCATE TABLE `{table_slice.database}`.{table_slice.schema}.{table_slice.table}"
 
 
 def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:

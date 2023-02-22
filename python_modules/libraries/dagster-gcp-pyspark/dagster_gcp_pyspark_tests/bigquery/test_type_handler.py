@@ -42,6 +42,7 @@ resource_config = {
 }
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+# IS_BUILDKITE = True
 
 
 SHARED_BUILDKITE_BQ_CONFIG = {
@@ -59,6 +60,7 @@ def temporary_bigquery_table(schema_name: str, column_str: str) -> Iterator[str]
     table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
     bq_client.query(f"create table {schema_name}.{table_name} ({column_str})").result()
     try:
+        print(table_name)
         yield table_name
     finally:
         bq_client.query(
@@ -90,6 +92,7 @@ def test_handle_output():
                 partition_dimensions=None,
             ),
             df,
+            None,
         )
 
         assert metadata == {
@@ -123,6 +126,7 @@ def test_load_input():
                 columns=None,
                 partition_dimensions=None,
             ),
+            None,
         )
         assert mock_read.called
 
