@@ -32,12 +32,9 @@ def test_stores_nux_seen_state(graphql_context):
 
 
 def test_does_not_show_nux_if_read_only_filesystem(graphql_context):
-    def mock_seen_filepath():
-        fn = mock.Mock()
-        fn.side_effect = OSError("Read-only filesystem")
-        return fn
-
-    with mock.patch("dagster._core.nux.nux_seen_filepath", new_callable=mock_seen_filepath):
+    with mock.patch(
+        "dagster._core.nux.nux_seen_filepath", side_effect=OSError("Read-only filesystem")
+    ):
         result = execute_dagster_graphql(graphql_context, GET_SHOULD_SHOW_NUX_QUERY)
         assert not result.errors
         assert result.data
