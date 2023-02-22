@@ -42,6 +42,16 @@ def instance_template() -> HelmTemplate:
     )
 
 
+@pytest.fixture()
+def env_configmap_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="templates/configmap-env-daemon.yaml",
+        model=models.V1ConfigMap,
+    )
+
+
 @pytest.mark.parametrize("enabled", [True, False])
 def test_startup_probe_enabled(template: HelmTemplate, enabled: bool):
     helm_values = DagsterHelmValues.construct(
@@ -388,3 +398,72 @@ def test_scheduler_name(template: HelmTemplate):
     [daemon_deployment] = template.render(helm_values)
 
     assert daemon_deployment.spec.template.spec.scheduler_name == "custom"
+
+
+def test_env(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+    [daemon_deployment] = template.render(helm_values)
+
+    assert len(daemon_deployment.spec.template.spec.containers[0].env) == 2
+
+    # env list gets written to deployment
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            env=[
+                {"name": "TEST_ENV", "value": "test_value"},
+                {
+                    "name": "TEST_ENV_FROM",
+                    "valueFrom": {"fieldRef": {"fieldPath": "metadata.uid", "apiVersion": "v1"}},
+                },
+            ]
+        )
+    )
+    [daemon_deployment] = template.render(helm_values)
+
+    assert len(daemon_deployment.spec.template.spec.containers[0].env) == 4
+    assert daemon_deployment.spec.template.spec.containers[0].env[2].name == "TEST_ENV"
+    assert daemon_deployment.spec.template.spec.containers[0].env[2].value == "test_value"
+    assert daemon_deployment.spec.template.spec.containers[0].env[3].name == "TEST_ENV_FROM"
+    assert (
+        daemon_deployment.spec.template.spec.containers[0].env[3].value_from.field_ref.field_path
+        == "metadata.uid"
+    )
+
+    # env dict doesn't get written to deployment
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            env={"TEST_ENV": "test_value"},
+        )
+    )
+    [daemon_deployment] = template.render(helm_values)
+    assert len(daemon_deployment.spec.template.spec.containers[0].env) == 2
+
+
+def test_env_configmap(env_configmap_template):
+    # env list doesn't get rendered into configmap
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            env=[
+                {"name": "TEST_ENV", "value": "test_value"},
+                {
+                    "name": "TEST_ENV_FROM",
+                    "valueFrom": {"fieldRef": {"fieldPath": "metadata.uid", "apiVersion": "v1"}},
+                },
+            ]
+        )
+    )
+    [cm] = env_configmap_template.render(helm_values)
+    assert len(cm.data) == 7
+    assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
+    assert "TEST_ENV" not in cm.data
+
+    # env dict gets rendered into configmap
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            env={"TEST_ENV": "test_value"},
+        )
+    )
+    [cm] = env_configmap_template.render(helm_values)
+    assert len(cm.data) == 8
+    assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
+    assert cm.data["TEST_ENV"] == "test_value"
