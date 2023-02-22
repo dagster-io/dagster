@@ -39,13 +39,12 @@ def instance_fixture() -> Generator[DagsterInstance, None, None]:
 def postgres_airflow_db(
     docker_compose_cm,
     docker_compose_file,
-) -> str:
+) -> Generator[str, None, None]:
     """
     Spins up an Airflow postgres database using docker-compose, and tears it down after the test.
     """
     with docker_compose_cm(docker_compose_file) as hostnames:
-        db_host = hostnames["airflow-db"]
-        uri = f"postgresql+psycopg2://airflow:airflow@{db_host}:5432"
+        uri = f"postgresql+psycopg2://airflow:airflow@{hostnames['airflow-db']}:5432"
         with environ(
             {"AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": uri, "AIRFLOW__CORE__SQL_ALCHEMY_CONN": uri}
         ):
@@ -72,4 +71,4 @@ def postgres_airflow_db(
                     "Waiting for Airflow postgres database to start and initialize"
                     + "." * (3 + (now - start_time).seconds // RETRY_DELAY_SEC)
                 )
-            return uri
+            yield uri

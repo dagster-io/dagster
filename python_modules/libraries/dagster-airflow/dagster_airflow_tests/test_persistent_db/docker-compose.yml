@@ -14,11 +14,3 @@ services:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 3s
       retries: 10
-    networks:
-      - postgres
-
-
-networks:
-  postgres:
-    driver: bridge
-    name: postgres
