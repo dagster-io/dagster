@@ -45,7 +45,7 @@ defs = Definitions(
                 "project": "my-gcp-project",
                 "location": "us-east5",
                 "dataset": "IRIS",
-                "gcp_credential": {"env": "GCP_CREDS"}
+                "gcp_credential": {"env": "GCP_CREDS"},
             }
         )
     },
@@ -282,10 +282,10 @@ def iris_data() -> pd.DataFrame:
 The dataset will be the last prefix before the asset's name. In this example, the `iris_data` asset will be stored in the `IRIS` dataset, and the `daffodil_data` asset will be found in the `DAFFODIL` dataset.
 
 <Note>
-  The two options for specifying the dataset are mutually exclusive. If you provide{" "}
-  <code>dataset</code> configuration to the I/O manager, you cannot also provide
-  it via the asset key and vice versa. If no <code>dataset</code> is provided,
-  either from configuration or asset keys, the default dataset{" "}
+  The two options for specifying the dataset are mutually exclusive. If you
+  provide <code>dataset</code> configuration to the I/O manager, you cannot also
+  provide it via the asset key and vice versa. If no <code>dataset</code> is
+  provided, either from configuration or asset keys, the default dataset{" "}
   <code>PUBLIC</code> will be used.
 </Note>
 
@@ -365,7 +365,7 @@ defs = Definitions(
                 "project": "my-gcp-project",  # required
                 "location": "us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
                 "data": "IRIS",  # optional, defaults to PUBLIC
-                "temporary_gcs_bucket": "my-gcs-bucket"
+                "temporary_gcs_bucket": "my-gcs-bucket",
             }
         )
     },
@@ -385,8 +385,8 @@ The `bigquery_pyspark_io_manager` requires that a `SparkSession` be active and c
 <TabItem name="With the spark_resource">
 
 ```python file=/integrations/bigquery/pyspark_with_spark_resource.py
-from dagster_pyspark import pyspark_resource
 from dagster_gcp_pyspark import bigquery_pyspark_io_manager
+from dagster_pyspark import pyspark_resource
 from pyspark import SparkFiles
 from pyspark.sql import (
     DataFrame,
@@ -401,9 +401,7 @@ from pyspark.sql.types import (
 
 from dagster import Definitions, asset
 
-BIGQUERY_JARS = (
-    "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
-)
+BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
 
 
 @asset(required_resource_keys={"pyspark"})
@@ -461,9 +459,8 @@ from pyspark.sql.types import (
 
 from dagster import Definitions, asset
 
-BIGQUERY_JARS = (
-    "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
-)
+BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
+
 
 @asset
 def iris_data() -> DataFrame:
