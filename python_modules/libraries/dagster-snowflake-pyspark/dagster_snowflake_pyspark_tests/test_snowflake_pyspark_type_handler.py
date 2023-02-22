@@ -21,6 +21,7 @@ from dagster import (
     asset,
     build_input_context,
     build_output_context,
+    fs_io_manager,
     instance_for_test,
     job,
     materialize,
@@ -234,6 +235,7 @@ def test_time_window_partitioned_asset():
             partitions_def=partitions_def,
             key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
             ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            io_manager_key="fs_io",
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in daily_partitioned
@@ -251,7 +253,7 @@ def test_time_window_partitioned_asset():
         )
 
         snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager}
+        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
 
         materialize(
             [daily_partitioned, downstream_partitioned],
@@ -330,6 +332,7 @@ def test_static_partitioned_asset():
             partitions_def=partitions_def,
             key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
             ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            io_manager_key="fs_io",
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in static_partitioned
@@ -347,7 +350,7 @@ def test_static_partitioned_asset():
         )
 
         snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager}
+        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
         materialize(
             [static_partitioned, downstream_partitioned],
             partition_key="red",
@@ -436,6 +439,7 @@ def test_multi_partitioned_asset():
             partitions_def=partitions_def,
             key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
             ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            io_manager_key="fs_io",
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in multi_partitioned
@@ -453,7 +457,7 @@ def test_multi_partitioned_asset():
         )
 
         snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager}
+        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
 
         materialize(
             [multi_partitioned, downstream_partitioned],
@@ -547,6 +551,7 @@ def test_dynamic_partitions():
             partitions_def=dynamic_fruits,
             key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
             ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            io_manager_key="fs_io",
         )
         def downstream_partitioned(df) -> None:
             # assert that we only get the columns created in dynamic_partitioned
@@ -564,7 +569,7 @@ def test_dynamic_partitions():
         )
 
         snowflake_io_manager = snowflake_pyspark_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager}
+        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
             dynamic_fruits.add_partitions(["apple"], instance)
