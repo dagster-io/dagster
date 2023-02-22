@@ -206,6 +206,8 @@ export type AssetNode = {
   projectedLogicalVersion: Maybe<Scalars['String']>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
+  staleStatus: Maybe<StaleStatus>;
+  staleStatusCauses: Array<StaleStatusCause>;
   type: Maybe<DagsterType>;
 };
 
@@ -3431,6 +3433,19 @@ export type SolidStepStatsOrError = SolidStepStatsConnection | SolidStepStatusUn
 export type SolidStepStatusUnavailableError = Error & {
   __typename: 'SolidStepStatusUnavailableError';
   message: Scalars['String'];
+};
+
+export enum StaleStatus {
+  FRESH = 'FRESH',
+  STALE = 'STALE',
+  UNKNOWN = 'UNKNOWN',
+}
+
+export type StaleStatusCause = {
+  __typename: 'StaleStatusCause';
+  key: AssetKey;
+  reason: Scalars['String'];
+  status: StaleStatus;
 };
 
 export type StartScheduleMutation = {
