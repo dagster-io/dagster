@@ -72,6 +72,7 @@ def test_simple(instance: DagsterInstance, external_repo: ExternalRepository):
     launch_process.start()
     launch_process.join(timeout=60)
     backfill = instance.get_backfill("simple")
+    assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED
 
 

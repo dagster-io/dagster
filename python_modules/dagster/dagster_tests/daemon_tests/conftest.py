@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Generator, Optional, cast
+from typing import Iterator, Optional, cast
 
 import pytest
 from dagster import DagsterInstance
@@ -19,7 +19,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 
 
 @pytest.fixture(name="instance_module_scoped", scope="module")
-def instance_module_scoped_fixture() -> Generator[DagsterInstance, None, None]:
+def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
     with instance_for_test(
         overrides={
             "run_launcher": {
@@ -32,7 +32,7 @@ def instance_module_scoped_fixture() -> Generator[DagsterInstance, None, None]:
 
 
 @pytest.fixture(name="instance", scope="function")
-def instance_fixture(instance_module_scoped) -> Generator[DagsterInstance, None, None]:
+def instance_fixture(instance_module_scoped) -> Iterator[DagsterInstance]:
     instance_module_scoped.wipe()
     instance_module_scoped.wipe_all_schedules()
     yield instance_module_scoped
@@ -48,7 +48,7 @@ def workspace_load_target(attribute=None):
 
 
 @pytest.fixture(name="workspace_context", scope="module")
-def workspace_fixture(instance_module_scoped) -> Generator[WorkspaceProcessContext, None, None]:
+def workspace_fixture(instance_module_scoped) -> Iterator[WorkspaceProcessContext]:
     with create_test_daemon_workspace_context(
         workspace_load_target=workspace_load_target(), instance=instance_module_scoped
     ) as workspace_context:
@@ -58,7 +58,7 @@ def workspace_fixture(instance_module_scoped) -> Generator[WorkspaceProcessConte
 @pytest.fixture(name="external_repo", scope="module")
 def external_repo_fixture(
     workspace_context: WorkspaceProcessContext,
-) -> Generator[ExternalRepository, None, None]:
+) -> Iterator[ExternalRepository]:
     yield cast(
         RepositoryLocation,
         next(
