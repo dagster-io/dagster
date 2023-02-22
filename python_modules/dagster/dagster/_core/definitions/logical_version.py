@@ -287,7 +287,7 @@ class CachingStaleStatusResolver:
 
         if provenance:
             prov_versions = provenance.input_logical_versions
-            all_dep_keys = set(proj_dep_keys).union(prov_versions.keys())
+            all_dep_keys = sorted(set(proj_dep_keys).union(prov_versions.keys()))
             for dep_key in all_dep_keys:
                 if dep_key not in prov_versions:
                     yield StaleStatusCause(
