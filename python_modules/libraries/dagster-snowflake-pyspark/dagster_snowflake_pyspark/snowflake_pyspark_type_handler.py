@@ -5,6 +5,7 @@ from dagster import InputContext, MetadataValue, OutputContext, TableColumn, Tab
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
+from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from pyspark.sql import DataFrame, SparkSession
 
 SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
@@ -88,7 +89,12 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         options = _get_snowflake_options(context.resource_config, table_slice)
 
         spark = SparkSession.builder.getOrCreate()
-        df = spark.read.format(SNOWFLAKE_CONNECTOR).options(**options).load()
+        df = (
+            spark.read.format(SNOWFLAKE_CONNECTOR)
+            .options(**options)
+            .option("query", SnowflakeDbClient.get_select_statement(table_slice))
+            .load()
+        )
 
         return df.toDF(*[c.lower() for c in df.columns])
 
