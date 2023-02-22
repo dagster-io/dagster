@@ -9,6 +9,17 @@ from dagster_dbt import DbtManifestAssetSelection
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 
 
+def get_previous_state_path():
+    """Make sure we're providing a compatible previous manifest.json object"""
+    import dbt.version
+    from packaging import version
+
+    if version.parse(dbt.version.__version__) >= version.parse("1.4.0"):
+        return file_relative_path(__file__, "sample_previous_state_v8")
+    else:
+        return file_relative_path(__file__, "sample_previous_state_v7")
+
+
 @pytest.mark.parametrize(
     "select,exclude,expected_asset_names",
     [
@@ -107,7 +118,7 @@ def test_dbt_asset_selection_with_state():
     actual_keys = DbtManifestAssetSelection(
         manifest_json_path=manifest_path,
         select="state:modified",
-        state_path=file_relative_path(__file__, "sample_previous_state"),
+        state_path=file_relative_path(__file__, get_previous_state_path()),
     ).resolve_inner(asset_graph)
 
     assert actual_keys == {
@@ -128,5 +139,5 @@ def test_dbt_asset_selection_with_state_wrong_argument():
         DbtManifestAssetSelection(
             manifest_json=manifest_json,
             select="state:modified",
-            state_path=file_relative_path(__file__, "sample_previous_state"),
+            state_path=file_relative_path(__file__, get_previous_state_path()),
         ).resolve_inner(asset_graph)
