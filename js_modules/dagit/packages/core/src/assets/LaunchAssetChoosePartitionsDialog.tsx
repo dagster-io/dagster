@@ -22,7 +22,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {displayNameForAssetKey, itemWithAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey, itemWithAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {LaunchBackfillParams} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
@@ -378,8 +378,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           {target.type === 'pureAssetBackfill' ? (
             <Alert
               intent="info"
-              title="Dagster will materialize all dependent asset partitions downstream of the anchor asset
-            selection, using separate runs as needed."
+              title="Dagster will materialize all partitions downstream of the selected partitions for the selected assets, using separate runs as needed."
             />
           ) : (
             <Box flex={{justifyContent: 'space-between'}}>
