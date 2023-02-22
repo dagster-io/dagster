@@ -15,6 +15,7 @@ export interface SuggestionProvider {
   token?: string;
   values: () => string[];
   suggestionFilter?: (query: string, suggestion: Suggestion) => boolean;
+  textOnly?: boolean;
 }
 
 export interface Suggestion {
@@ -47,6 +48,7 @@ interface TokenizingFieldProps {
 
   fullwidth?: boolean;
 
+  onTextChange?: (text: string) => void;
   suggestionProviders: SuggestionProvider[];
   suggestionRenderer?: (suggestion: Suggestion) => React.ReactNode;
   suggestionProvidersFilter?: (
@@ -122,6 +124,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   onChange,
   onChangeBeforeCommit,
   onFocus,
+  onTextChange,
   placeholder,
   addOnBlur,
   loading,
@@ -173,7 +176,10 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
       return provider
         .values()
         .filter(suggestionNotUsed)
-        .map((v) => ({text: provider?.token ? `${provider.token}:${v}` : v, final: true}))
+        .map((v) => ({
+          text: provider?.token ? `${provider.token}:${v}` : v,
+          final: !provider.textOnly,
+        }))
         .filter((s) => suggestionFilter(lastPart, s))
         .slice(0, MAX_SUGGESTIONS); // never show too many suggestions for one provider
     };
@@ -213,6 +219,11 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
 
     return suggestionsArr;
   }, [atMaxValues, filteredSuggestionProviders, lastPart, parts, typed.length, values]);
+
+  const _onTextChange = (text: string) => {
+    setTyped(text);
+    onTextChange && onTextChange(text);
+  };
 
   // We need to manage selection in the dropdown by ourselves. To ensure the
   // best behavior we store the active item's index and text (the text allows
@@ -262,12 +273,12 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
     if (suggestion.final) {
       // The user has finished a key-value pair
       onConfirmText(suggestion.text);
-      setTyped('');
+      _onTextChange('');
       setActive(null);
       setOpen(false);
     } else {
       // The user has finished a key
-      setTyped(suggestion.text);
+      _onTextChange(suggestion.text);
     }
   };
 
@@ -282,7 +293,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
       return;
     }
 
-    setTyped('');
+    _onTextChange('');
     onChange([...values, tokenizedValueFromString(str, filteredSuggestionProviders)]);
   };
 
@@ -395,7 +406,7 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
           onChange(next);
         }}
         onInputChange={(e) => {
-          setTyped(e.currentTarget.value);
+          _onTextChange(e.currentTarget.value);
 
           if (onChangeBeforeCommit) {
             const tokenized = tokenizedValueFromString(
