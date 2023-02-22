@@ -384,7 +384,7 @@ def test_solid_with_inputs():
     with pytest.raises(
         DagsterInvalidInvocationError, match='No value provided for required input "y".'
     ):
-        solid_with_inputs(5, x=5)
+        solid_with_inputs(5)
 
 
 def test_failing_solid():

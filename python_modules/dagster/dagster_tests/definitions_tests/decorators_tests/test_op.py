@@ -1,5 +1,6 @@
 # mypy: disable-error-code=return-value
 import time
+from functools import partial
 from typing import Dict, Generator, List, Tuple
 
 import pytest
@@ -24,6 +25,7 @@ from dagster import (
     mem_io_manager,
     op,
 )
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import Int, String
 from dagster._legacy import Materialization
@@ -1304,3 +1306,37 @@ def test_default_code_version():
 
     assert alpha.output_def_named("a").code_version == "foo"
     assert alpha.output_def_named("b").code_version == "bar"
+
+
+def test_colliding_args():
+    # ensure errors for argument collision, for normal python functions these raise as TypeError
+
+    @op
+    def emit():
+        return 1
+
+    @op
+    def foo(x, y):
+        print(x, y)
+
+    # in composition
+    with pytest.raises(
+        DagsterInvalidInvocationError, match="op foo got multiple values for argument 'x'"
+    ):
+
+        @graph
+        def collide():
+            x = emit()
+            foo_2 = partial(foo, x=x)
+            foo_2(emit())
+
+    @op
+    def bar(x, y=2):
+        print(x, y)
+
+    # or direct invocation
+    with pytest.raises(
+        DagsterInvalidInvocationError, match="op bar got multiple values for argument 'x'"
+    ):
+        bar_2 = partial(bar, x=1)
+        bar_2(1)

@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Generator,
     Iterator,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
@@ -97,12 +98,12 @@ async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
 def invoke_compute_fn(
     fn: Callable,
     context: OpExecutionContext,
-    kwargs: Dict[str, Any],
+    kwargs: Mapping[str, Any],
     context_arg_provided: bool,
     config_arg_cls: Optional[Type[Config]],
     resource_args: Optional[Dict[str, str]] = None,
 ) -> Any:
-    args_to_pass = kwargs
+    args_to_pass = {**kwargs}
     if config_arg_cls:
         # config_arg_cls is either a Config class or a primitive type
         if issubclass(config_arg_cls, Config):

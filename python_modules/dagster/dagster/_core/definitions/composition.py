@@ -561,6 +561,13 @@ class PendingNodeInvocation:
     def _process_argument_node(self, node_name, output_node, input_name, input_bindings, arg_desc):
         from .source_asset import SourceAsset
 
+        # already set - conflict between kwargs and args
+        if input_bindings.get(input_name):
+            raise DagsterInvalidInvocationError(
+                f"{self.node_def.node_type_str} {node_name} got multiple values for"
+                f" argument '{input_name}'"
+            )
+
         if isinstance(
             output_node, (InvokedNodeOutputHandle, InputMappingNode, DynamicFanIn, SourceAsset)
         ):
@@ -576,7 +583,7 @@ class PendingNodeInvocation:
                         "In {source} {name}, received a list containing an invalid type "
                         'at index {idx} for input "{input_name}" {arg_desc} in '
                         "{node_type} invocation {node_name}. Lists can only contain the "
-                        "output from previous solid invocations or input mappings, "
+                        "output from previous op invocations or input mappings, "
                         "received {type}".format(
                             source=current_context().source,
                             name=current_context().name,
