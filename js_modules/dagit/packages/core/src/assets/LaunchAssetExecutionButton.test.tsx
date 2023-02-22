@@ -2,19 +2,26 @@ import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
 
+import {CustomAlertProvider} from '../app/CustomAlertProvider';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {LaunchPartitionBackfillMutation} from '../instance/types/BackfillUtils.types';
 import {TestProvider} from '../testing/TestProvider';
 
-import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {
+  ERROR_INVALID_ASSET_SELECTION,
+  LaunchAssetExecutionButton,
+} from './LaunchAssetExecutionButton';
 import {
   ASSET_DAILY,
   ASSET_DAILY_PARTITION_KEYS,
   ASSET_WEEKLY,
+  ASSET_WEEKLY_ROOT,
   LaunchAssetChoosePartitionsMock,
   LaunchAssetLoaderAssetDailyWeeklyMock,
+  LaunchAssetLoaderAssetDailyWeeklyRootsDifferentPartitioningMock,
   PartitionHealthAssetDailyMock,
   PartitionHealthAssetWeeklyMock,
+  PartitionHealthAssetWeeklyRootMock,
 } from './LaunchAssetExecutionButton.mocks';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
@@ -46,6 +53,7 @@ describe('LaunchAssetExecutionButton', () => {
     await act(async () => {
       render(
         <TestProvider>
+          <CustomAlertProvider />
           <MockedProvider
             mocks={[
               LaunchAssetChoosePartitionsMock,
@@ -89,5 +97,42 @@ describe('LaunchAssetExecutionButton', () => {
     await waitFor(async () => {
       expect(await screen.queryByTestId('choose-partitions-dialog')).toBeNull();
     });
+  });
+
+  it('should show an error if two roots have different partition defintions', async () => {
+    await act(async () => {
+      render(
+        <TestProvider>
+          <CustomAlertProvider />
+          <MockedProvider
+            mocks={[
+              LaunchAssetChoosePartitionsMock,
+              LaunchAssetLoaderAssetDailyWeeklyRootsDifferentPartitioningMock,
+              PartitionHealthAssetDailyMock,
+              PartitionHealthAssetWeeklyMock,
+              PartitionHealthAssetWeeklyRootMock,
+            ]}
+          >
+            <LaunchAssetExecutionButton
+              scope={{all: [ASSET_DAILY, ASSET_WEEKLY, ASSET_WEEKLY_ROOT]}}
+            />
+          </MockedProvider>
+        </TestProvider>,
+      );
+    });
+
+    // click Materialize
+    const materializeButton = await screen.findByTestId('materialize-button');
+    expect(materializeButton).toBeVisible();
+    materializeButton.click();
+
+    // expect an error to be displayed
+    await waitFor(async () => {
+      await screen.findByTestId('alert-body');
+    });
+
+    expect(await screen.findByTestId('alert-body')).toHaveTextContent(
+      ERROR_INVALID_ASSET_SELECTION,
+    );
   });
 });

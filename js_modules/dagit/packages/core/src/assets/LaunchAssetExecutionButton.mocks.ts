@@ -87,6 +87,16 @@ export const ASSET_WEEKLY: AssetNodeForGraphQueryFragment = {
   },
 };
 
+export const ASSET_WEEKLY_ROOT: AssetNodeForGraphQueryFragment = {
+  ...ASSET_WEEKLY,
+  id: 'test.py.repo.["asset_weekly_root"]',
+  dependencyKeys: [],
+  assetKey: {
+    __typename: 'AssetKey',
+    path: ['asset_weekly_root'],
+  },
+};
+
 export const LaunchAssetChoosePartitionsMock: MockedResponse<LaunchAssetChoosePartitionsQuery> = {
   request: {
     query: LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY,
@@ -211,6 +221,41 @@ export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery
   },
 };
 
+export const PartitionHealthAssetWeeklyRootMock: MockedResponse<PartitionHealthQuery> = {
+  request: {
+    query: PARTITION_HEALTH_QUERY,
+    variables: {
+      assetKey: {
+        path: ['asset_weekly_root'],
+      },
+    },
+  },
+  result: {
+    data: {
+      __typename: 'DagitQuery',
+      assetNodeOrError: {
+        id: 'test.py.repo.["asset_weekly_root"]',
+        partitionKeysByDimension: [
+          {
+            name: 'default',
+            __typename: 'DimensionPartitionKeys',
+            partitionKeys: generateDailyTimePartitions(
+              new Date('2020-01-01'),
+              new Date('2023-02-22'),
+              7,
+            ),
+          },
+        ],
+        materializedPartitions: {
+          ranges: [],
+          __typename: 'TimePartitions',
+        },
+        __typename: 'AssetNode',
+      },
+    },
+  },
+};
+
 export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLoaderQuery> = {
   request: {
     query: LAUNCH_ASSET_LOADER_QUERY,
@@ -248,6 +293,102 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
         },
         {
           ...ASSET_WEEKLY,
+          requiredResources: [],
+          partitionDefinition: {
+            description: 'Weekly, starting 2020-01-01 UTC.',
+            dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
+            __typename: 'PartitionDefinition',
+          },
+          configField: {
+            name: 'config',
+            isRequired: false,
+            configType: {
+              __typename: 'RegularConfigType',
+              givenName: 'Any',
+              key: 'Any',
+              description: null,
+              isSelector: false,
+              typeParamKeys: [],
+              recursiveConfigTypes: [],
+            },
+            __typename: 'ConfigTypeField',
+          },
+          __typename: 'AssetNode',
+        },
+      ],
+      assetNodeDefinitionCollisions: [],
+    },
+  },
+};
+
+export const LaunchAssetLoaderAssetDailyWeeklyRootsDifferentPartitioningMock: MockedResponse<LaunchAssetLoaderQuery> = {
+  request: {
+    query: LAUNCH_ASSET_LOADER_QUERY,
+    variables: {
+      assetKeys: [{path: ['asset_daily']}, {path: ['asset_weekly']}, {path: ['asset_weekly_root']}],
+    },
+  },
+  result: {
+    data: {
+      __typename: 'DagitQuery',
+      assetNodes: [
+        {
+          ...ASSET_DAILY,
+          requiredResources: [],
+          partitionDefinition: {
+            description: 'Daily, starting 2020-01-01 UTC.',
+            dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
+            __typename: 'PartitionDefinition',
+          },
+          configField: {
+            name: 'config',
+            isRequired: false,
+            configType: {
+              __typename: 'RegularConfigType',
+              givenName: 'Any',
+              key: 'Any',
+              description: null,
+              isSelector: false,
+              typeParamKeys: [],
+              recursiveConfigTypes: [],
+            },
+            __typename: 'ConfigTypeField',
+          },
+          __typename: 'AssetNode',
+        },
+        {
+          ...ASSET_WEEKLY,
+          requiredResources: [],
+          partitionDefinition: {
+            description: 'Weekly, starting 2020-01-01 UTC.',
+            dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
+            __typename: 'PartitionDefinition',
+          },
+
+          dependencyKeys: [
+            {
+              __typename: 'AssetKey',
+              path: ['asset_daily', 'asset_weekly_root'],
+            },
+          ],
+          configField: {
+            name: 'config',
+            isRequired: false,
+            configType: {
+              __typename: 'RegularConfigType',
+              givenName: 'Any',
+              key: 'Any',
+              description: null,
+              isSelector: false,
+              typeParamKeys: [],
+              recursiveConfigTypes: [],
+            },
+            __typename: 'ConfigTypeField',
+          },
+          __typename: 'AssetNode',
+        },
+        {
+          ...ASSET_WEEKLY_ROOT,
           requiredResources: [],
           partitionDefinition: {
             description: 'Weekly, starting 2020-01-01 UTC.',

@@ -22,8 +22,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
-import {PartitionHealthSummary} from '../assets/PartitionHealthSummary';
+import {displayNameForAssetKey, itemWithAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
 import {LaunchBackfillParams} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
@@ -33,7 +32,7 @@ import {
 } from '../instance/types/BackfillUtils.types';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../launchpad/ConfigEditorConfigPicker';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
-import {TagContainer, TagEditor} from '../launchpad/TagEditor';
+import {TagEditor, TagContainer} from '../launchpad/TagEditor';
 import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
@@ -54,12 +53,16 @@ import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
-import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
+import {
+  executionParamsForAssetJob,
+  LaunchAssetsChoosePartitionsTarget,
+} from './LaunchAssetExecutionButton';
 import {
   explodePartitionKeysInSelection,
   mergedAssetHealth,
   partitionDefinitionsEqual,
 } from './MultipartitioningSupport';
+import {PartitionHealthSummary} from './PartitionHealthSummary';
 import {RunningBackfillsNotice} from './RunningBackfillsNotice';
 import {
   LaunchAssetChoosePartitionsQuery,
@@ -73,7 +76,7 @@ interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
   repoAddress: RepoAddress;
-  target: {jobName: string; partitionSetName: string} | {pureAssetBackfill: true};
+  target: LaunchAssetsChoosePartitionsTarget;
   assets: {
     assetKey: AssetKey;
     opNames: string[];
@@ -118,7 +121,6 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   upstreamAssetKeys,
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
-  const anchorAsset = partitionedAssets[0];
 
   const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);
   const [launching, setLaunching] = React.useState(false);
@@ -131,23 +133,17 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
   const assetHealthLoading = assetHealth.length === 0;
 
-  const {displayType, displayedHealth} = React.useMemo(() => {
-    const samePartitioning = partitionedAssets.every((a) =>
-      partitionDefinitionsEqual(a.partitionDefinition!, anchorAsset.partitionDefinition!),
-    );
-    return samePartitioning || assetHealthLoading
-      ? {
-          displayType: 'merged' as const,
-          displayedHealth: mergedAssetHealth(assetHealth),
-        }
-      : {
-          displayType: 'anchor-asset' as const,
-          displayedHealth:
-            assetHealth.find(
-              (a) => tokenForAssetKey(anchorAsset.assetKey) === tokenForAssetKey(a.assetKey),
-            ) || mergedAssetHealth([]),
-        };
-  }, [assetHealth, assetHealthLoading, partitionedAssets, anchorAsset]);
+  const displayedHealth = React.useMemo(() => {
+    if (target.type === 'job' || assetHealthLoading) {
+      return mergedAssetHealth(assetHealth);
+    }
+    return assetHealth.find(itemWithAssetKey(target.anchorAssetKey)) || mergedAssetHealth([]);
+  }, [assetHealth, assetHealthLoading, target]);
+
+  const displayedPartitionDefinition =
+    target.type === 'job'
+      ? partitionedAssets[0].partitionDefinition
+      : partitionedAssets.find(itemWithAssetKey(target.anchorAssetKey))?.partitionDefinition;
 
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
   const [missingOnly, setMissingOnly] = React.useState(true);
@@ -197,7 +193,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
   const launchAsBackfill =
-    'pureAssetBackfill' in target || (!launchWithRangesAsTags && keysFiltered.length !== 1);
+    target.type === 'pureAssetBackfill' || (!launchWithRangesAsTags && keysFiltered.length !== 1);
 
   React.useEffect(() => {
     !canLaunchWithRangesAsTags && setLaunchWithRangesAsTags(false);
@@ -208,8 +204,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   }, [launchWithRangesAsTags]);
 
   React.useEffect(() => {
-    displayType === 'anchor-asset' && setMissingOnly(false);
-  }, [displayType]);
+    target.type === 'pureAssetBackfill' && setMissingOnly(false);
+  }, [target]);
 
   const onLaunch = async () => {
     setLaunching(true);
@@ -347,10 +343,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     <>
       <DialogBody data-testid={testId('choose-partitions-dialog')}>
         <Box flex={{direction: 'column', gap: 8}}>
-          {displayType === 'anchor-asset' && (
+          {target.type === 'pureAssetBackfill' && (
             <Box flex={{gap: 8}} data-testid={testId('anchor-asset-label')}>
               <Icon name="asset" size={20} />
-              <Subheading>{displayNameForAssetKey(anchorAsset.assetKey)}</Subheading>
+              <Subheading>{displayNameForAssetKey(target.anchorAssetKey)}</Subheading>
             </Box>
           )}
 
@@ -379,7 +375,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             />
           ))}
 
-          {displayType === 'anchor-asset' ? (
+          {target.type === 'pureAssetBackfill' ? (
             <Alert
               intent="info"
               title="Dagster will materialize all dependent asset partitions downstream of the anchor asset
@@ -445,8 +441,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                 data={assetHealth}
                 selections={
                   a.partitionDefinition &&
-                  anchorAsset.partitionDefinition &&
-                  partitionDefinitionsEqual(a.partitionDefinition, anchorAsset.partitionDefinition)
+                  displayedPartitionDefinition &&
+                  partitionDefinitionsEqual(a.partitionDefinition, displayedPartitionDefinition)
                     ? selections
                     : undefined
                 }
@@ -516,7 +512,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
         {launchAsBackfill && !canLaunchPartitionBackfill.enabled ? (
           <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
             <Button disabled>
-              {displayType === 'merged'
+              {target.type === 'job'
                 ? `Launch ${keysFiltered.length}-Run Backfill`
                 : 'Launch Backfill'}
             </Button>
@@ -532,7 +528,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             {launching
               ? 'Launching...'
               : launchAsBackfill
-              ? displayType === 'merged'
+              ? target.type === 'job'
                 ? `Launch ${keysFiltered.length}-Run Backfill`
                 : 'Launch Backfill'
               : `Launch 1 Run`}

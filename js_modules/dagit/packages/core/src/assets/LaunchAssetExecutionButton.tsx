@@ -13,6 +13,7 @@ import {
   isHiddenAssetGroupJob,
   LiveData,
   toGraphId,
+  tokenForAssetKey,
 } from '../asset-graph/Utils';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
@@ -40,6 +41,10 @@ import {
   LaunchAssetCheckUpstreamQueryVariables,
 } from './types/LaunchAssetExecutionButton.types';
 
+export type LaunchAssetsChoosePartitionsTarget =
+  | {type: 'job'; jobName: string; partitionSetName: string}
+  | {type: 'pureAssetBackfill'; anchorAssetKey: AssetKey};
+
 type LaunchAssetsState =
   | {type: 'none'}
   | {type: 'loading'}
@@ -52,7 +57,7 @@ type LaunchAssetsState =
     }
   | {
       type: 'partitions';
-      target: {jobName: string; partitionSetName: string} | {pureAssetBackfill: true};
+      target: LaunchAssetsChoosePartitionsTarget;
       assets: LaunchAssetExecutionAssetNodeFragment[];
       upstreamAssetKeys: AssetKey[];
       repoAddress: RepoAddress;
@@ -78,6 +83,11 @@ const isAnyPartitioned = (assets: Asset[]) =>
       ('partitionDefinition' in a && !!a.partitionDefinition) ||
       ('isPartitioned' in a && a.isPartitioned),
   );
+
+export const ERROR_INVALID_ASSET_SELECTION =
+  `Assets can only be materialized together if they are defined in` +
+  ` the same code location and share a partition space, or form a connected` +
+  ` graph in which root assets share the same partitioning.`;
 
 export function optionsForButton(
   scope: AssetsInScope,
@@ -132,7 +142,6 @@ export const LaunchAssetExecutionButton: React.FC<{
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
-  console.log(scope);
   const options = optionsForButton(scope, liveDataForStale);
   const firstOption = options[0];
 
@@ -350,10 +359,17 @@ async function stateForLaunchingAssets(
   );
 
   if (!inSameRepo || !inSameOrNoPartitionSpace || !jobName) {
+    const anchorAsset = getAnchorAssetForPartitionMappedBackfill(assets);
+    if (!anchorAsset) {
+      return {
+        type: 'error',
+        error: ERROR_INVALID_ASSET_SELECTION,
+      };
+    }
     return {
       type: 'partitions',
       assets,
-      target: {pureAssetBackfill: true},
+      target: {type: 'pureAssetBackfill', anchorAssetKey: anchorAsset.assetKey},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
       repoAddress,
     };
@@ -415,7 +431,7 @@ async function stateForLaunchingAssets(
     return {
       type: 'partitions',
       assets,
-      target: {jobName, partitionSetName},
+      target: {type: 'job', jobName, partitionSetName},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
       repoAddress,
     };
@@ -433,6 +449,44 @@ export function getCommonJob(
   const everyAssetHasJob = (jobName: string) => assets.every((a) => a.jobNames.includes(jobName));
   const jobsInCommon = assets[0] ? assets[0].jobNames.filter(everyAssetHasJob) : [];
   return jobsInCommon.find((name) => name === preferredJobName) || jobsInCommon[0] || null;
+}
+
+export function getAnchorAssetForPartitionMappedBackfill(
+  assets: LaunchAssetExecutionAssetNodeFragment[],
+) {
+  // We have the ability to launch a pure asset backfill which will infer the partitions
+  // of downstream assets IFF the selection's root assets (at the top of the tree) ALL
+  // share a partition definition
+
+  // First, get the roots of the selection. The root assets are the ones with none
+  // of their dependencyKeys selected.
+  const roots = assets.filter((a) => {
+    const aDeps = a.dependencyKeys.map(tokenForAssetKey);
+    return !assets.some((b) => aDeps.includes(tokenForAssetKey(b.assetKey)));
+  });
+
+  const partitionedRoots = roots
+    .filter((r) => !!r.partitionDefinition)
+    .sort((a, b) =>
+      displayNameForAssetKey(a.assetKey).localeCompare(displayNameForAssetKey(b.assetKey)),
+    );
+
+  if (!partitionedRoots.length) {
+    return null;
+  }
+
+  // Next, see if they all share a partition set. If they do, any random root can be
+  // the anchor asset but we do it alphabetically so that it is deterministic.
+  const first = partitionedRoots[0];
+  if (
+    !partitionedRoots.every((r) =>
+      partitionDefinitionsEqual(first.partitionDefinition!, r.partitionDefinition!),
+    )
+  ) {
+    return null;
+  }
+
+  return first;
 }
 
 function getUpstreamAssetKeys(assets: LaunchAssetExecutionAssetNodeFragment[]) {
