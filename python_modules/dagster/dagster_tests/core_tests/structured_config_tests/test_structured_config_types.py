@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional, Type
+from typing import Any, Dict, List, Literal, Mapping, Optional, Type, Union
 
 import pytest
 from dagster import job, op
@@ -6,6 +6,7 @@ from dagster._config.config_type import ConfigTypeKind
 from dagster._config.structured_config import Config, PermissiveConfig
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.cached_method import cached_method
+from pydantic import Field
 
 
 def test_default_config_class_non_permissive():
@@ -298,5 +299,142 @@ def test_struct_config_map_different_key_type(key_type: Type, keys: List[Any]):
 
     a_job.execute_in_process(
         {"ops": {"a_struct_config_op": {"config": {"my_dict": {keys[0]: 1, keys[1]: 2}}}}}
+    )
+    assert executed["yes"]
+
+
+def test_descriminated_unions():
+    class Cat(Config):
+        pet_type: Literal["cat"]
+        meows: int
+
+    class Dog(Config):
+        pet_type: Literal["dog"]
+        barks: float
+
+    class Lizard(Config):
+        pet_type: Literal["reptile", "lizard"]
+        scales: bool
+
+    class OpConfigWithUnion(Config):
+        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator="pet_type")
+        n: int
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: OpConfigWithUnion):
+        if config.pet.pet_type == "cat":
+            assert config.pet.meows == 2
+        elif config.pet.pet_type == "dog":
+            assert config.pet.barks == 3.0
+        elif config.pet.pet_type == "lizard":
+            assert config.pet.scales
+        assert config.n == 4
+
+        executed["yes"] = True
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    assert a_job
+
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"pet": {"cat": {"meows": 2}}, "n": 4}}}}
+    )
+    assert executed["yes"]
+
+    executed = {}
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"pet": {"dog": {"barks": 3.0}}, "n": 4}}}}
+    )
+    assert executed["yes"]
+
+    executed = {}
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"pet": {"lizard": {"scales": True}}, "n": 4}}}}
+    )
+    assert executed["yes"]
+
+    executed = {}
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"pet": {"reptile": {"scales": True}}, "n": 4}}}}
+    )
+    assert executed["yes"]
+
+    # Ensure passing value which doesn't exist errors
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {"ops": {"a_struct_config_op": {"config": {"pet": {"octopus": {"meows": 2}}, "n": 4}}}}
+        )
+
+    # Disallow passing multiple discriminated union values
+    with pytest.raises(DagsterInvalidConfigError):
+        a_job.execute_in_process(
+            {
+                "ops": {
+                    "a_struct_config_op": {
+                        "config": {
+                            "pet": {"reptile": {"scales": True}, "dog": {"barks": 3.0}},
+                            "n": 4,
+                        }
+                    }
+                }
+            }
+        )
+
+
+def test_nested_discriminated_unions():
+    class Poodle(Config):
+        breed_type: Literal["poodle"]
+        fluffy: bool
+
+    class Dachshund(Config):
+        breed_type: Literal["dachshund"]
+        long: bool
+
+    class Cat(Config):
+        pet_type: Literal["cat"]
+        meows: int
+
+    class Dog(Config):
+        pet_type: Literal["dog"]
+        barks: float
+        breed: Union[Poodle, Dachshund] = Field(..., discriminator="breed_type")
+
+    class OpConfigWithUnion(Config):
+        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+        n: int
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: OpConfigWithUnion):
+        assert config.pet.pet_type == "dog"
+        assert isinstance(config.pet, Dog)
+        assert config.pet.breed.breed_type == "poodle"
+        assert isinstance(config.pet.breed, Poodle)
+        assert config.pet.breed.fluffy
+
+        executed["yes"] = True
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    assert a_job
+
+    a_job.execute_in_process(
+        {
+            "ops": {
+                "a_struct_config_op": {
+                    "config": {
+                        "pet": {"dog": {"barks": 3.0, "breed": {"poodle": {"fluffy": True}}}},
+                        "n": 4,
+                    }
+                }
+            }
+        }
     )
     assert executed["yes"]

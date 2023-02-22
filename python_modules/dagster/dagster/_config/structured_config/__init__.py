@@ -38,12 +38,13 @@ except ImportError:
 
 
 from abc import ABC, abstractmethod
+from typing import Any, Dict, Mapping, Optional, Set, Type, cast
 
 from pydantic import BaseModel, Extra
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_MAPPING, SHAPE_SINGLETON, ModelField
 
 import dagster._check as check
-from dagster import Field, Shape
+from dagster import Field, Selector, Shape
 from dagster._config.field_utils import (
     FIELD_NO_DEFAULT_PROVIDED,
     Map,
@@ -98,6 +99,30 @@ class Config(MakeConfigCacheable):
     """
     Base class for Dagster configuration models.
     """
+
+    def __init__(self, **config_dict):
+        """
+        This constructor is overridden to handle any remapping of raw config dicts to
+        the appropriate config classes. For example, discriminated unions are represented
+        in Dagster config as dicts with a single key, which is the descriminator value.
+        """
+        modified_data = {}
+        for key, value in config_dict.items():
+            field = self.__fields__.get(key)
+            if field and field.field_info.discriminator:
+                nested_items = list(check.is_dict(value).items())
+                check.invariant(
+                    len(nested_items) == 1, "Discriminated union must have exactly one key"
+                )
+                discriminated_value, nested_values = nested_items[0]
+
+                modified_data[key] = {
+                    **nested_values,
+                    field.discriminator_key: discriminated_value,
+                }
+            else:
+                modified_data[key] = value
+        super().__init__(**modified_data)
 
     def _as_config_dict(self) -> Mapping[str, Any]:
         """
@@ -704,6 +729,9 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
         if pydantic_field.key_field
         else None
     )
+    if pydantic_field.field_info.discriminator:
+        return _convert_pydantic_descriminated_union_field(pydantic_field)
+
     if safe_is_subclass(pydantic_field.type_, Config):
         inferred_field = infer_schema_from_config_class(
             pydantic_field.type_,
@@ -775,6 +803,59 @@ class StructuredIOManagerAdapter(ConfigurableIOManagerInjector):
         return self.wrapped_io_manager.resource_fn
 
 
+def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> Field:
+    """
+    Builds a Selector config field from a Pydantic field which is a descriminated union.
+
+    For example:
+
+    class Cat(Config):
+        pet_type: Literal["cat"]
+        meows: int
+
+    class Dog(Config):
+        pet_type: Literal["dog"]
+        barks: float
+
+    class OpConfigWithUnion(Config):
+        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+
+    Becomes:
+
+    Shape({
+      "pet": Selector({
+          "cat": Shape({"meows": Int}),
+          "dog": Shape({"barks": Float}),
+      })
+    })
+    """
+    sub_fields_mapping = pydantic_field.sub_fields_mapping
+    assert sub_fields_mapping
+
+    if not all(
+        issubclass(pydantic_field.type_, Config) for pydantic_field in sub_fields_mapping.values()
+    ):
+        raise NotImplementedError("Descriminated unions with non-Config types are not supported.")
+
+    # First, we generate a mapping between the various descriminator values and the
+    # Dagster config fields that correspond to them. We strip the descriminator key
+    # from the fields, since the user should not have to specify it.
+
+    dagster_config_field_mapping = {
+        descriminator_value: infer_schema_from_config_class(
+            field.type_,
+            fields_to_omit={pydantic_field.field_info.discriminator}
+            if pydantic_field.field_info.discriminator
+            else None,
+        )
+        for descriminator_value, field in sub_fields_mapping.items()
+    }
+
+    # We then nest the union fields under a Selector. The keys for the selector
+    # are the various descriminator values
+    return Field(config=Selector(fields=dagster_config_field_mapping))
+
+
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
     """
     Parses a structured config class or primitive type and returns a corresponding Dagster config Field.
@@ -808,7 +889,7 @@ def infer_schema_from_config_class(
     fields_to_omit = fields_to_omit or set()
 
     check.param_invariant(
-        issubclass(model_cls, Config),
+        safe_is_subclass(model_cls, Config),
         "Config type annotation must inherit from dagster._config.structured_config.Config",
     )
 
