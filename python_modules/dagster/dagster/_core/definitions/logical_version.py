@@ -68,6 +68,14 @@ class LogicalVersionProvenance(
         ],
     )
 ):
+    """(Experimental) Provenance information for an asset materialization.
+
+    Args:
+        code_version (str): The code version of the op that generated a materialization.
+        input_logical_versions (Mapping[AssetKey, LogicalVersion]): The logical versions of the
+            inputs used for the materialization.
+    """
+
     def __new__(
         cls,
         code_version: str,
