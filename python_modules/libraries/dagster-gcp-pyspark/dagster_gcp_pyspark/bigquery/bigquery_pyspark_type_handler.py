@@ -8,9 +8,9 @@ from dagster_gcp.bigquery.io_manager import BigQueryClient
 from pyspark.sql import DataFrame, SparkSession
 
 
-def _get_bigquery_options(config, table_slice: TableSlice) -> Mapping[str, str]:
+def _get_bigquery_write_options(config, table_slice: TableSlice) -> Mapping[str, str]:
     conf = {
-        "table": f"{table_slice.database}:{table_slice.schema}.{table_slice.table}",
+        "table": f"{table_slice.database}.{table_slice.schema}.{table_slice.table}",
     }
     if config.get("temporary_gcs_bucket") is not None:
         conf["temporaryGcsBucket"] = config["temporary_gcs_bucket"]
@@ -51,7 +51,7 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
     def handle_output(
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame, _
     ) -> Mapping[str, RawMetadataValue]:
-        options = _get_bigquery_options(context.resource_config, table_slice)
+        options = _get_bigquery_write_options(context.resource_config, table_slice)
 
         with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
 
@@ -69,14 +69,10 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
         }
 
     def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:
-        options = _get_bigquery_options(context.resource_config, table_slice)
-
         spark = SparkSession.builder.getOrCreate()
-        df = (
-            spark.read.format("bigquery")
-            .options(**options)
-            .load(BigQueryClient.get_select_statement(table_slice))
-        )
+        spark.conf.set("viewsEnabled", "true")
+        spark.conf.set("materializationDataset", table_slice.schema)
+        df = spark.read.format("bigquery").load(BigQueryClient.get_select_statement(table_slice))
 
         return df.toDF(*[c.lower() for c in df.columns])
 

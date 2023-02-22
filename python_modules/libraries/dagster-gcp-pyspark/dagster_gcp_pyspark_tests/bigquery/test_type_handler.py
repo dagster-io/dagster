@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pandas_gbq
 import pytest
 from dagster import (
+    AssetIn,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     IOManagerDefinition,
@@ -41,8 +42,8 @@ resource_config = {
     "warehouse": "warehouse_abc",
 }
 
-IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-# IS_BUILDKITE = True
+# IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+IS_BUILDKITE = True
 
 
 SHARED_BUILDKITE_BQ_CONFIG = {
@@ -186,9 +187,10 @@ def test_time_window_partitioned_asset():
         schema_name=schema,
         column_str="RAW_TIME string, A string, B int, TIME DATE",
     ) as table_name:
+        partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
         @asset(
-            partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+            partitions_def=partitions_def,
             metadata={"partition_expr": "CAST(time as DATETIME)"},
             config_schema={"value": str},
             key_prefix=schema,
@@ -220,6 +222,15 @@ def test_time_window_partitioned_asset():
 
             return df
 
+        @asset(
+            partitions_def=partitions_def,
+            key_prefix=schema,
+            ins={"df": AssetIn([schema, table_name])},
+        )
+        def downstream_partitioned(df) -> None:
+            # assert that we only get the columns created in daily_partitioned
+            assert df.count() == 3
+
         asset_full_name = f"{schema}__{table_name}"
         bq_table_path = f"{schema}.{table_name}"
 
@@ -227,7 +238,7 @@ def test_time_window_partitioned_asset():
         resource_defs = {"io_manager": bq_io_manager}
 
         materialize(
-            [daily_partitioned],
+            [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-01",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
@@ -239,7 +250,7 @@ def test_time_window_partitioned_asset():
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
-            [daily_partitioned],
+            [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-02",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
@@ -251,7 +262,7 @@ def test_time_window_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
-            [daily_partitioned],
+            [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-01",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
