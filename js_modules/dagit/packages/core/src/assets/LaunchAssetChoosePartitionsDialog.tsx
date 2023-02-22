@@ -51,6 +51,7 @@ import {DimensionRangeWizard} from '../partitions/DimensionRangeWizard';
 import {PartitionState} from '../partitions/PartitionStatus';
 import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
 import {DagsterTag} from '../runs/RunTag';
+import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
 import {executionParamsForAssetJob} from './LaunchAssetExecutionButton';
@@ -344,10 +345,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   return (
     <>
-      <DialogBody>
+      <DialogBody data-testid={testId('choose-partitions-dialog')}>
         <Box flex={{direction: 'column', gap: 8}}>
           {displayType === 'anchor-asset' && (
-            <Box flex={{gap: 8}}>
+            <Box flex={{gap: 8}} data-testid={testId('anchor-asset-label')}>
               <Icon name="asset" size={20} />
               <Subheading>{displayNameForAssetKey(anchorAsset.assetKey)}</Subheading>
             </Box>
@@ -387,6 +388,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           ) : (
             <Box flex={{justifyContent: 'space-between'}}>
               <Checkbox
+                data-testid={testId('missing-only-checkbox')}
                 label="Missing partitions only"
                 checked={missingOnly}
                 disabled={launchWithRangesAsTags}
@@ -394,6 +396,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
               />
 
               <Checkbox
+                data-testid={testId('ranges-as-tags-checkbox')}
                 label={
                   <Box flex={{alignItems: 'center', gap: 4}}>
                     Pass partition ranges to single run
@@ -520,6 +523,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           </Tooltip>
         ) : (
           <Button
+            data-testid={testId('launch-button')}
             intent="primary"
             onClick={onLaunch}
             disabled={keysFiltered.length === 0}
@@ -604,7 +608,7 @@ const UpstreamUnavailableWarning: React.FC<{
   );
 };
 
-const LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY = gql`
+export const LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY = gql`
   query LaunchAssetChoosePartitionsQuery {
     instance {
       ...DaemonNotRunningAlertInstanceFragment

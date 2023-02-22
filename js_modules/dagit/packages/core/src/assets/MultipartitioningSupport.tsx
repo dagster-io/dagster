@@ -1,4 +1,3 @@
-import {PartitionDefinition} from '../graphql/types';
 import {PartitionState} from '../partitions/PartitionStatus';
 
 import {

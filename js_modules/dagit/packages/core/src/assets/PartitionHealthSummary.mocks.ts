@@ -17,12 +17,13 @@ function generateHourlyTimePartitions(startDate: Date, endDate: Date) {
   return partitions;
 }
 
-// Generates hourly partitions in the format 2022-08-31-00:00
-function generateDailyTimePartitions(startDate: Date, endDate: Date) {
+// Generates daily partitions in the format 2022-08-31. Passing `step=7` allows you to
+// generate weekly partitions as well.
+export function generateDailyTimePartitions(startDate: Date, endDate: Date, step = 1) {
   const date = new Date(startDate);
   const partitions: string[] = [];
   while (date < endDate) {
-    date.setDate(date.getDate() + 1);
+    date.setDate(date.getDate() + step);
     const yyyymmdd = date.toISOString().split('T')[0];
     partitions.push(`${yyyymmdd}`);
   }

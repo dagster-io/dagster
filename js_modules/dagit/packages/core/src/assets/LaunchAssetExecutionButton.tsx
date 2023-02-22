@@ -18,6 +18,7 @@ import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
+import {testId} from '../testing/testId';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -78,7 +79,10 @@ const isAnyPartitioned = (assets: Asset[]) =>
       ('isPartitioned' in a && a.isPartitioned),
   );
 
-function optionsForButton(scope: AssetsInScope, liveDataForStale?: LiveData): LaunchOption[] {
+export function optionsForButton(
+  scope: AssetsInScope,
+  liveDataForStale?: LiveData,
+): LaunchOption[] {
   // If you pass a set of selected assets, we always show just one option
   // to materialize that selection.
   if ('selected' in scope) {
@@ -128,6 +132,7 @@ export const LaunchAssetExecutionButton: React.FC<{
   const {onClick, loading, launchpadElement} = useMaterializationAction(preferredJobName);
   const [isOpen, setIsOpen] = React.useState(false);
 
+  console.log(scope);
   const options = optionsForButton(scope, liveDataForStale);
   const firstOption = options[0];
 
@@ -157,6 +162,7 @@ export const LaunchAssetExecutionButton: React.FC<{
         >
           <MaterializeButton
             intent={intent}
+            data-testid={testId('materialize-button')}
             onClick={(e) => onClick(firstOption.assetKeys, e)}
             style={
               options.length > 1
