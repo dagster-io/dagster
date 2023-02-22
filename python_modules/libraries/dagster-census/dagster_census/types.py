@@ -16,9 +16,9 @@ class CensusOutput(
 
     Attributes:
         sync_run (Dict[str, Any]):
-            The details of the specific sync run
+            The details of the specific sync run.
         source (Dict[str, Any]):
-            Information about the source for the Census sync
+            Information about the source for the Census sync.
         destination (Dict[str, Any]):
-            Information about the destination for the Census sync
+            Information about the destination for the Census sync.
     """
