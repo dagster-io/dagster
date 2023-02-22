@@ -58,6 +58,7 @@ from dagster_dbt.utils import (
     _get_input_name,
     _get_output_name,
     result_to_events,
+    select_unique_ids_from_manifest,
 )
 
 
@@ -101,65 +102,6 @@ def _can_stream_events(dbt_resource: DbtCliResource) -> bool:
         version.parse(dbt.version.__version__) >= version.parse("1.4.0")
         and dbt_resource._json_log_format
     )
-
-
-def _select_unique_ids_from_manifest_json(
-    manifest_json: Mapping[str, Any], select: str, exclude: str
-) -> AbstractSet[str]:
-    """Method to apply a selection string to an existing manifest.json file."""
-    try:
-        import dbt.flags as flags
-        import dbt.graph.cli as graph_cli
-        import dbt.graph.selector as graph_selector
-        from dbt.contracts.graph.manifest import Manifest
-        from dbt.graph import SelectionSpec
-        from dbt.graph.selector_spec import IndirectSelection
-        from networkx import DiGraph
-    except ImportError as e:
-        raise check.CheckError(
-            "In order to use the `select` argument on load_assets_from_dbt_manifest, you must have"
-            "`dbt-core >= 1.0.0` and `networkx` installed."
-        ) from e
-
-    class _DictShim(dict):
-        """Shim to enable hydrating a dictionary into a dot-accessible object."""
-
-        def __getattr__(self, item):
-            ret = super().get(item)
-            # allow recursive access e.g. foo.bar.baz
-            return _DictShim(ret) if isinstance(ret, dict) else ret
-
-    # generate a dbt-compatible graph from the existing child map
-    graph = graph_selector.Graph(DiGraph(incoming_graph_data=manifest_json["child_map"]))
-    manifest = Manifest(
-        # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
-        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
-        sources={
-            unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
-        },
-        metrics={
-            unique_id: _DictShim(info) for unique_id, info in manifest_json["metrics"].items()
-        },
-        exposures={
-            unique_id: _DictShim(info) for unique_id, info in manifest_json["exposures"].items()
-        },
-    )
-
-    # create a parsed selection from the select string
-    flags.INDIRECT_SELECTION = IndirectSelection.Eager
-    parsed_spec: SelectionSpec = graph_cli.parse_union([select], True)
-
-    if exclude:
-        parsed_spec = graph_cli.SelectionDifference(
-            components=[parsed_spec, graph_cli.parse_union([exclude], True)]
-        )
-
-    # execute this selection against the graph
-    selector = graph_selector.NodeSelector(graph, manifest)
-    selected, _ = selector.select_nodes(parsed_spec)
-    if len(selected) == 0:
-        raise DagsterInvalidSubsetError(f"No dbt models match the selection string '{select}'.")
-    return selected
 
 
 def _get_node_asset_key(node_info: Mapping[str, Any]) -> AssetKey:
@@ -892,7 +834,11 @@ def load_assets_from_dbt_manifest(
         select = select if select is not None else "*"
         exclude = exclude if exclude is not None else ""
 
-        selected_unique_ids = _select_unique_ids_from_manifest_json(manifest_json, select, exclude)
+        selected_unique_ids = select_unique_ids_from_manifest(
+            select=select, exclude=exclude, manifest_json=manifest_json
+        )
+        if len(selected_unique_ids) == 0:
+            raise DagsterInvalidSubsetError(f"No dbt models match the selection string '{select}'.")
 
     dbt_assets_def = _dbt_nodes_to_assets(
         dbt_nodes,
