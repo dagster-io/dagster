@@ -7,7 +7,7 @@ interface ConfirmationOptions {
   description?: React.ReactNode;
   icon?: ConfirmationDialogProps['icon'];
   intent?: ConfirmationDialogProps['intent'];
-  buttonText?: string;
+  buttonText?: React.ReactNode;
 }
 
 interface ConfirmationDialogProps extends ConfirmationOptions {
