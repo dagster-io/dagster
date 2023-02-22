@@ -401,23 +401,37 @@ class ConfigurableResource(
         """
         return PartialResource(cls, data=kwargs)
 
-    def _resolve_and_update_env_vars(self) -> None:
+    def _with_updated_values(self, values: Mapping[str, Any]) -> "ConfigurableResource[TResValue]":
+        """
+        Returns a new instance of the resource with the given values.
+        Used when initializing a resource at runtime.
+        """
+        return self.__class__(
+            **{**{k: v for k, v in self.__dict__.items() if not k.startswith("_")}, **values}
+        )
+
+    def _resolve_and_update_env_vars(self) -> "ConfigurableResource[TResValue]":
         """
         Processes the config dictionary to resolve any EnvVar values. This is called at runtime
         when the resource is initialized, so the user is only shown the error if they attempt to
         kick off a run relying on this resource.
+
+        Returns a new instance of the resource.
         """
         post_processed_data = _process_config_values(
             self._schema, self._resolved_config_dict, self.__class__.__name__
         )
-        for k, v in post_processed_data.items():
-            object.__setattr__(self, k, v)
+        return self._with_updated_values(post_processed_data)
 
-    def _resolve_and_update_nested_resources(self, context: InitResourceContext) -> None:
+    def _resolve_and_update_nested_resources(
+        self, context: InitResourceContext
+    ) -> "ConfigurableResource[TResValue]":
         """
         Updates any nested resources with the resource values from the context.
         In this case, populating partially configured resources or
         resources that return plain Python types.
+
+        Returns a new instance of the resource.
         """
         partial_resources_to_update: Dict[str, Any] = {}
         if self._nested_partial_resources:
@@ -447,15 +461,13 @@ class ConfigurableResource(
         }
 
         to_update = {**resources_to_update, **partial_resources_to_update}
-
-        for attr_name, value in to_update.items():
-            object.__setattr__(self, attr_name, value)
+        return self._with_updated_values(to_update)
 
     def initialize_and_run(self, context: InitResourceContext) -> TResValue:
-        self._resolve_and_update_env_vars()
-        self._resolve_and_update_nested_resources(context)
+        with_nested_resources = self._resolve_and_update_nested_resources(context)
+        with_env_vars = with_nested_resources._resolve_and_update_env_vars()
 
-        return self._create_object_fn(context)
+        return with_env_vars._create_object_fn(context)
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource_to_inject(context)

@@ -1,6 +1,6 @@
 # encoding: utf-8
 import hashlib
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import public
@@ -459,20 +459,31 @@ def _convert_potential_field(
     return Field(_convert_potential_type(original_root, potential_field, stack))
 
 
+def _config_dictionary_from_values_inner(obj: Any):
+    from dagster._config.structured_config import Config
+
+    if isinstance(obj, dict):
+        return {k: _config_dictionary_from_values_inner(v) for k, v in obj.items() if v is not None}
+    elif isinstance(obj, list):
+        return [_config_dictionary_from_values_inner(v) for v in obj]
+    elif isinstance(obj, EnvVar):
+        return {"env": str(obj)}
+    elif isinstance(obj, Config):
+        return {
+            k: _config_dictionary_from_values_inner(v)
+            for k, v in obj.dict().items()
+            if not k.startswith("_")
+        }
+
+    return obj
+
+
 def config_dictionary_from_values(
     values: Mapping[str, Any], config_field: "Field"
 ) -> Dict[str, Any]:
     assert ConfigTypeKind.is_shape(config_field.config_type.kind)
-    new_values = {}
-    for key, value in values.items():
-        if value is None:
-            continue
 
-        if isinstance(value, EnvVar):
-            new_values[key] = {"env": str(value)}
-        else:
-            new_values[key] = value
-    return new_values
+    return cast(Dict[str, Any], _config_dictionary_from_values_inner(values))
 
 
 class EnvVar(str):
