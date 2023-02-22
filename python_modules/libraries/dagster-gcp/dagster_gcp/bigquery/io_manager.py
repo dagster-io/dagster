@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from typing import Optional, Sequence, Type, cast
 
 from dagster import Field, IOManagerDefinition, Noneable, OutputContext, StringSource, io_manager
+from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -21,6 +22,7 @@ from google.cloud import bigquery
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
+@experimental
 def build_bigquery_io_manager(
     type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
 ) -> IOManagerDefinition:
