@@ -1,3 +1,4 @@
+import {gql, useLazyQuery} from '@apollo/client';
 import {
   SuggestionProvider,
   TokenizingField,
@@ -11,6 +12,18 @@ import * as React from 'react';
 import {RunsFilter, RunStatus} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
+
+import {
+  RunTagKeysQuery,
+  RunTagValuesQuery,
+  RunTagValuesQueryVariables,
+} from './types/RunsFilterInput.types';
+
+type RunTags = Array<{
+  __typename: 'PipelineTagAndValues';
+  key: string;
+  values: Array<string>;
+}>;
 
 export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'job' | 'snapshotId' | 'tag';
 
@@ -107,6 +120,9 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
 
 function searchSuggestionsForRuns(
   repositoryOptions: DagsterRepoOption[],
+  runTagKeys?: string[],
+  selectedRunTagKey?: string,
+  runTagValues?: RunTags,
   enabledFilters?: RunFilterTokenType[],
 ): SuggestionProvider[] {
   const pipelineNames = new Set<string>();
@@ -123,7 +139,7 @@ function searchSuggestionsForRuns(
     }
   }
 
-  const suggestions: {token: RunFilterTokenType; values: () => string[]}[] = [
+  const suggestions: {token: RunFilterTokenType; values: () => string[]; textOnly?: boolean}[] = [
     {
       token: 'id',
       values: () => [],
@@ -142,7 +158,16 @@ function searchSuggestionsForRuns(
     },
     {
       token: 'tag',
-      values: () => [],
+      values: () => {
+        if (!selectedRunTagKey) {
+          return (runTagKeys || []).map((key) => `${key}`);
+        }
+        return (runTagValues || [])
+          .filter(({key}) => key === selectedRunTagKey)
+          .map(({values}) => values.map((value) => `${selectedRunTagKey}=${value}`))
+          .flat();
+      },
+      textOnly: !selectedRunTagKey,
     },
     {
       token: 'snapshotId',
@@ -171,10 +196,39 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   enabledFilters,
 }) => {
   const {options} = useRepositoryOptions();
+  const [selectedTagKey, setSelectedTagKey] = React.useState<string | undefined>();
+  const [fetchTagKeys, {data: tagKeyData}] = useLazyQuery<RunTagKeysQuery>(RUN_TAG_KEYS_QUERY);
+  const [fetchTagValues, {data: tagValueData}] = useLazyQuery<
+    RunTagValuesQuery,
+    RunTagValuesQueryVariables
+  >(RUN_TAG_VALUES_QUERY, {
+    variables: {tagKeys: selectedTagKey ? [selectedTagKey] : []},
+  });
 
-  const suggestions = searchSuggestionsForRuns(options, enabledFilters);
+  React.useEffect(() => {
+    if (selectedTagKey) {
+      fetchTagValues();
+    }
+  }, [selectedTagKey, fetchTagValues]);
+
+  const suggestions = searchSuggestionsForRuns(
+    options,
+    tagKeyData?.runTagKeys,
+    selectedTagKey,
+    tagValueData?.runTags,
+    enabledFilters,
+  );
 
   const search = tokenizedValuesFromStringArray(tokensAsStringArray(tokens), suggestions);
+  const refreshSuggestions = (text: string) => {
+    if (!text.startsWith('tag:')) {
+      return;
+    }
+    const tagKeyText = text.slice(4);
+    if (tagKeyData?.runTagKeys && tagKeyData?.runTagKeys.includes(tagKeyText)) {
+      setSelectedTagKey(tagKeyText);
+    }
+  };
 
   const suggestionProvidersFilter = (
     suggestionProviders: SuggestionProvider[],
@@ -201,13 +255,32 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
     );
   };
 
+  const onFocus = React.useCallback(() => fetchTagKeys(), [fetchTagKeys]);
+
   return (
     <TokenizingField
       values={search}
       onChange={(values) => onChange(values as RunFilterToken[])}
+      onFocus={onFocus}
+      onTextChange={refreshSuggestions}
       suggestionProviders={suggestions}
       suggestionProvidersFilter={suggestionProvidersFilter}
       loading={loading}
     />
   );
 };
+
+const RUN_TAG_KEYS_QUERY = gql`
+  query RunTagKeysQuery {
+    runTagKeys
+  }
+`;
+
+const RUN_TAG_VALUES_QUERY = gql`
+  query RunTagValuesQuery($tagKeys: [String!]!) {
+    runTags(tagKeys: $tagKeys) {
+      key
+      values
+    }
+  }
+`;
