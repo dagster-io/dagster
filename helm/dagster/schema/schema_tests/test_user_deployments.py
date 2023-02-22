@@ -48,6 +48,16 @@ def subchart_helm_template() -> HelmTemplate:
     )
 
 
+@pytest.fixture()
+def user_deployment_configmap_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="charts/dagster-user-deployments/templates/configmap-env-user.yaml",
+        model=models.V1ConfigMap,
+    )
+
+
 def assert_user_deployment_template(
     t: HelmTemplate, templates: List[models.V1Deployment], values: DagsterHelmValues
 ):
@@ -617,7 +627,7 @@ def test_user_deployment_volumes(template: HelmTemplate, include_config_in_launc
         }
     ]
 
-    deployment = UserDeployment(
+    deployment = UserDeployment.construct(
         name=name,
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
         dagsterApiGrpcArgs=["-m", name],
@@ -695,7 +705,7 @@ def test_user_deployment_secrets_and_configmaps(
 
     configmaps = [{"name": "my-configmap"}, {"name": "my-other-configmap"}]
 
-    deployment = UserDeployment(
+    deployment = UserDeployment.construct(
         name=name,
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
         dagsterApiGrpcArgs=["-m", name],
@@ -747,7 +757,7 @@ def test_user_deployment_labels(template: HelmTemplate, include_config_in_launch
 
     labels = {"my-label-key": "my-label-val", "my-other-label-key": "my-other-label-val"}
 
-    deployment = UserDeployment(
+    deployment = UserDeployment.construct(
         name=name,
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
         dagsterApiGrpcArgs=["-m", name],
@@ -957,7 +967,7 @@ def test_subchart_tag_can_be_numeric(subchart_template: HelmTemplate, tag: Union
 
 
 def test_scheduler_name(template: HelmTemplate):
-    deployment = UserDeployment(
+    deployment = UserDeployment.construct(
         name="foo",
         image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
         dagsterApiGrpcArgs=["-m", "foo"],

@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from pydantic import Extra
 
@@ -24,7 +24,7 @@ class Dagit(BaseModel):
     nameOverride: str
     service: kubernetes.Service
     workspace: Workspace
-    env: Dict[str, str]
+    env: Union[Dict[str, str], List[kubernetes.EnvVar]]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
     deploymentLabels: Dict[str, str]

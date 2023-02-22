@@ -229,6 +229,12 @@
                 "servers"
             ]
         },
+        "EnvVar": {
+            "title": "EnvVar",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+        },
         "ConfigMapEnvSource": {
             "title": "ConfigMapEnvSource",
             "type": "object",
@@ -336,10 +342,20 @@
                 },
                 "env": {
                     "title": "Env",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "anyOf": [
+                        {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/EnvVar"
+                            }
+                        }
+                    ]
                 },
                 "envConfigMaps": {
                     "title": "Envconfigmaps",
@@ -2574,10 +2590,20 @@
                 },
                 "env": {
                     "title": "Env",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "anyOf": [
+                        {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/EnvVar"
+                            }
+                        }
+                    ]
                 },
                 "envConfigMaps": {
                     "title": "Envconfigmaps",
