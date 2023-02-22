@@ -15,6 +15,7 @@ from dagster import (
     Out,
     StaticPartitionsDefinition,
     asset,
+    fs_io_manager,
     instance_for_test,
     job,
     materialize,
@@ -171,6 +172,7 @@ def test_time_window_partitioned_asset():
             partitions_def=partitions_def,
             key_prefix=schema,
             ins={"df": AssetIn([schema, table_name])},
+            io_manager_key="fs_io",
         )
         def downstream_partitioned(df: pd.DataFrame) -> None:
             # assert that we only get the columns created in daily_partitioned
@@ -180,7 +182,7 @@ def test_time_window_partitioned_asset():
         bq_table_path = f"{schema}.{table_name}"
 
         bq_io_manager = bigquery_pandas_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
-        resource_defs = {"io_manager": bq_io_manager}
+        resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
 
         materialize(
             [daily_partitioned, downstream_partitioned],
@@ -251,6 +253,7 @@ def test_static_partitioned_asset():
             partitions_def=partitions_def,
             key_prefix=schema,
             ins={"df": AssetIn([schema, table_name])},
+            io_manager_key="fs_io",
         )
         def downstream_partitioned(df: pd.DataFrame) -> None:
             # assert that we only get the columns created in static_partitioned
@@ -260,7 +263,7 @@ def test_static_partitioned_asset():
         bq_table_path = f"{schema}.{table_name}"
 
         bq_io_manager = bigquery_pandas_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
-        resource_defs = {"io_manager": bq_io_manager}
+        resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
 
         materialize(
             [static_partitioned, downstream_partitioned],
@@ -338,6 +341,7 @@ def test_multi_partitioned_asset():
             partitions_def=partitions_def,
             key_prefix=schema,
             ins={"df": AssetIn([schema, table_name])},
+            io_manager_key="fs_io",
         )
         def downstream_partitioned(df: pd.DataFrame) -> None:
             # assert that we only get the columns created in multi_partitioned
@@ -347,7 +351,7 @@ def test_multi_partitioned_asset():
         bq_table_path = f"{schema}.{table_name}"
 
         bq_io_manager = bigquery_pandas_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
-        resource_defs = {"io_manager": bq_io_manager}
+        resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
 
         materialize(
             [multi_partitioned, downstream_partitioned],
@@ -428,6 +432,7 @@ def test_dynamic_partitioned_asset():
             partitions_def=dynamic_fruits,
             key_prefix=schema,
             ins={"df": AssetIn([schema, table_name])},
+            io_manager_key="fs_io",
         )
         def downstream_partitioned(df: pd.DataFrame) -> None:
             # assert that we only get the columns created in dynamic_partitioned
