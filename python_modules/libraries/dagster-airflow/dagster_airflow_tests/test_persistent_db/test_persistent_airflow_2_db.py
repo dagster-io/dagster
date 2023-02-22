@@ -1,21 +1,25 @@
 import datetime
 import os
 import tempfile
+from typing import List
 
 import pytest
 import pytz
+from _pytest.mark.structures import ParameterSet
 from airflow import __version__ as airflow_version
 from airflow.models import Pool, Variable
 from dagster import (
     DagsterInstance,
     JobDefinition,
     ReexecutionOptions,
+    RepositoryDefinition,
     build_reconstructable_job,
     execute_job,
 )
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
 from dagster_airflow import (
     make_dagster_definitions_from_airflow_dags_path,
+    make_dagster_definitions_from_airflow_example_dags,
     make_persistent_airflow_db_resource,
 )
 
@@ -195,3 +199,60 @@ def test_prev_execution_date(postgres_airflow_db: str):
             Variable.get("PREVIOUS_EXECUTION")
             == datetime.datetime(2023, 2, 1, tzinfo=pytz.UTC).isoformat()
         )
+
+
+@pytest.fixture(scope="module")
+def airflow_examples_repo(postgres_airflow_db) -> RepositoryDefinition:
+    airflow_db = make_persistent_airflow_db_resource(uri=postgres_airflow_db)
+    definitions = make_dagster_definitions_from_airflow_example_dags(
+        resource_defs={"airflow_db": airflow_db}
+    )
+    return definitions.get_repository_def()
+
+
+def get_examples_airflow_repo_params() -> List[ParameterSet]:
+    definitions = make_dagster_definitions_from_airflow_example_dags()
+    repo = definitions.get_repository_def()
+    params = []
+    no_job_run_dags = [
+        # requires k8s environment to work
+        # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
+        "example_kubernetes_executor",
+        # requires params to be passed in to work
+        "example_passing_params_via_test_command",
+        # requires template files to exist
+        "example_python_operator",
+        # requires email server to work
+        "example_dag_decorator",
+        # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
+        "example_trigger_target_dag",
+        "example_trigger_controller_dag",
+        # runs slow
+        "example_sensors",
+    ]
+    for job_name in repo.job_names:
+        params.append(
+            pytest.param(job_name, True if job_name in no_job_run_dags else False, id=job_name),
+        )
+
+    return params
+
+
+@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
+@pytest.mark.parametrize(
+    "job_name, exclude_from_execution_tests",
+    get_examples_airflow_repo_params(),
+)
+@requires_persistent_db
+def test_airflow_example_dags_persistent_db(
+    airflow_examples_repo: RepositoryDefinition,
+    job_name: str,
+    exclude_from_execution_tests: bool,
+):
+    assert airflow_examples_repo.has_job(job_name)
+    if not exclude_from_execution_tests:
+        job = airflow_examples_repo.get_job(job_name)
+        result = job.execute_in_process()
+        assert result.success
+        for event in result.all_events:
+            assert event.event_type_value != "STEP_FAILURE"

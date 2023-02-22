@@ -35,6 +35,8 @@ def instance_fixture() -> Generator[DagsterInstance, None, None]:
         yield instance
 
 
+
+
 @pytest.fixture(name="postgres_airflow_db", scope="module")
 def postgres_airflow_db(
     docker_compose_cm,
@@ -43,7 +45,9 @@ def postgres_airflow_db(
     """
     Spins up an Airflow postgres database using docker-compose, and tears it down after the test.
     """
-    with docker_compose_cm(docker_compose_file) as hostnames:
+    with docker_compose_cm(
+        docker_compose_yml=docker_compose_file,
+    ) as hostnames:
         uri = f"postgresql+psycopg2://airflow:airflow@{hostnames['airflow-db']}:5432"
         with environ(
             {"AIRFLOW__DATABASE__SQL_ALCHEMY_CONN": uri, "AIRFLOW__CORE__SQL_ALCHEMY_CONN": uri}
