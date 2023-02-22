@@ -992,6 +992,7 @@ def test_opt_mapping_param():
 
     with pytest.raises(CheckError):
         check.opt_mapping_param("foo", param_name="name")
+    assert check.opt_nullable_mapping_param(None, "name") is None
 
 
 # ########################
