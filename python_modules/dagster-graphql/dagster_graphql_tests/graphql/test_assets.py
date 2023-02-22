@@ -152,6 +152,12 @@ GET_ASSET_LOGICAL_VERSIONS = """
             }
             currentLogicalVersion
             projectedLogicalVersion
+            staleStatus
+            staleStatusCauses {
+                status
+                key { path }
+                reason
+            }
             assetMaterializations {
                 tags {
                     key
