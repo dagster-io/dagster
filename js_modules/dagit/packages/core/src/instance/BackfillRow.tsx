@@ -1,4 +1,4 @@
-import {gql, useLazyQuery} from '@apollo/client';
+import {gql, QueryResult, useLazyQuery} from '@apollo/client';
 import {Box, Button, Colors, Icon, MenuItem, Menu, Popover, Tag, Mono} from '@dagster-io/ui';
 import countBy from 'lodash/countBy';
 import * as React from 'react';
@@ -37,6 +37,11 @@ import {
 } from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
 
+const NoBackfillStatusQuery = [
+  () => Promise.resolve({data: undefined} as QueryResult<undefined>),
+  {data: undefined, called: true, loading: false} as QueryResult<undefined>,
+] as const;
+
 export const BackfillRow = ({
   backfill,
   allPartitions,
@@ -70,10 +75,15 @@ export const BackfillRow = ({
     },
   );
 
+  const statusUnsupported = backfill.numPartitions === null || backfill.partitionNames === null;
+
   // Note: We switch queries based on how many partitions there are to display,
   // because the detail is nice for small backfills but breaks for 100k+ partitions
-  const [queryStatus, queryResult] =
-    backfill.numPartitions > BACKFILL_PARTITIONS_COUNTS_THRESHOLD ? statusCounts : statusDetails;
+  const [queryStatus, queryResult] = statusUnsupported
+    ? NoBackfillStatusQuery
+    : (backfill.numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD
+    ? statusCounts
+    : statusDetails;
 
   useDelayedRowQuery(queryStatus);
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
@@ -124,10 +134,10 @@ export const BackfillRow = ({
         />
       </td>
       <td style={{width: 140}}>
-        {counts ? (
+        {counts || statusUnsupported ? (
           <BackfillStatusTag backfill={backfill} counts={counts} />
         ) : (
-          <LoadingOrNone queryResult={queryResult} />
+          <LoadingOrNone queryResult={queryResult} noneString="" />
         )}
       </td>
       <td>
@@ -135,7 +145,7 @@ export const BackfillRow = ({
           counts ? (
             <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
           ) : (
-            <LoadingOrNone queryResult={queryResult} />
+            <LoadingOrNone queryResult={queryResult} noneString="" />
           )
         ) : (
           <p>A partitions definition has changed since this backfill ran.</p>
@@ -264,7 +274,7 @@ const BackfillRunStatus = ({
     [statuses],
   );
 
-  return statuses ? (
+  return statuses && backfill.partitionNames ? (
     <PartitionStatus
       partitionNames={backfill.partitionNames}
       health={health}
@@ -320,7 +330,10 @@ const BackfillTarget: React.FC<{
         </Link>
       );
     }
-    return <span style={{fontWeight: 500}}>{partitionSetName}</span>;
+    if (partitionSetName) {
+      return <span style={{fontWeight: 500}}>{partitionSetName}</span>;
+    }
+    return null;
   };
 
   const buildRepoLink = () =>
@@ -374,28 +387,44 @@ const BackfillRequestedRange = ({
   allPartitions?: string[];
   onExpand: () => void;
 }) => {
-  const health = React.useMemo(
-    () => ({
-      partitionStateForKey: (key: string) =>
-        backfill.partitionNames.includes(key) ? PartitionState.QUEUED : PartitionState.MISSING,
-    }),
-    [backfill.partitionNames],
-  );
+  const {partitionNames, numPartitions} = backfill;
 
+  if (numPartitions === null) {
+    return <span />;
+  }
+
+  const numPartitionsLabel = `${numPartitions.toLocaleString()} ${
+    numPartitions === 1 ? 'partition' : 'partitions'
+  }`;
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       <div>
-        <TagButton onClick={onExpand}>
-          <Tag intent="primary" interactive>
-            {backfill.partitionNames.length.toLocaleString()} partitions
-          </Tag>
-        </TagButton>
+        {partitionNames ? (
+          <TagButton onClick={onExpand}>
+            <Tag intent="primary" interactive>
+              {numPartitionsLabel}
+            </Tag>
+          </TagButton>
+        ) : (
+          <Tag intent="primary">{numPartitionsLabel}</Tag>
+        )}
       </div>
-      {allPartitions && (
-        <PartitionStatus small hideStatusTooltip partitionNames={allPartitions} health={health} />
+      {allPartitions && partitionNames && (
+        <RequestedPartitionStatusBar all={allPartitions} requested={partitionNames} />
       )}
     </Box>
   );
+};
+
+const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested: string[]}) => {
+  const health = React.useMemo(
+    () => ({
+      partitionStateForKey: (key: string) =>
+        requested && requested.includes(key) ? PartitionState.QUEUED : PartitionState.MISSING,
+    }),
+    [requested],
+  );
+  return <PartitionStatus small hideStatusTooltip partitionNames={all} health={health} />;
 };
 
 const BackfillStatusTag = ({
@@ -403,7 +432,7 @@ const BackfillStatusTag = ({
   counts,
 }: {
   backfill: BackfillTableFragment;
-  counts: {[status: string]: number};
+  counts: {[status: string]: number} | null;
 }) => {
   switch (backfill.status) {
     case BulkActionStatus.REQUESTED:
@@ -423,6 +452,12 @@ const BackfillStatusTag = ({
         </Box>
       );
     case BulkActionStatus.COMPLETED:
+      if (backfill.partitionNames === null) {
+        return <Tag intent="success">Completed</Tag>;
+      }
+      if (!counts) {
+        return <div style={{color: Colors.Gray500}}>None</div>;
+      }
       if (counts[RunStatus.SUCCESS] === backfill.partitionNames.length) {
         return <Tag intent="success">Completed</Tag>;
       }

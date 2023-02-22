@@ -22,9 +22,9 @@ export const BackfillPartitionsRequestedDialog = ({backfill, onClose}: Props) =>
       onClose={onClose}
     >
       <DialogBody>
-        {backfill ? (
+        {backfill && backfill.partitionNames ? (
           <Box flex={{direction: 'column', gap: 8}} style={{maxHeight: '80vh', overflowY: 'auto'}}>
-            {backfill.partitionNames.map((partitionName: string) => (
+            {backfill.partitionNames.map((partitionName) => (
               <div key={partitionName}>{partitionName}</div>
             ))}
           </Box>

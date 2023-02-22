@@ -21,7 +21,7 @@ interface Props {
 
 export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
   const content = () => {
-    if (!backfill?.partitionSet) {
+    if (!backfill?.partitionSet || backfill.partitionNames === null) {
       return null;
     }
 
@@ -34,6 +34,7 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
       <BackfillStepStatusDialogContent
         backfill={backfill}
         partitionSet={backfill.partitionSet}
+        partitionNames={backfill.partitionNames}
         repoAddress={repoAddress}
         onClose={onClose}
       />
@@ -58,6 +59,7 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
 interface ContentProps {
   backfill: BackfillTableFragment;
   partitionSet: PartitionSetForBackfillTableFragment;
+  partitionNames: string[];
   repoAddress: RepoAddress;
   onClose: () => void;
 }
@@ -65,6 +67,7 @@ interface ContentProps {
 export const BackfillStepStatusDialogContent = ({
   backfill,
   partitionSet,
+  partitionNames,
   repoAddress,
 }: ContentProps) => {
   const [pageSize, setPageSize] = React.useState(60);
@@ -78,7 +81,7 @@ export const BackfillStepStatusDialogContent = ({
   const partitions = usePartitionStepQuery({
     partitionSetName: partitionSet.name,
     partitionTagName: DagsterTag.Partition,
-    partitionNames: backfill.partitionNames,
+    partitionNames,
     pageSize,
     runsFilter,
     repositorySelector: repoAddressToSelector(repoAddress),
@@ -89,7 +92,7 @@ export const BackfillStepStatusDialogContent = ({
 
   return (
     <PartitionPerOpStatus
-      partitionNames={backfill.partitionNames}
+      partitionNames={partitionNames}
       partitions={partitions}
       pipelineName={partitionSet?.pipelineName}
       repoAddress={repoAddress}

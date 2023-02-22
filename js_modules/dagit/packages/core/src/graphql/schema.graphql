@@ -2332,9 +2332,9 @@ type PartitionRun {
 type PartitionBackfill {
   backfillId: String!
   status: BulkActionStatus!
-  partitionNames: [String!]!
+  partitionNames: [String!]
   isValidSerialization: Boolean!
-  numPartitions: Int!
+  numPartitions: Int
   numCancelable: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]
