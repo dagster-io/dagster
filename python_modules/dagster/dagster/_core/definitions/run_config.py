@@ -14,7 +14,6 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel
 from typing_extensions import TypeAlias
 
 from dagster._config import (
@@ -689,13 +688,13 @@ def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
 class RunConfig:
     def __init__(
         self,
-        ops: Optional[Dict[str, Config]] = None,
-        loggers: Optional[Dict[str, Any]] = None,
+        ops: Optional[Dict[str, Any]] = None,
         resources: Optional[Dict[str, Any]] = None,
+        loggers: Optional[Dict[str, Any]] = None,
     ):
         self.ops = check.opt_dict_param(ops, "ops")
-        self.loggers = check.opt_dict_param(loggers, "loggers")
         self.resources = check.opt_dict_param(resources, "resources")
+        self.loggers = check.opt_dict_param(loggers, "loggers")
 
     def to_config_dict(self):
         return {
