@@ -84,7 +84,9 @@ Dagster provides a growing library of integrations for today’s most popular da
 
 <br/>
 <p align="center">
-  <img width="100%" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/integrations-bar-for-readme.png">
+    <a target="_blank" href="https://dagster.io/integrations" style="background:none">
+        <img width="100%" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/integrations-bar-for-readme.png">
+    </a>
 </p>
 
 ## Community
