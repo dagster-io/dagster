@@ -14,11 +14,11 @@ from dagster._config.field import Field
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import (
     Config,
-    ConfigurableIOManagerInjector,
+    ConfigurableIOManagerFactory,
+    ConfigurableLegacyIOManagerAdapter,
+    ConfigurableLegacyResourceAdapter,
     ConfigurableResource,
-    ConfigurableResourceAdapter,
     ResourceDependency,
-    StructuredIOManagerAdapter,
 )
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
@@ -196,7 +196,7 @@ def test_yield_in_resource_function():
     class ResourceWithCleanup(ConfigurableResource):
         idx: int
 
-        def create_resource_to_inject(self, context):
+        def create_resource(self, context):
             called.append(f"creation_{self.idx}")
             yield True
             called.append(f"cleanup_{self.idx}")
@@ -235,7 +235,7 @@ def test_wrapping_function_resource():
 
         return output
 
-    class WriterResource(ConfigurableResourceAdapter):
+    class WriterResource(ConfigurableLegacyResourceAdapter):
         prefix: str
 
         @property
@@ -279,7 +279,7 @@ def test_io_manager_adapter():
     def an_io_manager(context: InitResourceContext) -> AnIOManagerImplementation:
         return AnIOManagerImplementation(context.resource_config["a_config_value"])
 
-    class AdapterForIOManager(StructuredIOManagerAdapter):
+    class AdapterForIOManager(ConfigurableLegacyIOManagerAdapter):
         a_config_value: str
 
         @property
@@ -304,10 +304,10 @@ def test_io_manager_adapter():
 
 def test_io_manager_factory_class():
     # now test without the adapter
-    class AnIOManagerFactory(ConfigurableIOManagerInjector):
+    class AnIOManagerFactory(ConfigurableIOManagerFactory):
         a_config_value: str
 
-        def create_io_manager_to_inject(self, _) -> IOManager:
+        def create_io_manager(self, _) -> IOManager:
             """Implement as one would implement a @io_manager decorator function"""
             return AnIOManagerImplementation(self.a_config_value)
 
@@ -620,7 +620,7 @@ def test_resources_which_return():
     class StringResource(ConfigurableResource[str]):
         a_string: str
 
-        def create_resource_to_inject(self, context) -> str:
+        def create_resource(self, context) -> str:
             return self.a_string
 
     class MyResource(ConfigurableResource):
@@ -689,7 +689,7 @@ def test_nested_function_resource():
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
-        def create_resource_to_inject(self, context) -> Callable[[str], None]:
+        def create_resource(self, context) -> Callable[[str], None]:
             def output(text: str):
                 self.writer(f"{text}{self.postfix}")
 
@@ -727,7 +727,7 @@ def test_nested_function_resource_configured():
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
-        def create_resource_to_inject(self, context) -> Callable[[str], None]:
+        def create_resource(self, context) -> Callable[[str], None]:
             def output(text: str):
                 self.writer(f"{text}{self.postfix}")
 
@@ -779,7 +779,7 @@ def test_nested_function_resource_runtime_config():
         writer: ResourceDependency[Callable[[str], None]]
         postfix: str
 
-        def create_resource_to_inject(self, context) -> Callable[[str], None]:
+        def create_resource(self, context) -> Callable[[str], None]:
             def output(text: str):
                 self.writer(f"{text}{self.postfix}")
 

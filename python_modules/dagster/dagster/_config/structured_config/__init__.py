@@ -502,9 +502,9 @@ class ConfigurableResource(
         return with_env_vars._create_object_fn(context)
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
-        return self.create_resource_to_inject(context)
+        return self.create_resource(context)
 
-    def create_resource_to_inject(
+    def create_resource(
         self, context: InitResourceContext
     ) -> TResValue:  # pylint: disable=unused-argument
         """
@@ -583,7 +583,7 @@ class ResourceDependency(Generic[V]):
         setattr(obj, self._name, value)
 
 
-class ConfigurableResourceAdapter(ConfigurableResource, ABC):
+class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
     """
     Adapter base class for wrapping a decorated, function-style resource
     with structured config.
@@ -603,7 +603,7 @@ class ConfigurableResourceAdapter(ConfigurableResource, ABC):
 
             return output
 
-        class WriterResource(ConfigurableResourceAdapter):
+        class WriterResource(ConfigurableLegacyResourceAdapter):
             prefix: str
 
             @property
@@ -624,7 +624,7 @@ class ConfigurableResourceAdapter(ConfigurableResource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-class ConfigurableIOManagerInjector(ConfigurableResource[TIOManagerValue], IOManagerDefinition):
+class ConfigurableIOManagerFactory(ConfigurableResource[TIOManagerValue], IOManagerDefinition):
     """
     Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
@@ -645,10 +645,10 @@ class ConfigurableIOManagerInjector(ConfigurableResource[TIOManagerValue], IOMan
         )
 
     def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
-        return self.create_io_manager_to_inject(context)
+        return self.create_io_manager(context)
 
     @abstractmethod
-    def create_io_manager_to_inject(self, context) -> TIOManagerValue:
+    def create_io_manager(self, context) -> TIOManagerValue:
         """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
 
@@ -672,7 +672,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManager
         )
 
 
-class ConfigurableIOManager(ConfigurableIOManagerInjector, IOManager):
+class ConfigurableIOManager(ConfigurableIOManagerFactory, IOManager):
     """
     Base class for Dagster IO managers that utilize structured config.
 
@@ -681,7 +681,7 @@ class ConfigurableIOManager(ConfigurableIOManagerInjector, IOManager):
     :py:meth:`handle_output` and :py:meth:`load_input` methods.
     """
 
-    def create_io_manager_to_inject(self, context) -> IOManager:
+    def create_io_manager(self, context) -> IOManager:
         return self
 
 
@@ -786,13 +786,41 @@ def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
     )
 
 
-class StructuredIOManagerAdapter(ConfigurableIOManagerInjector):
+class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
+    """
+    Adapter base class for wrapping a decorated, function-style I/O manager
+    with structured config.
+
+    To use this class, subclass it, define config schema fields using Pydantic,
+    and implement the ``wrapped_io_manager`` method.
+
+    Example:
+    .. code-block:: python
+
+        class OldIOManager(IOManager):
+            def __init__(self, base_path: str):
+                ...
+
+        @io_manager(config_schema={"base_path": str})
+        def old_io_manager(context):
+            base_path = context.resource_config["base_path"]
+
+            return OldIOManager(base_path)
+
+        class MyIOManager(ConfigurableLegacyIOManagerAdapter):
+            base_path: str
+
+            @property
+            def wrapped_io_manager(self) -> IOManagerDefinition:
+                return old_io_manager
+    """
+
     @property
     @abstractmethod
     def wrapped_io_manager(self) -> IOManagerDefinition:
         raise NotImplementedError()
 
-    def create_io_manager_to_inject(self, context) -> IOManager:
+    def create_io_manager(self, context) -> IOManager:
         raise NotImplementedError(
             "Because we override resource_fn in the adapter, this is never called."
         )
