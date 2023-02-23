@@ -143,7 +143,7 @@ GET_ASSET_LATEST_RUN_STATS = """
     }
 """
 
-GET_ASSET_LOGICAL_VERSIONS = """
+GET_ASSET_DATA_VERSIONS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
         assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
             id
