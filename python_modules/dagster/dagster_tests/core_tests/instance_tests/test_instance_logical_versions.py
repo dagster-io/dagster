@@ -9,8 +9,8 @@ from dagster._core.definitions.data_version import (
     LOGICAL_VERSION_TAG_KEY,
     UNKNOWN_LOGICAL_VERSION,
     UNKNOWN_VALUE,
+    DataProvenance,
     DataVersion,
-    LogicalVersionProvenance,
     compute_logical_version,
     extract_logical_version_from_entry,
     extract_logical_version_provenance_from_entry,
@@ -62,7 +62,7 @@ def test_extract_logical_version_and_provenance_from_materialization_entry():
     )
     entry = _create_test_event_log_entry(DagsterEventType.ASSET_MATERIALIZATION, materialization)
     assert extract_logical_version_from_entry(entry) == DataVersion("1")
-    assert extract_logical_version_provenance_from_entry(entry) == LogicalVersionProvenance(
+    assert extract_logical_version_provenance_from_entry(entry) == DataProvenance(
         code_version="3",
         input_logical_versions={
             AssetKey(["assetgroup", "bar"]): DataVersion("2"),

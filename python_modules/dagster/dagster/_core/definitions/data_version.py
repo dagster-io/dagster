@@ -71,9 +71,9 @@ NULL_LOGICAL_VERSION: Final[DataVersion] = DataVersion("NULL")
 UNKNOWN_LOGICAL_VERSION: Final[DataVersion] = DataVersion("UNKNOWN")
 
 
-class LogicalVersionProvenance(
+class DataProvenance(
     NamedTuple(
-        "_LogicalVersionProvenance",
+        "_DataProvenance",
         [
             ("code_version", str),
             ("input_logical_versions", Mapping["AssetKey", DataVersion]),
@@ -95,7 +95,7 @@ class LogicalVersionProvenance(
     ):
         from dagster._core.definitions.events import AssetKey
 
-        return super(LogicalVersionProvenance, cls).__new__(
+        return super(DataProvenance, cls).__new__(
             cls,
             code_version=check.str_param(code_version, "code_version"),
             input_logical_versions=check.mapping_param(
@@ -107,7 +107,7 @@ class LogicalVersionProvenance(
         )
 
     @staticmethod
-    def from_tags(tags: Mapping[str, str]) -> Optional[LogicalVersionProvenance]:
+    def from_tags(tags: Mapping[str, str]) -> Optional[DataProvenance]:
         from dagster._core.definitions.events import AssetKey
 
         code_version = tags.get(CODE_VERSION_TAG_KEY)
@@ -119,7 +119,7 @@ class LogicalVersionProvenance(
             for k, v in tags.items()
             if k.startswith(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX)
         }
-        return LogicalVersionProvenance(code_version, input_logical_versions)
+        return DataProvenance(code_version, input_logical_versions)
 
 
 # ########################
@@ -192,10 +192,10 @@ def extract_logical_version_from_entry(
 
 def extract_logical_version_provenance_from_entry(
     entry: EventLogEntry,
-) -> Optional[LogicalVersionProvenance]:
+) -> Optional[DataProvenance]:
     event_data = _extract_event_data_from_entry(entry)
     tags = event_data.tags or {}
-    return LogicalVersionProvenance.from_tags(tags)
+    return DataProvenance.from_tags(tags)
 
 
 def _extract_event_data_from_entry(
@@ -420,9 +420,7 @@ class CachingStaleStatusResolver:
         return self._instance.get_latest_materialization_event(key)
 
     @cached_method
-    def _get_current_logical_version_provenance(
-        self, *, key: AssetKey
-    ) -> Optional[LogicalVersionProvenance]:
+    def _get_current_logical_version_provenance(self, *, key: AssetKey) -> Optional[DataProvenance]:
         materialization = self._get_latest_materialization_event(key=key)
         if materialization is None:
             return None

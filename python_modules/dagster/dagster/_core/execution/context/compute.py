@@ -6,7 +6,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._core.definitions.data_version import (
-    LogicalVersionProvenance,
+    DataProvenance,
     extract_logical_version_provenance_from_entry,
 )
 from dagster._core.definitions.dependency import Node, NodeHandle
@@ -601,7 +601,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
     @public
     @experimental
-    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[LogicalVersionProvenance]:
+    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
         """
         Return the provenance information for the most recent materialization of an asset.
 
@@ -609,7 +609,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             asset_key (AssetKey): Key of the asset for which to retrieve provenance.
 
         Returns:
-            Optional[LogicalVersionProvenance]: Provenance information for the most recent
+            Optional[DataProvenance]: Provenance information for the most recent
                 materialization of the asset. Returns `None` if the asset was never materialized or
                 the materialization record is too old to contain provenance information.
         """
