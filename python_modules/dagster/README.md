@@ -81,6 +81,10 @@ Maintain control over your data as the complexity scales. Centralize your metada
 Dagster provides a growing library of integrations for today’s most popular data tools. Integrate with the tools you already use, and deploy to your infrastructure.
 
 
+<p align="center">
+  <img width="100%" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/integrations-bar-for-readme.png">
+</p>
+
 ## Community
 
 Connect with thousands of other data practitioners building with Dagster. Share knowledge, get help,
