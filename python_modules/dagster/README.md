@@ -39,7 +39,7 @@ If you're new to Dagster, we recommend reading about its [core concepts](https:/
 
 Dagster is a data pipeline orchestrator designed for **developing and maintaining data assets**, such as tables, data sets, machine learning models, and reports.
 
-With Dagster, you declare as Python functions the data assets that you want to build. Dagster then helps you run your functions at the right time and keep your assets up-to-date.
+With Dagster, you declare—as Python functions—the data assets that you want to build. Dagster then helps you run your functions at the right time and keep your assets up-to-date.
 
 Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
 
