@@ -31,14 +31,14 @@ dagit:
 - Fixes a bug where negative partition counts were displayed in the asset graph.
 - Previously, when an asset sensor did not yield run requests, it returned an empty result. This has been updated to yield a meaningful message.
 - Fix an issue with a non-partitioned asset downstream of a partitioned asset with self-dependencies causing a GQL error in dagit.
-- [dagster-snowflake-pyspark] Fixed a bug where the PySparkTypeHandler was incorrectly loading partitioned data
-- [dagster-k8s] Fixed an issue where [run monitoring](https://docs.dagster.io/deployment/run-monitoring#run-monitoring) sometimes failed to detect that the kubernetes job for a run had stopped, leaving the run hanging..
+- [dagster-snowflake-pyspark] Fixed a bug where the PySparkTypeHandler was incorrectly loading partitioned data.
+- [dagster-k8s] Fixed an issue where [run monitoring](https://docs.dagster.io/deployment/run-monitoring#run-monitoring) sometimes failed to detect that the kubernetes job for a run had stopped, leaving the run hanging.
 
 ### Documentation
 
 - (experimental) Documentation for the dynamic partitions definition is now added.
-- [dagster-snowflake] The Snowflake I/O Manager reference page now includes information on working with partitioned assets
-- Updated contributor docs to reference our new toolchain (`ruff`, `pyright`)
+- [dagster-snowflake] The Snowflake I/O Manager reference page now includes information on working with partitioned assets.
+- Updated contributor docs to reference our new toolchain (`ruff`, `pyright`).
 
 
 # 1.1.19 (core) / 0.17.19 (libraries)
