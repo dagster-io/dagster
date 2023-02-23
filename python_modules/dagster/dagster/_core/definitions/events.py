@@ -20,7 +20,7 @@ from typing import (
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.logical_version import LogicalVersion
+from dagster._core.definitions.data_version import LogicalVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster._utils.backcompat import experimental_class_param_warning

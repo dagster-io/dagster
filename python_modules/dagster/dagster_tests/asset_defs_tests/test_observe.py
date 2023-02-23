@@ -1,11 +1,11 @@
 from typing import Optional
 
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import (
+from dagster._core.definitions.data_version import (
     LogicalVersion,
     extract_logical_version_from_entry,
 )
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.observe import observe
 from dagster._core.instance import DagsterInstance
 

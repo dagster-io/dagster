@@ -5,6 +5,10 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import experimental, public
+from dagster._core.definitions.data_version import (
+    LogicalVersionProvenance,
+    extract_logical_version_provenance_from_entry,
+)
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetKey,
@@ -15,10 +19,6 @@ from dagster._core.definitions.events import (
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.logical_version import (
-    LogicalVersionProvenance,
-    extract_logical_version_provenance_from_entry,
-)
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition

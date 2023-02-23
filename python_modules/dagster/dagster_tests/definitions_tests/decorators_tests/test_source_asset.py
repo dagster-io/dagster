@@ -2,9 +2,9 @@ from dagster import Definitions
 from dagster._core.definitions.assets_job import (
     build_source_asset_observation_job,
 )
+from dagster._core.definitions.data_version import LogicalVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import LogicalVersion
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.storage.io_manager import io_manager

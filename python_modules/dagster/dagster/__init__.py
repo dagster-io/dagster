@@ -121,6 +121,10 @@ from dagster._core.definitions.assets import AssetsDefinition as AssetsDefinitio
 from dagster._core.definitions.composition import PendingNodeInvocation as PendingNodeInvocation
 from dagster._core.definitions.config import ConfigMapping as ConfigMapping
 from dagster._core.definitions.configurable import configured as configured
+from dagster._core.definitions.data_version import (
+    LogicalVersion as LogicalVersion,
+    LogicalVersionProvenance as LogicalVersionProvenance,
+)
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
     graph_asset as graph_asset,
@@ -201,10 +205,6 @@ from dagster._core.definitions.logger_definition import (
     LoggerDefinition as LoggerDefinition,
     build_init_logger_context as build_init_logger_context,
     logger as logger,
-)
-from dagster._core.definitions.logical_version import (
-    LogicalVersion as LogicalVersion,
-    LogicalVersionProvenance as LogicalVersionProvenance,
 )
 from dagster._core.definitions.materialize import (
     materialize as materialize,

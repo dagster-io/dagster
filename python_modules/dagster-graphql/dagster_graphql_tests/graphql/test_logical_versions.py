@@ -8,8 +8,8 @@ from dagster import (
     asset,
     repository,
 )
+from dagster._core.definitions.data_version import LOGICAL_VERSION_TAG_KEY
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.logical_version import LOGICAL_VERSION_TAG_KEY
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION

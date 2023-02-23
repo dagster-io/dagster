@@ -5,11 +5,11 @@ from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
-from dagster._core.definitions.logical_version import (
+from dagster._core.definitions.data_version import (
     NULL_LOGICAL_VERSION,
     StaleStatus,
 )
+from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
 from dagster._core.events import DagsterEventType

@@ -27,9 +27,7 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
-from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-from dagster._core.definitions.events import DynamicOutput
-from dagster._core.definitions.logical_version import (
+from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG_KEY,
     DEFAULT_LOGICAL_VERSION,
     LOGICAL_VERSION_TAG_KEY,
@@ -39,6 +37,8 @@ from dagster._core.definitions.logical_version import (
     get_input_event_pointer_tag_key,
     get_input_logical_version_tag_key,
 )
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.metadata import (
     MetadataEntry,
     PartitionMetadataEntry,

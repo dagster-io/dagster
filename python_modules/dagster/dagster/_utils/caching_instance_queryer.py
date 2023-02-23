@@ -16,8 +16,8 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.data_version import get_input_event_pointer_tag_key
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.logical_version import get_input_event_pointer_tag_key
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,

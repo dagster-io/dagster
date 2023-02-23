@@ -2,8 +2,7 @@ import time
 from hashlib import sha256
 from typing import Any, Union
 
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
-from dagster._core.definitions.logical_version import (
+from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG_KEY,
     INPUT_EVENT_POINTER_TAG_KEY_PREFIX,
     INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX,
@@ -16,6 +15,7 @@ from dagster._core.definitions.logical_version import (
     extract_logical_version_from_entry,
     extract_logical_version_provenance_from_entry,
 )
+from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.events import (
     AssetObservationData,
     DagsterEvent,

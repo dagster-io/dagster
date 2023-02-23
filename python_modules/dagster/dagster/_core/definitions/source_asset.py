@@ -8,8 +8,8 @@ from typing_extensions import Protocol, TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.decorator_utils import has_at_least_one_parameter
+from dagster._core.definitions.data_version import LOGICAL_VERSION_TAG_KEY, LogicalVersion
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
-from dagster._core.definitions.logical_version import LOGICAL_VERSION_TAG_KEY, LogicalVersion
 from dagster._core.definitions.metadata import (
     MetadataEntry,
     MetadataMapping,

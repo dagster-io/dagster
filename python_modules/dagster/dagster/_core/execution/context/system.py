@@ -61,11 +61,11 @@ from .input import InputContext
 from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.dependency import Node, NodeHandle
-    from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.logical_version import (
+    from dagster._core.definitions.data_version import (
         LogicalVersion,
     )
+    from dagster._core.definitions.dependency import Node, NodeHandle
+    from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.event_api import EventLogRecord
     from dagster._core.execution.plan.plan import ExecutionPlan
@@ -906,7 +906,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self._is_external_input_asset_records_loaded = True
 
     def _fetch_input_asset_record(self, key: AssetKey, retries: int = 0) -> None:
-        from dagster._core.definitions.logical_version import (
+        from dagster._core.definitions.data_version import (
             extract_logical_version_from_entry,
         )
 

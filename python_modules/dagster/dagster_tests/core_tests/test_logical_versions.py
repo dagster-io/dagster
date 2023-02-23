@@ -1,6 +1,6 @@
 import pytest
 from dagster._check import ParameterCheckError
-from dagster._core.definitions.logical_version import LogicalVersion
+from dagster._core.definitions.data_version import LogicalVersion
 
 
 def test_logical_version_construction():
