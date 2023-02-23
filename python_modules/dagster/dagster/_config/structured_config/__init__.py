@@ -103,7 +103,7 @@ class Config(MakeConfigCacheable):
         """
         This constructor is overridden to handle any remapping of raw config dicts to
         the appropriate config classes. For example, discriminated unions are represented
-        in Dagster config as dicts with a single key, which is the descriminator value.
+        in Dagster config as dicts with a single key, which is the discriminator value.
         """
         modified_data = {}
         for key, value in config_dict.items():
@@ -834,23 +834,23 @@ def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> F
     ):
         raise NotImplementedError("Descriminated unions with non-Config types are not supported.")
 
-    # First, we generate a mapping between the various descriminator values and the
-    # Dagster config fields that correspond to them. We strip the descriminator key
+    # First, we generate a mapping between the various discriminator values and the
+    # Dagster config fields that correspond to them. We strip the discriminator key
     # from the fields, since the user should not have to specify it.
 
     assert pydantic_field.sub_fields_mapping
     dagster_config_field_mapping = {
-        descriminator_value: infer_schema_from_config_class(
+        discriminator_value: infer_schema_from_config_class(
             field.type_,
             fields_to_omit={pydantic_field.field_info.discriminator}
             if pydantic_field.field_info.discriminator
             else None,
         )
-        for descriminator_value, field in sub_fields_mapping.items()
+        for discriminator_value, field in sub_fields_mapping.items()
     }
 
     # We then nest the union fields under a Selector. The keys for the selector
-    # are the various descriminator values
+    # are the various discriminator values
     return Field(config=Selector(fields=dagster_config_field_mapping))
 
 
