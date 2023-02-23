@@ -8,7 +8,7 @@ from typing import Generic, Optional, TypeVar, Any
 
 from dagster._config.structured_config import (
     ConfigurableResource,
-    ConfigurableResourceAdapter,
+    ConfigurableLegacyResourceAdapter,
 )
 
 V = TypeVar("V")
@@ -396,7 +396,7 @@ defs = Definitions(
 # start_resource_adapter
 
 from dagster import resource, Definitions
-from dagster._config.structured_config import ConfigurableResourceAdapter
+from dagster._config.structured_config import ConfigurableLegacyResourceAdapter
 
 
 # Old code, interface cannot be changed for back-compat purposes
@@ -415,7 +415,7 @@ def writer_resource(context):
 
 
 # New adapter layer
-class WriterResource(ConfigurableResourceAdapter):
+class WriterResource(ConfigurableLegacyResourceAdapter):
     prefix: str
 
     @property
@@ -443,9 +443,7 @@ from dagster import (
     InputContext,
     OutputContext,
 )
-from dagster._config.structured_config import (
-    StructuredIOManagerAdapter as ConfigurableIOManagerAdapter,
-)
+from dagster._config.structured_config import ConfigurableLegacyIOManagerAdapter
 import os
 
 
@@ -477,7 +475,7 @@ def old_file_io_manager(context):
 
 
 # New adapter layer
-class MyIOManager(ConfigurableIOManagerAdapter):
+class MyIOManager(ConfigurableLegacyIOManagerAdapter):
     base_path: str
 
     @property
