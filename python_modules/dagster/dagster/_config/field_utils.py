@@ -459,20 +459,34 @@ def _convert_potential_field(
     return Field(_convert_potential_type(original_root, potential_field, stack))
 
 
+def _config_dictionary_from_values_inner(obj: Any):
+    from dagster._config.structured_config import Config
+
+    if isinstance(obj, dict):
+        return {k: _config_dictionary_from_values_inner(v) for k, v in obj.items() if v is not None}
+    elif isinstance(obj, list):
+        return [_config_dictionary_from_values_inner(v) for v in obj]
+    elif isinstance(obj, EnvVar):
+        return {"env": str(obj)}
+    elif isinstance(obj, Config):
+        return {
+            k: _config_dictionary_from_values_inner(v) for k, v in obj._as_config_dict().items()
+        }
+
+    return obj
+
+
 def config_dictionary_from_values(
     values: Mapping[str, Any], config_field: "Field"
 ) -> Dict[str, Any]:
+    """
+    Converts a set of config values into a dictionary representation,
+    in particular converting EnvVar objects into Dagster config inputs
+    and processing data structures such as dicts, lists, and structured Config classes.
+    """
     assert ConfigTypeKind.is_shape(config_field.config_type.kind)
-    new_values = {}
-    for key, value in values.items():
-        if value is None:
-            continue
 
-        if isinstance(value, EnvVar):
-            new_values[key] = {"env": str(value)}
-        else:
-            new_values[key] = value
-    return new_values
+    return check.is_dict(_config_dictionary_from_values_inner(values))
 
 
 class EnvVar(str):

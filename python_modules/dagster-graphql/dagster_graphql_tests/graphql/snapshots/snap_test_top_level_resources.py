@@ -41,10 +41,6 @@ snapshots['test_fetch_top_level_resource 1'] = {
             {
                 'key': 'a_string',
                 'value': '"foo"'
-            },
-            {
-                'key': 'an_unset_string',
-                'value': '"defaulted"'
             }
         ],
         'description': 'my description',
@@ -96,10 +92,6 @@ snapshots['test_fetch_top_level_resources 1'] = {
                     {
                         'key': 'a_string',
                         'value': '"foo"'
-                    },
-                    {
-                        'key': 'an_unset_string',
-                        'value': '"defaulted"'
                     }
                 ],
                 'description': 'my description',
