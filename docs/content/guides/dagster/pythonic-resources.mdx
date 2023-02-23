@@ -346,7 +346,7 @@ from dagster import resource, Definitions
 from dagster._config.structured_config import ConfigurableResourceAdapter
 
 
-# Old code, cannot be changed for back-compat purposes
+# Old code, interface cannot be changed for back-compat purposes
 class Writer:
     def __init__(self, prefix: str):
         self._prefix = prefix
@@ -399,7 +399,7 @@ from dagster._config.structured_config import (
 import os
 
 
-# Old code, cannot be changed for back-compat purposes
+# Old code, interface cannot be changed for back-compat purposes
 class OldFileIOManager(IOManager):
     def __init__(self, base_path: str):
         self.base_path = base_path
@@ -411,7 +411,9 @@ class OldFileIOManager(IOManager):
     def load_input(self, context: InputContext):
         with open(
             os.path.join(
-                self.base_path, context.upstream_output.step_key, context.upstream_output.name
+                self.base_path,
+                context.upstream_output.step_key,
+                context.upstream_output.name,
             ),
             "r",
         ) as fd:

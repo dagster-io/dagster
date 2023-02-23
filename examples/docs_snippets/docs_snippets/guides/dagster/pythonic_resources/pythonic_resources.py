@@ -210,9 +210,7 @@ class RunConfig(Dict[str, Any]):
 # start_new_resource_runtime_launch
 from dagster import sensor, define_asset_job, RunRequest
 
-update_data_job = define_asset_job(
-    name="update_data_job", selection=[data_from_database]
-)
+update_data_job = define_asset_job(name="update_data_job", selection=[data_from_database])
 
 
 @sensor(job=update_data_job)
@@ -401,7 +399,7 @@ from dagster import resource, Definitions
 from dagster._config.structured_config import ConfigurableResourceAdapter
 
 
-# Old code, cannot be changed for back-compat purposes
+# Old code, interface cannot be changed for back-compat purposes
 class Writer:
     def __init__(self, prefix: str):
         self._prefix = prefix
@@ -430,9 +428,7 @@ def my_asset(writer: Writer):
     writer.output("hello, world!")
 
 
-defs = Definitions(
-    assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")}
-)
+defs = Definitions(assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")})
 
 # end_resource_adapter
 
@@ -453,15 +449,13 @@ from dagster._config.structured_config import (
 import os
 
 
-# Old code, cannot be changed for back-compat purposes
+# Old code, interface cannot be changed for back-compat purposes
 class OldFileIOManager(IOManager):
     def __init__(self, base_path: str):
         self.base_path = base_path
 
     def handle_output(self, context: OutputContext, obj):
-        with open(
-            os.path.join(self.base_path, context.step_key, context.name), "w"
-        ) as fd:
+        with open(os.path.join(self.base_path, context.step_key, context.name), "w") as fd:
             fd.write(obj)
 
     def load_input(self, context: InputContext):
