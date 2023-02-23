@@ -1,15 +1,13 @@
 import time
 
 from dagster import Int, Output, RetryRequested, VersionStrategy, fs_io_manager
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.output import Out
 from dagster._core.test_utils import nesting_graph_pipeline
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     default_executors,
-    lambda_solid,
     pipeline,
-    solid,
 )
 from dagster_celery import celery_executor
 
@@ -24,12 +22,12 @@ celery_mode_defs = [
 # test_execute pipelines
 
 
-@solid
+@op
 def simple(_):
     return 1
 
 
-@solid
+@op
 def add_one(_, num):
     return num + 1
 
@@ -44,13 +42,13 @@ def test_serial_pipeline():
     return add_one(simple())
 
 
-@solid(output_defs=[OutputDefinition(name="value_one"), OutputDefinition(name="value_two")])
+@op(out={"value_one": Out(), "value_two": Out()})
 def emit_values(_context):
     yield Output(1, "value_one")
     yield Output(2, "value_two")
 
 
-@lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+@op
 def subtract(num_one, num_two):
     return num_one - num_two
 
@@ -75,18 +73,18 @@ def composite_pipeline():
     return nesting_graph_pipeline(COMPOSITE_DEPTH, 2, mode_defs=celery_mode_defs)
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(Int, "out_1", is_required=False),
-        OutputDefinition(Int, "out_2", is_required=False),
-        OutputDefinition(Int, "out_3", is_required=False),
-    ]
+@op(
+    out={
+        "out_1": Out(Int, is_required=False),
+        "out_2": Out(Int, is_required=False),
+        "out_3": Out(Int, is_required=False),
+    }
 )
 def foo(_):
     yield Output(1, "out_1")
 
 
-@solid
+@op
 def bar(_, input_arg):
     return input_arg
 
@@ -100,13 +98,13 @@ def test_optional_outputs():
     bar.alias("third_consumer")(input_arg=foo_res.out_3)
 
 
-@lambda_solid
+@op
 def fails():
     raise Exception("argjhgjh")
 
 
-@lambda_solid
-def should_never_execute(_):
+@op
+def should_never_execute(foo):  # pylint: disable=unused-argument
     assert False  # should never execute
 
 
@@ -115,7 +113,7 @@ def test_fails():
     should_never_execute(fails())
 
 
-@lambda_solid
+@op
 def retry_request():
     raise RetryRequested()
 
@@ -125,7 +123,7 @@ def test_retries():
     retry_request()
 
 
-@solid(config_schema=str)
+@op(config_schema=str)
 def destroy(context, x):
     raise ValueError()
 
@@ -138,7 +136,7 @@ def engine_error():
     subtract(a, b)
 
 
-@solid(
+@op(
     tags={
         "dagster-k8s/resource_requirements": {
             "requests": {"cpu": "250m", "memory": "64Mi"},
@@ -158,7 +156,7 @@ def test_resources_limit():
 # test_priority pipelines
 
 
-@solid(tags={"dagster-celery/priority": 0})
+@op(tags={"dagster-celery/priority": 0})
 def zero(context):
     assert "dagster-celery/priority" in context.solid.tags
     assert context.solid.tags["dagster-celery/priority"] == "0"
@@ -166,7 +164,7 @@ def zero(context):
     return True
 
 
-@solid(tags={"dagster-celery/priority": 1})
+@op(tags={"dagster-celery/priority": 1})
 def one(context):
     assert "dagster-celery/priority" in context.solid.tags
     assert context.solid.tags["dagster-celery/priority"] == "1"
@@ -174,7 +172,7 @@ def one(context):
     return True
 
 
-@solid(tags={"dagster-celery/priority": 2})
+@op(tags={"dagster-celery/priority": 2})
 def two(context):
     assert "dagster-celery/priority" in context.solid.tags
     assert context.solid.tags["dagster-celery/priority"] == "2"
@@ -182,7 +180,7 @@ def two(context):
     return True
 
 
-@solid(tags={"dagster-celery/priority": 3})
+@op(tags={"dagster-celery/priority": 3})
 def three(context):
     assert "dagster-celery/priority" in context.solid.tags
     assert context.solid.tags["dagster-celery/priority"] == "3"
@@ -190,7 +188,7 @@ def three(context):
     return True
 
 
-@solid(tags={"dagster-celery/priority": 4})
+@op(tags={"dagster-celery/priority": 4})
 def four(context):
     assert "dagster-celery/priority" in context.solid.tags
     assert context.solid.tags["dagster-celery/priority"] == "4"
@@ -198,7 +196,7 @@ def four(context):
     return True
 
 
-@solid(tags={"dagster-celery/priority": 5})
+@op(tags={"dagster-celery/priority": 5})
 def five(context):
     assert "dagster-celery/priority" in context.solid.tags
     assert context.solid.tags["dagster-celery/priority"] == "5"
@@ -206,7 +204,7 @@ def five(context):
     return True
 
 
-@solid(tags={"dagster-celery/priority": 6})
+@op(tags={"dagster-celery/priority": 6})
 def six(context):
     assert "dagster-celery/priority" in context.solid.tags
     assert context.solid.tags["dagster-celery/priority"] == "6"
@@ -214,7 +212,7 @@ def six(context):
     return True
 
 
-@solid(tags={"dagster-celery/priority": 7})
+@op(tags={"dagster-celery/priority": 7})
 def seven_(context):
     assert "dagster-celery/priority" in context.solid.tags
     assert context.solid.tags["dagster-celery/priority"] == "7"
@@ -222,7 +220,7 @@ def seven_(context):
     return True
 
 
-@solid(tags={"dagster-celery/priority": 8})
+@op(tags={"dagster-celery/priority": 8})
 def eight(context):
     assert "dagster-celery/priority" in context.solid.tags
     assert context.solid.tags["dagster-celery/priority"] == "8"
@@ -230,7 +228,7 @@ def eight(context):
     return True
 
 
-@solid(tags={"dagster-celery/priority": 9})
+@op(tags={"dagster-celery/priority": 9})
 def nine(context):
     assert "dagster-celery/priority" in context.solid.tags
     assert context.solid.tags["dagster-celery/priority"] == "9"
@@ -238,7 +236,7 @@ def nine(context):
     return True
 
 
-@solid(tags={"dagster-celery/priority": 10})
+@op(tags={"dagster-celery/priority": 10})
 def ten(context):
     assert "dagster-celery/priority" in context.solid.tags
     assert context.solid.tags["dagster-celery/priority"] == "10"
@@ -277,7 +275,7 @@ def simple_priority_pipeline():
     ten()
 
 
-@solid
+@op
 def sleep_solid(_):
     time.sleep(0.5)
     return True
@@ -310,7 +308,7 @@ def interrupt_pipeline():
 # test_queues pipelines
 
 
-@solid(tags={"dagster-celery/queue": "fooqueue"})
+@op(tags={"dagster-celery/queue": "fooqueue"})
 def fooqueue(context):
     assert context.solid.tags["dagster-celery/queue"] == "fooqueue"
     context.log.info("Executing on queue fooqueue")
@@ -322,7 +320,7 @@ def multiqueue_pipeline():
     fooqueue()
 
 
-@solid
+@op
 def bar_solid():
     return "bar"
 

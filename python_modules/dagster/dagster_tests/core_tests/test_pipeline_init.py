@@ -1,5 +1,6 @@
 import pytest
 from dagster import DagsterInstance, resource
+from dagster._core.definitions import op
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
@@ -11,7 +12,7 @@ from dagster._core.execution.resources_init import (
 from dagster._core.execution.retries import RetryMode
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._legacy import ModeDefinition, PipelineDefinition, solid
+from dagster._legacy import ModeDefinition, PipelineDefinition
 
 
 def test_generator_exit():
@@ -50,7 +51,7 @@ def gen_basic_resource_pipeline(called=None, cleaned=None):
         finally:
             cleaned.append("B")
 
-    @solid(required_resource_keys={"a", "b"})
+    @op(required_resource_keys={"a", "b"})
     def resource_solid(_):
         pass
 
@@ -74,7 +75,7 @@ def test_clean_event_generator_exit():
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan
     )
-    log_manager = DagsterLogManager.create(loggers=[], pipeline_run=pipeline_run)
+    log_manager = DagsterLogManager.create(loggers=[], dagster_run=pipeline_run)
     resolved_run_config = ResolvedRunConfig.build(pipeline_def)
     execution_plan = create_execution_plan(pipeline_def)
 
@@ -97,7 +98,7 @@ def test_clean_event_generator_exit():
         resource_configs=resolved_run_config.resources,
         log_manager=log_manager,
         execution_plan=execution_plan,
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         resource_keys_to_init={"a"},
         instance=instance,
         emit_persistent_events=True,
@@ -109,7 +110,7 @@ def test_clean_event_generator_exit():
         pipeline=InMemoryPipeline(pipeline_def),
         execution_plan=execution_plan,
         run_config={},
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         instance=instance,
         retry_mode=RetryMode.DISABLED,
         scoped_resources_builder_cm=resource_initialization_manager,
@@ -118,6 +119,6 @@ def test_clean_event_generator_exit():
     generator.close()
 
 
-@solid
+@op
 def fake_solid(_):
     pass

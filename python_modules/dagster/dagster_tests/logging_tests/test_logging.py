@@ -21,14 +21,7 @@ from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import (
-    DagsterRun,
-    ModeDefinition,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import DagsterRun, ModeDefinition, execute_pipeline, execute_solid, pipeline
 from dagster._loggers import colored_console_logger, default_system_loggers, json_console_logger
 from dagster._utils.error import SerializableErrorInfo
 
@@ -84,7 +77,7 @@ def test_logging_basic():
     with _setup_logger("test") as (captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
         )
         dl.debug("test")
         dl.info("test")
@@ -99,7 +92,7 @@ def test_logging_custom_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
         )
         with pytest.raises(AttributeError):
             dl.foo("test")  # pylint: disable=no-member
@@ -109,7 +102,7 @@ def test_logging_integer_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
         )
         dl.log(3, "test")  # pylint: disable=no-member
 
@@ -118,7 +111,7 @@ def test_logging_bad_custom_log_levels():
     with _setup_logger("test") as (_, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
+            dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
         )
         with pytest.raises(check.CheckError):
             dl.log(level="test", msg="foobar")
@@ -151,7 +144,7 @@ def test_multiline_logging_complex():
     with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
         dl = DagsterLogManager.create(
             loggers=[logger],
-            pipeline_run=DagsterRun(run_id="123", pipeline_name="error_monster"),
+            dagster_run=DagsterRun(run_id="123", pipeline_name="error_monster"),
         )
         dl.log_dagster_event(logging.INFO, msg, dagster_event)
 
@@ -184,7 +177,7 @@ def _setup_test_two_handler_log_mgr():
     return DagsterLogManager.create(
         loggers=[],
         handlers=[test_info_handler, test_warn_handler],
-        pipeline_run=DagsterRun(pipeline_name="system", run_id="123"),
+        dagster_run=DagsterRun(pipeline_name="system", run_id="123"),
     )
 
 
@@ -231,7 +224,7 @@ def test_capture_handler_log_records():
     dl = DagsterLogManager.create(
         loggers=[],
         handlers=[capture_handler],
-        pipeline_run=DagsterRun(run_id="123456", pipeline_name="pipeline"),
+        dagster_run=DagsterRun(run_id="123456", pipeline_name="pipeline"),
     ).with_tags(step_key="some_step")
 
     dl.info("info")
@@ -254,7 +247,7 @@ def test_capture_handler_log_records():
 def test_default_context_logging():
     called = {}
 
-    @solid(input_defs=[], output_defs=[])
+    @op
     def default_context_solid(context):
         called["yes"] = True
         for logger in context.log._dagster_handler._loggers:  # pylint: disable=protected-access
@@ -280,7 +273,7 @@ def test_colored_console_logger_with_integer_log_level():
 
 
 def test_json_console_logger(capsys):
-    @solid
+    @op
     def hello_world(context):
         context.log.info("Hello, world!")
 
@@ -303,12 +296,12 @@ def test_json_console_logger(capsys):
 
 
 def test_pipeline_logging(capsys):
-    @solid
+    @op
     def foo(context):
         context.log.info("bar")
         return 0
 
-    @solid
+    @op
     def foo2(context, _in1):
         context.log.info("baz")
 
@@ -344,7 +337,7 @@ def test_resource_logging(capsys):
 
         return fn
 
-    @solid(required_resource_keys={"foo", "bar"})
+    @op(required_resource_keys={"foo", "bar"})
     def process(context):
         context.resources.foo()
         context.resources.bar()
@@ -367,7 +360,7 @@ def test_resource_logging(capsys):
 
 
 def test_io_context_logging(capsys):
-    @solid
+    @op
     def logged_solid(context):
         context.get_step_execution_context().get_output_context(
             StepOutputHandle("logged_solid", "result")
@@ -385,7 +378,7 @@ def test_io_context_logging(capsys):
     assert re.search("test INPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
 
 
-@solid
+@op
 def log_solid(context):
     context.log.info("Hello world")
     context.log.error("My test error")
@@ -468,7 +461,7 @@ def test_error_when_logger_defined_yaml():
 
 
 def test_python_log_level_context_logging():
-    @solid
+    @op
     def logged_solid(context):
         context.log.error("some error")
 

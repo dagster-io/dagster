@@ -1,7 +1,7 @@
 import pandas as pd
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
+from dagster_duckdb.io_manager import DuckDbClient, build_duckdb_io_manager
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -30,17 +30,19 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
     """
 
-    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame):
+    def handle_output(
+        self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, connection
+    ):
         """Stores the pandas DataFrame in duckdb."""
-        conn = _connect_duckdb(context).cursor()
-
-        conn.execute(
+        connection.execute(
             f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
             " obj;"
         )
-        if not conn.fetchall():
+        if not connection.fetchall():
             # table was not created, therefore already exists. Insert the data
-            conn.execute(f"insert into {table_slice.schema}.{table_slice.table} select * from obj")
+            connection.execute(
+                f"insert into {table_slice.schema}.{table_slice.table} select * from obj"
+            )
 
         context.add_output_metadata(
             {
@@ -56,19 +58,24 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             }
         )
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
+    def load_input(
+        self, context: InputContext, table_slice: TableSlice, connection
+    ) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
-        conn = _connect_duckdb(context).cursor()
-        return conn.execute(DuckDbClient.get_select_statement(table_slice)).fetchdf()
+        return connection.execute(DuckDbClient.get_select_statement(table_slice)).fetchdf()
 
     @property
     def supported_types(self):
         return [pd.DataFrame]
 
 
-duckdb_pandas_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler()])
+duckdb_pandas_io_manager = build_duckdb_io_manager(
+    [DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
+)
 duckdb_pandas_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes pandas dataframes to DuckDB.
+An IO manager definition that reads inputs from and writes Pandas DataFrames to DuckDB. When
+using the duckdb_pandas_io_manager, any inputs and outputs without type annotations will be loaded
+as Pandas DataFrames.
 
 Returns:
     IOManagerDefinition

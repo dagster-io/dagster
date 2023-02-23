@@ -10,6 +10,7 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import submit_backfill_runs
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from ..utils import assert_permission, assert_permission_for_location, capture_error
 
@@ -151,6 +152,7 @@ def create_and_launch_partition_backfill(
             backfill_timestamp=backfill_timestamp,
             asset_selection=asset_selection,
             partition_names=backfill_params["partitionNames"],
+            dynamic_partitions_store=CachingInstanceQueryer(graphene_info.context.instance),
         )
     else:
         raise DagsterError(

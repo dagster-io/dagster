@@ -402,7 +402,7 @@ class DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
@@ -829,7 +829,7 @@ class DagsterEvent(
     def step_input_event(
         step_context: StepExecutionContext, step_input_data: "StepInputData"
     ) -> "DagsterEvent":
-        input_def = step_context.solid_def.input_def_named(step_input_data.input_name)
+        input_def = step_context.op_def.input_def_named(step_input_data.input_name)
 
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_INPUT,
@@ -1299,7 +1299,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             message=(
@@ -1323,7 +1323,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             event_specific_data=_validate_event_specific_data(
@@ -1348,7 +1348,7 @@ class DagsterEvent(
             event_type_value=event_type.value,
             pipeline_name=step_context.pipeline_name,
             step_handle=step_context.step.handle,
-            solid_handle=step_context.step.solid_handle,
+            solid_handle=step_context.step.node_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
             message=(

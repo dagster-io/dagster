@@ -147,8 +147,17 @@ GET_ASSET_LOGICAL_VERSIONS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
         assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
             id
+            assetKey {
+              path
+            }
             currentLogicalVersion
             projectedLogicalVersion
+            staleStatus
+            staleStatusCauses {
+                status
+                key { path }
+                reason
+            }
             assetMaterializations {
                 tags {
                     key
@@ -1845,7 +1854,9 @@ def get_partitioned_asset_repo():
 
     @asset(partitions_def=daily_partitions_def)
     def daily_asset(_):
-        return 1
+        # invalid partition key
+        yield AssetMaterialization(asset_key="daily_asset", partition="2021-01-01")
+        yield Output(5)
 
     multipartitions_def = MultiPartitionsDefinition(
         {
@@ -1922,11 +1933,11 @@ def test_1d_materialized_subset_backcompat():
                 "b",
             }
 
-            abc_selector = infer_pipeline_selector(graphql_context, "daily_asset_job")
+            daily_job_selector = infer_pipeline_selector(graphql_context, "daily_asset_job")
             result = execute_dagster_graphql(
                 graphql_context,
                 GET_1D_MATERIALIZED_PARTITIONS,
-                variables={"pipelineSelector": abc_selector},
+                variables={"pipelineSelector": daily_job_selector},
             )
             assert result.data
             assert len(result.data["assetNodes"]) == 1
@@ -1938,7 +1949,7 @@ def test_1d_materialized_subset_backcompat():
             result = execute_dagster_graphql(
                 graphql_context,
                 GET_1D_MATERIALIZED_PARTITIONS,
-                variables={"pipelineSelector": abc_selector},
+                variables={"pipelineSelector": daily_job_selector},
             )
             assert result.data
             ranges = result.data["assetNodes"][0]["materializedPartitions"]["ranges"]
@@ -1947,6 +1958,16 @@ def test_1d_materialized_subset_backcompat():
             assert ranges[0]["endKey"] == "2022-03-03"
             assert ranges[1]["startKey"] == "2022-03-05"
             assert ranges[1]["endKey"] == "2022-03-06"
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_PARTITION_STATS,
+                variables={"pipelineSelector": daily_job_selector},
+            )
+            assert result.data
+            assert result.data["assetNodes"]
+            assert len(result.data["assetNodes"]) == 1
+            assert result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 3
 
 
 def test_2d_materialized_subset_backcompat():

@@ -266,7 +266,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.pipeline_run
+        run = context.dagster_run
         job_name = get_job_name_from_run_id(run.run_id)
         pipeline_origin = check.not_none(run.pipeline_code_origin)
 
@@ -284,7 +284,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def resume_run(self, context: ResumeRunContext) -> None:
-        run = context.pipeline_run
+        run = context.dagster_run
         job_name = get_job_name_from_run_id(
             run.run_id, resume_attempt_number=context.resume_attempt_number
         )
@@ -367,12 +367,19 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def supports_check_run_worker_health(self):
         return True
 
+    @property
+    def supports_run_worker_crash_recovery(self):
+        return True
+
     def check_run_worker_health(self, run: DagsterRun):
         container_context = self.get_container_context_for_run(run)
 
-        job_name = get_job_name_from_run_id(
-            run.run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
-        )
+        if self.supports_run_worker_crash_recovery:
+            resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
+        else:
+            resume_attempt_number = None
+
+        job_name = get_job_name_from_run_id(run.run_id, resume_attempt_number=resume_attempt_number)
         try:
             status = self._api_client.get_job_status(
                 namespace=container_context.namespace,
@@ -382,6 +389,21 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             return CheckRunHealthResult(
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
             )
+
+        inactive_job_with_finished_pods = bool(
+            (not status.active) and (status.failed or status.succeeded)
+        )
+
+        # If the run is in a non-terminal (and non-STARTING) state but the k8s job is not active,
+        # something went wrong
+        if (
+            run.status in (DagsterRunStatus.STARTED, DagsterRunStatus.CANCELING)
+            and inactive_job_with_finished_pods
+        ):
+            return CheckRunHealthResult(
+                WorkerStatus.FAILED, "Run has not completed but K8s job has no active pods"
+            )
+
         if status.failed:
             return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
         if status.succeeded:

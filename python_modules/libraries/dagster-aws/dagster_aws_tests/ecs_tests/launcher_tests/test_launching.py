@@ -689,7 +689,7 @@ def test_launcher_run_resources(
     assert task.get("overrides").get("cpu") == "1024"
 
 
-def test_container_context_run_resources(
+def test_launch_run_with_container_context(
     ecs,
     instance,
     launch_run_with_container_context,
@@ -709,6 +709,17 @@ def test_container_context_run_resources(
     )
     assert (
         task.get("overrides").get("cpu") == container_context_config["ecs"]["run_resources"]["cpu"]
+    )
+
+    task_definition_arn = task["taskDefinitionArn"]
+
+    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)[
+        "taskDefinition"
+    ]
+
+    assert task_definition["taskRoleArn"] == container_context_config["ecs"]["task_role_arn"]
+    assert (
+        task_definition["executionRoleArn"] == container_context_config["ecs"]["execution_role_arn"]
     )
 
 
@@ -785,7 +796,7 @@ def test_status(
         pipeline_code_origin=external_pipeline.get_python_origin(),
     )
 
-    instance.run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=None))
+    instance.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=None))
 
     assert instance.run_launcher.logs == cloudwatch_client
 

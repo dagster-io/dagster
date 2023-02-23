@@ -2,9 +2,10 @@ from typing import Sequence
 
 import pytest
 from dagster import DagsterEventType, DagsterInvariantViolationError, ExpectationResult
+from dagster._core.definitions.decorators import op
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.results import OpExecutionResult, PipelineExecutionResult
-from dagster._legacy import PipelineDefinition, execute_pipeline, solid
+from dagster._legacy import PipelineDefinition, execute_pipeline
 
 
 def expt_results_for_compute_step(
@@ -20,7 +21,7 @@ def expt_results_for_compute_step(
 
 
 def test_successful_expectation_in_compute_step():
-    @solid(output_defs=[])
+    @op(out={})
     def success_expectation_solid(_context):
         yield ExpectationResult(success=True, description="This is always true.")
 
@@ -43,7 +44,7 @@ def test_successful_expectation_in_compute_step():
 
 
 def test_failed_expectation_in_compute_step():
-    @solid(output_defs=[])
+    @op(out={})
     def failure_expectation_solid(_context):
         yield ExpectationResult(success=False, description="This is always false.")
 
@@ -65,7 +66,7 @@ def test_failed_expectation_in_compute_step():
 
 
 def test_return_expectation_failure():
-    @solid(output_defs=[])
+    @op
     def return_expectation_failure(_context):
         return ExpectationResult(success=True, description="This is always true.")
 

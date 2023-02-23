@@ -1,3 +1,5 @@
+from typing import Any, Mapping, Optional, Sequence
+
 from dagster import (
     AssetIn,
     DailyPartitionsDefinition,
@@ -6,6 +8,7 @@ from dagster import (
     asset,
     repository,
 )
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.logical_version import LOGICAL_VERSION_TAG_KEY
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -59,6 +62,29 @@ def test_dependencies_changed():
             assert _fetch_logical_versions(context_v2, repo_v2)
 
 
+def test_stale_status():
+    repo = get_repo_v1()
+
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
+            result = _fetch_logical_versions(context, repo)
+            foo = _get_asset_node("foo", result)
+            assert foo["currentLogicalVersion"] is None
+            assert foo["staleStatus"] == "STALE"
+            assert foo["staleStatusCauses"] == [
+                {"status": "STALE", "reason": "never materialized", "key": {"path": ["foo"]}}
+            ]
+
+            assert _materialize_assets(context, repo)
+            wait_for_runs_to_finish(context.instance)
+
+            result = _fetch_logical_versions(context, repo)
+            foo = _get_asset_node("foo", result)
+            assert foo["currentLogicalVersion"] is not None
+            assert foo["staleStatus"] == "FRESH"
+            assert foo["staleStatusCauses"] == []
+
+
 def test_logical_version_from_tags():
     repo_v1 = get_repo_v1()
     with instance_for_test() as instance:
@@ -83,9 +109,13 @@ def get_repo_with_partitioned_self_dep_asset():
     def a(a):
         del a
 
+    @asset
+    def b(a):
+        return a
+
     @repository
     def repo():
-        return [a]
+        return [a, b]
 
     return repo
 
@@ -100,11 +130,18 @@ def test_partitioned_self_dep():
             result = _fetch_logical_versions(context, repo)
             assert result
             assert result.data
-            assert result.data["assetNodes"][0]["projectedLogicalVersion"] is None
+            assert _get_asset_node("a", result)["projectedLogicalVersion"] is None
+            assert _get_asset_node("b", result)["projectedLogicalVersion"] == "UNKNOWN"
 
 
-def _materialize_assets(context: WorkspaceRequestContext, repo: RepositoryDefinition):
-    selector = infer_job_or_pipeline_selector(context, repo.get_implicit_asset_job_names()[0])
+def _materialize_assets(
+    context: WorkspaceRequestContext,
+    repo: RepositoryDefinition,
+    asset_selection: Optional[Sequence[AssetKey]] = None,
+):
+    selector = infer_job_or_pipeline_selector(
+        context, repo.get_implicit_asset_job_names()[0], asset_selection=asset_selection
+    )
     return execute_dagster_graphql(
         context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -125,3 +162,7 @@ def _fetch_logical_versions(context: WorkspaceRequestContext, repo: RepositoryDe
             "pipelineSelector": selector,
         },
     )
+
+
+def _get_asset_node(key: str, result: Any) -> Mapping[str, Any]:
+    return next((node for node in result.data["assetNodes"] if node["assetKey"]["path"] == [key]))

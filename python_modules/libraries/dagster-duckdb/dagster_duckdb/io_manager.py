@@ -1,4 +1,5 @@
-from typing import Sequence, cast
+from contextlib import contextmanager
+from typing import Optional, Sequence, Type, cast
 
 import duckdb
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
@@ -15,13 +16,17 @@ from dagster._utils.backoff import backoff
 DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
+def build_duckdb_io_manager(
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+) -> IOManagerDefinition:
     """
     Builds an IO manager definition that reads inputs from and writes outputs to DuckDB.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
-            DuckDB tables and an in-memory type - e.g. a Pandas DataFrame.
+            DuckDB tables and an in-memory type - e.g. a Pandas DataFrame. If only
+            one DbTypeHandler is provided, it will be used as teh default_load_type.
+        default_load_type (Type): When an input has no type annotation, load it as this type.
 
     Returns:
         IOManagerDefinition
@@ -96,6 +101,7 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
             io_manager_name="DuckDBIOManager",
             database=init_context.resource_config["database"],
             schema=init_context.resource_config.get("schema"),
+            default_load_type=default_load_type,
         )
 
     return duckdb_io_manager
@@ -103,20 +109,16 @@ def build_duckdb_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManager
 
 class DuckDbClient(DbClient):
     @staticmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
-        conn = _connect_duckdb(context).cursor()
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
-            conn.execute(_get_cleanup_statement(table_slice))
+            connection.execute(_get_cleanup_statement(table_slice))
         except duckdb.CatalogException:
             # table doesn't exist yet, so ignore the error
             pass
-        conn.close()
 
     @staticmethod
-    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
-        conn = _connect_duckdb(context).cursor()
-        conn.execute(f"create schema if not exists {table_slice.schema};")
-        conn.close()
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        connection.execute(f"create schema if not exists {table_slice.schema};")
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
@@ -134,14 +136,19 @@ class DuckDbClient(DbClient):
         else:
             return f"""SELECT {col_str} FROM {table_slice.schema}.{table_slice.table}"""
 
+    @staticmethod
+    @contextmanager
+    def connect(context, _):
+        conn = backoff(
+            fn=duckdb.connect,
+            retry_on=(RuntimeError, duckdb.IOException),
+            kwargs={"database": context.resource_config["database"], "read_only": False},
+            max_retries=10,
+        )
 
-def _connect_duckdb(context):
-    return backoff(
-        fn=duckdb.connect,
-        retry_on=(RuntimeError, duckdb.IOException),
-        kwargs={"database": context.resource_config["database"], "read_only": False},
-        max_retries=10,
-    )
+        yield conn
+
+        conn.close()
 
 
 def _get_cleanup_statement(table_slice: TableSlice) -> str:

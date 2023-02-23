@@ -169,7 +169,7 @@ def emr_pyspark_step_launcher(context):
     ) or context.resource_config.get("local_pipeline_package_path")
 
     if context.resource_config.get("deploy_local_job_package") and context.resource_config.get(
-        "deploy_local_job_package"
+        "deploy_local_pipeline_package"
     ):
         raise DagsterInvariantViolationError(
             "Provided both ``deploy_local_job_package`` and legacy version "
@@ -319,7 +319,7 @@ class EmrPySparkStepLauncher(StepLauncher):
     def launch_step(self, step_context):
         step_run_ref = step_context_to_step_run_ref(step_context, self.local_job_package_path)
 
-        run_id = step_context.pipeline_run.run_id
+        run_id = step_context.dagster_run.run_id
         log = step_context.log
 
         step_key = step_run_ref.step_key

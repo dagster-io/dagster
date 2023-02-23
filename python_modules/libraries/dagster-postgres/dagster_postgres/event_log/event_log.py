@@ -94,14 +94,14 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         self._secondary_index_cache = {}
 
-        table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
-
         # Stamp and create tables if the main table does not exist (we can't check alembic
         # revision because alembic config may be shared with other storage classes)
-        if self.should_autocreate_tables and "event_logs" not in table_names:
-            retry_pg_creation_fn(self._init_db)
-            self.reindex_events()
-            self.reindex_assets()
+        if self.should_autocreate_tables:
+            table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
+            if "event_logs" not in table_names:
+                retry_pg_creation_fn(self._init_db)
+                self.reindex_events()
+                self.reindex_assets()
 
         super().__init__()
 

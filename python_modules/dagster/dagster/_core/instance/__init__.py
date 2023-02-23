@@ -883,8 +883,19 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._event_storage.get_step_stats_for_run(run_id, step_keys)
 
     @traced
-    def get_run_tags(self) -> Sequence[Tuple[str, Set[str]]]:
-        return self._run_storage.get_run_tags()
+    def get_run_tags(
+        self,
+        tag_keys: Optional[Sequence[str]] = None,
+        value_prefix: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Sequence[Tuple[str, Set[str]]]:
+        return self._run_storage.get_run_tags(
+            tag_keys=tag_keys, value_prefix=value_prefix, limit=limit
+        )
+
+    @traced
+    def get_run_tag_keys(self) -> Sequence[str]:
+        return self._run_storage.get_run_tag_keys()
 
     @traced
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[DagsterRun]]]:
@@ -2018,7 +2029,7 @@ class DagsterInstance(DynamicPartitionsStore):
             check.failed(f"Failed to reload run {run_id}")
 
         try:
-            self.run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=workspace))
+            self.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(
@@ -2062,7 +2073,7 @@ class DagsterInstance(DynamicPartitionsStore):
         try:
             self.run_launcher.resume_run(
                 ResumeRunContext(
-                    pipeline_run=run,
+                    dagster_run=run,
                     workspace=workspace,
                     resume_attempt_number=attempt_number,
                 )

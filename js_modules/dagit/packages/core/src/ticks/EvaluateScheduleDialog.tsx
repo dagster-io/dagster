@@ -117,6 +117,7 @@ const EvaluateSchedule: React.FC<Props> = ({repoAddress, name, onClose, jobName}
     selectedTimestampRef.current = _selectedTimestamp || timestamps[0];
     return (
       <SelectWrapper>
+        <ScheduleDescriptor>Select a mock evaluation time</ScheduleDescriptor>
         <Popover
           isOpen={isTickSelectionOpen}
           position="bottom-left"
@@ -403,4 +404,8 @@ const Grid = styled.div`
   button {
     margin-top: 4px;
   }
+`;
+
+const ScheduleDescriptor = styled.div`
+  padding-bottom: 2px;
 `;

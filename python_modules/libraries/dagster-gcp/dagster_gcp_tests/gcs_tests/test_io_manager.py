@@ -99,7 +99,7 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
             execution_plan.build_subset_plan(step_keys, inty_job, resolved_run_config),
             pipeline=InMemoryPipeline(inty_job),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
             instance=instance,
         )
     )
@@ -124,7 +124,7 @@ def test_gcs_pickle_io_manager_execution(gcs_bucket):
             execution_plan.build_subset_plan(["add_one"], inty_job, resolved_run_config),
             pipeline=InMemoryPipeline(inty_job),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
             instance=instance,
         )
     )

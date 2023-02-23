@@ -21,6 +21,8 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster._core.execution.api import create_execution_plan, execute_plan
@@ -28,19 +30,19 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, lambda_solid
+from dagster._legacy import PipelineDefinition
 
 
 def define_inty_pipeline(using_file_system=False):
-    @lambda_solid
+    @op
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_one(num):
         return num + 1
 
-    @lambda_solid
+    @op
     def user_throw_exception():
         raise Exception("whoops")
 
@@ -85,7 +87,7 @@ def test_using_file_system_for_subplan():
             execution_plan.build_subset_plan(["return_one"], pipeline, resolved_run_config),
             InMemoryPipeline(pipeline),
             instance,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
         )
     )
 
@@ -101,7 +103,7 @@ def test_using_file_system_for_subplan():
             execution_plan.build_subset_plan(["add_one"], pipeline, resolved_run_config),
             InMemoryPipeline(pipeline),
             instance,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
         )
     )
 
@@ -138,7 +140,7 @@ def test_using_file_system_for_subplan_multiprocessing():
                 pipeline,
                 instance,
                 run_config=dict(execution={"multiprocess": {}}),
-                pipeline_run=pipeline_run,
+                dagster_run=pipeline_run,
             )
         )
 
@@ -162,7 +164,7 @@ def test_using_file_system_for_subplan_multiprocessing():
                 pipeline,
                 instance,
                 run_config=dict(execution={"multiprocess": {}}),
-                pipeline_run=pipeline_run,
+                dagster_run=pipeline_run,
             )
         )
 
@@ -194,7 +196,7 @@ def test_execute_step_wrong_step_key():
             execution_plan.build_subset_plan(["nope.compute"], pipeline, resolved_run_config),
             InMemoryPipeline(pipeline),
             instance,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
         )
 
     assert exc_info.value.step_keys == ["nope.compute"]
@@ -208,7 +210,7 @@ def test_execute_step_wrong_step_key():
             ),
             InMemoryPipeline(pipeline),
             instance,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
         )
 
     assert set(exc_info.value.step_keys) == {"nope.compute", "nuh_uh.compute"}
@@ -235,7 +237,7 @@ def test_using_file_system_for_subplan_missing_input():
         execution_plan.build_subset_plan(["add_one"], pipeline, resolved_run_config),
         InMemoryPipeline(pipeline),
         instance,
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
     )
     failures = [event for event in events if event.event_type_value == "STEP_FAILURE"]
     assert len(failures) == 1
@@ -265,7 +267,7 @@ def test_using_file_system_for_subplan_invalid_step():
             execution_plan.build_subset_plan(["nope.compute"], pipeline, resolved_run_config),
             InMemoryPipeline(pipeline),
             instance,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
         )
 
 
@@ -305,7 +307,7 @@ def test_using_repository_data():
         execute_plan(
             execution_plan=execution_plan,
             pipeline=recon_pipeline,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
             instance=instance,
         )
 

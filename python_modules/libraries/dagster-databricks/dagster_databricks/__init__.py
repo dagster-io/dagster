@@ -18,11 +18,6 @@ from .databricks_pyspark_step_launcher import (
 )
 from .ops import create_databricks_job_op
 from .resources import databricks_client
-from .types import (
-    DATABRICKS_RUN_TERMINATED_STATES,
-    DatabricksRunLifeCycleState,
-    DatabricksRunResultState,
-)
 from .version import __version__
 
 DagsterLibraryRegistry.register("dagster-databricks", __version__)
@@ -36,7 +31,4 @@ __all__ = [
     "DatabricksJobRunner",
     "DatabricksPySparkStepLauncher",
     "databricks_pyspark_step_launcher",
-    "DATABRICKS_RUN_TERMINATED_STATES",
-    "DatabricksRunLifeCycleState",
-    "DatabricksRunResultState",
 ]

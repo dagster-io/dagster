@@ -21,7 +21,7 @@ from .output import DynamicOutputDefinition
 if TYPE_CHECKING:
     from ..execution.context.invocation import BoundOpExecutionContext, UnboundOpExecutionContext
     from .composition import PendingNodeInvocation
-    from .decorators.solid_decorator import DecoratedOpFunction
+    from .decorators.op_decorator import DecoratedOpFunction
     from .op_definition import OpDefinition
     from .output import OutputDefinition
 
@@ -32,7 +32,7 @@ def op_invocation_result(
     *args,
     **kwargs,
 ) -> Any:
-    from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
     from dagster._core.execution.context.invocation import build_solid_context
 
     from .composition import PendingNodeInvocation

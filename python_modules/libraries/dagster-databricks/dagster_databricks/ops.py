@@ -7,8 +7,9 @@ from dagster import (
     _check as check,
     op,
 )
+from databricks_cli.sdk import JobsService
 
-from .databricks import wait_for_run_to_complete
+from .databricks import DatabricksClient, wait_for_run_to_complete
 
 _START = "start"
 
@@ -100,8 +101,9 @@ def create_databricks_job_op(
     )
     def databricks_fn(context):
         job_config = context.op_config["job"]
-        databricks_client = context.resources.databricks_client
-        run_id = databricks_client.submit_run(**job_config)
+        databricks_client: DatabricksClient = context.resources.databricks_client
+
+        run_id = JobsService(databricks_client.api_client).submit_run(**job_config)["run_id"]
 
         context.log.info(
             "Launched databricks job with run id {run_id}. UI: {url}. Waiting to run to"

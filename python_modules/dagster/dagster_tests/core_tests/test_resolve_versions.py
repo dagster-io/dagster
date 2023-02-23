@@ -22,7 +22,7 @@ from dagster import (
     root_input_manager,
     usable_as_dagster_type,
 )
-from dagster._core.definitions import InputDefinition
+from dagster._core.definitions.output import Out
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -31,7 +31,7 @@ from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, OutputDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 class VersionedInMemoryIOManager(MemoizableIOManager):
@@ -82,12 +82,12 @@ def test_resolve_config_version():
     )
 
 
-@solid(version="42")
+@op(version="42")
 def versioned_solid_no_input(_):
     return 4
 
 
-@solid(version="5")
+@op(version="5")
 def versioned_solid_takes_input(_, intput):
     return 2 * intput
 
@@ -108,7 +108,7 @@ def versioned_pipeline_factory(manager=VersionedInMemoryIOManager()):
     return versioned_pipeline
 
 
-@solid
+@op
 def solid_takes_input(_, intput):
     return 2 * intput
 
@@ -129,12 +129,12 @@ def partially_versioned_pipeline_factory(manager=VersionedInMemoryIOManager()):
     return partially_versioned_pipeline
 
 
-@solid
+@op
 def basic_solid(_):
     return 5
 
 
-@solid
+@op
 def basic_takes_input_solid(_, intpt):
     return intpt * 4
 
@@ -228,7 +228,7 @@ def run_test_with_builtin_type(type_to_test, type_values):
     first_type_val, second_type_val = type_values
     manager = VersionedInMemoryIOManager()
 
-    @solid(version="42", input_defs=[InputDefinition("_builtin_type", type_to_test)])
+    @op(version="42", ins={"_builtin_type": In(type_to_test)})
     def solid_ext_input(_builtin_type):
         pass
 
@@ -281,9 +281,9 @@ def run_test_with_builtin_type(type_to_test, type_values):
 
 
 def test_memoized_plan_default_input_val():
-    @solid(
+    @op(
         version="42",
-        input_defs=[InputDefinition("_my_input", String, default_value="DEFAULTVAL")],
+        ins={"_my_input": In(String, default_value="DEFAULTVAL")},
     )
     def solid_default_input(_my_input):
         pass
@@ -312,7 +312,7 @@ def test_memoized_plan_default_input_val():
 
 
 def test_memoized_plan_affected_by_resource_config():
-    @solid(required_resource_keys={"my_resource"}, version="39")
+    @op(required_resource_keys={"my_resource"}, version="39")
     def solid_reqs_resource():
         pass
 
@@ -370,7 +370,7 @@ def test_memoized_plan_custom_io_manager_key():
     manager = VersionedInMemoryIOManager()
     mgr_def = IOManagerDefinition.hardcoded_io_manager(manager)
 
-    @solid(version="39", output_defs=[OutputDefinition(io_manager_key="my_key")])
+    @op(version="39", out=Out(io_manager_key="my_key"))
     def solid_requires_io_manager():
         return Output(5)
 
@@ -403,7 +403,7 @@ def test_memoized_plan_custom_io_manager_key():
 
 
 def test_unmemoized_inner_op():
-    @solid
+    @op
     def solid_no_version():
         pass
 
@@ -438,7 +438,7 @@ def test_unmemoized_inner_op():
 
 
 def test_memoized_inner_op():
-    @solid(version="versioned")
+    @op(version="versioned")
     def solid_versioned():
         pass
 
@@ -486,7 +486,7 @@ def test_memoized_inner_op():
 
 
 def test_configured_versions():
-    @solid(version="5")
+    @op(version="5")
     def solid_to_configure():
         pass
 
@@ -500,11 +500,11 @@ def test_configured_versions():
 
 
 def test_memoized_plan_inits_resources_once():
-    @solid(output_defs=[OutputDefinition(io_manager_key="foo")], version="foo")
+    @op(out=Out(io_manager_key="foo"), version="foo")
     def foo_solid():
         pass
 
-    @solid(output_defs=[OutputDefinition(io_manager_key="bar")], version="bar")
+    @op(out=Out(io_manager_key="bar"), version="bar")
     def bar_solid():
         pass
 
@@ -563,7 +563,7 @@ def test_memoized_plan_inits_resources_once():
 
 
 def test_memoized_plan_disable_memoization():
-    @solid(version="hello")
+    @op(version="hello")
     def my_solid():
         return 5
 
@@ -604,8 +604,8 @@ def test_memoized_plan_root_input_manager():
     def my_input_manager():
         return 5
 
-    @solid(
-        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+    @op(
+        ins={"x": In(root_manager_key="my_input_manager")},
         version="foo",
     )
     def my_solid_takes_input(x):
@@ -642,8 +642,8 @@ def test_memoized_plan_root_input_manager_input_config():
     def my_input_manager():
         return 5
 
-    @solid(
-        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+    @op(
+        ins={"x": In(root_manager_key="my_input_manager")},
         version="foo",
     )
     def my_solid_takes_input(x):
@@ -700,8 +700,8 @@ def test_memoized_plan_root_input_manager_resource_config():
     def my_input_manager():
         return 5
 
-    @solid(
-        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+    @op(
+        ins={"x": In(root_manager_key="my_input_manager")},
         version="foo",
     )
     def my_solid_takes_input(x):
@@ -845,7 +845,7 @@ def test_bad_version_str(graph_for_test, strategy):
 
 
 def get_version_strategy_pipeline():
-    @solid
+    @op
     def my_solid():
         return 5
 
@@ -875,7 +875,7 @@ def test_version_strategy_on_pipeline():
 
 
 def test_version_strategy_no_resource_version():
-    @solid(required_resource_keys={"foo"})
+    @op(required_resource_keys={"foo"})
     def my_solid(context):
         return context.resources.foo
 

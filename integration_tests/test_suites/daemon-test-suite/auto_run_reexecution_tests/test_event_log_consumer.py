@@ -61,7 +61,7 @@ def test_daemon(instance: DagsterInstance, empty_workspace_context):
     instance.report_run_failed(run)
 
     list(daemon.run_iteration(empty_workspace_context))
-    assert [record.pipeline_run.run_id for record in daemon.run_records] == [run.run_id]
+    assert [record.dagster_run.run_id for record in daemon.run_records] == [run.run_id]
 
     # not called again for same event
     daemon.run_records = []  # reset this since it will keep the value from the last call

@@ -338,6 +338,48 @@ class TestRunStorage:
             "tag4": "val4",
         }
 
+    def test_get_run_tags(self, storage):
+        one = make_new_run_id()
+        two = make_new_run_id()
+        storage.add_run(TestRunStorage.build_run(run_id=one, pipeline_name="foo"))
+        storage.add_run(TestRunStorage.build_run(run_id=two, pipeline_name="foo"))
+        storage.add_run_tags(
+            one,
+            {
+                "tag1": "val1",
+                "tag2": "val2",
+                "tag3": "val3",
+                "tag4": "val4",
+                "x_1": "x_1",
+                "x_2": "x_2",
+            },
+        )
+        storage.add_run_tags(two, {"tag1": "val3"})
+
+        # test getting run tag keys
+        assert storage.get_run_tag_keys() == ["tag1", "tag2", "tag3", "tag4", "x_1", "x_2"]
+
+        # test getting run tags with key filter
+        assert storage.get_run_tags(tag_keys=["tag1"]) == [
+            ("tag1", {"val1", "val3"}),
+        ]
+        assert storage.get_run_tags(tag_keys=["tag1", "tag2"]) == [
+            ("tag1", {"val1", "val3"}),
+            ("tag2", {"val2"}),
+        ]
+
+        # test getting run tags with prefix
+        assert storage.get_run_tags(value_prefix="x_") == [
+            ("x_1", {"x_1"}),
+            ("x_2", {"x_2"}),
+        ]
+
+        # test getting run tags with limit
+        assert storage.get_run_tags(limit=3) == [
+            ("tag1", {"val1", "val3"}),
+            ("tag2", {"val2"}),
+        ]
+
     def test_fetch_by_filter(self, storage):
         assert storage
         one = make_new_run_id()
@@ -682,7 +724,7 @@ class TestRunStorage:
         record_three = storage.get_run_records(filters=RunsFilter(run_ids=[three]))[0]
 
         assert [
-            record.pipeline_run.run_id
+            record.dagster_run.run_id
             for record in storage.get_run_records(
                 filters=RunsFilter(updated_after=run_two_update_timestamp),
                 order_by="update_timestamp",
@@ -691,7 +733,7 @@ class TestRunStorage:
         ] == [three, one]
 
         assert [
-            record.pipeline_run.run_id
+            record.dagster_run.run_id
             for record in storage.get_run_records(
                 filters=RunsFilter(
                     statuses=[DagsterRunStatus.FAILURE], updated_after=run_two_update_timestamp
@@ -700,7 +742,7 @@ class TestRunStorage:
         ] == [one]
 
         assert [
-            record.pipeline_run.run_id
+            record.dagster_run.run_id
             for record in storage.get_run_records(
                 filters=RunsFilter(updated_before=record_three.update_timestamp)
             )
@@ -735,13 +777,13 @@ class TestRunStorage:
         run_two_create_timestamp = records[1].create_timestamp
 
         assert [
-            record.pipeline_run.run_id
+            record.dagster_run.run_id
             for record in storage.get_run_records(
                 filters=RunsFilter(created_after=run_two_create_timestamp + timedelta(seconds=1)),
             )
         ] == [three]
         assert [
-            record.pipeline_run.run_id
+            record.dagster_run.run_id
             for record in storage.get_run_records(
                 filters=RunsFilter(created_before=run_two_create_timestamp - timedelta(seconds=1)),
             )

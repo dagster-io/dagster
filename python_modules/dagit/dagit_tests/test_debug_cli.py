@@ -4,11 +4,12 @@ import uvicorn
 from click.testing import CliRunner
 from dagit.debug import dagit_debug_command
 from dagster._cli.debug import export_command
+from dagster._core.definitions.decorators import op
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline, lambda_solid, pipeline
+from dagster._legacy import execute_pipeline, pipeline
 
 
-@lambda_solid
+@op
 def emit_one():
     return 1
 

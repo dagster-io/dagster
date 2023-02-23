@@ -3,11 +3,12 @@ import os
 import uuid
 from contextlib import contextmanager
 from typing import Iterator
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pandas
 import pytest
 from dagster import (
+    AssetIn,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     IOManagerDefinition,
@@ -21,6 +22,7 @@ from dagster import (
     asset,
     build_input_context,
     build_output_context,
+    fs_io_manager,
     instance_for_test,
     job,
     materialize,
@@ -69,35 +71,37 @@ def temporary_snowflake_table(schema_name: str, db_name: str, column_str: str) -
 
 
 def test_handle_output():
-    with patch("dagster_snowflake_pandas.snowflake_pandas_type_handler._connect_snowflake"):
-        handler = SnowflakePandasTypeHandler()
-        df = DataFrame([{"col1": "a", "col2": 1}])
-        output_context = build_output_context(resource_config=resource_config)
+    handler = SnowflakePandasTypeHandler()
+    connection = MagicMock()
+    df = DataFrame([{"col1": "a", "col2": 1}])
+    output_context = build_output_context(resource_config=resource_config)
 
-        metadata = handler.handle_output(
-            output_context,
-            TableSlice(
-                table="my_table",
-                schema="my_schema",
-                database="my_db",
-                columns=None,
-                partition_dimensions=[],
-            ),
-            df,
-        )
+    metadata = handler.handle_output(
+        output_context,
+        TableSlice(
+            table="my_table",
+            schema="my_schema",
+            database="my_db",
+            columns=None,
+            partition_dimensions=[],
+        ),
+        df,
+        connection,
+    )
 
-        assert metadata == {
-            "dataframe_columns": MetadataValue.table_schema(
-                TableSchema(columns=[TableColumn("col1", "object"), TableColumn("col2", "int64")])
-            ),
-            "row_count": 1,
-        }
+    assert metadata == {
+        "dataframe_columns": MetadataValue.table_schema(
+            TableSchema(columns=[TableColumn("col1", "object"), TableColumn("col2", "int64")])
+        ),
+        "row_count": 1,
+    }
 
 
 def test_load_input():
-    with patch("dagster_snowflake_pandas.snowflake_pandas_type_handler._connect_snowflake"), patch(
+    with patch(
         "dagster_snowflake_pandas.snowflake_pandas_type_handler.pd.read_sql"
     ) as mock_read_sql:
+        connection = MagicMock()
         mock_read_sql.return_value = DataFrame([{"COL1": "a", "COL2": 1}])
 
         handler = SnowflakePandasTypeHandler()
@@ -111,6 +115,7 @@ def test_load_input():
                 columns=None,
                 partition_dimensions=[],
             ),
+            connection,
         )
         assert mock_read_sql.call_args_list[0][1]["sql"] == "SELECT * FROM my_db.my_schema.my_table"
         assert df.equals(DataFrame([{"col1": "a", "col2": 1}]))
@@ -253,9 +258,10 @@ def test_time_window_partitioned_asset():
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str="TIME TIMESTAMP_NTZ(9), A string, B int",
     ) as table_name:
+        partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
 
         @asset(
-            partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+            partitions_def=partitions_def,
             metadata={"partition_expr": "time"},
             config_schema={"value": str},
             key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
@@ -273,6 +279,16 @@ def test_time_window_partitioned_asset():
                 }
             )
 
+        @asset(
+            partitions_def=partitions_def,
+            key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
+            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            io_manager_key="fs_io",
+        )
+        def downstream_partitioned(df) -> None:
+            # assert that we only get the columns created in daily_partitioned
+            assert len(df.index) == 3
+
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
 
@@ -285,10 +301,10 @@ def test_time_window_partitioned_asset():
         )
 
         snowflake_io_manager = snowflake_pandas_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager}
+        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
 
         materialize(
-            [daily_partitioned],
+            [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-01",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
@@ -300,7 +316,7 @@ def test_time_window_partitioned_asset():
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
-            [daily_partitioned],
+            [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-02",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
@@ -312,7 +328,7 @@ def test_time_window_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
-            [daily_partitioned],
+            [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-01",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
@@ -331,9 +347,10 @@ def test_static_partitioned_asset():
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str=" COLOR string, A string, B int",
     ) as table_name:
+        partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
 
         @asset(
-            partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),
+            partitions_def=partitions_def,
             key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
             metadata={"partition_expr": "color"},
             config_schema={"value": str},
@@ -350,6 +367,16 @@ def test_static_partitioned_asset():
                 }
             )
 
+        @asset(
+            partitions_def=partitions_def,
+            key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
+            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            io_manager_key="fs_io",
+        )
+        def downstream_partitioned(df) -> None:
+            # assert that we only get the columns created in static_partitioned
+            assert len(df.index) == 3
+
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
 
@@ -362,9 +389,9 @@ def test_static_partitioned_asset():
         )
 
         snowflake_io_manager = snowflake_pandas_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager}
+        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
         materialize(
-            [static_partitioned],
+            [static_partitioned, downstream_partitioned],
             partition_key="red",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
@@ -376,7 +403,7 @@ def test_static_partitioned_asset():
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
-            [static_partitioned],
+            [static_partitioned, downstream_partitioned],
             partition_key="blue",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
@@ -388,7 +415,7 @@ def test_static_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
-            [static_partitioned],
+            [static_partitioned, downstream_partitioned],
             partition_key="red",
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
@@ -407,14 +434,15 @@ def test_multi_partitioned_asset():
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
         column_str=" COLOR string, TIME TIMESTAMP_NTZ(9), A string",
     ) as table_name:
+        partitions_def = MultiPartitionsDefinition(
+            {
+                "time": DailyPartitionsDefinition(start_date="2022-01-01"),
+                "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+            }
+        )
 
         @asset(
-            partitions_def=MultiPartitionsDefinition(
-                {
-                    "time": DailyPartitionsDefinition(start_date="2022-01-01"),
-                    "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
-                }
-            ),
+            partitions_def=partitions_def,
             key_prefix=["SNOWFLAKE_IO_MANAGER_SCHEMA"],
             metadata={"partition_expr": {"time": "CAST(time as TIMESTAMP)", "color": "color"}},
             config_schema={"value": str},
@@ -431,6 +459,16 @@ def test_multi_partitioned_asset():
                 }
             )
 
+        @asset(
+            partitions_def=partitions_def,
+            key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
+            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            io_manager_key="fs_io",
+        )
+        def downstream_partitioned(df) -> None:
+            # assert that we only get the columns created in multi_partitioned
+            assert len(df.index) == 3
+
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
 
@@ -443,10 +481,10 @@ def test_multi_partitioned_asset():
         )
 
         snowflake_io_manager = snowflake_pandas_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager}
+        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
 
         materialize(
-            [multi_partitioned],
+            [multi_partitioned, downstream_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "1"}}}},
@@ -458,7 +496,7 @@ def test_multi_partitioned_asset():
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
         materialize(
-            [multi_partitioned],
+            [multi_partitioned, downstream_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "2"}}}},
@@ -470,7 +508,7 @@ def test_multi_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
         materialize(
-            [multi_partitioned],
+            [multi_partitioned, downstream_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-02", "color": "red"}),
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "3"}}}},
@@ -482,7 +520,7 @@ def test_multi_partitioned_asset():
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
 
         materialize(
-            [multi_partitioned],
+            [multi_partitioned, downstream_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
             resources=resource_defs,
             run_config={"ops": {asset_full_name: {"config": {"value": "4"}}}},
@@ -520,6 +558,16 @@ def test_dynamic_partitions():
                 }
             )
 
+        @asset(
+            partitions_def=dynamic_fruits,
+            key_prefix="SNOWFLAKE_IO_MANAGER_SCHEMA",
+            ins={"df": AssetIn(["SNOWFLAKE_IO_MANAGER_SCHEMA", table_name])},
+            io_manager_key="fs_io",
+        )
+        def downstream_partitioned(df) -> None:
+            # assert that we only get the columns created in dynamic_partitioned
+            assert len(df.index) == 3
+
         asset_full_name = f"SNOWFLAKE_IO_MANAGER_SCHEMA__{table_name}"
         snowflake_table_path = f"SNOWFLAKE_IO_MANAGER_SCHEMA.{table_name}"
 
@@ -532,13 +580,13 @@ def test_dynamic_partitions():
         )
 
         snowflake_io_manager = snowflake_pandas_io_manager.configured(snowflake_config)
-        resource_defs = {"io_manager": snowflake_io_manager}
+        resource_defs = {"io_manager": snowflake_io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
             dynamic_fruits.add_partitions(["apple"], instance)
 
             materialize(
-                [dynamic_partitioned],
+                [dynamic_partitioned, downstream_partitioned],
                 partition_key="apple",
                 resources=resource_defs,
                 instance=instance,
@@ -553,7 +601,7 @@ def test_dynamic_partitions():
             dynamic_fruits.add_partitions(["orange"], instance)
 
             materialize(
-                [dynamic_partitioned],
+                [dynamic_partitioned, downstream_partitioned],
                 partition_key="orange",
                 resources=resource_defs,
                 instance=instance,
@@ -566,7 +614,7 @@ def test_dynamic_partitions():
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
             materialize(
-                [dynamic_partitioned],
+                [dynamic_partitioned, downstream_partitioned],
                 partition_key="apple",
                 resources=resource_defs,
                 instance=instance,

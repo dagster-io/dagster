@@ -682,6 +682,8 @@ type AssetNode {
   projectedLogicalVersion: String
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
+  staleStatus: StaleStatus
+  staleStatusCauses: [StaleStatusCause!]!
   type: DagsterType
 }
 
@@ -776,6 +778,18 @@ type TimePartitionsDefinitionMetadata {
 type DimensionPartitionKeys {
   name: String!
   partitionKeys: [String!]!
+}
+
+enum StaleStatus {
+  STALE
+  FRESH
+  UNKNOWN
+}
+
+type StaleStatusCause {
+  status: StaleStatus!
+  key: AssetKey!
+  reason: String!
 }
 
 enum EvaluationErrorReason {
@@ -1893,6 +1907,12 @@ type RepositoryLocation {
   environmentPath: String
   repositories: [Repository!]!
   serverId: String
+  dagsterLibraryVersions: [DagsterLibraryVersion!]
+}
+
+type DagsterLibraryVersion {
+  name: String!
+  version: String!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
@@ -2705,7 +2725,8 @@ type DagitQuery {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
-  pipelineRunTags: [PipelineTagAndValues!]!
+  runTagKeys: [String!]!
+  runTags(tagKeys: [String!], valuePrefix: String, limit: Int): [PipelineTagAndValues!]!
   runGroupOrError(runId: ID!): RunGroupOrError!
   runGroupsOrError(filter: RunsFilter, cursor: String, limit: Int): RunGroupsOrError!
   isPipelineConfigValid(

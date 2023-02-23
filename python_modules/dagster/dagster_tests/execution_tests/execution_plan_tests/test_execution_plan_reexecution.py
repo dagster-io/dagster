@@ -99,7 +99,7 @@ def test_execution_plan_reexecution():
         subset_plan,
         InMemoryPipeline(pipeline_def),
         run_config=run_config,
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         instance=instance,
     )
     assert not os.path.exists(
@@ -170,7 +170,7 @@ def test_execution_plan_reexecution_with_in_memory():
             execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config),
             InMemoryPipeline(pipeline_def),
             run_config=run_config,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
             instance=instance,
         )
 

@@ -98,7 +98,7 @@ class RepositoryScopedBatchLoader:
                         )
                     )
             for record in records:
-                fetched[record.pipeline_run.pipeline_name].append(record)
+                fetched[record.dagster_run.pipeline_name].append(record)
 
         elif data_type == RepositoryDataType.SCHEDULE_RUNS:
             schedule_names = [
@@ -134,7 +134,7 @@ class RepositoryScopedBatchLoader:
                         )
                     )
             for record in records:
-                tag: str = check.not_none(record.pipeline_run.tags.get(SCHEDULE_NAME_TAG))
+                tag: str = check.not_none(record.dagster_run.tags.get(SCHEDULE_NAME_TAG))
                 fetched[tag].append(record)
 
         elif data_type == RepositoryDataType.SENSOR_RUNS:
@@ -169,7 +169,7 @@ class RepositoryScopedBatchLoader:
                         )
                     )
             for record in records:
-                tag = check.not_none(record.pipeline_run.tags.get(SENSOR_NAME_TAG))
+                tag = check.not_none(record.dagster_run.tags.get(SENSOR_NAME_TAG))
                 fetched[tag].append(record)
 
         elif data_type == RepositoryDataType.SCHEDULE_STATES:
@@ -295,7 +295,7 @@ class BatchRunLoader:
     def _fetch(self) -> None:
         records = self._instance.get_run_records(RunsFilter(run_ids=list(self._run_ids)))
         for record in records:
-            self._records[record.pipeline_run.run_id] = record
+            self._records[record.dagster_run.run_id] = record
 
 
 class BatchMaterializationLoader:

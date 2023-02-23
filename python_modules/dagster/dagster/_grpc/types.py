@@ -292,17 +292,19 @@ class ListRepositoriesResponse(
             ("entry_point", Optional[Sequence[str]]),
             ("container_image", Optional[str]),
             ("container_context", Optional[Mapping[str, Any]]),
+            ("dagster_library_versions", Optional[Mapping[str, str]]),
         ],
     )
 ):
     def __new__(
         cls,
-        repository_symbols,
-        executable_path=None,
-        repository_code_pointer_dict=None,
-        entry_point=None,
-        container_image=None,
-        container_context=None,
+        repository_symbols: Sequence[LoadableRepositorySymbol],
+        executable_path: Optional[str] = None,
+        repository_code_pointer_dict: Optional[Mapping[str, CodePointer]] = None,
+        entry_point: Optional[Sequence[str]] = None,
+        container_image: Optional[str] = None,
+        container_context: Optional[Mapping] = None,
+        dagster_library_versions: Optional[Mapping[str, str]] = None,
     ):
         return super(ListRepositoriesResponse, cls).__new__(
             cls,
@@ -310,7 +312,7 @@ class ListRepositoriesResponse(
                 repository_symbols, "repository_symbols", of_type=LoadableRepositorySymbol
             ),
             executable_path=check.opt_str_param(executable_path, "executable_path"),
-            repository_code_pointer_dict=check.opt_dict_param(
+            repository_code_pointer_dict=check.opt_mapping_param(
                 repository_code_pointer_dict,
                 "repository_code_pointer_dict",
                 key_type=str,
@@ -326,6 +328,9 @@ class ListRepositoriesResponse(
                 check.dict_param(container_context, "container_context")
                 if container_context is not None
                 else None
+            ),
+            dagster_library_versions=check.opt_nullable_mapping_param(
+                dagster_library_versions, "dagster_library_versions"
             ),
         )
 

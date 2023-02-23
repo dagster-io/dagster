@@ -141,15 +141,15 @@ def get_papermill_parameters(
         "run_config": step_context.run_config,
     }
 
-    dm_solid_handle_kwargs = step_context.solid_handle._asdict()
+    dm_node_handle_kwargs = step_context.node_handle._asdict()
     dm_step_key = step_context.step.key
 
     parameters = {}
 
     parameters["__dm_context"] = dm_context_dict
     parameters["__dm_executable_dict"] = dm_executable_dict
-    parameters["__dm_pipeline_run_dict"] = pack_value(step_context.pipeline_run)
-    parameters["__dm_solid_handle_kwargs"] = dm_solid_handle_kwargs
+    parameters["__dm_pipeline_run_dict"] = pack_value(step_context.dagster_run)
+    parameters["__dm_node_handle_kwargs"] = dm_node_handle_kwargs
     parameters["__dm_instance_ref_dict"] = pack_value(step_context.instance.get_ref())
     parameters["__dm_step_key"] = dm_step_key
     parameters["__dm_input_names"] = list(inputs.keys())
@@ -235,7 +235,7 @@ def _handle_events_from_notebook(
 
     output_nb = scrapbook.read_notebook(executed_notebook_path)
 
-    for output_name, _ in step_context.solid_def.output_dict.items():
+    for output_name, _ in step_context.op_def.output_dict.items():
         data_dict = output_nb.scraps.data_dict
         if output_name in data_dict:
             # read outputs that were passed out of process via io manager from `yield_result`

@@ -15,6 +15,7 @@ from dagster import (
     fs_io_manager,
     repository,
 )
+from dagster._core.definitions import op
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRunStatus
@@ -30,12 +31,12 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.types import CancelExecutionRequest
-from dagster._legacy import ModeDefinition, pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
 
-@solid
+@op
 def noop_solid(_):
     pass
 
@@ -45,7 +46,7 @@ def noop_pipeline():
     pass
 
 
-@solid
+@op
 def crashy_solid(_):
     os._exit(1)  # pylint: disable=W0212
 
@@ -55,7 +56,7 @@ def crashy_pipeline():
     crashy_solid()
 
 
-@solid
+@op
 def exity_solid(_):
     sys.exit(1)  # pylint: disable=W0212
 
@@ -65,7 +66,7 @@ def exity_pipeline():
     exity_solid()
 
 
-@solid
+@op
 def sleepy_solid(_):
     while True:
         time.sleep(0.1)
@@ -76,7 +77,7 @@ def sleepy_pipeline():
     sleepy_solid()
 
 
-@solid
+@op
 def slow_solid(_):
     time.sleep(4)
 
@@ -86,22 +87,22 @@ def slow_pipeline():
     slow_solid()
 
 
-@solid
+@op
 def return_one(_):
     return 1
 
 
-@solid
+@op
 def multiply_by_2(_, num):
     return num * 2
 
 
-@solid
+@op
 def multiply_by_3(_, num):
     return num * 3
 
 
-@solid
+@op
 def add(_, num1, num2):
     return num1 + num2
 

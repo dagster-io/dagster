@@ -145,7 +145,7 @@ def test_solid_dictionary_type():
         },
     )
 
-    value = env_obj.solids
+    value = env_obj.ops
 
     assert set(["int_config_op", "string_config_op"]) == set(value.keys())
     assert value == {
@@ -223,8 +223,8 @@ def test_solid_dictionary_some_no_config():
 
     env = ResolvedRunConfig.build(job_def, {"ops": {"int_config_op": {"config": 1}}})
 
-    assert {"int_config_op", "no_config_op"} == set(env.solids.keys())
-    assert env.solids == {
+    assert {"int_config_op", "no_config_op"} == set(env.ops.keys())
+    assert env.ops == {
         "int_config_op": OpConfig.from_dict({"config": 1}),
         "no_config_op": OpConfig.from_dict({}),
     }
@@ -264,7 +264,7 @@ def test_whole_environment():
     )
 
     assert isinstance(env, ResolvedRunConfig)
-    assert env.solids == {
+    assert env.ops == {
         "int_config_op": OpConfig.from_dict({"config": 123}),
         "no_config_op": OpConfig.from_dict({}),
     }
@@ -350,7 +350,7 @@ def test_optional_solid_with_optional_scalar_config():
 
     env_obj = ResolvedRunConfig.build(job_def, {})
 
-    assert env_obj.solids["int_config_op"].config is None
+    assert env_obj.ops["int_config_op"].config is None
 
 
 def test_optional_solid_with_required_scalar_config():
@@ -420,7 +420,7 @@ def test_required_solid_with_required_subfield():
         {"ops": {"int_config_op": {"config": {"required_field": "foobar"}}}},
     )
 
-    assert env_obj.solids["int_config_op"].config["required_field"] == "foobar"
+    assert env_obj.ops["int_config_op"].config["required_field"] == "foobar"
 
     res = process_config(env_type, {"ops": {}})
     assert not res.success

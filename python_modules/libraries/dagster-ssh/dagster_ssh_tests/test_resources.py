@@ -6,7 +6,8 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster import Field
-from dagster._legacy import ModeDefinition, execute_solid, solid
+from dagster._core.definitions.decorators import op
+from dagster._legacy import ModeDefinition, execute_solid
 from dagster._seven import get_system_temp_directory
 from dagster_ssh.resources import (
     SSHResource,
@@ -214,7 +215,7 @@ def test_ssh_sftp(sftpserver):
     tmp_path = get_system_temp_directory()
     readme_file = os.path.join(tmp_path, "readme.txt")
 
-    @solid(
+    @op(
         config_schema={
             "local_filepath": Field(str, is_required=True, description="local file path to get"),
             "remote_filepath": Field(str, is_required=True, description="remote file path to get"),
@@ -222,8 +223,8 @@ def test_ssh_sftp(sftpserver):
         required_resource_keys={"ssh_resource"},
     )
     def sftp_solid_get(context):
-        local_filepath = context.solid_config.get("local_filepath")
-        remote_filepath = context.solid_config.get("remote_filepath")
+        local_filepath = context.op_config.get("local_filepath")
+        remote_filepath = context.op_config.get("remote_filepath")
         return context.resources.ssh_resource.sftp_get(remote_filepath, local_filepath)
 
     with sftpserver.serve_content({"a_dir": {"readme.txt": "hello, world"}}):

@@ -55,7 +55,7 @@ spec:
         {{- range $deployment := $userDeployments.deployments }}
         - name: "init-user-deployment-{{- $deployment.name -}}"
           image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}
-          command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
+          command: ['sh', '-c', "until nc -zv {{ $deployment.name -}} {{ $deployment.port -}} -w1; do echo waiting for user service; sleep 2; done"]
           securityContext:
             {{- toYaml $.Values.dagit.securityContext | nindent 12 }}
         {{- end }}
@@ -77,6 +77,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "dagster.postgresql.secretName" . | quote }}
                   key: postgresql-password
+            # This is a list by default, but for backcompat it can be a map. As a map it's written to the dagit-env
+            # configmap.
+            {{- if and (.Values.dagit.env) (kindIs "slice" .Values.dagit.env) }}
+            {{- toYaml .Values.dagit.env | nindent 12 }}
+            {{- end}}
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" . }}-dagit-env

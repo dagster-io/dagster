@@ -112,19 +112,15 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         self._events: List[DagsterEvent] = []
         self._output_metadata: Dict[str, Any] = {}
 
-    @property
-    def solid_config(self) -> Any:
-        return self._step_execution_context.op_config
-
     @public
     @property
     def op_config(self) -> Any:
-        return self.solid_config
+        return self._step_execution_context.op_config
 
     @property
     def pipeline_run(self) -> DagsterRun:
         """PipelineRun: The current pipeline run."""
-        return self._step_execution_context.pipeline_run
+        return self._step_execution_context.dagster_run
 
     @property
     def run(self) -> DagsterRun:
@@ -234,7 +230,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
 
         :meta private:
         """
-        return self._step_execution_context.solid_handle
+        return self._step_execution_context.node_handle
 
     @property
     def op_handle(self) -> NodeHandle:
@@ -447,9 +443,10 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         """Returns a list of the partition keys of the upstream asset corresponding to the
         given input.
         """
-        return self.asset_partitions_def_for_input(input_name).get_partition_keys_in_range(
-            self._step_execution_context.asset_partition_key_range_for_input(input_name),
-            dynamic_partitions_store=self.instance,
+        return list(
+            self._step_execution_context.asset_partitions_subset_for_input(
+                input_name
+            ).get_partition_keys()
         )
 
     @public

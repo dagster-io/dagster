@@ -830,14 +830,14 @@ def get_subselected_graph_definition(
     # filter out unselected input/output mapping
     new_input_mappings = list(
         filter(
-            lambda input_mapping: input_mapping.maps_to.solid_name
+            lambda input_mapping: input_mapping.maps_to.node_name
             in [name for name, _ in selected_nodes],
             graph._input_mappings,  # pylint: disable=protected-access
         )
     )
     new_output_mappings = list(
         filter(
-            lambda output_mapping: output_mapping.maps_from.solid_name
+            lambda output_mapping: output_mapping.maps_from.node_name
             in [name for name, _ in selected_nodes],
             graph._output_mappings,  # pylint: disable=protected-access
         )

@@ -4,9 +4,12 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
-snapshots['test_create_execution_plan_with_dep 1'] = '''{
+snapshots[
+    "test_create_execution_plan_with_dep 1"
+] = """{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "multi_or_in_process_executor",
@@ -138,9 +141,11 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
       "tags": {}
     }
   ]
-}'''
+}"""
 
-snapshots['test_create_noop_execution_plan 1'] = '''{
+snapshots[
+    "test_create_noop_execution_plan 1"
+] = """{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "multi_or_in_process_executor",
@@ -201,9 +206,11 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
       "tags": {}
     }
   ]
-}'''
+}"""
 
-snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
+snapshots[
+    "test_create_noop_execution_plan_with_tags 1"
+] = """{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "multi_or_in_process_executor",
@@ -278,9 +285,11 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
       }
     }
   ]
-}'''
+}"""
 
-snapshots['test_create_with_graph 1'] = '''{
+snapshots[
+    "test_create_with_graph 1"
+] = """{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": true,
   "executor_name": "multi_or_in_process_executor",
@@ -294,7 +303,7 @@ snapshots['test_create_with_graph 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "fab36b9d8cde94f28a2003eac11d03ea450d0043",
+  "pipeline_snapshot_id": "9fbbf986b4eac313bbfdb3b47416b203791730a8",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "comp_1.return_one",
@@ -656,4 +665,4 @@ snapshots['test_create_with_graph 1'] = '''{
       "tags": {}
     }
   ]
-}'''
+}"""

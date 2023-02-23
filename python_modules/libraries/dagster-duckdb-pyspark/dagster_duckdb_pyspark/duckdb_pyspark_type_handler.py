@@ -2,7 +2,7 @@ import pyspark
 import pyspark.sql
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
+from dagster_duckdb.io_manager import DuckDbClient, build_duckdb_io_manager
 from pyspark.sql import SparkSession
 
 
@@ -34,19 +34,21 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
     """
 
     def handle_output(
-        self, context: OutputContext, table_slice: TableSlice, obj: pyspark.sql.DataFrame
+        self,
+        context: OutputContext,
+        table_slice: TableSlice,
+        obj: pyspark.sql.DataFrame,
+        connection,
     ):
         """Stores the given object at the provided filepath."""
-        conn = _connect_duckdb(context).cursor()
-
         pd_df = obj.toPandas()  # noqa: F841
-        conn.execute(
+        connection.execute(
             f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
             " pd_df;"
         )
-        if not conn.fetchall():
+        if not connection.fetchall():
             # table was not created, therefore already exists. Insert the data
-            conn.execute(
+            connection.execute(
                 f"insert into {table_slice.schema}.{table_slice.table} select * from pd_df"
             )
 
@@ -63,10 +65,11 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
             }
         )
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> pyspark.sql.DataFrame:
+    def load_input(
+        self, context: InputContext, table_slice: TableSlice, connection
+    ) -> pyspark.sql.DataFrame:
         """Loads the return of the query as the correct type."""
-        conn = _connect_duckdb(context).cursor()
-        pd_df = conn.execute(DuckDbClient.get_select_statement(table_slice)).fetchdf()
+        pd_df = connection.execute(DuckDbClient.get_select_statement(table_slice)).fetchdf()
         spark = SparkSession.builder.getOrCreate()
         return spark.createDataFrame(pd_df)
 
@@ -75,9 +78,13 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         return [pyspark.sql.DataFrame]
 
 
-duckdb_pyspark_io_manager = build_duckdb_io_manager([DuckDBPySparkTypeHandler()])
+duckdb_pyspark_io_manager = build_duckdb_io_manager(
+    [DuckDBPySparkTypeHandler()], default_load_type=pyspark.sql.DataFrame
+)
 duckdb_pyspark_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes PySpark DataFrames to DuckDB.
+An IO manager definition that reads inputs from and writes PySpark DataFrames to DuckDB. When
+using the duckdb_pyspark_io_manager, any inputs and outputs without type annotations will be loaded
+as PySpark DataFrames.
 
 Returns:
     IOManagerDefinition

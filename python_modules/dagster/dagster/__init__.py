@@ -30,6 +30,7 @@ sys.meta_path.insert(
 # ##### NOTES ON IMPORT FORMAT
 # ########################
 #
+# ok
 # This file defines dagster's public API. Imports need to be structured/formatted so as to to ensure
 # that the broadest possible set of static analyzers understand Dagster's
 # public API as intended. The below guidelines ensure this is the case.
@@ -111,6 +112,8 @@ from dagster._core.definitions.config import ConfigMapping as ConfigMapping
 from dagster._core.definitions.configurable import configured as configured
 from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
+    graph_asset as graph_asset,
+    graph_multi_asset as graph_multi_asset,
     multi_asset as multi_asset,
 )
 from dagster._core.definitions.decorators.config_mapping_decorator import (
@@ -250,6 +253,7 @@ from dagster._core.definitions.partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
+    MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
     PartitionMapping as PartitionMapping,
     StaticPartitionMapping as StaticPartitionMapping,
 )

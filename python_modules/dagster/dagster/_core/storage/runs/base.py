@@ -173,11 +173,27 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def get_run_tags(self) -> Sequence[Tuple[str, Set[str]]]:
+    def get_run_tags(
+        self,
+        tag_keys: Optional[Sequence[str]] = None,
+        value_prefix: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Sequence[Tuple[str, Set[str]]]:
         """Get a list of tag keys and the values that have been associated with them.
+
+        Args:
+            tag_keys (Optional[Sequence[str]]): tag keys to filter by.
 
         Returns:
             List[Tuple[str, Set[str]]]
+        """
+
+    @abstractmethod
+    def get_run_tag_keys(self) -> Sequence[str]:
+        """Get a list of tag keys.
+
+        Returns:
+            List[str]
         """
 
     @abstractmethod

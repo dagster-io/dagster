@@ -190,16 +190,6 @@ def pipeline(
                 yield Output(4, "four")
 
 
-            @lambda_solid
-            def add_one(num: int) -> int:
-                return num + 1
-
-
-            @lambda_solid
-            def mult_two(num: int) -> int:
-                return num * 2
-
-
             @pipeline
             def math_pipeline():
                 two, four = emit_two_four()

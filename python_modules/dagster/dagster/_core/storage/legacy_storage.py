@@ -232,8 +232,16 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
             filters, limit, order_by, ascending, cursor, bucket_by
         )
 
-    def get_run_tags(self) -> Sequence[Tuple[str, Set[str]]]:
-        return self._storage.run_storage.get_run_tags()
+    def get_run_tags(
+        self,
+        tag_keys: Optional[Sequence[str]] = None,
+        value_prefix: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Sequence[Tuple[str, Set[str]]]:
+        return self._storage.run_storage.get_run_tags(tag_keys, value_prefix, limit)
+
+    def get_run_tag_keys(self) -> Sequence[str]:
+        return self._storage.run_storage.get_run_tag_keys()
 
     def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]):
         return self._storage.run_storage.add_run_tags(run_id, new_tags)

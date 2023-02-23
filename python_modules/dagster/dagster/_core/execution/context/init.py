@@ -27,11 +27,9 @@ class InitResourceContext:
         log_manager (DagsterLogManager): The log manager for this run of the job or pipeline
         resources (ScopedResources): The resources that are available to the resource that we are
             initalizing.
-        dagster_run (Optional[PipelineRun]): The dagster run to use. When initializing resources
+        dagster_run (Optional[DagsterRun]): The dagster run to use. When initializing resources
             outside of execution context, this will be None.
         run_id (Optional[str]): The id for this run of the job or pipeline. When initializing resources
-            outside of execution context, this will be None.
-        pipeline_run (Optional[PipelineRun]): (legacy) The dagster run to use. When initializing resources
             outside of execution context, this will be None.
 
     Example:
@@ -204,10 +202,6 @@ class UnboundInitResourceContext(InitResourceContext):
     @property
     def instance(self) -> Optional[DagsterInstance]:
         return self._instance
-
-    @property
-    def pipeline_run(self) -> Optional[DagsterRun]:
-        return None
 
     @property
     def log(self) -> Optional[DagsterLogManager]:

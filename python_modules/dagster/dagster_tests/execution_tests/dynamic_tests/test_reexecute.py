@@ -45,26 +45,26 @@ def emit(_):
 
 
 @job(executor_def=in_process_executor)
-def dynamic_pipeline():
+def dynamic_job():
     # pylint: disable=no-member
     emit().map(lambda n: multiply_by_two(multiply_inputs(n, emit_ten())))
 
 
 def test_map():
-    result = dynamic_pipeline.execute_in_process()
+    result = dynamic_job.execute_in_process()
     assert result.success
 
 
 def test_reexec_from_parent_basic():
     with instance_for_test() as instance:
         parent_result = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
         )
         parent_run_id = parent_result.run_id
 
         with execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             reexecution_options=ReexecutionOptions(
                 parent_run_id=parent_run_id,
@@ -81,11 +81,11 @@ def test_reexec_from_parent_basic():
 
 def test_reexec_from_parent_1():
     with instance_for_test() as instance:
-        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
+        parent_result = execute_job(reconstructable(dynamic_job), instance=instance)
         parent_run_id = parent_result.run_id
 
         with execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             reexecution_options=ReexecutionOptions(
                 parent_run_id=parent_run_id,
@@ -100,10 +100,10 @@ def test_reexec_from_parent_1():
 
 def test_reexec_from_parent_dynamic():
     with instance_for_test() as instance:
-        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
+        parent_result = execute_job(reconstructable(dynamic_job), instance=instance)
         parent_run_id = parent_result.run_id
         with execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             reexecution_options=ReexecutionOptions(
                 parent_run_id=parent_run_id,
@@ -116,11 +116,11 @@ def test_reexec_from_parent_dynamic():
 
 def test_reexec_from_parent_2():
     with instance_for_test() as instance:
-        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
+        parent_result = execute_job(reconstructable(dynamic_job), instance=instance)
         parent_run_id = parent_result.run_id
 
         with execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             reexecution_options=ReexecutionOptions(
                 parent_run_id=parent_run_id,
@@ -135,11 +135,11 @@ def test_reexec_from_parent_2():
 
 def test_reexec_from_parent_3():
     with instance_for_test() as instance:
-        parent_result = execute_job(reconstructable(dynamic_pipeline), instance=instance)
+        parent_result = execute_job(reconstructable(dynamic_job), instance=instance)
         parent_run_id = parent_result.run_id
 
         with execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             instance=instance,
             reexecution_options=ReexecutionOptions(
                 parent_run_id=parent_run_id,
@@ -177,11 +177,11 @@ def dynamic_with_optional_output_job():
         for i in range(10):
             if (
                 # re-execution run skipped odd numbers
-                context.pipeline_run.parent_run_id
+                context.run.parent_run_id
                 and i % 2 == 0
             ) or (
                 # root run skipped even numbers
-                not context.pipeline_run.parent_run_id
+                not context.run.parent_run_id
                 and i % 2 == 1
             ):
                 yield DynamicOutput(value=i, mapping_key=str(i))
@@ -253,9 +253,9 @@ def dynamic_with_transitive_optional_output_job():
     @op(out=Out(is_required=False))
     def add_one_with_optional_output(context, i: int):
         if (
-            context.pipeline_run.parent_run_id
+            context.run.parent_run_id
             and i % 2 == 0  # re-execution run skipped odd numbers
-            or not context.pipeline_run.parent_run_id
+            or not context.run.parent_run_id
             and i % 2 == 1  # root run skipped even numbers
         ):
             yield Output(i + 1)
@@ -328,11 +328,11 @@ def test_reexec_dynamic_with_transitive_optional_output_job_3():
 
 def test_reexec_all_steps_issue():
     with instance_for_test() as instance:
-        result_1 = dynamic_pipeline.execute_in_process(instance=instance)
+        result_1 = dynamic_job.execute_in_process(instance=instance)
         assert result_1.success
 
         result_2 = execute_job(
-            reconstructable(dynamic_pipeline),
+            reconstructable(dynamic_job),
             reexecution_options=ReexecutionOptions(
                 parent_run_id=result_1.run_id,
                 step_selection=["+multiply_inputs[?]"],

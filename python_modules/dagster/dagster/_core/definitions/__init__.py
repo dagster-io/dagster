@@ -66,6 +66,7 @@ from .metadata import (
     TextMetadataValue as TextMetadataValue,
     UrlMetadataValue as UrlMetadataValue,
 )
+from .node_container import create_execution_structure as create_execution_structure
 from .node_definition import NodeDefinition as NodeDefinition
 from .output import (
     DynamicOut as DynamicOut,
@@ -111,7 +112,6 @@ from .sensor_definition import (
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
 )
-from .solid_container import create_execution_structure as create_execution_structure
 
 # isort: split
 from .asset_group import AssetGroup as AssetGroup
@@ -130,7 +130,6 @@ from .decorators import (
     hook_decorator as hook_decorator,
     hourly_schedule as hourly_schedule,
     job as job,
-    lambda_solid as lambda_solid,
     monthly_schedule as monthly_schedule,
     multi_asset as multi_asset,
     op as op,
@@ -138,7 +137,6 @@ from .decorators import (
     repository as repository,
     schedule as schedule,
     sensor as sensor,
-    solid as solid,
     success_hook as success_hook,
     weekly_schedule as weekly_schedule,
 )
@@ -172,6 +170,7 @@ from .partition_mapping import (
     AllPartitionMapping as AllPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
+    MultiToSingleDimensionPartitionMapping as MultiToSingleDimensionPartitionMapping,
     PartitionMapping as PartitionMapping,
 )
 from .partitioned_schedule import (

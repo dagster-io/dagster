@@ -256,7 +256,7 @@ def test_version_strategy_depends_from_context():
     class ContextDependantVersionStrategy(VersionStrategy):
         def get_op_version(self, context):
             version_strategy_called.append("versioned")
-            solid_arg = context.solid_config["arg"]
+            solid_arg = context.op_config["arg"]
             return version[solid_arg]
 
         def get_resource_version(self, context):

@@ -3,6 +3,7 @@ from dagster import (
     _check as check,
     resource,
 )
+from dagster._core.definitions import op
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events.log import EventLogEntry, construct_event_logger
@@ -15,7 +16,7 @@ from dagster._core.execution.api import (
 )
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, PipelineDefinition, solid
+from dagster._legacy import ModeDefinition, PipelineDefinition
 
 
 @resource
@@ -34,7 +35,7 @@ def resource_b(context):
     yield  # add the second yield here to test teardown generator exit handling
 
 
-@solid(required_resource_keys={"a", "b"})
+@op(required_resource_keys={"a", "b"})
 def resource_solid(_):
     return "A"
 

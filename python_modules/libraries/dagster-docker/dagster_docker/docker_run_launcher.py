@@ -142,7 +142,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         container.start()
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.pipeline_run
+        run = context.dagster_run
         pipeline_code_origin = check.not_none(context.pipeline_code_origin)
         docker_image = self._get_docker_image(pipeline_code_origin)
 
@@ -159,7 +159,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def resume_run(self, context: ResumeRunContext) -> None:
-        run = context.pipeline_run
+        run = context.dagster_run
         pipeline_code_origin = check.not_none(context.pipeline_code_origin)
         docker_image = self._get_docker_image(pipeline_code_origin)
 

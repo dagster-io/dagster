@@ -1195,7 +1195,7 @@ def external_asset_graph_from_defs(
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():
         node_output_handle, job_def = node_tuple_list[0]
 
-        node_def = job_def.graph.get_solid(node_output_handle.node_handle).definition
+        node_def = job_def.graph.get_node(node_output_handle.node_handle).definition
         output_def = node_def.output_def_named(node_output_handle.output_name)
 
         asset_info = asset_info_by_asset_key[asset_key]

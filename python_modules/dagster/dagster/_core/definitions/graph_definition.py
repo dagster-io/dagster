@@ -47,10 +47,10 @@ from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
 from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
+from .node_container import create_execution_structure, validate_dependency_dict
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .resource_requirement import ResourceRequirement
-from .solid_container import create_execution_structure, validate_dependency_dict
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -328,7 +328,7 @@ class GraphDefinition(NodeDefinition):
 
         return self._node_dict[name]
 
-    def get_solid(self, handle: NodeHandle) -> Node:
+    def get_node(self, handle: NodeHandle) -> Node:
         check.inst_param(handle, "handle", NodeHandle)
         current = handle
         lineage: List[str] = []
@@ -337,14 +337,14 @@ class GraphDefinition(NodeDefinition):
             current = current.parent
 
         name = lineage.pop()
-        solid = self.node_named(name)
+        node = self.node_named(name)
         while lineage:
             name = lineage.pop()
-            # We know that this is a current solid is a graph while ascending lineage
-            definition = cast(GraphDefinition, solid.definition)
-            solid = definition.node_named(name)
+            # We know that this is a current node is a graph while ascending lineage
+            definition = cast(GraphDefinition, node.definition)
+            node = definition.node_named(name)
 
-        return solid
+        return node
 
     def iterate_node_defs(self) -> Iterator[NodeDefinition]:
         yield self
@@ -429,7 +429,7 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
-        mapped_node = self.node_named(mapping.maps_from.solid_name)
+        mapped_node = self.node_named(mapping.maps_from.node_name)
         return mapped_node.definition.resolve_output_to_origin(
             mapping.maps_from.output_name,
             NodeHandle(mapped_node.name, handle),
@@ -439,7 +439,7 @@ class GraphDefinition(NodeDefinition):
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
         return self.node_named(
-            mapping.maps_from.solid_name
+            mapping.maps_from.node_name
         ).definition.resolve_output_to_origin_op_def(output_name)
 
     def default_value_for_input(self, input_name: str) -> object:
@@ -451,7 +451,7 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_node = self.node_named(mapping.maps_to.solid_name)
+        mapped_node = self.node_named(mapping.maps_to.node_name)
 
         return mapped_node.definition.default_value_for_input(mapping.maps_to.input_name)
 
@@ -464,7 +464,7 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_node = self.node_named(mapping.maps_to.solid_name)
+        mapped_node = self.node_named(mapping.maps_to.node_name)
 
         return mapped_node.definition.input_has_default(mapping.maps_to.input_name)
 
@@ -484,12 +484,12 @@ class GraphDefinition(NodeDefinition):
 
     def input_supports_dynamic_output_dep(self, input_name: str) -> bool:
         mapping = self.get_input_mapping(input_name)
-        target_node = mapping.maps_to.solid_name
-        # check if input mapped to solid which is downstream of another dynamic output within
+        target_node = mapping.maps_to.node_name
+        # check if input mapped to node which is downstream of another dynamic output within
         if self.dependency_structure.is_dynamic_mapped(target_node):
             return False
 
-        # check if input mapped to solid which starts new dynamic downstream
+        # check if input mapped to node which starts new dynamic downstream
         if self.dependency_structure.has_dynamic_downstreams(target_node):
             return False
 
@@ -561,7 +561,7 @@ class GraphDefinition(NodeDefinition):
                 Describes how the job is parameterized at runtime.
 
                 If no value is provided, then the schema for the job's run config is a standard
-                format based on its solids and resources.
+                format based on its ops and resources.
 
                 If a dictionary is provided, then it must conform to the standard config schema, and
                 it will be used as the job's run config for the job whenever the job is executed.
@@ -594,7 +594,7 @@ class GraphDefinition(NodeDefinition):
             op_retry_policy (Optional[RetryPolicy]): The default retry policy for all ops in this job.
                 Only used if retry policy is not defined on the op definition or op invocation.
             version_strategy (Optional[VersionStrategy]):
-                Defines how each solid (and optionally, resource) in the job can be versioned. If
+                Defines how each op (and optionally, resource) in the job can be versioned. If
                 provided, memoizaton will be enabled for this job.
             partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition
                 keys that can parameterize the job. If this argument is supplied, the config
@@ -760,10 +760,10 @@ class GraphDefinition(NodeDefinition):
                 continue
             # recurse into graph structure
             all_destinations += self.node_named(
-                mapping.maps_to.solid_name
+                mapping.maps_to.node_name
             ).definition.resolve_input_to_destinations(
                 NodeInputHandle(
-                    NodeHandle(mapping.maps_to.solid_name, parent=input_handle.node_handle),
+                    NodeHandle(mapping.maps_to.node_name, parent=input_handle.node_handle),
                     mapping.maps_to.input_name,
                 ),
             )
@@ -784,7 +784,7 @@ class SubselectedGraphDefinition(GraphDefinition):
         dependencies (Optional[Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]]):
             A structure that declares the dependencies of each op's inputs on the outputs of other
             ops in the subselected graph. Keys of the top level dict are either the string names of
-            ops in the graph or, in the case of aliased solids, :py:class:`NodeInvocations <NodeInvocation>`.
+            ops in the graph or, in the case of aliased ops, :py:class:`NodeInvocations <NodeInvocation>`.
             Values of the top level dict are themselves dicts, which map input names belonging to
             the op or aliased op to :py:class:`DependencyDefinitions <DependencyDefinition>`.
         input_mappings (Optional[Sequence[InputMapping]]): Define the inputs to the nested graph, and
@@ -821,9 +821,7 @@ class SubselectedGraphDefinition(GraphDefinition):
         return self._parent_graph_def
 
     def get_top_level_omitted_nodes(self) -> Sequence[Node]:
-        return [
-            solid for solid in self.parent_graph_def.nodes if not self.has_node_named(solid.name)
-        ]
+        return [node for node in self.parent_graph_def.nodes if not self.has_node_named(node.name)]
 
     @property
     def is_subselected(self) -> bool:
@@ -937,33 +935,33 @@ def _validate_in_mappings(
 
 def _validate_out_mappings(
     output_mappings: Sequence[OutputMapping],
-    solid_dict: Mapping[str, Node],
+    node_dict: Mapping[str, Node],
     name: str,
     class_name: str,
 ) -> Tuple[Sequence[OutputMapping], Sequence[OutputDefinition]]:
     output_defs: List[OutputDefinition] = []
     for mapping in output_mappings:
         if isinstance(mapping, OutputMapping):
-            target_solid = solid_dict.get(mapping.maps_from.solid_name)
-            if target_solid is None:
+            target_node = node_dict.get(mapping.maps_from.node_name)
+            if target_node is None:
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' output mapping references node "
-                    "'{solid_name}' which it does not contain.".format(
-                        name=name, solid_name=mapping.maps_from.solid_name, class_name=class_name
+                    "'{node_name}' which it does not contain.".format(
+                        name=name, node_name=mapping.maps_from.node_name, class_name=class_name
                     )
                 )
-            if not target_solid.has_output(mapping.maps_from.output_name):
+            if not target_node.has_output(mapping.maps_from.output_name):
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} {name} output mapping from {described_node} "
                     "which contains no output named '{mapping.maps_from.output_name}'".format(
-                        described_node=target_solid.describe_node(),
+                        described_node=target_node.describe_node(),
                         name=name,
                         mapping=mapping,
                         class_name=class_name,
                     )
                 )
 
-            target_output = target_solid.output_def_named(mapping.maps_from.output_name)
+            target_output = target_node.output_def_named(mapping.maps_from.output_name)
             output_def = mapping.get_definition(is_dynamic=target_output.is_dynamic)
             output_defs.append(output_def)
 
@@ -976,7 +974,7 @@ def _validate_out_mappings(
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' output '{mapping.graph_output_name}' of type"
                     " {mapping.dagster_type.display_name} maps from"
-                    " {mapping.maps_from.solid_name}.{mapping.maps_from.output_name} of different"
+                    " {mapping.maps_from.node_name}.{mapping.maps_from.output_name} of different"
                     " type {target_output.dagster_type.display_name}. OutputMapping source and"
                     " destination must have the same type.".format(
                         class_name=class_name,

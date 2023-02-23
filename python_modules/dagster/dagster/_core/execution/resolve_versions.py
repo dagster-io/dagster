@@ -89,7 +89,7 @@ def resolve_step_versions(
         if not is_executable_step(step):  # type: ignore
             continue
 
-        solid_def = pipeline_def.get_solid(step.solid_handle).definition
+        solid_def = pipeline_def.get_solid(step.node_handle).definition
 
         input_version_dict = {
             input_name: step_input.source.compute_version(
@@ -105,9 +105,9 @@ def resolve_step_versions(
                 )
         input_versions = [version for version in input_version_dict.values()]
 
-        solid_name = str(step.solid_handle)
+        solid_name = str(step.node_handle)
 
-        solid_config = resolved_run_config.solids[solid_name].config
+        solid_config = resolved_run_config.ops[solid_name].config
 
         solid_def_version = None
         if solid_def.version is not None:  # type: ignore  # (should be OpDefinition)

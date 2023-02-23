@@ -1,20 +1,15 @@
-from dagster import Int, repository
+from dagster import In, Out, repository
+from dagster._core.definitions.decorators import op
 from dagster._core.test_utils import today_at_midnight
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    daily_schedule,
-    lambda_solid,
-    pipeline,
-)
+from dagster._legacy import daily_schedule, pipeline
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@op(ins={"num": In(int)}, out=Out(int))
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@op(ins={"num": In(int)}, out=Out(int))
 def mult_two(num):
     return num * 2
 

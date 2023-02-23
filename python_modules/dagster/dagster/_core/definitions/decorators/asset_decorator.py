@@ -32,10 +32,11 @@ from dagster._utils.backcompat import (
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
 from ..assets import AssetsDefinition
+from ..decorators.graph_decorator import graph
 from ..decorators.op_decorator import _Op
 from ..events import AssetKey, CoercibleToAssetKeyPrefix
 from ..input import In
-from ..output import Out
+from ..output import GraphOut, Out
 from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
@@ -615,6 +616,192 @@ def build_asset_ins(
         ins_by_asset_key[asset_key] = (stringified_asset_key, In(cast(type, Nothing)))
 
     return ins_by_asset_key
+
+
+@overload
+def graph_asset(compose_fn: Callable) -> AssetsDefinition:
+    ...
+
+
+@overload
+def graph_asset(
+    *,
+    name: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    ins: Optional[Mapping[str, AssetIn]] = None,
+    description: Optional[str] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    group_name: Optional[str] = None,
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    ...
+
+
+def graph_asset(
+    compose_fn: Optional[Callable] = None,
+    *,
+    name: Optional[str] = None,
+    key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+    ins: Optional[Mapping[str, AssetIn]] = None,
+    description: Optional[str] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    group_name: Optional[str] = None,
+) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
+    """
+    Creates a software-defined asset that's computed using a graph of ops.
+
+    This decorator is meant to decorate a function that composes a set of ops or graphs to define
+    the dependencies between them.
+
+    Args:
+        name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
+            decorated function. The asset's name must be a valid name in dagster (ie only contains
+            letters, numbers, and _) and may not contain python reserved keywords.
+        key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
+            concatenation of the key_prefix and the asset's name, which defaults to the name of
+            the decorated function. Each item in key_prefix must be a valid name in dagster (ie only
+            contains letters, numbers, and _) and may not contain python reserved keywords.
+        ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
+            about the input.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the asset.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. If
+            not provided, the name "default" is used.
+
+    Examples:
+        .. code-block:: python
+
+            @op
+            def fetch_files_from_slack(context) -> pd.DataFrame:
+                ...
+
+            @op
+            def store_files_in_table(files) -> None:
+                files.to_sql(name="slack_files", con=create_db_connection())
+
+            @graph_asset
+            def slack_files_table():
+                return store_files(fetch_files_from_slack())
+    """
+    if compose_fn is not None:
+        return _GraphBackedAsset()(compose_fn)
+
+    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
+        return _GraphBackedAsset(
+            name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
+            key_prefix=key_prefix,
+            ins=ins,
+            description=description,
+            partitions_def=partitions_def,
+            group_name=group_name,
+        )(fn)
+
+    return inner
+
+
+class _GraphBackedAsset:
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
+        ins: Optional[Mapping[str, AssetIn]] = None,
+        description: Optional[str] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
+        group_name: Optional[str] = None,
+    ):
+        self.name = name
+
+        if isinstance(key_prefix, str):
+            key_prefix = [key_prefix]
+        self.key_prefix = key_prefix
+        self.ins = ins or {}
+        self.description = description
+        self.partitions_def = partitions_def
+        self.group_name = group_name
+
+    def __call__(self, fn: Callable) -> AssetsDefinition:
+        asset_name = self.name or fn.__name__
+        asset_ins = build_asset_ins(fn, self.ins or {}, set())
+        out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
+
+        keys_by_input_name = {
+            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
+        }
+        partition_mappings = {
+            input_name: asset_in.partition_mapping
+            for input_name, asset_in in self.ins.items()
+            if asset_in.partition_mapping
+        }
+
+        op_graph = graph(
+            name="__".join(out_asset_key.path).replace("-", "_"), description=self.description
+        )(fn)
+        return AssetsDefinition.from_graph(
+            op_graph,
+            keys_by_input_name=keys_by_input_name,
+            keys_by_output_name={"result": out_asset_key},
+            partitions_def=self.partitions_def,
+            partition_mappings=partition_mappings if partition_mappings else None,
+            group_name=self.group_name,
+        )
+
+
+def graph_multi_asset(
+    *,
+    outs: Mapping[str, AssetOut],
+    name: Optional[str] = None,
+    ins: Optional[Mapping[str, AssetIn]] = None,
+    partitions_def: Optional[PartitionsDefinition[object]] = None,
+    group_name: Optional[str] = None,
+    can_subset: bool = False,
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    """Create a combined definition of multiple assets that are computed using the same graph of
+    ops, and the same upstream assets.
+
+    Each argument to the decorated function references an upstream asset that this asset depends on.
+    The name of the argument designates the name of the upstream asset.
+
+    Args:
+        name (Optional[str]): The name of the graph.
+        outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
+        ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
+            about the input.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the assets.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. This
+            group name will be applied to all assets produced by this multi_asset.
+        can_subset (bool): Whether this asset's computation can emit a subset of the asset
+            keys based on the context.selected_assets argument. Defaults to False.
+    """
+
+    def inner(fn: Callable) -> AssetsDefinition:
+        partition_mappings = {
+            input_name: asset_in.partition_mapping
+            for input_name, asset_in in (ins or {}).items()
+            if asset_in.partition_mapping
+        }
+
+        asset_ins = build_asset_ins(fn, ins or {}, set())
+        keys_by_input_name = {
+            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
+        }
+        asset_outs = build_asset_outs(outs)
+        op_graph = graph(
+            name=name or fn.__name__,
+            out={out_name: GraphOut() for out_name, _ in asset_outs.values()},
+        )(fn)
+        return AssetsDefinition.from_graph(
+            op_graph,
+            keys_by_input_name=keys_by_input_name,
+            keys_by_output_name={
+                output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
+            },
+            partitions_def=partitions_def,
+            partition_mappings=partition_mappings if partition_mappings else None,
+            group_name=group_name,
+            can_subset=can_subset,
+        )
+
+    return inner
 
 
 def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, Tuple[str, Out]]:

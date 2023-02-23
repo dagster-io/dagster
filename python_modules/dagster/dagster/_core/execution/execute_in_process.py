@@ -66,7 +66,7 @@ def core_execute_in_process(
                 context_event_generator=orchestration_context_event_generator,
                 pipeline=pipeline,
                 execution_plan=execution_plan,
-                pipeline_run=run,
+                dagster_run=run,
                 instance=execute_instance,
                 run_config=run_config,
                 executor_defs=None,
@@ -87,7 +87,7 @@ def core_execute_in_process(
 
 def _check_top_level_inputs(job_def: JobDefinition) -> None:
     for input_mapping in job_def.graph.input_mappings:
-        node = job_def.graph.node_named(input_mapping.maps_to.solid_name)
+        node = job_def.graph.node_named(input_mapping.maps_to.node_name)
         top_level_input_name = input_mapping.graph_input_name
         input_name = input_mapping.maps_to.input_name
         _check_top_level_inputs_for_node(
@@ -111,7 +111,7 @@ def _check_top_level_inputs_for_node(
     if isinstance(node.definition, GraphDefinition):
         graph_def = cast(GraphDefinition, node.definition)
         for input_mapping in graph_def.input_mappings:
-            next_node = graph_def.node_named(input_mapping.maps_to.solid_name)
+            next_node = graph_def.node_named(input_mapping.maps_to.node_name)
             input_name = input_mapping.maps_to.input_name
             _check_top_level_inputs_for_node(
                 next_node,

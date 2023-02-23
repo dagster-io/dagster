@@ -8,7 +8,7 @@ RESERVED_INPUT_NAMES = [
     "__dm_executable_dict",
     "__dm_json",
     "__dm_pipeline_run_dict",
-    "__dm_solid_handle_kwargs",
+    "__dm_node_handle_kwargs",
     "__dm_instance_ref_dict",
     "__dm_step_key",
     "__dm_input_names",
@@ -35,7 +35,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
         assert "__dm_context" in parameters
         assert "__dm_executable_dict" in parameters
         assert "__dm_pipeline_run_dict" in parameters
-        assert "__dm_solid_handle_kwargs" in parameters
+        assert "__dm_node_handle_kwargs" in parameters
         assert "__dm_instance_ref_dict" in parameters
         assert "__dm_step_key" in parameters
         assert "__dm_input_names" in parameters
@@ -44,7 +44,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
         pipeline_context_args = dict(
             executable_dict=parameters["__dm_executable_dict"],
             pipeline_run_dict=parameters["__dm_pipeline_run_dict"],
-            solid_handle_kwargs=parameters["__dm_solid_handle_kwargs"],
+            node_handle_kwargs=parameters["__dm_node_handle_kwargs"],
             instance_ref_dict=parameters["__dm_instance_ref_dict"],
             step_key=parameters["__dm_step_key"],
             **context_args,

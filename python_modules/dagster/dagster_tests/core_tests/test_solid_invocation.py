@@ -34,19 +34,15 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
 )
 from dagster._legacy import (
-    DynamicOutputDefinition,
-    InputDefinition,
     Materialization,
-    OutputDefinition,
     build_solid_context,
     execute_solid,
     pipeline,
-    solid,
 )
 
 
 def test_solid_invocation_no_arg():
-    @solid
+    @op
     def basic_solid():
         return 5
 
@@ -95,7 +91,7 @@ def test_solid_invocation_no_arg():
 
 
 def test_solid_invocation_none_arg():
-    @solid
+    @op
     def basic_solid(_):
         return 5
 
@@ -104,7 +100,7 @@ def test_solid_invocation_none_arg():
 
 
 def test_solid_invocation_context_arg():
-    @solid
+    @op
     def basic_solid(context):
         context.log.info("yay")
 
@@ -115,7 +111,7 @@ def test_solid_invocation_context_arg():
 
 
 def test_solid_invocation_empty_run_config():
-    @solid
+    @op
     def basic_solid(context):
         assert context.run_config is not None
         assert context.run_config == {"resources": {}}
@@ -124,7 +120,7 @@ def test_solid_invocation_empty_run_config():
 
 
 def test_solid_invocation_run_config_with_config():
-    @solid(config_schema={"foo": str})
+    @op(config_schema={"foo": str})
     def basic_solid(context):
         assert context.run_config
         assert context.run_config["solids"] == {"basic_solid": {"config": {"foo": "bar"}}}
@@ -133,7 +129,7 @@ def test_solid_invocation_run_config_with_config():
 
 
 def test_solid_invocation_out_of_order_input_defs():
-    @solid(input_defs=[InputDefinition("x"), InputDefinition("y")])
+    @op(ins={"x": In(), "y": In()})
     def check_correct_order(y, x):
         assert y == 6
         assert x == 5
@@ -144,7 +140,7 @@ def test_solid_invocation_out_of_order_input_defs():
 
 
 def test_solid_invocation_with_resources():
-    @solid(required_resource_keys={"foo"})
+    @op(required_resource_keys={"foo"})
     def solid_requires_resources(context):
         assert context.resources.foo == "bar"
         return context.resources.foo
@@ -199,7 +195,7 @@ def test_solid_invocation_with_cm_resource():
         finally:
             teardown_log.append("collected")
 
-    @solid(required_resource_keys={"cm_resource"})
+    @op(required_resource_keys={"cm_resource"})
     def solid_requires_cm_resource(context):
         return context.resources.cm_resource
 
@@ -219,9 +215,9 @@ def test_solid_invocation_with_cm_resource():
 
 
 def test_solid_invocation_with_config():
-    @solid(config_schema={"foo": str})
+    @op(config_schema={"foo": str})
     def solid_requires_config(context):
-        assert context.solid_config["foo"] == "bar"
+        assert context.op_config["foo"] == "bar"
         return 5
 
     # Ensure that error is raised when attempting to execute and no context is provided
@@ -279,30 +275,30 @@ def test_solid_invocation_with_config():
 
 
 def test_solid_invocation_default_config():
-    @solid(config_schema={"foo": Field(str, is_required=False, default_value="bar")})
+    @op(config_schema={"foo": Field(str, is_required=False, default_value="bar")})
     def solid_requires_config(context):
-        assert context.solid_config["foo"] == "bar"
-        return context.solid_config["foo"]
+        assert context.op_config["foo"] == "bar"
+        return context.op_config["foo"]
 
     assert solid_requires_config(None) == "bar"
 
-    @solid(config_schema=Field(str, is_required=False, default_value="bar"))
+    @op(config_schema=Field(str, is_required=False, default_value="bar"))
     def solid_requires_config_val(context):
-        assert context.solid_config == "bar"
-        return context.solid_config
+        assert context.op_config == "bar"
+        return context.op_config
 
     assert solid_requires_config_val(None) == "bar"
 
-    @solid(
+    @op(
         config_schema={
             "foo": Field(str, is_required=False, default_value="bar"),
             "baz": str,
         }
     )
     def solid_requires_config_partial(context):
-        assert context.solid_config["foo"] == "bar"
-        assert context.solid_config["baz"] == "bar"
-        return context.solid_config["foo"] + context.solid_config["baz"]
+        assert context.op_config["foo"] == "bar"
+        assert context.op_config["baz"] == "bar"
+        return context.op_config["foo"] + context.op_config["baz"]
 
     assert (
         solid_requires_config_partial(build_solid_context(solid_config={"baz": "bar"})) == "barbar"
@@ -310,23 +306,23 @@ def test_solid_invocation_default_config():
 
 
 def test_solid_invocation_dict_config():
-    @solid(config_schema=dict)
+    @op(config_schema=dict)
     def solid_requires_dict(context):
-        assert context.solid_config == {"foo": "bar"}
-        return context.solid_config
+        assert context.op_config == {"foo": "bar"}
+        return context.op_config
 
     assert solid_requires_dict(build_solid_context(solid_config={"foo": "bar"})) == {"foo": "bar"}
 
-    @solid(config_schema=Noneable(dict))
+    @op(config_schema=Noneable(dict))
     def solid_noneable_dict(context):
-        return context.solid_config
+        return context.op_config
 
     assert solid_noneable_dict(build_solid_context()) is None
     assert solid_noneable_dict(None) is None
 
 
 def test_solid_invocation_kitchen_sink_config():
-    @solid(
+    @op(
         config_schema={
             "str_field": str,
             "int_field": int,
@@ -341,7 +337,7 @@ def test_solid_invocation_kitchen_sink_config():
         }
     )
     def kitchen_sink(context):
-        return context.solid_config
+        return context.op_config
 
     solid_config_one = {
         "str_field": "kjf",
@@ -358,7 +354,7 @@ def test_solid_invocation_kitchen_sink_config():
 
 
 def test_solid_with_inputs():
-    @solid
+    @op
     def solid_with_inputs(x, y):
         assert x == 5
         assert y == 6
@@ -395,7 +391,7 @@ def test_solid_with_inputs():
 
 
 def test_failing_solid():
-    @solid
+    @op
     def solid_fails():
         raise Exception("Oh no!")
 
@@ -407,7 +403,7 @@ def test_failing_solid():
 
 
 def test_attempted_invocation_in_composition():
-    @solid
+    @op
     def basic_solid(_x):
         pass
 
@@ -435,7 +431,7 @@ def test_attempted_invocation_in_composition():
 
 
 def test_async_solid():
-    @solid
+    @op
     async def aio_solid():
         await asyncio.sleep(0.01)
         return "done"
@@ -445,7 +441,7 @@ def test_async_solid():
 
 
 def test_async_gen_invocation():
-    @solid
+    @op
     async def aio_gen(_):
         await asyncio.sleep(0.01)
         yield Output("done")
@@ -464,7 +460,7 @@ def test_async_gen_invocation():
 
 
 def test_multiple_outputs_iterator():
-    @solid(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
+    @op(out={"1": Out(int), "2": Out(int)})
     def solid_multiple_outputs():
         yield Output(2, output_name="2")
         yield Output(1, output_name="1")
@@ -479,7 +475,7 @@ def test_multiple_outputs_iterator():
 
 
 def test_wrong_output():
-    @solid
+    @op
     def solid_wrong_output():
         return Output(5, output_name="wrong_name")
 
@@ -497,11 +493,11 @@ def test_wrong_output():
 
 
 def test_optional_output_return():
-    @solid(
-        output_defs=[
-            OutputDefinition(int, name="1", is_required=False),
-            OutputDefinition(int, name="2"),
-        ]
+    @op(
+        out={
+            "1": Out(int, is_required=False),
+            "2": Out(int),
+        }
     )
     def solid_multiple_outputs_not_sent():
         return Output(2, output_name="2")
@@ -520,11 +516,11 @@ def test_optional_output_return():
 
 
 def test_optional_output_yielded():
-    @solid(
-        output_defs=[
-            OutputDefinition(int, name="1", is_required=False),
-            OutputDefinition(int, name="2"),
-        ]
+    @op(
+        out={
+            "1": Out(int, is_required=False),
+            "2": Out(int),
+        }
     )
     def solid_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
@@ -533,11 +529,11 @@ def test_optional_output_yielded():
 
 
 def test_optional_output_yielded_async():
-    @solid(
-        output_defs=[
-            OutputDefinition(int, name="1", is_required=False),
-            OutputDefinition(int, name="2"),
-        ]
+    @op(
+        out={
+            "1": Out(int, is_required=False),
+            "2": Out(int),
+        }
     )
     async def solid_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
@@ -555,7 +551,12 @@ def test_optional_output_yielded_async():
 
 def test_missing_required_output_generator():
     # Test missing required output from a generator solid
-    @solid(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
+    @op(
+        out={
+            "1": Out(int),
+            "2": Out(int),
+        }
+    )
     def solid_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
@@ -580,7 +581,12 @@ def test_missing_required_output_generator():
 
 def test_missing_required_output_generator_async():
     # Test missing required output from an async generator solid
-    @solid(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
+    @op(
+        out={
+            "1": Out(int),
+            "2": Out(int),
+        }
+    )
     async def solid_multiple_outputs_not_sent():
         yield Output(2, output_name="2")
 
@@ -611,7 +617,12 @@ def test_missing_required_output_generator_async():
 
 
 def test_missing_required_output_return():
-    @solid(output_defs=[OutputDefinition(int, name="1"), OutputDefinition(int, name="2")])
+    @op(
+        out={
+            "1": Out(int),
+            "2": Out(int),
+        }
+    )
     def solid_multiple_outputs_not_sent():
         return Output(2, output_name="2")
 
@@ -629,7 +640,11 @@ def test_missing_required_output_return():
 
 
 def test_output_sent_multiple_times():
-    @solid(output_defs=[OutputDefinition(int, name="1")])
+    @op(
+        out={
+            "1": Out(int),
+        }
+    )
     def solid_yields_twice():
         yield Output(1, "1")
         yield Output(2, "1")
@@ -661,7 +676,7 @@ def test_output_sent_multiple_times():
     ],
 )
 def test_invalid_properties_on_context(property_or_method_name, val_to_pass):
-    @solid
+    @op
     def solid_fails_getting_property(context):
         result = getattr(context, property_or_method_name)
         # for the case where property_or_method_name is a method, getting an attribute won't cause
@@ -673,7 +688,7 @@ def test_invalid_properties_on_context(property_or_method_name, val_to_pass):
 
 
 def test_solid_retry_requested():
-    @solid
+    @op
     def solid_retries():
         raise RetryRequested()
 
@@ -682,7 +697,7 @@ def test_solid_retry_requested():
 
 
 def test_solid_failure():
-    @solid
+    @op
     def solid_fails():
         raise Failure("oops")
 
@@ -691,7 +706,7 @@ def test_solid_failure():
 
 
 def test_yielded_asset_materialization():
-    @solid
+    @op
     def solid_yields_materialization(_):
         yield AssetMaterialization(asset_key=AssetKey(["fake"]))
         yield Output(5)
@@ -709,7 +724,7 @@ def test_yielded_asset_materialization():
 
 
 def test_input_type_check():
-    @solid(input_defs=[InputDefinition("x", dagster_type=int)])
+    @op(ins={"x": In(int)})
     def solid_takes_input(x):
         return x + 1
 
@@ -723,7 +738,7 @@ def test_input_type_check():
 
 
 def test_output_type_check():
-    @solid(output_defs=[OutputDefinition(dagster_type=int)])
+    @op(out=Out(dagster_type=int))
     def wrong_type():
         return "foo"
 
@@ -735,13 +750,13 @@ def test_output_type_check():
 
 
 def test_pending_node_invocation():
-    @solid
+    @op
     def basic_solid_to_hook():
         return 5
 
     assert basic_solid_to_hook.with_hooks(set())() == 5
 
-    @solid
+    @op
     def basic_solid_with_tag(context):
         assert context.has_tag("foo")
         return context.get_tag("foo")
@@ -750,7 +765,7 @@ def test_pending_node_invocation():
 
 
 def test_graph_invocation_out_of_composition():
-    @solid
+    @op
     def basic_solid():
         return 5
 
@@ -783,7 +798,7 @@ def test_pipeline_invocation():
         basic_pipeline()
 
 
-@solid
+@op
 async def foo_async() -> str:
     return "bar"
 
@@ -798,7 +813,7 @@ def test_coroutine_asyncio_invocation():
 
 
 def test_solid_invocation_nothing_deps():
-    @solid(input_defs=[InputDefinition("start", Nothing)])
+    @op(ins={"start": In(Nothing)})
     def nothing_dep():
         return 5
 
@@ -825,12 +840,12 @@ def test_solid_invocation_nothing_deps():
     # Ensure that not providing nothing dependency also works.
     assert nothing_dep() == 5
 
-    @solid(
-        input_defs=[
-            InputDefinition("x"),
-            InputDefinition("y", Nothing),
-            InputDefinition("z"),
-        ]
+    @op(
+        ins={
+            "x": In(),
+            "y": In(Nothing),
+            "z": In(),
+        }
     )
     def sandwiched_nothing_dep(x, z):
         return x + z
@@ -849,11 +864,11 @@ def test_solid_invocation_nothing_deps():
 
 
 def test_dynamic_output_gen():
-    @solid(
-        output_defs=[
-            DynamicOutputDefinition(name="a", is_required=False),
-            OutputDefinition(name="b", is_required=False),
-        ]
+    @op(
+        out={
+            "a": DynamicOut(is_required=False),
+            "b": Out(is_required=False),
+        }
     )
     def my_dynamic():
         yield DynamicOutput(value=1, mapping_key="1", output_name="a")
@@ -870,11 +885,11 @@ def test_dynamic_output_gen():
 
 
 def test_dynamic_output_async_gen():
-    @solid(
-        output_defs=[
-            DynamicOutputDefinition(name="a", is_required=False),
-            OutputDefinition(name="b", is_required=False),
-        ]
+    @op(
+        out={
+            "a": DynamicOut(is_required=False),
+            "b": Out(is_required=False),
+        }
     )
     async def aio_gen():
         yield DynamicOutput(value=1, mapping_key="1", output_name="a")
@@ -900,7 +915,11 @@ def test_dynamic_output_async_gen():
 
 
 def test_dynamic_output_non_gen():
-    @solid(output_defs=[DynamicOutputDefinition(name="a", is_required=False)])
+    @op(
+        out={
+            "a": DynamicOut(is_required=False),
+        }
+    )
     def should_not_work():
         return DynamicOutput(value=1, mapping_key="1", output_name="a")
 
@@ -918,7 +937,11 @@ def test_dynamic_output_non_gen():
 
 
 def test_dynamic_output_async_non_gen():
-    @solid(output_defs=[DynamicOutputDefinition(name="a", is_required=False)])
+    @op(
+        out={
+            "a": DynamicOut(is_required=False),
+        }
+    )
     def should_not_work():
         asyncio.sleep(0.01)
         return DynamicOutput(value=1, mapping_key="1", output_name="a")
@@ -944,7 +967,7 @@ def test_solid_invocation_with_bad_resources(capsys):
             raise Exception("oopsy daisy")
         yield "foo"
 
-    @solid(required_resource_keys={"my_resource"})
+    @op(required_resource_keys={"my_resource"})
     def solid_requires_resource(context):
         return context.resources.my_resource
 
@@ -966,7 +989,7 @@ def test_build_context_with_resources_config(context_builder):
     def my_resource(context):
         assert context.resource_config == "foo"
 
-    @solid(required_resource_keys={"my_resource"})
+    @op(required_resource_keys={"my_resource"})
     def my_solid(context):
         assert context.run_config["resources"]["my_resource"] == {"config": "foo"}
 

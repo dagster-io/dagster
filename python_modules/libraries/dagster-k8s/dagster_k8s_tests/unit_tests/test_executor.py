@@ -169,7 +169,7 @@ def _step_handler_context(pipeline, pipeline_run, instance, executor):
     plan_context = PlanOrchestrationContext(
         plan_data=PlanData(
             pipeline=pipeline,
-            pipeline_run=pipeline_run,
+            dagster_run=pipeline_run,
             instance=instance,
             execution_plan=execution_plan,
             raise_on_error=True,
@@ -393,8 +393,9 @@ def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
         method_name, _args, kwargs = mock_method_calls[0]
         assert method_name == "create_namespaced_job"
         assert kwargs["body"].spec.template.spec.containers[0].image == "bizbuz"
-        job_resources = kwargs["body"].spec.template.spec.containers[0].resources
-        assert job_resources.to_dict() == RESOURCE_TAGS
+        job_resources = kwargs["body"].spec.template.spec.containers[0].resources.to_dict()
+        job_resources.pop("claims", None)
+        assert job_resources == RESOURCE_TAGS
 
         env_vars = {
             env.name: env.value for env in kwargs["body"].spec.template.spec.containers[0].env

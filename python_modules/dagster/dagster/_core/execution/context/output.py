@@ -725,8 +725,8 @@ def get_output_context(
     """
     step = execution_plan.get_step_by_key(step_output_handle.step_key)
     # get config
-    solid_config = resolved_run_config.solids[step.solid_handle.to_string()]
-    outputs_config = solid_config.outputs
+    op_config = resolved_run_config.ops[step.node_handle.to_string()]
+    outputs_config = op_config.outputs
 
     if outputs_config:
         output_config = outputs_config.get_output_manager_config(step_output_handle.output_name)
@@ -739,7 +739,7 @@ def get_output_context(
     io_manager_key = output_def.io_manager_key
     resource_config = resolved_run_config.resources[io_manager_key].config
 
-    node_handle = execution_plan.get_step_by_key(step.key).solid_handle
+    node_handle = execution_plan.get_step_by_key(step.key).node_handle
     asset_info = pipeline_def.asset_layer.asset_info_for_output(
         node_handle=node_handle, output_name=step_output.name
     )
@@ -763,7 +763,7 @@ def get_output_context(
         metadata=output_def.metadata,
         mapping_key=step_output_handle.mapping_key,
         config=output_config,
-        op_def=pipeline_def.get_solid(step.solid_handle).definition,  # type: ignore  # (should be OpDefinition not NodeDefinition)
+        op_def=pipeline_def.get_solid(step.node_handle).definition,  # type: ignore  # (should be OpDefinition not NodeDefinition)
         dagster_type=output_def.dagster_type,
         log_manager=log_manager,
         version=version,

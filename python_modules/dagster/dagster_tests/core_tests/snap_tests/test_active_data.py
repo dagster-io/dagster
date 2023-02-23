@@ -4,6 +4,7 @@ from unittest import mock
 
 import pendulum
 from dagster import daily_partitioned_config, job, repository
+from dagster._core.definitions import op
 from dagster._core.host_representation import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
@@ -14,11 +15,11 @@ from dagster._core.host_representation.external_data import (
 from dagster._core.snap.pipeline_snapshot import create_pipeline_snapshot_id
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._legacy import ModeDefinition, PresetDefinition, daily_schedule, pipeline, solid
+from dagster._legacy import ModeDefinition, PresetDefinition, daily_schedule, pipeline
 from dagster._serdes import serialize_pp
 
 
-@solid
+@op
 def a_solid(_):
     pass
 

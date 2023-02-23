@@ -25,11 +25,11 @@ from dagster._core.storage.tags import (
 )
 from dagster._serdes import deserialize_json_to_dagster_namedtuple, whitelist_for_serdes
 
-CACHEABLE_PARTITION_TYPES = {
+CACHEABLE_PARTITION_TYPES = (
     TimeWindowPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
-}
+)
 
 
 @whitelist_for_serdes
@@ -170,9 +170,7 @@ def _build_status_cache(
     This method refreshes the asset status cache for a given asset key. It recalculates
     the materialized partition subset for the asset key and updates the cache value.
     """
-    if not partitions_def or not any(
-        isinstance(partitions_def, partition_type) for partition_type in CACHEABLE_PARTITION_TYPES
-    ):
+    if not partitions_def or not isinstance(partitions_def, CACHEABLE_PARTITION_TYPES):
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
     materialized_keys: Sequence[str]
@@ -224,9 +222,7 @@ def _get_updated_status_cache(
         return current_status_cache_value
 
     latest_storage_id = max([record.storage_id for record in unevaluated_event_records])
-    if not partitions_def or not any(
-        isinstance(partitions_def, partition_type) for partition_type in CACHEABLE_PARTITION_TYPES
-    ):
+    if not partitions_def or not isinstance(partitions_def, CACHEABLE_PARTITION_TYPES):
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
     check.invariant(

@@ -19,20 +19,20 @@ class StepHandlerContext:
         plan_context: PlanOrchestrationContext,
         steps: Sequence[ExecutionStep],
         execute_step_args: ExecuteStepArgs,
-        pipeline_run: Optional[DagsterRun] = None,
+        dagster_run: Optional[DagsterRun] = None,
     ) -> None:
         self._instance = instance
-        self._plan_context = plan_context
+        self._dagster_run = plan_context
         self._steps_by_key = {step.key: step for step in steps}
         self._execute_step_args = execute_step_args
-        self._pipeline_run = pipeline_run
+        self._pipeline_run = dagster_run
 
     @property
     def execute_step_args(self) -> ExecuteStepArgs:
         return self._execute_step_args
 
     @property
-    def pipeline_run(self) -> DagsterRun:
+    def dagster_run(self) -> DagsterRun:
         # lazy load
         if not self._pipeline_run:
             run_id = self.execute_step_args.pipeline_run_id
@@ -52,7 +52,7 @@ class StepHandlerContext:
         return self._instance
 
     def get_step_context(self, step_key: str) -> IStepContext:
-        return self._plan_context.for_step(self._steps_by_key[step_key])
+        return self._dagster_run.for_step(self._steps_by_key[step_key])
 
 
 class CheckStepHealthResult(

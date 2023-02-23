@@ -360,7 +360,7 @@ class GrapheneRun(graphene.ObjectType):
 
     def __init__(self, record: RunRecord):
         check.inst_param(record, "record", RunRecord)
-        pipeline_run = record.pipeline_run
+        pipeline_run = record.dagster_run
         super().__init__(
             runId=pipeline_run.run_id,
             status=pipeline_run.status.value,

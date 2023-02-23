@@ -3,25 +3,20 @@ import time
 
 from dagster import Int, ScheduleDefinition, op, repository, usable_as_dagster_type
 from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.errors import DagsterError
 from dagster._core.test_utils import default_mode_def_for_test
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PartitionSetDefinition,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import PartitionSetDefinition, pipeline
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 
 
-@lambda_solid
+@op
 def do_input(x):
     return x
 
@@ -31,7 +26,7 @@ def foo_pipeline():
     do_input(do_something())
 
 
-@lambda_solid
+@op
 def forever_solid():
     while True:
         time.sleep(10)
@@ -76,13 +71,13 @@ def bar_pipeline():
     class InputTypeWithoutHydration(int):
         pass
 
-    @solid(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    @op(out=Out(InputTypeWithoutHydration))
     def one(_):
         return 1
 
-    @solid(
-        input_defs=[InputDefinition("some_input", InputTypeWithoutHydration)],
-        output_defs=[OutputDefinition(Int)],
+    @op(
+        ins={"some_input": In(InputTypeWithoutHydration)},
+        out=Out(Int),
     )
     def fail_subset(_, some_input):
         return some_input

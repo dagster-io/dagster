@@ -5,6 +5,7 @@ from dagster import InputContext, MetadataValue, OutputContext, TableColumn, Tab
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_snowflake import build_snowflake_io_manager
+from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 from pyspark.sql import DataFrame, SparkSession
 
 SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
@@ -23,7 +24,6 @@ def _get_snowflake_options(config, table_slice: TableSlice) -> Mapping[str, str]
         "sfDatabase": config["database"],
         "sfSchema": table_slice.schema,
         "sfWarehouse": config["warehouse"],
-        "dbtable": table_slice.table,
     }
 
     return conf
@@ -63,15 +63,15 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
     """
 
     def handle_output(
-        self, context: OutputContext, table_slice: TableSlice, obj: DataFrame
+        self, context: OutputContext, table_slice: TableSlice, obj: DataFrame, _
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_snowflake_options(context.resource_config, table_slice)
 
         with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
 
-        with_uppercase_cols.write.format(SNOWFLAKE_CONNECTOR).options(**options).mode(
-            "append"
-        ).save()
+        with_uppercase_cols.write.format(SNOWFLAKE_CONNECTOR).options(**options).option(
+            "dbtable", table_slice.table
+        ).mode("append").save()
 
         return {
             "dataframe_columns": MetadataValue.table_schema(
@@ -84,11 +84,16 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
             ),
         }
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> DataFrame:
+    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:
         options = _get_snowflake_options(context.resource_config, table_slice)
 
         spark = SparkSession.builder.getOrCreate()
-        df = spark.read.format(SNOWFLAKE_CONNECTOR).options(**options).load()
+        df = (
+            spark.read.format(SNOWFLAKE_CONNECTOR)
+            .options(**options)
+            .option("query", SnowflakeDbClient.get_select_statement(table_slice))
+            .load()
+        )
 
         return df.toDF(*[c.lower() for c in df.columns])
 
@@ -97,9 +102,13 @@ class SnowflakePySparkTypeHandler(DbTypeHandler[DataFrame]):
         return [DataFrame]
 
 
-snowflake_pyspark_io_manager = build_snowflake_io_manager([SnowflakePySparkTypeHandler()])
+snowflake_pyspark_io_manager = build_snowflake_io_manager(
+    [SnowflakePySparkTypeHandler()], default_load_type=DataFrame
+)
 snowflake_pyspark_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes PySpark DataFrames to Snowflake.
+An IO manager definition that reads inputs from and writes PySpark DataFrames to Snowflake. When
+using the snowflake_pyspark_io_manager, any inputs and outputs without type annotations will be loaded
+as PySpark DataFrames.
 
 Returns:
     IOManagerDefinition

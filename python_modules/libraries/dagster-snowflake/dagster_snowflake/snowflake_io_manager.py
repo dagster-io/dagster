@@ -1,4 +1,5 @@
-from typing import Sequence, cast
+from contextlib import contextmanager
+from typing import Mapping, Optional, Sequence, Type, cast
 
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 from dagster._core.definitions.time_window_partitions import TimeWindow
@@ -16,13 +17,17 @@ from .resources import SnowflakeConnection
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOManagerDefinition:
+def build_snowflake_io_manager(
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+) -> IOManagerDefinition:
     """
     Builds an IO manager definition that reads inputs from and writes outputs to Snowflake.
 
     Args:
         type_handlers (Sequence[DbTypeHandler]): Each handler defines how to translate between
-            slices of Snowflake tables and an in-memory type - e.g. a Pandas DataFrame.
+            slices of Snowflake tables and an in-memory type - e.g. a Pandas DataFrame. If only
+            one DbTypeHandler is provided, it will be used as teh default_load_type.
+        default_load_type (Type): When an input has no type annotation, load it as this type.
 
     Returns:
         IOManagerDefinition
@@ -133,6 +138,7 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             io_manager_name="SnowflakeIOManager",
             database=init_context.resource_config["database"],
             schema=init_context.resource_config.get("schema"),
+            default_load_type=default_load_type,
         )
 
     return snowflake_io_manager
@@ -140,32 +146,34 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 
 class SnowflakeDbClient(DbClient):
     @staticmethod
-    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice) -> None:
+    @contextmanager
+    def connect(context, table_slice):
         no_schema_config = (
             {k: v for k, v in context.resource_config.items() if k != "schema"}
             if context.resource_config
             else {}
         )
         with SnowflakeConnection(
-            dict(schema=table_slice.schema, **no_schema_config), context.log
-        ).get_connection() as con:
-            con.execute_string(f"create schema if not exists {table_slice.schema};")
+            dict(
+                schema=table_slice.schema,
+                connector="sqlalchemy",
+                **cast(Mapping[str, str], no_schema_config),
+            ),
+            context.log,
+        ).get_connection(raw_conn=False) as conn:
+            yield conn
 
     @staticmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
-        no_schema_config = (
-            {k: v for k, v in context.resource_config.items() if k != "schema"}
-            if context.resource_config
-            else {}
-        )
-        with SnowflakeConnection(
-            dict(schema=table_slice.schema, **no_schema_config), context.log
-        ).get_connection() as con:
-            try:
-                con.execute_string(_get_cleanup_statement(table_slice))
-            except ProgrammingError:
-                # table doesn't exist yet, so ignore the error
-                pass
+    def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        connection.execute(f"create schema if not exists {table_slice.schema};")
+
+    @staticmethod
+    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
+        try:
+            connection.execute(_get_cleanup_statement(table_slice))
+        except ProgrammingError:
+            # table doesn't exist yet, so ignore the error
+            pass
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:

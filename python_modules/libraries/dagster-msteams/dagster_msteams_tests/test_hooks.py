@@ -1,4 +1,5 @@
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster import op
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster_msteams.hooks import teams_on_failure, teams_on_success
 from dagster_msteams.resources import msteams_resource
 from mock import patch
@@ -12,12 +13,12 @@ def my_message_fn(_):
     return "Some custom text"
 
 
-@solid
+@op
 def pass_solid(_):
     pass
 
 
-@solid
+@op
 def fail_solid(_):
     raise SomeUserException()
 

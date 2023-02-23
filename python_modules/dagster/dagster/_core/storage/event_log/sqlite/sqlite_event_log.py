@@ -1,6 +1,7 @@
 import glob
 import logging
 import os
+import re
 import sqlite3
 import threading
 import time
@@ -179,11 +180,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 err_msg = str(exc)
 
                 if not (
-                    "table asset_keys already exists" in err_msg
-                    or "table secondary_indexes already exists" in err_msg
-                    or "table event_logs already exists" in err_msg
-                    or "table asset_event_tags already exists" in err_msg
-                    or "table alembic_version already exists" in err_msg
+                    re.search(r"table [A-Za-z_]* already exists", err_msg)
                     or "database is locked" in err_msg
                     or "UNIQUE constraint failed: alembic_version.version_num" in err_msg
                 ):
@@ -338,7 +335,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         event_records = []
         for run_record in run_records:
-            run_id = run_record.pipeline_run.run_id
+            run_id = run_record.dagster_run.run_id
             with self.run_connection(run_id) as conn:
                 results = conn.execute(query).fetchall()
 

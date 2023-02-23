@@ -24,7 +24,7 @@ export const TextInput = React.forwardRef(
     } = props;
 
     return (
-      <Container $disabled={!!disabled}>
+      <TextInputContainer $disabled={!!disabled}>
         {icon ? <Icon name={icon} color={Colors.Gray900} /> : null}
         <StyledInput
           {...rest}
@@ -36,7 +36,7 @@ export const TextInput = React.forwardRef(
           type={type}
         />
         {rightElement ? <RightContainer>{rightElement}</RightContainer> : null}
-      </Container>
+      </TextInputContainer>
     );
   },
 );
@@ -56,7 +56,7 @@ export const TextInputContainerStyles = css`
   position: relative;
 `;
 
-const Container = styled.div<{$disabled: boolean}>`
+export const TextInputContainer = styled.div<{$disabled: boolean}>`
   ${TextInputContainerStyles}
 
   > ${IconWrapper}:first-child {

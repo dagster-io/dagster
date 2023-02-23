@@ -183,9 +183,12 @@ def fetch_location_statuses(
     check.inst_param(
         workspace_request_context, "workspace_request_context", BaseWorkspaceRequestContext
     )
+
+    # passes the ID to the GrapheneWorkspaceLocationStatusEntry, so it can be overridden in Cloud
     return GrapheneWorkspaceLocationStatusEntries(
         entries=[
             GrapheneWorkspaceLocationStatusEntry(
+                id=f"location_status:{status_entry.location_name}",
                 name=status_entry.location_name,
                 load_status=GrapheneRepositoryLocationLoadStatus.from_python_status(
                     status_entry.load_status

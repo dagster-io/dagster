@@ -186,7 +186,7 @@ class DagsterRunSerializer(DefaultNamedTupleSerializer):
             for key, value in storage_dict.items()
         }
         # called by the serdes layer, delegates to helper method with expanded kwargs
-        return pipeline_run_from_storage(**unpacked_dict)
+        return dagster_run_from_storage(**unpacked_dict)
 
     @classmethod
     def value_to_storage_dict(
@@ -205,7 +205,7 @@ class DagsterRunSerializer(DefaultNamedTupleSerializer):
         return storage
 
 
-def pipeline_run_from_storage(
+def dagster_run_from_storage(
     pipeline_name=None,
     run_id=None,
     run_config=None,
@@ -669,8 +669,6 @@ class RunsFilter(
 
 
 register_serdes_tuple_fallbacks({"PipelineRunsFilter": RunsFilter})
-# DEPRECATED - keeping around for backcompat reasons (some folks might have imported directly)
-PipelineRunsFilter = RunsFilter
 
 
 class JobBucket(NamedTuple):
@@ -689,7 +687,7 @@ class RunRecord(
         "_RunRecord",
         [
             ("storage_id", int),
-            ("pipeline_run", DagsterRun),
+            ("dagster_run", DagsterRun),
             ("create_timestamp", datetime),
             ("update_timestamp", datetime),
             ("start_time", Optional[float]),
@@ -706,7 +704,7 @@ class RunRecord(
     def __new__(
         cls,
         storage_id: int,
-        pipeline_run: DagsterRun,
+        dagster_run: DagsterRun,
         create_timestamp: datetime,
         update_timestamp: datetime,
         start_time: Optional[float] = None,
@@ -715,7 +713,7 @@ class RunRecord(
         return super(RunRecord, cls).__new__(
             cls,
             storage_id=check.int_param(storage_id, "storage_id"),
-            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", DagsterRun),
+            dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
             create_timestamp=check.inst_param(create_timestamp, "create_timestamp", datetime),
             update_timestamp=check.inst_param(update_timestamp, "update_timestamp", datetime),
             # start_time and end_time fields will be populated once the run has started and ended, respectively, but will be None beforehand.
@@ -724,8 +722,8 @@ class RunRecord(
         )
 
     @property
-    def dagster_run(self) -> DagsterRun:
-        return self.pipeline_run
+    def pipeline_run(self) -> DagsterRun:
+        return self.dagster_run
 
 
 @whitelist_for_serdes

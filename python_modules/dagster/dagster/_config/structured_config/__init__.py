@@ -25,8 +25,6 @@ from dagster._config.validate import process_config, validate_config
 from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
-    IDefinitionConfigSchema,
-    convert_user_facing_definition_config_schema,
 )
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.init import InitResourceContext
@@ -45,7 +43,7 @@ from pydantic import BaseModel, Extra
 from pydantic.fields import SHAPE_DICT, SHAPE_LIST, SHAPE_MAPPING, SHAPE_SINGLETON, ModelField
 
 import dagster._check as check
-from dagster import Field, Shape
+from dagster import Field, Selector, Shape
 from dagster._config.field_utils import (
     FIELD_NO_DEFAULT_PROVIDED,
     Map,
@@ -64,7 +62,7 @@ from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 from .utils import safe_is_subclass
 
-Self = TypeVar("Self", bound="Resource")
+Self = TypeVar("Self", bound="ConfigurableResource")
 
 
 class MakeConfigCacheable(BaseModel):
@@ -100,6 +98,37 @@ class Config(MakeConfigCacheable):
     """
     Base class for Dagster configuration models.
     """
+
+    def __init__(self, **config_dict):
+        """
+        This constructor is overridden to handle any remapping of raw config dicts to
+        the appropriate config classes. For example, discriminated unions are represented
+        in Dagster config as dicts with a single key, which is the discriminator value.
+        """
+        modified_data = {}
+        for key, value in config_dict.items():
+            field = self.__fields__.get(key)
+            if field and field.field_info.discriminator:
+                nested_items = list(check.is_dict(value).items())
+                check.invariant(
+                    len(nested_items) == 1, "Discriminated union must have exactly one key"
+                )
+                discriminated_value, nested_values = nested_items[0]
+
+                modified_data[key] = {
+                    **nested_values,
+                    field.discriminator_key: discriminated_value,
+                }
+            else:
+                modified_data[key] = value
+        super().__init__(**modified_data)
+
+    def _as_config_dict(self) -> Mapping[str, Any]:
+        """
+        Returns a dictionary representation of this config object,
+        ignoring any private fields.
+        """
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
 
 
 class PermissiveConfig(Config):
@@ -173,7 +202,7 @@ def _process_config_values(
     return post_processed_config.value or {}
 
 
-def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSchema:
+def _curry_config_schema(schema_field: Field, data: Any) -> DefinitionConfigSchema:
     """Return a new config schema configured with the passed in data"""
     return DefinitionConfigSchema(_apply_defaults_to_schema_field(schema_field, data))
 
@@ -333,7 +362,7 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
 def attach_resource_id_to_key_mapping(
     resource_def: Any, resource_id_to_key_mapping: Dict[ResourceId, str]
 ) -> Any:
-    if isinstance(resource_def, (Resource, PartialResource)):
+    if isinstance(resource_def, (ConfigurableResource, PartialResource)):
         return (
             IOManagerWithKeyMapping(resource_def, resource_id_to_key_mapping)
             if isinstance(resource_def, IOManagerDefinition)
@@ -342,7 +371,7 @@ def attach_resource_id_to_key_mapping(
     return resource_def
 
 
-class Resource(
+class ConfigurableResource(
     Generic[TResValue],
     ResourceDefinition,
     Config,
@@ -359,7 +388,7 @@ class Resource(
     Example:
     .. code-block:: python
 
-        class WriterResource(Resource):
+        class WriterResource(ConfigurableResource):
             prefix: str
 
             def output(self, text: str) -> None:
@@ -374,12 +403,11 @@ class Resource(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
         )
 
-        post_processed_data = _process_config_values(
-            schema, data_without_resources, self.__class__.__name__
-        )
-        curried_schema = _curry_config_schema(schema, post_processed_data)
+        # Resolve e.g. EnvVar values
+        resolved_config_dict = config_dictionary_from_values(data_without_resources, schema)
+        curried_schema = _curry_config_schema(schema, resolved_config_dict)
 
-        Config.__init__(self, **{**post_processed_data, **resource_pointers})
+        Config.__init__(self, **{**data_without_resources, **resource_pointers})
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
@@ -393,6 +421,8 @@ class Resource(
             config_schema=curried_schema,
             description=self.__doc__,
         )
+        self._resolved_config_dict = resolved_config_dict
+        self._schema = schema
 
     @classmethod
     def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":
@@ -402,10 +432,39 @@ class Resource(
         """
         return PartialResource(cls, data=kwargs)
 
-    def initialize_and_run(self, context: InitResourceContext) -> TResValue:
-        # If we have any partially configured resources, we need to update them
-        # with the fully configured resources from the context
+    def _with_updated_values(self, values: Mapping[str, Any]) -> "ConfigurableResource[TResValue]":
+        """
+        Returns a new instance of the resource with the given values.
+        Used when initializing a resource at runtime.
+        """
+        # Since Resource extends BaseModel and is a dataclass, we know that the
+        # signature of any __init__ method will always consist of the fields
+        # of this class. We can therefore safely pass in the values as kwargs.
+        return self.__class__(**{**self._as_config_dict(), **values})
 
+    def _resolve_and_update_env_vars(self) -> "ConfigurableResource[TResValue]":
+        """
+        Processes the config dictionary to resolve any EnvVar values. This is called at runtime
+        when the resource is initialized, so the user is only shown the error if they attempt to
+        kick off a run relying on this resource.
+
+        Returns a new instance of the resource.
+        """
+        post_processed_data = _process_config_values(
+            self._schema, self._resolved_config_dict, self.__class__.__name__
+        )
+        return self._with_updated_values(post_processed_data)
+
+    def _resolve_and_update_nested_resources(
+        self, context: InitResourceContext
+    ) -> "ConfigurableResource[TResValue]":
+        """
+        Updates any nested resources with the resource values from the context.
+        In this case, populating partially configured resources or
+        resources that return plain Python types.
+
+        Returns a new instance of the resource.
+        """
         partial_resources_to_update: Dict[str, Any] = {}
         if self._nested_partial_resources:
             context_with_mapping = cast(
@@ -434,16 +493,18 @@ class Resource(
         }
 
         to_update = {**resources_to_update, **partial_resources_to_update}
+        return self._with_updated_values(to_update)
 
-        for attr_name, value in to_update.items():
-            object.__setattr__(self, attr_name, value)
+    def initialize_and_run(self, context: InitResourceContext) -> TResValue:
+        with_nested_resources = self._resolve_and_update_nested_resources(context)
+        with_env_vars = with_nested_resources._resolve_and_update_env_vars()
 
-        return self._create_object_fn(context)
+        return with_env_vars._create_object_fn(context)
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
-        return self.create_object_to_pass_to_user_code(context)
+        return self.create_resource_to_inject(context)
 
-    def create_object_to_pass_to_user_code(
+    def create_resource_to_inject(
         self, context: InitResourceContext
     ) -> TResValue:  # pylint: disable=unused-argument
         """
@@ -459,13 +520,10 @@ class Resource(
 
 def _is_fully_configured(resource: ResourceDefinition) -> bool:
     res = (
-        ConfiguredDefinitionConfigSchema(
-            resource,
-            convert_user_facing_definition_config_schema(resource.config_schema),
+        validate_config(
+            resource.config_schema.config_type,
             resource.config_schema.default_value if resource.config_schema.default_provided else {},
-        )
-        .resolve_config({})
-        .success
+        ).success
         is True
     )
 
@@ -476,9 +534,9 @@ class PartialResource(
     Generic[TResValue], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
 ):
     data: Dict[str, Any]
-    resource_cls: Type[Resource[TResValue]]
+    resource_cls: Type[ConfigurableResource[TResValue]]
 
-    def __init__(self, resource_cls: Type[Resource[TResValue]], data: Dict[str, Any]):
+    def __init__(self, resource_cls: Type[ConfigurableResource[TResValue]], data: Dict[str, Any]):
         resource_pointers, data_without_resources = _separate_resource_params(data)
 
         MakeConfigCacheable.__init__(self, data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
@@ -505,9 +563,9 @@ class PartialResource(
         )
 
 
-ResourceOrPartial: TypeAlias = Union[Resource[TResValue], PartialResource[TResValue]]
+ResourceOrPartial: TypeAlias = Union[ConfigurableResource[TResValue], PartialResource[TResValue]]
 ResourceOrPartialOrValue: TypeAlias = Union[
-    Resource[TResValue], PartialResource[TResValue], ResourceDefinition, TResValue
+    ConfigurableResource[TResValue], PartialResource[TResValue], ResourceDefinition, TResValue
 ]
 
 
@@ -518,14 +576,14 @@ class ResourceDependency(Generic[V]):
     def __set_name__(self, _owner, name):
         self._name = name
 
-    def __get__(self, obj: "Resource", __owner: Any) -> V:
+    def __get__(self, obj: "ConfigurableResource", __owner: Any) -> V:
         return getattr(obj, self._name)
 
     def __set__(self, obj: Optional[object], value: ResourceOrPartialOrValue[V]) -> None:
         setattr(obj, self._name, value)
 
 
-class StructuredResourceAdapter(Resource, ABC):
+class ConfigurableResourceAdapter(ConfigurableResource, ABC):
     """
     Adapter base class for wrapping a decorated, function-style resource
     with structured config.
@@ -545,7 +603,7 @@ class StructuredResourceAdapter(Resource, ABC):
 
             return output
 
-        class WriterResource(StructuredResourceAdapter):
+        class WriterResource(ConfigurableResourceAdapter):
             prefix: str
 
             @property
@@ -566,7 +624,7 @@ class StructuredResourceAdapter(Resource, ABC):
         return self.wrapped_resource(*args, **kwargs)
 
 
-class StructuredConfigIOManagerBase(Resource[TIOManagerValue], IOManagerDefinition):
+class ConfigurableIOManagerInjector(ConfigurableResource[TIOManagerValue], IOManagerDefinition):
     """
     Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
@@ -578,7 +636,7 @@ class StructuredConfigIOManagerBase(Resource[TIOManagerValue], IOManagerDefiniti
     """
 
     def __init__(self, **data: Any):
-        Resource.__init__(self, **data)
+        ConfigurableResource.__init__(self, **data)
         IOManagerDefinition.__init__(
             self,
             resource_fn=self.initialize_and_run,
@@ -587,10 +645,10 @@ class StructuredConfigIOManagerBase(Resource[TIOManagerValue], IOManagerDefiniti
         )
 
     def _create_object_fn(self, context: InitResourceContext) -> TIOManagerValue:
-        return self.create_io_manager_to_pass_to_user_code(context)
+        return self.create_io_manager_to_inject(context)
 
     @abstractmethod
-    def create_io_manager_to_pass_to_user_code(self, context) -> TIOManagerValue:
+    def create_io_manager_to_inject(self, context) -> TIOManagerValue:
         """Implement as one would implement a @io_manager decorator function"""
         raise NotImplementedError()
 
@@ -604,7 +662,7 @@ class StructuredConfigIOManagerBase(Resource[TIOManagerValue], IOManagerDefiniti
 
 
 class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManagerDefinition):
-    def __init__(self, resource_cls: Type[Resource[TResValue]], data: Dict[str, Any]):
+    def __init__(self, resource_cls: Type[ConfigurableResource[TResValue]], data: Dict[str, Any]):
         PartialResource.__init__(self, resource_cls, data)
         IOManagerDefinition.__init__(
             self,
@@ -614,7 +672,7 @@ class PartialIOManager(Generic[TResValue], PartialResource[TResValue], IOManager
         )
 
 
-class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
+class ConfigurableIOManager(ConfigurableIOManagerInjector, IOManager):
     """
     Base class for Dagster IO managers that utilize structured config.
 
@@ -623,7 +681,7 @@ class StructuredConfigIOManager(StructuredConfigIOManagerBase, IOManager):
     :py:meth:`handle_output` and :py:meth:`load_input` methods.
     """
 
-    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+    def create_io_manager_to_inject(self, context) -> IOManager:
         return self
 
 
@@ -670,6 +728,9 @@ def _convert_pydantic_field(pydantic_field: ModelField) -> Field:
         if pydantic_field.key_field
         else None
     )
+    if pydantic_field.field_info.discriminator:
+        return _convert_pydantic_descriminated_union_field(pydantic_field)
+
     if safe_is_subclass(pydantic_field.type_, Config):
         inferred_field = infer_schema_from_config_class(
             pydantic_field.type_,
@@ -725,13 +786,13 @@ def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
     )
 
 
-class StructuredIOManagerAdapter(StructuredConfigIOManagerBase):
+class StructuredIOManagerAdapter(ConfigurableIOManagerInjector):
     @property
     @abstractmethod
     def wrapped_io_manager(self) -> IOManagerDefinition:
         raise NotImplementedError()
 
-    def create_io_manager_to_pass_to_user_code(self, context) -> IOManager:
+    def create_io_manager_to_inject(self, context) -> IOManager:
         raise NotImplementedError(
             "Because we override resource_fn in the adapter, this is never called."
         )
@@ -739,6 +800,58 @@ class StructuredIOManagerAdapter(StructuredConfigIOManagerBase):
     @property
     def resource_fn(self) -> ResourceFunction:
         return self.wrapped_io_manager.resource_fn
+
+
+def _convert_pydantic_descriminated_union_field(pydantic_field: ModelField) -> Field:
+    """
+    Builds a Selector config field from a Pydantic field which is a descriminated union.
+
+    For example:
+
+    class Cat(Config):
+        pet_type: Literal["cat"]
+        meows: int
+
+    class Dog(Config):
+        pet_type: Literal["dog"]
+        barks: float
+
+    class OpConfigWithUnion(Config):
+        pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
+
+    Becomes:
+
+    Shape({
+      "pet": Selector({
+          "cat": Shape({"meows": Int}),
+          "dog": Shape({"barks": Float}),
+      })
+    })
+    """
+    sub_fields_mapping = pydantic_field.sub_fields_mapping
+    if not sub_fields_mapping or not all(
+        issubclass(pydantic_field.type_, Config) for pydantic_field in sub_fields_mapping.values()
+    ):
+        raise NotImplementedError("Descriminated unions with non-Config types are not supported.")
+
+    # First, we generate a mapping between the various discriminator values and the
+    # Dagster config fields that correspond to them. We strip the discriminator key
+    # from the fields, since the user should not have to specify it.
+
+    assert pydantic_field.sub_fields_mapping
+    dagster_config_field_mapping = {
+        discriminator_value: infer_schema_from_config_class(
+            field.type_,
+            fields_to_omit={pydantic_field.field_info.discriminator}
+            if pydantic_field.field_info.discriminator
+            else None,
+        )
+        for discriminator_value, field in sub_fields_mapping.items()
+    }
+
+    # We then nest the union fields under a Selector. The keys for the selector
+    # are the various discriminator values
+    return Field(config=Selector(fields=dagster_config_field_mapping))
 
 
 def infer_schema_from_config_annotation(model_cls: Any, config_arg_default: Any) -> Field:
@@ -774,7 +887,7 @@ def infer_schema_from_config_class(
     fields_to_omit = fields_to_omit or set()
 
     check.param_invariant(
-        issubclass(model_cls, Config),
+        safe_is_subclass(model_cls, Config),
         "Config type annotation must inherit from dagster._config.structured_config.Config",
     )
 
@@ -819,6 +932,6 @@ def _call_resource_fn_with_default(obj: ResourceDefinition, context: InitResourc
 
 LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(
     resource_dep_type=ResourceDependency,
-    resource_type=Resource,
+    resource_type=ConfigurableResource,
     partial_resource_type=PartialResource,
 )

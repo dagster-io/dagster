@@ -85,7 +85,7 @@ class ExecutionResult(ABC):
             )
         # Resolve the first layer of mapping
         output_mapping = graph_def.get_output_mapping(output_name)
-        mapped_node = graph_def.node_named(output_mapping.maps_from.solid_name)
+        mapped_node = graph_def.node_named(output_mapping.maps_from.node_name)
         origin_output_def, origin_handle = mapped_node.definition.resolve_output_to_origin(
             output_mapping.maps_from.output_name,
             NodeHandle(mapped_node.name, None),
@@ -97,7 +97,7 @@ class ExecutionResult(ABC):
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> object:
         # resolve handle of node that node_str is referring to
         target_handle = NodeHandle.from_string(node_str)
-        target_node_def = self.job_def.graph.get_solid(target_handle).definition
+        target_node_def = self.job_def.graph.get_node(target_handle).definition
         origin_output_def, origin_handle = target_node_def.resolve_output_to_origin(
             output_name, NodeHandle.from_string(node_str)
         )

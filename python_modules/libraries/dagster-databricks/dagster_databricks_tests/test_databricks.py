@@ -5,14 +5,18 @@ import dagster_databricks
 import dagster_pyspark
 import pytest
 from dagster._utils.test import create_test_pipeline_execution_context
-from dagster_databricks.databricks import DatabricksError, DatabricksJobRunner, DatabricksRunState
-from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
+from dagster_databricks.databricks import DatabricksError, DatabricksJobRunner
+from dagster_databricks.types import (
+    DatabricksRunLifeCycleState,
+    DatabricksRunResultState,
+    DatabricksRunState,
+)
 
 HOST = "https://uksouth.azuredatabricks.net"
 TOKEN = "super-secret-token"
 
 
-@mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
+@mock.patch("databricks_cli.sdk.JobsService.submit_run")
 def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_config):
     mock_submit_run.return_value = {"run_id": 1}
 
@@ -42,7 +46,7 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
     )
 
 
-@mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
+@mock.patch("databricks_cli.sdk.JobsService.submit_run")
 def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_config):
     mock_submit_run.return_value = {"run_id": 1}
 
@@ -75,9 +79,9 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
     )
 
 
-@mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
+@mock.patch("databricks_cli.sdk.JobsService.submit_run")
 def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
-    mock_submit_run.return_value = 1
+    mock_submit_run.return_value = {"run_id": 1}
 
     context = create_test_pipeline_execution_context()
     runner = DatabricksJobRunner(HOST, TOKEN, poll_interval_sec=0.01)
@@ -87,8 +91,8 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
     calls = {
         "num_calls": 0,
         "final_state": DatabricksRunState(
-            DatabricksRunLifeCycleState.Terminated,
-            DatabricksRunResultState.Success,
+            DatabricksRunLifeCycleState.TERMINATED,
+            DatabricksRunResultState.SUCCESS,
             "Finished",
         ),
     }
@@ -98,15 +102,15 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
 
         if calls["num_calls"] == 1:
             return DatabricksRunState(
-                DatabricksRunLifeCycleState.Pending,
+                DatabricksRunLifeCycleState.PENDING,
                 None,
-                None,
+                "",
             )
         elif calls["num_calls"] == 2:
             return DatabricksRunState(
-                DatabricksRunLifeCycleState.Running,
+                DatabricksRunLifeCycleState.RUNNING,
                 None,
-                None,
+                "",
             )
         else:
             return calls["final_state"]
@@ -116,8 +120,8 @@ def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
 
     calls["num_calls"] = 0
     calls["final_state"] = DatabricksRunState(
-        DatabricksRunLifeCycleState.Terminated,
-        DatabricksRunResultState.Failed,
+        DatabricksRunLifeCycleState.TERMINATED,
+        DatabricksRunResultState.FAILED,
         "Failed",
     )
     with pytest.raises(DatabricksError) as exc_info:

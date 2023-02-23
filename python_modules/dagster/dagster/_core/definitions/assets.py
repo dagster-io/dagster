@@ -216,7 +216,7 @@ class AssetsDefinition(ResourceAddable):
         )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
-        from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+        from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
         from dagster._core.execution.context.compute import OpExecutionContext
 
         from .graph_definition import GraphDefinition
@@ -615,12 +615,16 @@ class AssetsDefinition(ResourceAddable):
     def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
         return self._partition_mappings.get(self._keys_by_input_name[input_name])
 
-    def infer_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
+    def infer_partition_mapping(
+        self, upstream_asset_key: AssetKey, upstream_partitions_def: Optional[PartitionsDefinition]
+    ) -> PartitionMapping:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            partition_mapping = self._partition_mappings.get(in_asset_key)
-            return infer_partition_mapping(partition_mapping, self._partitions_def)
+            partition_mapping = self._partition_mappings.get(upstream_asset_key)
+            return infer_partition_mapping(
+                partition_mapping, self._partitions_def, upstream_partitions_def
+            )
 
     def get_output_name_for_asset_key(self, key: AssetKey) -> str:
         for output_name, asset_key in self.keys_by_output_name.items():
@@ -1074,7 +1078,7 @@ def _build_invocation_context_with_included_resources(
         # pylint: disable=protected-access
         return build_op_context(
             resources=all_resources,
-            config=context.solid_config,
+            config=context.op_config,
             resources_config=context._resources_config,
             instance=context._instance,
             partition_key=context._partition_key,
@@ -1105,7 +1109,7 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
 
     # set of nodes that have outputs mapped to a graph output
     mapped_output_nodes = {
-        output_mapping.maps_from.solid_name for output_mapping in graph_def.output_mappings
+        output_mapping.maps_from.node_name for output_mapping in graph_def.output_mappings
     }
 
     # leaf nodes which do not have an associated mapped output

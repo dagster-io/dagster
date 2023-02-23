@@ -61,7 +61,7 @@ def create_step_outputs(
     config_output_names: Set[str] = set()
     current_handle = handle
     while current_handle:
-        solid_config = resolved_run_config.solids[current_handle.to_string()]
+        solid_config = resolved_run_config.ops[current_handle.to_string()]
         current_handle = current_handle.parent
         config_output_names = config_output_names.union(solid_config.outputs.output_names)
 
@@ -111,7 +111,7 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputU
             ).format(
                 described_node=step_context.describe_op(),
                 type_=type(event),
-                node_type=step_context.solid_def.node_type_str,
+                node_type=step_context.op_def.node_type_str,
             )
         )
 
@@ -143,7 +143,7 @@ def _yield_compute_results(
                 "its results"
             ).format(
                 described_node=step_context.describe_op(),
-                node_type=step_context.solid_def.node_type_str,
+                node_type=step_context.op_def.node_type_str,
             )
         )
 
@@ -161,7 +161,7 @@ def _yield_compute_results(
             msg_fn=lambda: f"Error occurred while executing {op_label}:",
             step_context=step_context,
             step_key=step_context.step.key,
-            op_def_name=step_context.solid_def.name,
+            op_def_name=step_context.op_def.name,
             op_name=step_context.solid.name,
         ),
         user_event_generator,
@@ -196,6 +196,6 @@ def execute_core_compute(
     omitted_outputs = solid_output_names.difference(emitted_result_names)
     if omitted_outputs:
         step_context.log.info(
-            f"{step_context.solid_def.node_type_str} '{str(step.solid_handle)}' did not fire "
+            f"{step_context.op_def.node_type_str} '{str(step.node_handle)}' did not fire "
             f"outputs {repr(omitted_outputs)}"
         )

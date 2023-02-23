@@ -119,8 +119,8 @@ class HookContext:
 
     @property
     def solid_config(self) -> Any:
-        solid_config = self._step_execution_context.resolved_run_config.solids.get(
-            str(self._step_execution_context.step.solid_handle)
+        solid_config = self._step_execution_context.resolved_run_config.ops.get(
+            str(self._step_execution_context.step.node_handle)
         )
         return solid_config.config if solid_config else None
 

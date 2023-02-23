@@ -11,7 +11,9 @@ from dagster import (
     asset,
     io_manager,
     materialize,
+    observable_source_asset,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, Output
@@ -19,10 +21,15 @@ from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
     INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX,
     LOGICAL_VERSION_TAG_KEY,
+    CachingStaleStatusResolver,
     LogicalVersion,
+    StaleStatus,
+    StaleStatusCause,
     compute_logical_version,
 )
+from dagster._core.definitions.observe import observe
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster._core.instance_for_test import instance_for_test
 from typing_extensions import Literal
 
 # ########################
@@ -30,12 +37,22 @@ from typing_extensions import Literal
 # ########################
 
 
+class MaterializationTable:
+    def __init__(self, materializations: Mapping[AssetKey, AssetMaterialization]):
+        self.materializations = materializations
+
+    def __getitem__(self, key: Union[str, AssetKey]) -> AssetMaterialization:
+        asset_key = AssetKey([key]) if isinstance(key, str) else key
+        return self.materializations[asset_key]
+
+
+# Used to provide sorrce asset dependency
 class MockIOManager(IOManager):
     def handle_output(self, context, obj):
         pass
 
     def load_input(self, context):
-        pass
+        return 1
 
 
 @io_manager
@@ -51,13 +68,13 @@ def get_mat_from_result(result: ExecuteInProcessResult, node_str: str) -> AssetM
 
 def get_mats_from_result(
     result: ExecuteInProcessResult, assets: Sequence[AssetsDefinition]
-) -> Mapping[AssetKey, AssetMaterialization]:
+) -> MaterializationTable:
     mats: Dict[AssetKey, AssetMaterialization] = {}
     for asset_def in assets:
         node_str = asset_def.node_def.name if asset_def.node_def else asset_def.key.path[-1]
         for mat in result.asset_materializations_for_node(node_str):
             mats[mat.asset_key] = cast(AssetMaterialization, mat)
-    return mats
+    return MaterializationTable(mats)
 
 
 def get_upstream_version_from_mat_provenance(
@@ -72,9 +89,10 @@ def get_version_from_mat(mat: AssetMaterialization) -> str:
     return mat.tags[LOGICAL_VERSION_TAG_KEY]
 
 
-def assert_logical_version(mat: AssetMaterialization, version: LogicalVersion) -> None:
+def assert_logical_version(mat: AssetMaterialization, version: Union[str, LogicalVersion]) -> None:
+    value = version.value if isinstance(version, LogicalVersion) else version
     assert mat.tags
-    assert mat.tags[LOGICAL_VERSION_TAG_KEY] == version.value
+    assert mat.tags[LOGICAL_VERSION_TAG_KEY] == value
 
 
 def assert_code_version(mat: AssetMaterialization, version: str) -> None:
@@ -123,7 +141,7 @@ def materialize_asset(
     instance: DagsterInstance,
     *,
     is_multi: Literal[True],
-) -> Mapping[AssetKey, AssetMaterialization]:
+) -> MaterializationTable:
     ...
 
 
@@ -143,7 +161,7 @@ def materialize_asset(
     asset_to_materialize: AssetsDefinition,
     instance: DagsterInstance,
     is_multi: bool = False,
-) -> Union[AssetMaterialization, Mapping[AssetKey, AssetMaterialization]]:
+) -> Union[AssetMaterialization, MaterializationTable]:
     assets: List[Union[AssetsDefinition, SourceAsset]] = []
     for asset_def in all_assets:
         if isinstance(asset_def, SourceAsset):
@@ -165,7 +183,7 @@ def materialize_asset(
 
 def materialize_assets(
     assets: Sequence[AssetsDefinition], instance: DagsterInstance
-) -> Mapping[AssetKey, AssetMaterialization]:
+) -> MaterializationTable:
     result = materialize(assets, instance=instance, resources={"io_manager": mock_io_manager})
     return get_mats_from_result(result, assets)
 
@@ -178,6 +196,13 @@ def materialize_twice(
     mat1 = materialize_asset(all_assets, asset_to_materialize, instance)
     mat2 = materialize_asset(all_assets, asset_to_materialize, instance)
     return mat1, mat2
+
+
+def get_stale_status_resolver(instance, assets) -> CachingStaleStatusResolver:
+    return CachingStaleStatusResolver(
+        instance=instance,
+        asset_graph=AssetGraph.from_assets(assets),
+    )
 
 
 # ########################
@@ -365,3 +390,98 @@ def test_multiple_code_versions():
     assert_code_version(alpha_mat, "a")
     assert_logical_version(beta_mat, compute_logical_version("b", {}))
     assert_code_version(beta_mat, "b")
+
+
+def test_stale_status() -> None:
+    x = 0
+
+    @observable_source_asset
+    def source1(_context):
+        nonlocal x
+        x = x + 1
+        return LogicalVersion(str(x))
+
+    @asset(code_version="abc")
+    def asset1(source1):
+        ...
+
+    @asset(code_version="xyz")
+    def asset2(asset1):
+        ...
+
+    # one cause per line for readability
+
+    all_assets = [source1, asset1, asset2]
+    with instance_for_test() as instance:
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        assert status_resolver.get_status(source1.key) == StaleStatus.FRESH
+        assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
+        assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
+        assert status_resolver.get_status_causes(asset2.key)[0] == StaleStatusCause(
+            StaleStatus.STALE, asset2.key, "never materialized"
+        )
+
+        materialize_assets(all_assets, instance)
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        assert status_resolver.get_status(asset1.key) == StaleStatus.FRESH
+        assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
+
+        observe([source1], instance=instance)
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
+        assert status_resolver.get_status_causes(asset1.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated input: source1"),
+        ]
+        assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
+        assert status_resolver.get_status_causes(asset2.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset2.key, "stale input: asset1"),
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated input: source1"),
+        ]
+        materialize_assets(all_assets, instance)
+
+        # Simulate updating an asset with a new code version
+        @asset(name="asset1", code_version="def")
+        def asset1_v2(source1):
+            ...
+
+        all_assets_v2 = [source1, asset1_v2, asset2]
+
+        status_resolver = get_stale_status_resolver(instance, all_assets_v2)
+        assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
+        assert status_resolver.get_status_causes(asset1.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated code version"),
+        ]
+        assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
+        assert status_resolver.get_status_causes(asset2.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset2.key, "stale input: asset1"),
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated code version"),
+        ]
+
+        @asset
+        def asset3():
+            ...
+
+        @asset(name="asset2", code_version="xyz")
+        def asset2_v2(asset3):
+            ...
+
+        all_assets_v3 = [source1, asset1_v2, asset2_v2, asset3]
+
+        status_resolver = get_stale_status_resolver(instance, all_assets_v3)
+        assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
+        assert status_resolver.get_status_causes(asset2.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset2.key, "removed input: asset1"),
+            StaleStatusCause(StaleStatus.STALE, asset2.key, "new input: asset3"),
+            StaleStatusCause(StaleStatus.STALE, asset3.key, "never materialized"),
+        ]
+
+
+def test_set_logical_version_inside_op():
+    instance = DagsterInstance.ephemeral()
+
+    @asset
+    def asset1():
+        return Output(1, logical_version=LogicalVersion("foo"))
+
+    mat = materialize_asset([asset1], asset1, instance)
+    assert_logical_version(mat, LogicalVersion("foo"))

@@ -206,6 +206,8 @@ export type AssetNode = {
   projectedLogicalVersion: Maybe<Scalars['String']>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
+  staleStatus: Maybe<StaleStatus>;
+  staleStatusCauses: Array<StaleStatusCause>;
   type: Maybe<DagsterType>;
 };
 
@@ -575,7 +577,6 @@ export type DagitQuery = {
   permissions: Array<Permission>;
   pipelineOrError: PipelineOrError;
   pipelineRunOrError: RunOrError;
-  pipelineRunTags: Array<PipelineTagAndValues>;
   pipelineRunsOrError: RunsOrError;
   pipelineSnapshotOrError: PipelineSnapshotOrError;
   repositoriesOrError: RepositoriesOrError;
@@ -584,6 +585,8 @@ export type DagitQuery = {
   runGroupOrError: RunGroupOrError;
   runGroupsOrError: RunGroupsOrError;
   runOrError: RunOrError;
+  runTagKeys: Array<Scalars['String']>;
+  runTags: Array<PipelineTagAndValues>;
   runsOrError: RunsOrError;
   scheduleOrError: ScheduleOrError;
   scheduler: SchedulerOrError;
@@ -733,6 +736,12 @@ export type DagitQueryRunOrErrorArgs = {
   runId: Scalars['ID'];
 };
 
+export type DagitQueryRunTagsArgs = {
+  limit?: InputMaybe<Scalars['Int']>;
+  tagKeys?: InputMaybe<Array<Scalars['String']>>;
+  valuePrefix?: InputMaybe<Scalars['String']>;
+};
+
 export type DagitQueryRunsOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']>;
   filter?: InputMaybe<RunsFilter>;
@@ -835,6 +844,12 @@ export enum DagsterEventType {
   STEP_WORKER_STARTED = 'STEP_WORKER_STARTED',
   STEP_WORKER_STARTING = 'STEP_WORKER_STARTING',
 }
+
+export type DagsterLibraryVersion = {
+  __typename: 'DagsterLibraryVersion';
+  name: Scalars['String'];
+  version: Scalars['String'];
+};
 
 export type DagsterRunEvent =
   | AlertFailureEvent
@@ -2686,6 +2701,7 @@ export type RepositoryConnection = {
 
 export type RepositoryLocation = {
   __typename: 'RepositoryLocation';
+  dagsterLibraryVersions: Maybe<Array<DagsterLibraryVersion>>;
   environmentPath: Maybe<Scalars['String']>;
   id: Scalars['ID'];
   isReloadSupported: Scalars['Boolean'];
@@ -3417,6 +3433,19 @@ export type SolidStepStatsOrError = SolidStepStatsConnection | SolidStepStatusUn
 export type SolidStepStatusUnavailableError = Error & {
   __typename: 'SolidStepStatusUnavailableError';
   message: Scalars['String'];
+};
+
+export enum StaleStatus {
+  FRESH = 'FRESH',
+  STALE = 'STALE',
+  UNKNOWN = 'UNKNOWN',
+}
+
+export type StaleStatusCause = {
+  __typename: 'StaleStatusCause';
+  key: AssetKey;
+  reason: Scalars['String'];
+  status: StaleStatus;
 };
 
 export type StartScheduleMutation = {

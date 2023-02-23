@@ -6,12 +6,15 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
     Union,
     cast,
 )
+
+from typing_extensions import TypedDict
 
 import dagster._check as check
 from dagster._core.definitions import (
@@ -24,7 +27,7 @@ from dagster._core.definitions import (
     OutputDefinition,
     TypeCheck,
 )
-from dagster._core.definitions.decorators.solid_decorator import DecoratedOpFunction
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.logical_version import (
     CODE_VERSION_TAG_KEY,
@@ -133,6 +136,7 @@ def _step_output_error_checked_user_event_sequence(
                         *output.metadata_entries,
                         *normalize_metadata(cast(Dict[str, Any], metadata), []),
                     ],
+                    logical_version=output.logical_version,
                 )
         else:
             if not output_def.is_dynamic:
@@ -162,7 +166,7 @@ def _step_output_error_checked_user_event_sequence(
         yield output
 
     for step_output in step.step_outputs:
-        step_output_def = step_context.solid_def.output_def_named(step_output.name)
+        step_output_def = step_context.op_def.output_def_named(step_output.name)
         if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
             if step_output_def.dagster_type.is_nothing:
                 step_context.log.info(
@@ -223,7 +227,7 @@ def _type_checked_event_sequence_for_input(
     check.str_param(input_name, "input_name")
 
     step_input = step_context.step.step_input_named(input_name)
-    input_def = step_context.solid_def.input_def_named(step_input.name)
+    input_def = step_context.op_def.input_def_named(step_input.name)
 
     check.invariant(
         input_def.name == input_name,
@@ -268,7 +272,7 @@ def _type_check_output(
     check.inst_param(output, "output", (Output, DynamicOutput))
 
     step_output = step_context.step.step_output_named(output.output_name)
-    step_output_def = step_context.solid_def.output_def_named(step_output.name)
+    step_output_def = step_context.op_def.output_def_named(step_output.name)
 
     dagster_type = step_output_def.dagster_type
     type_check_context = step_context.for_type(dagster_type)
@@ -333,7 +337,7 @@ def core_dagster_event_sequence_for_step(
         step_context.fetch_external_input_asset_records()
 
     for step_input in step_context.step.step_inputs:
-        input_def = step_context.solid_def.input_def_named(step_input.name)
+        input_def = step_context.op_def.input_def_named(step_input.name)
         dagster_type = input_def.dagster_type
 
         if dagster_type.is_nothing:
@@ -357,10 +361,10 @@ def core_dagster_event_sequence_for_step(
     # was generated from the @solid or @lambda_solid decorator, then compute_fn needs to be coerced
     # into this format. If the solid definition was created directly, then it is expected that the
     # compute_fn is already in this format.
-    if isinstance(step_context.solid_def.compute_fn, DecoratedOpFunction):
-        core_gen = create_op_compute_wrapper(step_context.solid_def)
+    if isinstance(step_context.op_def.compute_fn, DecoratedOpFunction):
+        core_gen = create_op_compute_wrapper(step_context.op_def)
     else:
-        core_gen = step_context.solid_def.compute_fn
+        core_gen = step_context.op_def.compute_fn
 
     with time_execution_scope() as timer_result:
         user_event_sequence = check.generator(
@@ -474,9 +478,21 @@ def _get_output_asset_materializations(
         step_context.is_external_input_asset_records_loaded
         and asset_key in step_context.pipeline_def.asset_layer.asset_keys
     ):
-        tags = _build_logical_version_tags(asset_key, step_context)
-        logical_version = LogicalVersion(tags[LOGICAL_VERSION_TAG_KEY])
-        step_context.record_logical_version(asset_key, logical_version)
+        assert isinstance(output, Output)
+        code_version = _get_code_version(asset_key, step_context)
+        input_provenance_data = _get_input_provenance_data(asset_key, step_context)
+        logical_version = (
+            compute_logical_version(
+                code_version,
+                {k: meta["logical_version"] for k, meta in input_provenance_data.items()},
+            )
+            if output.logical_version is None
+            else output.logical_version
+        )
+        tags = _build_logical_version_tags(logical_version, code_version, input_provenance_data)
+        if not step_context.has_logical_version(asset_key):
+            logical_version = LogicalVersion(tags[LOGICAL_VERSION_TAG_KEY])
+            step_context.set_logical_version(asset_key, logical_version)
     else:
         tags = {}
 
@@ -538,14 +554,22 @@ def _get_output_asset_materializations(
             )
 
 
-def _build_logical_version_tags(
+def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
+    return (
+        step_context.pipeline_def.asset_layer.code_version_for_asset(asset_key)
+        or step_context.dagster_run.run_id
+    )
+
+
+class _InputProvenanceData(TypedDict):
+    logical_version: LogicalVersion
+    storage_id: Optional[int]
+
+
+def _get_input_provenance_data(
     asset_key: AssetKey, step_context: StepExecutionContext
-) -> Dict[str, str]:
-    asset_layer = step_context.pipeline_def.asset_layer
-    code_version = asset_layer.code_version_for_asset(asset_key) or step_context.pipeline_run.run_id
-    input_logical_versions: Dict[AssetKey, LogicalVersion] = {}
-    tags: Dict[str, str] = {}
-    tags[CODE_VERSION_TAG_KEY] = code_version
+) -> Mapping[AssetKey, _InputProvenanceData]:
+    input_provenance: Dict[AssetKey, _InputProvenanceData] = {}
     deps = step_context.pipeline_def.asset_layer.upstream_assets_for_asset(asset_key)
     for key in deps:
         # For deps external to this step, this will retrieve the cached record that was stored prior
@@ -560,11 +584,25 @@ def _build_logical_version_tags(
             )
         else:
             logical_version = DEFAULT_LOGICAL_VERSION
-        input_logical_versions[key] = logical_version
-        tags[get_input_logical_version_tag_key(key)] = logical_version.value
-        tags[get_input_event_pointer_tag_key(key)] = str(event.storage_id) if event else "NULL"
+        input_provenance[key] = {
+            "logical_version": logical_version,
+            "storage_id": event.storage_id if event else None,
+        }
+    return input_provenance
 
-    logical_version = compute_logical_version(code_version, input_logical_versions)
+
+def _build_logical_version_tags(
+    logical_version: LogicalVersion,
+    code_version: str,
+    input_provenance_data: Mapping[AssetKey, _InputProvenanceData],
+) -> Dict[str, str]:
+    tags: Dict[str, str] = {}
+    tags[CODE_VERSION_TAG_KEY] = code_version
+    for key, meta in input_provenance_data.items():
+        tags[get_input_logical_version_tag_key(key)] = meta["logical_version"].value
+        tags[get_input_event_pointer_tag_key(key)] = (
+            str(meta["storage_id"]) if meta["storage_id"] else "NULL"
+        )
     tags[LOGICAL_VERSION_TAG_KEY] = logical_version.value
     return tags
 
@@ -574,7 +612,7 @@ def _store_output(
     step_output_handle: StepOutputHandle,
     output: Union[Output, DynamicOutput],
 ) -> Iterator[DagsterEvent]:
-    output_def = step_context.solid_def.output_def_named(step_output_handle.output_name)
+    output_def = step_context.op_def.output_def_named(step_output_handle.output_name)
     output_manager = step_context.get_io_manager(step_output_handle)
     output_context = step_context.get_output_context(step_output_handle)
 
@@ -684,11 +722,11 @@ def _create_type_materializations(
 ) -> Iterator[DagsterEvent]:
     """If the output has any dagster type materializers, runs them."""
     step = step_context.step
-    current_handle = step.solid_handle
+    current_handle = step.node_handle
 
     # check for output mappings at every point up the composition hierarchy
     while current_handle:
-        solid_config = step_context.resolved_run_config.solids.get(current_handle.to_string())
+        solid_config = step_context.resolved_run_config.ops.get(current_handle.to_string())
         current_handle = current_handle.parent
 
         if solid_config is None:
@@ -701,10 +739,10 @@ def _create_type_materializations(
                 step_output = step.step_output_named(output_name)
                 with user_code_error_boundary(
                     DagsterTypeMaterializationError,
-                    msg_fn=lambda: f'Error occurred during output materialization:\n    output name: "{output_name}"\n    solid invocation: "{step_context.solid.name}"\n    solid definition: "{step_context.solid_def.name}"',
+                    msg_fn=lambda: f'Error occurred during output materialization:\n    output name: "{output_name}"\n    solid invocation: "{step_context.solid.name}"\n    solid definition: "{step_context.op_def.name}"',
                     log_manager=step_context.log,
                 ):
-                    output_def = step_context.solid_def.output_def_named(step_output.name)
+                    output_def = step_context.op_def.output_def_named(step_output.name)
                     dagster_type = output_def.dagster_type
                     materializer = dagster_type.materializer
                     if materializer is None:

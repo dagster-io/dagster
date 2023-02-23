@@ -98,7 +98,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             GrpcServerRepositoryLocation,
         )
 
-        run = context.pipeline_run
+        run = context.dagster_run
 
         check.inst_param(run, "run", DagsterRun)
 

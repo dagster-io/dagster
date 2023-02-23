@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union, cast
 
 import graphene
 from dagster import (
@@ -8,6 +8,7 @@ from dagster import (
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.logical_version import (
     NULL_LOGICAL_VERSION,
+    StaleStatus,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
@@ -78,6 +79,17 @@ from .util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
     from .external import GrapheneRepository
+
+GrapheneAssetStaleStatus = graphene.Enum.from_enum(StaleStatus, name="StaleStatus")
+
+
+class GrapheneAssetStaleStatusCause(graphene.ObjectType):
+    status = graphene.NonNull(GrapheneAssetStaleStatus)
+    key = graphene.NonNull(GrapheneAssetKey)
+    reason = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "StaleStatusCause"
 
 
 class GrapheneAssetDependency(graphene.ObjectType):
@@ -219,6 +231,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     projectedLogicalVersion = graphene.String()
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
+    staleStatus = graphene.Field(GrapheneAssetStaleStatus)
+    staleStatusCauses = non_null_list(GrapheneAssetStaleStatusCause)
     type = graphene.Field(GrapheneDagsterType)
 
     class Meta:
@@ -542,7 +556,23 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_computeKind(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._external_asset_node.compute_kind
 
-    def resolve_currentLogicalVersion(self, _graphene_info: ResolveInfo) -> Optional[str]:
+    def resolve_staleStatus(self, graphene_info: ResolveInfo) -> Any:  # (GrapheneAssetStaleStatus)
+        return self.stale_status_loader.get_status(self._external_asset_node.asset_key)
+
+    def resolve_staleStatusCauses(
+        self, graphene_info: ResolveInfo
+    ) -> Sequence[GrapheneAssetStaleStatusCause]:
+        causes = self.stale_status_loader.get_status_causes(self._external_asset_node.asset_key)
+        return [
+            GrapheneAssetStaleStatusCause(
+                cause.status,
+                GrapheneAssetKey(path=cause.key.path),
+                cause.reason,
+            )
+            for cause in causes
+        ]
+
+    def resolve_currentLogicalVersion(self, graphene_info: ResolveInfo) -> Optional[str]:
         version = self.stale_status_loader.get_current_logical_version(
             self._external_asset_node.asset_key
         )

@@ -1,15 +1,17 @@
-# pylint:disable=no-member
-
 from time import sleep
 
-from dagster import Field, Int, List, Output
+from dagster import Field, In, Int, List, Out, Output
+from dagster._core.definitions import op
 from dagster._core.test_utils import default_mode_def_for_test
-from dagster._legacy import InputDefinition, OutputDefinition, PresetDefinition, pipeline, solid
+from dagster._legacy import PresetDefinition, pipeline
 
 
-@solid(
-    input_defs=[InputDefinition("units", List[Int])],
-    output_defs=[OutputDefinition(Int, "total")],
+# pylint:disable=no-member
+
+
+@op(
+    ins={"units": In(List[Int])},
+    out={"total": Out(Int)},
 )
 def sleeper(context, units):
     tot = 0
@@ -21,17 +23,17 @@ def sleeper(context, units):
     return tot
 
 
-@solid(
+@op(
     config_schema=Field([int], is_required=False, default_value=[1, 1, 1, 1]),
-    output_defs=[
-        OutputDefinition(List[Int], "out_1"),
-        OutputDefinition(List[Int], "out_2"),
-        OutputDefinition(List[Int], "out_3"),
-        OutputDefinition(List[Int], "out_4"),
-    ],
+    out={
+        "out 1": Out(List[Int]),
+        "out 2": Out(List[Int]),
+        "out 3": Out(List[Int]),
+        "out 4": Out(List[Int]),
+    },
 )
 def giver(context):
-    units = context.solid_config
+    units = context.op_config
     queues = [[], [], [], []]
     for i, sec in enumerate(units):
         queues[i % 4].append(sec)
@@ -42,14 +44,14 @@ def giver(context):
     yield Output(queues[3], "out_4")
 
 
-@solid(
-    input_defs=[
-        InputDefinition("in_1", Int),
-        InputDefinition("in_2", Int),
-        InputDefinition("in_3", Int),
-        InputDefinition("in_4", Int),
-    ],
-    output_defs=[OutputDefinition(Int)],
+@op(
+    ins={
+        "in_1": In(Int),
+        "in_2": In(Int),
+        "in_3": In(Int),
+        "in_4": In(Int),
+    },
+    out=Out(int),
 )
 def total(_, in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4

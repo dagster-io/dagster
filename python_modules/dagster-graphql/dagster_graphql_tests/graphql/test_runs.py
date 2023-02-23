@@ -7,7 +7,7 @@ from dagster._core.execution.api import execute_run
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline, lambda_solid, pipeline
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils import Counter, traced_counter
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
@@ -80,7 +80,7 @@ mutation DeleteRun($runId: String!) {
 
 ALL_TAGS_QUERY = """
 {
-  pipelineRunTags {
+  runTags {
     ... on PipelineTagAndValues {
       key
       values
@@ -88,6 +88,22 @@ ALL_TAGS_QUERY = """
   }
 }
 """
+
+ALL_TAG_KEYS_QUERY = """
+{
+  runTagKeys
+}
+"""
+
+FILTERED_TAGS_QUERY = """
+query FilteredRunTagsQuery($tagKeys: [String!]!) {
+  runTags(tagKeys: $tagKeys) {
+    key
+    values
+  }
+}
+"""
+
 
 ALL_RUNS_QUERY = """
 {
@@ -299,13 +315,25 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         runs = result.data["pipelineOrError"]["runs"]
         assert len(runs) == 2
 
+        all_tag_keys_result = execute_dagster_graphql(read_context, ALL_TAG_KEYS_QUERY)
+        tag_keys = set(all_tag_keys_result.data["runTagKeys"])
+        # check presence rather than set equality since we might have extra tags in cloud
+        assert "fruit" in tag_keys
+        assert "veggie" in tag_keys
+
         all_tags_result = execute_dagster_graphql(read_context, ALL_TAGS_QUERY)
-        tags = all_tags_result.data["pipelineRunTags"]
-
+        tags = all_tags_result.data["runTags"]
         tags_dict = {item["key"]: item["values"] for item in tags}
-
         assert tags_dict["fruit"] == ["apple"]
         assert tags_dict["veggie"] == ["carrot"]
+
+        filtered_tags_result = execute_dagster_graphql(
+            read_context, FILTERED_TAGS_QUERY, variables={"tagKeys": ["fruit"]}
+        )
+        tags = filtered_tags_result.data["runTags"]
+        tags_dict = {item["key"]: item["values"] for item in tags}
+        assert len(tags_dict) == 1
+        assert tags_dict["fruit"] == ["apple"]
 
         # delete the second run
         result = execute_dagster_graphql(
@@ -364,11 +392,11 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
 
 
 def get_repo_at_time_1():
-    @lambda_solid
+    @op
     def solid_A():
         pass
 
-    @lambda_solid
+    @op
     def solid_B():
         pass
 
@@ -389,11 +417,11 @@ def get_repo_at_time_1():
 
 
 def get_repo_at_time_2():
-    @lambda_solid
+    @op
     def solid_A():
         pass
 
-    @lambda_solid
+    @op
     def solid_B_prime():
         pass
 

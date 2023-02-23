@@ -223,6 +223,12 @@ class ScheduleType(Enum):
 
 
 class PartitionsDefinition(ABC, Generic[T]):
+    """
+    Defines a set of partitions, which can be attached to a software-defined asset or job.
+
+    Abstract class with implementations for different kinds of partitions.
+    """
+
     @property
     def partitions_subset_class(self) -> Type["PartitionsSubset"]:
         return DefaultPartitionsSubset
@@ -272,11 +278,6 @@ class PartitionsDefinition(ABC, Generic[T]):
         else:
             return None
 
-    def get_default_partition_mapping(self):
-        from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
-
-        return IdentityPartitionMapping()
-
     def get_partition_keys_in_range(
         self,
         partition_key_range: PartitionKeyRange,
@@ -304,6 +305,17 @@ class PartitionsDefinition(ABC, Generic[T]):
 
     def empty_subset(self) -> "PartitionsSubset":
         return self.partitions_subset_class.empty_subset(self)
+
+    def subset_with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
+        return self.empty_subset().with_partition_keys(partition_keys)
+
+    def subset_with_all_partitions(
+        self,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> "PartitionsSubset":
+        return self.subset_with_partition_keys(
+            self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
+        )
 
     def deserialize_subset(self, serialized: str) -> "PartitionsSubset":
         return self.partitions_subset_class.from_serialized(self, serialized)
@@ -351,8 +363,25 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
 
 
 class StaticPartitionsDefinition(
-    PartitionsDefinition[str],
+    PartitionsDefinition[str]
 ):  # pylint: disable=unsubscriptable-object
+    """
+    A statically-defined set of partitions.
+
+    Example:
+        .. code-block:: python
+
+            from dagster import StaticPartitionsDefinition, asset
+
+            oceans_partitions_def = StaticPartitionsDefinition(
+                ["arctic", "atlantic", "indian", "pacific", "southern"]
+            )
+
+            @asset(partitions_def=oceans_partitions_defs)
+            def ml_model_for_each_ocean():
+                ...
+    """
+
     def __init__(self, partition_keys: Sequence[str]):
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
 
@@ -1307,6 +1336,11 @@ class PartitionsSubset(ABC):
                 partition_key_range, dynamic_partitions_store=dynamic_partitions_store
             )
         )
+
+    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if self is other:
+            return self
+        return self.with_partition_keys(other.get_partition_keys())
 
     @abstractmethod
     def serialize(self) -> str:

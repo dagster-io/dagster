@@ -52,6 +52,8 @@ Partitions Definitions
 .. autoclass:: MultiPartitionKey
     :members:
 
+.. autoclass:: DynamicPartitionsDefinition
+    :members:
 
 Partitioned Schedules
 =====================
@@ -59,7 +61,7 @@ Partitioned Schedules
 .. autofunction:: build_schedule_from_partitioned_job
     :noindex:
 
-Partition Mapping (Experimental)
+Partition Mapping
 ================================
 
 .. autoclass:: PartitionMapping
