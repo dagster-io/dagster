@@ -35,8 +35,6 @@ def instance_fixture() -> Generator[DagsterInstance, None, None]:
         yield instance
 
 
-
-
 @pytest.fixture(name="postgres_airflow_db", scope="module")
 def postgres_airflow_db(
     docker_compose_cm,
