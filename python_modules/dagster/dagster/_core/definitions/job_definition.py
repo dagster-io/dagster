@@ -110,7 +110,7 @@ class JobDefinition(PipelineDefinition):
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
     ):
-        from dagster._core.definitions.run_config import ConfigInput, convert_config_input
+        from dagster._core.definitions.run_config import RunConfig, convert_config_input
         from dagster._loggers import default_loggers
 
         check.inst_param(graph_def, "graph_def", GraphDefinition)
@@ -146,7 +146,7 @@ class JobDefinition(PipelineDefinition):
         name = check_valid_name(check.opt_str_param(name, "name", default=graph_def.name))
 
         config = check.opt_inst_param(
-            config, "config", (Mapping, ConfigMapping, PartitionedConfig, ConfigInput)
+            config, "config", (Mapping, ConfigMapping, PartitionedConfig, RunConfig)
         )
         config = convert_config_input(config)
 

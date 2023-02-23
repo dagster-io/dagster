@@ -23,7 +23,7 @@ from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.run_config import ConfigInput
+from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
 from dagster._core.execution.context.invocation import build_op_context
@@ -361,12 +361,12 @@ def test_validate_run_config():
     }
 
     result_with_runconfig = validate_run_config(
-        pipeline_requires_config, ConfigInput(ops={"requires_config": {"foo": "bar"}})
+        pipeline_requires_config, RunConfig(ops={"requires_config": {"foo": "bar"}})
     )
     assert result_with_runconfig == result
 
     result_with_structured_in = validate_run_config(
-        pipeline_requires_config, ConfigInput(ops={"requires_config": MyBasicOpConfig(foo="bar")})
+        pipeline_requires_config, RunConfig(ops={"requires_config": MyBasicOpConfig(foo="bar")})
     )
     assert result_with_structured_in == result
 
@@ -653,7 +653,7 @@ def test_structured_run_config_ops():
         a_struct_config_op()
 
     a_job.execute_in_process(
-        ConfigInput(ops={"a_struct_config_op": ANewConfigOpConfig(a_string="foo", an_int=2)})
+        RunConfig(ops={"a_struct_config_op": ANewConfigOpConfig(a_string="foo", an_int=2)})
     )
     assert executed["yes"]
 
@@ -676,7 +676,7 @@ def test_structured_run_config_multi_asset():
         build_assets_job(
             "blah",
             [two_assets],
-            config=ConfigInput(ops={"two_assets": AMultiAssetConfig(a_string="foo", an_int=2)}),
+            config=RunConfig(ops={"two_assets": AMultiAssetConfig(a_string="foo", an_int=2)}),
         )
         .execute_in_process()
         .success
@@ -701,7 +701,7 @@ def test_structured_run_config_assets():
         build_assets_job(
             "blah",
             [my_asset],
-            config=ConfigInput(
+            config=RunConfig(
                 ops={
                     "my_asset": AnAssetConfig(a_string="foo", an_int=2),
                 }
@@ -717,7 +717,7 @@ def test_structured_run_config_assets():
     my_asset_job = define_asset_job(
         "my_asset_job",
         selection="my_asset",
-        config=ConfigInput(
+        config=RunConfig(
             ops={
                 "my_asset": AnAssetConfig(a_string="foo", an_int=2),
             }
@@ -734,7 +734,7 @@ def test_structured_run_config_assets():
     del executed["yes"]
     asset_result = materialize(
         [my_asset],
-        run_config=ConfigInput(
+        run_config=RunConfig(
             ops={
                 "my_asset": AnAssetConfig(a_string="foo", an_int=2),
             }
