@@ -135,7 +135,7 @@ def _step_output_error_checked_user_event_sequence(
                         *output.metadata_entries,
                         *normalize_metadata(cast(Dict[str, Any], metadata), []),
                     ],
-                    logical_version=output.logical_version,
+                    data_version=output.data_version,
                 )
         else:
             if not output_def.is_dynamic:
@@ -482,8 +482,8 @@ def _get_output_asset_materializations(
                 code_version,
                 {k: meta["logical_version"] for k, meta in input_provenance_data.items()},
             )
-            if output.logical_version is None
-            else output.logical_version
+            if output.data_version is None
+            else output.data_version
         )
         tags = _build_logical_version_tags(logical_version, code_version, input_provenance_data)
         if not step_context.has_logical_version(asset_key):
