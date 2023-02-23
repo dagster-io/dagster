@@ -583,7 +583,7 @@ class ResourceDependency(Generic[V]):
         setattr(obj, self._name, value)
 
 
-class ConfigurableResourceAdapter(ConfigurableResource, ABC):
+class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
     """
     Adapter base class for wrapping a decorated, function-style resource
     with structured config.
@@ -603,7 +603,7 @@ class ConfigurableResourceAdapter(ConfigurableResource, ABC):
 
             return output
 
-        class WriterResource(ConfigurableResourceAdapter):
+        class WriterResource(ConfigurableLegacyResourceAdapter):
             prefix: str
 
             @property
@@ -786,7 +786,7 @@ def _is_pydantic_field_required(pydantic_field: ModelField) -> bool:
     )
 
 
-class ConfigurableIOManagerAdapter(ConfigurableIOManagerFactory):
+class ConfigurableLegacyIOManagerAdapter(ConfigurableIOManagerFactory):
     """
     Adapter base class for wrapping a decorated, function-style I/O manager
     with structured config.
@@ -807,7 +807,7 @@ class ConfigurableIOManagerAdapter(ConfigurableIOManagerFactory):
 
             return OldIOManager(base_path)
 
-        class MyIOManager(ConfigurableIOManagerAdapter):
+        class MyIOManager(ConfigurableLegacyIOManagerAdapter):
             base_path: str
 
             @property

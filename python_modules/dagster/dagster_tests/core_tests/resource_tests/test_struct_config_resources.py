@@ -14,10 +14,10 @@ from dagster._config.field import Field
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import (
     Config,
-    ConfigurableIOManagerAdapter,
     ConfigurableIOManagerFactory,
+    ConfigurableLegacyIOManagerAdapter,
+    ConfigurableLegacyResourceAdapter,
     ConfigurableResource,
-    ConfigurableResourceAdapter,
     ResourceDependency,
 )
 from dagster._core.definitions.assets_job import build_assets_job
@@ -235,7 +235,7 @@ def test_wrapping_function_resource():
 
         return output
 
-    class WriterResource(ConfigurableResourceAdapter):
+    class WriterResource(ConfigurableLegacyResourceAdapter):
         prefix: str
 
         @property
@@ -279,7 +279,7 @@ def test_io_manager_adapter():
     def an_io_manager(context: InitResourceContext) -> AnIOManagerImplementation:
         return AnIOManagerImplementation(context.resource_config["a_config_value"])
 
-    class AdapterForIOManager(ConfigurableIOManagerAdapter):
+    class AdapterForIOManager(ConfigurableLegacyIOManagerAdapter):
         a_config_value: str
 
         @property
