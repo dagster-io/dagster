@@ -613,7 +613,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 materialization of the asset. Returns `None` if the asset was never materialized or
                 the materialization record is too old to contain provenance information.
         """
-        record = self.instance.get_latest_logical_version_record(asset_key)
+        record = self.instance.get_latest_data_version_record(asset_key)
 
         return (
             None if record is None else extract_data_provenance_from_entry(record.event_log_entry)

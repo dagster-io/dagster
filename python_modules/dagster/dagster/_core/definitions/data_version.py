@@ -409,7 +409,7 @@ class CachingStaleStatusResolver:
     @cached_method
     def _get_current_data_version(self, *, key: AssetKey) -> DataVersion:
         is_source = self.asset_graph.is_source(key)
-        event = self._instance.get_latest_logical_version_record(
+        event = self._instance.get_latest_data_version_record(
             key,
             is_source,
         )

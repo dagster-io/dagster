@@ -910,7 +910,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             extract_data_version_from_entry,
         )
 
-        event = self.instance.get_latest_logical_version_record(key)
+        event = self.instance.get_latest_data_version_record(key)
         if key in self._logical_version_cache and retries <= 5:
             event_logical_version = (
                 None if event is None else extract_data_version_from_entry(event.event_log_entry)

@@ -11,7 +11,7 @@ from dagster._core.instance import DagsterInstance
 
 
 def _get_current_logical_version(key: AssetKey, instance: DagsterInstance) -> Optional[DataVersion]:
-    record = instance.get_latest_logical_version_record(AssetKey("foo"))
+    record = instance.get_latest_data_version_record(AssetKey("foo"))
     assert record is not None
     return extract_data_version_from_entry(record.event_log_entry)
 
