@@ -65,12 +65,12 @@ def execute_with_config() -> None:
         print_greeting()
 
     job_result = greeting_job.execute_in_process(
-        run_config=RunConfig(ops={"print_greeting": MyOpConfig(person_name="Alice")})  # type: ignore
+        run_config=RunConfig({"print_greeting": MyOpConfig(person_name="Alice")})  # type: ignore
     )
 
     asset_result = materialize(
         [greeting],
-        run_config=RunConfig(ops={"greeting": MyAssetConfig(person_name="Alice")}),
+        run_config=RunConfig({"greeting": MyAssetConfig(person_name="Alice")}),
     )
 
     # end_execute_with_config
@@ -95,7 +95,7 @@ def basic_data_structures_config() -> None:
     result = materialize(
         [scoreboard],
         run_config=RunConfig(
-            ops={
+            {
                 "scoreboard": MyDataStructuresConfig(
                     user_names=["Alice", "Bob"],
                     user_scores={"Alice": 10, "Bob": 20},
@@ -129,7 +129,7 @@ def nested_schema_config() -> None:
     result = materialize(
         [average_age],
         run_config=RunConfig(
-            ops={
+            {
                 "average_age": MyNestedConfig(
                     user_data={
                         "Alice": UserData(age=10, email="alice@gmail.com", profile_picture_url=...),  # type: ignore
@@ -154,14 +154,15 @@ def union_schema_config() -> None:
     from typing_extensions import Literal
 
     class Cat(Config):
-        pet_type: Literal["cat"]
+        pet_type: Literal["cat"] = "cat"
         meows: int
 
     class Dog(Config):
-        pet_type: Literal["dog"]
+        pet_type: Literal["dog"] = "dog"
         barks: float
 
     class ConfigWithUnion(Config):
+        # Here, the ellipses `...` indicates that the field is required and has no default value.
         pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
 
     @asset
@@ -174,9 +175,9 @@ def union_schema_config() -> None:
     result = materialize(
         [pet_stats],
         run_config=RunConfig(
-            ops={
+            {
                 "pet_stats": ConfigWithUnion(
-                    pet=Cat(pet_type="cat", meows=10),
+                    pet=Cat(meows=10),
                 )
             }
         ),
@@ -190,6 +191,7 @@ def metadata_config() -> None:
     from pydantic import Field
 
     class MyMetadataConfig(Config):
+        # Here, the ellipses `...` indicates that the field is required and has no default value.
         person_name: str = Field(..., description="The name of the person to greet")
         age: int = Field(
             ..., gt=0, lt=100, description="The age of the person to greet"

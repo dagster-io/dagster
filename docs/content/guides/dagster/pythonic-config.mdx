@@ -11,7 +11,9 @@ description: Pythonic run configuration is an experimental new feature that make
 
 This guide acts as an introduction to providing parameters to assets and jobs using the experimental Pythonic configuration APIs, which makes defining and passing this [configuration](/concepts/configuration/config-schema) more lightweight.
 
-## It's often useful to provide user-chosen values to Dagster jobs or software-defined assets at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
+It's often useful to provide user-chosen values to Dagster jobs or software-defined assets at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
+
+---
 
 ## Using Pythonic configuration
 
@@ -19,7 +21,7 @@ This guide acts as an introduction to providing parameters to assets and jobs us
 
 Configurable parameters accepted by an op or asset are specified by defining a config model subclass of <PyObject object="Config"/> and a `config` parameter to the corresponding op or asset function. Under the hood, these config models utilize [Pydantic](https://docs.pydantic.dev/), a popular Python library for data validation and serialization.
 
-During execution, the specified config is accessed within the body of the op or asset using the `config` parameter.
+During execution, the specified config is accessed within the body of the op or asset using the `config` parameter, which is reserved specifically for this purpose.
 
 <TabGroup persistentKey="assetsorops">
 <TabItem name="Using software-defined-assets">
@@ -81,7 +83,7 @@ For more information on using resources, see [the Pythonic resources guide](/gui
 
 ### Specifying runtime configuration in code
 
-To execute a job or materialize an asset which specifies config, you'll need to provide values for its parameters. When specifying config from the Python API, we can use the `run_config` argument for <PyObject object="JobDefinition" method="execute_in_process"/> or <PyObject object="materialize"/>. This takes a `RunConfig` object, within which we can supply config on a per-op or per-asset basis. The config is specified as a dictionary, with the keys corresponding to the op/asset names and the values corresponding to the config values.
+To execute a job or materialize an asset that specifies config, you'll need to provide values for its parameters. When specifying config from the Python API, we can use the `run_config` argument for <PyObject object="JobDefinition" method="execute_in_process"/> or <PyObject object="materialize"/>. This takes a `RunConfig` object, within which we can supply config on a per-op or per-asset basis. The config is specified as a dictionary, with the keys corresponding to the op/asset names and the values corresponding to the config values.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_config endbefore=end_execute_with_config dedent=4
 from dagster import job, materialize, op
@@ -93,12 +95,12 @@ def greeting_job():
     print_greeting()
 
 job_result = greeting_job.execute_in_process(
-    run_config=RunConfig(ops={"print_greeting": MyOpConfig(person_name="Alice")})
+    run_config=RunConfig({"print_greeting": MyOpConfig(person_name="Alice")})
 )
 
 asset_result = materialize(
     [greeting],
-    run_config=RunConfig(ops={"greeting": MyAssetConfig(person_name="Alice")}),
+    run_config=RunConfig({"greeting": MyAssetConfig(person_name="Alice")}),
 )
 ```
 
@@ -119,6 +121,7 @@ from dagster._config.structured_config import Config
 from pydantic import Field
 
 class MyMetadataConfig(Config):
+    # Here, the ellipses `...` indicates that the field is required and has no default value.
     person_name: str = Field(..., description="The name of the person to greet")
     age: int = Field(
         ..., gt=0, lt=100, description="The age of the person to greet"
@@ -152,7 +155,7 @@ def scoreboard(config: MyDataStructuresConfig):
 result = materialize(
     [scoreboard],
     run_config=RunConfig(
-        ops={
+        {
             "scoreboard": MyDataStructuresConfig(
                 user_names=["Alice", "Bob"],
                 user_scores={"Alice": 10, "Bob": 20},
@@ -189,7 +192,7 @@ def average_age(config: MyNestedConfig):
 result = materialize(
     [average_age],
     run_config=RunConfig(
-        ops={
+        {
             "average_age": MyNestedConfig(
                 user_data={
                     "Alice": UserData(age=10, email="alice@gmail.com", profile_picture_url=...),
@@ -216,14 +219,15 @@ from typing import Union
 from typing_extensions import Literal
 
 class Cat(Config):
-    pet_type: Literal["cat"]
+    pet_type: Literal["cat"] = "cat"
     meows: int
 
 class Dog(Config):
-    pet_type: Literal["dog"]
+    pet_type: Literal["dog"] = "dog"
     barks: float
 
 class ConfigWithUnion(Config):
+    # Here, the ellipses `...` indicates that the field is required and has no default value.
     pet: Union[Cat, Dog] = Field(..., discriminator="pet_type")
 
 @asset
@@ -236,9 +240,9 @@ def pet_stats(config: ConfigWithUnion):
 result = materialize(
     [pet_stats],
     run_config=RunConfig(
-        ops={
+        {
             "pet_stats": ConfigWithUnion(
-                pet=Cat(pet_type="cat", meows=10),
+                pet=Cat(meows=10),
             )
         }
     ),
