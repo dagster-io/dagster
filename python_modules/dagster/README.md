@@ -34,7 +34,7 @@ __Dagster is a cloud-native orchestrator for the whole development lifecycle, wi
 If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
 
 <p align="center">
-  <img width="600" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/dagster-features-4x4.png">
+  <img width="800" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/dagster-features-4x4.png">
 </p>
 
 Dagster is a data pipeline orchestrator designed for **developing and maintaining data assets**, such as tables, data sets, machine learning models, and reports.
