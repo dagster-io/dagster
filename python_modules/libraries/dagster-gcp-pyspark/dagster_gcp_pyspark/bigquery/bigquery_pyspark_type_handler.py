@@ -19,6 +19,11 @@ def _get_bigquery_write_options(config, table_slice: TableSlice) -> Mapping[str,
     return conf
 
 
+def _get_bigquery_read_options(table_slice: TableSlice) -> Mapping[str, str]:
+    conf = {"viewsEnabled": "true", "materializationDataset": table_slice.schema}
+    return conf
+
+
 class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
     """Plugin for the BigQuery I/O Manager that can store and load PySpark DataFrames as BigQuery tables.
 
@@ -69,10 +74,14 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
         }
 
     def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:
+        options = _get_bigquery_read_options(table_slice)
         spark = SparkSession.builder.getOrCreate()
-        spark.conf.set("viewsEnabled", "true")
-        spark.conf.set("materializationDataset", table_slice.schema)
-        df = spark.read.format("bigquery").load(BigQueryClient.get_select_statement(table_slice))
+
+        df = (
+            spark.read.format("bigquery")
+            .options(**options)
+            .load(BigQueryClient.get_select_statement(table_slice))
+        )
 
         return df.toDF(*[c.lower() for c in df.columns])
 
