@@ -1,5 +1,46 @@
 # Changelog
 
+# 1.1.20 (core) / 0.17.20 (libraries)
+
+
+### New
+
+- The new `@graph_asset` and `@graph_multi_asset` decorators make it more ergonomic to define graph-backed assets.
+- Dagster will auto-infer dependency relationships between single-dimensionally partitioned assets and multipartitioned assets, when the single-dimensional partitions definition is a dimension of the `MultiPartitionsDefinition`.
+- A new `Test sensor` / `Test schedule` button that allows you to perform a dry-run of your sensor / schedule. Check out the docs on this functionality [here](https://docs.dagster.io/master/concepts/partitions-schedules-sensors/sensors#via-dagit) for sensors and [here](https://docs.dagster.io/master/concepts/partitions-schedules-sensors/sensors#via-dagit) for schedules.
+- New `bigquery_pandas_io_manager` can store and load Pandas dataframes in BigQuery.
+- [dagster-snowflake, dagster-duckdb] SnowflakeIOManagers and DuckDBIOManagers can now default to loading inputs as a specified type if a type annotation does not exist for the input.
+- [dagster-dbt] Added the ability to use the “state:” selector
+- [dagit] Added (back) tag autocompletion in the runs filter, now with improved query performance.
+- [dagit] The Dagster libraries and their versions that were used when loading definitions can now be viewed in the actions menu for each code location.
+- [k8s] The Helm chart now supports the full kubernetes env var spec for Dagit and the Daemon. E.g.
+```
+dagit:
+    
+      env:
+        - name: “FOO”
+        - valueFrom:
+            fieldRef: 
+              fieldPath: metadata.uid
+    ```
+    
+
+### Bugfixes
+
+- Previously, graphs would fail to resolve an input with a custom type and an input manager key. This has been fixed.
+- Fixes a bug where negative partition counts were displayed in the asset graph.
+- Previously, when an asset sensor did not yield run requests, it returned an empty result. This has been updated to yield a meaningful message.
+- Fix an issue with a non-partitioned asset downstream of a partitioned asset with self-dependencies causing a GQL error in dagit.
+- [dagster-snowflake-pyspark] Fixed a bug where the PySparkTypeHandler was incorrectly loading partitioned data
+- [dagster-k8s] Fixed an issue where [run monitoring](https://docs.dagster.io/deployment/run-monitoring#run-monitoring) sometimes failed to detect that the kubernetes job for a run had stopped, leaving the run hanging..
+
+### Documentation
+
+- (experimental) Documentation for the dynamic partitions definition is now added.
+- [dagster-snowflake] The Snowflake I/O Manager reference page now includes information on working with partitioned assets
+- Updated contributor docs to reference our new toolchain (`ruff`, `pyright`)
+
+
 # 1.1.19 (core) / 0.17.19 (libraries)
 
 ### New
