@@ -3,7 +3,7 @@
   <a target="_blank" href="https://dagster.io" style="background:none">
     <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/dagster-readme-header.svg" width="auto" height="343">
   </a>
-<p style="text-align: center;">Remember to star the Dagster repo for future reference.</p>
+<p style="text-align: center;">Remember to <a target="_blank" href="https://github.com/dagster-io/dagster">star the Dagster GitHub repo</a> for future reference.</p>
   <a target="_blank" href="https://github.com/dagster-io/dagster" style="background:none">
     <img src="https://img.shields.io/github/stars/dagster-io/dagster?labelColor=4F43DD&color=163B36&logo=github">
   </a>
@@ -34,7 +34,7 @@ __Dagster is a cloud-native orchestrator for the whole development lifecycle, wi
 If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
 
 <p align="center">
-  <img width="478" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/dagster-features-animated-gif.gif">
+  <img width="600" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/dagster-features-animated-gif.gif">
 </p>
 
 Dagster is a data pipeline orchestrator designed for **developing and maintaining data assets**, such as tables, data sets, machine learning models, and reports.
