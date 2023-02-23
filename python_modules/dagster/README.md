@@ -1,12 +1,12 @@
-<p align="center">
+<div align="center">
   <!-- Note: Do not try adding the dark mode version here with the `picture` element, it will break formatting in PyPI -->
   <a target="_blank" href="https://dagster.io" style="background:none">
     <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/dagster-readme-header.svg" width="auto" height="343">
   </a>
+<p style="text-align: center;">Remember to star the Dagster repo for future reference.</p>
   <a target="_blank" href="https://github.com/dagster-io/dagster" style="background:none">
     <img src="https://img.shields.io/github/stars/dagster-io/dagster?labelColor=4F43DD&color=163B36&logo=github">
   </a>
-<p style="text-align: center;">Rememebr to star the Dagster repo for future reference.</p>
   <a target="_blank" href="https://github.com/dagster-io/dagster/blob/master/LICENSE" style="background:none">
     <img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?label=license&labelColor=4F43DD&color=163B36">
   </a>
@@ -25,7 +25,7 @@
   <a target="_blank" href="https://linkedin.com/showcase/dagster" style="background:none">
     <img src="https://img.shields.io/badge/linkedin-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=linkedin" />
   </a>
-</p>
+</div>
 
 # Dagster
 
@@ -34,7 +34,7 @@ __Dagster is a cloud-native orchestrator for the whole development lifecycle, wi
 If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
 
 <p align="center">
-  <img width="478" alt="image" src="https://user-images.githubusercontent.com/654855/183537484-48dde394-91f2-4de0-9b17-a70b3e9a3823.png">
+  <img width="478" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/dagster-features-animated-gif.gif">
 </p>
 
 Dagster is a data pipeline orchestrator designed for **developing and maintaining data assets**, such as tables, data sets, machine learning models, and reports.
@@ -60,6 +60,8 @@ This installs two modules:
 
 You can find the full Dagster documentation [here](https://docs.dagster.io).
 
+<hr/>
+
 # Key Features:
 
 <p align="center">
@@ -76,11 +78,11 @@ Put your pipelines into production with a robust multi-tenant, multi-tool engine
 Maintain control over your data as the complexity scales. Centralize your metadata in one tool with built-in observability, diagnostics, cataloging, and lineage. Spot any issues and identify performance improvement opportunities.
 
 
-# Master the Modern Data Stack with integrations
+## Master the Modern Data Stack with integrations
 
 Dagster provides a growing library of integrations for today’s most popular data tools. Integrate with the tools you already use, and deploy to your infrastructure.
 
-
+<br/>
 <p align="center">
   <img width="100%" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/integrations-bar-for-readme.png">
 </p>
