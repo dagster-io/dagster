@@ -3,18 +3,19 @@
 from dagster import ResourceDefinition, graph, job, Definitions, resource
 import requests
 from requests import Response
-from typing import Generic, TypeVar
+from typing import Generic, Optional, TypeVar, Any
 
 
-# start_new_resource_testing
-from dagster._config.structured_config import ConfigurableResource, ConfigurableResourceAdapter
+from dagster._config.structured_config import (
+    ConfigurableResource,
+    ConfigurableResourceAdapter,
+)
 
 V = TypeVar("V")
 
 
-class ResourceDependency(Generic[V]):
-    def __get__(self, obj: "Resource", __owner: Any) -> V:
-        return getattr(obj, self._name)
+# start_new_resource_testing
+from dagster._config.structured_config import ConfigurableResource
 
 
 class MyResource(ConfigurableResource):
@@ -58,7 +59,9 @@ from typing import Dict, Any
 # start_new_resources_assets_defs
 
 from dagster import asset, Definitions
-from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.definitions.resource_output import Resource
+
+from typing import Dict, Any
 
 
 @asset
@@ -78,7 +81,7 @@ defs = Definitions(
 # start_new_resources_ops_defs
 
 from dagster import op, Definitions, job
-from dagster._core.definitions.resource_annotation import Resource
+from dagster._core.definitions.resource_output import Resource
 
 
 @op
@@ -108,12 +111,11 @@ from dagster._config.structured_config import ConfigurableResource
 
 class MyConnectionResource(ConfigurableResource):
     username: str
-    password: str
 
     def request(self, endpoint: str) -> Response:
         return requests.get(
             f"https://my-api.com/{endpoint}",
-            auth=(self.username, self.password),
+            headers={"user-agent": "dagster"},
         )
 
 
@@ -125,7 +127,7 @@ def data_from_service(my_conn: MyConnectionResource) -> Dict[str, Any]:
 defs = Definitions(
     assets=[data_from_service],
     resources={
-        "my_conn": MyConnectionResource(username="my_user", password="my_password"),
+        "my_conn": MyConnectionResource(username="my_user"),
     },
 )
 
@@ -141,12 +143,11 @@ from dagster._config.structured_config import ConfigurableResource
 
 class MyConnectionResource(ConfigurableResource):
     username: str
-    password: str
 
     def request(self, endpoint: str) -> Response:
         return requests.get(
             f"https://my-api.com/{endpoint}",
-            auth=(self.username, self.password),
+            headers={"user-agent": "dagster"},
         )
 
 
@@ -163,7 +164,7 @@ def update_service_job():
 defs = Definitions(
     jobs=[update_service_job],
     resources={
-        "my_conn": MyConnectionResource(username="my_user", password="my_password"),
+        "my_conn": MyConnectionResource(username="my_user"),
     },
 )
 
@@ -171,6 +172,8 @@ defs = Definitions(
 
 
 # start_new_resource_runtime
+from dagster._config.structured_config import ConfigurableResource
+from dagster import Definitions, asset
 
 
 class DatabaseResource(ConfigurableResource):
@@ -186,11 +189,46 @@ def data_from_database(db_conn: DatabaseResource):
 
 
 defs = Definitions(
-    assets=...,
+    assets=[data_from_database],
     resources={"db_conn": DatabaseResource.configure_at_launch()},
 )
 
 # end_new_resource_runtime
+
+from dagster import sensor, define_asset_job, RunRequest
+
+
+class RunConfig(Dict[str, Any]):
+    def __init__(
+        self,
+        ops: Optional[Dict[str, Any]] = None,
+        resources: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__({**(ops or {}), **(resources or {})})
+
+
+# start_new_resource_runtime_launch
+from dagster import sensor, define_asset_job, RunRequest
+
+update_data_job = define_asset_job(
+    name="update_data_job", selection=[data_from_database]
+)
+
+
+@sensor(job=update_data_job)
+def table_update_sensor():
+    tables = ...
+    for table_name in tables:
+        yield RunRequest(
+            run_config=RunConfig(
+                resources={
+                    "db_conn": DatabaseResource(table=table_name),
+                },
+            ),
+        )
+
+
+# end_new_resource_runtime_launch
 
 
 def get_filestore_client(*args, **kwargs):
@@ -282,11 +320,21 @@ class GitHubOrganization:
 
 
 class GitHub:
+    def __init__(*args, **kwargs):
+        pass
+
     def organization(self, name: str):
         return GitHubOrganization(name)
 
 
 # start_raw_github_resource
+
+from dagster import Definitions
+
+# `Resource[GitHub]` is treated exactly like `GitHub` for type checking purposes,
+# and the runtime type of the github parameter is `GitHub`. The purpose of the
+# `Resource` wrapper is to let Dagster know that `github` is a resource and not an
+# upstream asset.
 
 
 @asset
@@ -296,7 +344,7 @@ def public_github_repos(github: Resource[GitHub]):
 
 defs = Definitions(
     assets=[public_github_repos],
-    resources={"github": GitHub()},
+    resources={"github": GitHub(...)},
 )
 
 # end_raw_github_resource
@@ -326,6 +374,9 @@ def create_engine(*args, **kwargs):
 
 # start_raw_github_resource_dep
 
+from dagster._config.structured_config import ConfigurableResource, ResourceDependency
+from dagster import Definitions
+
 
 class DBResource(ConfigurableResource):
     engine: ResourceDependency[Engine]
@@ -345,6 +396,9 @@ defs = Definitions(
 # end_raw_github_resource_dep
 
 # start_resource_adapter
+
+from dagster import resource, Definitions
+from dagster._config.structured_config import ConfigurableResourceAdapter
 
 
 # Old code, cannot be changed for back-compat purposes
@@ -376,11 +430,16 @@ def my_asset(writer: Writer):
     writer.output("hello, world!")
 
 
-defs = Definitions(assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")})
+defs = Definitions(
+    assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")}
+)
 
 # end_resource_adapter
 
 # start_impl_details_resolve
+
+
+from dagster._config.structured_config import ConfigurableResource
 
 
 class CredentialsResource(ConfigurableResource):
@@ -394,7 +453,8 @@ class FileStoreBucket(ConfigurableResource):
 
     def write(self, data: str):
         # In this context, `self.credentials` is ensured to
-        # be a CredentialsResource
+        # be a CredentialsResource with valid values for
+        # `username` and `password`
 
         get_filestore_client(
             username=self.credentials.username,
@@ -430,6 +490,9 @@ def read_csv(path: str):
 
 # start_new_io_manager
 
+from dagster import Definitions, AssetKey, OutputContext, InputContext
+from dagster._config.structured_config import ConfigurableIOManager
+
 
 class MyIOManager(ConfigurableIOManager):
     root_path: str
@@ -443,11 +506,10 @@ class MyIOManager(ConfigurableIOManager):
     def load_input(self, context: InputContext):
         return read_csv(self._get_path(context.asset_key))
 
+
 defs = Definitions(
     assets=...,
-    resources={
-        "io_manager": MyIOManager(root_path="/tmp/")
-    },
+    resources={"io_manager": MyIOManager(root_path="/tmp/")},
 )
 
 # end_new_io_manager
