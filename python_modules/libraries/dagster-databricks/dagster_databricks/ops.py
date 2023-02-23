@@ -9,7 +9,7 @@ from dagster import (
 )
 from databricks_cli.sdk import JobsService
 
-from .databricks import DatabricksClient, wait_for_run_to_complete
+from .databricks import DatabricksClient
 
 _START = "start"
 
@@ -111,12 +111,12 @@ def create_databricks_job_op(
                 run_id=run_id, url=create_ui_url(databricks_client, context.op_config)
             )
         )
-        wait_for_run_to_complete(
-            databricks_client,
-            context.log,
-            run_id,
-            context.op_config["poll_interval_sec"],
-            context.op_config["max_wait_time_sec"],
+
+        databricks_client.wait_for_run_to_complete(
+            logger=context.log,
+            databricks_run_id=run_id,
+            poll_interval_sec=context.op_config["poll_interval_sec"],
+            max_wait_time_sec=context.op_config["max_wait_time_sec"],
         )
 
     return databricks_fn
