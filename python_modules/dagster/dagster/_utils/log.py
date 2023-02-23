@@ -262,23 +262,13 @@ def configure_loggers(handler="default", log_level="INFO"):
                 "class": "logging.NullHandler",
             },
         },
-        "loggers": {
-            "dagster": {
-                "handlers": [handler],
-                "level": "INFO",
-            },
-            "dagit": {
-                "handlers": [handler],
-                "level": "INFO",
-            },
-        },
+        "root": {"level": log_level, "handlers": [handler]},
     }
 
     logging.config.dictConfig(LOGGING_CONFIG)
 
     if handler == "default":
-        for name in ["dagster", "dagit"]:
-            logging.getLogger(name).handlers[0].formatter.formatTime = _mockable_formatTime
+        logging.getLogger("").handlers[0].formatter.formatTime = _mockable_formatTime
 
 
 def create_console_logger(name, level):
