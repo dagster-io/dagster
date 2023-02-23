@@ -171,6 +171,7 @@ Then, configuration for the resource can be provided at runtime in the launchpad
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resource_runtime_launch endbefore=end_new_resource_runtime_launch dedent=4
 from dagster import sensor, define_asset_job, RunRequest
+from dagster._core.definitions.run_config import RunConfig
 
 update_data_job = define_asset_job(
     name="update_data_job", selection=[data_from_database]
