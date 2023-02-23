@@ -18,7 +18,7 @@ export enum DagsterTag {
   SensorName = 'dagster/sensor_name',
   AssetPartitionRangeStart = 'dagster/asset_partition_range_start',
   AssetPartitionRangeEnd = 'dagster/asset_partition_range_end',
-  AssetEventLogicalVersion = 'dagster/logical_version',
+  AssetEventDataVersion = 'dagster/logical_version',
   AssetEventCodeVersion = 'dagster/code_version',
 
   // Hidden tags (using ".dagster" HIDDEN_TAG_PREFIX)
