@@ -12,6 +12,10 @@ from packaging import version
 
 
 def is_airflow_2_loaded_in_environment() -> bool:
+    # in sphinx context, airflow.__version__ is set to
+    # this string, version.parse errors trying to parse it
+    if str(airflow_version) == "airflow.__version__":
+        return False
     return version.parse(str(airflow_version)) >= version.parse("2.0.0")
 
 
