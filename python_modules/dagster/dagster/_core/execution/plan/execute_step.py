@@ -31,7 +31,7 @@ from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG_KEY,
     DEFAULT_LOGICAL_VERSION,
     LOGICAL_VERSION_TAG_KEY,
-    LogicalVersion,
+    DataVersion,
     compute_logical_version,
     extract_logical_version_from_entry,
     get_input_event_pointer_tag_key,
@@ -487,7 +487,7 @@ def _get_output_asset_materializations(
         )
         tags = _build_logical_version_tags(logical_version, code_version, input_provenance_data)
         if not step_context.has_logical_version(asset_key):
-            logical_version = LogicalVersion(tags[LOGICAL_VERSION_TAG_KEY])
+            logical_version = DataVersion(tags[LOGICAL_VERSION_TAG_KEY])
             step_context.set_logical_version(asset_key, logical_version)
     else:
         tags = {}
@@ -558,7 +558,7 @@ def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -
 
 
 class _InputProvenanceData(TypedDict):
-    logical_version: LogicalVersion
+    logical_version: DataVersion
     storage_id: Optional[int]
 
 
@@ -588,7 +588,7 @@ def _get_input_provenance_data(
 
 
 def _build_logical_version_tags(
-    logical_version: LogicalVersion,
+    logical_version: DataVersion,
     code_version: str,
     input_provenance_data: Mapping[AssetKey, _InputProvenanceData],
 ) -> Dict[str, str]:

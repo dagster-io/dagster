@@ -1,15 +1,15 @@
 import pytest
 from dagster._check import ParameterCheckError
-from dagster._core.definitions.data_version import LogicalVersion
+from dagster._core.definitions.data_version import DataVersion
 
 
 def test_logical_version_construction():
-    ver = LogicalVersion("foo")
+    ver = DataVersion("foo")
     assert ver.value == "foo"
 
     with pytest.raises(ParameterCheckError):
-        LogicalVersion(100)
+        DataVersion(100)
 
 
 def test_logical_version_equality():
-    assert LogicalVersion("foo") == LogicalVersion("foo")
+    assert DataVersion("foo") == DataVersion("foo")

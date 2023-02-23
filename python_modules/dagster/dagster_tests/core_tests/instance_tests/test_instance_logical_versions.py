@@ -9,7 +9,7 @@ from dagster._core.definitions.data_version import (
     LOGICAL_VERSION_TAG_KEY,
     UNKNOWN_LOGICAL_VERSION,
     UNKNOWN_VALUE,
-    LogicalVersion,
+    DataVersion,
     LogicalVersionProvenance,
     compute_logical_version,
     extract_logical_version_from_entry,
@@ -61,12 +61,12 @@ def test_extract_logical_version_and_provenance_from_materialization_entry():
         },
     )
     entry = _create_test_event_log_entry(DagsterEventType.ASSET_MATERIALIZATION, materialization)
-    assert extract_logical_version_from_entry(entry) == LogicalVersion("1")
+    assert extract_logical_version_from_entry(entry) == DataVersion("1")
     assert extract_logical_version_provenance_from_entry(entry) == LogicalVersionProvenance(
         code_version="3",
         input_logical_versions={
-            AssetKey(["assetgroup", "bar"]): LogicalVersion("2"),
-            AssetKey(["baz"]): LogicalVersion("3"),
+            AssetKey(["assetgroup", "bar"]): DataVersion("2"),
+            AssetKey(["baz"]): DataVersion("3"),
         },
     )
 
@@ -82,20 +82,20 @@ def test_extract_logical_version_from_observation_entry():
         DagsterEventType.ASSET_OBSERVATION,
         observation,
     )
-    assert extract_logical_version_from_entry(entry) == LogicalVersion("1")
+    assert extract_logical_version_from_entry(entry) == DataVersion("1")
 
 
 def test_compute_logical_version():
     result = compute_logical_version(
-        "foo", {AssetKey(["beta"]): LogicalVersion("1"), AssetKey(["alpha"]): LogicalVersion("2")}
+        "foo", {AssetKey(["beta"]): DataVersion("1"), AssetKey(["alpha"]): DataVersion("2")}
     )
     hash_sig = sha256()
     hash_sig.update(bytearray("".join(["foo", "2", "1"]), "utf8"))
-    assert result == LogicalVersion(hash_sig.hexdigest())
+    assert result == DataVersion(hash_sig.hexdigest())
 
 
 def test_compute_logical_version_unknown_code_version():
-    result = compute_logical_version(UNKNOWN_VALUE, {AssetKey(["alpha"]): LogicalVersion("1")})
+    result = compute_logical_version(UNKNOWN_VALUE, {AssetKey(["alpha"]): DataVersion("1")})
     assert result == UNKNOWN_LOGICAL_VERSION
 
 

@@ -21,7 +21,7 @@ from dagster._core.definitions.data_version import (
     INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX,
     LOGICAL_VERSION_TAG_KEY,
     CachingStaleStatusResolver,
-    LogicalVersion,
+    DataVersion,
     StaleCause,
     StaleStatus,
     compute_logical_version,
@@ -92,8 +92,8 @@ def get_version_from_mat(mat: AssetMaterialization) -> str:
     return mat.tags[LOGICAL_VERSION_TAG_KEY]
 
 
-def assert_logical_version(mat: AssetMaterialization, version: Union[str, LogicalVersion]) -> None:
-    value = version.value if isinstance(version, LogicalVersion) else version
+def assert_logical_version(mat: AssetMaterialization, version: Union[str, DataVersion]) -> None:
+    value = version.value if isinstance(version, DataVersion) else version
     assert mat.tags
     assert mat.tags[LOGICAL_VERSION_TAG_KEY] == value
 
@@ -436,7 +436,7 @@ def test_stale_status_general() -> None:
     def source1(_context):
         nonlocal x
         x = x + 1
-        return LogicalVersion(str(x))
+        return DataVersion(str(x))
 
     @asset(code_version="abc")
     def asset1(source1):
@@ -838,18 +838,18 @@ def test_get_logical_version_provenance_inside_op():
 
     @asset
     def asset1():
-        return Output(1, logical_version=LogicalVersion("foo"))
+        return Output(1, logical_version=DataVersion("foo"))
 
     @asset(config_schema={"check_provenance": Field(bool, default_value=False)})
     def asset2(context: OpExecutionContext, asset1):
         if context.op_config["check_provenance"]:
             provenance = context.get_asset_provenance(AssetKey("asset2"))
             assert provenance
-            assert provenance.input_logical_versions[AssetKey("asset1")] == LogicalVersion("foo")
+            assert provenance.input_logical_versions[AssetKey("asset1")] == DataVersion("foo")
         return Output(2)
 
     mats = materialize_assets([asset1, asset2], instance)
-    assert_logical_version(mats["asset1"], LogicalVersion("foo"))
+    assert_logical_version(mats["asset1"], DataVersion("foo"))
     materialize_asset(
         [asset1, asset2],
         asset2,

@@ -44,31 +44,31 @@ def foo(x):
 UNKNOWN_VALUE: Final[UnknownValue] = UnknownValue()
 
 
-class LogicalVersion(
+class DataVersion(
     NamedTuple(
-        "_LogicalVersion",
+        "_DataVersion",
         [("value", str)],
     )
 ):
-    """(Experimental) Represents a logical version for an asset.
+    """(Experimental) Represents a data version for an asset.
 
     Args:
-        value (str): An arbitrary string representing a logical version.
+        value (str): An arbitrary string representing a data version.
     """
 
     def __new__(
         cls,
         value: str,
     ):
-        return super(LogicalVersion, cls).__new__(
+        return super(DataVersion, cls).__new__(
             cls,
             value=check.str_param(value, "value"),
         )
 
 
-DEFAULT_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("INITIAL")
-NULL_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("NULL")
-UNKNOWN_LOGICAL_VERSION: Final[LogicalVersion] = LogicalVersion("UNKNOWN")
+DEFAULT_LOGICAL_VERSION: Final[DataVersion] = DataVersion("INITIAL")
+NULL_LOGICAL_VERSION: Final[DataVersion] = DataVersion("NULL")
+UNKNOWN_LOGICAL_VERSION: Final[DataVersion] = DataVersion("UNKNOWN")
 
 
 class LogicalVersionProvenance(
@@ -76,7 +76,7 @@ class LogicalVersionProvenance(
         "_LogicalVersionProvenance",
         [
             ("code_version", str),
-            ("input_logical_versions", Mapping["AssetKey", LogicalVersion]),
+            ("input_logical_versions", Mapping["AssetKey", DataVersion]),
         ],
     )
 ):
@@ -84,14 +84,14 @@ class LogicalVersionProvenance(
 
     Args:
         code_version (str): The code version of the op that generated a materialization.
-        input_logical_versions (Mapping[AssetKey, LogicalVersion]): The logical versions of the
+        input_logical_versions (Mapping[AssetKey, DataVersion]): The logical versions of the
             inputs used for the materialization.
     """
 
     def __new__(
         cls,
         code_version: str,
-        input_logical_versions: Mapping["AssetKey", LogicalVersion],
+        input_logical_versions: Mapping["AssetKey", DataVersion],
     ):
         from dagster._core.definitions.events import AssetKey
 
@@ -102,7 +102,7 @@ class LogicalVersionProvenance(
                 input_logical_versions,
                 "input_logical_versions",
                 key_type=AssetKey,
-                value_type=LogicalVersion,
+                value_type=DataVersion,
             ),
         )
 
@@ -115,7 +115,7 @@ class LogicalVersionProvenance(
             return None
         start_index = len(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX) + 1
         input_logical_versions = {
-            AssetKey.from_user_string(k[start_index:]): LogicalVersion(tags[k])
+            AssetKey.from_user_string(k[start_index:]): DataVersion(tags[k])
             for k, v in tags.items()
             if k.startswith(INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX)
         }
@@ -147,13 +147,13 @@ def get_input_event_pointer_tag_key(input_key: "AssetKey") -> str:
 
 def compute_logical_version(
     code_version: Union[str, UnknownValue],
-    input_logical_versions: Mapping["AssetKey", LogicalVersion],
-) -> LogicalVersion:
+    input_logical_versions: Mapping["AssetKey", DataVersion],
+) -> DataVersion:
     """Compute a logical version from inputs.
 
     Args:
-        code_version (LogicalVersion): The code version of the computation.
-        input_logical_versions (Mapping[AssetKey, LogicalVersion]): The logical versions of the inputs.
+        code_version (str): The code version of the computation.
+        input_logical_versions (Mapping[AssetKey, DataVersion]): The logical versions of the inputs.
 
     Returns:
         LogicalVersion: The computed logical version.
@@ -162,7 +162,7 @@ def compute_logical_version(
 
     check.inst_param(code_version, "code_version", (str, UnknownValue))
     check.mapping_param(
-        input_logical_versions, "input_versions", key_type=AssetKey, value_type=LogicalVersion
+        input_logical_versions, "input_versions", key_type=AssetKey, value_type=DataVersion
     )
 
     if (
@@ -178,16 +178,16 @@ def compute_logical_version(
 
     hash_sig = sha256()
     hash_sig.update(bytearray("".join(all_inputs), "utf8"))
-    return LogicalVersion(hash_sig.hexdigest())
+    return DataVersion(hash_sig.hexdigest())
 
 
 def extract_logical_version_from_entry(
     entry: EventLogEntry,
-) -> Optional[LogicalVersion]:
+) -> Optional[DataVersion]:
     event_data = _extract_event_data_from_entry(entry)
     tags = event_data.tags or {}
     value = tags.get(LOGICAL_VERSION_TAG_KEY)
-    return None if value is None else LogicalVersion(value)
+    return None if value is None else DataVersion(value)
 
 
 def extract_logical_version_provenance_from_entry(
@@ -278,7 +278,7 @@ class CachingStaleStatusResolver:
     def get_stale_root_causes(self, key: AssetKey) -> Sequence[StaleCause]:
         return self._get_stale_root_causes(key=key)
 
-    def get_current_logical_version(self, key: AssetKey) -> LogicalVersion:
+    def get_current_logical_version(self, key: AssetKey) -> DataVersion:
         return self._get_current_logical_version(key=key)
 
     @cached_method
@@ -401,7 +401,7 @@ class CachingStaleStatusResolver:
         return self._asset_graph
 
     @cached_method
-    def _get_current_logical_version(self, *, key: AssetKey) -> LogicalVersion:
+    def _get_current_logical_version(self, *, key: AssetKey) -> DataVersion:
         is_source = self.asset_graph.is_source(key)
         event = self._instance.get_latest_logical_version_record(
             key,

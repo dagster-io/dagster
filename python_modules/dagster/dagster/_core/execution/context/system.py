@@ -62,7 +62,7 @@ from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
     from dagster._core.definitions.data_version import (
-        LogicalVersion,
+        DataVersion,
     )
     from dagster._core.definitions.dependency import Node, NodeHandle
     from dagster._core.definitions.job_definition import JobDefinition
@@ -523,7 +523,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._input_asset_records: Dict[AssetKey, Optional["EventLogRecord"]] = {}
         self._is_external_input_asset_records_loaded = False
-        self._logical_version_cache: Dict[AssetKey, "LogicalVersion"] = {}
+        self._logical_version_cache: Dict[AssetKey, "DataVersion"] = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -857,13 +857,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
             return asset_info is not None
 
-    def set_logical_version(self, asset_key: AssetKey, logical_version: "LogicalVersion") -> None:
+    def set_logical_version(self, asset_key: AssetKey, logical_version: "DataVersion") -> None:
         self._logical_version_cache[asset_key] = logical_version
 
     def has_logical_version(self, asset_key: AssetKey) -> bool:
         return asset_key in self._logical_version_cache
 
-    def get_logical_version(self, asset_key: AssetKey) -> "LogicalVersion":
+    def get_logical_version(self, asset_key: AssetKey) -> "DataVersion":
         return self._logical_version_cache[asset_key]
 
     @property
