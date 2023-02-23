@@ -24,13 +24,13 @@ def input_number():
         return DataVersion(sha256_digest_from_str(ff.read()))
 
 
-@asset(code_version="v6", non_argument_deps={"input_number"})
+@asset(code_version="v3", non_argument_deps={"input_number"})
 def versioned_number():
     with open(FILE_PATH) as ff:
         value = int(ff.read())
-        return Output(value, logical_version=DataVersion(str(value)))
+        return Output(value, data_version=DataVersion(str(value)))
 
 
 @asset(code_version="v1")
-def multiplied_number(versioned_number):
+def multipled_number(versioned_number):
     return versioned_number * 2
