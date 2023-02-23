@@ -172,7 +172,9 @@ Then, configuration for the resource can be provided at runtime in the launchpad
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resource_runtime_launch endbefore=end_new_resource_runtime_launch dedent=4
 from dagster import sensor, define_asset_job, RunRequest
 
-update_data_job = define_asset_job(name="update_data_job", selection=[data_from_database])
+update_data_job = define_asset_job(
+    name="update_data_job", selection=[data_from_database]
+)
 
 @sensor(job=update_data_job)
 def table_update_sensor():
@@ -350,7 +352,9 @@ class WriterResource(ConfigurableLegacyResourceAdapter):
 def my_asset(writer: Writer):
     writer.output("hello, world!")
 
-defs = Definitions(assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")})
+defs = Definitions(
+    assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")}
+)
 ```
 
 ### Adapting function-style I/O managers
@@ -377,7 +381,9 @@ class OldFileIOManager(IOManager):
         self.base_path = base_path
 
     def handle_output(self, context: OutputContext, obj):
-        with open(os.path.join(self.base_path, context.step_key, context.name), "w") as fd:
+        with open(
+            os.path.join(self.base_path, context.step_key, context.name), "w"
+        ) as fd:
             fd.write(obj)
 
     def load_input(self, context: InputContext):
@@ -440,7 +446,10 @@ defs = Definitions(
 If you would like a Pythonic resource to depend on a bare Python object, you can use the <PyObject object="ResourceDependency"/> annotation to annotate the attribute in question. This indicates to Dagster that the attribute should be treated as a resource dependency.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_raw_github_resource_dep endbefore=end_raw_github_resource_dep dedent=4
-from dagster._config.structured_config import ConfigurableResource, ResourceDependency
+from dagster._config.structured_config import (
+    ConfigurableResource,
+    ResourceDependency,
+)
 from dagster import Definitions
 
 class DBResource(ConfigurableResource):
