@@ -151,7 +151,6 @@ GET_ASSET_DATA_VERSIONS = """
               path
             }
             currentDataVersion
-            projectedDataVersion
             staleStatus
             staleCauses {
                 key { path }

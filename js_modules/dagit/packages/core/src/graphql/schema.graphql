@@ -652,7 +652,7 @@ type AssetNode {
   ): [ObservationEvent!]!
   computeKind: String
   configField: ConfigTypeField
-  currentLogicalVersion: String
+  currentDataVersion: String
   dependedBy: [AssetDependency!]!
   dependedByKeys: [AssetKey!]!
   dependencies: [AssetDependency!]!
