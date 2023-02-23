@@ -523,7 +523,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._input_asset_records: Dict[AssetKey, Optional["EventLogRecord"]] = {}
         self._is_external_input_asset_records_loaded = False
-        self._logical_version_cache: Dict[AssetKey, "DataVersion"] = {}
+        self._data_version_cache: Dict[AssetKey, "DataVersion"] = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -857,14 +857,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
             return asset_info is not None
 
-    def set_logical_version(self, asset_key: AssetKey, logical_version: "DataVersion") -> None:
-        self._logical_version_cache[asset_key] = logical_version
+    def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
+        self._data_version_cache[asset_key] = data_version
 
-    def has_logical_version(self, asset_key: AssetKey) -> bool:
-        return asset_key in self._logical_version_cache
+    def has_data_version(self, asset_key: AssetKey) -> bool:
+        return asset_key in self._data_version_cache
 
-    def get_logical_version(self, asset_key: AssetKey) -> "DataVersion":
-        return self._logical_version_cache[asset_key]
+    def get_data_version(self, asset_key: AssetKey) -> "DataVersion":
+        return self._data_version_cache[asset_key]
 
     @property
     def input_asset_records(self) -> Optional[Mapping[AssetKey, Optional["EventLogRecord"]]]:
@@ -911,11 +911,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
         event = self.instance.get_latest_data_version_record(key)
-        if key in self._logical_version_cache and retries <= 5:
-            event_logical_version = (
+        if key in self._data_version_cache and retries <= 5:
+            event_data_version = (
                 None if event is None else extract_data_version_from_entry(event.event_log_entry)
             )
-            if event_logical_version == self._logical_version_cache[key]:
+            if event_data_version == self._data_version_cache[key]:
                 self._input_asset_records[key] = event
             else:
                 self._fetch_input_asset_record(key, retries + 1)

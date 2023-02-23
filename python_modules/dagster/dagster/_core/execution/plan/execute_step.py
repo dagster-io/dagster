@@ -477,18 +477,18 @@ def _get_output_asset_materializations(
         assert isinstance(output, Output)
         code_version = _get_code_version(asset_key, step_context)
         input_provenance_data = _get_input_provenance_data(asset_key, step_context)
-        logical_version = (
+        data_version = (
             compute_logical_data_version(
                 code_version,
-                {k: meta["logical_version"] for k, meta in input_provenance_data.items()},
+                {k: meta["data_version"] for k, meta in input_provenance_data.items()},
             )
             if output.data_version is None
             else output.data_version
         )
-        tags = _build_logical_version_tags(logical_version, code_version, input_provenance_data)
-        if not step_context.has_logical_version(asset_key):
-            logical_version = DataVersion(tags[DATA_VERSION_TAG])
-            step_context.set_logical_version(asset_key, logical_version)
+        tags = _build_data_version_tags(data_version, code_version, input_provenance_data)
+        if not step_context.has_data_version(asset_key):
+            data_version = DataVersion(tags[DATA_VERSION_TAG])
+            step_context.set_data_version(asset_key, data_version)
     else:
         tags = {}
 
@@ -558,7 +558,7 @@ def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -
 
 
 class _InputProvenanceData(TypedDict):
-    logical_version: DataVersion
+    data_version: DataVersion
     storage_id: Optional[int]
 
 
@@ -575,31 +575,31 @@ def _get_input_provenance_data(
         # generated in topological order -- we assume this.
         event = step_context.get_input_asset_record(key)
         if event is not None:
-            logical_version = (
+            data_version = (
                 extract_data_version_from_entry(event.event_log_entry) or DEFAULT_DATA_VERSION
             )
         else:
-            logical_version = DEFAULT_DATA_VERSION
+            data_version = DEFAULT_DATA_VERSION
         input_provenance[key] = {
-            "logical_version": logical_version,
+            "data_version": data_version,
             "storage_id": event.storage_id if event else None,
         }
     return input_provenance
 
 
-def _build_logical_version_tags(
-    logical_version: DataVersion,
+def _build_data_version_tags(
+    data_version: DataVersion,
     code_version: str,
     input_provenance_data: Mapping[AssetKey, _InputProvenanceData],
 ) -> Dict[str, str]:
     tags: Dict[str, str] = {}
     tags[CODE_VERSION_TAG] = code_version
     for key, meta in input_provenance_data.items():
-        tags[get_input_data_version_tag(key)] = meta["logical_version"].value
+        tags[get_input_data_version_tag(key)] = meta["data_version"].value
         tags[get_input_event_pointer_tag(key)] = (
             str(meta["storage_id"]) if meta["storage_id"] else "NULL"
         )
-    tags[DATA_VERSION_TAG] = logical_version.value
+    tags[DATA_VERSION_TAG] = data_version.value
     return tags
 
 
