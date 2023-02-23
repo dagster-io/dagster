@@ -62,6 +62,24 @@ You can find the full Dagster documentation [here](https://docs.dagster.io).
 
 # Key Features:
 
+<p align="center">
+  <img width="100%" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/key-features-cards.svg">
+</p>
+
+## Dagster as a productivity platform
+Identify the key assets you need to create using a declarative approach, or you can focus on running basic tasks. Embrace CI/CD best practices from the get-go: build reusable components, spot data quality issues, and flag bugs early.
+
+## Dagster as a robust orchestration engine
+Put your pipelines into production with a robust multi-tenant, multi-tool engine that scales technically and organizationally.
+
+## Dagster as a unified control plane
+Maintain control over your data as the complexity scales. Centralize your metadata in one tool with built-in observability, diagnostics, cataloging, and lineage. Spot any issues and identify performance improvement opportunities.
+
+
+# Master the Modern Data Stack with integrations
+
+Dagster provides a growing library of integrations for today’s most popular data tools. Integrate with the tools you already use, and deploy to your infrastructure.
+
 
 ## Community
 
