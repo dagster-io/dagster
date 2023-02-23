@@ -25,6 +25,7 @@ def make_dagster_schedule_from_airflow_dag(
     tags: Optional[Mapping[str, str]] = None,
     connections: Optional[List[Connection]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
+    **kwargs,
 ) -> ScheduleDefinition:
     """Construct a Dagster schedule corresponding to an Airflow DAG.
 
@@ -52,4 +53,5 @@ def make_dagster_schedule_from_airflow_dag(
         cron_schedule=str(cron_schedule),
         description=schedule_description,
         execution_timezone=dag.timezone.name,
+        **kwargs,
     )

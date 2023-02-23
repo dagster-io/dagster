@@ -25,6 +25,7 @@ def make_dagster_job_from_airflow_dag(
     tags: Optional[Mapping[str, str]] = None,
     connections: Optional[List[Connection]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
+    **kwargs,
 ) -> JobDefinition:
     """Construct a Dagster job corresponding to a given Airflow DAG.
 
@@ -95,12 +96,9 @@ def make_dagster_job_from_airflow_dag(
 
     job_def = JobDefinition(
         name=normalized_name(dag.dag_id),
-        description="",
         graph_def=graph_def,
         resource_defs=resource_defs,
         tags=mutated_tags,
-        metadata={},
-        op_retry_policy=None,
-        version_strategy=None,
+        **kwargs,
     )
     return job_def

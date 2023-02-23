@@ -161,3 +161,21 @@ def test_retry_conversion():
         assert result.success
         for event in result.all_events:
             assert event.event_type_value != "STEP_FAILURE"
+
+
+@pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
+@requires_local_db
+def test_kwargs_splat():
+    with tempfile.TemporaryDirectory(suffix="retries") as tmpdir_path:
+        with open(os.path.join(tmpdir_path, "dag.py"), "wb") as f:
+            f.write(bytes(RETRY_DAG.encode("utf-8")))
+
+        dag_bag = DagBag(dag_folder=tmpdir_path)
+        retry_dag = dag_bag.get_dag(dag_id="retry_dag")
+
+        job = make_dagster_job_from_airflow_dag(
+            dag=retry_dag,
+            description="foo",
+        )
+
+        assert job.description == "foo"
