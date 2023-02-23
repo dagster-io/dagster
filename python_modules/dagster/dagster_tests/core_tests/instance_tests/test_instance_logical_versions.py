@@ -48,7 +48,7 @@ def _create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> Eve
     )
 
 
-def test_extract_logical_version_and_provenance_from_materialization_entry():
+def test_extract_data_version_and_provenance_from_materialization_entry():
     materialization = AssetMaterialization(
         asset_key="foo",
         tags={
@@ -71,7 +71,7 @@ def test_extract_logical_version_and_provenance_from_materialization_entry():
     )
 
 
-def test_extract_logical_version_from_observation_entry():
+def test_extract_data_version_from_observation_entry():
     observation = AssetObservation(
         asset_key="foo",
         tags={
@@ -85,7 +85,7 @@ def test_extract_logical_version_from_observation_entry():
     assert extract_data_version_from_entry(entry) == DataVersion("1")
 
 
-def test_compute_logical_version():
+def test_compute_logical_data_version():
     result = compute_logical_data_version(
         "foo", {AssetKey(["beta"]): DataVersion("1"), AssetKey(["alpha"]): DataVersion("2")}
     )
@@ -94,11 +94,11 @@ def test_compute_logical_version():
     assert result == DataVersion(hash_sig.hexdigest())
 
 
-def test_compute_logical_version_unknown_code_version():
+def test_compute_logical_data_version_unknown_code_version():
     result = compute_logical_data_version(UNKNOWN_VALUE, {AssetKey(["alpha"]): DataVersion("1")})
     assert result == UNKNOWN_DATA_VERSION
 
 
-def test_compute_logical_version_unknown_dep_version():
+def test_compute_logical_data_version_unknown_dep_version():
     result = compute_logical_data_version("foo", {AssetKey(["alpha"]): UNKNOWN_DATA_VERSION})
     assert result == UNKNOWN_DATA_VERSION

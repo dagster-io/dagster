@@ -10,8 +10,8 @@ from dagster._core.definitions.observe import observe
 from dagster._core.instance import DagsterInstance
 
 
-def _get_current_logical_version(key: AssetKey, instance: DagsterInstance) -> Optional[DataVersion]:
-    record = instance.get_latest_data_version_record(AssetKey("foo"))
+def _get_current_data_version(key: AssetKey, instance: DagsterInstance) -> Optional[DataVersion]:
+    record = instance.get_latest_data_version_record(key)
     assert record is not None
     return extract_data_version_from_entry(record.event_log_entry)
 
@@ -24,7 +24,7 @@ def test_basic_observe():
     instance = DagsterInstance.ephemeral()
 
     observe([foo], instance=instance)
-    assert _get_current_logical_version(AssetKey("foo"), instance) == DataVersion("alpha")
+    assert _get_current_data_version(AssetKey("foo"), instance) == DataVersion("alpha")
 
 
 def test_observe_tags():
