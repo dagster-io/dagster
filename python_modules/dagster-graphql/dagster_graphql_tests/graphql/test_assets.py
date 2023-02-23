@@ -150,7 +150,8 @@ GET_ASSET_DATA_VERSIONS = """
             assetKey {
               path
             }
-            currentLogicalVersion
+            currentDataVersion
+            projectedDataVersion
             staleStatus
             staleCauses {
                 key { path }

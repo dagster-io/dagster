@@ -69,7 +69,7 @@ def test_stale_status():
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
             result = _fetch_data_versions(context, repo)
             foo = _get_asset_node("foo", result)
-            assert foo["currentLogicalVersion"] is None
+            assert foo["currentDataVersion"] is None
             assert foo["staleStatus"] == "MISSING"
             assert foo["staleCauses"] == []
 
@@ -78,7 +78,7 @@ def test_stale_status():
 
             result = _fetch_data_versions(context, repo)
             foo = _get_asset_node("foo", result)
-            assert foo["currentLogicalVersion"] is not None
+            assert foo["currentDataVersion"] is not None
             assert foo["staleStatus"] == "FRESH"
             assert foo["staleCauses"] == []
 
@@ -92,7 +92,7 @@ def test_data_version_from_tags():
             result = _fetch_data_versions(context_v1, repo_v1)
             tags = result.data["assetNodes"][0]["assetMaterializations"][0]["tags"]
             dv_tag = next(tag for tag in tags if tag["key"] == DATA_VERSION_TAG)
-            assert dv_tag["value"] == result.data["assetNodes"][0]["currentLogicalVersion"]
+            assert dv_tag["value"] == result.data["assetNodes"][0]["currentDataVersion"]
 
 
 def get_repo_with_partitioned_self_dep_asset():

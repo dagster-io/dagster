@@ -192,7 +192,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     )
     computeKind = graphene.String()
     configField = graphene.Field(GrapheneConfigTypeField)
-    currentLogicalVersion = graphene.String()
+    currentDataVersion = graphene.String()
     dependedBy = non_null_list(GrapheneAssetDependency)
     dependedByKeys = non_null_list(GrapheneAssetKey)
     dependencies = non_null_list(GrapheneAssetDependency)
@@ -303,7 +303,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     def stale_status_loader(self) -> StaleStatusLoader:
         loader = check.not_none(
             self._stale_status_loader,
-            "stale_status_loader must exist in order to logical versioning information",
+            "stale_status_loader must exist in order to access data versioning information",
         )
         return loader
 
@@ -578,7 +578,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             for cause in causes
         ]
 
-    def resolve_currentLogicalVersion(self, graphene_info: ResolveInfo) -> Optional[str]:
+    def resolve_currentDataVersion(self, graphene_info: ResolveInfo) -> Optional[str]:
         version = self.stale_status_loader.get_current_data_version(
             self._external_asset_node.asset_key
         )
