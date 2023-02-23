@@ -161,7 +161,7 @@ class TimeWindowPartitionMapping(
         if start_offset != 0 or end_offset != 0:
             check.invariant(
                 from_partitions_def.cron_schedule == to_partitions_def.cron_schedule,
-                "Offset can't be used when cron schedule don't match",
+                "Offset can't be used when cron schedules don't match",
             )
 
         if to_partitions_def.timezone != from_partitions_def.timezone:
