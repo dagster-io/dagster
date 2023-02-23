@@ -436,6 +436,71 @@ defs = Definitions(
 
 # end_resource_adapter
 
+
+# start_io_adapter
+
+from dagster import (
+    Definitions,
+    IOManagerDefinition,
+    io_manager,
+    IOManager,
+    InputContext,
+    OutputContext,
+)
+from dagster._config.structured_config import (
+    StructuredIOManagerAdapter as ConfigurableIOManagerAdapter,
+)
+import os
+
+
+# Old code, cannot be changed for back-compat purposes
+class OldFileIOManager(IOManager):
+    def __init__(self, base_path: str):
+        self.base_path = base_path
+
+    def handle_output(self, context: OutputContext, obj):
+        with open(
+            os.path.join(self.base_path, context.step_key, context.name), "w"
+        ) as fd:
+            fd.write(obj)
+
+    def load_input(self, context: InputContext):
+        with open(
+            os.path.join(
+                self.base_path,
+                context.upstream_output.step_key,
+                context.upstream_output.name,
+            ),
+            "r",
+        ) as fd:
+            return fd.read()
+
+
+@io_manager(config_schema={"base_path": str})
+def old_file_io_manager(context):
+    base_path = context.resource_config["base_path"]
+    return OldFileIOManager(base_path)
+
+
+# New adapter layer
+class MyIOManager(ConfigurableIOManagerAdapter):
+    base_path: str
+
+    @property
+    def wrapped_io_manager(self) -> IOManagerDefinition:
+        return old_file_io_manager
+
+
+defs = Definitions(
+    assets=...,
+    resources={
+        "io_manager": MyIOManager(base_path="/tmp/"),
+    },
+)
+
+# end_io_adapter
+
+
 # start_impl_details_resolve
 
 

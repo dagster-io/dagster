@@ -116,7 +116,6 @@ defs = Definitions(
 </TabItem>
 </TabGroup>
 
-
 ### Using environment variables with resources
 
 Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using Dagster Cloud, environment variables can be [configured directly in the UI](/dagster-cloud/developing-testing/environment-variables-and-secrets).
@@ -144,7 +143,6 @@ defs = Definitions(
     },
 )
 ```
-
 
 ### Configuring resources at runtime
 
@@ -182,9 +180,7 @@ Then, configuration for the resource can be provided at runtime in the launchpad
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_resource_runtime_launch endbefore=end_new_resource_runtime_launch
 from dagster import sensor, define_asset_job, RunRequest
 
-update_data_job = define_asset_job(
-    name="update_data_job", selection=[data_from_database]
-)
+update_data_job = define_asset_job(name="update_data_job", selection=[data_from_database])
 
 
 @sensor(job=update_data_job)
@@ -199,7 +195,6 @@ def table_update_sensor():
             ),
         )
 ```
-
 
 ### Resources which depend on other resources
 
@@ -261,7 +256,6 @@ defs = Definitions(
 )
 ```
 
-
 ### Testing configurable resources
 
 You can test the initialization of a <PyObject object="ConfigurableResource"/> by constructing it manually. In most cases, you can construct your resource directly:
@@ -307,7 +301,7 @@ def test_my_resource_with_context():
 
 ## Defining Pythonic I/O managers
 
-Pythonic [I/O managers](/concepts/io-management/io-managers) are defined as subclasses of <PyObject object="ConfigurableIOManager"/>, and similarly to Pythonic resources specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called  Dagster at runtime to handle the storing and loading of data.
+Pythonic [I/O managers](/concepts/io-management/io-managers) are defined as subclasses of <PyObject object="ConfigurableIOManager"/>, and similarly to Pythonic resources specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called Dagster at runtime to handle the storing and loading of data.
 
 ```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_new_io_manager endbefore=end_new_io_manager
 from dagster import Definitions, AssetKey, OutputContext, InputContext
@@ -332,6 +326,8 @@ defs = Definitions(
     resources={"io_manager": MyIOManager(root_path="/tmp/")},
 )
 ```
+
+###
 
 ---
 
@@ -379,8 +375,69 @@ def my_asset(writer: Writer):
     writer.output("hello, world!")
 
 
+defs = Definitions(assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")})
+```
+
+### Adapting function-style I/O managers
+
+Similar to with resources, in codebases that utilize [function-style](https://docs.dagster.io/concepts/io-management/io-managers) I/O managers with the <PyObject object="@io_manager"/> decorator, you can use the <PyObject object="ConfigurableIOManagerAdapter"/> class to adapt them to the new Pythonic I/O manager pattern.
+
+The adapter subclass should list all config fields as attributes and implement a `wrapped_io_manager` property which returns the underlying I/O manager definition to adapt.
+
+```python file=/guides/dagster/pythonic_resources/pythonic_resources.py startafter=start_io_adapter endbefore=end_io_adapter
+from dagster import (
+    Definitions,
+    IOManagerDefinition,
+    io_manager,
+    IOManager,
+    InputContext,
+    OutputContext,
+)
+from dagster._config.structured_config import (
+    StructuredIOManagerAdapter as ConfigurableIOManagerAdapter,
+)
+import os
+
+
+# Old code, cannot be changed for back-compat purposes
+class OldFileIOManager(IOManager):
+    def __init__(self, base_path: str):
+        self.base_path = base_path
+
+    def handle_output(self, context: OutputContext, obj):
+        with open(os.path.join(self.base_path, context.step_key, context.name), "w") as fd:
+            fd.write(obj)
+
+    def load_input(self, context: InputContext):
+        with open(
+            os.path.join(
+                self.base_path, context.upstream_output.step_key, context.upstream_output.name
+            ),
+            "r",
+        ) as fd:
+            return fd.read()
+
+
+@io_manager(config_schema={"base_path": str})
+def old_file_io_manager(context):
+    base_path = context.resource_config["base_path"]
+    return OldFileIOManager(base_path)
+
+
+# New adapter layer
+class MyIOManager(ConfigurableIOManagerAdapter):
+    base_path: str
+
+    @property
+    def wrapped_io_manager(self) -> IOManagerDefinition:
+        return old_file_io_manager
+
+
 defs = Definitions(
-    assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")}
+    assets=...,
+    resources={
+        "io_manager": MyIOManager(base_path="/tmp/"),
+    },
 )
 ```
 
