@@ -845,7 +845,7 @@ def test_get_logical_version_provenance_inside_op():
         if context.op_config["check_provenance"]:
             provenance = context.get_asset_provenance(AssetKey("asset2"))
             assert provenance
-            assert provenance.input_logical_versions[AssetKey("asset1")] == DataVersion("foo")
+            assert provenance.input_data_versions[AssetKey("asset1")] == DataVersion("foo")
         return Output(2)
 
     mats = materialize_assets([asset1, asset2], instance)
