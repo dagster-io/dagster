@@ -1,22 +1,12 @@
 <p align="center">
   <!-- Note: Do not try adding the dark mode version here with the `picture` element, it will break formatting in PyPI -->
   <a target="_blank" href="https://dagster.io" style="background:none">
-    <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/dagster-logo-light.svg" width="auto" height="120">
-  </a>
-  <br /><br />
-  <a target="_blank" href="https://twitter.com/dagster" style="background:none">
-    <img src="https://img.shields.io/badge/twitter-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=twitter" />
-  </a>
-  <a target="_blank" href="https://dagster.io/slack" style="background:none">
-    <img src="https://img.shields.io/badge/slack-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=slack" />
-  </a>
-  <a target="_blank" href="https://linkedin.com/showcase/dagster" style="background:none">
-    <img src="https://img.shields.io/badge/linkedin-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=linkedin" />
+    <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/dagster-readme-header.svg" width="auto" height="343">
   </a>
   <a target="_blank" href="https://github.com/dagster-io/dagster" style="background:none">
     <img src="https://img.shields.io/github/stars/dagster-io/dagster?labelColor=4F43DD&color=163B36&logo=github">
   </a>
-  <br />
+<p style="text-align: center;">Rememebr to star the Dagster repo for future reference.</p>
   <a target="_blank" href="https://github.com/dagster-io/dagster/blob/master/LICENSE" style="background:none">
     <img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?label=license&labelColor=4F43DD&color=163B36">
   </a>
@@ -26,55 +16,34 @@
   <a target="_blank" href="https://pypi.org/project/dagster/" style="background:none">
     <img src="https://img.shields.io/pypi/pyversions/dagster?labelColor=4F43DD&color=163B36">
   </a>
+  <a target="_blank" href="https://twitter.com/dagster" style="background:none">
+    <img src="https://img.shields.io/badge/twitter-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=twitter" />
+  </a>
+  <a target="_blank" href="https://dagster.io/slack" style="background:none">
+    <img src="https://img.shields.io/badge/slack-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=slack" />
+  </a>
+  <a target="_blank" href="https://linkedin.com/showcase/dagster" style="background:none">
+    <img src="https://img.shields.io/badge/linkedin-dagster-blue.svg?labelColor=4F43DD&color=163B36&logo=linkedin" />
+  </a>
 </p>
 
 # Dagster
 
-Dagster is an orchestrator that's designed for developing and maintaining data assets, such as tables, data sets, machine learning models, and reports.
-
-You declare functions that you want to run and the data assets that those functions produce or update. Dagster then helps you run your functions at the right time and keep your assets up-to-date.
-
-Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
+__Dagster is a cloud-native orchestrator for the whole development lifecycle, with integrated lineage and observability, a declarative programming model, and best-in-class testability.__
 
 If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
-
-An asset graph defined in Python:
-
-```python
-from dagster import asset
-from pandas import DataFrame, read_html, get_dummies
-from sklearn.linear_model import LinearRegression
-
-@asset
-def country_populations() -> DataFrame:
-    df = read_html("https://tinyurl.com/mry64ebh")[0]
-    df.columns = ["country", "continent", "rg", "pop2018", "pop2019", "change"]
-    df["change"] = df["change"].str.rstrip("%").str.replace("−", "-").astype("float")
-    return df
-
-@asset
-def continent_change_model(country_populations: DataFrame) -> LinearRegression:
-    data = country_populations.dropna(subset=["change"])
-    return LinearRegression().fit(
-        get_dummies(data[["continent"]]), data["change"]
-    )
-
-@asset
-def continent_stats(
-    country_populations: DataFrame, continent_change_model: LinearRegression
-) -> DataFrame:
-    result = country_populations.groupby("continent").sum()
-    result["pop_change_factor"] = continent_change_model.coef_
-    return result
-```
-
-The graph loaded into Dagster's web UI:
 
 <p align="center">
   <img width="478" alt="image" src="https://user-images.githubusercontent.com/654855/183537484-48dde394-91f2-4de0-9b17-a70b3e9a3823.png">
 </p>
 
-## Installation
+Dagster is a data pipeline orchestrator designed for **developing and maintaining data assets**, such as tables, data sets, machine learning models, and reports.
+
+With Dagster, you declare as Python functions the data assets that you want to build. Dagster then helps you run your functions at the right time and keep your assets up-to-date.
+
+Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
+
+## Quick Start:
 
 Dagster is available on PyPI and officially supports Python 3.7+.
 
@@ -90,6 +59,9 @@ This installs two modules:
 ## Documentation
 
 You can find the full Dagster documentation [here](https://docs.dagster.io).
+
+# Key Features:
+
 
 ## Community
 
