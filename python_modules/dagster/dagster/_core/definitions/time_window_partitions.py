@@ -370,17 +370,41 @@ class TimeWindowPartitionsDefinition(
     def get_first_partition_window(
         self, current_time: Optional[datetime] = None
     ) -> Optional[TimeWindow]:
-        current_timestamp = (
+        current_time = cast(
+            datetime,
             pendulum.instance(current_time, tz=self.timezone)
             if current_time
-            else pendulum.now(self.timezone)
-        ).timestamp()
+            else pendulum.now(self.timezone),
+        )
+        current_timestamp = current_time.timestamp()
 
         time_window = next(iter(self._iterate_time_windows(self.start)))
-        if time_window.end.timestamp() <= current_timestamp:
-            return time_window
+
+        if self.end_offset == 0:
+            return time_window if time_window.end.timestamp() <= current_timestamp else None
         else:
-            return None
+            if self.end_offset > 0:
+                iterator = iter(self._iterate_time_windows(current_time))
+                # first returned time window is time window of current time
+                curr_window_plus_offset = next(iterator)
+                for _ in range(self.end_offset):
+                    curr_window_plus_offset = next(iterator)
+                return (
+                    time_window
+                    if time_window.end.timestamp() <= curr_window_plus_offset.start.timestamp()
+                    else None
+                )
+            else:
+                # end offset < 0
+                iterator = iter(self._reverse_iterate_time_windows(current_time))
+                for _ in range(abs(self.end_offset)):
+                    end_window = next(iterator)
+
+                return (
+                    time_window
+                    if time_window.end.timestamp() <= end_window.start.timestamp()
+                    else None
+                )
 
     def get_last_partition_window(
         self, current_time: Optional[datetime] = None
@@ -1234,7 +1258,7 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         Returns a list of partition time windows that are not in the subset.
         Each time window is a single partition.
         """
-        first_tw = self._partitions_def.get_first_partition_window()
+        first_tw = self._partitions_def.get_first_partition_window(current_time=current_time)
         last_tw = self._partitions_def.get_last_partition_window(current_time=current_time)
 
         if not first_tw or not last_tw:
