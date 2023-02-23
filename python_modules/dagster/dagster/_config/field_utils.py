@@ -470,7 +470,7 @@ def _config_dictionary_from_values_inner(obj: Any):
         return {"env": str(obj)}
     elif isinstance(obj, Config):
         return {
-            k: _config_dictionary_from_values_inner(v) for k, v in obj.config_dictionary.items()
+            k: _config_dictionary_from_values_inner(v) for k, v in obj._as_config_dict().items()
         }
 
     return obj

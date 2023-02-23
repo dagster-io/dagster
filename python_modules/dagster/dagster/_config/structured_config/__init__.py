@@ -99,8 +99,7 @@ class Config(MakeConfigCacheable):
     Base class for Dagster configuration models.
     """
 
-    @property
-    def config_dictionary(self) -> Mapping[str, Any]:
+    def _as_config_dict(self) -> Mapping[str, Any]:
         """
         Returns a dictionary representation of this config object,
         ignoring any private fields.
@@ -418,7 +417,7 @@ class ConfigurableResource(
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.
-        return self.__class__(**{**self.config_dictionary, **values})
+        return self.__class__(**{**self._as_config_dict(), **values})
 
     def _resolve_and_update_env_vars(self) -> "ConfigurableResource[TResValue]":
         """
