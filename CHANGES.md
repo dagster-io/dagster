@@ -8,12 +8,12 @@
 - The new `@graph_asset` and `@graph_multi_asset` decorators make it more ergonomic to define graph-backed assets.
 - Dagster will auto-infer dependency relationships between single-dimensionally partitioned assets and multipartitioned assets, when the single-dimensional partitions definition is a dimension of the `MultiPartitionsDefinition`.
 - A new `Test sensor` / `Test schedule` button that allows you to perform a dry-run of your sensor / schedule. Check out the docs on this functionality [here](https://docs.dagster.io/master/concepts/partitions-schedules-sensors/sensors#via-dagit) for sensors and [here](https://docs.dagster.io/master/concepts/partitions-schedules-sensors/sensors#via-dagit) for schedules.
+- [dagit] Added (back) tag autocompletion in the runs filter, now with improved query performance.
+- [dagit] The Dagster libraries and their versions that were used when loading definitions can now be viewed in the actions menu for each code location.
 - New `bigquery_pandas_io_manager` can store and load Pandas dataframes in BigQuery.
 - [dagster-snowflake, dagster-duckdb] SnowflakeIOManagers and DuckDBIOManagers can now default to loading inputs as a specified type if a type annotation does not exist for the input.
 - [dagster-dbt] Added the ability to use the “state:” selector
-- [dagit] Added (back) tag autocompletion in the runs filter, now with improved query performance.
-- [dagit] The Dagster libraries and their versions that were used when loading definitions can now be viewed in the actions menu for each code location.
-- [k8s] The Helm chart now supports the full kubernetes env var spec for Dagit and the Daemon. E.g.
+- [dagster-k8s] The Helm chart now supports the full kubernetes env var spec for Dagit and the Daemon. E.g.
 ```
 dagit:
     
@@ -36,9 +36,9 @@ dagit:
 
 ### Documentation
 
+- Updated contributor docs to reference our new toolchain (`ruff`, `pyright`).
 - (experimental) Documentation for the dynamic partitions definition is now added.
 - [dagster-snowflake] The Snowflake I/O Manager reference page now includes information on working with partitioned assets.
-- Updated contributor docs to reference our new toolchain (`ruff`, `pyright`).
 
 
 # 1.1.19 (core) / 0.17.19 (libraries)
