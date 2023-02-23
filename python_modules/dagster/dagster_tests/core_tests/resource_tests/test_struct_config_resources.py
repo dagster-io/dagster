@@ -24,6 +24,7 @@ from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_output import Resource
+from dagster._core.definitions.run_config import RunConfig
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.init import InitResourceContext
@@ -357,6 +358,35 @@ def test_structured_resource_runtime_config():
     assert (
         defs.get_implicit_global_asset_job_def()
         .execute_in_process({"resources": {"writer": {"config": {"prefix": "greeting: "}}}})
+        .success
+    )
+    assert out_txt == ["greeting: hello, world!"]
+
+
+def test_runtime_config_run_config_obj():
+    # Use RunConfig to specify resource config
+    # in a structured format at runtime rather than using a dict
+
+    out_txt = []
+
+    class WriterResource(ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    @asset
+    def hello_world_asset(writer: WriterResource):
+        writer.output("hello, world!")
+
+    defs = Definitions(
+        assets=[hello_world_asset],
+        resources={"writer": WriterResource.configure_at_launch()},
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(RunConfig(resources={"writer": WriterResource(prefix="greeting: ")}))
         .success
     )
     assert out_txt == ["greeting: hello, world!"]

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequ
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
+from dagster._core.definitions.run_config import convert_config_input
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector.subset_selector import parse_clause
@@ -31,7 +32,10 @@ class UnresolvedAssetJobDefinition(
         [
             ("name", str),
             ("selection", "AssetSelection"),
-            ("config", Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]]),
+            (
+                "config",
+                Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]],
+            ),
             ("description", Optional[str]),
             ("tags", Optional[Mapping[str, Any]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
@@ -59,7 +63,7 @@ class UnresolvedAssetJobDefinition(
             cls,
             name=check.str_param(name, "name"),
             selection=check.inst_param(selection, "selection", AssetSelection),
-            config=config,
+            config=convert_config_input(config),
             description=check.opt_str_param(description, "description"),
             tags=check.opt_mapping_param(tags, "tags"),
             partitions_def=check.opt_inst_param(
