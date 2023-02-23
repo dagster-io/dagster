@@ -49,10 +49,11 @@ IS_BUILDKITE = True
 
 SHARED_BUILDKITE_BQ_CONFIG = {
     "project": os.getenv("GCP_PROJECT_ID"),
-    "temporary_gcs_bucket": "gcs_io_manager_test",
+    # "temporary_gcs_bucket": "gcs_io_manager_test",
 }
 
-BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0,com.google.cloud.bigdataoss:gcs-connector:hadoop2-2.1.9"
+# BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0,com.google.cloud.bigdataoss:gcs-connector:hadoop2-2.1.9"
+BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
 
 
 @contextmanager
@@ -207,15 +208,15 @@ def test_time_window_partitioned_asset():
                     key="spark.jars.packages",
                     value=BIGQUERY_JARS,
                 )
-                .config(
-                    key="fs.gs.impl", value="com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem"
-                )
-                .config(key="fs.gs.auth.service.account.enable", value="true")
-                .config(
-                    key="google.cloud.auth.service.account.json.keyfile",
-                    value=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
-                )
-                .config(key="fs.gs.project.id", value="elementl-dev")
+                # .config(
+                #     key="fs.gs.impl", value="com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem"
+                # )
+                # .config(key="fs.gs.auth.service.account.enable", value="true")
+                # .config(
+                #     key="google.cloud.auth.service.account.json.keyfile",
+                #     value=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+                # )
+                # .config(key="fs.gs.project.id", value="elementl-dev")
                 .getOrCreate()
             )
 

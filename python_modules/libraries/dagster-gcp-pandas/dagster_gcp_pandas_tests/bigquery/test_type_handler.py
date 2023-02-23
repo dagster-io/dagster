@@ -442,7 +442,7 @@ def test_dynamic_partitioned_asset():
         bq_table_path = f"{schema}.{table_name}"
 
         bq_io_manager = bigquery_pandas_io_manager.configured(SHARED_BUILDKITE_BQ_CONFIG)
-        resource_defs = {"io_manager": bq_io_manager}
+        resource_defs = {"io_manager": bq_io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
             dynamic_fruits.add_partitions(["apple"], instance)
