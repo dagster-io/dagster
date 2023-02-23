@@ -32,7 +32,7 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DEFAULT_DATA_VERSION,
     DataVersion,
-    compute_logical_version,
+    compute_logical_data_version,
     extract_data_version_from_entry,
     get_input_data_version_tag,
     get_input_event_pointer_tag,
@@ -478,7 +478,7 @@ def _get_output_asset_materializations(
         code_version = _get_code_version(asset_key, step_context)
         input_provenance_data = _get_input_provenance_data(asset_key, step_context)
         logical_version = (
-            compute_logical_version(
+            compute_logical_data_version(
                 code_version,
                 {k: meta["logical_version"] for k, meta in input_provenance_data.items()},
             )

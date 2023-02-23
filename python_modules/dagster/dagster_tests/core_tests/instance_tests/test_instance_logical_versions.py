@@ -11,7 +11,7 @@ from dagster._core.definitions.data_version import (
     UNKNOWN_VALUE,
     DataProvenance,
     DataVersion,
-    compute_logical_version,
+    compute_logical_data_version,
     extract_data_provenance_from_entry,
     extract_data_version_from_entry,
 )
@@ -86,7 +86,7 @@ def test_extract_logical_version_from_observation_entry():
 
 
 def test_compute_logical_version():
-    result = compute_logical_version(
+    result = compute_logical_data_version(
         "foo", {AssetKey(["beta"]): DataVersion("1"), AssetKey(["alpha"]): DataVersion("2")}
     )
     hash_sig = sha256()
@@ -95,10 +95,10 @@ def test_compute_logical_version():
 
 
 def test_compute_logical_version_unknown_code_version():
-    result = compute_logical_version(UNKNOWN_VALUE, {AssetKey(["alpha"]): DataVersion("1")})
+    result = compute_logical_data_version(UNKNOWN_VALUE, {AssetKey(["alpha"]): DataVersion("1")})
     assert result == UNKNOWN_DATA_VERSION
 
 
 def test_compute_logical_version_unknown_dep_version():
-    result = compute_logical_version("foo", {AssetKey(["alpha"]): UNKNOWN_DATA_VERSION})
+    result = compute_logical_data_version("foo", {AssetKey(["alpha"]): UNKNOWN_DATA_VERSION})
     assert result == UNKNOWN_DATA_VERSION

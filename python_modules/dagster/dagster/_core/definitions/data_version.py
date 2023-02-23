@@ -151,11 +151,11 @@ def get_input_event_pointer_tag(input_key: "AssetKey") -> str:
 # ########################
 
 
-def compute_logical_version(
+def compute_logical_data_version(
     code_version: Union[str, UnknownValue],
     input_data_versions: Mapping["AssetKey", DataVersion],
 ) -> DataVersion:
-    """Compute a version for a value as a hash of input data versions and code version.
+    """Compute a data version for a value as a hash of input data versions and code version.
 
     Args:
         code_version (str): The code version of the computation.

@@ -24,7 +24,7 @@ from dagster._core.definitions.data_version import (
     DataVersion,
     StaleCause,
     StaleStatus,
-    compute_logical_version,
+    compute_logical_data_version,
 )
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.events import AssetKey, Output
@@ -412,9 +412,9 @@ def test_multiple_code_versions():
     alpha_mat = mats[AssetKey("alpha")]
     beta_mat = mats[AssetKey("beta")]
 
-    assert_logical_version(alpha_mat, compute_logical_version("a", {}))
+    assert_logical_version(alpha_mat, compute_logical_data_version("a", {}))
     assert_code_version(alpha_mat, "a")
-    assert_logical_version(beta_mat, compute_logical_version("b", {}))
+    assert_logical_version(beta_mat, compute_logical_data_version("b", {}))
     assert_code_version(beta_mat, "b")
 
 
