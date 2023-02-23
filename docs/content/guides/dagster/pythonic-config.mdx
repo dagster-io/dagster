@@ -86,6 +86,8 @@ To execute a job or materialize an asset which specifies config, you'll need to 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_config endbefore=end_execute_with_config dedent=4
 from dagster import job, materialize, op
 
+from dagster._core.definitions.run_config import RunConfig
+
 @job
 def greeting_job():
     print_greeting()
@@ -96,7 +98,7 @@ job_result = greeting_job.execute_in_process(
 
 asset_result = materialize(
     [greeting],
-    run_config=RunConfig(assets={"greeting": MyAssetConfig(person_name="Alice")}),
+    run_config=RunConfig(ops={"greeting": MyAssetConfig(person_name="Alice")}),
 )
 ```
 
@@ -137,6 +139,8 @@ from dagster._config.structured_config import Config
 from typing import List, Dict
 from dagster import materialize, asset
 
+from dagster._core.definitions.run_config import RunConfig
+
 class MyDataStructuresConfig(Config):
     user_names: List[str]
     user_scores: Dict[str, int]
@@ -148,7 +152,7 @@ def scoreboard(config: MyDataStructuresConfig):
 result = materialize(
     [scoreboard],
     run_config=RunConfig(
-        assets={
+        ops={
             "scoreboard": MyDataStructuresConfig(
                 user_names=["Alice", "Bob"],
                 user_scores={"Alice": 10, "Bob": 20},
@@ -165,8 +169,10 @@ Schemas can be nested in one another, or in basic Python data structures.
 Here, we define a schema which contains a mapping of user names to complex user data objects.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_nested_schema_config endbefore=end_nested_schema_config dedent=4
-from dagster._config.structured_config import Config
 from dagster import asset, materialize
+from dagster._config.structured_config import Config
+from dagster._core.definitions.run_config import RunConfig
+from typing import Dict
 
 class UserData(Config):
     age: int
@@ -183,7 +189,7 @@ def average_age(config: MyNestedConfig):
 result = materialize(
     [average_age],
     run_config=RunConfig(
-        assets={
+        ops={
             "average_age": MyNestedConfig(
                 user_data={
                     "Alice": UserData(age=10, email="alice@gmail.com", profile_picture_url=...),
@@ -202,11 +208,12 @@ Union types are supported using Pydantic [discriminated unions](https://docs.pyd
 Here, we define a config schema which takes in a `pet` field, which can be either a `Cat` or a `Dog`, as indicated by the `pet_type` field.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_union_schema_config endbefore=end_union_schema_config dedent=4
-from typing import Union
-from pydantic import Field
-from typing_extensions import Literal
-from dagster._config.structured_config import Config
 from dagster import asset, materialize
+from dagster._config.structured_config import Config
+from dagster._core.definitions.run_config import RunConfig
+from pydantic import Field
+from typing import Union
+from typing_extensions import Literal
 
 class Cat(Config):
     pet_type: Literal["cat"]
@@ -229,7 +236,7 @@ def pet_stats(config: ConfigWithUnion):
 result = materialize(
     [pet_stats],
     run_config=RunConfig(
-        assets={
+        ops={
             "pet_stats": ConfigWithUnion(
                 pet=Cat(pet_type="cat", meows=10),
             )
