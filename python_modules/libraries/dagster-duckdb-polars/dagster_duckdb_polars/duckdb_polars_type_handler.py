@@ -1,7 +1,7 @@
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_duckdb.io_manager import DuckDbClient, _connect_duckdb, build_duckdb_io_manager
+from dagster_duckdb.io_manager import DuckDbClient, build_duckdb_io_manager
 
 
 class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
@@ -30,19 +30,19 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
 
     """
 
-    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pl.DataFrame):
+    def handle_output(
+        self, context: OutputContext, table_slice: TableSlice, obj: pl.DataFrame, connection
+    ):
         """Stores the polars DataFrame in duckdb."""
         obj_arrow = obj.to_arrow()  # noqa: F841  # need obj_arrow symbol to exist for duckdb query
-        conn = _connect_duckdb(context).cursor()
-
-        conn.execute(f"create schema if not exists {table_slice.schema};")
-        conn.execute(
+        connection.execute(f"create schema if not exists {table_slice.schema};")
+        connection.execute(
             f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
             " obj_arrow;"
         )
-        if not conn.fetchall():
+        if not connection.fetchall():
             # table was not created, therefore already exists. Insert the data
-            conn.execute(
+            connection.execute(
                 f"insert into {table_slice.schema}.{table_slice.table} select * from obj_arrow"
             )
 
@@ -60,10 +60,13 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
             }
         )
 
-    def load_input(self, context: InputContext, table_slice: TableSlice) -> pl.DataFrame:
+    def load_input(
+        self, context: InputContext, table_slice: TableSlice, connection
+    ) -> pl.DataFrame:
         """Loads the input as a Polars DataFrame."""
-        conn = _connect_duckdb(context).cursor()
-        select_statement = conn.execute(DuckDbClient.get_select_statement(table_slice=table_slice))
+        select_statement = connection.execute(
+            DuckDbClient.get_select_statement(table_slice=table_slice)
+        )
         duckdb_to_arrow = select_statement.arrow()
         return pl.DataFrame(duckdb_to_arrow)
 
@@ -72,9 +75,13 @@ class DuckDBPolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
         return [pl.DataFrame]
 
 
-duckdb_polars_io_manager = build_duckdb_io_manager([DuckDBPolarsTypeHandler()])
+duckdb_polars_io_manager = build_duckdb_io_manager(
+    [DuckDBPolarsTypeHandler()], default_load_type=pl.DataFrame
+)
 duckdb_polars_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes polars dataframes to DuckDB.
+An IO manager definition that reads inputs from and writes polars dataframes to DuckDB. When
+using the duckdb_polars_io_manager, any inputs and outputs without type annotations will be loaded
+as Polars DataFrames.
 
 Returns:
     IOManagerDefinition
