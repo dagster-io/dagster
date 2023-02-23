@@ -2,7 +2,7 @@ from typing import Optional
 
 from dagster._core.definitions.data_version import (
     DataVersion,
-    extract_logical_version_from_entry,
+    extract_data_version_from_entry,
 )
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKey
@@ -13,7 +13,7 @@ from dagster._core.instance import DagsterInstance
 def _get_current_logical_version(key: AssetKey, instance: DagsterInstance) -> Optional[DataVersion]:
     record = instance.get_latest_logical_version_record(AssetKey("foo"))
     assert record is not None
-    return extract_logical_version_from_entry(record.event_log_entry)
+    return extract_data_version_from_entry(record.event_log_entry)
 
 
 def test_basic_observe():

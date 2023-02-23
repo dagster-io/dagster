@@ -3,17 +3,17 @@ from hashlib import sha256
 from typing import Any, Union
 
 from dagster._core.definitions.data_version import (
-    CODE_VERSION_TAG_KEY,
-    INPUT_EVENT_POINTER_TAG_KEY_PREFIX,
-    INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX,
-    LOGICAL_VERSION_TAG_KEY,
-    UNKNOWN_LOGICAL_VERSION,
+    CODE_VERSION_TAG,
+    DATA_VERSION_TAG,
+    INPUT_DATA_VERSION_TAG_PREFIX,
+    INPUT_EVENT_POINTER_TAG_PREFIX,
+    UNKNOWN_DATA_VERSION,
     UNKNOWN_VALUE,
     DataProvenance,
     DataVersion,
     compute_logical_version,
-    extract_logical_version_from_entry,
-    extract_logical_version_provenance_from_entry,
+    extract_data_provenance_from_entry,
+    extract_data_version_from_entry,
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.events import (
@@ -52,17 +52,17 @@ def test_extract_logical_version_and_provenance_from_materialization_entry():
     materialization = AssetMaterialization(
         asset_key="foo",
         tags={
-            LOGICAL_VERSION_TAG_KEY: "1",
-            f"{INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX}/assetgroup/bar": "2",
-            f"{INPUT_EVENT_POINTER_TAG_KEY_PREFIX}/assetgroup/bar": "10",
-            f"{INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX}/baz": "3",
-            f"{INPUT_EVENT_POINTER_TAG_KEY_PREFIX}/baz": "11",
-            f"{CODE_VERSION_TAG_KEY}": "3",
+            DATA_VERSION_TAG: "1",
+            f"{INPUT_DATA_VERSION_TAG_PREFIX}/assetgroup/bar": "2",
+            f"{INPUT_EVENT_POINTER_TAG_PREFIX}/assetgroup/bar": "10",
+            f"{INPUT_DATA_VERSION_TAG_PREFIX}/baz": "3",
+            f"{INPUT_EVENT_POINTER_TAG_PREFIX}/baz": "11",
+            f"{CODE_VERSION_TAG}": "3",
         },
     )
     entry = _create_test_event_log_entry(DagsterEventType.ASSET_MATERIALIZATION, materialization)
-    assert extract_logical_version_from_entry(entry) == DataVersion("1")
-    assert extract_logical_version_provenance_from_entry(entry) == DataProvenance(
+    assert extract_data_version_from_entry(entry) == DataVersion("1")
+    assert extract_data_provenance_from_entry(entry) == DataProvenance(
         code_version="3",
         input_data_versions={
             AssetKey(["assetgroup", "bar"]): DataVersion("2"),
@@ -75,14 +75,14 @@ def test_extract_logical_version_from_observation_entry():
     observation = AssetObservation(
         asset_key="foo",
         tags={
-            LOGICAL_VERSION_TAG_KEY: "1",
+            DATA_VERSION_TAG: "1",
         },
     )
     entry = _create_test_event_log_entry(
         DagsterEventType.ASSET_OBSERVATION,
         observation,
     )
-    assert extract_logical_version_from_entry(entry) == DataVersion("1")
+    assert extract_data_version_from_entry(entry) == DataVersion("1")
 
 
 def test_compute_logical_version():
@@ -96,9 +96,9 @@ def test_compute_logical_version():
 
 def test_compute_logical_version_unknown_code_version():
     result = compute_logical_version(UNKNOWN_VALUE, {AssetKey(["alpha"]): DataVersion("1")})
-    assert result == UNKNOWN_LOGICAL_VERSION
+    assert result == UNKNOWN_DATA_VERSION
 
 
 def test_compute_logical_version_unknown_dep_version():
-    result = compute_logical_version("foo", {AssetKey(["alpha"]): UNKNOWN_LOGICAL_VERSION})
-    assert result == UNKNOWN_LOGICAL_VERSION
+    result = compute_logical_version("foo", {AssetKey(["alpha"]): UNKNOWN_DATA_VERSION})
+    assert result == UNKNOWN_DATA_VERSION

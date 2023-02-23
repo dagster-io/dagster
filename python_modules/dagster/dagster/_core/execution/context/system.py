@@ -907,13 +907,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def _fetch_input_asset_record(self, key: AssetKey, retries: int = 0) -> None:
         from dagster._core.definitions.data_version import (
-            extract_logical_version_from_entry,
+            extract_data_version_from_entry,
         )
 
         event = self.instance.get_latest_logical_version_record(key)
         if key in self._logical_version_cache and retries <= 5:
             event_logical_version = (
-                None if event is None else extract_logical_version_from_entry(event.event_log_entry)
+                None if event is None else extract_data_version_from_entry(event.event_log_entry)
             )
             if event_logical_version == self._logical_version_cache[key]:
                 self._input_asset_records[key] = event

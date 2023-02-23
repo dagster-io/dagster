@@ -28,14 +28,14 @@ from dagster._core.definitions import (
     TypeCheck,
 )
 from dagster._core.definitions.data_version import (
-    CODE_VERSION_TAG_KEY,
-    DEFAULT_LOGICAL_VERSION,
-    LOGICAL_VERSION_TAG_KEY,
+    CODE_VERSION_TAG,
+    DATA_VERSION_TAG,
+    DEFAULT_DATA_VERSION,
     DataVersion,
     compute_logical_version,
-    extract_logical_version_from_entry,
-    get_input_event_pointer_tag_key,
-    get_input_logical_version_tag_key,
+    extract_data_version_from_entry,
+    get_input_data_version_tag,
+    get_input_event_pointer_tag,
 )
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
@@ -487,7 +487,7 @@ def _get_output_asset_materializations(
         )
         tags = _build_logical_version_tags(logical_version, code_version, input_provenance_data)
         if not step_context.has_logical_version(asset_key):
-            logical_version = DataVersion(tags[LOGICAL_VERSION_TAG_KEY])
+            logical_version = DataVersion(tags[DATA_VERSION_TAG])
             step_context.set_logical_version(asset_key, logical_version)
     else:
         tags = {}
@@ -576,10 +576,10 @@ def _get_input_provenance_data(
         event = step_context.get_input_asset_record(key)
         if event is not None:
             logical_version = (
-                extract_logical_version_from_entry(event.event_log_entry) or DEFAULT_LOGICAL_VERSION
+                extract_data_version_from_entry(event.event_log_entry) or DEFAULT_DATA_VERSION
             )
         else:
-            logical_version = DEFAULT_LOGICAL_VERSION
+            logical_version = DEFAULT_DATA_VERSION
         input_provenance[key] = {
             "logical_version": logical_version,
             "storage_id": event.storage_id if event else None,
@@ -593,13 +593,13 @@ def _build_logical_version_tags(
     input_provenance_data: Mapping[AssetKey, _InputProvenanceData],
 ) -> Dict[str, str]:
     tags: Dict[str, str] = {}
-    tags[CODE_VERSION_TAG_KEY] = code_version
+    tags[CODE_VERSION_TAG] = code_version
     for key, meta in input_provenance_data.items():
-        tags[get_input_logical_version_tag_key(key)] = meta["logical_version"].value
-        tags[get_input_event_pointer_tag_key(key)] = (
+        tags[get_input_data_version_tag(key)] = meta["logical_version"].value
+        tags[get_input_event_pointer_tag(key)] = (
             str(meta["storage_id"]) if meta["storage_id"] else "NULL"
         )
-    tags[LOGICAL_VERSION_TAG_KEY] = logical_version.value
+    tags[DATA_VERSION_TAG] = logical_version.value
     return tags
 
 

@@ -8,7 +8,7 @@ from dagster import (
     asset,
     repository,
 )
-from dagster._core.definitions.data_version import LOGICAL_VERSION_TAG_KEY
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -91,7 +91,7 @@ def test_logical_version_from_tags():
             wait_for_runs_to_finish(context_v1.instance)
             result = _fetch_logical_versions(context_v1, repo_v1)
             tags = result.data["assetNodes"][0]["assetMaterializations"][0]["tags"]
-            lv_tag = next(tag for tag in tags if tag["key"] == LOGICAL_VERSION_TAG_KEY)
+            lv_tag = next(tag for tag in tags if tag["key"] == DATA_VERSION_TAG)
             assert lv_tag["value"] == result.data["assetNodes"][0]["currentLogicalVersion"]
 
 

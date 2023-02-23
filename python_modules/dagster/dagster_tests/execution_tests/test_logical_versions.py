@@ -17,9 +17,9 @@ from dagster._config.field import Field
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.data_version import (
-    CODE_VERSION_TAG_KEY,
-    INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX,
-    LOGICAL_VERSION_TAG_KEY,
+    CODE_VERSION_TAG,
+    DATA_VERSION_TAG,
+    INPUT_DATA_VERSION_TAG_PREFIX,
     CachingStaleStatusResolver,
     DataVersion,
     StaleCause,
@@ -84,42 +84,42 @@ def get_upstream_version_from_mat_provenance(
     mat: AssetMaterialization, upstream_asset_key: AssetKey
 ) -> str:
     assert mat.tags
-    return mat.tags[f"{INPUT_LOGICAL_VERSION_TAG_KEY_PREFIX}/{upstream_asset_key.to_user_string()}"]
+    return mat.tags[f"{INPUT_DATA_VERSION_TAG_PREFIX}/{upstream_asset_key.to_user_string()}"]
 
 
 def get_version_from_mat(mat: AssetMaterialization) -> str:
     assert mat.tags
-    return mat.tags[LOGICAL_VERSION_TAG_KEY]
+    return mat.tags[DATA_VERSION_TAG]
 
 
 def assert_logical_version(mat: AssetMaterialization, version: Union[str, DataVersion]) -> None:
     value = version.value if isinstance(version, DataVersion) else version
     assert mat.tags
-    assert mat.tags[LOGICAL_VERSION_TAG_KEY] == value
+    assert mat.tags[DATA_VERSION_TAG] == value
 
 
 def assert_code_version(mat: AssetMaterialization, version: str) -> None:
     assert mat.tags
-    assert mat.tags[CODE_VERSION_TAG_KEY] == version
+    assert mat.tags[CODE_VERSION_TAG] == version
 
 
 def assert_same_versions(
     mat1: AssetMaterialization, mat2: AssetMaterialization, code_version: str
 ) -> None:
     assert mat1.tags
-    assert mat1.tags[CODE_VERSION_TAG_KEY] == code_version
-    assert mat1.tags[LOGICAL_VERSION_TAG_KEY] is not None
+    assert mat1.tags[CODE_VERSION_TAG] == code_version
+    assert mat1.tags[DATA_VERSION_TAG] is not None
     assert mat2.tags
-    assert mat2.tags[CODE_VERSION_TAG_KEY] == code_version
-    assert mat2.tags[LOGICAL_VERSION_TAG_KEY] == mat1.tags["dagster/logical_version"]
+    assert mat2.tags[CODE_VERSION_TAG] == code_version
+    assert mat2.tags[DATA_VERSION_TAG] == mat1.tags["dagster/logical_version"]
 
 
 def assert_different_versions(mat1: AssetMaterialization, mat2: AssetMaterialization) -> None:
     assert mat1.tags
-    assert mat1.tags[CODE_VERSION_TAG_KEY] is not None
-    assert mat1.tags[LOGICAL_VERSION_TAG_KEY] is not None
+    assert mat1.tags[CODE_VERSION_TAG] is not None
+    assert mat1.tags[DATA_VERSION_TAG] is not None
     assert mat2.tags
-    assert mat2.tags[LOGICAL_VERSION_TAG_KEY] != mat1.tags["dagster/logical_version"]
+    assert mat2.tags[DATA_VERSION_TAG] != mat1.tags["dagster/logical_version"]
 
 
 def assert_provenance_match(mat: AssetMaterialization, upstream_mat: AssetMaterialization) -> None:

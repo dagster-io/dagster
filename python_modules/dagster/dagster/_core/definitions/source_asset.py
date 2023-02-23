@@ -8,7 +8,7 @@ from typing_extensions import Protocol, TypeAlias
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.decorator_utils import has_at_least_one_parameter
-from dagster._core.definitions.data_version import LOGICAL_VERSION_TAG_KEY, DataVersion
+from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     MetadataEntry,
@@ -184,14 +184,14 @@ class SourceAsset(ResourceAddable):
         observe_fn_has_context = has_at_least_one_parameter(observe_fn)
 
         def fn(context: OpExecutionContext):
-            logical_version = observe_fn(context) if observe_fn_has_context else observe_fn()  # type: ignore
+            data_version = observe_fn(context) if observe_fn_has_context else observe_fn()  # type: ignore
 
             check.inst(
-                logical_version,
+                data_version,
                 DataVersion,
                 "Source asset observation function must return a DataVersion",
             )
-            tags = {LOGICAL_VERSION_TAG_KEY: logical_version.value}
+            tags = {DATA_VERSION_TAG: data_version.value}
             context.log_event(
                 AssetObservation(
                     asset_key=self.key,

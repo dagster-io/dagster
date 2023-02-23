@@ -7,7 +7,7 @@ import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._core.definitions.data_version import (
     DataProvenance,
-    extract_logical_version_provenance_from_entry,
+    extract_data_provenance_from_entry,
 )
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
@@ -616,9 +616,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         record = self.instance.get_latest_logical_version_record(asset_key)
 
         return (
-            None
-            if record is None
-            else extract_logical_version_provenance_from_entry(record.event_log_entry)
+            None if record is None else extract_data_provenance_from_entry(record.event_log_entry)
         )
 
 
