@@ -911,6 +911,10 @@
             "path": "/_apidocs/libraries/dagster-duckdb-pyspark"
           },
           {
+            "title": "DuckDB + Polars (dagster-duckdb-polars)",
+            "path": "/_apidocs/libraries/dagster-duckdb-polars"
+          },
+          {
             "title": "Fivetran (dagster-fivetran)",
             "path": "/_apidocs/libraries/dagster-fivetran"
           },
