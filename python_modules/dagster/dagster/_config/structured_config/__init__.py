@@ -413,7 +413,6 @@ class ConfigurableResource(
         Returns a new instance of the resource with the given values.
         Used when initializing a resource at runtime.
         """
-
         # Since Resource extends BaseModel and is a dataclass, we know that the
         # signature of any __init__ method will always consist of the fields
         # of this class. We can therefore safely pass in the values as kwargs.

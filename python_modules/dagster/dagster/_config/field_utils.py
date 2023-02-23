@@ -1,6 +1,6 @@
 # encoding: utf-8
 import hashlib
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Sequence
 
 import dagster._check as check
 from dagster._annotations import public
