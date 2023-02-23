@@ -25,8 +25,6 @@ from dagster._config.validate import process_config, validate_config
 from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
-    IDefinitionConfigSchema,
-    convert_user_facing_definition_config_schema,
 )
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.init import InitResourceContext
@@ -101,6 +99,13 @@ class Config(MakeConfigCacheable):
     Base class for Dagster configuration models.
     """
 
+    def _as_config_dict(self) -> Mapping[str, Any]:
+        """
+        Returns a dictionary representation of this config object,
+        ignoring any private fields.
+        """
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+
 
 class PermissiveConfig(Config):
     # Pydantic config for this class
@@ -173,7 +178,7 @@ def _process_config_values(
     return post_processed_config.value or {}
 
 
-def _curry_config_schema(schema_field: Field, data: Any) -> IDefinitionConfigSchema:
+def _curry_config_schema(schema_field: Field, data: Any) -> DefinitionConfigSchema:
     """Return a new config schema configured with the passed in data"""
     return DefinitionConfigSchema(_apply_defaults_to_schema_field(schema_field, data))
 
@@ -374,12 +379,11 @@ class ConfigurableResource(
             self.__class__, fields_to_omit=set(resource_pointers.keys())
         )
 
-        post_processed_data = _process_config_values(
-            schema, data_without_resources, self.__class__.__name__
-        )
-        curried_schema = _curry_config_schema(schema, post_processed_data)
+        # Resolve e.g. EnvVar values
+        resolved_config_dict = config_dictionary_from_values(data_without_resources, schema)
+        curried_schema = _curry_config_schema(schema, resolved_config_dict)
 
-        Config.__init__(self, **{**post_processed_data, **resource_pointers})
+        Config.__init__(self, **{**data_without_resources, **resource_pointers})
 
         # We keep track of any resources we depend on which are not fully configured
         # so that we can retrieve them at runtime
@@ -393,6 +397,8 @@ class ConfigurableResource(
             config_schema=curried_schema,
             description=self.__doc__,
         )
+        self._resolved_config_dict = resolved_config_dict
+        self._schema = schema
 
     @classmethod
     def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialResource[Self]":
@@ -402,10 +408,39 @@ class ConfigurableResource(
         """
         return PartialResource(cls, data=kwargs)
 
-    def initialize_and_run(self, context: InitResourceContext) -> TResValue:
-        # If we have any partially configured resources, we need to update them
-        # with the fully configured resources from the context
+    def _with_updated_values(self, values: Mapping[str, Any]) -> "ConfigurableResource[TResValue]":
+        """
+        Returns a new instance of the resource with the given values.
+        Used when initializing a resource at runtime.
+        """
+        # Since Resource extends BaseModel and is a dataclass, we know that the
+        # signature of any __init__ method will always consist of the fields
+        # of this class. We can therefore safely pass in the values as kwargs.
+        return self.__class__(**{**self._as_config_dict(), **values})
 
+    def _resolve_and_update_env_vars(self) -> "ConfigurableResource[TResValue]":
+        """
+        Processes the config dictionary to resolve any EnvVar values. This is called at runtime
+        when the resource is initialized, so the user is only shown the error if they attempt to
+        kick off a run relying on this resource.
+
+        Returns a new instance of the resource.
+        """
+        post_processed_data = _process_config_values(
+            self._schema, self._resolved_config_dict, self.__class__.__name__
+        )
+        return self._with_updated_values(post_processed_data)
+
+    def _resolve_and_update_nested_resources(
+        self, context: InitResourceContext
+    ) -> "ConfigurableResource[TResValue]":
+        """
+        Updates any nested resources with the resource values from the context.
+        In this case, populating partially configured resources or
+        resources that return plain Python types.
+
+        Returns a new instance of the resource.
+        """
         partial_resources_to_update: Dict[str, Any] = {}
         if self._nested_partial_resources:
             context_with_mapping = cast(
@@ -434,11 +469,13 @@ class ConfigurableResource(
         }
 
         to_update = {**resources_to_update, **partial_resources_to_update}
+        return self._with_updated_values(to_update)
 
-        for attr_name, value in to_update.items():
-            object.__setattr__(self, attr_name, value)
+    def initialize_and_run(self, context: InitResourceContext) -> TResValue:
+        with_nested_resources = self._resolve_and_update_nested_resources(context)
+        with_env_vars = with_nested_resources._resolve_and_update_env_vars()
 
-        return self._create_object_fn(context)
+        return with_env_vars._create_object_fn(context)
 
     def _create_object_fn(self, context: InitResourceContext) -> TResValue:
         return self.create_resource_to_inject(context)
@@ -459,13 +496,10 @@ class ConfigurableResource(
 
 def _is_fully_configured(resource: ResourceDefinition) -> bool:
     res = (
-        ConfiguredDefinitionConfigSchema(
-            resource,
-            convert_user_facing_definition_config_schema(resource.config_schema),
+        validate_config(
+            resource.config_schema.config_type,
             resource.config_schema.default_value if resource.config_schema.default_provided else {},
-        )
-        .resolve_config({})
-        .success
+        ).success
         is True
     )
 
