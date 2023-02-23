@@ -114,11 +114,12 @@ class DataProvenance(
         code_version = tags.get(CODE_VERSION_TAG)
         if code_version is None:
             return None
-        start_index = len(INPUT_DATA_VERSION_TAG_PREFIX) + 1
         input_data_versions = {
-            AssetKey.from_user_string(k[start_index:]): DataVersion(tags[k])
+            # Everything after the 2nd slash is the asset key
+            AssetKey.from_user_string(k.split("/", maxsplit=3)[-1]): DataVersion(tags[k])
             for k, v in tags.items()
             if k.startswith(INPUT_DATA_VERSION_TAG_PREFIX)
+            or k.startswith(_OLD_INPUT_DATA_VERSION_TAG_PREFIX)
         }
         return DataProvenance(code_version, input_data_versions)
 
@@ -132,14 +133,27 @@ class DataProvenance(
 # ##### TAG KEYS
 # ########################
 
-DATA_VERSION_TAG: Final[str] = "dagster/logical_version"
+DATA_VERSION_TAG: Final[str] = "dagster/data_version"
+_OLD_DATA_VERSION_TAG: Final[str] = "dagster/logical_version"
 CODE_VERSION_TAG: Final[str] = "dagster/code_version"
-INPUT_DATA_VERSION_TAG_PREFIX: Final[str] = "dagster/input_logical_version"
+INPUT_DATA_VERSION_TAG_PREFIX: Final[str] = "dagster/input_data_version"
+_OLD_INPUT_DATA_VERSION_TAG_PREFIX: Final[str] = "dagster/input_logical_version"
 INPUT_EVENT_POINTER_TAG_PREFIX: Final[str] = "dagster/input_event_pointer"
 
 
-def get_input_data_version_tag(input_key: "AssetKey") -> str:
-    return f"{INPUT_DATA_VERSION_TAG_PREFIX}/{input_key.to_user_string()}"
+def read_input_data_version_from_tags(
+    tags: Mapping[str, str], input_key: "AssetKey"
+) -> Optional[DataVersion]:
+    value = tags.get(
+        get_input_data_version_tag(input_key, prefix=INPUT_DATA_VERSION_TAG_PREFIX)
+    ) or tags.get(get_input_data_version_tag(input_key, prefix=_OLD_INPUT_DATA_VERSION_TAG_PREFIX))
+    return DataVersion(value) if value is not None else None
+
+
+def get_input_data_version_tag(
+    input_key: "AssetKey", prefix: str = INPUT_DATA_VERSION_TAG_PREFIX
+) -> str:
+    return f"{prefix}/{input_key.to_user_string()}"
 
 
 def get_input_event_pointer_tag(input_key: "AssetKey") -> str:
@@ -192,7 +206,7 @@ def extract_data_version_from_entry(
 ) -> Optional[DataVersion]:
     event_data = _extract_event_data_from_entry(entry)
     tags = event_data.tags or {}
-    value = tags.get(DATA_VERSION_TAG)
+    value = tags.get(DATA_VERSION_TAG) or tags.get(_OLD_DATA_VERSION_TAG)
     return None if value is None else DataVersion(value)
 
 
