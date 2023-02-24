@@ -75,12 +75,15 @@ describe('AssetPartitions', () => {
       // Verify that the counts update to reflect the subrange
       expect(screen.getByTestId('partitions-selected')).toHaveTextContent('150 Partitions');
     });
-    expect(screen.getByText('Missing (135)')).toBeVisible();
-    expect(screen.getByText('Completed (15)')).toBeVisible();
-
-    // Verify that the items shown on the left update to reflect the subrange
-    expect(screen.queryByText('2022-06-01-01:00')).toBeNull();
-    expect(screen.queryByText('2022-11-28-20:00')).toBeVisible();
+    await waitFor(() => {
+      expect(screen.getByText('Missing (135)')).toBeVisible();
+      expect(screen.getByText('Completed (15)')).toBeVisible();
+    });
+    await waitFor(() => {
+      // Verify that the items shown on the left update to reflect the subrange
+      expect(screen.queryByText('2022-06-01-01:00')).toBeNull();
+      expect(screen.queryByText('2022-11-28-20:00')).toBeVisible();
+    });
   });
 
   it('should sync time range selection to the URL', async () => {
