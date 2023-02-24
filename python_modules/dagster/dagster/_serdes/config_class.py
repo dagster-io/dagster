@@ -10,16 +10,16 @@ from dagster._utils.yaml_utils import load_run_config_yaml
 from .serdes import DefaultNamedTupleSerializer, WhitelistMap, whitelist_for_serdes
 
 
-class ConfigurableClassDataSerializer(DefaultNamedTupleSerializer):
+class ConfigurableClassDataSerializer(DefaultNamedTupleSerializer["ConfigurableClassData"]):
     @classmethod
     def value_to_storage_dict(
         cls,
-        value: NamedTuple,
+        value: "ConfigurableClassData",
         whitelist_map: WhitelistMap,
         descent_path: str,
     ) -> Dict[str, Any]:
         dct = super().value_to_storage_dict(value, whitelist_map, descent_path)
-        dct["module_name"] = convert_dagster_submodule_name(value.module_name, "public")  # type: ignore
+        dct["module_name"] = convert_dagster_submodule_name(value.module_name, "public")
         return dct
 
 
@@ -173,7 +173,7 @@ class ConfigurableClass(ABC):
         )
 
 
-def class_from_code_pointer(module_name: str, class_name: str) -> Type[Any]:
+def class_from_code_pointer(module_name: str, class_name: str) -> Type[object]:
     try:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError:

@@ -340,11 +340,11 @@ class ReconstructablePipeline(
     def for_module(module: str, fn_name: str) -> ReconstructablePipeline:
         return bootstrap_standalone_recon_pipeline(ModuleCodePointer(module, fn_name, os.getcwd()))
 
-    def to_dict(self) -> Mapping[str, object]:
-        return pack_value(self)
+    def to_dict(self) -> Mapping[str, Any]:
+        return pack_value(self)  # type: ignore
 
     @staticmethod
-    def from_dict(val: Mapping[str, object]) -> ReconstructablePipeline:
+    def from_dict(val: Mapping[str, Any]) -> ReconstructablePipeline:
         check.mapping_param(val, "val")
 
         inst = unpack_value(val)
@@ -354,7 +354,7 @@ class ReconstructablePipeline(
                 type=type(inst)
             ),
         )
-        return inst
+        return inst  # type: ignore  # (illegible runtime check)
 
     def get_python_origin(self) -> PipelinePythonOrigin:
         return PipelinePythonOrigin(self.pipeline_name, self.repository.get_python_origin())
