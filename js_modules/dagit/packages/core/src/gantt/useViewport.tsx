@@ -66,7 +66,9 @@ export const useViewport = (
         });
         resizeObserver.observe(element);
       } else {
-        console.warn(`No ResizeObserver support, or useViewport is attached to a non-DOM node?`);
+        if (process.env.NODE_ENV !== 'test') {
+          console.warn(`No ResizeObserver support, or useViewport is attached to a non-DOM node?`);
+        }
         onApplySize({width: element.clientWidth, height: element.clientHeight});
       }
     }

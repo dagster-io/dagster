@@ -88,11 +88,11 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
 
   const stateForKeyWithRangeOrdering = (dimensionKeys: string[]): PartitionState => {
     if (dimensionKeys.length !== dimensions.length) {
-      console.warn('[stateForKey] called with incorrect number of dimensions');
+      warnUnlessTest('[stateForKey] called with incorrect number of dimensions');
       return PartitionState.MISSING;
     }
     if (dimensionKeys.length === 0) {
-      console.warn('[stateForKey] called with zero dimension keys');
+      warnUnlessTest('[stateForKey] called with zero dimension keys');
       return PartitionState.MISSING;
     }
 
@@ -119,7 +119,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       return [];
     }
     if (dimensionIdx >= dimensions.length) {
-      console.warn('[rangesForSingleDimension] called with invalid dimension index');
+      warnUnlessTest('[rangesForSingleDimension] called with invalid dimension index');
       return [];
     }
 
@@ -289,7 +289,7 @@ export function keyCountByStateInSelection(
   selections: PartitionDimensionSelection[],
 ) {
   if (selections.length === 0) {
-    console.warn('[keyCountByStateInSelection] A selection must be provided for dimension 0.');
+    warnUnlessTest('[keyCountByStateInSelection] A selection must be provided for dimension 0.');
     return {
       [PartitionState.MISSING]: 0,
       [PartitionState.SUCCESS]: 0,
@@ -354,7 +354,7 @@ function addKeyIndexesToMaterializedRanges(
       });
     } else if (range.__typename === 'MaterializedPartitionRange2D') {
       if (dimensions.length !== 2) {
-        console.warn('[addKeyIndexesToMaterializedRanges] Found 2D health data for 1D asset');
+        warnUnlessTest('[addKeyIndexesToMaterializedRanges] Found 2D health data for 1D asset');
         return result;
       }
       const [dim0, dim1] = dimensions;
@@ -525,3 +525,8 @@ export const PARTITION_HEALTH_QUERY = gql`
     }
   }
 `;
+function warnUnlessTest(msg: string) {
+  if (process.env.NODE_ENV !== 'test') {
+    console.warn(msg);
+  }
+}
