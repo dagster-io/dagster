@@ -18,6 +18,7 @@ from .types import (
     DatabricksRunResultState,
     DatabricksRunState,
 )
+from .version import __version__
 
 # wait at most 24 hours by default for run execution
 DEFAULT_RUN_MAX_WAIT_TIME_SEC = 24 * 60 * 60
@@ -38,9 +39,15 @@ class DatabricksClient:
         # confusing for users to use since this is an unofficial wrapper around the documented
         # Databricks REST API. We should consider removing this in the future.
         self.client = DatabricksAPI(host=host, token=token)
+        self.__setup_user_agent(self.client.client)
 
         # Expose an interface directly to the official Databricks API client.
         self._api_client = ApiClient(host=host, token=token)
+        self.__setup_user_agent(self._api_client)
+
+    def __setup_user_agent(self, client: ApiClient) -> None:
+        """Overrides the user agent for the Databricks API client."""
+        client.default_headers["user-agent"] = f"dagster-databricks/{__version__}"
 
     @public
     @property
