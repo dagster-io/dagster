@@ -54,7 +54,6 @@ from dagster._core.errors import (
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
     DagsterTypeCheckError,
-    DagsterTypeMaterializationError,
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent
@@ -439,9 +438,6 @@ def _type_check_and_store_output(
     for evt in _store_output(step_context, step_output_handle, output):
         yield evt
 
-    for evt in _create_type_materializations(step_context, output.output_name, output.value):
-        yield evt
-
 
 def _asset_key_and_partitions_for_output(
     output_context: OutputContext,
@@ -715,57 +711,3 @@ def _store_output(
             entry for entry in manager_metadata_entries if isinstance(entry, MetadataEntry)
         ],
     )
-
-
-def _create_type_materializations(
-    step_context: StepExecutionContext, output_name: str, value: Any
-) -> Iterator[DagsterEvent]:
-    """If the output has any dagster type materializers, runs them."""
-    step = step_context.step
-    current_handle = step.node_handle
-
-    # check for output mappings at every point up the composition hierarchy
-    while current_handle:
-        solid_config = step_context.resolved_run_config.ops.get(current_handle.to_string())
-        current_handle = current_handle.parent
-
-        if solid_config is None:
-            continue
-
-        for output_spec in solid_config.outputs.type_materializer_specs:
-            check.invariant(len(output_spec) == 1)  # type: ignore
-            config_output_name, output_spec = list(output_spec.items())[0]  # type: ignore
-            if config_output_name == output_name:
-                step_output = step.step_output_named(output_name)
-                with user_code_error_boundary(
-                    DagsterTypeMaterializationError,
-                    msg_fn=lambda: f'Error occurred during output materialization:\n    output name: "{output_name}"\n    solid invocation: "{step_context.solid.name}"\n    solid definition: "{step_context.op_def.name}"',
-                    log_manager=step_context.log,
-                ):
-                    output_def = step_context.op_def.output_def_named(step_output.name)
-                    dagster_type = output_def.dagster_type
-                    materializer = dagster_type.materializer
-                    if materializer is None:
-                        check.failed(
-                            "Unexpected attempt to materialize with no materializer available on"
-                            " dagster_type"
-                        )
-                    materializations = materializer.materialize_runtime_values(
-                        step_context.get_type_materializer_context(), output_spec, value
-                    )
-
-                for materialization in materializations:
-                    if not isinstance(materialization, (AssetMaterialization, Materialization)):
-                        raise DagsterInvariantViolationError(
-                            (
-                                "materialize_runtime_values on type {type_name} has returned "
-                                "value {value} of type {python_type}. You must return an "
-                                "AssetMaterialization."
-                            ).format(
-                                type_name=dagster_type.display_name,
-                                value=repr(materialization),
-                                python_type=type(materialization).__name__,
-                            )
-                        )
-
-                    yield DagsterEvent.asset_materialization(step_context, materialization)

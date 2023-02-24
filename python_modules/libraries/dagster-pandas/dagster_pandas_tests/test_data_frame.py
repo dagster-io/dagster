@@ -2,7 +2,6 @@ from typing import List
 
 import pytest
 from dagster import (
-    AssetMaterialization,
     DagsterInvariantViolationError,
     DagsterType,
     DynamicOutput,
@@ -14,7 +13,6 @@ from dagster import (
     Selector,
     check_dagster_type,
     dagster_type_loader,
-    dagster_type_materializer,
     graph,
     job,
     op,
@@ -231,17 +229,12 @@ def test_custom_dagster_dataframe_parametrizable_input():
             "You did not pick a door. You chose: {which_door}".format(which_door=which_door)
         )
 
-    @dagster_type_materializer(Selector({"devnull": Field(str), "nothing": Field(str)}))
-    def silly_materializer(_, _config, _value):
-        return AssetMaterialization(asset_key="nothing", description="just one of those days")
-
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name="TestDataFrame",
         columns=[
             PandasColumn.exists("foo"),
         ],
         loader=silly_loader,
-        materializer=silly_materializer,
     )
 
     @op(

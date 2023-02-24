@@ -536,37 +536,26 @@ from dagster._utils.backcompat import deprecation_warning, rename_warning
 # in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
 if TYPE_CHECKING:
-    from dagster._core.execution.context.system import (
-        DagsterTypeMaterializerContext as DagsterTypeMaterializerContext,
-    )
-    from dagster._core.types.config_schema import (
-        DagsterTypeMaterializer as DagsterTypeMaterializer,
-        dagster_type_materializer as dagster_type_materializer,
-    )
+    ##### EXAMPLE
+    # from dagster.some.module import (
+    #     Foo as Foo,
+    # )
+    pass
 
 
 _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
-    "dagster_type_materializer": (
-        "dagster._core.types.config_schema",
-        "1.1.0",
-        "Instead, use an IOManager.",
-    ),
-    "DagsterTypeMaterializer": (
-        "dagster._core.types.config_schema",
-        "1.1.0",
-        "Instead, use an IOManager.",
-    ),
-    "DagsterTypeMaterializerContext": (
-        "dagster._core.execution.context.system",
-        "1.1.0",
-        "Instead, use an IOManager.",
-    ),
+    ##### EXAMPLE
+    # "Foo": (
+    #     "dagster.some.module",
+    #     "1.1.0",  # breaking version
+    #     "Use Bar instead.",
+    # ),
 }
 
-# Example Deprecated Renamed Entry:
-#
-# "EventMetadataEntry": (MetadataEntry, "1.0.0"),
-_DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {}
+_DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
+    ##### EXAMPLE
+    # "Foo": (Bar, "1.1.0"),
+}
 
 
 def __getattr__(name: str) -> TypingAny:

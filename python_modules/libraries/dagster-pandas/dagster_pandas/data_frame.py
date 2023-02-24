@@ -1,6 +1,5 @@
 import pandas as pd
 from dagster import (
-    AssetMaterialization,
     DagsterInvariantViolationError,
     DagsterType,
     Field,
@@ -9,7 +8,6 @@ from dagster import (
     TypeCheck,
     _check as check,
     dagster_type_loader,
-    dagster_type_materializer,
 )
 from dagster._annotations import experimental
 from dagster._check import CheckError
@@ -26,38 +24,6 @@ from dagster_pandas.constraints import (
 from dagster_pandas.validation import PandasColumn, validate_constraints
 
 CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
-
-
-@dagster_type_materializer(
-    Selector(
-        {
-            "csv": {
-                "path": StringSource,
-                "sep": Field(StringSource, is_required=False, default_value=","),
-            },
-            "parquet": {"path": StringSource},
-            "table": {"path": StringSource},
-            "pickle": {"path": StringSource},
-        },
-    )
-)
-def dataframe_materializer(_context, config, pandas_df):
-    check.inst_param(pandas_df, "pandas_df", pd.DataFrame)
-    file_type, file_options = list(config.items())[0]
-
-    if file_type == "csv":
-        path = file_options["path"]
-        pandas_df.to_csv(path, index=False, **dict_without_keys(file_options, "path"))
-    elif file_type == "parquet":
-        pandas_df.to_parquet(file_options["path"])
-    elif file_type == "table":
-        pandas_df.to_csv(file_options["path"], sep="\t", index=False)
-    elif file_type == "pickle":
-        pandas_df.to_pickle(file_options["path"])
-    else:
-        check.failed("Unsupported file_type {file_type}".format(file_type=file_type))
-
-    return AssetMaterialization.file(file_options["path"])
 
 
 @dagster_type_loader(
@@ -110,7 +76,6 @@ DataFrame = DagsterType(
     tabular data structure with labeled axes (rows and columns).
     See http://pandas.pydata.org/""",
     loader=dataframe_loader,
-    materializer=dataframe_materializer,
     type_check_fn=df_type_check,
     typing_type=pd.DataFrame,
 )
@@ -162,7 +127,6 @@ def create_dagster_pandas_dataframe_type(
     event_metadata_fn=None,
     dataframe_constraints=None,
     loader=None,
-    materializer=None,
 ):
     """
     Constructs a custom pandas dataframe dagster type.
@@ -180,13 +144,10 @@ def create_dagster_pandas_dataframe_type(
         loader (Optional[DagsterTypeLoader]): An instance of a class that
             inherits from :py:class:`~dagster.DagsterTypeLoader`. If None, we will default
             to using `dataframe_loader`.
-        materializer (Optional[DagsterTypeMaterializer]): An instance of a class
-            that inherits from :py:class:`~dagster.DagsterTypeMaterializer`. If None, we will
-            default to using `dataframe_materializer`.
     """
-    # We allow for the plugging in of dagster_type_loaders/materializers so that
-    # Users can load and materialize their custom dataframes via configuration their own way if the default
-    # configs don't suffice. This is purely optional.
+    # We allow for the plugging in of a dagster_type_loader so that users can load their custom
+    # dataframes via configuration their own way if the default configs don't suffice. This is
+    # purely optional.
     check.str_param(name, "name")
     event_metadata_fn = check.opt_callable_param(event_metadata_fn, "event_metadata_fn")
     description = create_dagster_pandas_dataframe_description(
@@ -223,7 +184,6 @@ def create_dagster_pandas_dataframe_type(
         name=name,
         type_check_fn=_dagster_type_check,
         loader=loader if loader else dataframe_loader,
-        materializer=materializer if materializer else dataframe_materializer,
         description=description,
         typing_type=pd.DataFrame,
     )
@@ -237,7 +197,6 @@ def create_structured_dataframe_type(
     columns_aggregate_validator=None,
     dataframe_validator=None,
     loader=None,
-    materializer=None,
 ):
     """
 
@@ -257,9 +216,6 @@ def create_structured_dataframe_type(
         loader (Optional[DagsterTypeLoader]): An instance of a class that
             inherits from :py:class:`~dagster.DagsterTypeLoader`. If None, we will default
             to using `dataframe_loader`.
-        materializer (Optional[DagsterTypeMaterializer]): An instance of a class
-            that inherits from :py:class:`~dagster.DagsterTypeMaterializer`. If None, we will
-            default to using `dataframe_materializer`.
 
     Returns:
         a DagsterType with the corresponding name and packaged validation.
@@ -315,7 +271,6 @@ def create_structured_dataframe_type(
         name=name,
         type_check_fn=_dagster_type_check,
         loader=loader if loader else dataframe_loader,
-        materializer=materializer if loader else dataframe_materializer,
         description=description,
     )
 

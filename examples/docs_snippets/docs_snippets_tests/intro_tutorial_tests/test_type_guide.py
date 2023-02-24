@@ -16,7 +16,6 @@ from dagster import (
     Out,
     PythonObjectDagsterType,
     dagster_type_loader,
-    dagster_type_materializer,
     make_python_type_usable_as_dagster_type,
     op,
     usable_as_dagster_type,
@@ -47,9 +46,7 @@ def test_basic_even_type():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(double_even, input_values={"num": 3})
 
-    assert not execute_solid(
-        double_even, input_values={"num": 3}, raise_on_error=False
-    ).success
+    assert not execute_solid(double_even, input_values={"num": 3}, raise_on_error=False).success
 
 
 def test_basic_even_type_no_annotations():
@@ -73,9 +70,7 @@ def test_basic_even_type_no_annotations():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(double_even, input_values={"num": 3})
 
-    assert not execute_solid(
-        double_even, input_values={"num": 3}, raise_on_error=False
-    ).success
+    assert not execute_solid(double_even, input_values={"num": 3}, raise_on_error=False).success
 
 
 def test_python_object_dagster_type():
@@ -140,46 +135,6 @@ def test_even_type_loader():
             double_even,
             run_config={"solids": {"double_even": {"inputs": {"even_num": 3}}}},
         )
-
-
-def test_even_type_materialization_config():
-    class EvenType:
-        def __init__(self, num):
-            assert num % 2 == 0
-            self.num = num
-
-    @dagster_type_materializer({"path": str})
-    def save_to_file_materialization(_, cfg, value):
-        with open(cfg["path"], "w", encoding="utf8") as ff:
-            ff.write(str(value))
-            return AssetMaterialization(
-                "path",
-                "Wrote out value to {path}".format(path=path),
-                metadata={"path": path},
-            )
-
-    EvenDagsterType = PythonObjectDagsterType(
-        EvenType, materializer=save_to_file_materialization
-    )
-
-    @op
-    def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
-        return EvenType(even_num.num * 2)
-
-    with safe_tempfile_path() as path:
-        yaml_doc = """
-ops:
-    double_even:
-        outputs:
-            - result:
-                path: {path}
- """
-        op_result = execute_solid(
-            double_even,
-            input_values={"even_num": EvenType(2)},
-            run_config=yaml.safe_load(yaml_doc.format(path=path)),
-        )
-        assert op_result.success
 
 
 def test_mypy_compliance():
