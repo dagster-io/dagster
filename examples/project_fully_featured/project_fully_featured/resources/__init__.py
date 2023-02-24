@@ -3,16 +3,20 @@ import os
 from dagster._utils import file_relative_path
 from dagster_aws.s3 import s3_resource
 from dagster_dbt import dbt_cli_resource
+from dagster_duckdb import build_duckdb_io_manager
+from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+from dagster_duckdb_pyspark import DuckDBPySparkTypeHandler
 from dagster_pyspark import pyspark_resource
+from dagster_snowflake import build_snowflake_io_manager
+from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
 
 from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
-from .duckdb_parquet_io_manager import duckdb_partitioned_parquet_io_manager
 from .hn_resource import HNAPIClient, HNAPISubsampleClient
 from .parquet_io_manager import (
     local_partitioned_parquet_io_manager,
     s3_partitioned_parquet_io_manager,
 )
-from .snowflake_io_manager import SnowflakeIOManager
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
 DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"
@@ -52,12 +56,18 @@ SHARED_SNOWFLAKE_CONF = {
     "warehouse": "TINY_WAREHOUSE",
 }
 
+snowflake_io_manager = build_snowflake_io_manager(
+    [SnowflakePandasTypeHandler(), SnowflakePySparkTypeHandler()]
+)
+
 RESOURCES_PROD = {
     "s3_bucket": "hackernews-elementl-prod",
     "io_manager": common_bucket_s3_pickle_io_manager,
     "s3": s3_resource,
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
-    "warehouse_io_manager": SnowflakeIOManager(dict(database="DEMO_DB", **SHARED_SNOWFLAKE_CONF)),
+    "warehouse_io_manager": snowflake_io_manager.configured(
+        dict(database="DEMO_DB", **SHARED_SNOWFLAKE_CONF)
+    ),
     "pyspark": configured_pyspark,
     "hn_client": HNAPISubsampleClient(subsample_rate=10),
     "dbt": dbt_prod_resource,
@@ -69,7 +79,7 @@ RESOURCES_STAGING = {
     "io_manager": common_bucket_s3_pickle_io_manager,
     "s3": s3_resource,
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
-    "warehouse_io_manager": SnowflakeIOManager(
+    "warehouse_io_manager": snowflake_io_manager.configured(
         dict(database="DEMO_DB_STAGING", **SHARED_SNOWFLAKE_CONF)
     ),
     "pyspark": configured_pyspark,
@@ -77,11 +87,12 @@ RESOURCES_STAGING = {
     "dbt": dbt_staging_resource,
 }
 
+duckdb_io_manager = build_duckdb_io_manager([DuckDBPandasTypeHandler(), DuckDBPySparkTypeHandler()])
 
 RESOURCES_LOCAL = {
     "parquet_io_manager": local_partitioned_parquet_io_manager,
-    "warehouse_io_manager": duckdb_partitioned_parquet_io_manager.configured(
-        {"duckdb_path": os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb")},
+    "warehouse_io_manager": duckdb_io_manager.configured(
+        {"database": os.path.join(DBT_PROJECT_DIR, "hackernews.duckdb")},
     ),
     "pyspark": configured_pyspark,
     "hn_client": HNAPIClient(),
