@@ -138,11 +138,14 @@ class UPathIOManager(MemoizableIOManager):
             obj = self.load_from_path(context=context, path=path)
         except FileNotFoundError as e:
             if backcompat_path is not None:
-                context.log.debug(
-                    f"File not found at {path}. Attempting to load file from backcompat path:"
-                    f" {backcompat_path}"
-                )
-                obj = self.load_from_path(context=context, path=backcompat_path)
+                try:
+                    obj = self.load_from_path(context=context, path=backcompat_path)
+                    context.log.debug(
+                        f"File not found at {path}. Loaded instead from backcompat path:"
+                        f" {backcompat_path}"
+                    )
+                except FileNotFoundError:
+                    raise e
             else:
                 raise e
 
@@ -175,11 +178,12 @@ class UPathIOManager(MemoizableIOManager):
                     objs[partition_key] = obj
 
                 if not allow_missing_partitions and objs.get(partition_key) is None:
-                    context.log.debug(
-                        f"Couldn't load partition {path} and skipped it "
-                        "because the input metadata includes allow_missing_partitions=True"
-                    )
                     raise e
+
+                context.log.debug(
+                    f"Couldn't load partition {path} and skipped it "
+                    "because the input metadata includes allow_missing_partitions=True"
+                )
 
         # TODO: context.add_output_metadata fails in the partitioned context. this should be fixed?
         return objs

@@ -574,6 +574,16 @@ def test_backcompat_multipartitions_fs_io_manager():
         def downstream_of_multipartitioned(multipartitioned):
             return 1
 
+        # Upstream partition was never materialized, so this run should error
+        with pytest.raises(FileNotFoundError, match="c/2020-04-21"):
+            my_job = define_asset_job(
+                "my_job", [multipartitioned, downstream_of_multipartitioned]
+            ).resolve([multipartitioned, downstream_of_multipartitioned], [])
+            result = my_job.execute_in_process(
+                partition_key=MultiPartitionKey({"abc": "c", "date": "2020-04-21"}),
+                asset_selection=[AssetKey("downstream_of_multipartitioned")],
+            )
+
         my_job = define_asset_job(
             "my_job", [multipartitioned, downstream_of_multipartitioned]
         ).resolve([multipartitioned, downstream_of_multipartitioned], [])
