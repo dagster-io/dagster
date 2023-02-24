@@ -1217,6 +1217,9 @@ type Run implements PipelineRun {
   startTime: Float
   endTime: Float
   updateTime: Float
+  hasReExecutePermission: Boolean!
+  hasTerminatePermission: Boolean!
+  hasDeletePermission: Boolean!
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
@@ -2117,6 +2120,8 @@ type InstigationState {
   ): [InstigationTick!]!
   nextTick: DryRunInstigationTick
   runningCount: Int!
+  hasStartPermission: Boolean!
+  hasStopPermission: Boolean!
 }
 
 enum InstigationType {
@@ -2342,6 +2347,7 @@ type PartitionBackfill {
   error: PythonError
   partitionStatuses: PartitionStatuses!
   partitionStatusCounts: [PartitionStatusCounts!]!
+  hasCancelPermission: Boolean!
 }
 
 enum BulkActionStatus {

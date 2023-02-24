@@ -19,6 +19,7 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.storage.pipeline_run import DagsterRun, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
+from dagster._core.workspace.permissions import Permissions
 from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
@@ -363,6 +364,9 @@ class GrapheneInstigationState(graphene.ObjectType):
     nextTick = graphene.Field(GrapheneDryRunInstigationTick)
     runningCount = graphene.NonNull(graphene.Int)  # remove with cron scheduler
 
+    hasStartPermission = graphene.NonNull(graphene.Boolean)
+    hasStopPermission = graphene.NonNull(graphene.Boolean)
+
     class Meta:
         name = "InstigationState"
 
@@ -401,6 +405,29 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     def resolve_repositoryLocationName(self, _graphene_info: ResolveInfo):
         return self._instigator_state.repository_selector.location_name
+
+    def resolve_hasStartPermission(self, graphene_info: ResolveInfo):
+        if self._instigator_state.instigator_type == InstigatorType.SCHEDULE:
+            return graphene_info.context.has_permission_for_location(
+                Permissions.START_SCHEDULE, self._instigator_state.repository_selector.location_name
+            )
+        else:
+            check.invariant(self._instigator_state.instigator_type == InstigatorType.SENSOR)
+            return graphene_info.context.has_permission_for_location(
+                Permissions.EDIT_SENSOR, self._instigator_state.repository_selector.location_name
+            )
+
+    def resolve_hasStopPermission(self, graphene_info: ResolveInfo):
+        if self._instigator_state.instigator_type == InstigatorType.SCHEDULE:
+            return graphene_info.context.has_permission_for_location(
+                Permissions.STOP_RUNNING_SCHEDULE,
+                self._instigator_state.repository_selector.location_name,
+            )
+        else:
+            check.invariant(self._instigator_state.instigator_type == InstigatorType.SENSOR)
+            return graphene_info.context.has_permission_for_location(
+                Permissions.EDIT_SENSOR, self._instigator_state.repository_selector.location_name
+            )
 
     def resolve_typeSpecificData(self, _graphene_info: ResolveInfo):
         if not self._instigator_state.instigator_data:
