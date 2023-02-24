@@ -23,6 +23,12 @@ setup(
         "dagster-pyspark",
         "dagster-slack",
         "dagster-postgres",
+        "dagster-duckdb",
+        "dagster-duckdb-pandas",
+        "dagster-duckdb-pyspark",
+        "dagster-snowflake",
+        "dagster-snowflake-pandas",
+        "dagster-snowflake-pyspark",
         "dbt-core",
         "dbt-duckdb",
         "dbt-snowflake",
@@ -38,8 +44,6 @@ setup(
         "s3fs",
         "scipy",
         "scikit-learn",
-        "sqlalchemy!=1.4.42",  # workaround for https://github.com/snowflakedb/snowflake-sqlalchemy/issues/350
-        "snowflake-sqlalchemy",
     ],
     extras_require={"dev": ["dagit", "pytest"], "tests": ["mypy", "pylint", "pytest"]},
 )
