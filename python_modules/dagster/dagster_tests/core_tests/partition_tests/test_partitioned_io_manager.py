@@ -2,8 +2,13 @@ import datetime
 from typing import Any, Dict
 
 import pytest
-from dagster import DailyPartitionsDefinition, HourlyPartitionsDefinition, asset, materialize
-from dagster._check import CheckError
+from dagster import (
+    DagsterTypeCheckDidNotPass,
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    asset,
+    materialize,
+)
 from pytest import fixture
 
 
@@ -73,13 +78,5 @@ def test_partitioned_io_manager_single_partition_dependency_errors_with_wrong_ty
     def daily_asset(upstream_asset: Dict[str, Any]):
         return upstream_asset
 
-    with pytest.raises(
-        CheckError,
-        match=r".*If you are loading a single partition, "
-        r"the upstream asset type annotation "
-        r"should not be a typing.Dict, but a single partition type.",
-    ):
-        materialize(
-            [upstream_asset, daily_asset],
-            partition_key="2022-01-01",
-        )
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        materialize([upstream_asset, daily_asset], partition_key="2022-01-01")

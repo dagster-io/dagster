@@ -1,8 +1,5 @@
-from __future__ import annotations
-
-import inspect
 from abc import abstractmethod
-from typing import Any, Dict, Union
+from typing import Any, Dict, Mapping, Union
 
 from upath import UPath
 
@@ -149,67 +146,24 @@ class UPathIOManager(MemoizableIOManager):
                 path = self._get_path(context)
                 return self._load_single_input(path, context)
             else:
-                expected_type = inspect.signature(self.load_from_path).return_annotation
-
                 asset_partition_keys = context.asset_partition_keys
                 if len(asset_partition_keys) == 0:
                     return None
                 elif len(asset_partition_keys) == 1:
-                    if (
-                        hasattr(context.dagster_type.typing_type, "__origin__")
-                        and context.dagster_type.typing_type.__origin__ in (Dict, dict)
-                        and context.dagster_type.typing_type.__args__[1] == expected_type
-                    ):
-                        # the asset type annotation is accidentally a Dict[str, expected_type]
-                        # even tho no partition mappings are used
-                        return check.failed(
-                            f"Received `{context.dagster_type.typing_type}` type in input of"
-                            f" DagsterType {context.dagster_type}, but `{self.load_from_path}` has"
-                            f" {expected_type} type annotation for obj. They should match. If you"
-                            " are loading a single partition, the upstream asset type annotation"
-                            " should not be a typing.Dict, but a single partition type."
-                        )
-
-                    # we are dealing with a single partition of a non-partitioned asset
                     paths = self._get_paths_for_partitions(context)
                     check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
                     path = list(paths.values())[0]
                     return self._load_single_input(path, context)
-                else:
-                    # we are dealing with multiple partitions of an asset
+                else:  # we are dealing with multiple partitions of an asset
+                    type_annotation = context.dagster_type.typing_type
+                    if type_annotation != Any and not is_dict_type(type_annotation):
+                        check.failed(
+                            "Loading an input that corresponds to multiple partitions, but the"
+                            " type annotation on the op input is not a dict, Dict, Mapping, or"
+                            f" Any: is '{type_annotation}'."
+                        )
 
-                    if (
-                        context.dagster_type.typing_type != Any
-                    ):  # skip type checking if the type is Any
-                        if context.dagster_type.typing_type == expected_type:
-                            # error message if the user forgot to specify a Dict type
-                            # this case is checked separately because this type of mistake can be very common
-                            return check.failed(
-                                f"Received `{context.dagster_type.typing_type}` type in input"
-                                f" DagsterType {context.dagster_type}, but the input has multiple"
-                                f" partitions. `Dict[str, {context.dagster_type.typing_type}]`"
-                                " should be used in this case."
-                            )
-
-                        elif (
-                            hasattr(context.dagster_type.typing_type, "__origin__")
-                            and context.dagster_type.typing_type.__origin__ in (Dict, dict)
-                            and context.dagster_type.typing_type.__args__[1] == expected_type
-                        ):
-                            # type checking passed
-                            return self._load_multiple_inputs(context)
-                        else:
-                            # something is wrong with the types
-                            return check.failed(
-                                f"Received `{context.dagster_type.typing_type}` type in input of"
-                                f" DagsterType {context.dagster_type}, but `{self.load_from_path}`"
-                                f" has {expected_type} type annotation for obj. They should be both"
-                                " specified with type annotations and match. If you are loading"
-                                " multiple partitions, the upstream asset type annotation should"
-                                " be a typing.Dict."
-                            )
-                    else:
-                        return self._load_multiple_inputs(context)
+                    return self._load_multiple_inputs(context)
 
     def handle_output(self, context: OutputContext, obj: Any):
         if context.dagster_type.typing_type == type(None):
@@ -237,3 +191,13 @@ class UPathIOManager(MemoizableIOManager):
         metadata.update(custom_metadata)  # type: ignore
 
         context.add_output_metadata(metadata)
+
+
+def is_dict_type(type_obj) -> bool:
+    if type_obj == dict:
+        return True
+
+    if hasattr(type_obj, "__origin__") and type_obj.__origin__ in (dict, Dict, Mapping):
+        return True
+
+    return False
