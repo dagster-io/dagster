@@ -351,7 +351,7 @@ class AssetGroup:
 
     def materialize(
         self,
-        selection: Optional[Union[str, Sequence[str]]] = None,
+        selection: Optional[Union[str, Sequence[str]]] = "*",
         run_config: Optional[Any] = None,
     ) -> "ExecuteInProcessResult":
         """
