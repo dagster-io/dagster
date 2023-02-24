@@ -57,7 +57,7 @@ class PartitionBackfill(
         backfill_id: str,
         status: BulkActionStatus,
         from_failure: bool,
-        tags: Mapping[str, str],
+        tags: Optional[Mapping[str, str]],
         backfill_timestamp: float,
         error: Optional[SerializableErrorInfo] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,
