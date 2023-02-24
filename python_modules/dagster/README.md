@@ -33,31 +33,32 @@ Dagster is a data pipeline orchestrator designed for **developing and maintainin
 
 With Dagster, you declare—as Python functions—the data assets that you want to build. Dagster then helps you run your functions at the right time and keep your assets up-to-date.
 
-Here is an asset graph defined in Python:
+Here is an example of a graph of three assets defined in Python:
 
 ```python
 from dagster import asset
 from pandas import DataFrame, read_html, get_dummies
 from sklearn.linear_model import LinearRegression
 
-@asset
+@asset(compute_kind="scrape")
 def country_populations() -> DataFrame:
+    """Population data on all countries."""
     df = read_html("https://tinyurl.com/mry64ebh")[0]
     df.columns = ["country", "continent", "rg", "pop2018", "pop2019", "change"]
     df["change"] = df["change"].str.rstrip("%").str.replace("−", "-").astype("float")
     return df
 
-@asset
+@asset(compute_kind="Regression")
 def continent_change_model(country_populations: DataFrame) -> LinearRegression:
+    """Regression of pop change vs. continent"""
     data = country_populations.dropna(subset=["change"])
     return LinearRegression().fit(
         get_dummies(data[["continent"]]), data["change"]
     )
 
-@asset
-def continent_stats(
-    country_populations: DataFrame, continent_change_model: LinearRegression
-) -> DataFrame:
+@asset(compute_kind="pandas")
+def continent_stats(country_populations: DataFrame, continent_change_model: LinearRegression) -> DataFrame:
+    """Statistics for each continent"""
     result = country_populations.groupby("continent").sum()
     result["pop_change_factor"] = continent_change_model.coef_
     return result
@@ -65,7 +66,7 @@ def continent_stats(
 The graph loaded into Dagster's web UI:
 
 <p align="center">
-  <img width="80%" alt="An example asset graph as rendered in the Dagster UI" src="https://user-images.githubusercontent.com/654855/183537484-48dde394-91f2-4de0-9b17-a70b3e9a3823.png">
+  <img width="80%" alt="An example asset graph as rendered in the Dagster UI" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/readme-asset-graph.png">
 </p>
 
 Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
