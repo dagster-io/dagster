@@ -158,7 +158,6 @@ def test_asset_out_partitioned():
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,
-        asset_partition_key="2020-01-02",
         asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
         metadata={"partition_expr": "abc"},
         asset_partitions_def=partitions_def,
@@ -169,7 +168,6 @@ def test_asset_out_partitioned():
         upstream_output=output_context,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
-        asset_partition_key="2020-01-02",
         asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
         metadata=None,
         asset_partitions_def=partitions_def,
@@ -183,7 +181,7 @@ def test_asset_out_partitioned():
         table="table1",
         partition_dimensions=[
             TablePartitionDimension(
-                partition=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
+                partitions=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
                 partition_expr="abc",
             )
         ],
@@ -209,7 +207,7 @@ def test_asset_out_static_partitioned():
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,
-        asset_partition_key="red",
+        asset_partition_keys=["red"],
         metadata={"partition_expr": "abc"},
         asset_partitions_def=partitions_def,
     )
@@ -219,7 +217,7 @@ def test_asset_out_static_partitioned():
         upstream_output=output_context,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
-        asset_partition_key="red",
+        asset_partition_keys=["red"],
         metadata=None,
         asset_partitions_def=partitions_def,
     )
@@ -232,7 +230,56 @@ def test_asset_out_static_partitioned():
         table="table1",
         partition_dimensions=[
             TablePartitionDimension(
-                partition="red",
+                partitions=["red"],
+                partition_expr="abc",
+            )
+        ],
+    )
+    assert handler.handle_output_calls[0][1:] == (table_slice, 5)
+    db_client.delete_table_slice.assert_called_once_with(
+        output_context, table_slice, connect_mock().__enter__()
+    )
+
+    assert len(handler.handle_input_calls) == 1
+    assert handler.handle_input_calls[0][1] == table_slice
+
+
+def test_asset_out_multiple_static_partitions():
+    handler = IntHandler()
+    connect_mock = MagicMock()
+    db_client = MagicMock(
+        spec=DbClient, get_select_statement=MagicMock(return_value=""), connect=connect_mock
+    )
+    manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
+    asset_key = AssetKey(["schema1", "table1"])
+    partitions_def = StaticPartitionsDefinition(["red", "yellow", "blue"])
+    output_context = MagicMock(
+        asset_key=asset_key,
+        resource_config=resource_config,
+        asset_partition_keys=["red", "yellow"],
+        metadata={"partition_expr": "abc"},
+        asset_partitions_def=partitions_def,
+    )
+    manager.handle_output(output_context, 5)
+    input_context = MagicMock(
+        asset_key=asset_key,
+        upstream_output=output_context,
+        resource_config=resource_config,
+        dagster_type=resolve_dagster_type(int),
+        asset_partition_keys=["red", "yellow"],
+        metadata=None,
+        asset_partitions_def=partitions_def,
+    )
+    assert manager.load_input(input_context) == 7
+
+    assert len(handler.handle_output_calls) == 1
+    table_slice = TableSlice(
+        database="database_abc",
+        schema="schema1",
+        table="table1",
+        partition_dimensions=[
+            TablePartitionDimension(
+                partitions=["red", "yellow"],
                 partition_expr="abc",
             )
         ],
