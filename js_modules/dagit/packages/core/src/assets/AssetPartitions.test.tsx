@@ -2,10 +2,9 @@ import {MockedProvider} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent, {specialChars} from '@testing-library/user-event';
 import React from 'react';
-import {Route} from 'react-router-dom';
+import {MemoryRouter, Route} from 'react-router-dom';
 
 import {AssetKeyInput} from '../graphql/types';
-import {TestProvider} from '../testing/TestProvider';
 
 import {AssetPartitionListProps} from './AssetPartitionList';
 import {AssetPartitions} from './AssetPartitions';
@@ -34,7 +33,7 @@ jest.mock('./AssetPartitionList', () => ({
 const SingleDimensionAssetPartitions: React.FC<{assetKey: AssetKeyInput}> = ({assetKey}) => {
   const [params, setParams] = React.useState<AssetViewParams>({});
   return (
-    <TestProvider>
+    <MemoryRouter>
       <MockedProvider
         mocks={[SingleDimensionTimePartitionHealthQuery, SingleDimensionStaticPartitionHealthQuery]}
       >
@@ -51,7 +50,7 @@ const SingleDimensionAssetPartitions: React.FC<{assetKey: AssetKeyInput}> = ({as
         path="*"
         render={({location}) => <div data-testid="router-search">{location.search}</div>}
       />
-    </TestProvider>
+    </MemoryRouter>
   );
 };
 

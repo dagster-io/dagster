@@ -274,8 +274,8 @@ export function keyCountInRanges(ranges: Range[]) {
 }
 export function keyCountInSelection(selections: PartitionDimensionSelectionRange[]) {
   let count = 0;
-  for (const selection of selections) {
-    count += selection[1].idx - selection[0].idx + 1;
+  for (const [start, end] of selections) {
+    count += end.idx - start.idx + 1;
   }
   return count;
 }
@@ -288,6 +288,14 @@ export function keyCountByStateInSelection(
   assetHealth: PartitionHealthData,
   selections: PartitionDimensionSelection[],
 ) {
+  if (selections.length === 0) {
+    console.warn('[keyCountByStateInSelection] A selection must be provided for dimension 0.');
+    return {
+      [PartitionState.MISSING]: 0,
+      [PartitionState.SUCCESS]: 0,
+    };
+  }
+
   const total = selections
     .map((s) => keyCountInSelection(s.selectedRanges))
     .reduce((a, b) => (a ? a * b : b), 0);
@@ -374,6 +382,10 @@ function addKeyIndexesToMaterializedRanges(
 }
 
 export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
+  if (keys.length === 0 || allKeys.length === 0) {
+    return [];
+  }
+
   // If you gave us two arrays of equal length, we don't need to iterate - this is the entire range
   if (keys.length === allKeys.length) {
     return [
@@ -383,10 +395,6 @@ export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
         value: PartitionState.SUCCESS as const,
       },
     ];
-  }
-
-  if (keys.length === 0) {
-    return [];
   }
 
   // Ok - we want to convert keys=[A,B,C,F] in allKeys=[A,B,C,D,E,F,G], into ranges. We could do the "bad"

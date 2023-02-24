@@ -12,6 +12,8 @@ import {
   keyCountByStateInSelection,
   PartitionHealthDimension,
   PartitionDimensionSelection,
+  keyCountInRanges,
+  keyCountInSelection,
 } from './usePartitionHealthData';
 
 const {SUCCESS, MISSING} = PartitionState;
@@ -544,9 +546,31 @@ describe('usePartitionHealthData utilities', () => {
     });
   });
 
+  describe('keyCountInRanges', () => {
+    it('should return 0 if passed no ranges', () => {
+      expect(keyCountInRanges([])).toEqual(0);
+    });
+    it('should return the sum of the lengths of the ranges', () => {
+      expect(keyCountInRanges([A_C, G_I])).toEqual(6);
+    });
+  });
+
+  describe('keyCountInSelection', () => {
+    it('should return 0 if passed no selections', () => {
+      expect(keyCountInSelection([])).toEqual(0);
+    });
+    it('should return the sum of the lengths of the selections', () => {
+      expect(keyCountInSelection([SEL_A_C, SEL_E_G])).toEqual(6);
+    });
+  });
+
   describe('rangesForKeys', () => {
     it('should return a complete range given all dimension keys', () => {
       expect(rangesForKeys(KEYS, KEYS)).toEqual([A_I]);
+    });
+    it('should return an empty range if all dimension keys is an empty array', () => {
+      expect(rangesForKeys([], [])).toEqual([]);
+      expect(rangesForKeys(KEYS, [])).toEqual([]);
     });
     it('should return the correct result if `keys` is unsorted', () => {
       expect(rangesForKeys(['A', 'C', 'B', 'D', 'F', 'G', 'I', 'H', 'E'], KEYS)).toEqual([A_I]);
@@ -589,6 +613,11 @@ describe('usePartitionHealthData utilities', () => {
   });
 
   describe('keyCountByStateInSelection', () => {
+    it('should return nothing when passed an empty selection array (invalid use)', () => {
+      const one = buildPartitionHealthData(ONE_DIMENSIONAL_ASSET, {path: ['asset']});
+      expect(keyCountByStateInSelection(one, [])).toEqual({missing: 0, success: 0});
+    });
+
     it('should return correct counts in the one dimensional case', () => {
       const one = buildPartitionHealthData(ONE_DIMENSIONAL_ASSET, {path: ['asset']});
 
