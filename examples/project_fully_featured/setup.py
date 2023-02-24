@@ -32,10 +32,8 @@ setup(
         "dbt-core",
         "dbt-duckdb",
         "dbt-snowflake",
-        "duckdb!=0.3.3, <= 6.0.0",  # missing wheels
         "mock",
         # DataFrames were not written to Snowflake, causing errors
-        "pandas<1.4.0",
         "pyarrow>=4.0.0",
         "pyspark",
         "requests",
