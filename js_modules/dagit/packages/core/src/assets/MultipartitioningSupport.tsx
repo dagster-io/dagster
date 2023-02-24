@@ -33,12 +33,11 @@ the asset health bar you see is a flattened representation of the health of all 
 */
 export function mergedAssetHealth(
   assetHealth: PartitionHealthData[],
-): Omit<PartitionHealthData, 'assetKey'> {
+): Omit<PartitionHealthData, 'assetKey' | 'ranges'> {
   if (!assetHealth.length) {
     return {
       dimensions: [],
       stateForKey: () => PartitionState.MISSING,
-      stateForSingleDimension: () => PartitionState.MISSING,
       rangesForSingleDimension: () => [],
     };
   }
@@ -68,16 +67,6 @@ export function mergedAssetHealth(
     })),
     stateForKey: (dimensionKeys: string[]) =>
       mergedStates(assetHealth.map((health) => health.stateForKey(dimensionKeys))),
-    stateForSingleDimension: (
-      dimensionIdx: number,
-      dimensionKey: string,
-      otherDimensionSelectedKeys?: string[],
-    ) =>
-      mergedStates(
-        assetHealth.map((health) =>
-          health.stateForSingleDimension(dimensionIdx, dimensionKey, otherDimensionSelectedKeys),
-        ),
-      ),
     rangesForSingleDimension: (dimensionIdx, otherDimensionSelectedRanges?) =>
       mergedRanges(
         dimensions[dimensionIdx].partitionKeys,

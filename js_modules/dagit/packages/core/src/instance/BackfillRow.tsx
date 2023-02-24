@@ -258,7 +258,7 @@ const BackfillRunStatus = ({
     () => ({
       partitionStateForKey: (key: string) =>
         statuses
-          ? runStatusToPartitionState(statuses.filter((s) => s.partitionName === key)[0].runStatus)
+          ? runStatusToPartitionState(statuses.filter((s) => s.partitionName === key)[0]?.runStatus)
           : PartitionState.MISSING,
     }),
     [statuses],

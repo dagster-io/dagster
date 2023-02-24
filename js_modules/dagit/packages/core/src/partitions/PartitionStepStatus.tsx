@@ -10,13 +10,17 @@ import {
   Menu,
   Popover,
 } from '@dagster-io/ui';
-import keyBy from 'lodash/keyBy';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {tokenForAssetKey} from '../asset-graph/Utils';
-import {PartitionHealthData, PartitionHealthDimension} from '../assets/usePartitionHealthData';
+import {
+  PartitionHealthData,
+  PartitionHealthDimension,
+  partitionStateAtIndex,
+  Range,
+} from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
@@ -93,13 +97,18 @@ export const PartitionPerAssetStatus: React.FC<
     rangeDimension: PartitionHealthDimension;
   }
 > = ({assetHealth, rangeDimension, rangeDimensionIdx, assetQueryItems, ...rest}) => {
-  const healthByAssetKey = keyBy(assetHealth, (a) => tokenForAssetKey(a.assetKey));
+  const rangesByAssetKey: {[assetKey: string]: Range[]} = {};
+  for (const a of assetHealth) {
+    if (a.dimensions[rangeDimensionIdx]?.name !== rangeDimension.name) {
+      // Ignore assets in the job / graph that do not have the range partition dimension.
+      continue;
+    }
+    const ranges = a.rangesForSingleDimension(rangeDimensionIdx);
+    rangesByAssetKey[tokenForAssetKey(a.assetKey)] = ranges;
+  }
 
   const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
-  const layoutBoxesWithRangeDimension = layout.boxes.filter(
-    (b) =>
-      healthByAssetKey[b.node.name]?.dimensions[rangeDimensionIdx]?.name === rangeDimension.name,
-  );
+  const layoutBoxesWithRangeDimension = layout.boxes.filter((b) => !!rangesByAssetKey[b.node.name]);
 
   const data: MatrixData = {
     stepRows: layoutBoxesWithRangeDimension.map((box) => ({
@@ -109,8 +118,8 @@ export const PartitionPerAssetStatus: React.FC<
       finalFailurePercent: 0,
     })),
     partitions: [],
-    partitionColumns: rangeDimension.partitionKeys.map((partitionKey, idx) => ({
-      idx,
+    partitionColumns: rangeDimension.partitionKeys.map((partitionKey, partitionKeyIdx) => ({
+      idx: partitionKeyIdx,
       name: partitionKey,
       runsLoaded: true,
       runs: [],
@@ -118,7 +127,7 @@ export const PartitionPerAssetStatus: React.FC<
         name: box.node.name,
         unix: 0,
         color: partitionStateToStatusSquareColor(
-          healthByAssetKey[box.node.name].stateForSingleDimension(rangeDimensionIdx, partitionKey),
+          partitionStateAtIndex(rangesByAssetKey[box.node.name], partitionKeyIdx),
         ),
       })),
     })),
