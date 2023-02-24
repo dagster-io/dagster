@@ -225,3 +225,8 @@ export function tokenForAssetKey(key: {path: string[]}) {
 export function displayNameForAssetKey(key: {path: string[]}) {
   return key.path.join(' / ');
 }
+
+export const itemWithAssetKey = (key: {path: string[]}) => {
+  const token = tokenForAssetKey(key);
+  return (asset: {assetKey: {path: string[]}}) => tokenForAssetKey(asset.assetKey) === token;
+};

@@ -171,6 +171,16 @@ export function assembleRangesFromTransitions(
   return result.filter((range) => range.value !== PartitionState.MISSING) as Range[];
 }
 
+export function partitionDefinitionsEqual(
+  a: {description: string; dimensionTypes: {name: string}[]},
+  b: {description: string; dimensionTypes: {name: string}[]},
+) {
+  return (
+    a.description === b.description &&
+    JSON.stringify(a.dimensionTypes) === JSON.stringify(b.dimensionTypes)
+  );
+}
+
 export function explodePartitionKeysInSelection(
   selections: PartitionDimensionSelection[],
   stateForKey: (dimensionKeys: string[]) => PartitionState,

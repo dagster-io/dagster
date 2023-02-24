@@ -54,10 +54,10 @@ export const DialogHeader: React.FC<HeaderProps> = (props) => {
   );
 };
 
-export const DialogBody: React.FC = (props) => {
+export const DialogBody: React.FC = ({children, ...rest}) => {
   return (
-    <Box padding={{vertical: 16, horizontal: 20}} background={Colors.White}>
-      {props.children}
+    <Box padding={{vertical: 16, horizontal: 20}} background={Colors.White} {...rest}>
+      {children}
     </Box>
   );
 };

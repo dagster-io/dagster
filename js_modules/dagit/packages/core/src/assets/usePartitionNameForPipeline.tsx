@@ -14,6 +14,7 @@ export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineNa
     AssetJobPartitionSetsQuery,
     AssetJobPartitionSetsQueryVariables
   >(ASSET_JOB_PARTITION_SETS_QUERY, {
+    skip: !pipelineName,
     variables: {
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,
