@@ -148,3 +148,11 @@ def test_databricks_wait_for_run(mocker: MockerFixture):
         )
 
     assert "Run `1` failed with result state" in str(exc_info.value)
+
+
+def test_dagster_databricks_user_agent() -> None:
+    databricks_client = DatabricksClient(host=HOST, token=TOKEN)
+    assert "dagster-databricks" in databricks_client.api_client.default_headers["user-agent"]
+
+    # Remove this once databricks_api is deprecated
+    assert "dagster-databricks" in databricks_client.client.client.default_headers["user-agent"]
