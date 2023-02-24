@@ -112,7 +112,7 @@ class DuckDbClient(DbClient):
     def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None:
         try:
             connection.execute(_get_cleanup_statement(table_slice))
-        except duckdb.CatalogException:
+        except (duckdb.CatalogException, duckdb.IOException):
             # table doesn't exist yet, so ignore the error
             pass
 
