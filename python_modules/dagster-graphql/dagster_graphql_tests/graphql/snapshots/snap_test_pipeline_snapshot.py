@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots[
@@ -49,7 +50,7 @@ snapshots[
       }
     ],
     "name": "csv_hello_world",
-    "pipelineSnapshotId": "9337b5df6e525aeb08834fd377c7b08af3874bf5",
+    "pipelineSnapshotId": "30ae63a1cef05f91067eaf8720b14f2e44535b66",
     "solidHandles": [
       {
         "handleID": "sum_solid"
@@ -111,7 +112,7 @@ snapshots[
       }
     ],
     "name": "noop_pipeline",
-    "pipelineSnapshotId": "a982241a32141f69e3aa860b13115bdcbe400b86",
+    "pipelineSnapshotId": "a38f5dd465a9b07f9d116f7c6962502e581f03f8",
     "solidHandles": [
       {
         "handleID": "noop_solid"
