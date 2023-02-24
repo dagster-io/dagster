@@ -2,7 +2,6 @@ import {act, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
-import {TestProvider} from '../testing/TestProvider';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 
 import {buildStorageKey, useRepoExpansionState} from './useRepoExpansionState';
@@ -18,27 +17,25 @@ describe('useRepoExpansionState', () => {
     );
 
     return (
-      <TestProvider>
-        <div>
-          {ALL_REPO_KEYS.map((key) => (
-            <div key={key}>
-              <div>{`${key} ${expandedKeys.includes(key) ? 'expanded' : 'collapsed'}`}</div>
-              <button
-                onClick={() => {
-                  const repoAddress = repoAddressFromPath(key);
-                  if (repoAddress) {
-                    onToggle(repoAddress);
-                  }
-                }}
-              >
-                {`toggle ${key}`}
-              </button>
-            </div>
-          ))}
-          <button onClick={() => onToggleAll(true)}>expand all</button>
-          <button onClick={() => onToggleAll(false)}>collapse all</button>
-        </div>
-      </TestProvider>
+      <div>
+        {ALL_REPO_KEYS.map((key) => (
+          <div key={key}>
+            <div>{`${key} ${expandedKeys.includes(key) ? 'expanded' : 'collapsed'}`}</div>
+            <button
+              onClick={() => {
+                const repoAddress = repoAddressFromPath(key);
+                if (repoAddress) {
+                  onToggle(repoAddress);
+                }
+              }}
+            >
+              {`toggle ${key}`}
+            </button>
+          </div>
+        ))}
+        <button onClick={() => onToggleAll(true)}>expand all</button>
+        <button onClick={() => onToggleAll(false)}>collapse all</button>
+      </div>
     );
   };
 
