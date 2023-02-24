@@ -33,6 +33,7 @@ from dagster import (
 )
 from dagster._config import StringSource
 from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.executor_definition import in_process_executor
@@ -1448,6 +1449,26 @@ def test_job_default_config_preserved_with_asset_subset():
     foo_job = define_asset_job("foo_job").resolve([asset_one, two, three], [])
 
     result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
+    assert result.success
+
+
+def test_empty_asset_job():
+    @asset
+    def a():
+        pass
+
+    @asset
+    def b(a):
+        pass
+
+    empty_selection = AssetSelection.keys("a", "b") - AssetSelection.keys("a", "b")
+    assert empty_selection.resolve([a, b]) == set()
+
+    empty_job = define_asset_job("empty_job", selection=empty_selection).resolve([a, b], [])
+    print(vars(empty_job))
+    assert empty_job.all_node_defs == []
+
+    result = empty_job.execute_in_process()
     assert result.success
 
 

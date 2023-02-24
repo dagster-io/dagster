@@ -407,7 +407,7 @@ def test_asset_group_build_subset_job_errors(job_selection, use_multi, expected_
 @pytest.mark.parametrize(
     "job_selection,expected_assets",
     [
-        (None, "a,b,c"),
+        ("*", "a,b,c"),
         ("a+", "a,b"),
         ("+c", "b,c"),
         (["a", "c"], "a,c"),
