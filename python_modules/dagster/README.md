@@ -27,23 +27,52 @@
   </a>
 </div>
 
-# Dagster
-
 __Dagster is a cloud-native orchestrator for the whole development lifecycle, with integrated lineage and observability, a declarative programming model, and best-in-class testability.__
-
-If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
-
-<p align="center">
-  <img width="800" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/dagster-features-4x4.png">
-</p>
 
 Dagster is a data pipeline orchestrator designed for **developing and maintaining data assets**, such as tables, data sets, machine learning models, and reports.
 
 With Dagster, you declare—as Python functions—the data assets that you want to build. Dagster then helps you run your functions at the right time and keep your assets up-to-date.
 
+Here is an asset graph defined in Python:
+
+```python
+from dagster import asset
+from pandas import DataFrame, read_html, get_dummies
+from sklearn.linear_model import LinearRegression
+
+@asset
+def country_populations() -> DataFrame:
+    df = read_html("https://tinyurl.com/mry64ebh")[0]
+    df.columns = ["country", "continent", "rg", "pop2018", "pop2019", "change"]
+    df["change"] = df["change"].str.rstrip("%").str.replace("−", "-").astype("float")
+    return df
+
+@asset
+def continent_change_model(country_populations: DataFrame) -> LinearRegression:
+    data = country_populations.dropna(subset=["change"])
+    return LinearRegression().fit(
+        get_dummies(data[["continent"]]), data["change"]
+    )
+
+@asset
+def continent_stats(
+    country_populations: DataFrame, continent_change_model: LinearRegression
+) -> DataFrame:
+    result = country_populations.groupby("continent").sum()
+    result["pop_change_factor"] = continent_change_model.coef_
+    return result
+```
+The graph loaded into Dagster's web UI:
+
+<p align="center">
+  <img width="80%" alt="An example asset graph as rendered in the Dagster UI" src="https://user-images.githubusercontent.com/654855/183537484-48dde394-91f2-4de0-9b17-a70b3e9a3823.png">
+</p>
+
 Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
 
 ## Quick Start:
+
+If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
 
 Dagster is available on PyPI and officially supports Python 3.7+.
 
