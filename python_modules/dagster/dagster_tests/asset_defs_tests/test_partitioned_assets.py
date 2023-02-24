@@ -13,6 +13,8 @@ from dagster import (
     HourlyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
     Output,
     PartitionsDefinition,
     SourceAsset,
@@ -48,6 +50,7 @@ def check_experimental_warnings():
                 "resource_defs" in w.message.args[0]
                 or "io_manager_def" in w.message.args[0]
                 or "build_assets_job" in w.message.args[0]
+                or "MultiPartitionsDefinition" in w.message.args[0]
             ):
                 continue
             assert False, f"Unexpected warning: {w.message.args[0]}"
@@ -625,3 +628,43 @@ def test_partition_range_single_run():
         materialization.partition
         for materialization in result.asset_materializations_for_node("downstream_asset")
     } == {"2020-01-01", "2020-01-02", "2020-01-03"}
+
+
+def test_multipartition_range_single_run():
+    partitions_def = MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2020-01-01"),
+            "abc": StaticPartitionsDefinition(["a", "b", "c"]),
+        }
+    )
+
+    @asset(partitions_def=partitions_def)
+    def multipartitioned_asset(context) -> None:
+        key_range = context.asset_partition_key_range_for_output()
+
+        assert isinstance(key_range.start, MultiPartitionKey)
+        assert isinstance(key_range.end, MultiPartitionKey)
+        assert key_range.start == MultiPartitionKey({"date": "2020-01-01", "abc": "a"})
+        assert key_range.end == MultiPartitionKey({"date": "2020-01-03", "abc": "a"})
+
+        assert all(
+            isinstance(key, MultiPartitionKey) for key in context.asset_partition_keys_for_output()
+        )
+
+    the_job = define_asset_job("job").resolve([multipartitioned_asset], [])
+
+    result = the_job.execute_in_process(
+        tags={
+            ASSET_PARTITION_RANGE_START_TAG: "a|2020-01-01",
+            ASSET_PARTITION_RANGE_END_TAG: "a|2020-01-03",
+        }
+    )
+    assert result.success
+    assert {
+        materialization.partition
+        for materialization in result.asset_materializations_for_node("multipartitioned_asset")
+    } == {
+        MultiPartitionKey({"date": "2020-01-01", "abc": "a"}),
+        MultiPartitionKey({"date": "2020-01-02", "abc": "a"}),
+        MultiPartitionKey({"date": "2020-01-03", "abc": "a"}),
+    }
