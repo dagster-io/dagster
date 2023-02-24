@@ -252,6 +252,9 @@ class CachingStaleStatusResolver:
     def get_projected_logical_version(self, key: AssetKey) -> LogicalVersion:
         return self._get_projected_logical_version(key=key)
 
+    def is_partitioned_or_downstream(self, key: AssetKey) -> bool:
+        return self._is_partitioned_or_downstream(key=key)
+
     @cached_method
     def _get_status(self, key: AssetKey) -> StaleStatus:
         if self.asset_graph.get_partitions_def(key):
@@ -259,15 +262,6 @@ class CachingStaleStatusResolver:
         else:
             causes = self._get_status_causes(key=key)
             return StaleStatus.FRESH if len(causes) == 0 else causes[0].status
-
-        current_version = self._get_current_logical_version(key=key)
-        projected_version = self._get_projected_logical_version(key=key)
-        if projected_version == UNKNOWN_LOGICAL_VERSION:
-            return StaleStatus.UNKNOWN
-        elif projected_version == current_version:  # always true for source assets
-            return StaleStatus.FRESH
-        else:
-            return StaleStatus.STALE
 
     @cached_method
     def _get_status_causes(self, key: AssetKey) -> Sequence[StaleStatusCause]:
@@ -384,6 +378,16 @@ class CachingStaleStatusResolver:
             return None
         else:
             return extract_logical_version_provenance_from_entry(materialization)
+
+    @cached_method
+    def _is_partitioned_or_downstream(self, *, key: AssetKey) -> bool:
+        if self.asset_graph.get_partitions_def(key):
+            return True
+        else:
+            return any(
+                self._is_partitioned_or_downstream(key=dep_key)
+                for dep_key in self.asset_graph.get_parents(key)
+            )
 
     # Returns true if the current logical version of at least one input asset differs from the
     # recorded logical version for that asset in the provenance. This indicates that a new
