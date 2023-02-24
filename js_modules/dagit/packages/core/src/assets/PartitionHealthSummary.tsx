@@ -13,7 +13,7 @@ export const PartitionHealthSummary: React.FC<{
   showAssetKey?: boolean;
   data: PartitionHealthData[];
   selections?: PartitionDimensionSelection[];
-}> = ({showAssetKey, assetKey, data, selections}) => {
+}> = React.memo(({showAssetKey, assetKey, data, selections}) => {
   const assetData = data.find((d) => JSON.stringify(d.assetKey) === JSON.stringify(assetKey));
 
   if (!assetData) {
@@ -54,16 +54,15 @@ export const PartitionHealthSummary: React.FC<{
             partitionNames={dimension.partitionKeys}
             splitPartitions={!isTimeseriesDimension(dimension)}
             selected={selections ? selections[dimensionIdx].selectedKeys : undefined}
-            partitionStateForKey={(key) =>
-              assetData.stateForSingleDimension(
+            health={{
+              ranges: assetData.rangesForSingleDimension(
                 dimensionIdx,
-                key,
-                selections?.length === 2 ? selections[1 - dimensionIdx].selectedKeys : undefined,
-              )
-            }
+                selections?.length === 2 ? selections[1 - dimensionIdx].selectedRanges : undefined,
+              ),
+            }}
           />
         </Box>
       ))}
     </Box>
   );
-};
+});

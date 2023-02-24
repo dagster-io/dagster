@@ -14,6 +14,8 @@ type SelectionRange = {
 
 const MIN_SPAN_WIDTH = 8;
 
+// Todo: Rename this enum to Partition"Status" instead of Partition"State" to
+// match the server-provided RunStatus and others.
 export enum PartitionState {
   MISSING = 'missing',
   SUCCESS = 'success',
@@ -23,6 +25,26 @@ export enum PartitionState {
   QUEUED = 'queued',
   STARTED = 'started',
 }
+
+// This type is similar to a partition health "Range", but this component is also
+// used by backfill UI and backfills can have a wider range of partition states,
+// so this type allows the entire enum.
+export type PartitionStatusRange = {
+  start: {idx: number; key: string};
+  end: {idx: number; key: string};
+  value: PartitionState;
+};
+
+// This component can be wired up to assets, which provide partition status in terms
+// of ranges with a given status. It can also be wired up to backfills, which provide
+// status per-partition.
+//
+// In the latter case, this component will call the getter function you provide
+// and assemble ranges by itself for display.
+//
+export type PartitionStatusHealthSource =
+  | {ranges: PartitionStatusRange[]}
+  | {partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState};
 
 export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
   switch (runStatus) {
@@ -41,9 +63,9 @@ export const runStatusToPartitionState = (runStatus: RunStatus | null) => {
   }
 };
 
-export const PartitionStatus: React.FC<{
+interface PartitionStatusProps {
   partitionNames: string[];
-  partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState;
+  health: PartitionStatusHealthSource;
   selected?: string[];
   small?: boolean;
   onClick?: (partitionName: string) => void;
@@ -52,23 +74,27 @@ export const PartitionStatus: React.FC<{
   hideStatusTooltip?: boolean;
   tooltipMessage?: string;
   selectionWindowSize?: number;
-}> = ({
+}
+
+export const PartitionStatus: React.FC<PartitionStatusProps> = ({
   partitionNames,
-  partitionStateForKey,
   selected,
   onSelect,
   onClick,
-  splitPartitions,
   small,
+  health,
   selectionWindowSize,
   hideStatusTooltip,
   tooltipMessage,
+  splitPartitions = false,
 }) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
     SelectionRange | undefined
   >();
   const {viewport, containerProps} = useViewport();
+
+  const ranges = useRenderableRanges(health, splitPartitions, partitionNames);
 
   const toPartitionName = React.useCallback(
     (e: MouseEvent) => {
@@ -140,19 +166,7 @@ export const PartitionStatus: React.FC<{
     [selectedSet, partitionNames],
   );
 
-  const spans = React.useMemo(
-    () =>
-      splitPartitions
-        ? partitionNames.map((name, idx) => ({
-            startIdx: idx,
-            endIdx: idx,
-            status: partitionStateForKey(name, idx),
-          }))
-        : assembleIntoSpans(partitionNames, partitionStateForKey),
-    [splitPartitions, partitionNames, partitionStateForKey],
-  );
-
-  const highestIndex = spans.map((s) => s.endIdx).reduce((prev, cur) => Math.max(prev, cur), 0);
+  const highestIndex = ranges.map((s) => s.end.idx).reduce((prev, cur) => Math.max(prev, cur), 0);
   const indexToPct = (idx: number) => `${((idx * 100) / partitionNames.length).toFixed(3)}%`;
   const showSeparators =
     splitPartitions && viewport.width > MIN_SPAN_WIDTH * (partitionNames.length + 1);
@@ -197,27 +211,22 @@ export const PartitionStatus: React.FC<{
         onClick={_onClick}
         onMouseDown={_onMouseDown}
       >
-        {spans.map((s) => (
+        {ranges.map((s) => (
           <div
-            key={s.startIdx}
+            key={s.start.idx}
             style={{
-              left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
-              width: indexToPct(s.endIdx - s.startIdx + 1),
-              minWidth: s.status && s.status !== PartitionState.MISSING ? 2 : undefined,
+              left: `min(calc(100% - 2px), ${indexToPct(s.start.idx)})`,
+              width: indexToPct(s.end.idx - s.start.idx + 1),
+              minWidth: s.value ? 2 : undefined,
               position: 'absolute',
-              zIndex:
-                s.startIdx === 0 || s.endIdx === highestIndex
-                  ? 3
-                  : s.status && s.status !== PartitionState.MISSING
-                  ? 2
-                  : 1, //End-caps, then statuses, then missing
+              zIndex: s.start.idx === 0 || s.end.idx === highestIndex ? 3 : 2,
               top: 0,
             }}
           >
             {hideStatusTooltip || tooltipMessage ? (
               <div
                 className="color-span"
-                style={partitionStateToStyle(s.status)}
+                style={partitionStateToStyle(s.value)}
                 title={tooltipMessage}
               />
             ) : (
@@ -227,27 +236,27 @@ export const PartitionStatus: React.FC<{
                 content={
                   tooltipMessage
                     ? tooltipMessage
-                    : s.startIdx === s.endIdx
-                    ? `Partition ${partitionNames[s.startIdx]} is ${partitionStatusToText(
-                        s.status,
+                    : s.start.idx === s.end.idx
+                    ? `Partition ${partitionNames[s.start.idx]} is ${partitionStatusToText(
+                        s.value,
                       ).toLowerCase()}`
-                    : `Partitions ${partitionNames[s.startIdx]} through ${
-                        partitionNames[s.endIdx]
-                      } are ${partitionStatusToText(s.status).toLowerCase()}`
+                    : `Partitions ${partitionNames[s.start.idx]} through ${
+                        partitionNames[s.end.idx]
+                      } are ${partitionStatusToText(s.value).toLowerCase()}`
                 }
               >
-                <div className="color-span" style={partitionStateToStyle(s.status)} />
+                <div className="color-span" style={partitionStateToStyle(s.value)} />
               </Tooltip>
             )}
           </div>
         ))}
         {showSeparators
-          ? spans.slice(1).map((s) => (
+          ? ranges.slice(1).map((s) => (
               <div
                 className="separator"
-                key={`separator_${s.startIdx}`}
+                key={`separator_${s.start.idx}`}
                 style={{
-                  left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
+                  left: `min(calc(100% - 2px), ${indexToPct(s.start.idx)})`,
                   height: small ? 14 : 24,
                 }}
               />
@@ -335,6 +344,63 @@ export const PartitionStatus: React.FC<{
     </div>
   );
 };
+
+function useRenderableRanges(
+  health: PartitionStatusHealthSource,
+  splitPartitions: boolean,
+  partitionNames: string[],
+) {
+  const _ranges = 'ranges' in health ? health.ranges : null;
+  const _stateForKey = 'partitionStateForKey' in health ? health.partitionStateForKey : null;
+
+  return React.useMemo(() => {
+    return _stateForKey
+      ? buildRangesFromStateFn(partitionNames, splitPartitions, _stateForKey)
+      : _ranges && splitPartitions
+      ? convertToSingleKeyRanges(partitionNames, _ranges)
+      : _ranges!;
+  }, [splitPartitions, partitionNames, _ranges, _stateForKey]);
+}
+
+// If you ask for each partition to be rendered as a separate segment in the UI, we break the
+// provided ranges apart into per-partition ranges so that each partition can have a separate tooltip.
+//
+function convertToSingleKeyRanges(
+  partitionNames: string[],
+  ranges: PartitionStatusRange[],
+): PartitionStatusRange[] {
+  const result: PartitionStatusRange[] = [];
+  for (const range of ranges) {
+    for (let idx = range.start.idx; idx <= range.end.idx; idx++) {
+      result.push({
+        start: {idx, key: partitionNames[idx]},
+        end: {idx, key: partitionNames[idx]},
+        value: range.value,
+      });
+    }
+  }
+  return result;
+}
+
+function buildRangesFromStateFn(
+  partitionNames: string[],
+  splitPartitions: boolean,
+  partitionStateForKey: (partitionKey: string, partitionIdx: number) => PartitionState,
+) {
+  const spans = splitPartitions
+    ? partitionNames.map((name, idx) => ({
+        startIdx: idx,
+        endIdx: idx,
+        status: partitionStateForKey(name, idx),
+      }))
+    : assembleIntoSpans(partitionNames, partitionStateForKey);
+
+  return spans.map((s) => ({
+    value: s.status,
+    start: {idx: s.startIdx, key: partitionNames[s.startIdx]},
+    end: {idx: s.endIdx, key: partitionNames[s.endIdx]},
+  }));
+}
 
 export const partitionStateToStyle = (status: PartitionState): React.CSSProperties => {
   switch (status) {

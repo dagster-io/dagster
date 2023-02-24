@@ -178,7 +178,7 @@ export const BackfillPartitionSelector: React.FC<{
             <DimensionRangeWizard
               selected={range}
               setSelected={setRange}
-              partitionStateForKey={(name) => partitionData[name]}
+              health={{partitionStateForKey: (key) => partitionData[key]}}
               partitionKeys={partitionNames}
             />
 

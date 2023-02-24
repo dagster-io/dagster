@@ -5,7 +5,7 @@ import React from 'react';
 import {assertUnreachable} from '../app/Util';
 import {PartitionState} from '../partitions/PartitionStatus';
 
-import {mergedStates} from './MultipartitioningSupport';
+import {assembleRangesFromTransitions, mergedStates} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {
   PartitionHealthQuery,
@@ -16,6 +16,7 @@ type PartitionHealthMaterializedPartitions = Extract<
   PartitionHealthQuery['assetNodeOrError'],
   {__typename: 'AssetNode'}
 >['materializedPartitions'];
+
 /**
  * usePartitionHealthData retrieves partitionKeysByDimension + partitionMaterializationCounts and
  * reshapes the data for rapid retrieval from the UI. The hook exposes a series of getter methods
@@ -34,6 +35,10 @@ export interface PartitionHealthData {
     dimensionKey: string,
     otherDimensionSelectedKeys?: string[],
   ) => PartitionState;
+  rangesForSingleDimension: (
+    dimensionIdx: number,
+    otherDimensionSelectedRanges?: PartitionDimensionSelectionRange[] | undefined,
+  ) => Range[];
 }
 
 export interface PartitionHealthDimension {
@@ -88,6 +93,10 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       console.warn('[stateForKey] called with incorrect number of dimensions');
       return PartitionState.MISSING;
     }
+    if (dimensionKeys.length === 0) {
+      console.warn('[stateForKey] called with zero dimension keys');
+      return PartitionState.MISSING;
+    }
 
     const dIndexes = dimensionKeys.map((key, idx) => dimensions[idx].partitionKeys.indexOf(key));
     const d0Range = ranges.find((r) => r.start.idx <= dIndexes[0] && r.end.idx >= dIndexes[0]);
@@ -95,7 +104,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
     if (!d0Range) {
       return PartitionState.MISSING;
     }
-    if (!d0Range.subranges) {
+    if (!d0Range.subranges || dIndexes.length === 1) {
       return PartitionState.SUCCESS; // 1D case
     }
     const d1Range = d0Range.subranges.find(
@@ -156,11 +165,68 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
     throw new Error('stateForSingleDimension asked for third dimension');
   };
 
+  const rangesForSingleDimension = (
+    dimensionIdx: number,
+    otherDimensionSelectedRanges?: PartitionDimensionSelectionRange[] | undefined,
+  ): Range[] => {
+    if (dimensions.length === 0) {
+      return [];
+    }
+    if (dimensionIdx >= dimensions.length) {
+      console.warn('[rangesForSingleDimension] called with invalid dimension index');
+      return [];
+    }
+
+    if (isRangeDataInverted) {
+      dimensionIdx = 1 - dimensionIdx;
+    }
+    if (dimensionIdx === 0 && !otherDimensionSelectedRanges) {
+      return removeSubrangesAndJoin(ranges);
+    } else if (dimensionIdx === 0 && otherDimensionSelectedRanges) {
+      const otherDimensionKeyCount = keyCountInSelection(otherDimensionSelectedRanges);
+      const clipped = ranges
+        .map((range) => {
+          const subranges = range.subranges
+            ? rangesClippedToSelection(range.subranges, otherDimensionSelectedRanges)
+            : [];
+
+          return {
+            start: range.start,
+            end: range.end,
+            value: partitionStatusGivenRanges(subranges, otherDimensionKeyCount),
+            subranges,
+          };
+        })
+        .filter((range) => range.value !== PartitionState.MISSING) as Range[];
+      return removeSubrangesAndJoin(clipped);
+    } else {
+      const [d0, d1] = dimensions;
+      const allKeys = d1.partitionKeys;
+      const d0KeyCount = otherDimensionSelectedRanges
+        ? keyCountInSelection(otherDimensionSelectedRanges)
+        : d0.partitionKeys.length;
+      const transitions: {idx: number; delta: number}[] = [];
+      const rangesClipped = otherDimensionSelectedRanges
+        ? rangesClippedToSelection(ranges, otherDimensionSelectedRanges)
+        : ranges;
+      for (const range of rangesClipped) {
+        const length = range.end.idx - range.start.idx + 1;
+        for (const subrange of range.subranges || []) {
+          transitions.push({idx: subrange.start.idx, delta: length});
+          transitions.push({idx: subrange.end.idx + 1, delta: -length});
+        }
+      }
+
+      return assembleRangesFromTransitions(allKeys, transitions, d0KeyCount);
+    }
+  };
+
   const result: PartitionHealthData = {
     assetKey: loadKey,
     dimensions: __dims.map((d) => ({name: d.name, partitionKeys: d.partitionKeys})),
     stateForKey,
     stateForSingleDimension,
+    rangesForSingleDimension,
   };
 
   return result;
@@ -169,12 +235,93 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
 // Add indexes to the materializedPartitions data so that we can find specific keys in
 // the range structures without having to indexOf the start and end key of every range.
 //
-type Range = {
+export type Range = {
   start: {key: string; idx: number};
   end: {key: string; idx: number};
   value: PartitionState.SUCCESS | PartitionState.SUCCESS_MISSING;
   subranges?: Range[];
 };
+
+/** Given a set of materialized ranges and the total number of keys in the dimension,
+ * return whether these ranges represent "success" (all the keys), "success_missing"
+ * (some of the keys) or "missing". (none of the keys). Used to evaluate the status
+ * of the first dimension based on second dimension materialized ranges.
+ */
+export function partitionStatusGivenRanges(ranges: Range[], totalKeyCount: number) {
+  const keyCount = keyCountInRanges(ranges);
+  return keyCount === totalKeyCount
+    ? PartitionState.SUCCESS
+    : keyCount === 0
+    ? PartitionState.MISSING
+    : PartitionState.SUCCESS_MISSING;
+}
+
+/**
+ * Given a set of ranges that specify materialized regions and a selection of interest, returns the
+ * ranges required to represent the ranges clipped to the selection (within the selected area only.)
+ */
+function rangesClippedToSelection(ranges: Range[], selection: PartitionDimensionSelectionRange[]) {
+  return ranges.flatMap((range) => rangeClippedToSelection(range, selection));
+}
+
+/**
+ * Given a range eg: [B-F] and a selection of interest [A-C], [D-Z], this function returns the ranges
+ * required to represent the range clipped to the selection. ([[B-C], [D-F]])
+ */
+export function rangeClippedToSelection(
+  range: Range,
+  selection: PartitionDimensionSelectionRange[],
+) {
+  const intersecting = selection.filter(
+    ([start, end]) => range.start.idx <= end.idx && range.end.idx >= start.idx,
+  );
+  return intersecting.map(([start, end]) => {
+    return {
+      value: range.value,
+      start: range.start.idx > start.idx ? range.start : start,
+      end: range.end.idx < end.idx ? range.end : end,
+      subranges: range.subranges,
+    };
+  });
+}
+
+// If you provide the primary dimension ranges of a multi-partitioned asset, there can be tons of
+// small ranges which differ only in their subranges, which can lead to tiny "A-B", "C-D", "E"
+// ranges rendering when one "A-E" would suffice. This is noticeable because we use a striped pattern
+// for partial ranges and the pattern resets.
+//
+// This function walks the ranges and merges them if their top level status is the same so they
+// can be rendered with the minimal number of divs.
+//
+function removeSubrangesAndJoin(ranges: Range[]): Range[] {
+  const result: Range[] = [];
+  for (const range of ranges) {
+    const last = result[result.length - 1];
+    if (last && last.end.idx === range.start.idx - 1 && last.value === range.value) {
+      last.end = range.end;
+    } else {
+      result.push({start: range.start, end: range.end, value: range.value});
+    }
+  }
+  return result;
+}
+
+// In a follow-up, maybe we make these two data structures share a signature
+
+function keyCountInRanges(ranges: Range[]) {
+  let count = 0;
+  for (const range of ranges) {
+    count += range.end.idx - range.start.idx + 1;
+  }
+  return count;
+}
+function keyCountInSelection(ranges: PartitionDimensionSelectionRange[]) {
+  let count = 0;
+  for (const range of ranges) {
+    count += range[1].idx - range[0].idx + 1;
+  }
+  return count;
+}
 
 function addKeyIndexesToMaterializedRanges(
   dimensions: {name: string; partitionKeys: string[]}[],
@@ -186,21 +333,7 @@ function addKeyIndexesToMaterializedRanges(
   }
   if (materializedPartitions.__typename === 'DefaultPartitions') {
     const dim = dimensions[0];
-    const count = dim.partitionKeys.length;
-    if (materializedPartitions.materializedPartitions.length === count) {
-      return [
-        {
-          start: {key: dim.partitionKeys[0], idx: 0},
-          end: {key: dim.partitionKeys[count - 1], idx: count - 1},
-          value: PartitionState.SUCCESS as const,
-        },
-      ];
-    } else {
-      return materializedPartitions.materializedPartitions.map<Range>((key) => {
-        const idx = dim.partitionKeys.indexOf(key);
-        return {start: {key, idx}, end: {key, idx}, value: PartitionState.SUCCESS};
-      });
-    }
+    return rangesForKeys(materializedPartitions.materializedPartitions, dim.partitionKeys);
   }
 
   for (const range of materializedPartitions.ranges) {
@@ -239,6 +372,46 @@ function addKeyIndexesToMaterializedRanges(
   return result;
 }
 
+export function rangesForKeys(keys: string[], allKeys: string[]): Range[] {
+  // If you gave us two arrays of equal length, we don't need to iterate - this is the entire range
+  if (keys.length === allKeys.length) {
+    return [
+      {
+        start: {key: allKeys[0], idx: 0},
+        end: {key: allKeys[allKeys.length - 1], idx: allKeys.length - 1},
+        value: PartitionState.SUCCESS as const,
+      },
+    ];
+  }
+
+  if (keys.length === 0) {
+    return [];
+  }
+
+  // Ok - we want to convert keys=[A,B,C,F] in allKeys=[A,B,C,D,E,F,G], into ranges. We could do the "bad"
+  // thing and give you a separate range for every key, but this has downstream implications (like creating
+  // one <div /> for every key in <PartitionHealthSummary />). Instead, we do index lookups on keys, sort
+  // them, and then walk the sorted list assembling them into ranges when they're contiguous.
+  const keysIdxs = keys.map((k) => allKeys.indexOf(k)).sort((a, b) => a - b);
+  const ranges: Range[] = [];
+
+  for (const idx of keysIdxs) {
+    if (ranges.length && idx === ranges[ranges.length - 1].end.idx + 1) {
+      ranges[ranges.length - 1].end = {idx, key: allKeys[idx]};
+    } else {
+      ranges.push({
+        start: {idx, key: allKeys[idx]},
+        end: {idx, key: allKeys[idx]},
+        value: PartitionState.SUCCESS,
+      });
+    }
+  }
+
+  return ranges;
+}
+
+// Returns true if the provided ranges span keyCount keys, indicating that they cover the entire key space.
+//
 function rangesCoverAll(ranges: Range[], keyCount: number) {
   let last = 0;
   for (const range of ranges) {
@@ -249,10 +422,11 @@ function rangesCoverAll(ranges: Range[], keyCount: number) {
   }
   return last === keyCount;
 }
+
 // Note: assetLastMaterializedAt is used as a "hint" - if the input value changes, it's
 // a sign that we should invalidate and reload previously loaded health stats. We don't
 // clear them immediately to avoid an empty state.
-
+//
 export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMaterializedAt = '') {
   const [result, setResult] = React.useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
   const client = useApolloClient();

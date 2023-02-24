@@ -329,13 +329,12 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
             <DimensionRangeWizard
               key={range.dimension.name}
               partitionKeys={range.dimension.partitionKeys}
-              partitionStateForKey={(dimensionKey) =>
-                mergedHealth.stateForSingleDimension(
+              health={{
+                ranges: mergedHealth.rangesForSingleDimension(
                   idx,
-                  dimensionKey,
-                  selections.length === 2 ? selections[1 - idx].selectedKeys : undefined,
-                )
-              }
+                  selections.length === 2 ? selections[1 - idx].selectedRanges : undefined,
+                ),
+              }}
               selected={range.selectedKeys}
               setSelected={(selectedKeys) =>
                 setSelections(

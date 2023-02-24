@@ -1,7 +1,14 @@
 import {PartitionState} from '../partitions/PartitionStatus';
 
 import {PartitionHealthQuery} from './types/usePartitionHealthData.types';
-import {buildPartitionHealthData} from './usePartitionHealthData';
+import {
+  Range,
+  buildPartitionHealthData,
+  PartitionDimensionSelectionRange,
+  partitionStatusGivenRanges,
+  rangeClippedToSelection,
+  rangesForKeys,
+} from './usePartitionHealthData';
 
 const {SUCCESS_MISSING, SUCCESS, MISSING} = PartitionState;
 
@@ -216,6 +223,18 @@ describe('usePartitionHealthData', () => {
 
       expect(assetHealth.stateForSingleDimension(0, '2022-01-01')).toEqual(MISSING);
       expect(assetHealth.stateForSingleDimension(0, '2022-01-04')).toEqual(SUCCESS);
+
+      expect(assetHealth.rangesForSingleDimension(0)).toEqual([
+        {
+          start: {idx: 3, key: '2022-01-04'},
+          end: {idx: 4, key: '2022-01-05'},
+          value: PartitionState.SUCCESS,
+        },
+      ]);
+
+      // should not crash if asked for an invalid dimension -- just return []
+      expect(assetHealth.rangesForSingleDimension(1)).toEqual([]);
+      expect(assetHealth.rangesForSingleDimension(2)).toEqual([]);
     });
 
     it('should return an object with accessors for 2D partition data', async () => {
@@ -246,15 +265,132 @@ describe('usePartitionHealthData', () => {
       expect(assetHealth.stateForSingleDimension(1, 'TN')).toEqual(SUCCESS_MISSING);
       expect(assetHealth.stateForSingleDimension(1, 'MN')).toEqual(SUCCESS);
       expect(assetHealth.stateForSingleDimension(1, 'TN', ['2022-01-04'])).toEqual(SUCCESS);
+
+      // Ask for the ranges of a row
+      expect(assetHealth.rangesForSingleDimension(0)).toEqual([
+        {
+          start: {idx: 0, key: '2022-01-01'},
+          end: {idx: 2, key: '2022-01-03'},
+          value: PartitionState.SUCCESS_MISSING,
+        },
+        {
+          start: {idx: 3, key: '2022-01-04'},
+          end: {idx: 3, key: '2022-01-04'},
+          value: PartitionState.SUCCESS,
+        },
+        {
+          start: {idx: 4, key: '2022-01-05'},
+          end: {idx: 5, key: '2022-01-06'},
+          value: PartitionState.SUCCESS_MISSING,
+        },
+      ]);
+
+      expect(
+        assetHealth.rangesForSingleDimension(0, [
+          [
+            {key: 'MN', idx: 4},
+            {key: 'MN', idx: 4},
+          ],
+        ]),
+      ).toEqual([
+        {
+          start: {idx: 0, key: '2022-01-01'},
+          end: {idx: 5, key: '2022-01-06'},
+          value: PartitionState.SUCCESS,
+        },
+      ]);
+
+      expect(
+        assetHealth.rangesForSingleDimension(0, [
+          [
+            {key: 'NY', idx: 3},
+            {key: 'MN', idx: 4},
+          ],
+        ]),
+      ).toEqual([
+        {
+          start: {idx: 0, key: '2022-01-01'},
+          end: {idx: 0, key: '2022-01-01'},
+          value: PartitionState.SUCCESS,
+        },
+        {
+          start: {idx: 1, key: '2022-01-02'},
+          end: {idx: 2, key: '2022-01-03'},
+          value: PartitionState.SUCCESS_MISSING,
+        },
+        {
+          start: {idx: 3, key: '2022-01-04'},
+          end: {idx: 3, key: '2022-01-04'},
+          value: PartitionState.SUCCESS,
+        },
+        {
+          start: {idx: 4, key: '2022-01-05'},
+          end: {idx: 5, key: '2022-01-06'},
+          value: PartitionState.SUCCESS_MISSING,
+        },
+      ]);
+
+      expect(assetHealth.rangesForSingleDimension(1)).toEqual([
+        {
+          start: {idx: 0, key: 'TN'},
+          end: {idx: 3, key: 'NY'},
+          value: PartitionState.SUCCESS_MISSING,
+        },
+        {
+          start: {idx: 4, key: 'MN'},
+          end: {idx: 4, key: 'MN'},
+          value: PartitionState.SUCCESS,
+        },
+      ]);
+
+      expect(
+        assetHealth.rangesForSingleDimension(1, [
+          [
+            {key: '2022-01-01', idx: 0},
+            {key: '2022-01-01', idx: 0},
+          ],
+        ]),
+      ).toEqual([
+        {
+          start: {idx: 3, key: 'NY'},
+          end: {idx: 4, key: 'MN'},
+          value: PartitionState.SUCCESS,
+        },
+      ]);
+
+      // should not crash if asked for an invalid dimension -- just return []
+      expect(assetHealth.rangesForSingleDimension(2)).toEqual([]);
     });
 
     it('should return correct data in all-missing states', async () => {
       const assetHealth = buildPartitionHealthData(TWO_DIMENSIONAL_ASSET_EMPTY, {path: ['asset']});
       expect(assetHealth.assetKey).toEqual({path: ['asset']});
+
       expect(assetHealth.stateForKey(['2022-01-01', 'TN'])).toEqual(MISSING);
       expect(assetHealth.stateForKey(['2022-01-04', 'NY'])).toEqual(MISSING);
+
       expect(assetHealth.stateForSingleDimension(0, '2022-01-03')).toEqual(MISSING);
       expect(assetHealth.stateForSingleDimension(1, 'TN')).toEqual(MISSING);
+
+      expect(assetHealth.rangesForSingleDimension(0)).toEqual([]);
+      expect(
+        assetHealth.rangesForSingleDimension(0, [
+          [
+            {key: 'NY', idx: 3},
+            {key: 'MN', idx: 4},
+          ],
+        ]),
+      ).toEqual([]);
+
+      expect(assetHealth.rangesForSingleDimension(1)).toEqual([]);
+      expect(
+        assetHealth.rangesForSingleDimension(1, [
+          [
+            {key: '2022-01-01', idx: 0},
+            {key: '2022-01-01', idx: 0},
+          ],
+        ]),
+      ).toEqual([]);
     });
 
     it('should return an object with accessors for 2D partition data where both are static', async () => {
@@ -280,6 +416,143 @@ describe('usePartitionHealthData', () => {
       // These should safely no-op
       expect(assetHealth.stateForKey(['2022-01-01'])).toEqual(MISSING);
       expect(assetHealth.stateForSingleDimension(0, '2022-01-01')).toEqual(MISSING);
+    });
+  });
+});
+
+const KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+
+const A_F: Range = {
+  start: {idx: 0, key: 'A'},
+  end: {idx: 5, key: 'F'},
+  value: PartitionState.SUCCESS,
+};
+const A_C: Range = {
+  start: {idx: 0, key: 'A'},
+  end: {key: 'C', idx: 2},
+  value: PartitionState.SUCCESS,
+};
+const A_I: Range = {
+  start: {idx: 0, key: 'A'},
+  end: {idx: 8, key: 'I'},
+  value: PartitionState.SUCCESS,
+};
+const B_E: Range = {
+  start: {idx: 1, key: 'B'},
+  end: {idx: 4, key: 'E'},
+  value: PartitionState.SUCCESS,
+};
+const G_I: Range = {
+  start: {idx: 6, key: 'G'},
+  end: {idx: 8, key: 'I'},
+  value: PartitionState.SUCCESS,
+};
+
+const SEL_A_C: PartitionDimensionSelectionRange = [
+  {key: 'A', idx: 0},
+  {key: 'C', idx: 2},
+];
+const SEL_A_D: PartitionDimensionSelectionRange = [
+  {key: 'A', idx: 0},
+  {key: 'D', idx: 3},
+];
+const SEL_C_D: PartitionDimensionSelectionRange = [
+  {key: 'C', idx: 2},
+  {key: 'D', idx: 3},
+];
+const SEL_E_G: PartitionDimensionSelectionRange = [
+  {key: 'E', idx: 4},
+  {key: 'G', idx: 6},
+];
+const SEL_G_G: PartitionDimensionSelectionRange = [
+  {key: 'G', idx: 6},
+  {key: 'G', idx: 6},
+];
+
+describe('usePartitionHealthData utilities', () => {
+  describe('partitionStatusGivenRanges', () => {
+    it('should return SUCCESS if the ranges span the total key count', () => {
+      expect(partitionStatusGivenRanges([A_I], KEYS.length)).toEqual(PartitionState.SUCCESS);
+      expect(partitionStatusGivenRanges([A_F, G_I], KEYS.length)).toEqual(PartitionState.SUCCESS);
+    });
+
+    it('should return SUCCESS_MISSING if the ranges are not empty', () => {
+      expect(partitionStatusGivenRanges([A_F], KEYS.length)).toEqual(
+        PartitionState.SUCCESS_MISSING,
+      );
+      expect(partitionStatusGivenRanges([G_I], KEYS.length)).toEqual(
+        PartitionState.SUCCESS_MISSING,
+      );
+    });
+
+    it('should return MISSING if the ranges are empty', () => {
+      expect(partitionStatusGivenRanges([], KEYS.length)).toEqual(PartitionState.MISSING);
+    });
+  });
+
+  describe('rangeClippedToSelection', () => {
+    it('should clip the range to a selection specifying one sub-section of it', () => {
+      expect(rangeClippedToSelection(B_E, [SEL_C_D])).toEqual([
+        {
+          start: {key: 'C', idx: 2},
+          end: {key: 'D', idx: 3},
+          value: PartitionState.SUCCESS,
+        },
+      ]);
+    });
+
+    it('should clip the range to a selection specifying one end of it', () => {
+      expect(rangeClippedToSelection(B_E, [SEL_A_D])).toEqual([
+        {
+          start: {key: 'B', idx: 1},
+          end: {key: 'D', idx: 3},
+          value: PartitionState.SUCCESS,
+        },
+      ]);
+    });
+
+    it('should clip the range to a selection specifying both ends but not the middle', () => {
+      expect(rangeClippedToSelection(B_E, [SEL_A_C, SEL_E_G])).toEqual([
+        {
+          start: {key: 'B', idx: 1},
+          end: {key: 'C', idx: 2},
+          value: PartitionState.SUCCESS,
+        },
+        {
+          start: {key: 'E', idx: 4},
+          end: {key: 'E', idx: 4},
+          value: PartitionState.SUCCESS,
+        },
+      ]);
+    });
+
+    it('should clip the range to a selection that does not overlap with the range at all', () => {
+      expect(rangeClippedToSelection(B_E, [SEL_G_G])).toEqual([]);
+    });
+
+    it('should not alter the input data', () => {
+      const before = JSON.stringify({B_E, SEL_A_D});
+      rangeClippedToSelection(B_E, [SEL_A_D]);
+      expect(JSON.stringify({B_E, SEL_A_D})).toEqual(before);
+    });
+  });
+
+  describe('rangesForKeys', () => {
+    it('should return a complete range given all dimension keys', () => {
+      expect(rangesForKeys(KEYS, KEYS)).toEqual([A_I]);
+    });
+    it('should return the correct result if `keys` is unsorted', () => {
+      expect(rangesForKeys(['A', 'C', 'B', 'D', 'F', 'G', 'I', 'H', 'E'], KEYS)).toEqual([A_I]);
+    });
+    it('should return several ranges if there are segments in `keys`', () => {
+      expect(rangesForKeys(['B', 'C', 'D', 'E'], KEYS)).toEqual([B_E]);
+      expect(rangesForKeys(['A', 'B', 'C', 'G', 'H', 'I'], KEYS)).toEqual([A_C, G_I]);
+      expect(rangesForKeys(['G'], KEYS)).toEqual([
+        {start: {idx: 6, key: 'G'}, end: {idx: 6, key: 'G'}, value: PartitionState.SUCCESS},
+      ]);
+    });
+    it('should return no ranges if no keys are provided', () => {
+      expect(rangesForKeys([], KEYS)).toEqual([]);
     });
   });
 });
