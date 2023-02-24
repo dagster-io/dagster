@@ -1,7 +1,6 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
-
-import {TestProvider} from '../testing/TestProvider';
+import {MemoryRouter} from 'react-router-dom';
 
 import {AssetNode} from './AssetNode';
 import {
@@ -21,13 +20,13 @@ describe('AssetNode', () => {
   Scenarios.forEach((scenario) =>
     it(`renders ${scenario.expectedText.join(',')} when ${scenario.title}`, async () => {
       render(
-        <TestProvider>
+        <MemoryRouter>
           <AssetNode
             definition={scenario.definition}
             liveData={scenario.liveData}
             selected={false}
           />
-        </TestProvider>,
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
