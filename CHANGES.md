@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.1.21 (core) / 0.17.21 (libraries)
+
+### Bugfixes
+
+- Fixed an issue where assets downstream of partitions were incorrectly always marked as stale.
+
 # 1.1.20 (core) / 0.17.20 (libraries)
 
 ### New
