@@ -1,7 +1,7 @@
 <div align="center">
   <!-- Note: Do not try adding the dark mode version here with the `picture` element, it will break formatting in PyPI -->
   <a target="_blank" href="https://dagster.io" style="background:none">
-    <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/dagster-readme-header.svg" width="auto" height="343">
+    <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/dagster-readme-header.svg" width="auto" height="100%">
   </a>
 <p style="text-align: center;">Remember to <a target="_blank" href="https://github.com/dagster-io/dagster">star the Dagster GitHub repo</a> for future reference.</p>
   <a target="_blank" href="https://github.com/dagster-io/dagster" style="background:none">
