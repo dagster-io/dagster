@@ -206,17 +206,14 @@ def topstories_word_cloud(context, topstories):
     plt.savefig(buffer, format="png")
     image_data = base64.b64encode(buffer.getvalue())
 
-		# Addition: Turn the image into Markdown to embed it into the metadata
+    # Addition: Turn the image into Markdown to embed it into the metadata
     md_content = f"![img](data:image/png;base64,{image_data.decode()})"
 
     # Addition: Attach the Markdown content as metadata to the asset
     return Output(value=image_data, metadata={
         "plot": MetadataValue.md(md_content)
     })
-
 ```
-
-For more information about metadata, refer to the [metadata documentation](/concepts/metadata).
 
 <Note>
   If your data is sensitive, such as PHI or PII, be careful and follow your
