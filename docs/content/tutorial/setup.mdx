@@ -8,28 +8,28 @@ description: Learn how to install Dagster and get started with the Dagster tutor
 To complete this tutorial, you'll need:
 
 - **To install Python and pip.** This tutorial assumes that you have some familiarity with Python, but you should be able to follow along even if you're coming from a different programming language. To check that Python and `pip` (Python's package manager) are already installed in your environment or install them, follow the instructions [here](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/).
-    
-    <DagsterVersion />
-    
+
+  {" "} <DagsterVersion />
+
 - To install Dagster, Dagit, and the packages you'll be using during this tutorial, run the follow command from your terminal:
-    
-    ```bash
-    pip install dagster dagit requests pandas matplotlib wordcloud dagster_duckdb dagster_duckdb_panda
-    ```
-    
-    This installs the following Python packages:
-    
-    - `dagster` is the command line interface (CLI) tool to run Dagster. For more information, refer to the [Dagster installation guide](/getting-started/install).
-    - `dagit` is the web-based UI for operating Dagster jobs, a library for your assets, a type-aware config editor, and a live execution interface
-    
-    It also installs packages that aren't necessary for every Dagster project but are used for this tutorial. You don't have to read up on them, but if you're curious:
-    
-    - `requests` will be used to download data from the internet
-    - `pandas` is a popular library for working with tabular data
-    - `matplotlib` makes it easy to make charts in Python
-    - `wordcloud` has utilities for text processing and making word clouds
-    - `dagster_duckdb` manages how Dagster can read and write to DuckDB, an in-memory data warehouse, similar to SQLite, that you'll use for this tutorial
-    - `dagster_duckdb_pandas` allows loading data from DuckDB into Pandas data frames
+
+  ```bash
+  pip install dagster dagit requests pandas matplotlib wordcloud dagster_duckdb dagster_duckdb_panda
+  ```
+
+  This installs the following Python packages:
+
+  - `dagster` is the command line interface (CLI) tool to run Dagster. For more information, refer to the [Dagster installation guide](/getting-started/install).
+  - `dagit` is the web-based UI for operating Dagster jobs, a library for your assets, a type-aware config editor, and a live execution interface
+
+  It also installs packages that aren't necessary for every Dagster project but are used for this tutorial. You don't have to read up on them, but if you're curious:
+
+  - `requests` will be used to download data from the internet
+  - `pandas` is a popular library for working with tabular data
+  - `matplotlib` makes it easy to make charts in Python
+  - `wordcloud` has utilities for text processing and making word clouds
+  - `dagster_duckdb` manages how Dagster can read and write to DuckDB, an in-memory data warehouse, similar to SQLite, that you'll use for this tutorial
+  - `dagster_duckdb_pandas` allows loading data from DuckDB into Pandas data frames
 
 ## Making your first Dagster project
 
@@ -37,9 +37,7 @@ To verify that your Dagster installation was successful, it's time for you to cr
 
 To create the project, run:
 
-```
-dagster project scaffold --name tutorial-project
-```
+    dagster project scaffold --name tutorial-project
 
 To verify that it worked and that you can run Dagster locally, run:
 
@@ -50,7 +48,7 @@ dagster dev
 
 Navigate to [localhost:3000](http://localhost:3000). You should see the Dagster UI. This command will run Dagster until you're ready to stop it. To stop the long-running process, press Control+C from the terminal that the process is running on.
 
-If you'd like an explanation of what files were made and why,  refer to the [Creating a new Dagster project guide](/getting-started/create-new-project#using-the-default-project-skeleton).
+If you'd like an explanation of what files were made and why, refer to the [Creating a new Dagster project guide](/getting-started/create-new-project#using-the-default-project-skeleton).
 
 ---
 
