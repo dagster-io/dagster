@@ -34,7 +34,7 @@ import {
   GetScheduleQueryVariables,
   ScheduleDryRunMutation,
   ScheduleDryRunMutationVariables,
-} from './types/EvaluateSchedule.types';
+} from './types/EvaluateScheduleDialog.types';
 
 const locale = navigator.language;
 
