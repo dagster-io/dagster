@@ -409,9 +409,6 @@ class TestEventLogStorage:
         # Whether the storage is allowed to watch the event log
         return True
 
-    def can_write_to_asset_key_table(self):
-        return True
-
     def test_event_log_storage_store_events_and_wipe(self, test_run_id, storage):
         assert len(storage.get_logs_for_run(test_run_id)) == 0
         storage.store_event(
@@ -2850,9 +2847,6 @@ class TestEventLogStorage:
             )
 
     def test_store_and_wipe_cached_status(self, storage, instance):
-        if not self.can_write_to_asset_key_table():
-            return
-
         asset_key = AssetKey("yay")
 
         @op
@@ -2875,6 +2869,15 @@ class TestEventLogStorage:
                 latest_storage_id=1,
                 partitions_def_id="foo",
                 serialized_materialized_partition_subset="bar",
+            )
+            storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
+
+            assert _get_cached_status_for_asset(storage, asset_key) == cache_value
+
+            cache_value = AssetStatusCacheValue(
+                latest_storage_id=1,
+                partitions_def_id=None,
+                serialized_materialized_partition_subset=None,
             )
             storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
 
