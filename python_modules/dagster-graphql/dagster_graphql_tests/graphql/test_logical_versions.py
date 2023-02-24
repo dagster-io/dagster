@@ -131,7 +131,7 @@ def test_partitioned_self_dep():
             assert result
             assert result.data
             assert _get_asset_node("a", result)["projectedLogicalVersion"] is None
-            assert _get_asset_node("b", result)["projectedLogicalVersion"] == "UNKNOWN"
+            assert _get_asset_node("b", result)["projectedLogicalVersion"] is None
 
 
 def _materialize_assets(
