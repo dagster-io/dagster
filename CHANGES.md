@@ -2,7 +2,6 @@
 
 # 1.1.20 (core) / 0.17.20 (libraries)
 
-
 ### New
 
 - The new `@graph_asset` and `@graph_multi_asset` decorators make it more ergonomic to define graph-backed assets.
@@ -14,16 +13,15 @@
 - [dagster-snowflake, dagster-duckdb] SnowflakeIOManagers and DuckDBIOManagers can now default to loading inputs as a specified type if a type annotation does not exist for the input.
 - [dagster-dbt] Added the ability to use the “state:” selector
 - [dagster-k8s] The Helm chart now supports the full kubernetes env var spec for Dagit and the Daemon. E.g.
-```
-dagit:
-    
-      env:
-        - name: “FOO”
-        - valueFrom:
-            fieldRef: 
-              fieldPath: metadata.uid
-    ```
-    
+
+  ```yaml
+  dagit:
+    env:
+    - name: “FOO”
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.uid
+  ```
 
 ### Bugfixes
 
@@ -39,7 +37,6 @@ dagit:
 - Updated contributor docs to reference our new toolchain (`ruff`, `pyright`).
 - (experimental) Documentation for the dynamic partitions definition is now added.
 - [dagster-snowflake] The Snowflake I/O Manager reference page now includes information on working with partitioned assets.
-
 
 # 1.1.19 (core) / 0.17.19 (libraries)
 
@@ -66,6 +63,7 @@ def send_emails(emails) -> None:
 def send_emails_job():
     send_emails(emails_to_send.to_source_asset())
 ```
+
 - Added a `--dagit-host/-h` argument to the `dagster dev` command to allow customization of the host where Dagit runs.
 - [dagster-snowflake, dagster-duckdb] Database I/O managers (Snowflake, DuckDB) now support static partitions, multi-partitions, and dynamic partitions.
 
