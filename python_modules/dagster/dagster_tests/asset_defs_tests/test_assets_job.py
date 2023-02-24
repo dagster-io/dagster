@@ -1,5 +1,6 @@
 import os
 import warnings
+from dagster._core.definitions.asset_selection import AssetSelection
 
 import pytest
 from dagster import (
@@ -1448,6 +1449,26 @@ def test_job_default_config_preserved_with_asset_subset():
     foo_job = define_asset_job("foo_job").resolve([asset_one, two, three], [])
 
     result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
+    assert result.success
+
+
+def test_empty_asset_job():
+    @asset
+    def a():
+        pass
+
+    @asset
+    def b(a):
+        pass
+
+    empty_selection = AssetSelection.keys("a", "b") - AssetSelection.keys("a", "b")
+    assert empty_selection.resolve([a, b]) == set()
+
+    empty_job = define_asset_job("empty_job", selection=empty_selection).resolve([a, b], [])
+    print(vars(empty_job))
+    assert empty_job.all_node_defs == []
+
+    result = empty_job.execute_in_process()
     assert result.success
 
 

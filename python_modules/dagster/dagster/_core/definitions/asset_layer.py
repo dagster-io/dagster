@@ -759,7 +759,7 @@ def build_asset_selection_job(
         build_source_asset_observation_job,
     )
 
-    if asset_selection:
+    if asset_selection is not None:
         (included_assets, excluded_assets) = _subset_assets_defs(assets, asset_selection)
         included_source_assets = _subset_source_assets(source_assets, asset_selection)
 
