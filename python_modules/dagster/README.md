@@ -92,9 +92,11 @@ This installs two modules:
 - **Dagster**: The core programming model.
 - **Dagit**: The web interface for developing and operating Dagster jobs and assets.
 
+Running on Using a Mac with an M1 or M2 chip? Check the [install details here](https://docs.dagster.io/getting-started/install#installing-dagster-into-an-existing-python-environment).
+
 ## Documentation
 
-You can find the full Dagster documentation [here](https://docs.dagster.io).
+You can find the full Dagster documentation [here](https://docs.dagster.io), including the ['getting started' guide](https://docs.dagster.io/getting-started).
 
 <hr/>
 
