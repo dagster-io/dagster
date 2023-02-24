@@ -1,7 +1,7 @@
-from dagster import op, job
+import pytest
+from dagster import job, op
 from dagster._config.structured_config import Config
 from pydantic import ValidationError, validator
-import pytest
 
 
 def test_validators_basic() -> None:
