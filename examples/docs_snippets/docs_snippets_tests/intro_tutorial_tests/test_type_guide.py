@@ -46,7 +46,9 @@ def test_basic_even_type():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(double_even, input_values={"num": 3})
 
-    assert not execute_solid(double_even, input_values={"num": 3}, raise_on_error=False).success
+    assert not execute_solid(
+        double_even, input_values={"num": 3}, raise_on_error=False
+    ).success
 
 
 def test_basic_even_type_no_annotations():
@@ -70,7 +72,9 @@ def test_basic_even_type_no_annotations():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(double_even, input_values={"num": 3})
 
-    assert not execute_solid(double_even, input_values={"num": 3}, raise_on_error=False).success
+    assert not execute_solid(
+        double_even, input_values={"num": 3}, raise_on_error=False
+    ).success
 
 
 def test_python_object_dagster_type():
