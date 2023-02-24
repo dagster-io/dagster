@@ -241,6 +241,20 @@ class PartitionsDefinition(ABC, Generic[T]):
     ) -> Sequence[Partition[T]]:
         ...
 
+    def get_partition(
+        self,
+        partition_key: str,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Partition:
+        for partition in self.get_partitions(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        ):
+            if partition.name == partition_key:
+                return partition
+
+        raise DagsterUnknownPartitionError(f"Could not find a partition with key `{partition_key}`")
+
     def __str__(self) -> str:
         joined_keys = ", ".join([f"'{key}'" for key in self.get_partition_keys()])
         return joined_keys
@@ -883,11 +897,9 @@ class PartitionSetDefinition(Generic[T]):
     def get_partition(
         self, name: str, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
     ) -> Partition[T]:
-        for partition in self.get_partitions(dynamic_partitions_store=dynamic_partitions_store):
-            if partition.name == name:
-                return partition
-
-        raise DagsterUnknownPartitionError(f"Could not find a partition with key `{name}`")
+        return self._partitions_def.get_partition(
+            name, dynamic_partitions_store=dynamic_partitions_store
+        )
 
     def get_partition_names(
         self,
