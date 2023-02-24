@@ -33,7 +33,6 @@ from .partition import (
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,
-    Partition,
 )
 from .time_window_partitions import TimeWindowPartitionsDefinition
 
@@ -219,7 +218,8 @@ class MultiPartitionsDefinition(PartitionsDefinition):
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Partition:
         if not isinstance(partition_key, MultiPartitionKey):
-            check.failed("get_partition can only be called with a MultiPartitionKey")
+            partition_key = self.get_partition_key_from_str(partition_key)
+        partition_key = cast(MultiPartitionKey, partition_key)
 
         if partition_key.keys_by_dimension.keys() != set(self.partition_dimension_names):
             raise DagsterUnknownPartitionError(
@@ -236,8 +236,8 @@ class MultiPartitionsDefinition(PartitionsDefinition):
             )
             if not partition:
                 check.failed(
-                    "Invalid partition key {partition_key}. The partition key does not exist in the"
-                    " partitions definition."
+                    f"Invalid partition key {partition_key}. The partition key does not exist in"
+                    " the partitions definition."
                 )
             partitions_by_dimension[dimension.name] = partition
 
