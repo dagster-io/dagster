@@ -93,6 +93,10 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       console.warn('[stateForKey] called with incorrect number of dimensions');
       return PartitionState.MISSING;
     }
+    if (dimensionKeys.length === 0) {
+      console.warn('[stateForKey] called with zero dimension keys');
+      return PartitionState.MISSING;
+    }
 
     const dIndexes = dimensionKeys.map((key, idx) => dimensions[idx].partitionKeys.indexOf(key));
     const d0Range = ranges.find((r) => r.start.idx <= dIndexes[0] && r.end.idx >= dIndexes[0]);
@@ -100,7 +104,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
     if (!d0Range) {
       return PartitionState.MISSING;
     }
-    if (!d0Range.subranges) {
+    if (!d0Range.subranges || dIndexes.length === 1) {
       return PartitionState.SUCCESS; // 1D case
     }
     const d1Range = d0Range.subranges.find(
@@ -166,6 +170,10 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
     otherDimensionSelectedRanges?: PartitionDimensionSelectionRange[] | undefined,
   ): Range[] => {
     if (dimensions.length === 0) {
+      return [];
+    }
+    if (dimensionIdx >= dimensions.length) {
+      console.warn('[rangesForSingleDimension] called with invalid dimension index');
       return [];
     }
 

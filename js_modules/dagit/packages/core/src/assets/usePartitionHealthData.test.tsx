@@ -231,6 +231,10 @@ describe('usePartitionHealthData', () => {
           value: PartitionState.SUCCESS,
         },
       ]);
+
+      // should not crash if asked for an invalid dimension -- just return []
+      expect(assetHealth.rangesForSingleDimension(1)).toEqual([]);
+      expect(assetHealth.rangesForSingleDimension(2)).toEqual([]);
     });
 
     it('should return an object with accessors for 2D partition data', async () => {
@@ -353,6 +357,9 @@ describe('usePartitionHealthData', () => {
           value: PartitionState.SUCCESS,
         },
       ]);
+
+      // should not crash if asked for an invalid dimension -- just return []
+      expect(assetHealth.rangesForSingleDimension(2)).toEqual([]);
     });
 
     it('should return correct data in all-missing states', async () => {

@@ -65,12 +65,17 @@ describe('multipartitioning support', () => {
       end: {idx: 8, key: 'I'},
       value: PartitionState.SUCCESS,
     };
+
     it('merges two [A...I] range set into one [A...I] range set', () => {
       expect(mergedRanges(KEYS, [[A_I], [A_I]])).toEqual([A_I]);
     });
 
     it('merges two [A...I] partial range sets into one [A...I] partial range set', () => {
       expect(mergedRanges(KEYS, [[A_I_Partial], [A_I_Partial]])).toEqual([A_I_Partial]);
+    });
+
+    it('does not throw errors if an empty set is passed', () => {
+      expect(mergedRanges(KEYS, [])).toEqual([]);
     });
 
     it('makes no modifications to a single range set', () => {

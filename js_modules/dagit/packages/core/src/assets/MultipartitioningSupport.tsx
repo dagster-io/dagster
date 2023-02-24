@@ -135,11 +135,11 @@ export function mergedRanges(allKeys: string[], rangeSets: Range[][]): Range[] {
 
 export function assembleRangesFromTransitions(
   allKeys: string[],
-  transitions: {idx: number; delta: number}[],
+  transitionsUnsorted: {idx: number; delta: number}[],
   maxOverlap: number,
 ) {
-  // sort the array
-  transitions.sort((a, b) => a.idx - b.idx);
+  // sort the input array, this algorithm does not work unless the transitions are in order
+  const transitions = [...transitionsUnsorted].sort((a, b) => a.idx - b.idx);
 
   // walk the transitions array and apply the transitions to a counter, creating an array of just the changes
   // in the number of currently-overlapping ranges. (eg: how many of the assets are materialized at this time).
