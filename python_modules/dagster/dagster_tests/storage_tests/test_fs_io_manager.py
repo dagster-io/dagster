@@ -547,10 +547,8 @@ def test_multipartitions_fs_io_manager():
 
 
 def test_backcompat_multipartitions_fs_io_manager():
-    path = file_relative_path(
-        __file__, "./compat_tests/backcompat_multipartitions_fs_io_manager/storage/"
-    )
-    with copy_directory(path) as test_dir:
+    src_dir = file_relative_path(__file__, "backcompat_multipartitions_fs_io_manager/storage")
+    with copy_directory(src_dir) as test_dir:
         io_manager_def = fs_io_manager.configured({"base_dir": test_dir})
 
         composite = MultiPartitionsDefinition(
