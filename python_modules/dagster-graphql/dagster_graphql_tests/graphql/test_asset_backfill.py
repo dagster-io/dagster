@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 from dagster import (
     AssetKey,
@@ -9,10 +9,18 @@ from dagster import (
     asset,
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.execution.asset_backfill import AssetBackfillData
+from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
-from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
+from dagster_graphql.test.utils import (
+    GqlResult,
+    define_out_of_process_context,
+    execute_dagster_graphql,
+)
 
 GET_PARTITION_BACKFILLS_QUERY = """
   query InstanceBackfillsQuery($cursor: String, $limit: Int) {
@@ -60,7 +68,7 @@ SINGLE_BACKFILL_QUERY = """
 """
 
 
-def get_repo():
+def get_repo() -> RepositoryDefinition:
     partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
     @asset(partitions_def=partitions_def)
@@ -74,7 +82,7 @@ def get_repo():
     return Definitions(assets=[asset1, asset2]).get_repository_def()
 
 
-def get_repo_with_non_partitioned_asset():
+def get_repo_with_non_partitioned_asset() -> RepositoryDefinition:
     partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
     @asset(partitions_def=partitions_def)
@@ -251,7 +259,7 @@ def test_launch_asset_backfill_with_non_partitioned_asset():
             assert AssetKey("asset2") not in target_subset.partitions_subsets_by_asset_key
 
 
-def get_daily_hourly_repo():
+def get_daily_hourly_repo() -> RepositoryDefinition:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
     def hourly():
         ...
@@ -314,7 +322,7 @@ def test_launch_asset_backfill_with_upstream_anchor_asset():
             assert backfill_results[0]["partitionNames"] is None
 
 
-def get_daily_two_hourly_repo():
+def get_daily_two_hourly_repo() -> RepositoryDefinition:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
     def hourly1():
         ...
@@ -372,7 +380,7 @@ def test_launch_asset_backfill_with_two_anchor_assets():
             )
 
 
-def get_daily_hourly_non_partitioned_repo():
+def get_daily_hourly_non_partitioned_repo() -> RepositoryDefinition:
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
     def hourly():
         ...
@@ -428,7 +436,9 @@ def test_launch_asset_backfill_with_upstream_anchor_asset_and_non_partitioned_as
             )
 
 
-def _get_backfill_data(launch_backfill_result, instance, repo):
+def _get_backfill_data(
+    launch_backfill_result: GqlResult, instance: DagsterInstance, repo
+) -> Tuple[str, AssetBackfillData]:
     assert launch_backfill_result
     assert launch_backfill_result.data
     assert (
@@ -448,7 +458,7 @@ def _get_backfill_data(launch_backfill_result, instance, repo):
     )
 
 
-def _get_error_message(launch_backfill_result) -> Optional[str]:
+def _get_error_message(launch_backfill_result: GqlResult) -> Optional[str]:
     return (
         (
             "".join(launch_backfill_result.data["launchPartitionBackfill"]["stack"])

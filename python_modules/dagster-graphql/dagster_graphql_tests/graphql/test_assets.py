@@ -1,7 +1,7 @@
 import datetime
 import os
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 from dagster import (
     AssetKey,
@@ -17,14 +17,18 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
 )
 from dagster_graphql.test.utils import (
+    GqlAssetKey,
+    GqlTag,
     define_out_of_process_context,
     execute_dagster_graphql,
     infer_job_or_pipeline_selector,
@@ -32,7 +36,6 @@ from dagster_graphql.test.utils import (
     infer_repository_selector,
 )
 
-# from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     AllRepositoryGraphQLContextTestMatrix,
     ExecutingGraphQLContextTestMatrix,
@@ -527,8 +530,13 @@ BATCH_LOAD_ASSETS = """
 
 
 def _create_run(
-    graphql_context, pipeline_name, mode="default", step_keys=None, asset_selection=None, tags=None
-):
+    graphql_context: WorkspaceRequestContext,
+    pipeline_name: str,
+    mode: str = "default",
+    step_keys: Optional[Sequence[str]] = None,
+    asset_selection: Optional[Sequence[GqlAssetKey]] = None,
+    tags: Optional[Sequence[GqlTag]] = None,
+) -> str:
     if asset_selection:
         selector = infer_job_or_pipeline_selector(
             graphql_context, pipeline_name, asset_selection=asset_selection
@@ -559,7 +567,7 @@ def _create_run(
 
 
 def _create_partitioned_run(
-    graphql_context,
+    graphql_context: WorkspaceRequestContext,
     job_name: str,
     partition_key: str,
     asset_selection: Optional[List[AssetKey]] = None,
@@ -597,14 +605,16 @@ def _create_partitioned_run(
     )
 
 
-def _get_sorted_materialization_events(graphql_context, run_id):
+def _get_sorted_materialization_events(
+    graphql_context: WorkspaceRequestContext, run_id: str
+) -> Sequence[EventLogEntry]:
     return sorted(
         [
             event
             for event in graphql_context.instance.all_logs(run_id=run_id)
             if event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
         ],
-        key=lambda event: event.get_dagster_event().asset_key,
+        key=lambda event: event.get_dagster_event().asset_key,  # type: ignore  # (possible none)
     )
 
 
