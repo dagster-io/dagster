@@ -132,6 +132,9 @@ query PipelineRunsRootQuery($filter: RunsFilter!) {
     ... on PipelineRuns {
       results {
         runId
+        hasReExecutePermission
+        hasTerminatePermission
+        hasDeletePermission
       }
     }
   }
@@ -255,6 +258,16 @@ class TestDeleteRunReadonly(ReadonlyGraphQLContextTestMatrix):
         )
 
         assert result.data["deletePipelineRun"]["__typename"] == "UnauthorizedError"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            FILTERED_RUN_QUERY,
+            variables={"filter": {"runIds": [run_id]}},
+        )
+        run_response = result.data["pipelineRunsOrError"]["results"][0]
+        assert run_response["hasReExecutePermission"] is False
+        assert run_response["hasTerminatePermission"] is False
+        assert run_response["hasDeletePermission"] is False
 
 
 class TestGetRuns(ExecutingGraphQLContextTestMatrix):
@@ -675,6 +688,11 @@ def test_filtered_runs():
             run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_1
+
+            run_response = result.data["pipelineRunsOrError"]["results"][0]
+            assert run_response["hasReExecutePermission"] is True
+            assert run_response["hasTerminatePermission"] is True
+            assert run_response["hasDeletePermission"] is True
 
             result = execute_dagster_graphql(
                 context,

@@ -3,6 +3,7 @@ import graphene
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG
+from dagster._core.workspace.permissions import Permissions
 
 from ..implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
@@ -119,6 +120,8 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     partitionStatusCounts = non_null_list(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatusCounts"
     )
+
+    hasCancelPermission = graphene.NonNull(graphene.Boolean)
 
     def __init__(self, backfill_job):
         self._backfill_job = check.opt_inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -242,6 +245,14 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         if self._backfill_job.error:
             return GraphenePythonError(self._backfill_job.error)
         return None
+
+    def resolve_hasCancelPermission(self, graphene_info):
+        if self._backfill_job.partition_set_origin is None:
+            return graphene_info.context.has_permission(Permissions.CANCEL_PARTITION_BACKFILL)
+        location_name = self._backfill_job.partition_set_origin.selector.location_name
+        return graphene_info.context.has_permission_for_location(
+            Permissions.CANCEL_PARTITION_BACKFILL, location_name
+        )
 
 
 class GraphenePartitionBackfillOrError(graphene.Union):

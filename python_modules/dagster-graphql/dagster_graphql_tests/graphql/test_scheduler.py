@@ -114,6 +114,8 @@ query getScheduleState($scheduleSelector: ScheduleSelector!) {
         id
         selectorId
         status
+        hasStartPermission
+        hasStopPermission
       }
     }
   }
@@ -801,6 +803,9 @@ def test_start_schedule_with_default_status(graphql_context):
 
     assert result.data["scheduleOrError"]["scheduleState"]["status"] == "RUNNING"
 
+    assert result.data["scheduleOrError"]["scheduleState"]["hasStartPermission"] is True
+    assert result.data["scheduleOrError"]["scheduleState"]["hasStopPermission"] is True
+
     # Start a single schedule
     start_result = execute_dagster_graphql(
         graphql_context,
@@ -868,6 +873,9 @@ class TestSchedulePermissions(ReadonlyGraphQLContextTestMatrix):
             GET_SCHEDULE_STATE_QUERY,
             variables={"scheduleSelector": schedule_selector},
         )
+
+        assert result.data["scheduleOrError"]["scheduleState"]["hasStartPermission"] is False
+        assert result.data["scheduleOrError"]["scheduleState"]["hasStopPermission"] is False
 
         schedule_origin_id = result.data["scheduleOrError"]["scheduleState"]["id"]
         schedule_selector_id = result.data["scheduleOrError"]["scheduleState"]["selectorId"]

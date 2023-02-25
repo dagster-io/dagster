@@ -39,6 +39,7 @@ PARTITION_PROGRESS_QUERY = """
             runStatus
           }
         }
+        hasCancelPermission
       }
       ... on PythonError {
         message
@@ -178,6 +179,18 @@ class TestPartitionBackillReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
         assert result.data
         assert result.data["cancelPartitionBackfill"]["__typename"] == "UnauthorizedError"
 
+    def test_no_cancel_permission(self, graphql_context):
+        backfill_id = self._create_backfill(graphql_context)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            PARTITION_PROGRESS_QUERY,
+            variables={"backfillId": backfill_id},
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["hasCancelPermission"] is False
+
     def test_resume_backfill_failure(self, graphql_context):
         backfill_id = self._create_backfill(graphql_context)
 
@@ -225,6 +238,8 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
         assert result.data["partitionBackfillOrError"]["numCancelable"] == 2
+        assert result.data["partitionBackfillOrError"]["hasCancelPermission"] is True
+
         assert len(result.data["partitionBackfillOrError"]["partitionNames"]) == 2
 
     def test_get_partition_backfills(self, graphql_context):

@@ -1496,6 +1496,8 @@ export type InstigationSelector = {
 
 export type InstigationState = {
   __typename: 'InstigationState';
+  hasStartPermission: Scalars['Boolean'];
+  hasStopPermission: Scalars['Boolean'];
   id: Scalars['ID'];
   instigationType: InstigationType;
   name: Scalars['String'];
@@ -2151,6 +2153,7 @@ export type PartitionBackfill = {
   backfillId: Scalars['String'];
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
+  hasCancelPermission: Scalars['Boolean'];
   isValidSerialization: Scalars['Boolean'];
   numCancelable: Scalars['Int'];
   numPartitions: Scalars['Int'];
@@ -2868,6 +2871,9 @@ export type Run = PipelineRun & {
   endTime: Maybe<Scalars['Float']>;
   eventConnection: EventConnection;
   executionPlan: Maybe<ExecutionPlan>;
+  hasDeletePermission: Scalars['Boolean'];
+  hasReExecutePermission: Scalars['Boolean'];
+  hasTerminatePermission: Scalars['Boolean'];
   id: Scalars['ID'];
   jobName: Scalars['String'];
   mode: Scalars['String'];
