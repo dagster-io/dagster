@@ -1,27 +1,56 @@
 import asyncio
 from contextlib import contextmanager
+from typing import Any, Dict, Iterator, Mapping, Optional, Protocol, Sequence
 
 import dagster._check as check
+from dagster._core.host_representation.external import ExternalRepository
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import wait_for_runs_to_finish
-from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
+from typing_extensions import TypeAlias, TypedDict
 
 from dagster_graphql.schema import create_schema
 
 
-def main_repo_location_name():
+class GqlResult(Protocol):
+    @property
+    def data(self) -> Mapping[str, Any]:
+        ...
+
+    @property
+    def errors(self) -> Optional[Sequence[str]]:
+        ...
+
+
+Selector: TypeAlias = Dict[str, Any]
+
+GqlVariables: TypeAlias = Mapping[str, Any]
+
+
+class GqlTag(TypedDict):
+    key: str
+    value: str
+
+
+class GqlAssetKey(TypedDict):
+    path: Sequence[str]
+
+
+def main_repo_location_name() -> str:
     return "test_location"
 
 
-def main_repo_name():
+def main_repo_name() -> str:
     return "test_repo"
 
 
 SCHEMA = create_schema()
 
 
-def execute_dagster_graphql(context, query, variables=None):
+def execute_dagster_graphql(
+    context: WorkspaceRequestContext, query: str, variables: Optional[GqlVariables] = None
+) -> GqlResult:
     result = SCHEMA.execute(
         query,
         context_value=context,
@@ -39,10 +68,10 @@ def execute_dagster_graphql(context, query, variables=None):
 
 
 def execute_dagster_graphql_subscription(
-    context,
-    query,
-    variables=None,
-):
+    context: WorkspaceRequestContext,
+    query: str,
+    variables: Optional[GqlVariables] = None,
+) -> Sequence[GqlResult]:
     results = []
 
     subscription = SCHEMA.subscribe(
@@ -63,14 +92,18 @@ def execute_dagster_graphql_subscription(
     return results
 
 
-def execute_dagster_graphql_and_finish_runs(context, query, variables=None):
+def execute_dagster_graphql_and_finish_runs(
+    context: WorkspaceRequestContext, query: str, variables: Optional[GqlVariables] = None
+) -> GqlResult:
     result = execute_dagster_graphql(context, query, variables)
     wait_for_runs_to_finish(context.instance, timeout=30)
     return result
 
 
 @contextmanager
-def define_out_of_process_context(python_file, fn_name, instance, read_only=False):
+def define_out_of_process_context(
+    python_file: str, fn_name: str, instance: DagsterInstance, read_only: bool = False
+) -> Iterator[WorkspaceRequestContext]:
     check.inst_param(instance, "instance", DagsterInstance)
 
     with define_out_of_process_workspace(
@@ -79,7 +112,9 @@ def define_out_of_process_context(python_file, fn_name, instance, read_only=Fals
         yield workspace_process_context.create_request_context()
 
 
-def define_out_of_process_workspace(python_file, fn_name, instance, read_only=False):
+def define_out_of_process_workspace(
+    python_file: str, fn_name: str, instance: DagsterInstance, read_only: bool = False
+) -> WorkspaceProcessContext:
     return WorkspaceProcessContext(
         instance,
         PythonFileTarget(
@@ -93,7 +128,7 @@ def define_out_of_process_workspace(python_file, fn_name, instance, read_only=Fa
     )
 
 
-def infer_repository(graphql_context):
+def infer_repository(graphql_context: WorkspaceRequestContext) -> ExternalRepository:
     if len(graphql_context.code_locations) == 1:
         # This is to account for having a single in process repository
         code_location = graphql_context.code_locations[0]
@@ -105,7 +140,7 @@ def infer_repository(graphql_context):
     return code_location.get_repository("test_repo")
 
 
-def infer_repository_selector(graphql_context):
+def infer_repository_selector(graphql_context: WorkspaceRequestContext) -> Selector:
     if len(graphql_context.code_locations) == 1:
         # This is to account for having a single in process repository
         code_location = graphql_context.code_locations[0]
@@ -123,11 +158,11 @@ def infer_repository_selector(graphql_context):
 
 
 def infer_job_or_pipeline_selector(
-    graphql_context,
-    pipeline_name,
-    solid_selection=None,
-    asset_selection=None,
-):
+    graphql_context: WorkspaceRequestContext,
+    pipeline_name: str,
+    solid_selection: Optional[Sequence[str]] = None,
+    asset_selection: Optional[Sequence[GqlAssetKey]] = None,
+) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector.update(
         {
@@ -140,10 +175,10 @@ def infer_job_or_pipeline_selector(
 
 
 def infer_pipeline_selector(
-    graphql_context,
-    pipeline_name,
-    solid_selection=None,
-):
+    graphql_context: WorkspaceRequestContext,
+    pipeline_name: str,
+    solid_selection: Optional[Sequence[str]] = None,
+) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector.update(
         {
@@ -154,25 +189,27 @@ def infer_pipeline_selector(
     return selector
 
 
-def infer_schedule_selector(graphql_context, schedule_name):
+def infer_schedule_selector(
+    graphql_context: WorkspaceRequestContext, schedule_name: str
+) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector.update({"scheduleName": schedule_name})
     return selector
 
 
-def infer_sensor_selector(graphql_context, sensor_name):
+def infer_sensor_selector(graphql_context: WorkspaceRequestContext, sensor_name: str) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector.update({"sensorName": sensor_name})
     return selector
 
 
-def infer_instigation_selector(graphql_context, name):
+def infer_instigation_selector(graphql_context: WorkspaceRequestContext, name: str) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector.update({"name": name})
     return selector
 
 
-def infer_resource_selector(graphql_context, name):
+def infer_resource_selector(graphql_context: WorkspaceRequestContext, name: str) -> Selector:
     selector = infer_repository_selector(graphql_context)
     selector = {**selector, **{"resourceName": name}}
     return selector

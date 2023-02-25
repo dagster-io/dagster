@@ -32590,7 +32590,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
             "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
-            "name": "a_solid_with_map_config",
+            "name": "op_with_map_config",
             "type_key": "Shape.2a97511a3ef8f50ab932d400ae5d21f27aff16ab"
           },
           {
@@ -33033,8 +33033,8 @@ snapshots['test_all_snapshot_ids 17'] = '''{
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
         "is_dynamic_mapped": false,
-        "solid_def_name": "a_solid_with_map_config",
-        "solid_name": "a_solid_with_map_config",
+        "solid_def_name": "op_with_map_config",
+        "solid_name": "op_with_map_config",
         "tags": {}
       },
       {
@@ -33108,7 +33108,7 @@ snapshots['test_all_snapshot_ids 17'] = '''{
         },
         "description": null,
         "input_def_snaps": [],
-        "name": "a_solid_with_map_config",
+        "name": "op_with_map_config",
         "output_def_snaps": [
           {
             "__class__": "OutputDefSnap",
@@ -66295,7 +66295,7 @@ snapshots['test_all_snapshot_ids 65'] = '''{
             "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
-            "name": "a_solid_with_three_field_config",
+            "name": "op_with_three_field_config",
             "type_key": "Shape.5709d1127ac33b4adedc66258e34f81c25df9189"
           },
           {
@@ -66637,8 +66637,8 @@ snapshots['test_all_snapshot_ids 65'] = '''{
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
         "is_dynamic_mapped": false,
-        "solid_def_name": "a_solid_with_three_field_config",
-        "solid_name": "a_solid_with_three_field_config",
+        "solid_def_name": "op_with_three_field_config",
+        "solid_name": "op_with_three_field_config",
         "tags": {}
       },
       {
@@ -66712,7 +66712,7 @@ snapshots['test_all_snapshot_ids 65'] = '''{
         },
         "description": null,
         "input_def_snaps": [],
-        "name": "a_solid_with_three_field_config",
+        "name": "op_with_three_field_config",
         "output_def_snaps": [
           {
             "__class__": "OutputDefSnap",
@@ -67618,7 +67618,7 @@ snapshots['test_all_snapshot_ids 67'] = '''{
             "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
-            "name": "a_solid_with_multilayered_config",
+            "name": "op_with_multilayered_config",
             "type_key": "Shape.15ac78f309795f7a9d95c864cb9d10865728fab3"
           }
         ],
@@ -67957,8 +67957,8 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
         "is_dynamic_mapped": false,
-        "solid_def_name": "a_solid_with_multilayered_config",
-        "solid_name": "a_solid_with_multilayered_config",
+        "solid_def_name": "op_with_multilayered_config",
+        "solid_name": "op_with_multilayered_config",
         "tags": {}
       }
     ]
@@ -68024,7 +68024,7 @@ snapshots['test_all_snapshot_ids 67'] = '''{
         },
         "description": null,
         "input_def_snaps": [],
-        "name": "a_solid_with_multilayered_config",
+        "name": "op_with_multilayered_config",
         "output_def_snaps": [],
         "required_resource_keys": [],
         "tags": {}

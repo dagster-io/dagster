@@ -76,7 +76,7 @@ QueuedRunCoordinatorTestSuite: Any = make_graphql_context_test_suite(
 
 class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
     def test_cancel_queued_run(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
+        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -107,7 +107,7 @@ class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
             ), str(result.data)
 
     def test_force_cancel_queued_run(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
+        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -169,7 +169,7 @@ class TestTerminationReadonly(ReadonlyGraphQLContextTestMatrix):
 
 class TestRunVariantTermination(RunTerminationTestSuite):
     def test_basic_termination(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
+        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -202,7 +202,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
             assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
     def test_force_termination(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
+        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -260,7 +260,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
         ],
     )
     def test_terminate_failed(self, graphql_context, new_terminate_method, terminate_result):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
+        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             old_terminate = graphql_context.instance.run_launcher.terminate
             graphql_context.instance.run_launcher.terminate = new_terminate_method
@@ -322,7 +322,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
         pipeline = ReconstructableRepository.for_file(
             file_relative_path(__file__, "repo.py"),
             "test_repo",
-        ).get_reconstructable_pipeline("noop_pipeline")
+        ).get_reconstructable_pipeline("noop_job")
 
         pipeline_result = execute_pipeline(pipeline, instance=instance)
         assert pipeline_result.success
@@ -359,7 +359,7 @@ class TestRunVariantTermination(RunTerminationTestSuite):
         )
 
     def test_backcompat_termination(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
+        selector = infer_pipeline_selector(graphql_context, "infinite_loop_job")
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,

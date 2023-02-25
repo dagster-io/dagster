@@ -7,7 +7,7 @@ from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from ..graphql.graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from ..graphql.repo import csv_hello_world_solids_config
+from ..graphql.repo import csv_hello_world_ops_config
 from .conftest import MockClient, python_client_test_suite
 
 
@@ -62,7 +62,7 @@ class TestGetRunStatusWithClient(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": csv_hello_world_solids_config(),
+                    "runConfigData": csv_hello_world_ops_config(),
                     "mode": "default",
                 }
             },

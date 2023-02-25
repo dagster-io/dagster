@@ -1,11 +1,12 @@
 import time
 
-from dagster import repository
-from dagster._core.definitions.decorators import op
+from dagster import job, op, repository
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import PresetDefinition, pipeline
-from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    execute_dagster_graphql,
+)
 
 RUNS_QUERY = """
 query RunsQuery {
@@ -152,37 +153,10 @@ mutation ExecutePipeline(
 }
 """
 
-LAUNCH_PIPELINE_PRESET = """
-mutation ExecutePipeline(
-  $repositoryLocationName: String!
-  $repositoryName: String!
-  $pipelineName: String!
-  $presetName: String!
-) {
-  launchPipelineExecution(
-    executionParams: {
-      selector: {
-        repositoryLocationName: $repositoryLocationName
-        repositoryName: $repositoryName
-        pipelineName: $pipelineName
-      }
-      preset: $presetName
-    }
-  ) {
-    __typename
-    ... on LaunchPipelineRunSuccess {
-      run {
-        runId
-      }
-    }
-  }
-}
-"""
-
 
 def get_repo():
     @op
-    def my_solid():
+    def my_op():
         pass
 
     @op
@@ -190,17 +164,17 @@ def get_repo():
         while True:
             time.sleep(0.1)
 
-    @pipeline
-    def infinite_loop_pipeline():
+    @job
+    def infinite_loop_job():
         loop()
 
-    @pipeline(preset_defs=[PresetDefinition(name="my_preset", run_config={})])
-    def foo_pipeline():
-        my_solid()
+    @job
+    def foo_job():
+        my_op()
 
     @repository
     def my_repo():
-        return [infinite_loop_pipeline, foo_pipeline]
+        return [infinite_loop_job, foo_job]
 
     return my_repo
 
@@ -209,10 +183,10 @@ def test_runs_query():
     with instance_for_test() as instance:
         repo = get_repo()
         run_id_1 = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.STARTED
+            repo.get_pipeline("foo_job"), status=DagsterRunStatus.STARTED
         ).run_id
         run_id_2 = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.FAILURE
+            repo.get_pipeline("foo_job"), status=DagsterRunStatus.FAILURE
         ).run_id
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             result = execute_dagster_graphql(context, RUNS_QUERY)
@@ -227,13 +201,13 @@ def test_paginated_runs_query():
     with instance_for_test() as instance:
         repo = get_repo()
         _ = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.STARTED
+            repo.get_pipeline("foo_job"), status=DagsterRunStatus.STARTED
         ).run_id
         run_id_2 = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.FAILURE
+            repo.get_pipeline("foo_job"), status=DagsterRunStatus.FAILURE
         ).run_id
         run_id_3 = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.SUCCESS
+            repo.get_pipeline("foo_job"), status=DagsterRunStatus.SUCCESS
         ).run_id
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             result = execute_dagster_graphql(
@@ -251,13 +225,13 @@ def test_filtered_runs_query():
     with instance_for_test() as instance:
         repo = get_repo()
         _ = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.STARTED
+            repo.get_pipeline("foo_job"), status=DagsterRunStatus.STARTED
         ).run_id
         run_id_2 = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.FAILURE
+            repo.get_pipeline("foo_job"), status=DagsterRunStatus.FAILURE
         ).run_id
         _ = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=DagsterRunStatus.SUCCESS
+            repo.get_pipeline("foo_job"), status=DagsterRunStatus.SUCCESS
         ).run_id
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             result = execute_dagster_graphql(context, FILTERED_RUNS_QUERY)
@@ -304,7 +278,7 @@ def test_launch_mutation():
                 variables={
                     "repositoryLocationName": "test_location",
                     "repositoryName": "my_repo",
-                    "pipelineName": "foo_pipeline",
+                    "pipelineName": "foo_job",
                     "runConfigData": {},
                     "mode": "default",
                 },
@@ -325,7 +299,7 @@ def test_launch_mutation_error():
                 variables={
                     "repositoryLocationName": "test_location",
                     "repositoryName": "my_repo",
-                    "pipelineName": "foo_pipeline",
+                    "pipelineName": "foo_job",
                     "runConfigData": {"invalid": "config"},
                     "mode": "default",
                 },
@@ -336,23 +310,3 @@ def test_launch_mutation_error():
             assert len(errors) == 1
             message = errors[0]["message"]
             assert message
-
-
-def test_launch_preset_mutation():
-    with instance_for_test() as instance:
-        with define_out_of_process_context(__file__, "get_repo", instance) as context:
-            result = execute_dagster_graphql(
-                context,
-                LAUNCH_PIPELINE_PRESET,
-                variables={
-                    "repositoryLocationName": "test_location",
-                    "repositoryName": "my_repo",
-                    "pipelineName": "foo_pipeline",
-                    "presetName": "my_preset",
-                },
-            )
-            assert not result.errors
-            assert result.data
-            run = result.data["launchPipelineExecution"]["run"]
-            assert run
-            assert run["runId"]

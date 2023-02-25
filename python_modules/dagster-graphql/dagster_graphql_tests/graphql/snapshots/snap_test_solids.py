@@ -29,7 +29,7 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'a_solid_with_map_config'
+                    'name': 'op_with_map_config'
                 },
                 'invocations': [
                     {
@@ -37,7 +37,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'config_with_map'
                         },
                         'solidHandle': {
-                            'handleID': 'a_solid_with_map_config'
+                            'handleID': 'op_with_map_config'
                         }
                     }
                 ]
@@ -45,7 +45,7 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'a_solid_with_multilayered_config'
+                    'name': 'op_with_multilayered_config'
                 },
                 'invocations': [
                     {
@@ -53,7 +53,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'more_complicated_nested_config'
                         },
                         'solidHandle': {
-                            'handleID': 'a_solid_with_multilayered_config'
+                            'handleID': 'op_with_multilayered_config'
                         }
                     }
                 ]
@@ -61,7 +61,7 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
-                    'name': 'a_solid_with_three_field_config'
+                    'name': 'op_with_three_field_config'
                 },
                 'invocations': [
                     {
@@ -69,7 +69,7 @@ snapshots['test_query_all_solids 1'] = {
                             'name': 'more_complicated_config'
                         },
                         'solidHandle': {
-                            'handleID': 'a_solid_with_three_field_config'
+                            'handleID': 'op_with_three_field_config'
                         }
                     }
                 ]

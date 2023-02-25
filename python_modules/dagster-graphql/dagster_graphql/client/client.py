@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 
 import dagster._check as check
 import requests.exceptions
@@ -120,10 +120,10 @@ class DagsterGraphQLClient:
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
         run_config: Optional[Mapping[str, Any]] = None,
-        mode: Optional[str] = None,
+        mode: str = "default",
         preset: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
-        solid_selection: Optional[List[str]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         is_using_job_op_graph_apis: Optional[bool] = False,
     ):
         check.opt_str_param(repository_location_name, "repository_location_name")
@@ -220,10 +220,10 @@ class DagsterGraphQLClient:
         repository_location_name: Optional[str] = None,
         repository_name: Optional[str] = None,
         run_config: Optional[Any] = None,
-        mode: Optional[str] = None,
+        mode: str = "default",
         preset: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
-        solid_selection: Optional[List[str]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
     ) -> str:
         """Submits a Pipeline with attached configuration for execution.
 

@@ -1,9 +1,6 @@
 from time import sleep
 
-from dagster import Field, In, Int, List, Out, Output
-from dagster._core.definitions import op
-from dagster._core.test_utils import default_mode_def_for_test
-from dagster._legacy import PresetDefinition, pipeline
+from dagster import Field, In, Int, List, Out, Output, job, op
 
 
 @op(
@@ -54,23 +51,10 @@ def total(_, in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4
 
 
-@pipeline(
-    description=(
-        "Demo diamond-shaped pipeline that has four-path parallel structure of solids.  Execute "
-        "with the `multi` preset to take advantage of multi-process parallelism."
-    ),
-    preset_defs=[
-        PresetDefinition(
-            "multi",
-            {
-                "execution": {"multiprocess": {}},
-                "solids": {"giver": {"config": [2, 2, 2, 2]}},
-            },
-        )
-    ],
-    mode_defs=[default_mode_def_for_test],
+@job(
+    description="Demo diamond-shaped job that has four-path parallel structure of ops.",
 )
-def sleepy_pipeline():
+def sleepy_job():
     giver_res = giver()
 
     total(
