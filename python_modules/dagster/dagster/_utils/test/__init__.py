@@ -399,7 +399,7 @@ def execute_solid(
 def copy_directory(src):
     with tempfile.TemporaryDirectory() as temp_dir:
         dst = os.path.join(temp_dir, os.path.basename(src))
-        shutil.copytree(src, dst)
+        shutil.copytree(src, dst, dirs_exist_ok=True)
         yield dst
 
 
