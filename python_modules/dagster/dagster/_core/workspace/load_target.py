@@ -4,6 +4,7 @@ from typing import NamedTuple, Optional, Sequence
 
 import tomli
 
+import dagster._check as check
 from dagster._core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -49,12 +50,29 @@ def get_origins_from_toml(path: str) -> Sequence[ManagedGrpcPythonEnvRepositoryL
 
         dagster_block = data.get("tool", {}).get("dagster", {})
         if "module_name" in dagster_block:
-            return ModuleTarget(
-                module_name=dagster_block["module_name"],
-                attribute=None,
-                working_directory=os.getcwd(),
-                location_name=None,
-            ).create_origins()
+            module_names = dagster_block["module_name"]
+            if isinstance(module_names, str):
+                return ModuleTarget(
+                    module_name=module_names,
+                    attribute=None,
+                    working_directory=os.getcwd(),
+                    location_name=None,
+                ).create_origins()
+            elif isinstance(module_names, list):
+                check.is_list(module_names, of_type=str)
+
+                return CompositeTarget(
+                    targets=[
+                        ModuleTarget(
+                            module_name=module_name,
+                            attribute=None,
+                            working_directory=os.getcwd(),
+                            location_name=None,
+                        )
+                        for module_name in module_names
+                    ]
+                ).create_origins()
+
         return []
 
 
