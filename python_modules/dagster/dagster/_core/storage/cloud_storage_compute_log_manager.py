@@ -10,6 +10,7 @@ from typing import IO, Iterator, Optional, Sequence, Union
 from typing_extensions import TypeAlias
 
 from dagster import _check as check
+from dagster._core.instance import T_DagsterInstance
 from dagster._core.storage.captured_log_manager import (
     CapturedLogContext,
     CapturedLogData,
@@ -34,7 +35,7 @@ SUBSCRIPTION_POLLING_INTERVAL = 5
 LogSubscription: TypeAlias = Union[CapturedLogSubscription, ComputeLogSubscription]
 
 
-class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager):
+class CloudStorageComputeLogManager(CapturedLogManager, ComputeLogManager[T_DagsterInstance]):
     """Abstract class that uses the local compute log manager to capture logs and stores them in
     remote cloud storage.
     """
