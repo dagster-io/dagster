@@ -71,6 +71,7 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
         poll_interval=0.1,
         poll_timeout=10,
         infer_missing_tables=infer_missing_tables,
+        op_tags=op_tags,
     )
 
     # expect the multi asset to have one asset key and one output for each specified asset key
