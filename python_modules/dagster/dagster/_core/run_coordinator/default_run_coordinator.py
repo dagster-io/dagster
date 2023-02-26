@@ -37,14 +37,14 @@ class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
         pipeline_run = context.pipeline_run
 
         if pipeline_run.status == DagsterRunStatus.NOT_STARTED:
-            self._instance.launch_run(pipeline_run.run_id, context.workspace)  # type: ignore
+            self._instance.launch_run(pipeline_run.run_id, context.workspace)
         else:
             self._logger.warning(
                 f"submit_run called for run {pipeline_run.run_id} with status "
                 f"{pipeline_run.status.value}, skipping launch."
             )
 
-        run = self._instance.get_run_by_id(pipeline_run.run_id)  # type: ignore
+        run = self._instance.get_run_by_id(pipeline_run.run_id)
         if run is None:
             check.failed(f"Failed to reload run {pipeline_run.run_id}")
         return run

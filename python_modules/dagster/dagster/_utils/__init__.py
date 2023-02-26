@@ -70,6 +70,9 @@ DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 PrintFn: TypeAlias = Callable[[Any], None]
 
+SingleInstigatorDebugCrashFlags: TypeAlias = Mapping[str, int]
+DebugCrashFlags: TypeAlias = Mapping[str, SingleInstigatorDebugCrashFlags]
+
 
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
 # version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.

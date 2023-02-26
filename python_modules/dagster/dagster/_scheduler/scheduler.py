@@ -7,7 +7,7 @@ import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
-from typing import Dict, List, Optional, cast
+from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, cast
 
 import pendulum
 
@@ -37,9 +37,15 @@ from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._seven.compat.pendulum import to_timezone
+from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
 from dagster._utils.merger import merge_dicts
+
+if TYPE_CHECKING:
+    from pendulum.datetime import DateTime
+
+    from dagster._daemon.daemon import DaemonIterator
 
 
 class _ScheduleLaunchContext:
@@ -102,7 +108,7 @@ SECONDS_IN_MINUTE = 60
 VERBOSE_LOGS_INTERVAL = 60
 
 
-def _get_next_scheduler_iteration_time(start_time):
+def _get_next_scheduler_iteration_time(start_time: float) -> float:
     # Wait until at least the next minute to run again, since the minimum granularity
     # for a cron schedule is every minute
     last_minute_time = start_time - (start_time % SECONDS_IN_MINUTE)
@@ -115,7 +121,7 @@ def execute_scheduler_iteration_loop(
     max_catchup_runs: int,
     max_tick_retries: int,
     shutdown_event: threading.Event,
-):
+) -> "DaemonIterator":
     schedule_state_lock = threading.Lock()
     scheduler_run_futures: Dict[str, Future] = {}
 
@@ -169,15 +175,15 @@ def execute_scheduler_iteration_loop(
 def launch_scheduled_runs(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    end_datetime_utc: datetime.datetime,
+    end_datetime_utc: "DateTime",
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     scheduler_run_futures: Optional[Dict[str, Future]] = None,
     schedule_state_lock: Optional[threading.Lock] = None,
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     max_tick_retries: int = 0,
-    debug_crash_flags=None,
+    debug_crash_flags: Optional[DebugCrashFlags] = None,
     log_verbose_checks: bool = True,
-):
+) -> "DaemonIterator":
     instance = workspace_process_context.instance
 
     if not schedule_state_lock:
@@ -371,10 +377,10 @@ def launch_scheduled_runs_for_schedule(
     end_datetime_utc: datetime.datetime,
     max_catchup_runs: int,
     max_tick_retries: int,
-    tick_retention_settings,
-    schedule_debug_crash_flags,
-    log_verbose_checks,
-):
+    tick_retention_settings: Mapping[TickStatus, int],
+    schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
+    log_verbose_checks: bool,
+) -> None:
     # evaluate the tick immediately, but from within a thread.  The main thread should be able to
     # heartbeat to keep the daemon alive
     list(
@@ -403,10 +409,10 @@ def launch_scheduled_runs_for_schedule_iterator(
     end_datetime_utc: datetime.datetime,
     max_catchup_runs: int,
     max_tick_retries: int,
-    tick_retention_settings,
-    schedule_debug_crash_flags,
-    log_verbose_checks,
-):
+    tick_retention_settings: Mapping[TickStatus, int],
+    schedule_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
+    log_verbose_checks: bool,
+) -> "DaemonIterator":
     schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     instance = workspace_process_context.instance
@@ -553,7 +559,9 @@ def launch_scheduled_runs_for_schedule_iterator(
                     return
 
 
-def _check_for_debug_crash(debug_crash_flags, key):
+def _check_for_debug_crash(
+    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags], key: str
+) -> None:
     if not debug_crash_flags:
         return
 
@@ -572,8 +580,8 @@ def _schedule_runs_at_time(
     external_schedule: ExternalSchedule,
     schedule_time: datetime.datetime,
     tick_context: _ScheduleLaunchContext,
-    debug_crash_flags,
-):
+    debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
+) -> "DaemonIterator":
     schedule_name = external_schedule.name
     instance = workspace_process_context.instance
     schedule_origin = external_schedule.get_external_origin()
@@ -680,7 +688,7 @@ def _schedule_runs_at_time(
 def _get_existing_run_for_request(
     instance: DagsterInstance,
     external_schedule: ExternalSchedule,
-    schedule_time,
+    schedule_time: datetime.datetime,
     run_request: RunRequest,
 ) -> Optional[DagsterRun]:
     tags = merge_dicts(

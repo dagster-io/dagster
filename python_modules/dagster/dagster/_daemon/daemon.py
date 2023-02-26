@@ -9,6 +9,7 @@ from threading import Event
 from typing import TYPE_CHECKING, Generator, Generic, Optional, TypeVar, Union
 
 import pendulum
+from typing_extensions import TypeAlias
 
 from dagster import (
     DagsterInstance,
@@ -41,7 +42,8 @@ def get_telemetry_daemon_session_id() -> str:
     return _telemetry_daemon_session_id
 
 
-TDaemonGenerator = Generator[Union[None, SerializableErrorInfo], None, None]
+# DaemonIterator = Iterator[Union[None, SerializableErrorInfo]]
+DaemonIterator: TypeAlias = Generator[Union[None, SerializableErrorInfo], None, None]
 
 TContext = TypeVar("TContext", bound=IWorkspaceProcessContext)
 
@@ -196,7 +198,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
         self,
         workspace_process_context: TContext,
         shutdown_event: Event,
-    ) -> TDaemonGenerator:
+    ) -> DaemonIterator:
         """
         Execute the daemon loop, which should be a generator function that never finishes.
         Should periodically yield so that the controller can check for heartbeats. Yields can be either NoneType or a SerializableErrorInfo.
@@ -214,7 +216,7 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
         self,
         workspace_process_context: TContext,
         shutdown_event: Event,
-    ) -> TDaemonGenerator:
+    ) -> DaemonIterator:
         while True:
             start_time = time.time()
             try:
@@ -230,7 +232,7 @@ class IntervalDaemon(DagsterDaemon[TContext], ABC):
             yield None
 
     @abstractmethod
-    def run_iteration(self, workspace_process_context: TContext) -> TDaemonGenerator:
+    def run_iteration(self, workspace_process_context: TContext) -> DaemonIterator:
         ...
 
 
@@ -243,7 +245,7 @@ class SchedulerDaemon(DagsterDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         shutdown_event: Event,
-    ) -> TDaemonGenerator:
+    ) -> DaemonIterator:
         scheduler = workspace_process_context.instance.scheduler
         if not isinstance(scheduler, DagsterDaemonScheduler):
             check.failed(f"Expected DagsterDaemonScheduler, got {scheduler}")
@@ -266,7 +268,7 @@ class SensorDaemon(DagsterDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         shutdown_event: Event,
-    ) -> TDaemonGenerator:
+    ) -> DaemonIterator:
         yield from execute_sensor_iteration_loop(
             workspace_process_context,
             self._logger,
@@ -282,7 +284,7 @@ class BackfillDaemon(IntervalDaemon):
     def run_iteration(
         self,
         workspace_process_context: IWorkspaceProcessContext,
-    ) -> TDaemonGenerator:
+    ) -> DaemonIterator:
         yield from execute_backfill_iteration(workspace_process_context, self._logger)
 
 
@@ -294,5 +296,5 @@ class MonitoringDaemon(IntervalDaemon):
     def run_iteration(
         self,
         workspace_process_context: IWorkspaceProcessContext,
-    ) -> TDaemonGenerator:
+    ) -> DaemonIterator:
         yield from execute_monitoring_iteration(workspace_process_context, self._logger)

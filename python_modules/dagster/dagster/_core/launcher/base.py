@@ -75,7 +75,7 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abstractmethod
-    def terminate(self, run_id):
+    def terminate(self, run_id: str) -> bool:
         """
         Terminates a process.
 
@@ -83,17 +83,17 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         the process was alive and was successfully terminated
         """
 
-    def dispose(self):
+    def dispose(self) -> None:
         """
         Do any resource cleanup that should happen when the DagsterInstance is
         cleaning itself up.
         """
 
-    def join(self, timeout=30):
+    def join(self, timeout: int = 30) -> None:
         pass
 
     @property
-    def supports_check_run_worker_health(self):
+    def supports_check_run_worker_health(self) -> bool:
         """
         Whether the run launcher supports check_run_worker_health.
         """
@@ -105,7 +105,7 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         )
 
     @property
-    def supports_resume_run(self):
+    def supports_resume_run(self) -> bool:
         """
         Whether the run launcher supports resume_run.
         """

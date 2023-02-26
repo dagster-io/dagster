@@ -16,6 +16,7 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
 )
 from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
+from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
@@ -98,7 +99,7 @@ def monitor_started_run(
 def execute_monitoring_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    _debug_crash_flags=None,
+    _debug_crash_flags: Optional[DebugCrashFlags] = None,
 ) -> Iterator[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
     check.invariant(

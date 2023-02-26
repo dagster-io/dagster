@@ -317,7 +317,7 @@ class DagsterDaemonController(AbstractContextManager):
         self._daemons[daemon.daemon_type()] = daemon
 
     def get_daemon(self, daemon_type: str) -> DagsterDaemon:
-        return self._daemons.get(daemon_type)
+        return self._daemons.get(daemon_type)  # type: ignore  # (possible none)
 
     @property
     def daemons(self) -> Sequence[DagsterDaemon]:
@@ -418,7 +418,7 @@ def get_daemon_statuses(
                 maximum_tolerated_time = (
                     hearbeat_timestamp + heartbeat_interval_seconds + heartbeat_tolerance_seconds
                 )
-                healthy = curr_time_seconds <= maximum_tolerated_time
+                healthy = curr_time_seconds <= maximum_tolerated_time  # type: ignore  # (possible none)
 
                 if not ignore_errors and latest_heartbeat.errors:
                     healthy = False

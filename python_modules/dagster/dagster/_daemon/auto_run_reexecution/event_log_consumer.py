@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Callable, Dict, Iterator, List, Mapping, Optional, Sequence
 
@@ -94,14 +95,14 @@ class EventLogConsumerDaemon(IntervalDaemon):
         _persist_cursors(instance, new_cursors)
 
 
-def _create_cursor_key(event_type: DagsterEventType):
+def _create_cursor_key(event_type: DagsterEventType) -> str:
     check.inst_param(event_type, "event_type", DagsterEventType)
 
     return f"EVENT_LOG_CONSUMER_CURSOR-{event_type.value}"
 
 
 def _fetch_persisted_cursors(
-    instance: DagsterInstance, event_types: Sequence[DagsterEventType], logger
+    instance: DagsterInstance, event_types: Sequence[DagsterEventType], logger: logging.Logger
 ) -> Dict[DagsterEventType, Optional[int]]:
     check.inst_param(instance, "instance", DagsterInstance)
     check.sequence_param(event_types, "event_types", of_type=DagsterEventType)

@@ -149,8 +149,8 @@ def execute_run_iterator(
                 dagster_run.solids_to_execute == pipeline.solids_to_execute,
                 "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that"
                 " conflicts with pipeline subset {pipeline_solids_to_execute}.".format(
-                    pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
-                    solids_to_execute=str_format_set(dagster_run.solids_to_execute),
+                    pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),  # type: ignore  # (possible none)
+                    solids_to_execute=str_format_set(dagster_run.solids_to_execute),  # type: ignore  # (possible none)
                 ),
             )
         else:
@@ -249,8 +249,8 @@ def execute_run(
                 dagster_run.solids_to_execute == pipeline.solids_to_execute,
                 "Cannot execute DagsterRun with solids_to_execute {solids_to_execute} that "
                 "conflicts with pipeline subset {pipeline_solids_to_execute}.".format(
-                    pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
-                    solids_to_execute=str_format_set(dagster_run.solids_to_execute),
+                    pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),  # type: ignore  # (possible none)
+                    solids_to_execute=str_format_set(dagster_run.solids_to_execute),  # type: ignore  # (possible none)
                 ),
             )
         else:

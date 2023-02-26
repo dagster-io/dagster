@@ -1,5 +1,3 @@
-# pyright: strict
-
 from enum import Enum
 from typing import List, NamedTuple, Optional, Sequence, Union
 
@@ -80,7 +78,7 @@ class ScheduleInstigatorData(
     def __new__(
         cls, cron_schedule: Union[str, Sequence[str]], start_timestamp: Optional[float] = None
     ):
-        cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence[str]))
+        cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, list))
         if not isinstance(cron_schedule, str):
             cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
 

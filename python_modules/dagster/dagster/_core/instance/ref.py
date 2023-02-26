@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Type
 
 import yaml
 
@@ -9,6 +9,7 @@ from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whit
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 
 if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance, DagsterInstanceOverrides
     from dagster._core.launcher.base import RunLauncher
     from dagster._core.run_coordinator.base import RunCoordinator
     from dagster._core.scheduler.scheduler import Scheduler
@@ -323,18 +324,22 @@ class InstanceRef(
 
     @staticmethod
     def from_dir(
-        base_dir, *, config_dir=None, config_filename=DAGSTER_CONFIG_YAML_FILENAME, overrides=None
-    ):
+        base_dir: str,
+        *,
+        config_dir: Optional[str] = None,
+        config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
+        overrides: Optional["DagsterInstanceOverrides"] = None,
+    ) -> "InstanceRef":
         if config_dir is None:
             config_dir = base_dir
 
-        overrides = check.opt_dict_param(overrides, "overrides")
+        overrides = check.opt_mapping_param(overrides, "overrides")
         config_value, custom_instance_class = dagster_instance_config(
             config_dir, config_filename=config_filename, overrides=overrides
         )
 
         if custom_instance_class:
-            config_keys = set(custom_instance_class.config_schema().keys())
+            config_keys = set(custom_instance_class.config_schema().keys())  # type: ignore  # (undefined method)
             custom_instance_class_config = {
                 key: val for key, val in config_value.items() if key in config_keys
             }
@@ -343,7 +348,7 @@ class InstanceRef(
                 config_value["instance_class"]["class"],
                 yaml.dump(custom_instance_class_config, default_flow_style=False),
             )
-            defaults = custom_instance_class.config_defaults(base_dir)
+            defaults = custom_instance_class.config_defaults(base_dir)  # type: ignore  # (undefined method)
         else:
             custom_instance_class_data = None
             defaults = InstanceRef.config_defaults(base_dir)
@@ -380,19 +385,19 @@ class InstanceRef(
                 config_yaml=yaml.dump(
                     {
                         "run_storage": {
-                            "module_name": run_storage_data.module_name,
-                            "class_name": run_storage_data.class_name,
-                            "config_yaml": run_storage_data.config_yaml,
+                            "module_name": run_storage_data.module_name,  # type: ignore  # (possible none)
+                            "class_name": run_storage_data.class_name,  # type: ignore  # (possible none)
+                            "config_yaml": run_storage_data.config_yaml,  # type: ignore  # (possible none)
                         },
                         "event_log_storage": {
-                            "module_name": event_storage_data.module_name,
-                            "class_name": event_storage_data.class_name,
-                            "config_yaml": event_storage_data.config_yaml,
+                            "module_name": event_storage_data.module_name,  # type: ignore  # (possible none)
+                            "class_name": event_storage_data.class_name,  # type: ignore  # (possible none)
+                            "config_yaml": event_storage_data.config_yaml,  # type: ignore  # (possible none)
                         },
                         "schedule_storage": {
-                            "module_name": schedule_storage_data.module_name,
-                            "class_name": schedule_storage_data.class_name,
-                            "config_yaml": schedule_storage_data.config_yaml,
+                            "module_name": schedule_storage_data.module_name,  # type: ignore  # (possible none)
+                            "class_name": schedule_storage_data.class_name,  # type: ignore  # (possible none)
+                            "config_yaml": schedule_storage_data.config_yaml,  # type: ignore  # (possible none)
                         },
                     },
                     default_flow_style=False,
@@ -405,7 +410,9 @@ class InstanceRef(
                 run_storage_data,
                 event_storage_data,
                 schedule_storage_data,
-            ] = configurable_storage_data(config_value.get("storage"), defaults)
+            ] = configurable_storage_data(
+                config_value.get("storage"), defaults  # type: ignore  # (possible none)
+            )
 
         scheduler_data = configurable_class_data_or_default(
             config_value, "scheduler", defaults["scheduler"]
@@ -424,7 +431,7 @@ class InstanceRef(
         )
 
         secrets_loader_data = configurable_secrets_loader_data(
-            config_value.get("secrets"), defaults["secrets"]
+            config_value.get("secrets"), defaults["secrets"]  # type: ignore  # (possible none)
         )
 
         settings_keys = {
@@ -441,10 +448,10 @@ class InstanceRef(
         settings = {key: config_value.get(key) for key in settings_keys if config_value.get(key)}
 
         return InstanceRef(
-            local_artifact_storage_data=local_artifact_storage_data,
+            local_artifact_storage_data=local_artifact_storage_data,  # type: ignore  # (possible none)
             run_storage_data=run_storage_data,
             event_storage_data=event_storage_data,
-            compute_logs_data=compute_logs_data,
+            compute_logs_data=compute_logs_data,  # type: ignore  # (possible none)
             schedule_storage_data=schedule_storage_data,
             scheduler_data=scheduler_data,
             run_coordinator_data=run_coordinator_data,
@@ -557,8 +564,8 @@ class InstanceRef(
         )
 
     @property
-    def custom_instance_class(self):
-        return (
+    def custom_instance_class(self) -> Type["DagsterInstance"]:
+        return (  # type: ignore  # (ambiguous return type)
             class_from_code_pointer(
                 self.custom_instance_class_data.module_name,
                 self.custom_instance_class_data.class_name,
