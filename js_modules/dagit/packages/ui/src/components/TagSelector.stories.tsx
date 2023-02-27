@@ -38,7 +38,7 @@ export const Styled = () => {
   const isAllSelected = selectedTags.length === 6;
   return (
     <TagSelector
-      allTags={['NY', 'NJ', 'VC', 'FL', 'AL', 'CA']}
+      allTags={allTags}
       selectedTags={selectedTags}
       setSelectedTags={setSelectedTags}
       placeholder="Select a partition or create one"
