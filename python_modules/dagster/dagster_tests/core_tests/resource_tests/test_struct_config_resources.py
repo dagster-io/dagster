@@ -5,8 +5,7 @@ import subprocess
 import sys
 import tempfile
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Mapping
-from typing import Any, Callable, List, cast
+from typing import Any, Callable, List, Mapping, cast
 
 import pytest
 from dagster import (
