@@ -7,7 +7,20 @@ for that.
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
+from enum import Enum
+from typing import (
+    Any,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import pendulum
 
@@ -78,6 +91,7 @@ class ExternalRepositoryData(
             ("external_pipeline_datas", Optional[Sequence["ExternalPipelineData"]]),
             ("external_job_refs", Optional[Sequence["ExternalJobRef"]]),
             ("external_resource_data", Optional[Sequence["ExternalResourceData"]]),
+            ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
         ],
     )
 ):
@@ -91,6 +105,7 @@ class ExternalRepositoryData(
         external_pipeline_datas: Optional[Sequence["ExternalPipelineData"]] = None,
         external_job_refs: Optional[Sequence["ExternalJobRef"]] = None,
         external_resource_data: Optional[Sequence["ExternalResourceData"]] = None,
+        utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -121,6 +136,11 @@ class ExternalRepositoryData(
             ),
             external_resource_data=check.opt_nullable_sequence_param(
                 external_resource_data, "external_resource_data", of_type=ExternalResourceData
+            ),
+            utilized_env_vars=check.opt_nullable_mapping_param(
+                utilized_env_vars,
+                "utilized_env_vars",
+                key_type=str,
             ),
         )
 
@@ -249,6 +269,17 @@ class ExternalPipelineData(
             ),
             is_job=check.bool_param(is_job, "is_job"),
         )
+
+
+@whitelist_for_serdes
+class EnvVarConsumerType(Enum):
+    RESOURCE = "RESOURCE"
+
+
+@whitelist_for_serdes
+class EnvVarConsumer(NamedTuple):
+    type: EnvVarConsumerType
+    name: str
 
 
 @whitelist_for_serdes
@@ -1096,6 +1127,13 @@ def external_repository_data_from_def(
             ],
             key=lambda rd: rd.name,
         ),
+        utilized_env_vars={
+            env_var: [
+                EnvVarConsumer(type=EnvVarConsumerType.RESOURCE, name=res_name)
+                for res_name in res_names
+            ]
+            for env_var, res_names in repository_def.get_env_vars_by_top_level_resource().items()
+        },
     )
 
 

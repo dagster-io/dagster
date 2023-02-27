@@ -1,5 +1,8 @@
+from typing import Dict, List
+
 from dagster import Definitions, asset, job, op, repository
-from dagster._config.structured_config import ConfigurableResource
+from dagster._config.field_utils import EnvVar
+from dagster._config.structured_config import Config, ConfigurableResource
 from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
@@ -120,3 +123,81 @@ def test_repository_snap_empty():
     assert external_repo_data.name == "empty_repo"
     assert len(external_repo_data.external_pipeline_datas) == 0
     assert len(external_repo_data.external_resource_data) == 0
+
+
+def test_repository_snap_definitions_env_vars() -> None:
+    class MyStringResource(ConfigurableResource):
+        my_string: str
+
+    class MyInnerResource(ConfigurableResource):
+        my_string: str
+
+    class MyOuterResource(ConfigurableResource):
+        inner: MyInnerResource
+
+    class MyInnerConfig(Config):
+        my_string: str
+
+    class MyDataStructureResource(ConfigurableResource):
+        str_list: List[str]
+        str_dict: Dict[str, str]
+
+    class MyResourceWithConfig(ConfigurableResource):
+        config: MyInnerConfig
+        config_list: List[MyInnerConfig]
+
+    @asset
+    def my_asset(foo: MyStringResource):
+        pass
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "foo": MyStringResource(
+                my_string=EnvVar("MY_STRING"),
+            ),
+            "bar": MyStringResource(
+                my_string=EnvVar("MY_STRING"),
+            ),
+            "baz": MyStringResource(
+                my_string=EnvVar("MY_OTHER_STRING"),
+            ),
+            "qux": MyOuterResource(
+                inner=MyInnerResource(
+                    my_string=EnvVar("MY_INNER_STRING"),
+                ),
+            ),
+            "quux": MyDataStructureResource(
+                str_list=[EnvVar("MY_STRING")],
+                str_dict={"foo": EnvVar("MY_STRING"), "bar": EnvVar("MY_OTHER_STRING")},
+            ),
+            "quuz": MyResourceWithConfig(
+                config=MyInnerConfig(
+                    my_string=EnvVar("MY_CONFIG_NESTED_STRING"),
+                ),
+                config_list=[
+                    MyInnerConfig(
+                        my_string=EnvVar("MY_CONFIG_LIST_NESTED_STRING"),
+                    )
+                ],
+            ),
+        },
+    )
+
+    repo = resolve_pending_repo_if_required(defs)
+    external_repo_data = external_repository_data_from_def(repo)
+    assert external_repo_data.utilized_env_vars
+
+    env_vars = dict(external_repo_data.utilized_env_vars)
+
+    assert len(env_vars) == 5
+    assert "MY_STRING" in env_vars
+    assert {consumer.name for consumer in env_vars["MY_STRING"]} == {"foo", "bar", "quux"}
+    assert "MY_OTHER_STRING" in env_vars
+    assert {consumer.name for consumer in env_vars["MY_OTHER_STRING"]} == {"baz", "quux"}
+    assert "MY_INNER_STRING" in env_vars
+    assert {consumer.name for consumer in env_vars["MY_INNER_STRING"]} == {"qux"}
+    assert "MY_CONFIG_NESTED_STRING" in env_vars
+    assert {consumer.name for consumer in env_vars["MY_CONFIG_NESTED_STRING"]} == {"quuz"}
+    assert "MY_CONFIG_LIST_NESTED_STRING" in env_vars
+    assert {consumer.name for consumer in env_vars["MY_CONFIG_LIST_NESTED_STRING"]} == {"quuz"}

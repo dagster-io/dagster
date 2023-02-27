@@ -52,6 +52,7 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
+    EnvVarConsumer,
     ExternalAssetNode,
     ExternalJobRef,
     ExternalPartitionSetData,
@@ -162,6 +163,14 @@ class ExternalRepository:
 
     def get_external_resources(self) -> Iterable[ExternalResource]:
         return self._external_resources.values()
+
+    @property
+    @cached_method
+    def _utilized_env_vars(self) -> Mapping[str, Sequence[EnvVarConsumer]]:
+        return self.external_repository_data.utilized_env_vars or {}
+
+    def get_utilized_env_vars(self) -> Mapping[str, Sequence[EnvVarConsumer]]:
+        return self._utilized_env_vars
 
     @property
     @cached_method

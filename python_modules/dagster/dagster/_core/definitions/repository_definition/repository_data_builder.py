@@ -1,3 +1,4 @@
+import json
 from inspect import isfunction
 from typing import (
     Any,
@@ -8,9 +9,16 @@ from typing import (
     Sequence,
     Set,
     Union,
+    cast,
 )
 
 import dagster._check as check
+from dagster._config.structured_config import (
+    ConfigurableResource,
+    PartialResource,
+    ResourceWithKeyMapping,
+    separate_resource_params,
+)
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets_job import (
     get_base_asset_jobs,
@@ -32,6 +40,47 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .repository_data import CachingRepositoryData, _get_partition_set_from_schedule
 from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
+
+
+def _find_env_vars(config_entry: Any) -> Set[str]:
+    """
+    Given a part of a config dictionary, return a set of environment variables that are used in
+    that part of the config.
+    """
+    if isinstance(config_entry, list):
+        return set().union(*[_find_env_vars(v) for v in config_entry])
+    elif not isinstance(config_entry, dict):
+        return set()
+
+    if set(config_entry.keys()) == {"env"}:
+        return {config_entry["env"]}
+
+    return set().union(*[_find_env_vars(v) for v in config_entry.values()])
+
+
+def _env_vars_from_resource_defaults(resource_def: ResourceDefinition) -> Set[str]:
+    """
+    Given a resource definition, return a set of environment variables that are used in the
+    resource's default config. This is used to extract environment variables from the top-level
+    resources in a Definitions object.
+    """
+    config_schema_default = cast(
+        Mapping[str, Any],
+        json.loads(resource_def.config_schema.default_value_as_json_str)
+        if resource_def.config_schema.default_provided
+        else {},
+    )
+
+    env_vars = _find_env_vars(config_schema_default)
+
+    if isinstance(resource_def, ResourceWithKeyMapping) and isinstance(
+        resource_def.inner_resource, (ConfigurableResource, PartialResource)
+    ):
+        nested_resources = separate_resource_params(resource_def.inner_resource.__dict__).resources
+        for nested_resource in nested_resources.values():
+            env_vars = env_vars.union(_env_vars_from_resource_defaults(nested_resource))
+
+    return env_vars
 
 
 def build_caching_repository_data_from_list(
@@ -238,6 +287,15 @@ def build_caching_repository_data_from_list(
             if not job_def._logger_defs_specified:  # pylint: disable=protected-access
                 jobs[name] = job_def.with_logger_defs(default_logger_defs)
 
+    top_level_resources = top_level_resources or {}
+
+    utilized_env_vars: Mapping[str, Set[str]] = {}
+
+    for resource_key, resource_def in top_level_resources.items():
+        used_env_vars = _env_vars_from_resource_defaults(resource_def)
+        for env_var in used_env_vars:
+            utilized_env_vars.setdefault(env_var, set()).add(resource_key)
+
     return CachingRepositoryData(
         pipelines=pipelines,
         jobs=jobs,
@@ -247,6 +305,7 @@ def build_caching_repository_data_from_list(
         source_assets_by_key=source_assets_by_key,
         assets_defs_by_key=assets_defs_by_key,
         top_level_resources=top_level_resources or {},
+        utilized_env_vars=utilized_env_vars,
     )
 
 
@@ -309,6 +368,7 @@ def build_caching_repository_data_from_dict(
         source_assets_by_key={},
         assets_defs_by_key={},
         top_level_resources={},
+        utilized_env_vars={},
     )
 
 
