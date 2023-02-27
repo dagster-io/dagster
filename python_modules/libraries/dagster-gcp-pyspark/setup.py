@@ -39,7 +39,6 @@ setup(
         f"dagster{pin}",
         f"dagster-gcp{pin}",
         "pyspark",
-        "requests",
     ],
     extras_require={"test": ["pandas-gbq"]},
     zip_safe=False,
