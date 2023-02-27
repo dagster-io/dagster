@@ -17,12 +17,14 @@ type DropdownItemProps = {
   selected: boolean;
 };
 type Props = {
+  placeholder?: React.ReactNode;
   allTags: string[];
   selectedTags: string[];
   setSelectedTags: (tags: React.SetStateAction<string[]>) => void;
-  renderTag?: (tag: string, tagProps: TagProps) => JSX.Element;
-  renderDropdown?: (dropdown: JSX.Element) => JSX.Element;
-  renderDropdownItem?: (tag: string, dropdownItemProps: DropdownItemProps) => JSX.Element;
+  renderTag?: (tag: string, tagProps: TagProps) => React.ReactNode;
+  renderTagList?: (tags: React.ReactElement[]) => React.ReactNode;
+  renderDropdown?: (dropdown: React.ReactElement) => React.ReactNode;
+  renderDropdownItem?: (tag: string, dropdownItemProps: DropdownItemProps) => React.ReactElement;
   dropdownStyles?: React.CSSProperties;
 };
 
@@ -61,12 +63,14 @@ const defaultRenderDropdownItem = (tag: string, dropdownItemProps: DropdownItemP
 
 export const TagSelector = ({
   allTags,
+  placeholder,
   selectedTags,
   setSelectedTags,
   renderTag,
   renderDropdownItem,
   renderDropdown,
   dropdownStyles,
+  renderTagList,
 }: Props) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const dropdown = React.useMemo(() => {
@@ -100,6 +104,24 @@ export const TagSelector = ({
 
   const dropdownContainer = React.useRef<HTMLDivElement>(null);
 
+  const tagsContent = React.useMemo(() => {
+    if (selectedTags.length === 0) {
+      return <Placeholder>{placeholder || 'Select tags'}</Placeholder>;
+    }
+    const tags = selectedTags.map((tag) =>
+      (renderTag || defaultRenderTag)(tag, {
+        close: (ev) => {
+          setSelectedTags((tags) => tags.filter((t) => t !== tag));
+          ev.stopPropagation();
+        },
+      }),
+    );
+    if (renderTagList) {
+      return renderTagList(tags);
+    }
+    return tags;
+  }, [placeholder, selectedTags, renderTag, renderTagList]);
+
   return (
     <Popover
       placement="bottom"
@@ -124,16 +146,7 @@ export const TagSelector = ({
           setIsDropdownOpen((isOpen) => !isOpen);
         }}
       >
-        <Box flex={{grow: 1, gap: 6}}>
-          {selectedTags.map((tag) =>
-            (renderTag || defaultRenderTag)(tag, {
-              close: (ev) => {
-                setSelectedTags((tags) => tags.filter((t) => t !== tag));
-                ev.stopPropagation();
-              },
-            }),
-          )}
-        </Box>
+        <TagsContainer flex={{grow: 1, gap: 6}}>{tagsContent}</TagsContainer>
         <div style={{cursor: 'pointer'}}>
           <Icon name={isDropdownOpen ? 'expand_less' : 'expand_more'} />
         </div>
@@ -145,4 +158,18 @@ export const TagSelector = ({
 const Container = styled.div`
   border: 1px solid ${Colors.Gray300};
   border-radius: 8px;
+`;
+
+const Placeholder = styled.div`
+  color: ${Colors.Gray400};
+`;
+
+const TagsContainer = styled(Box)`
+  overflow-x: auto;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 `;

@@ -15,16 +15,21 @@ export default {
   component: TagSelector,
 } as Meta;
 
-const allTags = ['NY', 'NJ', 'VC', 'FL', 'AL', 'CA'];
+const allTags = [
+  'NY',
+  'NJ',
+  'VC',
+  'FL',
+  'AL',
+  'CALIFORNIA_SUPER_LONG_TAG',
+  'ANOTHER_REALLY_LONG_TAG',
+  'LONG_TAGS_ARE_GREAT_FOR_TESTING_DECEMBER_2020',
+];
 
 export const Basic = () => {
   const [selectedTags, setSelectedTags] = React.useState<string[]>(['NY', 'NJ']);
   return (
-    <TagSelector
-      allTags={['NY', 'NJ', 'VC', 'FL', 'AL', 'CA']}
-      selectedTags={selectedTags}
-      setSelectedTags={setSelectedTags}
-    />
+    <TagSelector allTags={allTags} selectedTags={selectedTags} setSelectedTags={setSelectedTags} />
   );
 };
 
@@ -36,6 +41,7 @@ export const Styled = () => {
       allTags={['NY', 'NJ', 'VC', 'FL', 'AL', 'CA']}
       selectedTags={selectedTags}
       setSelectedTags={setSelectedTags}
+      placeholder="Select a partition or create one"
       renderDropdownItem={(tag, dropdownItemProps) => {
         return (
           <MenuItem
@@ -82,6 +88,12 @@ export const Styled = () => {
             </Box>
           </Menu>
         );
+      }}
+      renderTagList={(tags) => {
+        if (tags.length > 3) {
+          return <span>{tags.length} partitions selected</span>;
+        }
+        return tags;
       }}
     />
   );
