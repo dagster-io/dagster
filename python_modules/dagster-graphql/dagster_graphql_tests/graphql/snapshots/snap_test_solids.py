@@ -645,6 +645,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'fail_partition_materialization'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'fail_partition_materialization_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'fail_partition_materialization'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'fail_subset'
                 },
                 'invocations': [

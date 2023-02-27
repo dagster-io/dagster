@@ -45,6 +45,7 @@ from dagster._core.host_representation.repository_location import RepositoryLoca
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.partition_status_cache import (
     CACHEABLE_PARTITION_TYPES,
+    filter_incomplete_materialized_runs_to_failed,
     get_and_update_asset_status_cache_value,
     get_materialized_multipartitions,
     get_validated_partition_keys,
@@ -321,19 +322,18 @@ def get_unique_asset_id(
     )
 
 
-def get_materialized_partitions_subset(
+def get_materialized_and_failed_partition_subsets(
     instance: DagsterInstance,
     asset_key: AssetKey,
     dynamic_partitions_loader: DynamicPartitionsStore,
     partitions_def: Optional[PartitionsDefinition] = None,
-) -> Optional[PartitionsSubset]:
+) -> Tuple[Optional[PartitionsSubset], Optional[PartitionsSubset]]:
     """
-    Returns the materialization status for each partition key. The materialization status
-    is a boolean indicating whether the partition has been materialized: True if materialized,
-    False if not.
+    Returns a tuple of two PartitionSubset objects: the first is the materialized partitions,
+    the second is the failed partitions.
     """
     if not partitions_def:
-        return None
+        return None, None
 
     if instance.can_cache_asset_status_data() and isinstance(
         partitions_def, CACHEABLE_PARTITION_TYPES
@@ -348,8 +348,13 @@ def get_materialized_partitions_subset(
             if updated_cache_value
             else partitions_def.empty_subset()
         )
+        failed_subset = (
+            updated_cache_value.deserialize_failed_partition_subsets(partitions_def)
+            if updated_cache_value
+            else partitions_def.empty_subset()
+        )
 
-        return materialized_subset
+        return materialized_subset, failed_subset
 
     else:
         # If the partition status can't be cached, fetch partition status from storage
@@ -370,11 +375,35 @@ def get_materialized_partitions_subset(
             dynamic_partitions_loader, partitions_def, set(materialized_keys)
         )
 
-        return (
+        materialized_subset = (
             partitions_def.empty_subset().with_partition_keys(validated_keys)
             if validated_keys
             else partitions_def.empty_subset()
         )
+
+        # failed
+        incomplete_materialization_runs = instance.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+            asset_key
+        )
+
+        if not incomplete_materialization_runs:
+            failed_subset = partitions_def.empty_subset()
+        else:
+            validated_keys = get_validated_partition_keys(
+                dynamic_partitions_loader,
+                partitions_def,
+                filter_incomplete_materialized_runs_to_failed(
+                    instance, incomplete_materialization_runs
+                ),
+            )
+
+            failed_subset = (
+                partitions_def.empty_subset().with_partition_keys(validated_keys)
+                if validated_keys
+                else partitions_def.empty_subset()
+            )
+
+        return materialized_subset, failed_subset
 
 
 def build_materialized_partitions(

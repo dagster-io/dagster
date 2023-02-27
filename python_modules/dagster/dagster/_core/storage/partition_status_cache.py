@@ -224,7 +224,7 @@ def _build_status_cache(
     )
 
 
-def _filter_incomplete_materialized_runs_to_failed(
+def filter_incomplete_materialized_runs_to_failed(
     instance: DagsterInstance, incomplete_materialization_runs: Mapping[str, str]
 ) -> Set[str]:
     if not incomplete_materialization_runs:
@@ -256,7 +256,7 @@ def _build_failed_partition_subset(
         get_validated_partition_keys(
             instance,
             partitions_def,
-            _filter_incomplete_materialized_runs_to_failed(
+            filter_incomplete_materialized_runs_to_failed(
                 instance, incomplete_materialization_runs
             ),
         )
@@ -287,7 +287,7 @@ def _get_updated_failed_partition_subset(
                 # if we have a new materialization for a partition, that negates the old failure
                 current_failed_partitions.discard(event.partition)
 
-    new_failed_partitions = _filter_incomplete_materialized_runs_to_failed(
+    new_failed_partitions = filter_incomplete_materialized_runs_to_failed(
         instance, incomplete_materialization_runs
     )
 
