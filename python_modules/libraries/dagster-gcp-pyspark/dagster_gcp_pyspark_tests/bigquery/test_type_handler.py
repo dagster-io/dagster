@@ -56,7 +56,7 @@ SHARED_BUILDKITE_BQ_CONFIG = {
 # BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0,com.google.cloud.bigdataoss:gcs-connector:hadoop2-2.1.9"
 BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
 
-SLEEP_TIME = 2
+SLEEP_TIME = 5
 
 
 @contextmanager
