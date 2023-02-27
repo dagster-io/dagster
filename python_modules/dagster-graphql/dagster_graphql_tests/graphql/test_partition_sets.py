@@ -10,6 +10,7 @@ from dagster_graphql.test.utils import (
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     NonLaunchableGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
 )
 
 GET_PARTITION_SETS_FOR_PIPELINE_QUERY = """
@@ -359,7 +360,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
                 assert partitionStatus["runStatus"] is None
 
     def test_add_dynamic_partitions(self, graphql_context):
-        result = execute_dagster_graphql_and_finish_runs(
+        result = execute_dagster_graphql(
             graphql_context,
             ADD_DYNAMIC_PARTITION_MUTATION,
             variables={"partitionsDefName": "foo", "partitionKey": "bar"},
@@ -370,3 +371,15 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
         assert result.data["addDynamicPartition"]["partitionKey"] == "bar"
 
         assert set(graphql_context.instance.get_dynamic_partitions("foo")) == {"bar"}
+
+
+class TestDynamicPartitionReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
+    def test_unauthorized_error_on_add_dynamic_partitions(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            ADD_DYNAMIC_PARTITION_MUTATION,
+            variables={"partitionsDefName": "foo", "partitionKey": "bar"},
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["addDynamicPartition"]["__typename"] == "UnauthorizedError"

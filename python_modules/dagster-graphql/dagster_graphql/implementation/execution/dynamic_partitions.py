@@ -14,7 +14,7 @@ def add_dynamic_partition(
 ) -> "GrapheneAddDynamicPartitionSuccess":
     from ...schema.partition_sets import GrapheneAddDynamicPartitionSuccess
 
-    assert_permission(graphene_info, Permissions.ADD_DYNAMIC_PARTITION)
+    assert_permission(graphene_info, Permissions.EDIT_DYNAMIC_PARTITIONS)
     graphene_info.context.instance.add_dynamic_partitions(partitions_def_name, [partition_key])
     return GrapheneAddDynamicPartitionSuccess(
         partitionsDefName=partitions_def_name, partitionKey=partition_key

@@ -344,7 +344,7 @@ class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
         name = "AddDynamicPartitionMutation"
 
     @capture_error
-    @require_permission_check(Permissions.ADD_DYNAMIC_PARTITION)
+    @require_permission_check(Permissions.EDIT_DYNAMIC_PARTITIONS)
     def mutate(self, graphene_info: ResolveInfo, partitionsDefName: str, partitionKey: str):
         return add_dynamic_partition(graphene_info, partitionsDefName, partitionKey)
 

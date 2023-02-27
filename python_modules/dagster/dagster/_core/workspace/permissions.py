@@ -16,7 +16,7 @@ class Permissions(str, Enum):
     WIPE_ASSETS = "wipe_assets"
     LAUNCH_PARTITION_BACKFILL = "launch_partition_backfill"
     CANCEL_PARTITION_BACKFILL = "cancel_partition_backfill"
-    ADD_DYNAMIC_PARTITION = "add_dynamic_partition"
+    EDIT_DYNAMIC_PARTITIONS = "edit_dynamic_partitions"
 
     def __str__(self) -> str:
         return str.__str__(self)
@@ -35,7 +35,7 @@ VIEWER_PERMISSIONS: Dict[str, bool] = {
     Permissions.WIPE_ASSETS: False,
     Permissions.LAUNCH_PARTITION_BACKFILL: False,
     Permissions.CANCEL_PARTITION_BACKFILL: False,
-    Permissions.ADD_DYNAMIC_PARTITION: False,
+    Permissions.EDIT_DYNAMIC_PARTITIONS: False,
 }
 
 EDITOR_PERMISSIONS: Dict[str, bool] = {
@@ -51,7 +51,7 @@ EDITOR_PERMISSIONS: Dict[str, bool] = {
     Permissions.WIPE_ASSETS: True,
     Permissions.LAUNCH_PARTITION_BACKFILL: True,
     Permissions.CANCEL_PARTITION_BACKFILL: True,
-    Permissions.ADD_DYNAMIC_PARTITION: True,
+    Permissions.EDIT_DYNAMIC_PARTITIONS: True,
 }
 
 LOCATION_SCOPED_PERMISSIONS = {
@@ -65,7 +65,7 @@ LOCATION_SCOPED_PERMISSIONS = {
     Permissions.RELOAD_REPOSITORY_LOCATION,
     Permissions.LAUNCH_PARTITION_BACKFILL,
     Permissions.CANCEL_PARTITION_BACKFILL,
-    Permissions.ADD_DYNAMIC_PARTITION,
+    Permissions.EDIT_DYNAMIC_PARTITIONS,
 }
 
 

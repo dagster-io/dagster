@@ -18,7 +18,7 @@ export const EXPECTED_PERMISSIONS = {
   wipe_assets: true,
   launch_partition_backfill: true,
   cancel_partition_backfill: true,
-  add_dynamic_partition: true,
+  edit_dynamic_partitions: true,
 };
 
 export type PermissionResult = {
