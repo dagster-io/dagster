@@ -386,6 +386,14 @@ def test_reuse_task_definition(instance, ecs):
         container_name,
     )
 
+    # Changed runtime platform fails
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["runtimePlatform"] = {"operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"}
+    assert not instance.run_launcher._reuse_task_definition(
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
     # Changed command fails
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["command"] = ["echo", "GOODBYE"]
@@ -485,6 +493,7 @@ def test_launching_with_task_definition_dict(
                 "execution_role_arn": execution_role_arn,
                 "sidecar_containers": [sidecar],
                 "requires_compatibilities": ["FARGATE"],
+                "runtime_platform": {"operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"},
             },
             "container_name": container_name,
         }
@@ -518,6 +527,9 @@ def test_launching_with_task_definition_dict(
 
         assert task_definition["taskRoleArn"] == task_role_arn
         assert task_definition["executionRoleArn"] == execution_role_arn
+        assert task_definition["runtimePlatform"] == {
+            "operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"
+        }
 
         assert [container["name"] for container in task_definition["containerDefinitions"]] == [
             container_name,
@@ -721,6 +733,7 @@ def test_launch_run_with_container_context(
     assert (
         task_definition["executionRoleArn"] == container_context_config["ecs"]["execution_role_arn"]
     )
+    assert task_definition["runtimePlatform"] == container_context_config["ecs"]["runtime_platform"]
 
 
 def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
