@@ -48,7 +48,7 @@ class ModeDefinition(
             executors (:py:data:`~dagster.default_executors`).
         description (Optional[str]): A human-readable description of the mode.
         _config_mapping (Optional[ConfigMapping]): Only for internal use.
-        _partitioned_config (Optional[PartitionedConfig]): Only for internal use.
+        _partitions (Optional[PartitionedConfig]): Only for internal use.
     """
 
     def __new__(

@@ -24,7 +24,6 @@ class StepOutputProperties(
             ("is_asset", bool),
             ("should_materialize", bool),
             ("asset_key", Optional[AssetKey]),
-            ("is_asset_partitioned", bool),
         ],
     )
 ):
@@ -35,7 +34,6 @@ class StepOutputProperties(
         is_asset: bool,
         should_materialize: bool,
         asset_key: Optional[AssetKey] = None,
-        is_asset_partitioned: bool = False,
     ):
         return super(StepOutputProperties, cls).__new__(
             cls,
@@ -44,7 +42,6 @@ class StepOutputProperties(
             check.bool_param(is_asset, "is_asset"),
             check.bool_param(should_materialize, "should_materialize"),
             check.opt_inst_param(asset_key, "asset_key", AssetKey),
-            check.bool_param(is_asset_partitioned, "is_asset_partitioned"),
         )
 
 

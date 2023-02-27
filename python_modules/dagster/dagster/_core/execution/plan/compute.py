@@ -79,7 +79,6 @@ def create_step_outputs(
                     is_asset=asset_info is not None,
                     should_materialize=output_def.name in config_output_names,
                     asset_key=asset_info.key if asset_info and asset_info.is_required else None,
-                    is_asset_partitioned=bool(asset_info.partitions_def) if asset_info else False,
                 ),
             )
         )

@@ -47,7 +47,6 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
-            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -118,7 +117,6 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
-            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -184,7 +182,6 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
-            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -261,7 +258,6 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
-            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -393,7 +389,6 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
-            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -464,7 +459,6 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
-            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -513,7 +507,6 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
-            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -592,7 +585,6 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
-            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
@@ -641,7 +633,6 @@ snapshots[
             "__class__": "StepOutputProperties",
             "asset_key": null,
             "is_asset": false,
-            "is_asset_partitioned": false,
             "is_dynamic": false,
             "is_required": true,
             "should_materialize": false
