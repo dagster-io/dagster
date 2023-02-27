@@ -44,18 +44,20 @@ export const Styled = () => {
       placeholder="Select a partition or create one"
       renderDropdownItem={(tag, dropdownItemProps) => {
         return (
-          <MenuItem
-            text={
-              <Box as="label" flex={{alignItems: 'center', gap: 12}}>
-                <Checkbox
-                  checked={dropdownItemProps.selected}
-                  onChange={dropdownItemProps.toggle}
-                />
-                <Dot color={Math.random() > 0.5 ? Colors.Green500 : Colors.Gray500} />
-                <span>{tag}</span>
-              </Box>
-            }
-          />
+          <label>
+            <MenuItem
+              text={
+                <Box flex={{alignItems: 'center', gap: 12}}>
+                  <Checkbox
+                    checked={dropdownItemProps.selected}
+                    onChange={dropdownItemProps.toggle}
+                  />
+                  <Dot color={Math.random() > 0.5 ? Colors.Green500 : Colors.Gray500} />
+                  <span>{tag}</span>
+                </Box>
+              }
+            />
+          </label>
         );
       }}
       renderDropdown={(dropdown) => {
@@ -76,14 +78,16 @@ export const Styled = () => {
                 </Box>
               </Box>
               <MenuDivider />
-              <MenuItem
-                text={
-                  <Box as="label" flex={{alignItems: 'center', gap: 8}}>
-                    <Checkbox checked={isAllSelected} onChange={toggleAll} />
-                    <span>Select All ({allTags.length})</span>
-                  </Box>
-                }
-              />
+              <label>
+                <MenuItem
+                  text={
+                    <Box flex={{alignItems: 'center', gap: 8}}>
+                      <Checkbox checked={isAllSelected} onChange={toggleAll} />
+                      <span>Select All ({allTags.length})</span>
+                    </Box>
+                  }
+                />
+              </label>
               {dropdown}
             </Box>
           </Menu>

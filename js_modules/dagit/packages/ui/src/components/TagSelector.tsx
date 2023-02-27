@@ -43,21 +43,16 @@ const defaultRenderTag = (tag: string, tagProps: TagProps) => {
 
 const defaultRenderDropdownItem = (tag: string, dropdownItemProps: DropdownItemProps) => {
   return (
-    <MenuItem
-      text={
-        <Box flex={{alignItems: 'center', gap: 8}}>
-          <Checkbox
-            checked={dropdownItemProps.selected}
-            onChange={() => {}}
-            onClick={(ev) => {
-              ev.stopPropagation();
-            }}
-          />
-          <span>{tag}</span>
-        </Box>
-      }
-      onClick={dropdownItemProps.toggle}
-    />
+    <label>
+      <MenuItem
+        text={
+          <Box flex={{alignItems: 'center', gap: 8}}>
+            <Checkbox checked={dropdownItemProps.selected} onChange={dropdownItemProps.toggle} />
+            <span>{tag}</span>
+          </Box>
+        }
+      />
+    </label>
   );
 };
 
