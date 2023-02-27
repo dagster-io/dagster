@@ -1,7 +1,6 @@
 import os
 import uuid
 from contextlib import contextmanager
-from time import sleep
 from typing import Iterator
 from unittest.mock import patch
 
@@ -32,7 +31,7 @@ from dagster._core.storage.db_io_manager import TableSlice
 from dagster_gcp import build_bigquery_io_manager
 from dagster_gcp_pyspark import BigQueryPySparkTypeHandler, bigquery_pyspark_io_manager
 from google.cloud import bigquery
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, to_date
 from pyspark.sql.types import LongType, StringType, StructField, StructType
 
@@ -45,18 +44,11 @@ resource_config = {
 }
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-# IS_BUILDKITE = True
-
 
 SHARED_BUILDKITE_BQ_CONFIG = {
     "project": os.getenv("GCP_PROJECT_ID"),
-    # "temporary_gcs_bucket": "gcs_io_manager_test",
+    "temporary_gcs_bucket": "gcs_io_manager_test",
 }
-
-# BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0,com.google.cloud.bigdataoss:gcs-connector:hadoop2-2.1.9"
-BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
-
-SLEEP_TIME = 5
 
 
 @contextmanager
@@ -75,14 +67,10 @@ def temporary_bigquery_table(schema_name: str, column_str: str) -> Iterator[str]
         ).result()
 
 
-def test_handle_output():
+def test_handle_output(spark):
     with patch("pyspark.sql.DataFrame.write") as mock_write:
         handler = BigQueryPySparkTypeHandler()
 
-        spark = SparkSession.builder.config(
-            key="spark.jars.packages",
-            value=BIGQUERY_JARS,
-        ).getOrCreate()
         columns = ["col1", "col2"]
         data = [("a", "b")]
         df = spark.createDataFrame(data).toDF(*columns)
@@ -111,12 +99,8 @@ def test_handle_output():
         assert len(mock_write.method_calls) == 1
 
 
-def test_load_input():
+def test_load_input(spark):
     with patch("pyspark.sql.DataFrameReader.load") as mock_read:
-        spark = SparkSession.builder.config(
-            key="spark.jars.packages",
-            value=BIGQUERY_JARS,
-        ).getOrCreate()
         columns = ["col1", "col2"]
         data = [("a", "b")]
         df = spark.createDataFrame(data).toDF(*columns)
@@ -147,7 +131,7 @@ def test_build_bigquery_pyspark_io_manager():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
-def test_io_manager_with_bigquery_pyspark():
+def test_io_manager_with_bigquery_pyspark(spark):
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
@@ -160,10 +144,6 @@ def test_io_manager_with_bigquery_pyspark():
             out={table_name: Out(dagster_type=DataFrame, metadata={"schema": schema})},
         )
         def emit_pyspark_df(_):
-            spark = SparkSession.builder.config(
-                key="spark.jars.packages",
-                value=BIGQUERY_JARS,
-            ).getOrCreate()
             columns = ["foo", "quux"]
             data = [("bar", 1), ("baz", 2)]
             df = spark.createDataFrame(data).toDF(*columns)
@@ -187,7 +167,7 @@ def test_io_manager_with_bigquery_pyspark():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
-def test_time_window_partitioned_asset():
+def test_time_window_partitioned_asset(spark):
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
@@ -205,32 +185,6 @@ def test_time_window_partitioned_asset():
         def daily_partitioned(context) -> DataFrame:
             partition = context.asset_partition_key_for_output()
             value = context.op_config["value"]
-
-            spark = (
-                SparkSession.builder.config(
-                    key="spark.jars.packages",
-                    value=BIGQUERY_JARS,
-                )
-                # .config(
-                #     key="fs.gs.impl", value="com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem"
-                # )
-                # .config(key="fs.gs.auth.service.account.enable", value="true")
-                # .config(
-                #     key="google.cloud.auth.service.account.json.keyfile",
-                #     value=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
-                # )
-                # .config(key="fs.gs.project.id", value="elementl-dev")
-                .getOrCreate()
-            )
-
-            # spark._jsc.hadoopConfiguration().set(
-            #     "fs.gs.impl", "com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem"
-            # )
-            # spark._jsc.hadoopConfiguration().set("fs.gs.auth.service.account.enable", "true")
-            # spark._jsc.hadoopConfiguration().set(
-            #     "google.cloud.auth.service.account.json.keyfile",
-            #     os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
-            # )
 
             schema = StructType(
                 [
@@ -277,8 +231,6 @@ def test_time_window_partitioned_asset():
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
-        sleep(SLEEP_TIME)
-
         materialize(
             [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-02",
@@ -290,8 +242,6 @@ def test_time_window_partitioned_asset():
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
-
-        sleep(SLEEP_TIME)
 
         materialize(
             [daily_partitioned, downstream_partitioned],
@@ -307,7 +257,7 @@ def test_time_window_partitioned_asset():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
-def test_static_partitioned_asset():
+def test_static_partitioned_asset(spark):
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
@@ -325,11 +275,6 @@ def test_static_partitioned_asset():
         def static_partitioned(context) -> DataFrame:
             partition = context.asset_partition_key_for_output()
             value = context.op_config["value"]
-
-            spark = SparkSession.builder.config(
-                key="spark.jars.packages",
-                value=BIGQUERY_JARS,
-            ).getOrCreate()
 
             schema = StructType(
                 [
@@ -370,8 +315,6 @@ def test_static_partitioned_asset():
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
-        sleep(SLEEP_TIME)
-
         materialize(
             [static_partitioned, downstream_partitioned],
             partition_key="blue",
@@ -383,8 +326,6 @@ def test_static_partitioned_asset():
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
-
-        sleep(SLEEP_TIME)
 
         materialize(
             [static_partitioned, downstream_partitioned],
@@ -400,7 +341,7 @@ def test_static_partitioned_asset():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
-def test_multi_partitioned_asset():
+def test_multi_partitioned_asset(spark):
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
@@ -423,11 +364,6 @@ def test_multi_partitioned_asset():
         def multi_partitioned(context) -> DataFrame:
             partition = context.partition_key.keys_by_dimension
             value = context.op_config["value"]
-
-            spark = SparkSession.builder.config(
-                key="spark.jars.packages",
-                value=BIGQUERY_JARS,
-            ).getOrCreate()
 
             schema = StructType(
                 [
@@ -474,8 +410,6 @@ def test_multi_partitioned_asset():
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
-        sleep(SLEEP_TIME)
-
         materialize(
             [multi_partitioned, downstream_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
@@ -500,8 +434,6 @@ def test_multi_partitioned_asset():
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
 
-        sleep(SLEEP_TIME)
-
         materialize(
             [multi_partitioned, downstream_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "red"}),
@@ -516,7 +448,7 @@ def test_multi_partitioned_asset():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
-def test_dynamic_partitions():
+def test_dynamic_partitions(spark):
     schema = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(
         schema_name=schema,
@@ -534,11 +466,6 @@ def test_dynamic_partitions():
         def dynamic_partitioned(context) -> DataFrame:
             partition = context.asset_partition_key_for_output()
             value = context.op_config["value"]
-
-            spark = SparkSession.builder.config(
-                key="spark.jars.packages",
-                value=BIGQUERY_JARS,
-            ).getOrCreate()
 
             schema = StructType(
                 [
@@ -588,8 +515,6 @@ def test_dynamic_partitions():
 
             dynamic_fruits.add_partitions(["orange"], instance)
 
-            sleep(SLEEP_TIME)
-
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
                 partition_key="orange",
@@ -602,8 +527,6 @@ def test_dynamic_partitions():
                 f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
-
-            sleep(SLEEP_TIME)
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
