@@ -259,4 +259,4 @@ combine-as-imports = true
 force-wrap-aliases = true
 
 [tool.dagster]
-module_name = "assets_dynamic_partitions"
+module_name = "dagster_test.toys.repo"
