@@ -1,6 +1,7 @@
 import os
 import uuid
 from contextlib import contextmanager
+from time import sleep
 from typing import Iterator
 from unittest.mock import patch
 
@@ -43,17 +44,19 @@ resource_config = {
     "warehouse": "warehouse_abc",
 }
 
-# IS_BUILDKITE = os.getenv("BUILDKITE") is not None
-IS_BUILDKITE = True
+IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+# IS_BUILDKITE = True
 
 
 SHARED_BUILDKITE_BQ_CONFIG = {
     "project": os.getenv("GCP_PROJECT_ID"),
-    "temporary_gcs_bucket": "gcs_io_manager_test",
+    # "temporary_gcs_bucket": "gcs_io_manager_test",
 }
 
-BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0,com.google.cloud.bigdataoss:gcs-connector:hadoop2-2.1.9"
-# BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
+# BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0,com.google.cloud.bigdataoss:gcs-connector:hadoop2-2.1.9"
+BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
+
+SLEEP_TIME = 2
 
 
 @contextmanager
@@ -220,14 +223,14 @@ def test_time_window_partitioned_asset():
                 .getOrCreate()
             )
 
-            spark._jsc.hadoopConfiguration().set(
-                "fs.gs.impl", "com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem"
-            )
-            spark._jsc.hadoopConfiguration().set("fs.gs.auth.service.account.enable", "true")
-            spark._jsc.hadoopConfiguration().set(
-                "google.cloud.auth.service.account.json.keyfile",
-                os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
-            )
+            # spark._jsc.hadoopConfiguration().set(
+            #     "fs.gs.impl", "com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystem"
+            # )
+            # spark._jsc.hadoopConfiguration().set("fs.gs.auth.service.account.enable", "true")
+            # spark._jsc.hadoopConfiguration().set(
+            #     "google.cloud.auth.service.account.json.keyfile",
+            #     os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+            # )
 
             schema = StructType(
                 [
@@ -274,6 +277,8 @@ def test_time_window_partitioned_asset():
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
+        sleep(SLEEP_TIME)
+
         materialize(
             [daily_partitioned, downstream_partitioned],
             partition_key="2022-01-02",
@@ -285,6 +290,8 @@ def test_time_window_partitioned_asset():
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+
+        sleep(SLEEP_TIME)
 
         materialize(
             [daily_partitioned, downstream_partitioned],
@@ -363,6 +370,8 @@ def test_static_partitioned_asset():
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
+        sleep(SLEEP_TIME)
+
         materialize(
             [static_partitioned, downstream_partitioned],
             partition_key="blue",
@@ -374,6 +383,8 @@ def test_static_partitioned_asset():
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+
+        sleep(SLEEP_TIME)
 
         materialize(
             [static_partitioned, downstream_partitioned],
@@ -463,6 +474,8 @@ def test_multi_partitioned_asset():
         )
         assert out_df["A"].tolist() == ["1", "1", "1"]
 
+        sleep(SLEEP_TIME)
+
         materialize(
             [multi_partitioned, downstream_partitioned],
             partition_key=MultiPartitionKey({"time": "2022-01-01", "color": "blue"}),
@@ -486,6 +499,8 @@ def test_multi_partitioned_asset():
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
         )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
+
+        sleep(SLEEP_TIME)
 
         materialize(
             [multi_partitioned, downstream_partitioned],
@@ -573,6 +588,8 @@ def test_dynamic_partitions():
 
             dynamic_fruits.add_partitions(["orange"], instance)
 
+            sleep(SLEEP_TIME)
+
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
                 partition_key="orange",
@@ -585,6 +602,8 @@ def test_dynamic_partitions():
                 f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
+
+            sleep(SLEEP_TIME)
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
