@@ -11,6 +11,7 @@ from dagster_graphql.implementation.execution.backfill import (
     create_and_launch_partition_backfill,
     resume_partition_backfill,
 )
+from dagster_graphql.implementation.execution.dynamic_partitions import add_dynamic_partition
 from dagster_graphql.implementation.execution.launch_execution import (
     launch_pipeline_execution,
     launch_pipeline_reexecution,
@@ -58,6 +59,7 @@ from ..inputs import (
     GrapheneLaunchBackfillParams,
     GrapheneReexecutionParams,
 )
+from ..partition_sets import GrapheneAddDynamicPartitionResult
 from ..pipelines.pipeline import GrapheneRun
 from ..runs import (
     GrapheneLaunchRunReexecutionResult,
@@ -327,6 +329,24 @@ class GrapheneResumeBackfillMutation(graphene.Mutation):
     @require_permission_check(Permissions.LAUNCH_PARTITION_BACKFILL)
     def mutate(self, graphene_info: ResolveInfo, backfillId: str):
         return resume_partition_backfill(graphene_info, backfillId)
+
+
+class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
+    """Adds a partition to a dynamic partition set."""
+
+    Output = graphene.NonNull(GrapheneAddDynamicPartitionResult)
+
+    class Arguments:
+        partitionsDefName = graphene.NonNull(graphene.String)
+        partitionKey = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "AddDynamicPartitionMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.ADD_DYNAMIC_PARTITION)
+    def mutate(self, graphene_info: ResolveInfo, partitionsDefName: str, partitionKey: str):
+        return add_dynamic_partition(graphene_info, partitionsDefName, partitionKey)
 
 
 @capture_error
@@ -694,3 +714,4 @@ class GrapheneDagitMutation(graphene.ObjectType):
     cancel_partition_backfill = GrapheneCancelBackfillMutation.Field()
     log_telemetry = GrapheneLogTelemetryMutation.Field()
     set_nux_seen = GrapheneSetNuxSeenMutation.Field()
+    add_dynamic_partition = GrapheneAddDynamicPartitionMutation.Field()

@@ -2907,6 +2907,7 @@ type DagitMutation {
     metadata: String!
   ): LogTelemetryMutationResult!
   setNuxSeen: Boolean!
+  addDynamicPartition(partitionKey: String!, partitionsDefName: String!): AddDynamicPartitionResult!
 }
 
 input ReexecutionParams {
@@ -2949,6 +2950,13 @@ union LogTelemetryMutationResult = LogTelemetrySuccess | PythonError
 
 type LogTelemetrySuccess {
   action: String!
+}
+
+union AddDynamicPartitionResult = AddDynamicPartitionSuccess | UnauthorizedError | PythonError
+
+type AddDynamicPartitionSuccess {
+  partitionsDefName: String!
+  partitionKey: String!
 }
 
 type DagitSubscription {

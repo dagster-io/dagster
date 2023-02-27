@@ -30,6 +30,7 @@ from .errors import (
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
+    GrapheneUnauthorizedError,
 )
 from .inputs import GrapheneRunsFilter
 from .pipelines.pipeline import GrapheneRun
@@ -37,6 +38,24 @@ from .pipelines.status import GrapheneRunStatus
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import ResolveInfo, non_null_list
+
+
+class GrapheneAddDynamicPartitionSuccess(graphene.ObjectType):
+    partitionsDefName = graphene.NonNull(graphene.String)
+    partitionKey = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "AddDynamicPartitionSuccess"
+
+
+class GrapheneAddDynamicPartitionResult(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneAddDynamicPartitionSuccess,
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+        )
+        name = "AddDynamicPartitionResult"
 
 
 class GraphenePartitionTags(graphene.ObjectType):

@@ -17,6 +17,17 @@ export type Scalars = {
   RunConfigData: any;
 };
 
+export type AddDynamicPartitionResult =
+  | AddDynamicPartitionSuccess
+  | PythonError
+  | UnauthorizedError;
+
+export type AddDynamicPartitionSuccess = {
+  __typename: 'AddDynamicPartitionSuccess';
+  partitionKey: Scalars['String'];
+  partitionsDefName: Scalars['String'];
+};
+
 export type AlertFailureEvent = MessageEvent &
   RunEvent & {
     __typename: 'AlertFailureEvent';
@@ -426,6 +437,7 @@ export type DaemonStatus = {
 
 export type DagitMutation = {
   __typename: 'DagitMutation';
+  addDynamicPartition: AddDynamicPartitionResult;
   cancelPartitionBackfill: CancelBackfillResult;
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
@@ -450,6 +462,11 @@ export type DagitMutation = {
   terminatePipelineExecution: TerminateRunResult;
   terminateRun: TerminateRunResult;
   wipeAssets: AssetWipeMutationResult;
+};
+
+export type DagitMutationAddDynamicPartitionArgs = {
+  partitionKey: Scalars['String'];
+  partitionsDefName: Scalars['String'];
 };
 
 export type DagitMutationCancelPartitionBackfillArgs = {

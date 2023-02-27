@@ -116,6 +116,23 @@ GET_PARTITION_SET_STATUS_QUERY = """
 """
 
 
+ADD_DYNAMIC_PARTITION_MUTATION = """
+mutation($partitionsDefName: String!, $partitionKey: String!) {
+    addDynamicPartition(partitionsDefName: $partitionsDefName, partitionKey: $partitionKey) {
+        __typename
+        ... on AddDynamicPartitionSuccess {
+            partitionsDefName
+            partitionKey
+        }
+        ... on PythonError {
+            message
+            stack
+        }
+    }
+}
+"""
+
+
 class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
     def test_get_partition_sets_for_pipeline(self, graphql_context, snapshot):
         selector = infer_repository_selector(graphql_context)
@@ -340,3 +357,16 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
                 assert partitionStatus["runStatus"] == "SUCCESS"
             else:
                 assert partitionStatus["runStatus"] is None
+
+    def test_add_dynamic_partitions(self, graphql_context):
+        result = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            ADD_DYNAMIC_PARTITION_MUTATION,
+            variables={"partitionsDefName": "foo", "partitionKey": "bar"},
+        )
+        assert not result.errors
+        assert result.data["addDynamicPartition"]["__typename"] == "AddDynamicPartitionSuccess"
+        assert result.data["addDynamicPartition"]["partitionsDefName"] == "foo"
+        assert result.data["addDynamicPartition"]["partitionKey"] == "bar"
+
+        assert set(graphql_context.instance.get_dynamic_partitions("foo")) == {"bar"}
