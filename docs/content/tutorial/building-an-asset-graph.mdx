@@ -1,9 +1,9 @@
 ---
-title: Building an asset graph | Dagster Docs
+title: "Tutorial, part four: Building an asset graph | Dagster Docs"
 description: Learn how to build graphs of assets in Dagster
 ---
 
-# Dagster tutorial, part four: Building an asset graph
+# Tutorial, part four: Building an asset graph
 
 In the previous portion of the tutorial, you wrote your first Software-defined asset (SDA), looked at Dagster's UI, and manually materialized your asset.
 
@@ -22,7 +22,7 @@ By the end of the previous section, you ingested the top Hacker News story IDs i
 Copy and paste the completed asset code below into `assets.py`:
 
 <Note>
-  Add new imports, such as `import pandas as pd`, to the top of `assets.py`
+  Add new imports, such as <code>import pandas as pd</code>, to the top of <code>assets.py</code>
 </Note>
 
 ```python
@@ -85,7 +85,7 @@ For more information about loggers, such as the different types of logging, refe
 
 ---
 
-## Creating an unstructured data asset
+## Step 2: Creating an unstructured data asset
 
 Along with structured data like tables, Dagster's assets can also be unstructured data, such as images. Your next and final asset will take the data frame of stories and create a word cloud with the titles.
 
@@ -123,7 +123,7 @@ def topstories_word_cloud(topstories):
 
 ---
 
-## Educating users with metadata
+## Step 3: Educating users with metadata
 
 Software-defined assets can be enriched with different types of metadata. Anything can be used as metadata for an SDA. Common details to add are:
 

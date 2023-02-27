@@ -1,5 +1,5 @@
 ---
-title: Getting set up | Dagster Docs
+title: "Tutorial, part two: Getting set up | Dagster Docs"
 description: Learn how to install Dagster and get started with the Dagster tutorial.
 ---
 
@@ -28,16 +28,20 @@ To complete this tutorial, you'll need:
   - `pandas` is a popular library for working with tabular data
   - `matplotlib` makes it easy to make charts in Python
   - `wordcloud` has utilities for text processing and making word clouds
-  - `dagster_duckdb` manages how Dagster can read and write to DuckDB, an in-memory data warehouse, similar to SQLite, that you'll use for this tutorial
+  - `dagster_duckdb` manages how Dagster can read and write to DuckDB, an in-memory data warehouse similar to SQLite, that you'll use for this tutorial
   - `dagster_duckdb_pandas` allows loading data from DuckDB into Pandas data frames
 
-## Making your first Dagster project
+---
+
+## Creating your first Dagster project
 
 To verify that your Dagster installation was successful, it's time for you to create your first Dagster project! You'll use the Dagster scaffolding command to give you an empty Dagster project that you can run locally.
 
 To create the project, run:
 
-    dagster project scaffold --name tutorial-project
+```bash
+dagster project scaffold --name tutorial-project
+```
 
 To verify that it worked and that you can run Dagster locally, run:
 
