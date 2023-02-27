@@ -61,7 +61,7 @@ def continent_stats(country_populations: DataFrame, continent_change_model: Line
 The graph loaded into Dagster's web UI:
 
 <p align="center">
-  <img width="380px" alt="An example asset graph as rendered in the Dagster UI" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/readme-asset-graph.png">
+  <img width="400px" alt="An example asset graph as rendered in the Dagster UI" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/readme-asset-graph.png">
 </p>
 
 Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
@@ -89,21 +89,22 @@ You can find the full Dagster documentation [here](https://docs.dagster.io), inc
 
 <hr/>
 
-# Key Features:
+## Key Features:
 
 <p align="center">
   <img width="100%" alt="image" src="https://raw.githubusercontent.com/dagster-io/dagster/fraser/rework-readme/.github/key-features-cards.svg">
 </p>
 
-## Dagster as a productivity platform
+### Dagster as a productivity platform
 Identify the key assets you need to create using a declarative approach, or you can focus on running basic tasks. Embrace CI/CD best practices from the get-go: build reusable components, spot data quality issues, and flag bugs early.
 
-## Dagster as a robust orchestration engine
+### Dagster as a robust orchestration engine
 Put your pipelines into production with a robust multi-tenant, multi-tool engine that scales technically and organizationally.
 
-## Dagster as a unified control plane
+### Dagster as a unified control plane
 Maintain control over your data as the complexity scales. Centralize your metadata in one tool with built-in observability, diagnostics, cataloging, and lineage. Spot any issues and identify performance improvement opportunities.
 
+<hr />
 
 ## Master the Modern Data Stack with integrations
 
