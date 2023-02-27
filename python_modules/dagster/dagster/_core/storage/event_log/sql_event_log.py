@@ -672,7 +672,6 @@ class SqlEventLogStorage(EventLogStorage):
         if len(removed_asset_keys) > 0:
             keys_to_check = []
             keys_to_check.extend([key.to_string() for key in removed_asset_keys])  # type: ignore  # (bad sig?)
-            keys_to_check.extend([key.to_string(legacy=True) for key in removed_asset_keys])  # type: ignore  # (bad sig?)
             remaining_asset_keys = [
                 AssetKey.from_db_string(row[0])
                 for row in conn.execute(
@@ -685,7 +684,6 @@ class SqlEventLogStorage(EventLogStorage):
             if to_remove:
                 keys_to_remove = []
                 keys_to_remove.extend([key.to_string() for key in to_remove])  # type: ignore  # (bad sig?)
-                keys_to_remove.extend([key.to_string(legacy=True) for key in to_remove])  # type: ignore  # (bad sig?)
                 conn.execute(
                     AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
                         AssetKeyTable.c.asset_key.in_(keys_to_remove)
@@ -783,12 +781,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         if event_records_filter.asset_key:
             query = query.where(
-                db.or_(
-                    SqlEventLogStorageTable.c.asset_key
-                    == event_records_filter.asset_key.to_string(),
-                    SqlEventLogStorageTable.c.asset_key
-                    == event_records_filter.asset_key.to_string(legacy=True),
-                )
+                SqlEventLogStorageTable.c.asset_key == event_records_filter.asset_key.to_string(),
             )
 
         if event_records_filter.asset_partitions:
@@ -1322,10 +1315,7 @@ class SqlEventLogStorage(EventLogStorage):
                 conn.execute(
                     AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
                     .where(
-                        db.or_(
-                            AssetKeyTable.c.asset_key == asset_key.to_string(),
-                            AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
-                        )
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
                     )
                     .values(cached_status_data=serialize_dagster_namedtuple(cache_values))
                 )
@@ -1431,10 +1421,7 @@ class SqlEventLogStorage(EventLogStorage):
         for i in range(len(assets_details)):
             asset_key, asset_details = asset_keys[i], assets_details[i]
             if asset_details and asset_details.last_wipe_timestamp:
-                asset_key_in_row = db.or_(
-                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
-                )
+                asset_key_in_row = SqlEventLogStorageTable.c.asset_key == asset_key.to_string()
                 # If asset key is in row, keep the row if the timestamp > wipe timestamp, else remove the row.
                 # If asset key is not in row, keep the row.
                 query = query.where(
@@ -1570,10 +1557,7 @@ class SqlEventLogStorage(EventLogStorage):
                 [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
             )
             .where(
-                db.or_(
-                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
-                )
+                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
             )
             .group_by(
                 SqlEventLogStorageTable.c.run_id,
@@ -1648,10 +1632,7 @@ class SqlEventLogStorage(EventLogStorage):
                 AssetKeyTable.update()  # pylint: disable=no-value-for-parameter
                 .values(**wiped_values)
                 .where(
-                    db.or_(
-                        AssetKeyTable.c.asset_key == asset_key.to_string(),
-                        AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
-                    )
+                    AssetKeyTable.c.asset_key == asset_key.to_string(),
                 )
             )
 
@@ -1670,13 +1651,8 @@ class SqlEventLogStorage(EventLogStorage):
             )
             .where(
                 db.and_(
-                    db.or_(
-                        SqlEventLogStorageTable.c.asset_key.in_(
-                            [asset_key.to_string() for asset_key in asset_keys]
-                        ),
-                        SqlEventLogStorageTable.c.asset_key.in_(
-                            [asset_key.to_string(legacy=True) for asset_key in asset_keys]
-                        ),
+                    SqlEventLogStorageTable.c.asset_key.in_(
+                        [asset_key.to_string() for asset_key in asset_keys]
                     ),
                     SqlEventLogStorageTable.c.partition != None,  # noqa: E711
                     SqlEventLogStorageTable.c.dagster_event_type

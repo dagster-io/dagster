@@ -121,10 +121,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                 materialization_query = (
                     db.select([SqlEventLogStorageTable.c.event])
                     .where(
-                        db.or_(
-                            SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                            SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
-                        )
+                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                     )
                     .order_by(SqlEventLogStorageTable.c.timestamp.desc())
                     .limit(1)
