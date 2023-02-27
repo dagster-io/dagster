@@ -712,6 +712,11 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_isPartitioned(self, _graphene_info: ResolveInfo) -> bool:
         return self._external_asset_node.partitions_def_data is not None
 
+    def resolve_isDynamicPartitioned(self, _graphene_info: ResolveInfo) -> bool:
+        return isinstance(
+            self._external_asset_node.partitions_def_data, ExternalDynamicPartitionsDefinitionData
+        )
+
     def resolve_isObservable(self, _graphene_info: ResolveInfo) -> bool:
         return self._external_asset_node.is_observable
 

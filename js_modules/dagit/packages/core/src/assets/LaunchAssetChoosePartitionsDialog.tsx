@@ -120,6 +120,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   target,
   upstreamAssetKeys,
 }) => {
+  console.log({assets});
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
   const {canLaunchPartitionBackfill} = usePermissionsForLocation(repoAddress.location);

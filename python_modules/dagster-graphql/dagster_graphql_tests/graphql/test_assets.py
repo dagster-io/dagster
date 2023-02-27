@@ -282,6 +282,7 @@ GET_1D_MATERIALIZED_PARTITIONS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!) {
         assetNodes(pipeline: $pipelineSelector) {
             id
+            isDynamicPartitioned
             materializedPartitions {
                 ... on TimePartitions {
                     ranges {
@@ -966,6 +967,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["assetNodes"]
         asset_node = result.data["assetNodes"][0]
+        assert result.data["assetNodes"][0]["isDynamicPartitioned"] is False
         materialized_partitions = asset_node["materializedPartitions"]["materializedPartitions"]
         assert len(materialized_partitions) == 2
         assert set(materialized_partitions) == {"a", "c"}
@@ -1002,6 +1004,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             assert (
                 result.data["assetNodes"][i]["partitionKeysByDimension"][0]["partitionKeys"] == []
             )
+            assert result.data["assetNodes"][i]["isDynamicPartitioned"] is True
 
         counts = traced_counter.get().counts()
         assert counts.get("DagsterInstance.get_dynamic_partitions") == 1
