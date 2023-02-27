@@ -355,7 +355,7 @@ class PlanExecutionContext(IPlanContext):
         return partitions_def
 
     @property
-    def is_partitioned_run(self) -> bool:
+    def has_partitions(self) -> bool:
         tags = self._plan_data.dagster_run.tags
         return bool(
             PARTITION_NAME_TAG in tags
@@ -373,7 +373,7 @@ class PlanExecutionContext(IPlanContext):
             get_multipartition_key_from_tags,
         )
 
-        if not self.is_partitioned_run:
+        if not self.has_partitions:
             raise DagsterInvariantViolationError(
                 "Cannot access partition_key for a non-partitioned run"
             )
@@ -404,7 +404,7 @@ class PlanExecutionContext(IPlanContext):
             get_multipartition_key_from_tags,
         )
 
-        if not self.is_partitioned_run:
+        if not self.has_partitions:
             raise DagsterInvariantViolationError(
                 "Cannot access partition_key for a non-partitioned run"
             )
@@ -414,9 +414,8 @@ class PlanExecutionContext(IPlanContext):
             multipartition_key = get_multipartition_key_from_tags(tags)
             return PartitionKeyRange(multipartition_key, multipartition_key)
         elif PARTITION_NAME_TAG in tags:
-            partition_key = tags.get(PARTITION_NAME_TAG)
-            if partition_key is not None:
-                return PartitionKeyRange(partition_key, partition_key)
+            partition_key = tags[PARTITION_NAME_TAG]
+            return PartitionKeyRange(partition_key, partition_key)
         else:
             partition_key_range_start = tags[ASSET_PARTITION_RANGE_START_TAG]
             if partition_key_range_start is not None:
