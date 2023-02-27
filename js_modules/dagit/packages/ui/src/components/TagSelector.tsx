@@ -22,9 +22,9 @@ type Props = {
   selectedTags: string[];
   setSelectedTags: (tags: React.SetStateAction<string[]>) => void;
   renderTag?: (tag: string, tagProps: TagProps) => React.ReactNode;
-  renderTagList?: (tags: React.ReactElement[]) => React.ReactNode;
-  renderDropdown?: (dropdown: React.ReactElement) => React.ReactNode;
-  renderDropdownItem?: (tag: string, dropdownItemProps: DropdownItemProps) => React.ReactElement;
+  renderTagList?: (tags: React.ReactNode[]) => React.ReactNode;
+  renderDropdown?: (dropdown: React.ReactNode) => React.ReactNode;
+  renderDropdownItem?: (tag: string, dropdownItemProps: DropdownItemProps) => React.ReactNode;
   dropdownStyles?: React.CSSProperties;
 };
 
