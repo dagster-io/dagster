@@ -38,7 +38,7 @@ export function usePartitionNameForPipeline(repoAddress: RepoAddress, pipelineNa
   );
 }
 
-const ASSET_JOB_PARTITION_SETS_QUERY = gql`
+export const ASSET_JOB_PARTITION_SETS_QUERY = gql`
   query AssetJobPartitionSetsQuery(
     $pipelineName: String!
     $repositoryName: String!

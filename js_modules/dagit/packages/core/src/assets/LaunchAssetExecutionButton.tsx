@@ -638,7 +638,7 @@ export const LAUNCH_ASSET_LOADER_QUERY = gql`
   ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
 `;
 
-const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
+export const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
   query LaunchAssetLoaderResourceQuery(
     $pipelineName: String!
     $repositoryLocationName: String!
