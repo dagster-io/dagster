@@ -42,7 +42,7 @@ def test_get_select_statement():
         BigQueryClient.get_select_statement(
             TableSlice(database="db", schema="schema1", table="table1")
         )
-        == "SELECT * FROM db.schema1.table1"
+        == "SELECT * FROM `db.schema1.table1`"
     )
 
 
@@ -56,7 +56,7 @@ def test_get_select_statement_columns():
                 columns=["apple", "banana"],
             )
         )
-        == "SELECT apple, banana FROM db.schema1.table1"
+        == "SELECT apple, banana FROM `db.schema1.table1`"
     )
 
 
@@ -76,7 +76,7 @@ def test_get_select_statement_partitioned():
                 columns=["apple", "banana"],
             )
         )
-        == "SELECT apple, banana FROM db.schema1.table1 WHERE\nmy_timestamp_col >= '2020-01-02"
+        == "SELECT apple, banana FROM `db.schema1.table1` WHERE\nmy_timestamp_col >= '2020-01-02"
         " 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
     )
 
@@ -134,7 +134,7 @@ def test_get_select_statement_multi_partitioned():
                 ],
             )
         )
-        == "SELECT * FROM db.schema1.table1 WHERE\nmy_fruit_col in ('apple')"
+        == "SELECT * FROM `db.schema1.table1` WHERE\nmy_fruit_col in ('apple')"
         " AND\nmy_timestamp_col >="
         " '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
     )
@@ -143,7 +143,7 @@ def test_get_select_statement_multi_partitioned():
 def test_get_cleanup_statement():
     assert (
         _get_cleanup_statement(TableSlice(database="db", schema="schema1", table="table1"))
-        == "TRUNCATE TABLE db.schema1.table1"
+        == "TRUNCATE TABLE `db.schema1.table1`"
     )
 
 
@@ -162,7 +162,7 @@ def test_get_cleanup_statement_partitioned():
                 ],
             )
         )
-        == "DELETE FROM db.schema1.table1 WHERE\nmy_timestamp_col >= '2020-01-02 00:00:00' AND"
+        == "DELETE FROM `db.schema1.table1` WHERE\nmy_timestamp_col >= '2020-01-02 00:00:00' AND"
         " my_timestamp_col < '2020-02-03 00:00:00'"
     )
 
@@ -179,7 +179,7 @@ def test_get_cleanup_statement_static_partitioned():
                 ],
             )
         )
-        == "DELETE FROM db.schema1.table1 WHERE\nmy_fruit_col in ('apple')"
+        == "DELETE FROM `db.schema1.table1` WHERE\nmy_fruit_col in ('apple')"
     )
 
 
@@ -199,7 +199,7 @@ def test_get_cleanup_statement_multi_partitioned():
                 ],
             )
         )
-        == "DELETE FROM db.schema1.table1 WHERE\nmy_fruit_col in ('apple') AND\nmy_timestamp_col >="
+        == "DELETE FROM `db.schema1.table1` WHERE\nmy_fruit_col in ('apple') AND\nmy_timestamp_col >="
         " '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
     )
 
