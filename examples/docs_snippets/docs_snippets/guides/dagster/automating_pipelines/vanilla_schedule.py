@@ -1,0 +1,6 @@
+
+from dagster import AssetSelection, define_asset_job, ScheduleDefinition
+
+asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_group"))
+
+basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 9 * * *")

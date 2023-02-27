@@ -19,12 +19,13 @@ This is one of the most traditional cases when building a pipeline. Lets go into
 ### I want a job to start at a specific time
 
 In Dagster, we have [basic scheduling](/concepts/partitions-schedules-sensors/schedules#basic-schedules) capabilities, which means that you say how often and when you want a job to run, and it will run. This can mean daily, weekly, or hourly. Dagster also supports any type of [cron scheduling](https://en.wikipedia.org/wiki/Cron).
-```python file=/guides/dagster/automated_pipelines/vanilla_schedule.py
+```python file=/examples/docs_snippets/docs_snippets/guides/dagster/automating_pipelines/vanilla_schedule.py
 from dagster import AssetSelection, define_asset_job, ScheduleDefinition
 
 asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_group"))
 
 basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 9 * * *")
+
 ```
 You can also use the <PyObject object="schedule" decorator /> decorator if you want to provide custom run config and tags. For example, if you want to pass a parameter to the job at runtime, for example, activity = ‘party’ on the weekend and activity=’grind’ on the weekdays, you can use the configuration to pass parameters in. 
 ```python file=/guides/dagster/automated_pipelines/config_schedule.py
@@ -37,7 +38,7 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
   if context.scheduled_execution_time.weekday()<5:
     activity_selection='grind'
   else: 
-    activity_selection= 'part'
+    activity_selection= 'party'
   return RunRequest(
     run_config={"ops": {"configurable_op": {"config": {"activity": activity_selection}}}})
 ```
@@ -55,9 +56,9 @@ This approach allows you to think about each asset’s freshness requirements in
 
 In the following example, we set the freshness policy to instruct the sales asset not to be more than 60 minutes old by 9:00 AM. The sales data will prompt the upstream transactions asset to materialize to stay within the freshness policy. 
 
-We also have a asset for the expenses which also depends on the transactions asset. This asset has a freshness policy of 120 minutes, or two hours at any time, since it did not specify a schedule. The expenses asset will require the transactions data to be refreshed in order to comply with the freshness policy.
+We also have an asset for the expenses, which also depends on the transactions asset. This asset has a freshness policy of 120 minutes, or two hours at any time, since it did not specify a schedule. The expenses asset will require the transactions data to be refreshed in order to comply with the freshness policy.
 
-```python file=/guides/dagster/automated_pipelines/declare_schedule.py
+```python file=/examples/docs_snippets/docs_snippets/guides/dagster/automating_pipelines/declare_schedule.py
 from dagster import (
     AssetSelection,
     Definitions,
@@ -90,7 +91,7 @@ defs = Definitions(assets=[transactions, sales, expenses], sensors=[update_senso
 ### I want my data to be updated when an event happens
 
 Let’s say you have sales pipeline data that you want updated every time a customer submits an RFP on your website. Dagster offers [sensors](/concepts/partitions-schedules-sensors/sensors) that allow you to kick off jobs based on some external change, such as a new file in an S3 bucket, if some other asset is updated, or if a system is down.
-```python file=/guides/dagster/automated_pipelines/s3_sensor.py
+```python file=/examples/docs_snippets/docs_snippets/guides/dagster/automating_pipelines/s3_sensor.py
 from dagster_aws.s3.sensor import get_s3_keys
 
 
@@ -112,7 +113,7 @@ If every time you materialize Airbyte assets you want to execute a dbt asset, [a
 Dagster provides [reconciliation sensors](/concepts/partitions-schedules-sensors/asset-sensors#asset-reconciliation-sensors) that automatically materialize assets if they are ‘unreconciled’. One of the ways assets are considered unreconciled if any of the asset’s upstream dependencies have been materialized more recently than it has.  
 
 In the example below, the sensor will materialize the dbt assets when the parent Airbtye assets materialize.
-```python file=/guides/dagster/automated_pipelines/airbyte_dbt_sensor.py
+```python file=/examples/docs_snippets/docs_snippets/guides/dagster/automating_pipelines/airbyte_dbt_sensor.py
 from dagster import build_asset_reconciliation_sensor
 
 defs = Definitions(
