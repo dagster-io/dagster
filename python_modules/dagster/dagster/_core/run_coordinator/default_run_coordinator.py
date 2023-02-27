@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
@@ -10,7 +11,7 @@ from .base import RunCoordinator, SubmitRunContext
 class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
     """Immediately send runs to the run launcher."""
 
-    def __init__(self, inst_data=None):
+    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._logger = logging.getLogger("dagster.run_coordinator.default_run_coordinator")
         super().__init__()

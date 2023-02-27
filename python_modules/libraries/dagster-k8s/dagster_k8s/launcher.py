@@ -53,7 +53,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         image_pull_secrets=None,
         load_incluster_config=True,
         kubeconfig_file=None,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
         job_namespace="default",
         env_config_maps=None,
         env_secrets=None,

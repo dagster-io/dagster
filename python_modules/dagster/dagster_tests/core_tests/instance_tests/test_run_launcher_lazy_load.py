@@ -1,14 +1,15 @@
-# pylint: disable=redefined-outer-name
-
+from typing import Any, Mapping, Optional
 
 import pytest
 from dagster._core.launcher import RunLauncher
 from dagster._core.test_utils import instance_for_test
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
+from typing_extensions import Self
 
 
 class InitFailRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None):
+    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         super().__init__()
         self._inst_data = inst_data
         raise Exception("Expected init fail")
@@ -21,8 +22,10 @@ class InitFailRunLauncher(RunLauncher, ConfigurableClass):
     def config_type(cls):
         return {}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return InitFailRunLauncher(inst_data=inst_data)
 
     def launch_run(self, context):

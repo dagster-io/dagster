@@ -1,6 +1,8 @@
 import abc
 import os
-from typing import NamedTuple, Optional, Sequence
+from typing import Any, Mapping, NamedTuple, Optional, Sequence
+
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._config import Field, IntSource
@@ -14,6 +16,7 @@ from dagster._core.scheduler.instigation import (
     ScheduleInstigatorData,
 )
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
 from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import mkdir_p
 
@@ -175,7 +178,10 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
     """
 
     def __init__(
-        self, max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS, max_tick_retries=0, inst_data=None
+        self,
+        max_catchup_runs=DEFAULT_MAX_CATCHUP_RUNS,
+        max_tick_retries=0,
+        inst_data: Optional[ConfigurableClassData] = None,
     ):
         self.max_catchup_runs = check.opt_int_param(
             max_catchup_runs, "max_catchup_runs", DEFAULT_MAX_CATCHUP_RUNS
@@ -216,8 +222,10 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
             ),
         }
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return DagsterDaemonScheduler(inst_data=inst_data, **config_value)
 
     def debug_info(self):

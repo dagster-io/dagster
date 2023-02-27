@@ -6,6 +6,7 @@ from urllib.parse import urljoin, urlparse
 import sqlalchemy as db
 from sqlalchemy.engine import Connection
 from sqlalchemy.pool import NullPool
+from typing_extensions import Self
 
 from dagster import (
     StringSource,
@@ -70,16 +71,14 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return {"base_dir": StringSource}
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: "SqliteStorageConfig"
+        cls, inst_data: Optional[ConfigurableClassData], config_value: "SqliteStorageConfig"
     ) -> "SqliteRunStorage":
         return SqliteRunStorage.from_local(inst_data=inst_data, **config_value)
 
     @classmethod
-    def from_local(
-        cls, base_dir: str, inst_data: Optional[ConfigurableClassData] = None
-    ) -> "SqliteRunStorage":
+    def from_local(cls, base_dir: str, inst_data: Optional[ConfigurableClassData] = None) -> Self:
         check.str_param(base_dir, "base_dir")
         mkdir_p(base_dir)
         conn_string = create_db_conn_string(base_dir, "runs")

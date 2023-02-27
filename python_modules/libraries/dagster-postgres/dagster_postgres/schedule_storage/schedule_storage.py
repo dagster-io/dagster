@@ -119,9 +119,9 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def config_type(cls) -> UserConfigSchema:
         return pg_config()
 
-    @staticmethod
+    @classmethod
     def from_config_value(
-        inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
+        cls, inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
     ) -> "PostgresScheduleStorage":
         return PostgresScheduleStorage(
             inst_data=inst_data,

@@ -1,6 +1,6 @@
 import os
 from contextlib import contextmanager
-from typing import Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import dagster._seven as seven
 from azure.identity import DefaultAzureCredential
@@ -22,6 +22,7 @@ from dagster._core.storage.local_compute_log_manager import (
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir, ensure_file
+from typing_extensions import Self
 
 from .utils import create_blob_client, generate_blob_sas
 
@@ -70,7 +71,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         container,
         secret_key=None,
         local_dir=None,
-        inst_data=None,
+        inst_data: Optional[ConfigurableClassData] = None,
         prefix="dagster",
         upload_interval=None,
         default_azure_credential=None,
@@ -133,8 +134,10 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
         }
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return AzureBlobComputeLogManager(inst_data=inst_data, **config_value)
 
     @property

@@ -1,5 +1,7 @@
 from contextlib import contextmanager
-from typing import IO, Generator, Optional, Sequence
+from typing import IO, Any, Generator, Mapping, Optional, Sequence
+
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.storage.captured_log_manager import (
@@ -20,7 +22,7 @@ from .compute_log_manager import (
 
 
 class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableClass):
-    def __init__(self, inst_data=None):
+    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @property
@@ -31,8 +33,10 @@ class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableC
     def config_type(cls):
         return {}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return NoOpComputeLogManager(inst_data=inst_data, **config_value)
 
     def enabled(self, _pipeline_run, _step_key):

@@ -1,7 +1,13 @@
+from typing import Any, Mapping, Optional
+
+from typing_extensions import Self
+
 import dagster._check as check
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.execution.api import execute_run
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 
 
@@ -11,7 +17,7 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
     Use the :py:class:`dagster.DefaultRunLauncher`.
     """
 
-    def __init__(self, inst_data=None):
+    def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = inst_data
         self._repository = None
         self._instance_ref = None
@@ -19,15 +25,17 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
         super().__init__()
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
-    def config_type(cls):
+    def config_type(cls) -> UserConfigSchema:
         return {}
 
-    @staticmethod
-    def from_config_value(inst_data, config_value):
+    @classmethod
+    def from_config_value(
+        cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
+    ) -> Self:
         return SyncInMemoryRunLauncher(inst_data=inst_data)
 
     def launch_run(self, context: LaunchRunContext) -> None:

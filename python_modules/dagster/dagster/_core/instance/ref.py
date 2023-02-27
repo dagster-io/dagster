@@ -1,5 +1,5 @@
 import os
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence
 
 import yaml
 
@@ -7,6 +7,18 @@ import dagster._check as check
 from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
+
+if TYPE_CHECKING:
+    from dagster._core.launcher.base import RunLauncher
+    from dagster._core.run_coordinator.base import RunCoordinator
+    from dagster._core.scheduler.scheduler import Scheduler
+    from dagster._core.secrets.loader import SecretsLoader
+    from dagster._core.storage.base_storage import DagsterStorage
+    from dagster._core.storage.compute_log_manager import ComputeLogManager
+    from dagster._core.storage.event_log.base import EventLogStorage
+    from dagster._core.storage.root import LocalArtifactStorage
+    from dagster._core.storage.runs.base import RunStorage
+    from dagster._core.storage.schedules.base import ScheduleStorage
 
 
 def compute_logs_directory(base: str) -> str:
@@ -455,54 +467,93 @@ class InstanceRef(
         return InstanceRef(**{k: value_for_ref_item(k, v) for k, v in instance_ref_dict.items()})
 
     @property
-    def local_artifact_storage(self):
-        return self.local_artifact_storage_data.rehydrate()
+    def local_artifact_storage(self) -> "LocalArtifactStorage":
+        from dagster._core.storage.root import LocalArtifactStorage
+
+        return self.local_artifact_storage_data.rehydrate(as_type=LocalArtifactStorage)
 
     @property
-    def storage(self):
-        return self.storage_data.rehydrate() if self.storage_data else None
+    def storage(self) -> Optional["DagsterStorage"]:
+        from dagster._core.storage.base_storage import DagsterStorage
+
+        return self.storage_data.rehydrate(as_type=DagsterStorage) if self.storage_data else None
 
     @property
-    def run_storage(self):
-        return self.run_storage_data.rehydrate() if self.run_storage_data else None
+    def run_storage(self) -> Optional["RunStorage"]:
+        from dagster._core.storage.runs.base import RunStorage
+
+        return (
+            self.run_storage_data.rehydrate(as_type=RunStorage) if self.run_storage_data else None
+        )
 
     @property
-    def event_storage(self):
-        return self.event_storage_data.rehydrate() if self.event_storage_data else None
+    def event_storage(self) -> Optional["EventLogStorage"]:
+        from dagster._core.storage.event_log.base import EventLogStorage
+
+        return (
+            self.event_storage_data.rehydrate(as_type=EventLogStorage)
+            if self.event_storage_data
+            else None
+        )
 
     @property
-    def schedule_storage(self):
-        return self.schedule_storage_data.rehydrate() if self.schedule_storage_data else None
+    def schedule_storage(self) -> Optional["ScheduleStorage"]:
+        from dagster._core.storage.schedules.base import ScheduleStorage
+
+        return (
+            self.schedule_storage_data.rehydrate(as_type=ScheduleStorage)
+            if self.schedule_storage_data
+            else None
+        )
 
     @property
-    def compute_log_manager(self):
-        return self.compute_logs_data.rehydrate()
+    def compute_log_manager(self) -> "ComputeLogManager":
+        from dagster._core.storage.compute_log_manager import ComputeLogManager
+
+        return self.compute_logs_data.rehydrate(as_type=ComputeLogManager)
 
     @property
-    def scheduler(self):
-        return self.scheduler_data.rehydrate() if self.scheduler_data else None
+    def scheduler(self) -> Optional["Scheduler"]:
+        from dagster._core.scheduler.scheduler import Scheduler
+
+        return self.scheduler_data.rehydrate(as_type=Scheduler) if self.scheduler_data else None
 
     @property
-    def run_coordinator(self):
-        return self.run_coordinator_data.rehydrate() if self.run_coordinator_data else None
+    def run_coordinator(self) -> Optional["RunCoordinator"]:
+        from dagster._core.run_coordinator.base import RunCoordinator
+
+        return (
+            self.run_coordinator_data.rehydrate(as_type=RunCoordinator)
+            if self.run_coordinator_data
+            else None
+        )
 
     @property
-    def run_launcher(self):
-        return self.run_launcher_data.rehydrate() if self.run_launcher_data else None
+    def run_launcher(self) -> Optional["RunLauncher"]:
+        from dagster._core.launcher.base import RunLauncher
+
+        return (
+            self.run_launcher_data.rehydrate(as_type=RunLauncher)
+            if self.run_launcher_data
+            else None
+        )
 
     @property
-    def secrets_loader(self):
+    def secrets_loader(self) -> "SecretsLoader":
+        from dagster._core.secrets.env_file import EnvFileLoader
+        from dagster._core.secrets.loader import SecretsLoader
+
         # Defining a default here rather than in stored config to avoid
         # back-compat issues when loading the config on older versions where
         # EnvFileLoader was not defined
         return (
-            self.secrets_loader_data.rehydrate()
+            self.secrets_loader_data.rehydrate(as_type=SecretsLoader)
             if self.secrets_loader_data
             else ConfigurableClassData(
                 "dagster._core.secrets.env_file",
                 "EnvFileLoader",
                 yaml.dump({}),
-            ).rehydrate()
+            ).rehydrate(as_type=EnvFileLoader)
         )
 
     @property
