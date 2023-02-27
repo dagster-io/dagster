@@ -8,6 +8,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    Nothing,
     Output,
     _check as check,
     multi_asset,
@@ -63,6 +64,7 @@ def _build_fivetran_assets(
                 io_manager_key=io_manager_key,
                 key=user_facing_asset_keys[table],
                 metadata=_metadata_by_table_name.get(table),
+                dagster_type=Nothing,
             )
             for table, key in tracked_asset_keys.items()
         },
