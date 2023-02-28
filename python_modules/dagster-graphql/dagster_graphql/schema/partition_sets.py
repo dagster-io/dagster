@@ -380,13 +380,12 @@ class GraphenePartitionDefinition(graphene.ObjectType):
                 endKey=partitions_def.get_last_partition_key(),
             )
 
-        name = None
-        if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData):
-            name = partition_def_data.name
         super().__init__(
             description=str(partition_def_data.get_partitions_definition()),
             type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data),
-            name=name,
+            name=partition_def_data.name
+            if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
+            else None,
             dimensionTypes=[
                 GrapheneDimensionDefinitionType(
                     name=dim.name,
