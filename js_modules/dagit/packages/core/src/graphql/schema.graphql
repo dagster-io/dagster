@@ -782,15 +782,16 @@ type DimensionPartitionKeys {
 }
 
 enum StaleStatus {
+  MISSING
   STALE
   FRESH
-  UNKNOWN
 }
 
 type StaleStatusCause {
   status: StaleStatus!
   key: AssetKey!
   reason: String!
+  dependency: AssetKey
 }
 
 enum EvaluationErrorReason {

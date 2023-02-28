@@ -157,6 +157,7 @@ GET_ASSET_LOGICAL_VERSIONS = """
                 status
                 key { path }
                 reason
+                dependency { path }
             }
             assetMaterializations {
                 tags {

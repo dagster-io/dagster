@@ -70,9 +70,14 @@ def test_stale_status():
             result = _fetch_logical_versions(context, repo)
             foo = _get_asset_node("foo", result)
             assert foo["currentLogicalVersion"] is None
-            assert foo["staleStatus"] == "STALE"
+            assert foo["staleStatus"] == "MISSING"
             assert foo["staleStatusCauses"] == [
-                {"status": "STALE", "reason": "never materialized", "key": {"path": ["foo"]}}
+                {
+                    "status": "MISSING",
+                    "reason": "never materialized",
+                    "key": {"path": ["foo"]},
+                    "dependency": None,
+                }
             ]
 
             assert _materialize_assets(context, repo)
