@@ -2907,7 +2907,11 @@ type DagitMutation {
     metadata: String!
   ): LogTelemetryMutationResult!
   setNuxSeen: Boolean!
-  addDynamicPartition(partitionKey: String!, partitionsDefName: String!): AddDynamicPartitionResult!
+  addDynamicPartition(
+    partitionKey: String!
+    partitionsDefName: String!
+    repositorySelector: RepositorySelector!
+  ): AddDynamicPartitionResult!
 }
 
 input ReexecutionParams {

@@ -118,8 +118,8 @@ GET_PARTITION_SET_STATUS_QUERY = """
 
 
 ADD_DYNAMIC_PARTITION_MUTATION = """
-mutation($partitionsDefName: String!, $partitionKey: String!) {
-    addDynamicPartition(partitionsDefName: $partitionsDefName, partitionKey: $partitionKey) {
+mutation($partitionsDefName: String!, $partitionKey: String!, $repositorySelector: RepositorySelector!) {
+    addDynamicPartition(partitionsDefName: $partitionsDefName, partitionKey: $partitionKey, repositorySelector: $repositorySelector) {
         __typename
         ... on AddDynamicPartitionSuccess {
             partitionsDefName
@@ -128,6 +128,9 @@ mutation($partitionsDefName: String!, $partitionKey: String!) {
         ... on PythonError {
             message
             stack
+        }
+        ... on UnauthorizedError {
+            message
         }
     }
 }
@@ -360,10 +363,15 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
                 assert partitionStatus["runStatus"] is None
 
     def test_add_dynamic_partitions(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(
             graphql_context,
             ADD_DYNAMIC_PARTITION_MUTATION,
-            variables={"partitionsDefName": "foo", "partitionKey": "bar"},
+            variables={
+                "partitionsDefName": "foo",
+                "partitionKey": "bar",
+                "repositorySelector": repository_selector,
+            },
         )
         assert not result.errors
         assert result.data["addDynamicPartition"]["__typename"] == "AddDynamicPartitionSuccess"
@@ -375,18 +383,48 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             ADD_DYNAMIC_PARTITION_MUTATION,
-            variables={"partitionsDefName": "foo", "partitionKey": "bar"},
+            variables={
+                "partitionsDefName": "foo",
+                "partitionKey": "bar",
+                "repositorySelector": repository_selector,
+            },
         )
         assert not result.errors
         assert result.data["addDynamicPartition"]["__typename"] == "DuplicateDynamicPartitionError"
 
-
-class TestDynamicPartitionReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
-    def test_unauthorized_error_on_add_dynamic_partitions(self, graphql_context):
+    def test_nonexistent_dynamic_partitions_def_throws_error(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(
             graphql_context,
             ADD_DYNAMIC_PARTITION_MUTATION,
-            variables={"partitionsDefName": "foo", "partitionKey": "bar"},
+            variables={
+                "partitionsDefName": "nonexistent",
+                "partitionKey": "bar",
+                "repositorySelector": repository_selector,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["addDynamicPartition"]["__typename"] == "UnauthorizedError"
+        # If the selected repository does not contain a matching dynamic partitions definition
+        # we should throw an unauthorized error
+        assert (
+            "does not contain a dynamic partitions definition"
+            in result.data["addDynamicPartition"]["message"]
+        )
+
+
+class TestDynamicPartitionReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
+    def test_unauthorized_error_on_add_dynamic_partitions(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            ADD_DYNAMIC_PARTITION_MUTATION,
+            variables={
+                "partitionsDefName": "foo",
+                "partitionKey": "bar",
+                "repositorySelector": repository_selector,
+            },
         )
         assert not result.errors
         assert result.data

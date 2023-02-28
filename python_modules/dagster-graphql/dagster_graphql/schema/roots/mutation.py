@@ -58,6 +58,7 @@ from ..inputs import (
     GrapheneExecutionParams,
     GrapheneLaunchBackfillParams,
     GrapheneReexecutionParams,
+    GrapheneRepositorySelector,
 )
 from ..partition_sets import GrapheneAddDynamicPartitionResult
 from ..pipelines.pipeline import GrapheneRun
@@ -337,6 +338,7 @@ class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
     Output = graphene.NonNull(GrapheneAddDynamicPartitionResult)
 
     class Arguments:
+        repositorySelector = graphene.NonNull(GrapheneRepositorySelector)
         partitionsDefName = graphene.NonNull(graphene.String)
         partitionKey = graphene.NonNull(graphene.String)
 
@@ -345,8 +347,16 @@ class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
 
     @capture_error
     @require_permission_check(Permissions.EDIT_DYNAMIC_PARTITIONS)
-    def mutate(self, graphene_info: ResolveInfo, partitionsDefName: str, partitionKey: str):
-        return add_dynamic_partition(graphene_info, partitionsDefName, partitionKey)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        repositorySelector: GrapheneRepositorySelector,
+        partitionsDefName: str,
+        partitionKey: str,
+    ):
+        return add_dynamic_partition(
+            graphene_info, repositorySelector, partitionsDefName, partitionKey
+        )
 
 
 @capture_error

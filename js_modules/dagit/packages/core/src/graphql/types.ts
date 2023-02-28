@@ -468,6 +468,7 @@ export type DagitMutation = {
 export type DagitMutationAddDynamicPartitionArgs = {
   partitionKey: Scalars['String'];
   partitionsDefName: Scalars['String'];
+  repositorySelector: RepositorySelector;
 };
 
 export type DagitMutationCancelPartitionBackfillArgs = {
