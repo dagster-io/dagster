@@ -18,6 +18,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -51,7 +52,6 @@ from .sensor_definition import (
     SensorEvaluationContext,
     SensorType,
     SkipReason,
-    has_at_least_one_parameter,
 )
 from .target import ExecutableDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
