@@ -7,10 +7,10 @@ from click.testing import CliRunner
 from dagster._cli.job import job_execute_command
 from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.telemetry import (
-    TELEMETRY_STR,
-    UPDATE_REPO_STATS,
     DYNAMIC_PARTITIONS_ADDED,
     DYNAMIC_PARTITIONS_FETCHED,
+    TELEMETRY_STR,
+    UPDATE_REPO_STATS,
     cleanup_telemetry_logger,
     get_or_create_dir_from_dagster_home,
     get_or_set_instance_id,
@@ -204,7 +204,7 @@ def test_log_dynamic_partitions_actions(caplog):
         assert caplog.records[1]
         message = json.loads(caplog.records[1].getMessage())
         assert message.get("action") == DYNAMIC_PARTITIONS_FETCHED
-        assert message.get("metadata") == {'num_partitions': 2}
+        assert message.get("metadata") == {"num_partitions": 2}
 
         # Needed to avoid file contention issues on windows with the telemetry log file
         cleanup_telemetry_logger()

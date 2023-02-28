@@ -479,7 +479,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 " file which can configure storing metadata in an external database.\nYou can"
                 " resolve this error by exporting the environment variable. For example, you can"
                 " run the following command in your shell or include it in your shell configuration"
-                " file:\n\texport DAGSTER_HOME=~\"/dagster_home\"\nor PowerShell\n$env:DAGSTER_HOME"
+                ' file:\n\texport DAGSTER_HOME=~"/dagster_home"\nor PowerShell\n$env:DAGSTER_HOME'
                 " = ($home + '\\dagster_home')or batchset"
                 " DAGSTER_HOME=%UserProfile%/dagster_homeAlternatively, DagsterInstance.ephemeral()"
                 " can be used for a transient instance.\n"
@@ -491,7 +491,7 @@ class DagsterInstance(DynamicPartitionsStore):
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" must be an absolute path. Dagster requires this '
-                    'environment variable to be set to an existing directory in your filesystem.'
+                    "environment variable to be set to an existing directory in your filesystem."
                 ).format(dagster_home_path)
             )
 
@@ -499,7 +499,7 @@ class DagsterInstance(DynamicPartitionsStore):
             raise DagsterInvariantViolationError(
                 (
                     '$DAGSTER_HOME "{}" is not a directory or does not exist. Dagster requires this'
-                    ' environment variable to be set to an existing directory in your filesystem'
+                    " environment variable to be set to an existing directory in your filesystem"
                 ).format(dagster_home_path)
             )
 
@@ -1162,8 +1162,8 @@ class DagsterInstance(DynamicPartitionsStore):
             execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id,
             (
                 "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
-                "\"{ep_pipeline_snapshot_id}\" and snapshot_id created in memory is "
-                "\"{pipeline_snapshot_id}\""
+                '"{ep_pipeline_snapshot_id}" and snapshot_id created in memory is '
+                '"{pipeline_snapshot_id}"'
             ).format(
                 ep_pipeline_snapshot_id=execution_plan_snapshot.pipeline_snapshot_id,
                 pipeline_snapshot_id=pipeline_snapshot_id,
@@ -1811,16 +1811,19 @@ class DagsterInstance(DynamicPartitionsStore):
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
+<<<<<<< HEAD
         """Add partitions to the specified dynamic partitions definition idempotently.
         Does not add any partitions that already exist.
         """
 
+=======
+        from dagster._core.definitions.partition import (
+            raise_error_on_invalid_partition_key_substring,
+        )
+>>>>>>> 1b31865af3 (retain original ordering of partition keys)
         from dagster._core.telemetry import (
             DYNAMIC_PARTITIONS_ADDED,
             log_action,
-        )
-        from dagster._core.definitions.partition import (
-            raise_error_on_invalid_partition_key_substring,
         )
 
         log_action(
