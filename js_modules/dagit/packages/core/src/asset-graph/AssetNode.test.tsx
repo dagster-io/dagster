@@ -8,7 +8,6 @@ import {
   AssetNodeScenariosPartitioned,
   AssetNodeScenariosSource,
 } from './AssetNode.mocks';
-import {displayNameForAssetKey} from './Utils';
 
 const Scenarios = [
   ...AssetNodeScenariosBase,
@@ -30,7 +29,8 @@ describe('AssetNode', () => {
       );
 
       await waitFor(() => {
-        const displayName = displayNameForAssetKey(scenario.definition.assetKey);
+        const assetKey = scenario.definition.assetKey;
+        const displayName = assetKey.path[assetKey.path.length - 1];
         expect(screen.getByText(displayName)).toBeVisible();
         for (const text of scenario.expectedText) {
           expect(screen.getByText(new RegExp(text))).toBeVisible();
