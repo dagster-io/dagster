@@ -1,18 +1,22 @@
 from dagster_aws.s3.sensor import get_s3_keys
 from dagster import sensor, op, job, build_sensor_context, RunRequest
-import os 
+import os
+
 
 @op(config_schema={"filename": str})
 def process_file(context):
     filename = context.op_config["filename"]
     context.log.info(filename)
 
+
 @job
 def log_file_job():
     process_file()
 
-# s3_sensor_start 
+
+# s3_sensor_start
 from dagster_aws.s3.sensor import get_s3_keys
+
 
 @sensor(job=log_file_job)
 def my_s3_sensor(context):
@@ -25,6 +29,5 @@ def my_s3_sensor(context):
     context.update_cursor(last_key)
     return run_requests
 
+
 # s3_sensor_end
-
-
