@@ -142,16 +142,7 @@ export const BackfillTableFragmentFailedError: BackfillTableFragment = {
     __typename: 'PythonError',
     message:
       'dagster._core.errors.DagsterLaunchFailedError: Tried to start a run on a server after telling it to shut down\n',
-    stack: [
-      '  File "/dagster/python_modules/dagster/dagster/_daemon/backfill.py", line 34, in execute_backfill_iteration\n    yield from execute_asset_backfill_iteration(backfill, workspace, instance)\n',
-      '  File "/dagster/python_modules/dagster/dagster/_core/execution/asset_backfill.py", line 193, in execute_asset_backfill_iteration\n    submit_run_request(\n',
-      '  File "/dagster/python_modules/dagster/dagster/_core/execution/asset_backfill.py", line 265, in submit_run_request\n    instance.submit_run(run.run_id, workspace)\n',
-      '  File "/dagster/python_modules/dagster/dagster/_core/instance/__init__.py", line 1926, in submit_run\n    submitted_run = self._run_coordinator.submit_run(\n',
-      '  File "/dagster/python_modules/dagster/dagster/_core/run_coordinator/default_run_coordinator.py", line 34, in submit_run\n    self._instance.launch_run(pipeline_run.run_id, context.workspace)\n',
-      '  File "/dagster/python_modules/dagster/dagster/_core/instance/__init__.py", line 1979, in launch_run\n    self.run_launcher.launch_run(LaunchRunContext(pipeline_run=run, workspace=workspace))\n',
-      '  File "/dagster/python_modules/dagster/dagster/_core/launcher/default_run_launcher.py", line 121, in launch_run\n    DefaultRunLauncher.launch_run_from_grpc_client(\n',
-      '  File "/dagster/python_modules/dagster/dagster/_core/launcher/default_run_launcher.py", line 89, in launch_run_from_grpc_client\n    raise (\n',
-    ],
+    stack: ['OMITTED FROM MOCKS'],
     errorChain: [],
   },
   numCancelable: 0,
@@ -178,7 +169,7 @@ export const BackfillTableFragmentFailedErrorStatus: MockedResponse<SingleBackfi
       partitionBackfillOrError: {
         backfillId: 'sjqzcfhe',
         partitionStatuses: {
-          results: BackfillTableFragmentFailedError.partitionNames.map((n) => ({
+          results: BackfillTableFragmentFailedError.partitionNames!.map((n) => ({
             id: `__NO_PARTITION_SET__:${n}:ccpbwdbq`,
             partitionName: n,
             runId: null,
@@ -439,6 +430,77 @@ export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment = {
   __typename: 'PartitionBackfill',
 };
 
+export const BackfillTablePureAssetCountsOnly: BackfillTableFragment = {
+  backfillId: 'likqkgna',
+  status: BulkActionStatus.FAILED,
+  isValidSerialization: true,
+  numPartitions: 30,
+  timestamp: 1677023094.435064,
+  partitionSetName: null,
+  partitionSet: null,
+  error: {
+    __typename: 'PythonError',
+    message:
+      'dagster._core.errors.DagsterUserCodeUnreachableError: Could not reach user code server. gRPC Error code: UNAVAILABLE\n',
+    stack: ['OMITTED FROM MOCKS'],
+    errorChain: [
+      {
+        isExplicitLink: true,
+        error: {
+          message:
+            'grpc._channel._InactiveRpcError: <_InactiveRpcError of RPC that terminated with:\n\tstatus = StatusCode.UNAVAILABLE\n\tdetails = "failed to connect to all addresses"\n\tdebug_error_string = "{"created":"@1677105084.883333000","description":"Failed to pick subchannel","file":"src/core/ext/filters/client_channel/client_channel.cc","file_line":3261,"referenced_errors":[{"created":"@1677105084.883332000","description":"failed to connect to all addresses","file":"src/core/lib/transport/error_utils.cc","file_line":167,"grpc_status":14}]}"\n>\n',
+          stack: ['OMITTED FROM MOCKS'],
+          __typename: 'PythonError',
+        },
+        __typename: 'ErrorChainLink',
+      },
+    ],
+  },
+  numCancelable: 0,
+  partitionNames: null,
+  assetSelection: [
+    {
+      path: ['asset_daily'],
+      __typename: 'AssetKey',
+    },
+    {
+      path: ['asset_weekly'],
+      __typename: 'AssetKey',
+    },
+  ],
+  __typename: 'PartitionBackfill',
+};
+
+const BackfillTablePureAssetNoCountsOrPartitionNames: BackfillTableFragment = {
+  backfillId: 'vlpmimsl',
+  status: BulkActionStatus.COMPLETED,
+  isValidSerialization: true,
+  numPartitions: null,
+  timestamp: 1677078839.707758,
+  partitionSetName: null,
+  partitionSet: null,
+  error: {
+    __typename: 'PythonError',
+    message:
+      'dagster._core.errors.DagsterLaunchFailedError: Tried to start a run on a server after telling it to shut down\n',
+    stack: ['OMITTED FROM MOCKS'],
+    errorChain: [],
+  },
+  numCancelable: 0,
+  partitionNames: null,
+  assetSelection: [
+    {
+      path: ['asset_daily'],
+      __typename: 'AssetKey',
+    },
+    {
+      path: ['asset_weekly'],
+      __typename: 'AssetKey',
+    },
+  ],
+  __typename: 'PartitionBackfill',
+};
+
 export const BackfillTableFragments: BackfillTableFragment[] = [
   BackfillTableFragmentRequested2000AssetsPure,
   BackfillTableFragmentCancelledAssetsPartitionSet,
@@ -446,4 +508,6 @@ export const BackfillTableFragments: BackfillTableFragment[] = [
   BackfillTableFragmentCompletedAssetJob,
   BackfillTableFragmentCompletedOpJob,
   BackfillTableFragmentInvalidPartitionSet,
+  BackfillTablePureAssetCountsOnly,
+  BackfillTablePureAssetNoCountsOrPartitionNames,
 ];

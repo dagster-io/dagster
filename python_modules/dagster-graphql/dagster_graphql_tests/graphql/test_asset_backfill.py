@@ -299,6 +299,20 @@ def test_launch_asset_backfill_with_upstream_anchor_asset():
                 },
             )
 
+            # on PartitionBackfills
+            get_backfills_result = execute_dagster_graphql(
+                context, GET_PARTITION_BACKFILLS_QUERY, variables={}
+            )
+            assert not get_backfills_result.errors
+            assert get_backfills_result.data
+            backfill_results = get_backfills_result.data["partitionBackfillsOrError"]["results"]
+            assert len(backfill_results) == 1
+            assert backfill_results[0]["numPartitions"] is None
+            assert backfill_results[0]["backfillId"] == backfill_id
+            assert backfill_results[0]["partitionSet"] is None
+            assert backfill_results[0]["partitionSetName"] is None
+            assert backfill_results[0]["partitionNames"] is None
+
 
 def get_daily_two_hourly_repo():
     @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
