@@ -21,7 +21,14 @@ def scope_define_databricks_custom_ops_and_assets():
     # start_define_databricks_custom_ops_and_assets
     from databricks_cli.sdk import JobsService
 
-    from dagster import OpExecutionContext, asset, job, op
+    from dagster import (
+        AssetSelection,
+        OpExecutionContext,
+        asset,
+        define_asset_job,
+        job,
+        op,
+    )
 
     @asset(required_resource_keys={"databricks"})
     def my_databricks_table(context: OpExecutionContext) -> None:
@@ -29,6 +36,11 @@ def scope_define_databricks_custom_ops_and_assets():
         jobs_service = JobsService(databricks_api_client)
 
         jobs_service.run_now(job_id=DATABRICKS_JOB_ID)
+
+    materialize_databricks_table = define_asset_job(
+        name="materialize_databricks_table",
+        selection=AssetSelection.keys("my_databricks_table"),
+    )
 
     @op(required_resource_keys={"databricks"})
     def my_databricks_op(context: OpExecutionContext) -> None:
@@ -52,19 +64,19 @@ def scope_define_databricks_op_factories():
         create_databricks_submit_run_op,
     )
 
-    my_databricks_run_now_op = create_databricks_run_now_op(databricks_job_id=DATABRICKS_JOB_ID)
+    my_databricks_run_now_op = create_databricks_run_now_op(
+        databricks_job_id=DATABRICKS_JOB_ID,
+    )
 
     my_databricks_submit_run_op = create_databricks_submit_run_op(
         databricks_job_configuration={
-            "job": {
-                "new_cluster": {
-                    "spark_version": "2.1.0-db3-scala2.11",
-                    "num_workers": 2,
-                },
-                "notebook_task": {
-                    "notebook_path": "/Users/dagster@example.com/PrepareData",
-                },
-            }
+            "new_cluster": {
+                "spark_version": "2.1.0-db3-scala2.11",
+                "num_workers": 2,
+            },
+            "notebook_task": {
+                "notebook_path": "/Users/dagster@example.com/PrepareData",
+            },
         },
     )
 
@@ -79,11 +91,16 @@ def scope_define_databricks_op_factories():
 def scope_schedule_databricks():
     from dagster_databricks import databricks_client as databricks_client_instance
 
-    from dagster import asset, job
+    from dagster import AssetSelection, asset, define_asset_job, job
 
     @asset
     def my_databricks_table():
         ...
+
+    materialize_databricks_table = define_asset_job(
+        name="materialize_databricks_table",
+        selection=AssetSelection.keys("my_databricks_table"),
+    )
 
     @job
     def my_databricks_job():
@@ -94,12 +111,6 @@ def scope_schedule_databricks():
         AssetSelection,
         Definitions,
         ScheduleDefinition,
-        define_asset_job,
-    )
-
-    materialize_databricks_table = define_asset_job(
-        name="materialize_databricks_table",
-        selection=AssetSelection.keys("my_databricks_table").downstream(),
     )
 
     defs = Definitions(
