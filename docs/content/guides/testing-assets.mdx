@@ -9,6 +9,10 @@ Creating testable and verifiable data pipelines is one of the focuses of Dagster
 
 Let's go back to the assets we defined in the [tutorial](/tutorial) and ensure that they work as expected by writing some unit tests.
 
+---
+
+## Testing an individual asset
+
 We'll start by writing a test for the `topstories_word_cloud` asset definition, which is an image of a word cloud of the titles of top stories on Hacker News. To run the function that derives an asset from its upstream dependencies, we can invoke it directly, as if it's a regular Python function.
 
 
@@ -28,6 +32,8 @@ def test_topstories_word_cloud():
     results = topstories_word_cloud(df)
     assert results is not None # It returned something
 ```
+
+## Testing a graph of assets
 
 We'll also write a test for all the assets together. To do that, we can put them in a list and then pass it to the <PyObject object="materialize" /> function. That returns an <PyObject object="ExecuteInProcessResult" />, whose methods let us investigate, in detail, the success or failure of execution, the values produced by the computation, and other events associated with execution.
 

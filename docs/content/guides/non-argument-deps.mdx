@@ -13,7 +13,7 @@ In those situations, we can define assets whose functions don't have return valu
 
 ---
 
-## Bringing in more stopwords
+## Writing an asset with no output
 
 In the [tutorial](/tutorial), we defined an asset that contains a list of stopwords to filter out common words or prepositions from our word cloud. The English language has a lot of stopwords, so rather than hardcoding them into your asset, you'll bring them in from a separate data source.
 
@@ -42,7 +42,7 @@ The implementation downloads a zip file from the internet to our local filesyste
 - **It doesn't have a return statement.** Instead of returning an object and letting the I/O manager write it to storage, the function handles writing to storage itself.
 - **It has a `None` annotation for its return type.** This helps Dagster understand what we already know by looking at it - that the function never returns any values.
 
-### An unzipped CSV of stopwords
+### Using an asset without loading it
 
 Let's define an asset that contains the unzipped contents of our zip file:
 
@@ -61,7 +61,7 @@ In the assets we've seen so far, we indicate the asset dependencies by including
 
 However, in this case, we don't want a Python object for the upstream asset, we just want to work with the file directly. So we instead supply `"stopwords_zip"` to the `non_argument_deps` parameter of the <PyObject module="dagster" object="asset" displayText="@asset"/> decorator. This lets us tell Dagster that the `stopwords` asset depends on the `stopwords_zip` asset, without telling it to load `stopwords_zip` for us.
 
-### Nabisco cereal ratings
+### Combining assets with and without I/O
 
 Finally, let's define an asset that joins the cereal ratings data from `stopwords` with the cereals in our `topstories_word_cloud` asset:
 
