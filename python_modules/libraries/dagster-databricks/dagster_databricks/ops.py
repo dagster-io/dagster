@@ -204,15 +204,6 @@ def create_databricks_run_now_op(
         ins=(ins or {"start_after": In(Nothing)}),
         out=out,
         config_schema={
-            "job": Field(
-                config=Permissive(),
-                is_required=False,
-                description=(
-                    "Configuration for triggering a run of an existing Databricks Job. See"
-                    " https://docs.databricks.com/api-explorer/workspace/jobs/runnow for the"
-                    " full configuration."
-                ),
-            ),
             "poll_interval_sec": Field(
                 float,
                 description="Check whether the Databricks Job is done at this interval.",
@@ -236,10 +227,7 @@ def create_databricks_run_now_op(
 
         run_id: int = jobs_service.run_now(
             job_id=databricks_job_id,
-            **{
-                **(databricks_job_configuration or {}),
-                **context.op_config.get("job", {}),
-            },
+            **(databricks_job_configuration or {}),
         )["run_id"]
 
         get_run_response: dict = jobs_service.get_run(run_id=run_id)
@@ -328,16 +316,6 @@ def create_databricks_submit_run_op(
         ins=(ins or {"start_after": In(Nothing)}),
         out=out,
         config_schema={
-            "job": Field(
-                config=Permissive(),
-                is_required=False,
-                description=(
-                    "Configuration for submitting a one-time run of a set of tasks on"
-                    " Databricks. See"
-                    " https://docs.databricks.com/api-explorer/workspace/jobs/submit for the"
-                    " full configuration."
-                ),
-            ),
             "poll_interval_sec": Field(
                 float,
                 description="Check whether the Databricks Job is done at this interval.",
@@ -359,10 +337,7 @@ def create_databricks_submit_run_op(
         databricks: DatabricksClient = context.resources.databricks
         jobs_service = JobsService(databricks.api_client)
 
-        run_id: int = jobs_service.submit_run(
-            **databricks_job_configuration,
-            **context.op_config.get("job", {}),
-        )["run_id"]
+        run_id: int = jobs_service.submit_run(**databricks_job_configuration)["run_id"]
 
         get_run_response: dict = jobs_service.get_run(run_id=run_id)
 
