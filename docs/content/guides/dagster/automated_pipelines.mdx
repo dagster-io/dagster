@@ -12,19 +12,19 @@ This guide assumes you have some familiarity with several Dagster concepts, incl
 Dagster offers a few different ways of automating data pipelines, and choosing the right Dagster tool depends on your specific needs. In this guide we'll walk through a few different cases, and which Dagster tool you should use in each case.
 
 ## Things to think through
+
 When thinking about automating your data pipelines, it’s helpful to think through how and when your data needs to be refreshed. A few helpful things to think through:
 
 - How often does my data need to be refreshed? Does all data need to be refreshed at the same frequency?
-- How is my data split up? Do older records need updating? 
-- Am I waiting for some data that needs to trigger downstream updates? 
-- Do I want it to run every time a new file is added or update data in batches? 
+- How is my data split up? Do older records need updating?
+- Am I waiting for some data that needs to trigger downstream updates?
+- Do I want it to run every time a new file is added or update data in batches?
 
 ---
 
 ## My data should be updated every morning
 
 You want some data to be updated every day by a certain time to refresh a dashboard, have updated data go to to a system or you want your database to have the most recent information for the team to work with. This is one of the most traditional cases when building a pipeline. Let's go into how to do this with Dagster!
-
 
 ### I want a job to start at a specific time
 
