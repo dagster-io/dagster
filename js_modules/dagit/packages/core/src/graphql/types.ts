@@ -2190,6 +2190,7 @@ export type PartitionDefinition = {
   __typename: 'PartitionDefinition';
   description: Scalars['String'];
   dimensionTypes: Array<DimensionDefinitionType>;
+  name: Maybe<Scalars['String']>;
   timeWindowMetadata: Maybe<TimePartitionsDefinitionMetadata>;
   type: PartitionDefinitionType;
 };
