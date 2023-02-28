@@ -173,11 +173,7 @@ def test_databricks_run_now_op(
         databricks_job_id=databricks_job_id,
         databricks_job_configuration=databricks_job_configuration,
         **op_kwargs,
-    ).configured(
-        config_or_config_fn={
-            "poll_interval_sec": 0.01,
-        },
-        name="test_databricks_run_now_op",
+        poll_interval_seconds=0.01,
     )
 
     @job(
@@ -235,11 +231,7 @@ def test_databricks_submit_run_op(mocker: MockerFixture, op_kwargs: dict) -> Non
             },
         },
         **op_kwargs,
-    ).configured(
-        config_or_config_fn={
-            "poll_interval_sec": 0.01,
-        },
-        name="test_databricks_submit_run_op",
+        poll_interval_seconds=0.01,
     )
 
     @job(

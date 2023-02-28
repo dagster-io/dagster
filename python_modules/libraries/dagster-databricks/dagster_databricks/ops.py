@@ -16,9 +16,9 @@ from databricks_cli.sdk import JobsService
 
 from .databricks import DatabricksClient
 
-_DEFAULT_POLL_INTERVAL = 10
+DEFAULT_POLL_INTERVAL_SECONDS = 10
 # wait at most 24 hours by default for run execution
-_DEFAULT_RUN_MAX_WAIT_TIME_SEC = 24 * 60 * 60
+DEFAULT_MAX_WAIT_TIME_SECONDS = 24 * 60 * 60
 
 
 def create_databricks_job_op(
@@ -89,12 +89,12 @@ def create_databricks_job_op(
             "poll_interval_sec": Field(
                 float,
                 description="Check whether the job is done at this interval.",
-                default_value=_DEFAULT_POLL_INTERVAL,
+                default_value=DEFAULT_POLL_INTERVAL_SECONDS,
             ),
             "max_wait_time_sec": Field(
                 float,
                 description="If the job is not complete after this length of time, raise an error.",
-                default_value=_DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+                default_value=DEFAULT_MAX_WAIT_TIME_SECONDS,
             ),
         },
         ins=ins,
@@ -145,6 +145,8 @@ def create_databricks_run_now_op(
     databricks_job_configuration: Optional[dict] = None,
     ins: Optional[Mapping[str, In]] = None,
     out: Optional[Union[Out, Mapping[str, Out]]] = None,
+    poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
+    max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
 ) -> OpDefinition:
     """
     Creates an op that launches an existing databricks job.
@@ -161,6 +163,10 @@ def create_databricks_run_now_op(
             for the full configuration.
         ins (Optional[Dict[str, In]]): Keyword argument passed to the underlying op.
         out (Optional[Union[Out, Dict[str, Out]]]): Keyword argument passed to the underlying op.
+        poll_interval_seconds (float): How often to poll the Databricks API to check whether the
+            Databricks job has finished running.
+        max_wait_time_seconds (float): How long to wait for the Databricks job to finish running
+            before raising an error.
 
     Returns:
         OpDefinition: An op definition to run the Databricks Job.
@@ -204,18 +210,20 @@ def create_databricks_run_now_op(
         ins=(ins or {"start_after": In(Nothing)}),
         out=out,
         config_schema={
-            "poll_interval_sec": Field(
-                float,
-                description="Check whether the Databricks Job is done at this interval.",
-                default_value=_DEFAULT_POLL_INTERVAL,
-            ),
-            "max_wait_time_sec": Field(
+            "poll_interval_seconds": Field(
                 float,
                 description=(
-                    "If the Databricks Job is not complete after this length of time, raise an"
-                    " error."
+                    "Check whether the Databricks Job is done at this interval, in seconds."
                 ),
-                default_value=_DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+                default_value=poll_interval_seconds,
+            ),
+            "max_wait_time_seconds": Field(
+                float,
+                description=(
+                    "If the Databricks Job is not complete after this length of time, in seconds,"
+                    " raise an error."
+                ),
+                default_value=max_wait_time_seconds,
             ),
         },
         required_resource_keys={"databricks"},
@@ -240,8 +248,8 @@ def create_databricks_run_now_op(
         databricks.wait_for_run_to_complete(
             logger=context.log,
             databricks_run_id=run_id,
-            poll_interval_sec=context.op_config["poll_interval_sec"],
-            max_wait_time_sec=context.op_config["max_wait_time_sec"],
+            poll_interval_sec=context.op_config["poll_interval_seconds"],
+            max_wait_time_sec=context.op_config["max_wait_time_seconds"],
         )
 
         yield from [
@@ -256,6 +264,8 @@ def create_databricks_submit_run_op(
     databricks_job_configuration: dict,
     ins: Optional[Mapping[str, In]] = None,
     out: Optional[Union[Out, Mapping[str, Out]]] = None,
+    poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
+    max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
 ) -> OpDefinition:
     """
     Creates an op that submits a one-time run of a set of tasks on Databricks.
@@ -269,6 +279,10 @@ def create_databricks_submit_run_op(
             for the full configuration.
         ins (Optional[Dict[str, In]]): Keyword argument passed to the underlying op.
         out (Optional[Union[Out, Dict[str, Out]]]): Keyword argument passed to the underlying op.
+        poll_interval_seconds (float): How often to poll the Databricks API to check whether the
+            Databricks job has finished running.
+        max_wait_time_seconds (float): How long to wait for the Databricks job to finish running
+            before raising an error.
 
     Returns:
         OpDefinition: An op definition to submit a one-time run of a set of tasks on Databricks.
@@ -316,18 +330,20 @@ def create_databricks_submit_run_op(
         ins=(ins or {"start_after": In(Nothing)}),
         out=out,
         config_schema={
-            "poll_interval_sec": Field(
-                float,
-                description="Check whether the Databricks Job is done at this interval.",
-                default_value=_DEFAULT_POLL_INTERVAL,
-            ),
-            "max_wait_time_sec": Field(
+            "poll_interval_seconds": Field(
                 float,
                 description=(
-                    "If the Databricks Job is not complete after this length of time, raise an"
-                    " error."
+                    "Check whether the Databricks Job is done at this interval, in seconds."
                 ),
-                default_value=_DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+                default_value=poll_interval_seconds,
+            ),
+            "max_wait_time_seconds": Field(
+                float,
+                description=(
+                    "If the Databricks Job is not complete after this length of time, in seconds,"
+                    " raise an error."
+                ),
+                default_value=max_wait_time_seconds,
             ),
         },
         required_resource_keys={"databricks"},
@@ -349,8 +365,8 @@ def create_databricks_submit_run_op(
         databricks.wait_for_run_to_complete(
             logger=context.log,
             databricks_run_id=run_id,
-            poll_interval_sec=context.op_config["poll_interval_sec"],
-            max_wait_time_sec=context.op_config["max_wait_time_sec"],
+            poll_interval_sec=context.op_config["poll_interval_seconds"],
+            max_wait_time_sec=context.op_config["max_wait_time_seconds"],
         )
 
         yield from [
