@@ -1,7 +1,12 @@
 import animate from 'amator';
 import * as React from 'react';
 
-import {GanttViewport} from './Constants';
+export interface Viewport {
+  left: number; // Note: pixel values
+  top: number;
+  width: number;
+  height: number;
+}
 
 type ContainerRef = {
   element: HTMLDivElement;
@@ -155,7 +160,7 @@ export const useViewport = (
   );
 
   return {
-    viewport: {...offset, ...size} as GanttViewport,
+    viewport: {...offset, ...size} as Viewport,
     containerProps: {
       ref: setRef,
       onScroll,

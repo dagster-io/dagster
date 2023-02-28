@@ -1,8 +1,7 @@
-import {Box, Tooltip, Colors} from '@dagster-io/ui';
+import {Box, Tooltip, Colors, useViewport} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useViewport} from '../gantt/useViewport';
 import {RunStatus} from '../graphql/types';
 
 import {assembleIntoSpans} from './SpanRepresentation';

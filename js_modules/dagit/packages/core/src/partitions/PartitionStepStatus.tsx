@@ -9,6 +9,7 @@ import {
   MenuItem,
   Menu,
   Popover,
+  useViewport,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -23,7 +24,6 @@ import {
 } from '../assets/usePartitionHealthData';
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
-import {useViewport} from '../gantt/useViewport';
 import {RunStatus} from '../graphql/types';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
