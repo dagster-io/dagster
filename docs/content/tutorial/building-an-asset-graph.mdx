@@ -22,7 +22,8 @@ By the end of the previous section, you ingested the top Hacker News story IDs i
 Copy and paste the completed asset code below into `assets.py`:
 
 <Note>
-  Add new imports, such as <code>import pandas as pd</code>, to the top of <code>assets.py</code>
+  Add new imports, such as <code>import pandas as pd</code>, to the top of{" "}
+  <code>assets.py</code>
 </Note>
 
 ```python
@@ -164,21 +165,21 @@ Reload the definitions and re-materialize your assets. The metadata can then be 
 
 - In the **Asset graph** page, click on an asset and its metadata will be shown in the right sidebar:
 
-<Image
-alt="the asset's materialization metadata"
-src="/images/tutorial/asset-metadata.png"
-width={1152}
-height={666}
-/>
+    <Image
+        alt="the asset's materialization metadata"
+        src="/images/tutorial/asset-metadata.png"
+        width={1152}
+        height={666}
+    />
 
 - In the **Asset Catalog's** page for the `topstories` asset:
 
-<Image
-alt="the asset's materialization metadata"
-src="/images/tutorial/asset-metadata.png"
-width={1152}
-height={667}
-/>
+    <Image
+        alt="the asset's materialization metadata"
+        src="/images/tutorial/asset-metadata.png"
+        width={1152}
+        height={667}
+    />
 
 ### Metadata and Markdown
 
@@ -214,6 +215,15 @@ def topstories_word_cloud(context, topstories):
         "plot": MetadataValue.md(md_content)
     })
 ```
+
+Reload your definitions and rematerialize your assets. The word cloud image will be visible with the rest of your materialization metadata for the `topstories_word_cloud` asset. The `path` key in the metadata will contain a link that says **`[Show Markdown]`**. Clicking on the link will open the preview in the Dagster UI. The word cloud will change throughout the day as the top stories change. Here is a screenshot of the word cloud:
+
+<Image
+    alt="the asset's materialization metadata"
+    src="/images/tutorial/word-cloud-preview.png"
+    width={1150}
+    height={635}
+/>
 
 <Note>
   If your data is sensitive, such as PHI or PII, be careful and follow your

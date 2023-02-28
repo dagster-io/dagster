@@ -1,0 +1,58 @@
+---
+title: Testing Assets | Dagster
+description: Dagster enables you to unit-test individual assets and graphs of assets
+---
+
+# Testing assets
+
+Creating testable and verifiable data pipelines is one of the focuses of Dagster. We believe ensuring data quality is critical for managing the complexity of data systems. Here, we'll cover how to write unit tests for individual assets, as well as for graphs of assets together.
+
+Let's go back to the assets we defined in the [tutorial](/tutorial) and ensure that they work as expected by writing some unit tests.
+
+We'll start by writing a test for the `topstories_word_cloud` asset definition, which is an image of a word cloud of the titles of top stories on Hacker News. To run the function that derives an asset from its upstream dependencies, we can invoke it directly, as if it's a regular Python function.
+
+
+Add the following code to the `test_assets.py` file in your `tutorial_tests` directory:
+
+```python
+import pandas as pd
+from tutorial.assets import topstories_word_cloud
+
+def test_topstories_word_cloud():
+    df = pd.DataFrame(
+        [
+            {"title": "Wow, Dagster is such an awesome and amazing product. I can't wait to use it!"},
+            {"title": "Pied Piper launches new product"},
+        ]
+    )
+    results = topstories_word_cloud(df)
+    assert results is not None # It returned something
+```
+
+We'll also write a test for all the assets together. To do that, we can put them in a list and then pass it to the <PyObject object="materialize" /> function. That returns an <PyObject object="ExecuteInProcessResult" />, whose methods let us investigate, in detail, the success or failure of execution, the values produced by the computation, and other events associated with execution.
+
+Update the `test_assets.py` file to include the following code:
+
+```python
+from dagster import materialize
+from tutorial.assets import (
+    topstory_ids,
+    topstories,
+    topstories_word_cloud
+) # Instead of importing one asset, import them all
+
+def test_hackernews_assets():
+    assets = [topstory_ids, topstories, topstories_word_cloud]
+    result = materialize(assets)
+    assert result.success
+    df = result.output_for_node("topstories")
+    assert len(df) == 100
+```
+
+Use pytest, or your test runner of choice, to run the unit tests. Navigate to Dagster project's directory and run
+
+```bash
+pytest test_assets
+```
+
+Dagster is written to make testing easy in a domain where it has historically been very difficult. Refer to the [Testing](/concepts/testing) documentation to learn more.

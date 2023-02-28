@@ -659,6 +659,14 @@
             "path": "/guides/dagster/enriching-with-software-defined-assets"
           },
           {
+            "title": "Testing assets",
+            "path": "/guides/testing-assets"
+          },
+          {
+            "title": "Assets without I/O",
+            "path": "/guides/non-argument-deps"
+          },
+          {
             "title": "Software-defined assets with Pandas & PySpark",
             "path": "/guides/dagster/software-defined-assets"
           },
