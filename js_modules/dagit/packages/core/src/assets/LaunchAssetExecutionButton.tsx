@@ -606,6 +606,8 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
 
   fragment PartitionDefinitionForLaunchAsset on PartitionDefinition {
     description
+    type
+    name
     dimensionTypes {
       name
     }

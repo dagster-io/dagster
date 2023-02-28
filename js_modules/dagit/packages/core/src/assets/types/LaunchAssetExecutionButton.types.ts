@@ -13,6 +13,8 @@ export type LaunchAssetExecutionAssetNodeFragment = {
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
+    type: Types.PartitionDefinitionType;
+    name: string | null;
     dimensionTypes: Array<{__typename: 'DimensionDefinitionType'; name: string}>;
   } | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -581,6 +583,8 @@ export type LaunchAssetExecutionAssetNodeFragment = {
 export type PartitionDefinitionForLaunchAssetFragment = {
   __typename: 'PartitionDefinition';
   description: string;
+  type: Types.PartitionDefinitionType;
+  name: string | null;
   dimensionTypes: Array<{__typename: 'DimensionDefinitionType'; name: string}>;
 };
 
@@ -601,6 +605,8 @@ export type LaunchAssetLoaderQuery = {
     partitionDefinition: {
       __typename: 'PartitionDefinition';
       description: string;
+      type: Types.PartitionDefinitionType;
+      name: string | null;
       dimensionTypes: Array<{__typename: 'DimensionDefinitionType'; name: string}>;
     } | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};

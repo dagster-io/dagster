@@ -28,7 +28,7 @@ export const buildPartitionHealthMock = (
           },
         ],
         materializedPartitions: {
-          materializedPartitions: [],
+          materializedPartitions: ['test1'],
           __typename: 'DefaultPartitions',
         },
         __typename: 'AssetNode',

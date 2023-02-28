@@ -1,5 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
+import {PartitionDefinitionType} from '../../graphql/types';
 import {LAUNCH_ASSET_LOADER_QUERY} from '../LaunchAssetExecutionButton';
 import {LaunchAssetLoaderQuery} from '../types/LaunchAssetExecutionButton.types';
 
@@ -37,6 +38,8 @@ export const ReleasesWorkspace_RAW = {
           jobNames: ['__ASSET_JOB_0'],
           graphName: null,
           partitionDefinition: {
+            type: PartitionDefinitionType.DYNAMIC,
+            name: 'Foo',
             __typename: 'PartitionDefinition' as const,
             description: 'Dynamic partitions definition releases',
             dimensionTypes: [
@@ -91,6 +94,8 @@ export const ReleasesWorkspace_RAW = {
           jobNames: ['__ASSET_JOB_0'],
           graphName: null,
           partitionDefinition: {
+            type: PartitionDefinitionType.DYNAMIC,
+            name: 'Foo',
             __typename: 'PartitionDefinition' as const,
             description: 'Dynamic partitions definition releases',
             dimensionTypes: [
@@ -145,6 +150,8 @@ export const ReleasesWorkspace_RAW = {
           jobNames: ['__ASSET_JOB_0'],
           graphName: null,
           partitionDefinition: {
+            type: PartitionDefinitionType.DYNAMIC,
+            name: 'Foo',
             __typename: 'PartitionDefinition' as const,
             description: 'Dynamic partitions definition releases',
             dimensionTypes: [
@@ -199,6 +206,8 @@ export const ReleasesWorkspace_RAW = {
           jobNames: ['__ASSET_JOB_0'],
           graphName: null,
           partitionDefinition: {
+            type: PartitionDefinitionType.DYNAMIC,
+            name: 'Foo',
             __typename: 'PartitionDefinition' as const,
             description: 'Dynamic partitions definition releases',
             dimensionTypes: [

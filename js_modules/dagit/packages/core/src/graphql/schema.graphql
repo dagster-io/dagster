@@ -752,6 +752,7 @@ type PartitionDefinition {
   type: PartitionDefinitionType!
   dimensionTypes: [DimensionDefinitionType!]!
   timeWindowMetadata: TimePartitionsDefinitionMetadata
+  name: String
 }
 
 enum PartitionDefinitionType {

@@ -1,6 +1,7 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
+import {PartitionDefinitionType} from '../graphql/types';
 
 import {LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY} from './LaunchAssetChoosePartitionsDialog';
 import {LAUNCH_ASSET_LOADER_QUERY} from './LaunchAssetExecutionButton';
@@ -271,6 +272,8 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
           ...ASSET_DAILY,
           requiredResources: [],
           partitionDefinition: {
+            name: 'Foo',
+            type: PartitionDefinitionType.TIME_WINDOW,
             description: 'Daily, starting 2020-01-01 UTC.',
             dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
             __typename: 'PartitionDefinition',
@@ -295,6 +298,8 @@ export const LaunchAssetLoaderAssetDailyWeeklyMock: MockedResponse<LaunchAssetLo
           ...ASSET_WEEKLY,
           requiredResources: [],
           partitionDefinition: {
+            name: 'Foo',
+            type: PartitionDefinitionType.TIME_WINDOW,
             description: 'Weekly, starting 2020-01-01 UTC.',
             dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
             __typename: 'PartitionDefinition',
@@ -336,6 +341,8 @@ export const LaunchAssetLoaderAssetDailyWeeklyRootsDifferentPartitioningMock: Mo
           ...ASSET_DAILY,
           requiredResources: [],
           partitionDefinition: {
+            name: 'Foo',
+            type: PartitionDefinitionType.TIME_WINDOW,
             description: 'Daily, starting 2020-01-01 UTC.',
             dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
             __typename: 'PartitionDefinition',
@@ -360,6 +367,8 @@ export const LaunchAssetLoaderAssetDailyWeeklyRootsDifferentPartitioningMock: Mo
           ...ASSET_WEEKLY,
           requiredResources: [],
           partitionDefinition: {
+            name: 'Foo',
+            type: PartitionDefinitionType.TIME_WINDOW,
             description: 'Weekly, starting 2020-01-01 UTC.',
             dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
             __typename: 'PartitionDefinition',
@@ -391,6 +400,8 @@ export const LaunchAssetLoaderAssetDailyWeeklyRootsDifferentPartitioningMock: Mo
           ...ASSET_WEEKLY_ROOT,
           requiredResources: [],
           partitionDefinition: {
+            name: 'Foo',
+            type: PartitionDefinitionType.TIME_WINDOW,
             description: 'Weekly, starting 2020-01-01 UTC.',
             dimensionTypes: [{name: 'default', __typename: 'DimensionDefinitionType'}],
             __typename: 'PartitionDefinition',
