@@ -22,45 +22,42 @@ export default {
 
 export const Empty = () => {
   return (
-    <StorybookProvider>
-      <MockedProvider
-        mocks={[
-          ReleaseFiles(true),
-          ReleaseFilesMetadata(true),
-          ReleaseZips(true),
-          ReleasesMetadata(true),
-          ReleasesSummary(true),
-        ]}
-      >
-        <LaunchAssetChoosePartitionsDialog
-          {...ReleasesJobProps}
-          open={true}
-          setOpen={function () {}}
-        />
-      </MockedProvider>
-    </StorybookProvider>
+    <MockedProvider
+      mocks={[
+        ReleaseFiles(true),
+        ReleaseFilesMetadata(true),
+        ReleaseZips(true),
+        ReleasesMetadata(true),
+        ReleasesSummary(true),
+        NoRunningBackfills,
+      ]}
+    >
+      <LaunchAssetChoosePartitionsDialog
+        {...ReleasesJobProps}
+        open={true}
+        setOpen={function () {}}
+      />
+    </MockedProvider>
   );
 };
 
 export const Ordinal = () => {
   return (
-    <StorybookProvider>
-      <MockedProvider
-        mocks={[
-          ReleaseFiles(),
-          ReleaseFilesMetadata(),
-          ReleaseZips(),
-          ReleasesMetadata(),
-          ReleasesSummary(),
-          NoRunningBackfills,
-        ]}
-      >
-        <LaunchAssetChoosePartitionsDialog
-          {...ReleasesJobProps}
-          open={true}
-          setOpen={function () {}}
-        />
-      </MockedProvider>
-    </StorybookProvider>
+    <MockedProvider
+      mocks={[
+        ReleaseFiles(),
+        ReleaseFilesMetadata(),
+        ReleaseZips(),
+        ReleasesMetadata(),
+        ReleasesSummary(),
+        NoRunningBackfills,
+      ]}
+    >
+      <LaunchAssetChoosePartitionsDialog
+        {...ReleasesJobProps}
+        open={true}
+        setOpen={function () {}}
+      />
+    </MockedProvider>
   );
 };
