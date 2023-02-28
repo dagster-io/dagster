@@ -1,0 +1,144 @@
+---
+title: Adopting a new orchestrator | Dagster Docs
+--- 
+
+# Adopt a new orchestrator
+
+Leading an organization to adopt a new orchestrator can be incredibly rewarding, it is a chance to:  
+- Dramatically reduce daily toil 
+- Up-level the data culture for an entire organization 
+- Make a case for a promotion from senior to staff data engineer
+
+However, it can also be difficult to know how to start, with daunting questions like:  
+- How do I learn a new orchestrator?  
+- What capabilities matter to my team? 
+- Who needs to be involved? 
+- How do I align infrastructure, data security, and engineering teams?
+- How can I evaluate different software quickly, while still making the right choice?
+- How do I do my "day job", while also evaluating something new?
+- How do I purchase new software? 
+
+This guide provides a blueprint for data engineers who want to champion a new orchestration technology. We recommend evaluating a new orchestrator, like Dagster, in three phases: 
+
+1. The goal of phase 1 is to learn Dagster concepts and decide if Dagster will resolve your team's most pressing pain points. Phase 1 is not concerned with your production data, integrating with your existing systems, or standing up a production architecture.
+
+2. The goal of phase 2 is to evaluate whether Dagster will work with your organization's data, infrastructure, and architecture. Phase 2 involves running a proof of concept where you will write and deploy a minimal viable pipeline to a production-ready architecture. 
+
+3. At the end of phase 2 your team should have made a decision about whether or not to migrate to a new orchestrator. Phase 3 is about rapidly adopting the new orchestrator.
+
+<TabGroup>
+<TabItem name ="Phase 1">
+
+### Phase 1
+
+The goal of phase 1 is to learn enough about Dagster to decide if a full POC is worth your time.
+
+#### Identify existing pain
+
+The goal of phase 1 is to learn enough about Dagster to decide whether a full proof of concept is worthwhile. The first step for evaluating this goal is listing the pain points your team has today. For example:  
+
+- The team struggles with debugging. Stakeholders ask about broken datasets, but it is hard to identify the runs that might have impacted a table. 
+- The team is spending too much time fixing production issues that are introduced because it is hard to test code locally. 
+- Addressing requests for new datasets is difficult because it is unclear what existing scheduled job and dag should be modified.
+- The team is frustrated by dependency management and project structure.
+
+After making an initial list, it can be useful to identify what impacts those paint points are having on the business. For example:
+
+- On average, each production incident costs the company $30K because due to violated SLAs, missed conversions, or churned carts
+- Dealing with technical debt costs the team $100K a year, becausehalf of a full time head count each week is spent babysitting the legacy tool
+
+#### Learn Dagster
+
+While it is possible to learn a new orchestrator by watching webinars, reading documentation, or writing new code fromn scratch, we believe a Dagster Cloud Quickstart is the fastest way to decide if Dagster will resolve your team's pain points. The following steps take less than an hour. 
+
+1. Create a Dagster Cloud organization. This organization is temporary, just for learning, so don't worry about picking a long-lasting name. 
+2. Select Serverless. In phase 2, you will evaluate whether a serverless, hybrid, or OSS deployment model is best suited to your organization's infrastructure. For now, serverless is the fastest way to become familiar with Dagster's capabilities.
+3. Select a quickstart template. Quickstart templates allow you to evaluate common Dagster pipelines and integrations. You will have the chance to deploy real code, make changes, and see updates. 
+4. After selecting a quickstart template, connect Dagster Cloud to your personal GitHub and create a new private repository. In phase 2 you will evaluate a version control and CICD structure that works for your team. For now, the goal is to make changes to Dagster and deploy those changes quickly. 
+5. After deploying the quickstart, you can explore the Dagster web interface: launch runs, view assets, enable sensors and schedules. You can also make changes to the code and trigger deployments. 
+
+At this point, you the tools to make an initial evaluation of whether Dagster's capabilities will meet your team's needs. This a great time to introduce yourself on the Dagster slack, or attend the weekly Dagster demo or community day to meet other individuals and data teams evaluating and adopting a new orchesterator.
+
+</TabItem>
+
+<TabItem name = "Phase 2">
+
+### Phase 2
+
+The goal of phase 2 is to solicit feedback from a wider set of stakeholders including your team, executives, and IT/Ops. At the end of phase 2 you should have a go/no-go decision for implementing a new orchestrator. While phase 2 preparations might take time in some orgs, your full time work coding the proof-of-concept is normally a single two-week sprint.
+
+#### Identify stakeholders
+
+- Other data engineers
+- Analytic / BI engineers
+- Infrastructure team 
+- Executive sponsor 
+
+
+#### Determine a minimum viable pipeline 
+ 
+- Connect to real data 
+- Address pain points as evaluation criteria, eg: 
+    - Local development without production resources
+    - CICD for deployment and PRs for staging review
+    - Quick additions of new assets with declarative schedules
+
+#### Solicit necessary support 
+
+- InfoSec: Might require a vendor security evaluation before a POC 
+- Legal: Might want a NDA signed
+- Infrastructure team: Compute environment or serverless access to data
+- DB admin team: Service account for DB access
+- Executive sponsor: budget a two week sprint without on-call interruptions
+
+#### Run POC 
+
+1. Create a Dagster Cloud organization
+2. Launch an agent or determine infosec requirements for serverless 
+3. Setup a project in your team's Git provider
+4. Setup CICS to deploy your project to Git
+5. Develop dagster code to implement your minimal viable pipeline   
+    - Connect to relevant data sources 
+
+
+#### Present to executive stakeholders
+
+- How to make a great case for a new orchestrator
+
+#### Begin procurement process
+
+- Identifying budget
+- Reviewing pricing proposal
+- InfoSec approval
+- Legal approval 
+
+
+</TabItem>
+
+<TabItem name = "Phase 3">
+
+### Phase 3
+
+The goal of phase 3 is to onboard to the new orchestrator. 
+
+#### Complete procurement 
+
+#### Harden infrastructure 
+
+1. Setup SSO 
+2. Enable appropriate RBAC 
+
+#### Begin migration 
+
+- Lift and shift 
+- Gradual refactor 
+- Greenfield 
+
+#### Onboard team 
+
+- Create internal documentation 
+- Share dagster resources 
+
+</TabItem>
+
+</TabGroup>
