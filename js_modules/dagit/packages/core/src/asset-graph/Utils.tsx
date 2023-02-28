@@ -1,6 +1,6 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
-import {RunStatus} from '../graphql/types';
+import {RunStatus, StaleStatus} from '../graphql/types';
 
 import {
   AssetNodeKeyFragment,
@@ -134,8 +134,7 @@ export interface LiveDataForNode {
   freshnessPolicy: AssetNodeLiveFreshnessPolicyFragment | null;
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
-  currentLogicalVersion: string | null;
-  projectedLogicalVersion: string | null;
+  staleStatus: StaleStatus | null;
   partitionStats: {numMaterialized: number; numPartitions: number} | null;
 }
 
@@ -148,9 +147,8 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   lastMaterialization: null,
   lastMaterializationRunStatus: null,
   lastObservation: null,
-  currentLogicalVersion: null,
-  projectedLogicalVersion: null,
   partitionStats: null,
+  staleStatus: null,
   stepKey: '',
 };
 
@@ -189,8 +187,6 @@ export const buildLiveDataForNode = (
 ): LiveDataForNode => {
   const lastMaterialization = assetNode.assetMaterializations[0] || null;
   const lastObservation = assetNode.assetObservations[0] || null;
-  const currentLogicalVersion = assetNode.currentLogicalVersion;
-  const projectedLogicalVersion = assetNode.projectedLogicalVersion;
   const latestRunForAsset = assetLatestInfo?.latestRun ? assetLatestInfo.latestRun : null;
 
   const runWhichFailedToMaterialize =
@@ -206,8 +202,7 @@ export const buildLiveDataForNode = (
         ? latestRunForAsset.status
         : null,
     lastObservation,
-    currentLogicalVersion,
-    projectedLogicalVersion,
+    staleStatus: assetNode.staleStatus,
     stepKey: assetNode.opNames[0],
     freshnessInfo: assetNode.freshnessInfo,
     freshnessPolicy: assetNode.freshnessPolicy,

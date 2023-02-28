@@ -22,8 +22,7 @@ export type SingleAssetQuery = {
           id: string;
           computeKind: string | null;
           opNames: Array<string>;
-          currentLogicalVersion: string | null;
-          projectedLogicalVersion: string | null;
+          staleStatus: Types.StaleStatus | null;
           groupName: string | null;
           isSource: boolean;
           description: string | null;

@@ -350,8 +350,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     assetObservations(limit: 1) {
       ...AssetNodeLiveObservation
     }
-    currentLogicalVersion
-    projectedLogicalVersion
+    staleStatus
     partitionStats {
       numMaterialized
       numPartitions

@@ -1,6 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {RunStatus} from '../../graphql/types';
+import {StaleStatus, RunStatus} from '../../graphql/types';
 import {SINGLE_ASSET_QUERY} from '../../workspace/VirtualizedAssetRow';
 import {SingleAssetQuery} from '../../workspace/types/VirtualizedAssetRow.types';
 import {ASSET_CATALOG_GROUP_TABLE_QUERY, ASSET_CATALOG_TABLE_QUERY} from '../AssetsCatalogTable';
@@ -96,9 +96,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<SingleAss
               __typename: 'ObservationEvent',
             },
           ],
-          currentLogicalVersion: '0abac660f8672d7951f8047bddfa4de61feaaeedffb0ff6df6ae398bb4ef4741',
-          projectedLogicalVersion:
-            '0abac660f8672d7951f8047bddfa4de61feaaeedffb0ff6df6ae398bb4ef4741',
+          staleStatus: StaleStatus.FRESH,
           __typename: 'AssetNode',
           groupName: 'GROUP2',
           isSource: false,
@@ -187,8 +185,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<SingleAsse
             __typename: 'AssetFreshnessInfo',
           },
           assetObservations: [],
-          currentLogicalVersion: '8226fabb0255eda79f2152a5d12c7135e20c7d3fed6d0f25efecde0d2ab30194',
-          projectedLogicalVersion: 'UNKNOWN',
+          staleStatus: StaleStatus.STALE,
           __typename: 'AssetNode',
           groupName: 'GROUP2',
           isSource: false,
@@ -272,8 +269,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<SingleAssetQuery> = {
           freshnessPolicy: null,
           freshnessInfo: null,
           assetObservations: [],
-          currentLogicalVersion: 'INITIAL',
-          projectedLogicalVersion: null,
+          staleStatus: StaleStatus.MISSING,
           __typename: 'AssetNode',
           groupName: 'default',
           isSource: false,
