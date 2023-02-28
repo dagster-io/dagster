@@ -1,4 +1,19 @@
-from dagster import build_asset_reconciliation_sensor, Definitions, AssetSelection
+from dagster import asset, build_asset_reconciliation_sensor, Definitions, AssetSelection
+
+@asset
+def airbyte_asset1():
+  pass
+@asset
+def airbyte_asset2():
+  pass
+@asset
+def dbt_asset2():
+  pass
+@asset
+def dbt_asset1():
+  pass
+
+# airbyte_dbt_sensor_start
 
 defs = Definitions(
     assets=[airbyte_asset1, airbyte_asset2, dbt_asset1, dbt_asset2],
@@ -9,3 +24,8 @@ defs = Definitions(
         ),
     ],
 )
+
+# airbyte_dbt_sensor_end 
+
+def test_airbyte_sensor():
+    assert airbtye_dbt_defs.get_sensor_def('asset_reconciliation_sensor')

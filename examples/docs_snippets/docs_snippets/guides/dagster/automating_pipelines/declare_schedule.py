@@ -3,8 +3,11 @@ from dagster import (
     Definitions,
     FreshnessPolicy,
     asset,
-    build_asset_reconciliation_sensor,
+    build_asset_reconciliation_sensor, 
+    materialize
 )
+
+# declare_schedule_start
 
 @asset
 def transactions():
@@ -23,3 +26,13 @@ update_sensor = build_asset_reconciliation_sensor(
 )
 
 defs = Definitions(assets=[transactions, sales, expenses], sensors=[update_sensor])
+
+# declare_schedule_end
+
+def test_declare_sensor():
+    assert defs.get_sensor_def('update_sensor')
+
+def test_assets():
+    result= materialize([transactions, expenses, sales])
+    assert result.success
+
