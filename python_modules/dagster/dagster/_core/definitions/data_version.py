@@ -116,7 +116,7 @@ class DataProvenance(
             return None
         input_data_versions = {
             # Everything after the 2nd slash is the asset key
-            AssetKey.from_user_string(k.split("/", maxsplit=3)[-1]): DataVersion(tags[k])
+            AssetKey.from_user_string(k.split("/", maxsplit=2)[-1]): DataVersion(tags[k])
             for k, v in tags.items()
             if k.startswith(INPUT_DATA_VERSION_TAG_PREFIX)
             or k.startswith(_OLD_INPUT_DATA_VERSION_TAG_PREFIX)
@@ -176,7 +176,7 @@ def compute_logical_data_version(
         input_data_versions (Mapping[AssetKey, DataVersion]): The data versions of the inputs.
 
     Returns:
-        DataVersion: The computed logical version as a `DataVersion`.
+        DataVersion: The computed version as a `DataVersion`.
     """
     from dagster._core.definitions.events import AssetKey
 
@@ -303,8 +303,8 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_status(self, key: AssetKey) -> StaleStatus:
-        current_version = self._get_current_logical_version(key=key)
-        if current_version == NULL_LOGICAL_VERSION:
+        current_version = self._get_current_data_version(key=key)
+        if current_version == NULL_DATA_VERSION:
             return StaleStatus.MISSING
         elif self.asset_graph.is_source(key) or self._is_partitioned_or_downstream(key=key):
             return StaleStatus.FRESH
@@ -360,17 +360,17 @@ class CachingStaleStatusResolver:
                         "new dependency",
                         dep_key,
                     )
-                elif provenance.input_data_versions[
-                    dep_key
-                ] != self._get_current_data_version(key=dep_key):
+                elif provenance.input_data_versions[dep_key] != self._get_current_data_version(
+                    key=dep_key
+                ):
                     yield StaleCause(
                         key,
-                        "updated dependency logical version",
+                        "updated dependency data version",
                         dep_key,
                         [
                             StaleCause(
                                 dep_key,
-                                "updated logical version",
+                                "updated data version",
                             )
                         ],
                     )

@@ -19,11 +19,11 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, deprecated, public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster._utils.backcompat import canonicalize_backcompat_args, experimental_class_param_warning
+from dagster._utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
     MetadataEntry,
@@ -242,11 +242,7 @@ class Output(Generic[T]):
         metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         data_version: Optional[DataVersion] = None,
-        logical_version: Optional[DataVersion] = None,
     ):
-        data_version = canonicalize_backcompat_args(
-            data_version, "data_version", logical_version, "logical_version", "1.2.0"
-        )
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_sequence_param(
             metadata_entries,
@@ -277,12 +273,6 @@ class Output(Generic[T]):
     @public
     @property
     def data_version(self) -> Optional[DataVersion]:
-        return self._data_version
-
-    @public
-    @deprecated
-    @property
-    def logical_version(self) -> Optional[DataVersion]:
         return self._data_version
 
     def __eq__(self, other: object) -> bool:

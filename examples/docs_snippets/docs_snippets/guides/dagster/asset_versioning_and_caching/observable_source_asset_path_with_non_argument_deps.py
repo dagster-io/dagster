@@ -1,7 +1,7 @@
 from hashlib import sha256
 
 from dagster import (
-    LogicalVersion,
+    DataVersion,
     Output,
     asset,
     file_relative_path,
@@ -21,14 +21,14 @@ FILE_PATH = file_relative_path(__file__, "input_number.txt")
 @observable_source_asset
 def input_number():
     with open(FILE_PATH) as ff:
-        return LogicalVersion(sha256_digest_from_str(ff.read()))
+        return DataVersion(sha256_digest_from_str(ff.read()))
 
 
 @asset(code_version="v6", non_argument_deps={"input_number"})
 def versioned_number():
     with open(FILE_PATH) as ff:
         value = int(ff.read())
-        return Output(value, logical_version=LogicalVersion(str(value)))
+        return Output(value, logical_version=DataVersion(str(value)))
 
 
 @asset(code_version="v1")
