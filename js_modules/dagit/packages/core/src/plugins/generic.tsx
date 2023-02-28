@@ -1,5 +1,4 @@
 import {Button, DialogBody, DialogFooter, Dialog, Icon} from '@dagster-io/ui';
-import startCase from 'lodash/startCase';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
@@ -48,7 +47,7 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
               <tbody>
                 {metadata.map(({key, value}) => (
                   <tr key={key}>
-                    <td>{startCase(key)}</td>
+                    <td>{key}</td>
                     <td>
                       <code style={{whiteSpace: 'pre-wrap'}}>{value}</code>
                     </td>
