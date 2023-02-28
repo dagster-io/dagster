@@ -78,17 +78,21 @@ export const BackfillRow = ({
   const statusUnsupported = backfill.numPartitions === null || backfill.partitionNames === null;
 
   // Note: We switch queries based on how many partitions there are to display,
-  // because the detail is nice for small backfills but breaks for 100k+ partitions
-  const [queryStatus, queryResult] = statusUnsupported
+  // because the detail is nice for small backfills but breaks for 100k+ partitions.
+  //
+  // If the number of partitions or partition names are missing, we use a mock to
+  // avoid executing any query at all. This is a bit awkward, but seems cleaner than
+  // making the hooks below support an optional query function / result.
+  const [statusQueryFn, statusQueryResult] = statusUnsupported
     ? NoBackfillStatusQuery
     : (backfill.numPartitions || 0) > BACKFILL_PARTITIONS_COUNTS_THRESHOLD
     ? statusCounts
     : statusDetails;
 
-  useDelayedRowQuery(queryStatus);
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useDelayedRowQuery(statusQueryFn);
+  useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
 
-  const {data} = queryResult;
+  const {data} = statusQueryResult;
   const {counts, statuses} = React.useMemo(() => {
     if (data?.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {counts: null, statuses: null};
@@ -137,7 +141,7 @@ export const BackfillRow = ({
         {counts || statusUnsupported ? (
           <BackfillStatusTag backfill={backfill} counts={counts} />
         ) : (
-          <LoadingOrNone queryResult={queryResult} noneString="" />
+          <LoadingOrNone queryResult={statusQueryResult} noneString={'\u2013'} />
         )}
       </td>
       <td>
@@ -145,7 +149,7 @@ export const BackfillRow = ({
           counts ? (
             <BackfillRunStatus backfill={backfill} counts={counts} statuses={statuses} />
           ) : (
-            <LoadingOrNone queryResult={queryResult} noneString="" />
+            <LoadingOrNone queryResult={statusQueryResult} noneString={'\u2013'} />
           )
         ) : (
           <p>A partitions definition has changed since this backfill ran.</p>
