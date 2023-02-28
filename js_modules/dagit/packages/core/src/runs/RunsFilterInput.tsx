@@ -288,6 +288,7 @@ const RUN_TAG_KEYS_QUERY = gql`
 const RUN_TAG_VALUES_QUERY = gql`
   query RunTagValuesQuery($tagKeys: [String!]!) {
     runTagsOrError(tagKeys: $tagKeys) {
+      __typename
       ... on RunTags {
         tags {
           key

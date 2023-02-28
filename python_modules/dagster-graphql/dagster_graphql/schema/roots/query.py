@@ -640,7 +640,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_runTagKeysOrError(self, graphene_info: ResolveInfo):
         return get_run_tag_keys(graphene_info)
 
-    def resolve_runTags(
+    def resolve_runTagsOrError(
         self,
         graphene_info: ResolveInfo,
         tagKeys: Optional[List[str]] = None,
