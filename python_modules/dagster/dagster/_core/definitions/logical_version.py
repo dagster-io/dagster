@@ -203,15 +203,16 @@ def _extract_event_data_from_entry(
 
 
 class StaleStatus(Enum):
+    MISSING = "MISSING"
     STALE = "STALE"
     FRESH = "FRESH"
-    UNKNOWN = "UNKNOWN"
 
 
 class StaleStatusCause(NamedTuple):
     status: StaleStatus
     key: AssetKey
     reason: str
+    dependency: Optional[AssetKey] = None
 
 
 class CachingStaleStatusResolver:
@@ -257,20 +258,18 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_status(self, key: AssetKey) -> StaleStatus:
-        if self.asset_graph.get_partitions_def(key):
-            return StaleStatus.UNKNOWN
-        else:
-            causes = self._get_status_causes(key=key)
-            return StaleStatus.FRESH if len(causes) == 0 else causes[0].status
+        causes = self._get_status_causes(key=key)
+        return StaleStatus.FRESH if len(causes) == 0 else causes[0].status
 
     @cached_method
     def _get_status_causes(self, key: AssetKey) -> Sequence[StaleStatusCause]:
         current_version = self._get_current_logical_version(key=key)
-        projected_version = self._get_projected_logical_version(key=key)
-        if current_version == projected_version:
+        if self.asset_graph.is_source(key):
             return []
         elif current_version == NULL_LOGICAL_VERSION:
-            return [StaleStatusCause(StaleStatus.STALE, key, "never materialized")]
+            return [StaleStatusCause(StaleStatus.MISSING, key, "never materialized")]
+        elif self._is_partitioned_or_downstream(key=key):
+            return []
         else:
             return list(self._get_stale_status_causes_materialized(key))
 
@@ -284,29 +283,49 @@ class CachingStaleStatusResolver:
             all_dep_keys = sorted(set(proj_dep_keys).union(prov_versions.keys()))
             for dep_key in all_dep_keys:
                 if dep_key not in prov_versions:
-                    yield StaleStatusCause(
-                        StaleStatus.STALE, key, f"new input: {dep_key.to_user_string()}"
-                    )
+                    yield StaleStatusCause(StaleStatus.STALE, key, "new input", dep_key)
                 elif dep_key not in proj_dep_keys:
                     yield StaleStatusCause(
-                        StaleStatus.STALE, key, f"removed input: {dep_key.to_user_string()}"
+                        StaleStatus.STALE,
+                        key,
+                        "removed input",
+                        dep_key,
                     )
                 elif prov_versions[dep_key] != self._get_current_logical_version(key=dep_key):
                     yield StaleStatusCause(
-                        StaleStatus.STALE, key, f"updated input: {dep_key.to_user_string()}"
+                        StaleStatus.STALE,
+                        key,
+                        "updated input",
+                        dep_key,
                     )
-                elif prov_versions[dep_key] != self._get_projected_logical_version(key=dep_key):
+                elif self._get_status(key=dep_key) == StaleStatus.STALE:
                     yield StaleStatusCause(
-                        StaleStatus.STALE, key, f"stale input: {dep_key.to_user_string()}"
+                        StaleStatus.STALE,
+                        key,
+                        "stale input",
+                        dep_key,
                     )
-
             if code_version is not None and code_version != provenance.code_version:
                 yield StaleStatusCause(StaleStatus.STALE, key, "updated code version")
 
-        if code_version is None:
-            yield StaleStatusCause(StaleStatus.UNKNOWN, key, "code version unknown")
-        elif provenance is None or provenance.code_version is None:
-            yield StaleStatusCause(StaleStatus.UNKNOWN, key, "previous code version unknown")
+        # if no provenance, then use materialization timestamps instead of versions
+        # this should be removable eventually since provenance is on all newer materializations
+        else:
+            materialization = check.not_none(self._get_latest_materialization_event(key=key))
+            materialization_time = materialization.timestamp
+            all_dep_keys = sorted(proj_dep_keys)
+            for dep_key in all_dep_keys:
+                dep_materialization = self._get_latest_materialization_event(key=dep_key)
+                if dep_materialization is None:
+                    # The input must be new if it has no materialization
+                    yield StaleStatusCause(StaleStatus.STALE, key, "new input", dep_key)
+                elif dep_materialization.timestamp > materialization_time:
+                    yield StaleStatusCause(
+                        StaleStatus.STALE,
+                        key,
+                        "updated input",
+                        dep_key,
+                    )
 
         for dep_key in proj_dep_keys:
             yield from self._get_status_causes(key=dep_key)
@@ -383,6 +402,8 @@ class CachingStaleStatusResolver:
     def _is_partitioned_or_downstream(self, *, key: AssetKey) -> bool:
         if self.asset_graph.get_partitions_def(key):
             return True
+        elif self.asset_graph.is_source(key):
+            return False
         else:
             return any(
                 self._is_partitioned_or_downstream(key=dep_key)
