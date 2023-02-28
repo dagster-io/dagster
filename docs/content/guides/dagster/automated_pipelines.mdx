@@ -29,7 +29,7 @@ asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_grou
 basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 9 * * *")
 ```
 
-You can also use the <PyObject object="schedule" decorator /> decorator if you want to provide custom run config and tags. For example, if you want to pass a parameter to the job at runtime, for example, activity = ‘party’ on the weekend and activity=’grind’ on the weekdays, you can use the configuration to pass parameters in.
+You can also use the <PyObject object="schedule" decorator /> decorator if you want to provide custom run config and tags. For example, if you want to pass a parameter to the job at runtime, for example, `activity = ‘party’` on the weekend and `activity=’grind’` on weekdays, you can use the configuration to pass parameters in.
 
 ```python file=/guides/dagster/automating_pipelines/config_schedule.py
 from dagster import schedule, ScheduleEvaluationContext, RunRequest
