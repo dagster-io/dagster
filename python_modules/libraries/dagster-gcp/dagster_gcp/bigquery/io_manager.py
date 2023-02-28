@@ -115,7 +115,11 @@ def build_bigquery_io_manager(
                 Noneable(StringSource),
                 is_required=False,
                 default_value=None,
-                description="The GCP location.",
+                description=(
+                    "The GCP location. **Note:** When using PySpark DataFrames, the default"
+                    " location of the project will be used. A custom location can be specified in"
+                    " your SparkSession configuration."
+                ),
             ),
             "gcp_credentials": Field(
                 Noneable(StringSource),

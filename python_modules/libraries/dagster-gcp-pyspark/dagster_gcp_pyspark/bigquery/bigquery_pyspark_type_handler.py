@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import Any, Mapping, Optional
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.metadata import RawMetadataValue
@@ -8,11 +8,13 @@ from dagster_gcp.bigquery.io_manager import BigQueryClient
 from pyspark.sql import DataFrame, SparkSession
 
 
-def _get_bigquery_write_options(config, table_slice: TableSlice) -> Mapping[str, str]:
+def _get_bigquery_write_options(
+    config: Optional[Mapping[str, Any]], table_slice: TableSlice
+) -> Mapping[str, str]:
     conf = {
         "table": f"{table_slice.database}.{table_slice.schema}.{table_slice.table}",
     }
-    if config.get("temporary_gcs_bucket") is not None:
+    if config and config.get("temporary_gcs_bucket") is not None:
         conf["temporaryGcsBucket"] = config["temporary_gcs_bucket"]
     else:
         conf["writeMethod"] = "direct"
