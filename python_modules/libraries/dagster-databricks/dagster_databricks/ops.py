@@ -1,4 +1,4 @@
-from typing import Mapping, Optional, Union
+from typing import Optional
 
 from dagster import (
     Field,
@@ -6,7 +6,6 @@ from dagster import (
     Nothing,
     OpExecutionContext,
     Out,
-    Output,
     Permissive,
     _check as check,
     op,
@@ -143,8 +142,6 @@ def create_ui_url(databricks_client, op_config):
 def create_databricks_run_now_op(
     databricks_job_id: int,
     databricks_job_configuration: Optional[dict] = None,
-    ins: Optional[Mapping[str, In]] = None,
-    out: Optional[Union[Out, Mapping[str, Out]]] = None,
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
 ) -> OpDefinition:
@@ -161,8 +158,6 @@ def create_databricks_run_now_op(
         databricks_job_configuration (dict): Configuration for triggering a new job run of a
             Databricks Job. See https://docs.databricks.com/api-explorer/workspace/jobs/runnow
             for the full configuration.
-        ins (Optional[Dict[str, In]]): Keyword argument passed to the underlying op.
-        out (Optional[Union[Out, Dict[str, Out]]]): Keyword argument passed to the underlying op.
         poll_interval_seconds (float): How often to poll the Databricks API to check whether the
             Databricks job has finished running.
         max_wait_time_seconds (float): How long to wait for the Databricks job to finish running
@@ -207,8 +202,7 @@ def create_databricks_run_now_op(
     """
 
     @op(
-        ins=(ins or {"start_after": In(Nothing)}),
-        out=out,
+        ins={"start_after": In(Nothing)},
         config_schema={
             "poll_interval_seconds": Field(
                 float,
@@ -229,7 +223,7 @@ def create_databricks_run_now_op(
         required_resource_keys={"databricks"},
         tags={"kind": "databricks"},
     )
-    def _databricks_run_now_op(context: OpExecutionContext):
+    def _databricks_run_now_op(context: OpExecutionContext) -> None:
         databricks: DatabricksClient = context.resources.databricks
         jobs_service = JobsService(databricks.api_client)
 
@@ -252,18 +246,11 @@ def create_databricks_run_now_op(
             max_wait_time_sec=context.op_config["max_wait_time_seconds"],
         )
 
-        yield from [
-            Output(value=None, output_name=output_name)
-            for output_name in context.op.output_dict.keys()
-        ]
-
     return _databricks_run_now_op
 
 
 def create_databricks_submit_run_op(
     databricks_job_configuration: dict,
-    ins: Optional[Mapping[str, In]] = None,
-    out: Optional[Union[Out, Mapping[str, Out]]] = None,
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     max_wait_time_seconds: float = DEFAULT_MAX_WAIT_TIME_SECONDS,
 ) -> OpDefinition:
@@ -277,8 +264,6 @@ def create_databricks_submit_run_op(
         databricks_job_configuration (dict): Configuration for submitting a one-time run of a set
             of tasks on Databricks. See https://docs.databricks.com/api-explorer/workspace/jobs/submit
             for the full configuration.
-        ins (Optional[Dict[str, In]]): Keyword argument passed to the underlying op.
-        out (Optional[Union[Out, Dict[str, Out]]]): Keyword argument passed to the underlying op.
         poll_interval_seconds (float): How often to poll the Databricks API to check whether the
             Databricks job has finished running.
         max_wait_time_seconds (float): How long to wait for the Databricks job to finish running
@@ -296,15 +281,13 @@ def create_databricks_submit_run_op(
 
             submit_run_op = create_databricks_submit_run_op(
                 databricks_job_configuration={
-                    "job": {
-                        "new_cluster": {
-                            "spark_version": '2.1.0-db3-scala2.11',
-                            "num_workers": 2
-                        },
-                        "notebook_task": {
-                            "notebook_path": "/Users/dagster@example.com/PrepareData",
-                        },
-                    }
+                    "new_cluster": {
+                        "spark_version": '2.1.0-db3-scala2.11',
+                        "num_workers": 2
+                    },
+                    "notebook_task": {
+                        "notebook_path": "/Users/dagster@example.com/PrepareData",
+                    },
                 }
             )
 
@@ -327,8 +310,7 @@ def create_databricks_submit_run_op(
     )
 
     @op(
-        ins=(ins or {"start_after": In(Nothing)}),
-        out=out,
+        ins={"start_after": In(Nothing)},
         config_schema={
             "poll_interval_seconds": Field(
                 float,
@@ -349,7 +331,7 @@ def create_databricks_submit_run_op(
         required_resource_keys={"databricks"},
         tags={"kind": "databricks"},
     )
-    def _databricks_submit_run_op(context: OpExecutionContext):
+    def _databricks_submit_run_op(context: OpExecutionContext) -> None:
         databricks: DatabricksClient = context.resources.databricks
         jobs_service = JobsService(databricks.api_client)
 
@@ -368,10 +350,5 @@ def create_databricks_submit_run_op(
             poll_interval_sec=context.op_config["poll_interval_seconds"],
             max_wait_time_sec=context.op_config["max_wait_time_seconds"],
         )
-
-        yield from [
-            Output(value=None, output_name=output_name)
-            for output_name in context.op.output_dict.keys()
-        ]
 
     return _databricks_submit_run_op

@@ -2,7 +2,7 @@ from typing import Optional, Sequence
 from unittest import mock
 
 import pytest
-from dagster import In, Nothing, Out, job
+from dagster import job
 from dagster._check import CheckError
 from dagster_databricks import create_databricks_job_op, databricks_client
 from dagster_databricks.ops import (
@@ -123,23 +123,6 @@ def test_create_ui_url(host, config, workspace_id, expected):
 
 
 @pytest.mark.parametrize(
-    "op_kwargs",
-    [
-        {},
-        {
-            "ins": {"input1": In(Nothing), "input2": In(Nothing)},
-            "out": {
-                "output1": Out(Nothing, is_required=False),
-                "output2": Out(Nothing, is_required=False),
-            },
-        },
-    ],
-    ids=[
-        "no overrides",
-        "with ins and outs",
-    ],
-)
-@pytest.mark.parametrize(
     "databricks_job_configuration",
     [
         None,
@@ -160,7 +143,7 @@ def test_create_ui_url(host, config, workspace_id, expected):
     ],
 )
 def test_databricks_run_now_op(
-    mocker: MockerFixture, op_kwargs: dict, databricks_job_configuration: Optional[dict]
+    mocker: MockerFixture, databricks_job_configuration: Optional[dict]
 ) -> None:
     mock_run_now = mocker.patch("databricks_cli.sdk.JobsService.run_now")
     mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
@@ -172,7 +155,6 @@ def test_databricks_run_now_op(
     test_databricks_run_now_op = create_databricks_run_now_op(
         databricks_job_id=databricks_job_id,
         databricks_job_configuration=databricks_job_configuration,
-        **op_kwargs,
         poll_interval_seconds=0.01,
     )
 
@@ -196,41 +178,24 @@ def test_databricks_run_now_op(
     assert mock_get_run.call_count == 4
 
 
-@pytest.mark.parametrize(
-    "op_kwargs",
-    [
-        {},
-        {
-            "ins": {"input1": In(Nothing), "input2": In(Nothing)},
-            "out": {
-                "output1": Out(Nothing, is_required=False),
-                "output2": Out(Nothing, is_required=False),
-            },
-        },
-    ],
-    ids=[
-        "no overrides",
-        "with ins and outs",
-    ],
-)
-def test_databricks_submit_run_op(mocker: MockerFixture, op_kwargs: dict) -> None:
+def test_databricks_submit_run_op(mocker: MockerFixture) -> None:
     mock_submit_run = mocker.patch("databricks_cli.sdk.JobsService.submit_run")
     mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
+    databricks_job_configuration = {
+        "new_cluster": {
+            "spark_version": "2.1.0-db3-scala2.11",
+            "num_workers": 2,
+        },
+        "notebook_task": {
+            "notebook_path": "/Users/dagster@example.com/PrepareData",
+        },
+    }
 
     mock_submit_run.return_value = {"run_id": 1}
     mock_get_run.side_effect = _mock_get_run_response()
 
     test_databricks_submit_run_op = create_databricks_submit_run_op(
-        databricks_job_configuration={
-            "new_cluster": {
-                "spark_version": "2.1.0-db3-scala2.11",
-                "num_workers": 2,
-            },
-            "notebook_task": {
-                "notebook_path": "/Users/dagster@example.com/PrepareData",
-            },
-        },
-        **op_kwargs,
+        databricks_job_configuration=databricks_job_configuration,
         poll_interval_seconds=0.01,
     )
 
@@ -247,7 +212,7 @@ def test_databricks_submit_run_op(mocker: MockerFixture, op_kwargs: dict) -> Non
     result = test_databricks_job.execute_in_process()
 
     assert result.success
-    assert mock_submit_run.call_count == 1
+    mock_submit_run.assert_called_once_with(**databricks_job_configuration)
     assert mock_get_run.call_count == 4
 
 
