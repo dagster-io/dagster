@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Mapping, Optional, Union
 
 from dagster import (
     Field,
@@ -141,7 +141,10 @@ def create_ui_url(databricks_client, op_config):
 
 
 def create_databricks_run_now_op(
-    databricks_job_id: int, databricks_job_configuration: Optional[dict] = None, **kwargs
+    databricks_job_id: int,
+    databricks_job_configuration: Optional[dict] = None,
+    ins: Optional[Mapping[str, In]] = None,
+    out: Optional[Union[Out, Mapping[str, Out]]] = None,
 ) -> OpDefinition:
     """
     Creates an op that launches an existing databricks job.
@@ -156,8 +159,8 @@ def create_databricks_run_now_op(
         databricks_job_configuration (dict): Configuration for triggering a new job run of a
             Databricks Job. See https://docs.databricks.com/api-explorer/workspace/jobs/runnow
             for the full configuration.
-        **kwargs: Additional keyword arguments to pass to the underlying op. Accepted keywords are
-            are the accepted keywords to the @op decorator.
+        ins (Optional[Dict[str, In]]): Keyword argument passed to the underlying op.
+        out (Optional[Union[Out, Dict[str, Out]]]): Keyword argument passed to the underlying op.
 
     Returns:
         OpDefinition: An op definition to run the Databricks Job.
@@ -169,6 +172,7 @@ def create_databricks_run_now_op(
             from dagster_databricks import create_databricks_run_now_op, databricks_client
 
             DATABRICKS_JOB_ID = 1234
+
 
             run_now_op = create_databricks_run_now_op(
                 databricks_job_id=DATABRICKS_JOB_ID,
@@ -195,9 +199,11 @@ def create_databricks_run_now_op(
             def do_stuff():
                 run_now_op()
     """
-    op_kwargs = {
-        "ins": {"start_after": In(Nothing)},
-        "config_schema": {
+
+    @op(
+        ins=(ins or {"start_after": In(Nothing)}),
+        out=out,
+        config_schema={
             "job": Field(
                 config=Permissive(),
                 is_required=False,
@@ -221,12 +227,9 @@ def create_databricks_run_now_op(
                 default_value=_DEFAULT_RUN_MAX_WAIT_TIME_SEC,
             ),
         },
-        "required_resource_keys": {"databricks"},
-        "tags": {"kind": "databricks"},
-        **kwargs,
-    }
-
-    @op(**op_kwargs)
+        required_resource_keys={"databricks"},
+        tags={"kind": "databricks"},
+    )
     def _databricks_run_now_op(context: OpExecutionContext):
         databricks: DatabricksClient = context.resources.databricks
         jobs_service = JobsService(databricks.api_client)
@@ -263,7 +266,8 @@ def create_databricks_run_now_op(
 
 def create_databricks_submit_run_op(
     databricks_job_configuration: dict,
-    **kwargs,
+    ins: Optional[Mapping[str, In]] = None,
+    out: Optional[Union[Out, Mapping[str, Out]]] = None,
 ) -> OpDefinition:
     """
     Creates an op that submits a one-time run of a set of tasks on Databricks.
@@ -275,8 +279,8 @@ def create_databricks_submit_run_op(
         databricks_job_configuration (dict): Configuration for submitting a one-time run of a set
             of tasks on Databricks. See https://docs.databricks.com/api-explorer/workspace/jobs/submit
             for the full configuration.
-        **kwargs: Additional keyword arguments to pass to the underlying op. Accepted keywords are
-            are the accepted keywords to the @op decorator.
+        ins (Optional[Dict[str, In]]): Keyword argument passed to the underlying op.
+        out (Optional[Union[Out, Dict[str, Out]]]): Keyword argument passed to the underlying op.
 
     Returns:
         OpDefinition: An op definition to submit a one-time run of a set of tasks on Databricks.
@@ -287,7 +291,6 @@ def create_databricks_submit_run_op(
             from dagster import job
             from dagster_databricks import create_databricks_submit_run_op, databricks_client
 
-            DATABRICKS_JOB_ID = 1234
 
             submit_run_op = create_databricks_submit_run_op(
                 databricks_job_configuration={
@@ -321,15 +324,17 @@ def create_databricks_submit_run_op(
         "Configuration for the one-time Databricks Job is required.",
     )
 
-    op_kwargs = {
-        "ins": {"start_after": In(Nothing)},
-        "config_schema": {
+    @op(
+        ins=(ins or {"start_after": In(Nothing)}),
+        out=out,
+        config_schema={
             "job": Field(
                 config=Permissive(),
                 is_required=False,
                 description=(
-                    "Configuration for submitting a one-time run of a set of tasks on Databricks."
-                    " See https://docs.databricks.com/api-explorer/workspace/jobs/submit for the"
+                    "Configuration for submitting a one-time run of a set of tasks on"
+                    " Databricks. See"
+                    " https://docs.databricks.com/api-explorer/workspace/jobs/submit for the"
                     " full configuration."
                 ),
             ),
@@ -347,12 +352,9 @@ def create_databricks_submit_run_op(
                 default_value=_DEFAULT_RUN_MAX_WAIT_TIME_SEC,
             ),
         },
-        "required_resource_keys": {"databricks"},
-        "tags": {"kind": "databricks"},
-        **kwargs,
-    }
-
-    @op(**op_kwargs)
+        required_resource_keys={"databricks"},
+        tags={"kind": "databricks"},
+    )
     def _databricks_submit_run_op(context: OpExecutionContext):
         databricks: DatabricksClient = context.resources.databricks
         jobs_service = JobsService(databricks.api_client)
