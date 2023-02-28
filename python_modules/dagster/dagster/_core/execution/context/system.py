@@ -343,58 +343,94 @@ class PlanExecutionContext(IPlanContext):
         return self._log_manager
 
     @property
-    def partition_key(self) -> str:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            get_multipartition_key_from_tags,
-        )
-
-        tags = self._plan_data.dagster_run.tags
-
-        is_multipartitioned = any(
-            [tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]
-        )
-        check.invariant(
-            PARTITION_NAME_TAG in tags or is_multipartitioned,
-            "Tried to access partition_key for a non-partitioned run",
-        )
-
-        if is_multipartitioned:
-            return get_multipartition_key_from_tags(tags)
-
-        return tags[PARTITION_NAME_TAG]
-
-    @property
-    def asset_partition_key_range(self) -> PartitionKeyRange:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            get_multipartition_key_from_tags,
-        )
-
-        tags = self._plan_data.dagster_run.tags
-        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
-            multipartition_key = get_multipartition_key_from_tags(tags)
-            return PartitionKeyRange(multipartition_key, multipartition_key)
-
-        partition_key = tags.get(PARTITION_NAME_TAG)
-        if partition_key is not None:
-            return PartitionKeyRange(partition_key, partition_key)
-
-        partition_key_range_start = tags.get(ASSET_PARTITION_RANGE_START_TAG)
-        if partition_key_range_start is not None:
-            return PartitionKeyRange(partition_key_range_start, tags[ASSET_PARTITION_RANGE_END_TAG])
-
-        check.failed("Tried to access partition_key_range for a non-partitioned run")
-
-    @property
-    def partition_time_window(self) -> str:
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
         from dagster._core.definitions.job_definition import JobDefinition
 
         pipeline_def = self._execution_data.pipeline_def
         if not isinstance(pipeline_def, JobDefinition):
             check.failed(
-                # isinstance(pipeline_def, JobDefinition),
-                "Can only call 'partition_time_window', when using jobs, not legacy pipelines",
+                "Can only call 'partitions_def', when using jobs, not legacy pipelines",
             )
         partitions_def = pipeline_def.partitions_def
+        return partitions_def
+
+    @property
+    def has_partitions(self) -> bool:
+        tags = self._plan_data.dagster_run.tags
+        return bool(
+            PARTITION_NAME_TAG in tags
+            or any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()])
+            or (
+                tags.get(ASSET_PARTITION_RANGE_START_TAG)
+                and tags.get(ASSET_PARTITION_RANGE_END_TAG)
+            )
+        )
+
+    @property
+    def partition_key(self) -> str:
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiPartitionsDefinition,
+            get_multipartition_key_from_tags,
+        )
+
+        if not self.has_partitions:
+            raise DagsterInvariantViolationError(
+                "Cannot access partition_key for a non-partitioned run"
+            )
+
+        tags = self._plan_data.dagster_run.tags
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            return get_multipartition_key_from_tags(tags)
+        elif PARTITION_NAME_TAG in tags:
+            return tags[PARTITION_NAME_TAG]
+        else:
+            range_start = tags[ASSET_PARTITION_RANGE_START_TAG]
+            range_end = tags[ASSET_PARTITION_RANGE_END_TAG]
+
+            if range_start != range_end:
+                raise DagsterInvariantViolationError(
+                    "Cannot access partition_key for a partitioned run with a range of partitions."
+                    " Call asset_partition_key_range instead."
+                )
+            else:
+                if isinstance(self.partitions_def, MultiPartitionsDefinition):
+                    return self.partitions_def.get_partition_key_from_str(cast(str, range_start))
+                return cast(str, range_start)
+
+    @property
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiPartitionsDefinition,
+            get_multipartition_key_from_tags,
+        )
+
+        if not self.has_partitions:
+            raise DagsterInvariantViolationError(
+                "Cannot access partition_key for a non-partitioned run"
+            )
+
+        tags = self._plan_data.dagster_run.tags
+        if any([tag.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX) for tag in tags.keys()]):
+            multipartition_key = get_multipartition_key_from_tags(tags)
+            return PartitionKeyRange(multipartition_key, multipartition_key)
+        elif PARTITION_NAME_TAG in tags:
+            partition_key = tags[PARTITION_NAME_TAG]
+            return PartitionKeyRange(partition_key, partition_key)
+        else:
+            partition_key_range_start = tags[ASSET_PARTITION_RANGE_START_TAG]
+            if partition_key_range_start is not None:
+                if isinstance(self.partitions_def, MultiPartitionsDefinition):
+                    return PartitionKeyRange(
+                        self.partitions_def.get_partition_key_from_str(partition_key_range_start),
+                        self.partitions_def.get_partition_key_from_str(
+                            tags[ASSET_PARTITION_RANGE_END_TAG]
+                        ),
+                    )
+            return PartitionKeyRange(partition_key_range_start, tags[ASSET_PARTITION_RANGE_END_TAG])
+
+    @property
+    def partition_time_window(self) -> str:
+        partitions_def = self.partitions_def
 
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed(

@@ -153,11 +153,11 @@ def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
     return iris_dataset_partitioned.dropna().drop_duplicates()
 ```
 
-Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the partition in the downstream asset. When loading a static partition, the following statement is used:
+Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the partition in the downstream asset. When loading a static partition (or multiple static partitions), the following statement is used:
 
 ```sql
 SELECT *
- WHERE [partition_expr] = [selected partition]
+ WHERE [partition_expr] in ([selected partitions])
 ```
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow Snowflake's SQL syntax. Refer to the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/constructs) for more information.
@@ -166,7 +166,7 @@ When materializing the above assets, a partition must be selected, as described 
 
 ```sql
 SELECT *
- WHERE SPECIES = 'Iris-setosa'
+ WHERE SPECIES in ('Iris-setosa')
 ```
 
 ### Storing time partitioned assets
