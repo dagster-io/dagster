@@ -895,10 +895,13 @@ class PartitionSetDefinition(Generic[T]):
         )
 
     def get_partition(
-        self, name: str, dynamic_partitions_store: Optional[DynamicPartitionsStore] = None
+        self,
+        name: str,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        current_time: Optional[datetime] = None,
     ) -> Partition[T]:
         return self._partitions_def.get_partition(
-            name, dynamic_partitions_store=dynamic_partitions_store
+            name, current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
 
     def get_partition_names(

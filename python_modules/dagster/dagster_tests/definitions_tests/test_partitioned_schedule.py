@@ -354,3 +354,24 @@ def test_empty_partitions():
 
     assert len(result.run_requests) == 0
     assert result.skip_message is not None
+
+
+def test_future_tick():
+    with pendulum.test(pendulum.parse("2022-02-28")):
+
+        @daily_partitioned_config(start_date="2021-05-05")
+        def my_partitioned_config(start, end):
+            return {"start": str(start), "end": str(end)}
+
+        my_schedule = schedule_for_partitioned_config(my_partitioned_config)
+
+        run_request = my_schedule.evaluate_tick(
+            build_schedule_context(
+                scheduled_execution_time=datetime.strptime("2022-03-05", DATE_FORMAT)
+            )
+        ).run_requests[0]
+        assert run_request.run_config == {
+            "start": "2022-03-04T00:00:00+00:00",
+            "end": "2022-03-05T00:00:00+00:00",
+        }
+        assert run_request.tags["test_tag_key"] == "test_tag_value"
