@@ -179,7 +179,10 @@ def _get_schedule_evaluation_fn(
             return SkipReason("The job's PartitionsDefinition has no partitions")
 
         return job.run_request_for_partition(
-            partition_key=partition_key, run_key=partition_key, tags=tags
+            partition_key=partition_key,
+            run_key=partition_key,
+            tags=tags,
+            current_time=context.scheduled_execution_time,
         )
 
     return schedule_fn
