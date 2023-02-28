@@ -59,7 +59,7 @@ This approach allows you to think about each asset’s freshness requirements in
 
 In the following example, we set the freshness policy to instruct the sales asset not to be more than 60 minutes old by 9:00 AM. The sales data will prompt the upstream transactions asset to materialize to stay within the freshness policy.
 
-We also have an asset for the expenses, which also depends on the transactions asset. This asset has a freshness policy of 120 minutes, or two hours at any time, since it did not specify a schedule. The expenses asset will require the transactions data to be refreshed in order to comply with the freshness policy.
+We also have an asset for the expenses, which also depends on the transactions asset. This asset has a freshness policy of 120 minutes, or two hours at any time, since it did not specify a schedule. The `expenses` asset will require the `transactions` data to be refreshed in order to comply with the freshness policy.
 
 ```python file=/guides/dagster/automating_pipelines/declare_schedule.py startafter=declare_schedule_start endbefore=declare_schedule_end
 @asset
