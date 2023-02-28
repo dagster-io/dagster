@@ -372,6 +372,15 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
 
         assert set(graphql_context.instance.get_dynamic_partitions("foo")) == {"bar"}
 
+        result = execute_dagster_graphql(
+            graphql_context,
+            ADD_DYNAMIC_PARTITION_MUTATION,
+            variables={"partitionsDefName": "foo", "partitionKey": "bar"},
+        )
+        assert not result.errors
+        assert result.data["addDynamicPartition"]["__typename"] == "PythonError"
+        assert "Partition bar already exists" in result.data["addDynamicPartition"]["message"]
+
 
 class TestDynamicPartitionReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
     def test_unauthorized_error_on_add_dynamic_partitions(self, graphql_context):
