@@ -932,12 +932,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(self.node_handle)
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
 
         return (
             upstream_asset_key is not None
-            and assets_def is not None
             and asset_layer.partitions_def_for_asset(upstream_asset_key) is not None
         )
 
@@ -965,8 +963,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if upstream_asset_key is not None:
             upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
 
-            if assets_def is not None and upstream_asset_partitions_def is not None:
-                partitions_def = assets_def.partitions_def
+            if upstream_asset_partitions_def is not None:
+                partitions_def = assets_def.partitions_def if assets_def else None
                 partitions_subset = (
                     partitions_def.empty_subset().with_partition_key_range(
                         self.asset_partition_key_range, dynamic_partitions_store=self.instance
