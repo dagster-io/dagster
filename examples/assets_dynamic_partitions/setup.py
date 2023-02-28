@@ -5,7 +5,6 @@ setup(
     packages=find_packages(exclude=["assets_dynamic_partitions_tests"]),
     install_requires=[
         "dagster",
-        "dagster-cloud",
         "dagster-duckdb-pandas",
         "requests",
     ],
