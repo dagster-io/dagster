@@ -84,6 +84,7 @@ def make_location_entry(defs_attr: str):
         load_status=WorkspaceLocationLoadStatus.LOADED,
         display_metadata={},
         update_timestamp=time.time(),
+        image=None,
     )
 
 

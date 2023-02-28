@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import graphene
 from dagster import (
@@ -170,6 +170,7 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
     loadStatus = graphene.NonNull(GrapheneRepositoryLocationLoadStatus)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     updatedTimestamp = graphene.NonNull(graphene.Float)
+    image = graphene.Field(graphene.String)
 
     permissions = graphene.Field(non_null_list(GraphenePermission))
 
@@ -184,6 +185,9 @@ class GrapheneWorkspaceLocationEntry(graphene.ObjectType):
 
     def resolve_id(self, _):
         return self.name
+
+    def resolve_image(self, _) -> Optional[str]:
+        return self._location_entry.image
 
     def resolve_locationOrLoadError(self, _):
         if self._location_entry.repository_location:

@@ -1307,6 +1307,7 @@ type WorkspaceLocationEntry {
   loadStatus: RepositoryLocationLoadStatus!
   displayMetadata: [RepositoryMetadata!]!
   updatedTimestamp: Float!
+  image: String
   permissions: [Permission!]!
 }
 

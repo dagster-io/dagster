@@ -46,6 +46,7 @@ query {
             value
           }
           updatedTimestamp
+          image
         }
       }
       ... on PythonError {
@@ -142,6 +143,7 @@ class TestLoadWorkspace(BaseTestSuite):
             assert "No such file or directory" in failure_node["locationOrLoadError"]["message"]
 
             for node in nodes:
+                assert node["image"] is None
                 assert node["loadStatus"] == "LOADED"
                 update_time = node["updatedTimestamp"]
                 assert update_time >= reload_time and update_time <= time.time()

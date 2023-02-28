@@ -610,10 +610,11 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             repository_location=location,
             load_error=error,
             load_status=WorkspaceLocationLoadStatus.LOADED,
-            display_metadata=location.get_display_metadata()
-            if location
-            else origin.get_display_metadata(),
+            display_metadata=(
+                location.get_display_metadata() if location else origin.get_display_metadata()
+            ),
             update_timestamp=time.time(),
+            image=location.container_image if location else None,
         )
 
     def create_snapshot(self):

@@ -153,6 +153,7 @@ class DaemonWorkspace(BaseDaemonWorkspace):
             if location
             else origin.get_display_metadata(),
             update_timestamp=time.time(),
+            image=location.container_image if location else None,
         )
 
     def _create_location_from_origin(self, origin) -> RepositoryLocation:

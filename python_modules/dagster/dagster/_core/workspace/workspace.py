@@ -21,6 +21,7 @@ class WorkspaceLocationEntry(NamedTuple):
     load_status: WorkspaceLocationLoadStatus
     display_metadata: Mapping[str, str]
     update_timestamp: float
+    image: Optional[str]
 
 
 class WorkspaceLocationStatusEntry(NamedTuple):

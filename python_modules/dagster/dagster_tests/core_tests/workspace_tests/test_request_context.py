@@ -27,6 +27,7 @@ def test_get_repository_location():
                 load_status=WorkspaceLocationLoadStatus.LOADING,
                 display_metadata={},
                 update_timestamp=time.time(),
+                image=None,
             ),
             "loaded_loc": WorkspaceLocationEntry(
                 origin=RegisteredRepositoryLocationOrigin("loaded_loc"),
@@ -35,6 +36,7 @@ def test_get_repository_location():
                 load_status=WorkspaceLocationLoadStatus.LOADED,
                 display_metadata={},
                 update_timestamp=time.time(),
+                image="my_test_image",
             ),
             "error_loc": WorkspaceLocationEntry(
                 origin=RegisteredRepositoryLocationOrigin("error_loc"),
@@ -43,6 +45,7 @@ def test_get_repository_location():
                 load_status=WorkspaceLocationLoadStatus.LOADED,
                 display_metadata={},
                 update_timestamp=time.time(),
+                image=None,
             ),
         },
         process_context=mock.MagicMock(),
@@ -50,6 +53,10 @@ def test_get_repository_location():
         source=None,
         read_only=True,
     )
+
+    assert context.get_workspace_snapshot()["loaded_loc"].image == "my_test_image"
+    assert context.get_workspace_snapshot()["error_loc"].image is None
+    assert context.get_workspace_snapshot()["loading_loc"].image is None
 
     assert context.get_repository_location("loaded_loc") == mock_loc
     with pytest.raises(DagsterRepositoryLocationLoadError, match="oopsie"):
