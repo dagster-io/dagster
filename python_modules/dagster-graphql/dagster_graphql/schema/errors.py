@@ -543,4 +543,5 @@ types = [
     GrapheneScheduleNotFoundError,
     GrapheneSchedulerNotDefinedError,
     GrapheneSensorNotFoundError,
+    GrapheneDuplicateDynamicPartitionError,
 ]

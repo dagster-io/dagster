@@ -1792,6 +1792,12 @@ type SensorNotFoundError implements Error {
   sensorName: String!
 }
 
+type DuplicateDynamicPartitionError implements Error {
+  message: String!
+  partitionsDefName: String!
+  partitionName: String!
+}
+
 type ExecutionPlan {
   steps: [ExecutionStep!]!
   artifactsPersisted: Boolean!
@@ -2965,12 +2971,6 @@ union AddDynamicPartitionResult =
 type AddDynamicPartitionSuccess {
   partitionsDefName: String!
   partitionKey: String!
-}
-
-type DuplicateDynamicPartitionError implements Error {
-  message: String!
-  partitionsDefName: String!
-  partitionName: String!
 }
 
 type DagitSubscription {
