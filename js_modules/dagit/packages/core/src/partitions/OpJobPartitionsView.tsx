@@ -1,10 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading} from '@dagster-io/ui';
+import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading, useViewport} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {useViewport} from '../gantt/useViewport';
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';

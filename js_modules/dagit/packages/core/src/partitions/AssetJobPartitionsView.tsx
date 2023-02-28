@@ -1,4 +1,4 @@
-import {Box, Button, Colors, Subheading} from '@dagster-io/ui';
+import {Box, Button, Colors, Subheading, useViewport} from '@dagster-io/ui';
 import React from 'react';
 
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
@@ -9,7 +9,6 @@ import {
   isTimeseriesDimension,
 } from '../assets/MultipartitioningSupport';
 import {usePartitionHealthData} from '../assets/usePartitionHealthData';
-import {useViewport} from '../gantt/useViewport';
 import {RepositorySelector} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';

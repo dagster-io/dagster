@@ -6488,6 +6488,7 @@ __metadata:
     "@types/rollup-plugin-node-globals": ^1
     "@types/styled-components": ^5
     "@types/testing-library__jest-dom": ^5.14.2
+    amator: ^1.1.0
     babel-jest: ^27.4.6
     babel-loader: ^8.2.4
     babel-plugin-macros: ^3.1.0
