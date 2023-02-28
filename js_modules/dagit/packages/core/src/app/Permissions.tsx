@@ -43,9 +43,11 @@ export type PermissionsFromJSON = {
   cancel_partition_backfill?: PermissionResult;
 };
 
+export const DEFAULT_DISABLED_REASON = 'Disabled by your administrator';
+
 const DEFAULT_PERMISSIONS = {
   enabled: false,
-  disabledReason: 'Disabled by your administrator',
+  disabledReason: DEFAULT_DISABLED_REASON,
 };
 
 export const extractPermissions = (
