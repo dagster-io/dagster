@@ -9,6 +9,8 @@ from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.telemetry import (
     TELEMETRY_STR,
     UPDATE_REPO_STATS,
+    DYNAMIC_PARTITIONS_ADDED,
+    DYNAMIC_PARTITIONS_FETCHED,
     cleanup_telemetry_logger,
     get_or_create_dir_from_dagster_home,
     get_or_set_instance_id,
@@ -175,12 +177,34 @@ def test_log_workspace_stats(caplog):
         ) as context:
             log_workspace_stats(instance, context)
 
+            assert len(caplog.records) == 2
+
             for record in caplog.records:
                 message = json.loads(record.getMessage())
                 assert message.get("action") == UPDATE_REPO_STATS
                 assert set(message.keys()) == EXPECTED_KEYS
 
             assert len(caplog.records) == 2
+
+        # Needed to avoid file contention issues on windows with the telemetry log file
+        cleanup_telemetry_logger()
+
+
+def test_log_dynamic_partitions_actions(caplog):
+    with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
+        instance.add_dynamic_partitions("foo", ["baz", "qux"])
+        instance.get_dynamic_partitions("foo")
+
+        assert len(caplog.records) == 2
+
+        assert caplog.records[0]
+        message = json.loads(caplog.records[0].getMessage())
+        assert message.get("action") == DYNAMIC_PARTITIONS_ADDED
+
+        assert caplog.records[1]
+        message = json.loads(caplog.records[1].getMessage())
+        assert message.get("action") == DYNAMIC_PARTITIONS_FETCHED
+        assert message.get("metadata") == {'num_partitions': 2}
 
         # Needed to avoid file contention issues on windows with the telemetry log file
         cleanup_telemetry_logger()

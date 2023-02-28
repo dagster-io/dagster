@@ -70,6 +70,8 @@ BACKFILL_RUN_CREATED = "backfill_run_created"
 STEP_START_EVENT = "step_start_event"
 STEP_SUCCESS_EVENT = "step_success_event"
 STEP_FAILURE_EVENT = "step_failure_event"
+DYNAMIC_PARTITIONS_ADDED = "dynamic_partitions_added"
+DYNAMIC_PARTITIONS_FETCHED = "dynamic_partitions_fetched"
 OS_DESC = platform.platform()
 OS_PLATFORM = platform.system()
 
