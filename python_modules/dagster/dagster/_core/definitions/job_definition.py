@@ -305,6 +305,7 @@ class JobDefinition(PipelineDefinition):
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        resources: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute the Job in-process, gathering results in-memory.
@@ -333,6 +334,9 @@ class JobDefinition(PipelineDefinition):
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
             input_values (Optional[Mapping[str, Any]]):
                 A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
+            resources (Optional[Mapping[str, Any]]):
+                The resources needed if any are required. Can provide resource instances directly,
+                or resource definitions.
 
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
@@ -340,11 +344,15 @@ class JobDefinition(PipelineDefinition):
         """
         from dagster._core.definitions.executor_definition import execute_in_process_executor
         from dagster._core.definitions.run_config import convert_config_input
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
         from dagster._core.execution.execute_in_process import core_execute_in_process
 
         run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
         asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", AssetKey)
+        resources = check.opt_mapping_param(resources, "resources", key_type=str)
+
+        resource_defs = wrap_resources_for_execution(resources)
 
         check.invariant(
             not (op_selection and asset_selection),
@@ -362,12 +370,12 @@ class JobDefinition(PipelineDefinition):
         # execute_in_process will override those provided on the definition.
         input_values = merge_dicts(self.input_values, input_values)
 
-        resource_defs = dict(self.resource_defs)
+        bound_resource_defs = dict(self.resource_defs)
         logger_defs = dict(self.loggers)
         ephemeral_job = JobDefinition(
             name=self._name,
             graph_def=self._graph_def,
-            resource_defs=_swap_default_io_man(resource_defs, self),
+            resource_defs={**_swap_default_io_man(bound_resource_defs, self), **resource_defs},
             executor_def=execute_in_process_executor,
             logger_defs=logger_defs,
             hook_defs=self.hook_defs,

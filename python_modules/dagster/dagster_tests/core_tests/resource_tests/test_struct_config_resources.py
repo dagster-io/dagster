@@ -1429,6 +1429,38 @@ def test_bind_resource_to_job_at_defn_time() -> None:
     assert out_txt == ["msg: hello, world!"]
 
 
+def test_execute_in_process() -> None:
+    out_txt = []
+
+    class WriterResource(ConfigurableResource):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    @op
+    def hello_world_op(writer: WriterResource):
+        writer.output("hello, world!")
+
+    @job
+    def hello_world_job() -> None:
+        hello_world_op()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'writer' required by op 'hello_world_op' was not provided",
+    ):
+        hello_world_job.execute_in_process()
+
+    assert not out_txt
+
+    # Bind resource as part of calling execute_in_process
+    assert hello_world_job.execute_in_process(
+        resources={"writer": WriterResource(prefix="msg: ")}
+    ).success
+    assert out_txt == ["msg: hello, world!"]
+
+
 def test_bind_resource_to_job_at_defn_time_override() -> None:
     out_txt = []
 
