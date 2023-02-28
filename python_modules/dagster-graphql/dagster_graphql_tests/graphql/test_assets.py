@@ -923,7 +923,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             len(result.data["assetNodes"][0]["materializedPartitions"]["unmaterializedPartitions"])
             == 4
         )
-        assert result.data["assetNodes"][0]["name"] is None
+        assert result.data["assetNodes"][0]["partitionDefinition"]["name"] is None
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1018,8 +1018,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         materialized_partitions = result.data["assetNodes"][0]["materializedPartitions"][
             "materializedPartitions"
         ]
-        assert result.data["assetNodes"][0]["name"] == "foo"
-        assert result.data["assetNodes"][1]["name"] == "foo"
+        assert result.data["assetNodes"][0]["partitionDefinition"]["name"] == "foo"
+        assert result.data["assetNodes"][1]["partitionDefinition"]["name"] == "foo"
         assert len(materialized_partitions) == 0
         assert (
             len(result.data["assetNodes"][0]["materializedPartitions"]["unmaterializedPartitions"])
