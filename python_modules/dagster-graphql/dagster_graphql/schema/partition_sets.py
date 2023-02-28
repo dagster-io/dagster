@@ -27,6 +27,7 @@ from dagster_graphql.implementation.fetch_runs import get_runs
 
 from .backfill import GraphenePartitionBackfill
 from .errors import (
+    GrapheneDuplicateDynamicPartitionError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
@@ -54,6 +55,7 @@ class GrapheneAddDynamicPartitionResult(graphene.Union):
             GrapheneAddDynamicPartitionSuccess,
             GrapheneUnauthorizedError,
             GraphenePythonError,
+            GrapheneDuplicateDynamicPartitionError,
         )
         name = "AddDynamicPartitionResult"
 

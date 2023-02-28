@@ -19,6 +19,7 @@ export type Scalars = {
 
 export type AddDynamicPartitionResult =
   | AddDynamicPartitionSuccess
+  | DuplicateDynamicPartitionError
   | PythonError
   | UnauthorizedError;
 
@@ -986,6 +987,13 @@ export type DryRunInstigationTicks = {
   __typename: 'DryRunInstigationTicks';
   cursor: Scalars['Float'];
   results: Array<DryRunInstigationTick>;
+};
+
+export type DuplicateDynamicPartitionError = Error & {
+  __typename: 'DuplicateDynamicPartitionError';
+  message: Scalars['String'];
+  partitionName: Scalars['String'];
+  partitionsDefName: Scalars['String'];
 };
 
 export type EngineEvent = DisplayableEvent &

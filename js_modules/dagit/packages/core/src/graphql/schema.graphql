@@ -2952,11 +2952,21 @@ type LogTelemetrySuccess {
   action: String!
 }
 
-union AddDynamicPartitionResult = AddDynamicPartitionSuccess | UnauthorizedError | PythonError
+union AddDynamicPartitionResult =
+    AddDynamicPartitionSuccess
+  | UnauthorizedError
+  | PythonError
+  | DuplicateDynamicPartitionError
 
 type AddDynamicPartitionSuccess {
   partitionsDefName: String!
   partitionKey: String!
+}
+
+type DuplicateDynamicPartitionError implements Error {
+  message: String!
+  partitionsDefName: String!
+  partitionName: String!
 }
 
 type DagitSubscription {

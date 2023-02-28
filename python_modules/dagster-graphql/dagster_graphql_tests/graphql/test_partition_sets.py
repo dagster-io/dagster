@@ -378,8 +378,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
             variables={"partitionsDefName": "foo", "partitionKey": "bar"},
         )
         assert not result.errors
-        assert result.data["addDynamicPartition"]["__typename"] == "PythonError"
-        assert "Partition bar already exists" in result.data["addDynamicPartition"]["message"]
+        assert result.data["addDynamicPartition"]["__typename"] == "DuplicateDynamicPartitionError"
 
 
 class TestDynamicPartitionReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
