@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@react-hook/resize-observer": "^1.2.6",
+    "amator": "^1.1.0",
     "codemirror": "^5.65.2",
     "deepmerge": "^4.2.2",
     "react-codemirror2": "^7.2.1",
