@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dagster import (
     Field,
     In,
@@ -138,7 +140,9 @@ def create_ui_url(databricks_client, op_config):
         )
 
 
-def create_databricks_run_now_op(databricks_job_id: int, **kwargs) -> OpDefinition:
+def create_databricks_run_now_op(
+    databricks_job_id: int, databricks_job_configuration: Optional[dict] = None, **kwargs
+) -> OpDefinition:
     """
     Creates an op that launches an existing databricks job.
 
@@ -149,6 +153,11 @@ def create_databricks_run_now_op(databricks_job_id: int, **kwargs) -> OpDefiniti
 
     Arguments:
         databricks_job_id (int): The ID of the Databricks Job to be executed.
+        databricks_job_configuration (dict): Configuration for triggering a new job run of a
+            Databricks Job. See https://docs.databricks.com/api-explorer/workspace/jobs/runnow
+            for the full configuration.
+        **kwargs: Additional keyword arguments to pass to the underlying op. Accepted keywords are
+            are the accepted keywords to the @op decorator.
 
     Returns:
         OpDefinition: An op definition to run the Databricks Job.
@@ -162,19 +171,15 @@ def create_databricks_run_now_op(databricks_job_id: int, **kwargs) -> OpDefiniti
             DATABRICKS_JOB_ID = 1234
 
             run_now_op = create_databricks_run_now_op(
-                databricks_job_id=DATABRICKS_JOB_ID
-            ).configured(
-                {
-                    "job": {
-                        "python_params": [
-                            "--input",
-                            "schema.db.input_table",
-                            "--output",
-                            "schema.db.output_table",
-                        ],
-                    }
+                databricks_job_id=DATABRICKS_JOB_ID,
+                databricks_job_configuration={
+                    "python_params": [
+                        "--input",
+                        "schema.db.input_table",
+                        "--output",
+                        "schema.db.output_table",
+                    ],
                 },
-                name="databricks_run_now_1234"
             )
 
             @job(
@@ -228,7 +233,10 @@ def create_databricks_run_now_op(databricks_job_id: int, **kwargs) -> OpDefiniti
 
         run_id: int = jobs_service.run_now(
             job_id=databricks_job_id,
-            **context.op_config.get("job", {}),
+            **{
+                **(databricks_job_configuration or {}),
+                **context.op_config.get("job", {}),
+            },
         )["run_id"]
 
         get_run_response: dict = jobs_service.get_run(run_id=run_id)
@@ -267,6 +275,8 @@ def create_databricks_submit_run_op(
         databricks_job_configuration (dict): Configuration for submitting a one-time run of a set
             of tasks on Databricks. See https://docs.databricks.com/api-explorer/workspace/jobs/submit
             for the full configuration.
+        **kwargs: Additional keyword arguments to pass to the underlying op. Accepted keywords are
+            are the accepted keywords to the @op decorator.
 
     Returns:
         OpDefinition: An op definition to submit a one-time run of a set of tasks on Databricks.

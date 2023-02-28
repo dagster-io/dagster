@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Optional, Sequence
 from unittest import mock
 
 import pytest
@@ -139,15 +139,39 @@ def test_create_ui_url(host, config, workspace_id, expected):
         "with ins and outs",
     ],
 )
-def test_databricks_run_now_op(mocker: MockerFixture, op_kwargs: dict) -> None:
+@pytest.mark.parametrize(
+    "databricks_job_configuration",
+    [
+        None,
+        {},
+        {
+            "python_params": [
+                "--input",
+                "schema.db.input_table",
+                "--output",
+                "schema.db.output_table",
+            ]
+        },
+    ],
+    ids=[
+        "no Databricks job configuration",
+        "empty Databricks job configuration",
+        "Databricks job configuration with python params",
+    ],
+)
+def test_databricks_run_now_op(
+    mocker: MockerFixture, op_kwargs: dict, databricks_job_configuration: Optional[dict]
+) -> None:
     mock_run_now = mocker.patch("databricks_cli.sdk.JobsService.run_now")
     mock_get_run = mocker.patch("databricks_cli.sdk.JobsService.get_run")
+    databricks_job_id = 10
 
     mock_run_now.return_value = {"run_id": 1}
     mock_get_run.side_effect = _mock_get_run_response()
 
     test_databricks_run_now_op = create_databricks_run_now_op(
-        databricks_job_id=10,
+        databricks_job_id=databricks_job_id,
+        databricks_job_configuration=databricks_job_configuration,
         **op_kwargs,
     ).configured(
         config_or_config_fn={
@@ -169,7 +193,10 @@ def test_databricks_run_now_op(mocker: MockerFixture, op_kwargs: dict) -> None:
     result = test_databricks_job.execute_in_process()
 
     assert result.success
-    assert mock_run_now.call_count == 1
+    mock_run_now.assert_called_once_with(
+        job_id=databricks_job_id,
+        **(databricks_job_configuration or {}),
+    )
     assert mock_get_run.call_count == 4
 
 
