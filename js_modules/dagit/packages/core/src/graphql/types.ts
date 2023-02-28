@@ -604,7 +604,7 @@ export type DagitQuery = {
   runGroupOrError: RunGroupOrError;
   runGroupsOrError: RunGroupsOrError;
   runOrError: RunOrError;
-  runTagKeys: Array<Scalars['String']>;
+  runTagKeysOrError: Maybe<RunTagKeysOrError>;
   runTags: Array<PipelineTagAndValues>;
   runsOrError: RunsOrError;
   scheduleOrError: ScheduleOrError;
@@ -3168,6 +3168,13 @@ export type RunSuccessEvent = MessageEvent &
     stepKey: Maybe<Scalars['String']>;
     timestamp: Scalars['String'];
   };
+
+export type RunTagKeys = {
+  __typename: 'RunTagKeys';
+  keys: Array<Scalars['String']>;
+};
+
+export type RunTagKeysOrError = PythonError | RunTagKeys;
 
 export type Runs = PipelineRuns & {
   __typename: 'Runs';

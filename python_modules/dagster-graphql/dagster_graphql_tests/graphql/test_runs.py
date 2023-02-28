@@ -91,7 +91,16 @@ ALL_TAGS_QUERY = """
 
 ALL_TAG_KEYS_QUERY = """
 {
-  runTagKeys
+  runTagKeysOrError {
+    __typename
+    ... on RunTagKeys {
+      keys
+    }
+    ... on PythonError {
+        message
+        stack
+    }
+  }
 }
 """
 
@@ -329,7 +338,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         assert len(runs) == 2
 
         all_tag_keys_result = execute_dagster_graphql(read_context, ALL_TAG_KEYS_QUERY)
-        tag_keys = set(all_tag_keys_result.data["runTagKeys"])
+        tag_keys = set(all_tag_keys_result.data["runTagKeysOrError"]["keys"])
         # check presence rather than set equality since we might have extra tags in cloud
         assert "fruit" in tag_keys
         assert "veggie" in tag_keys

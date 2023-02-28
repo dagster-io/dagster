@@ -2739,7 +2739,7 @@ type DagitQuery {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
-  runTagKeys: [String!]!
+  runTagKeysOrError: RunTagKeysOrError
   runTags(tagKeys: [String!], valuePrefix: String, limit: Int): [PipelineTagAndValues!]!
   runGroupOrError(runId: ID!): RunGroupOrError!
   runGroupsOrError(filter: RunsFilter, cursor: String, limit: Int): RunGroupsOrError!
@@ -2826,6 +2826,12 @@ union ResourcesOrError = ResourceDetailsList | RepositoryNotFoundError | PythonE
 
 type ResourceDetailsList {
   results: [ResourceDetails!]!
+}
+
+union RunTagKeysOrError = PythonError | RunTagKeys
+
+type RunTagKeys {
+  keys: [String!]!
 }
 
 input AssetGroupSelector {

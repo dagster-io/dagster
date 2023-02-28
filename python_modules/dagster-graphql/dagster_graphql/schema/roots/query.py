@@ -122,6 +122,7 @@ from ..runs import (
     GrapheneRunGroupsOrError,
     GrapheneRuns,
     GrapheneRunsOrError,
+    GrapheneRunTagKeysOrError,
     parse_run_config_input,
 )
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
@@ -291,8 +292,8 @@ class GrapheneDagitQuery(graphene.ObjectType):
         runId=graphene.NonNull(graphene.ID),
         description="Retrieve a run by its run id.",
     )
-    runTagKeys = graphene.Field(
-        non_null_list(graphene.String), description="Retrieve the distinct tag keys from all runs."
+    runTagKeysOrError = graphene.Field(
+        GrapheneRunTagKeysOrError, description="Retrieve the distinct tag keys from all runs."
     )
     runTags = graphene.Field(
         non_null_list(GraphenePipelineTagAndValues),
@@ -636,7 +637,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             partitionSetName,  # type: ignore
         )
 
-    def resolve_runTagKeys(self, graphene_info: ResolveInfo):
+    def resolve_runTagKeysOrError(self, graphene_info: ResolveInfo):
         return get_run_tag_keys(graphene_info)
 
     def resolve_runTags(

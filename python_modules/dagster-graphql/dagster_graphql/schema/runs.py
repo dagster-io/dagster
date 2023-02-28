@@ -137,6 +137,19 @@ class GrapheneRunGroupsOrError(graphene.ObjectType):
         name = "RunGroupsOrError"
 
 
+class GrapheneRunTagKeys(graphene.ObjectType):
+    keys = non_null_list(graphene.String)
+
+    class Meta:
+        name = "RunTagKeys"
+
+
+class GrapheneRunTagKeysOrError(graphene.Union):
+    class Meta:
+        types = (GraphenePythonError, GrapheneRunTagKeys)
+        name = "RunTagKeysOrError"
+
+
 class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
     class Meta:
         description = """This type is used when passing in a configuration object

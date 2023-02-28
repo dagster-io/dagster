@@ -213,7 +213,9 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
 
   const suggestions = searchSuggestionsForRuns(
     options,
-    tagKeyData?.runTagKeys,
+    tagKeyData?.runTagKeysOrError?.__typename === 'RunTagKeys'
+      ? tagKeyData.runTagKeysOrError.keys
+      : [],
     selectedTagKey,
     tagValueData?.runTags,
     enabledFilters,
@@ -225,7 +227,10 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
       return;
     }
     const tagKeyText = text.slice(4);
-    if (tagKeyData?.runTagKeys && tagKeyData?.runTagKeys.includes(tagKeyText)) {
+    if (
+      tagKeyData?.runTagKeysOrError?.__typename === 'RunTagKeys' &&
+      tagKeyData.runTagKeysOrError.keys.includes(tagKeyText)
+    ) {
       setSelectedTagKey(tagKeyText);
     }
   };
@@ -272,7 +277,11 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
 
 const RUN_TAG_KEYS_QUERY = gql`
   query RunTagKeysQuery {
-    runTagKeys
+    runTagKeysOrError {
+      ... on RunTagKeys {
+        keys
+      }
+    }
   }
 `;
 

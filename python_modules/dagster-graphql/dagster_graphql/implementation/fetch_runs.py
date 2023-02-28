@@ -56,12 +56,17 @@ def get_run_by_id(
         return GrapheneRun(record)
 
 
+@capture_error
 def get_run_tag_keys(graphene_info: "ResolveInfo") -> List[str]:
-    return [
-        tag_key
-        for tag_key in graphene_info.context.instance.get_run_tag_keys()
-        if get_tag_type(tag_key) != TagType.HIDDEN
-    ]
+    from ..schema.runs import GrapheneRunTagKeys
+
+    return GrapheneRunTagKeys(
+        keys=[
+            tag_key
+            for tag_key in graphene_info.context.instance.get_run_tag_keys()
+            if get_tag_type(tag_key) != TagType.HIDDEN
+        ]
+    )
 
 
 def get_run_tags(

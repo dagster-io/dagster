@@ -4,7 +4,13 @@ import * as Types from '../../graphql/types';
 
 export type RunTagKeysQueryVariables = Types.Exact<{[key: string]: never}>;
 
-export type RunTagKeysQuery = {__typename: 'DagitQuery'; runTagKeys: Array<string>};
+export type RunTagKeysQuery = {
+  __typename: 'DagitQuery';
+  runTagKeysOrError:
+    | {__typename: 'PythonError'}
+    | {__typename: 'RunTagKeys'; keys: Array<string>}
+    | null;
+};
 
 export type RunTagValuesQueryVariables = Types.Exact<{
   tagKeys: Array<Types.Scalars['String']> | Types.Scalars['String'];
