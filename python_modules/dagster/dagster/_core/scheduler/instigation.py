@@ -1,6 +1,5 @@
 from enum import Enum
-from inspect import Parameter
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Type, Union
+from typing import List, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 
@@ -12,19 +11,13 @@ from dagster._core.definitions.selector import InstigatorSelector, RepositorySel
 from dagster._core.host_representation.origin import ExternalInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
-    DefaultNamedTupleSerializer,
-    WhitelistMap,
-    register_serdes_enum_fallbacks,
-    register_serdes_tuple_fallbacks,
-    replace_storage_keys,
-    unpack_value,
     whitelist_for_serdes,
 )
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(old_storage_names={"JobStatus"})
 class InstigatorStatus(Enum):
     # User has taken some action to start the run instigator
     RUNNING = "RUNNING"
@@ -35,12 +28,7 @@ class InstigatorStatus(Enum):
     STOPPED = "STOPPED"
 
 
-register_serdes_enum_fallbacks({"JobStatus": InstigatorStatus})
-# for internal backcompat
-JobStatus = InstigatorStatus
-
-
-@whitelist_for_serdes
+@whitelist_for_serdes(old_storage_names={"SensorJobData"})
 class SensorInstigatorData(
     NamedTuple(
         "_SensorInstigatorData",
@@ -74,12 +62,7 @@ class SensorInstigatorData(
         )
 
 
-register_serdes_tuple_fallbacks({"SensorJobData": SensorInstigatorData})
-# for internal backcompat
-SensorJobData = SensorInstigatorData
-
-
-@whitelist_for_serdes
+@whitelist_for_serdes(old_storage_names={"ScheduleJobData"})
 class ScheduleInstigatorData(
     NamedTuple(
         "_ScheduleInstigatorData",
@@ -104,11 +87,6 @@ class ScheduleInstigatorData(
         )
 
 
-register_serdes_tuple_fallbacks({"ScheduleJobData": ScheduleInstigatorData})
-# for internal backcompat
-ScheduleJobData = ScheduleInstigatorData
-
-
 def check_instigator_data(
     instigator_type: InstigatorType,
     instigator_data: Optional[Union[ScheduleInstigatorData, SensorInstigatorData]],
@@ -126,57 +104,13 @@ def check_instigator_data(
     return instigator_data
 
 
-class InstigatorStateSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict: Dict[str, Any],
-        klass: Type,
-        args_for_class: Mapping[str, Parameter],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> NamedTuple:
-        klass_kwargs = {}
-        for key, value in storage_dict.items():
-            unpacked = unpack_value(
-                value, whitelist_map=whitelist_map, descent_path=f"{descent_path}.{key}"
-            )
-            if key in args_for_class:
-                klass_kwargs[key] = unpacked
-            elif key == "job_type":
-                # For backcompat, we store instigator_type as job_type
-                klass_kwargs["instigator_type"] = unpacked
-            elif key == "job_specific_data":
-                # For backcompat, we store instigator_data as job_specific_data
-                klass_kwargs["instigator_data"] = unpacked
-
-        return klass(**klass_kwargs)
-
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
-        # For backcompat, we store:
-        # instigator_type as job_type
-        # instigator_data as job_specific_data
-        return replace_storage_keys(
-            storage,
-            {
-                "instigator_type": "job_type",
-                "instigator_data": "job_specific_data",
-            },
-        )
-
-
-@whitelist_for_serdes(serializer=InstigatorStateSerializer)
+@whitelist_for_serdes(
+    old_storage_names={"JobState"},
+    storage_field_names={
+        "instigator_type": "job_type",
+        "instigator_data": "job_specific_data",
+    },
+)
 class InstigatorState(
     NamedTuple(
         "_InstigationState",
@@ -263,12 +197,7 @@ class InstigatorState(
         )
 
 
-register_serdes_tuple_fallbacks({"JobState": InstigatorState})
-# for internal backcompat
-JobState = InstigatorState
-
-
-@whitelist_for_serdes
+@whitelist_for_serdes(old_storage_names={"JobTickStatus"})
 class TickStatus(Enum):
     STARTED = "STARTED"
     SKIPPED = "SKIPPED"
@@ -276,57 +205,9 @@ class TickStatus(Enum):
     FAILURE = "FAILURE"
 
 
-register_serdes_enum_fallbacks({"JobTickStatus": TickStatus})
-# for internal backcompat
-JobTickStatus = TickStatus
-
-
-class TickSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict: Dict[str, Any],
-        klass: Type,
-        args_for_class: Mapping[str, Parameter],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> NamedTuple:
-        klass_kwargs = {}
-        for key, value in storage_dict.items():
-            unpacked = unpack_value(
-                value, whitelist_map=whitelist_map, descent_path=f"{descent_path}.{key}"
-            )
-            if key in args_for_class:
-                klass_kwargs[key] = unpacked
-            elif key == "job_tick_data":
-                # For backcompat, we store tick_data as job_tick_data
-                klass_kwargs["tick_data"] = unpacked
-
-        return klass(**klass_kwargs)
-
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
-        # For backcompat, we store:
-        # tick_data as job_tick_data
-        return replace_storage_keys(
-            storage,
-            {
-                "tick_data": "job_tick_data",
-            },
-        )
-
-
-@whitelist_for_serdes(serializer=TickSerializer)
+@whitelist_for_serdes(
+    old_storage_names={"JobTick"}, storage_field_names={"tick_data": "job_tick_data"}
+)
 class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_data", "TickData")])):
     def __new__(cls, tick_id: int, tick_data: "TickData"):
         return super(InstigatorTick, cls).__new__(
@@ -428,63 +309,14 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.status == TickStatus.SUCCESS
 
 
-register_serdes_tuple_fallbacks({"JobTick": InstigatorTick})
-# for internal backcompat
-JobTick = InstigatorTick
-
-
-class TickDataSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict: Dict[str, Any],
-        klass: Type,
-        args_for_class: Mapping[str, Parameter],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> NamedTuple:
-        klass_kwargs = {}
-        for key, value in storage_dict.items():
-            unpacked = unpack_value(
-                value, whitelist_map=whitelist_map, descent_path=f"{descent_path}.{key}"
-            )
-            if key in args_for_class:
-                klass_kwargs[key] = unpacked
-            elif key == "job_origin_id":
-                # For backcompat, we store instigator_origin_id as job_origin_id
-                klass_kwargs["instigator_origin_id"] = unpacked
-            elif key == "job_name":
-                # For backcompat, we store instigator_name as job_name
-                klass_kwargs["instigator_name"] = unpacked
-            elif key == "job_type":
-                # For backcompat, we store instigator_type as job_type
-                klass_kwargs["instigator_type"] = unpacked
-
-        return klass(**klass_kwargs)
-
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
-        return replace_storage_keys(
-            storage,
-            {
-                "instigator_origin_id": "job_origin_id",
-                "instigator_name": "job_name",
-                "instigator_type": "job_type",
-            },
-        )
-
-
-@whitelist_for_serdes(serializer=TickDataSerializer)
+@whitelist_for_serdes(
+    old_storage_names={"JobTickData"},
+    storage_field_names={
+        "instigator_origin_id": "job_origin_id",
+        "instigator_name": "job_name",
+        "instigator_type": "job_type",
+    },
+)
 class TickData(
     NamedTuple(
         "_TickData",
@@ -637,11 +469,6 @@ class TickData(
                 {"log_key": check.list_param(log_key, "log_key", of_type=str)},
             )
         )
-
-
-register_serdes_tuple_fallbacks({"JobTickData": TickData})
-# for internal backcompat
-JobTickData = TickData
 
 
 def _validate_tick_args(instigator_type, status, run_ids=None, error=None, skip_reason=None):

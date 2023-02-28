@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
+from typing import AbstractSet, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 from dagster import _check as check
 from dagster._config import (
@@ -32,12 +32,11 @@ from dagster._core.definitions.pipeline_definition import (
 )
 from dagster._core.utils import toposort_flatten
 from dagster._serdes import (
-    DefaultNamedTupleSerializer,
     create_snapshot_id,
     deserialize_value,
     whitelist_for_serdes,
 )
-from dagster._serdes.serdes import unpack_value
+from dagster._serdes.serdes import NamedTupleSerializer
 
 from .config_types import build_config_schema_snapshot
 from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot
@@ -59,80 +58,32 @@ def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:
     return create_snapshot_id(snapshot)
 
 
-class PipelineSnapshotSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def skip_when_empty(cls) -> Set[str]:
-        return {"metadata"}  # Maintain stable snapshot ID for back-compat purposes
-
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict,
-        klass,
-        args_for_class,
-        whitelist_map,
-        descent_path,
-    ):
-        # unpack all stored fields
-        unpacked_dict = {
-            key: unpack_value(
-                value, whitelist_map=whitelist_map, descent_path=f"{descent_path}.{key}"
-            )
-            for key, value in storage_dict.items()
-        }
-        # called by the serdes layer, delegates to helper method with expanded kwargs
-        return _pipeline_snapshot_from_storage(**unpacked_dict)
-
-
-def _pipeline_snapshot_from_storage(
-    name: str,
-    description: Optional[str],
-    tags: Optional[Mapping[str, Any]],
-    config_schema_snapshot: ConfigSchemaSnapshot,
-    dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
-    solid_definitions_snapshot: SolidDefinitionsSnapshot,
-    dep_structure_snapshot: DependencyStructureSnapshot,
-    mode_def_snaps: Sequence[ModeDefSnap],
-    lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
-    graph_def_name: Optional[str] = None,
-    metadata: Optional[Sequence[MetadataEntry]] = None,
-    **kwargs,  # pylint: disable=unused-argument
-) -> "PipelineSnapshot":
-    """
-    v0
-    v1:
-        - lineage added
-    v2:
-        - graph_def_name
-    v3:
-        - metadata added
-    v4:
-        - add kwargs so that if future versions add new args, this version of deserialization will
-        be able to ignore them. previously, new args would be passed to old versions and cause
-        deserialization errors.
-    """
-    if graph_def_name is None:
-        graph_def_name = name
-
-    if metadata is None:
-        metadata = []
-
-    return PipelineSnapshot(
-        name=name,
-        description=description,
-        tags=tags,
-        metadata=metadata,
-        config_schema_snapshot=config_schema_snapshot,
-        dagster_type_namespace_snapshot=dagster_type_namespace_snapshot,
-        solid_definitions_snapshot=solid_definitions_snapshot,
-        dep_structure_snapshot=dep_structure_snapshot,
-        mode_def_snaps=mode_def_snaps,
-        lineage_snapshot=lineage_snapshot,
-        graph_def_name=graph_def_name,
-    )
+class PipelineSnapshotSerializer(NamedTupleSerializer["PipelineSnapshot"]):
+    # v0
+    # v1:
+    #     - lineage added
+    # v2:
+    #     - graph_def_name
+    # v3:
+    #     - metadata added
+    # v4:
+    #     - add kwargs so that if future versions add new args, this version of deserialization will
+    #     be able to ignore them. previously, new args would be passed to old versions and cause
+    #     deserialization errors.
+    def before_unpack(
+        self,
+        **unpacked: Any,
+    ) -> Dict[str, Any]:
+        if unpacked.get("graph_def_name") is None:
+            unpacked["graph_def_name"] = unpacked["name"]
+        if unpacked.get("metadata") is None:
+            unpacked["metadata"] = []
+        if unpacked.get("lineage_snapshot") is None:
+            unpacked["lineage_snapshot"] = None
+        return unpacked
 
 
-@whitelist_for_serdes(serializer=PipelineSnapshotSerializer)
+@whitelist_for_serdes(serializer=PipelineSnapshotSerializer, skip_when_empty_fields={"metadata"})
 class PipelineSnapshot(
     NamedTuple(
         "_PipelineSnapshot",

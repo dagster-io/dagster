@@ -34,7 +34,7 @@ from dagster._serdes import (
     whitelist_for_serdes,
 )
 from dagster._serdes.errors import DeserializationError
-from dagster._serdes.serdes import deserialize_value, register_serdes_tuple_fallbacks
+from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.backcompat import deprecation_warning
@@ -73,7 +73,7 @@ RunFailureSensorEvaluationFn: TypeAlias = Union[
 ]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(old_storage_names={"PipelineSensorCursor"})
 class RunStatusSensorCursor(
     NamedTuple(
         "_RunStatusSensorCursor",
@@ -101,10 +101,6 @@ class RunStatusSensorCursor(
     @staticmethod
     def from_json(json_str: str) -> "RunStatusSensorCursor":
         return deserialize_value(json_str, RunStatusSensorCursor)
-
-
-# handle backcompat
-register_serdes_tuple_fallbacks({"PipelineSensorCursor": RunStatusSensorCursor})
 
 
 class RunStatusSensorContext:

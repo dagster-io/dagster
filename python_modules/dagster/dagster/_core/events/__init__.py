@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 from enum import Enum
-from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -13,7 +12,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Type,
+    Tuple,
     Union,
     cast,
 )
@@ -42,12 +41,9 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.pipeline_run import DagsterRunStatus
 from dagster._serdes import (
-    DefaultNamedTupleSerializer,
-    WhitelistMap,
-    register_serdes_tuple_fallbacks,
+    NamedTupleSerializer,
     whitelist_for_serdes,
 )
-from dagster._serdes.serdes import replace_storage_keys
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
@@ -314,47 +310,36 @@ def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") ->
     log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
 
 
-class DagsterEventSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict: Dict[str, Any],
-        klass: Type,
-        args_for_class: Mapping[str, Parameter],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> NamedTuple:
-        event_type_value = storage_dict["event_type_value"]
-        pipeline_name = storage_dict["pipeline_name"]
-        message = storage_dict.get("message")
-        step_key = storage_dict.get("step_key")
-        event_specific_data = storage_dict.get("event_specific_data")
-
+class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
+    def before_unpack(self, **storage_dict: Any) -> Dict[str, Any]:
         event_type_value, event_specific_data = _handle_back_compat(
-            event_type_value, event_specific_data
+            storage_dict["event_type_value"], storage_dict.get("event_specific_data")
         )
         storage_dict["event_type_value"] = event_type_value
         storage_dict["event_specific_data"] = event_specific_data
 
-        try:
-            return super().value_from_storage_dict(
-                storage_dict, klass, args_for_class, whitelist_map, descent_path
-            )
-        except Exception:
-            new_message = (
-                f"Could not deserialize event of type {event_type_value}. This event may have been"
-                " written by a newer version of Dagster."
-                + (f' Original message: "{message}"' if message else "")
-            )
-            return DagsterEvent(
-                event_type_value=DagsterEventType.ENGINE_EVENT.value,
-                pipeline_name=pipeline_name,
-                message=new_message,
-                step_key=step_key,
-                event_specific_data=EngineEventData(
-                    error=serializable_error_info_from_exc_info(sys.exc_info())
-                ),
-            )
+        return storage_dict
+
+    def handle_unpack_error(self, exc: Exception, **storage_dict: Any) -> "DagsterEvent":
+        event_type_value, _ = _handle_back_compat(
+            storage_dict["event_type_value"], storage_dict.get("event_specific_data")
+        )
+        step_key = storage_dict.get("step_key")
+        orig_message = storage_dict.get("message")
+        new_message = (
+            f"Could not deserialize event of type {event_type_value}. This event may have been"
+            " written by a newer version of Dagster."
+            + (f' Original message: "{orig_message}"' if orig_message else "")
+        )
+        return DagsterEvent(
+            event_type_value=DagsterEventType.ENGINE_EVENT.value,
+            pipeline_name=storage_dict["pipeline_name"],
+            message=new_message,
+            step_key=step_key,
+            event_specific_data=EngineEventData(
+                error=serializable_error_info_from_exc_info(sys.exc_info())
+            ),
+        )
 
 
 @whitelist_for_serdes(serializer=DagsterEventSerializer)
@@ -1695,44 +1680,7 @@ class LoadedInputData(
         )
 
 
-class ComputeLogsDataSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict,
-        klass,
-        args_for_class,
-        whitelist_map,
-        descent_path,
-    ):
-        storage_dict = replace_storage_keys(storage_dict, {"log_key": "file_key"})
-        return super().value_from_storage_dict(
-            storage_dict, klass, args_for_class, whitelist_map, descent_path
-        )
-
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
-        # For backcompat, we store:
-        # file_key as log_key
-        return replace_storage_keys(
-            storage,
-            {
-                "file_key": "log_key",
-            },
-        )
-
-
-@whitelist_for_serdes(serializer=ComputeLogsDataSerializer)
+@whitelist_for_serdes(storage_field_names={"file_key": "log_key"})
 class ComputeLogsCaptureData(
     NamedTuple(
         "_ComputeLogsCaptureData",
@@ -1768,69 +1716,77 @@ class ComputeLogsCaptureData(
 ###################################################################################################
 
 
-# Keep these around to prevent issues like https://github.com/dagster-io/dagster/issues/3533
-@whitelist_for_serdes
-class AssetStoreOperationData(NamedTuple):
-    op: str
-    step_key: str
-    output_name: str
-    asset_store_key: str
+# Old data structures referenced below
+# class AssetStoreOperationData(NamedTuple):
+#     op: str
+#     step_key: str
+#     output_name: str
+#     asset_store_key: str
+#
+#
+# class AssetStoreOperationType(Enum):
+#     SET_ASSET = "SET_ASSET"
+#     GET_ASSET = "GET_ASSET"
+#
+#
+# class PipelineInitFailureData(NamedTuple):
+#     error: SerializableErrorInfo
 
 
-@whitelist_for_serdes
-class AssetStoreOperationType(Enum):
-    SET_ASSET = "SET_ASSET"
-    GET_ASSET = "GET_ASSET"
-
-
-@whitelist_for_serdes
-class PipelineInitFailureData(NamedTuple):
-    error: SerializableErrorInfo
-
-
-def _handle_back_compat(event_type_value, event_specific_data):
+def _handle_back_compat(
+    event_type_value: str, event_specific_data: Optional[Dict[str, Any]]
+) -> Tuple[str, Optional[Dict[str, Any]]]:
     # transform old specific process events in to engine events
-    if event_type_value == "PIPELINE_PROCESS_START":
-        return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
-    elif event_type_value == "PIPELINE_PROCESS_STARTED":
-        return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
-    elif event_type_value == "PIPELINE_PROCESS_EXITED":
-        return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
+    if event_type_value in [
+        "PIPELINE_PROCESS_START",
+        "PIPELINE_PROCESS_STARTED",
+        "PIPELINE_PROCESS_EXITED",
+    ]:
+        return "ENGINE_EVENT", {"__class__": "EngineEventData"}
 
     # changes asset store ops in to get/set asset
     elif event_type_value == "ASSET_STORE_OPERATION":
-        if event_specific_data.op in ("GET_ASSET", AssetStoreOperationType.GET_ASSET):
+        assert (
+            event_specific_data is not None
+        ), "ASSET_STORE_OPERATION event must have specific data"
+        if event_specific_data["op"] in (
+            "GET_ASSET",
+            '{"__enum__": "AssetStoreOperationType.GET_ASSET"}',
+        ):
             return (
-                DagsterEventType.LOADED_INPUT.value,
-                LoadedInputData(
-                    event_specific_data.output_name, event_specific_data.asset_store_key
-                ),
+                "LOADED_INPUT",
+                {
+                    "__class__": "LoadedInputData",
+                    "input_name": event_specific_data["output_name"],
+                    "manager_key": event_specific_data["asset_store_key"],
+                },
             )
-        if event_specific_data.op in ("SET_ASSET", AssetStoreOperationType.SET_ASSET):
+        if event_specific_data["op"] in (
+            "SET_ASSET",
+            '{"__enum__": "AssetStoreOperationType.SET_ASSET"}',
+        ):
             return (
-                DagsterEventType.HANDLED_OUTPUT.value,
-                HandledOutputData(
-                    event_specific_data.output_name, event_specific_data.asset_store_key, []
-                ),
+                "HANDLED_OUTPUT",
+                {
+                    "__class__": "HandledOutputData",
+                    "output_name": event_specific_data["output_name"],
+                    "manager_key": event_specific_data["asset_store_key"],
+                },
             )
 
     # previous name for ASSET_MATERIALIZATION was STEP_MATERIALIZATION
     if event_type_value == "STEP_MATERIALIZATION":
-        return DagsterEventType.ASSET_MATERIALIZATION.value, event_specific_data
+        assert event_specific_data is not None, "STEP_MATERIALIZATION event must have specific data"
+        return "ASSET_MATERIALIZATION", event_specific_data
 
     # transform PIPELINE_INIT_FAILURE to PIPELINE_FAILURE
     if event_type_value == "PIPELINE_INIT_FAILURE":
-        return DagsterEventType.PIPELINE_FAILURE.value, PipelineFailureData(
-            event_specific_data.error
-        )
+        assert (
+            event_specific_data is not None
+        ), "PIPELINE_INIT_FAILURE event must have specific data"
+        return "PIPELINE_FAILURE", {
+            "__class__": "PipelineFailureData",
+            "error": event_specific_data.get("error"),
+        }
 
     return event_type_value, event_specific_data
-
-
-register_serdes_tuple_fallbacks(
-    {
-        "PipelineProcessStartedData": None,
-        "PipelineProcessExitedData": None,
-        "PipelineProcessStartData": None,
-    }
-)

@@ -1,7 +1,5 @@
-import warnings
 from datetime import datetime
 from enum import Enum
-from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,7 +10,6 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Type,
     Union,
 )
 
@@ -25,13 +22,8 @@ from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.serdes import (
-    DefaultNamedTupleSerializer,
-    EnumSerializer,
-    WhitelistMap,
-    register_serdes_enum_fallbacks,
-    register_serdes_tuple_fallbacks,
-    replace_storage_keys,
-    unpack_value,
+    NamedTupleSerializer,
+    copy_packed_set,
     whitelist_for_serdes,
 )
 
@@ -53,22 +45,7 @@ if TYPE_CHECKING:
     from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
 
-class DagsterRunStatusSerializer(EnumSerializer):
-    @classmethod
-    def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
-        return getattr(klass, storage_str)
-
-    @classmethod
-    def value_to_storage_str(
-        cls, value: Enum, whitelist_map: WhitelistMap, descent_path: str
-    ) -> str:
-        enum_value = value.value
-        # Store DagsterRunStatus with backcompat name PipelineRunStatus
-        backcompat_name = "PipelineRunStatus"
-        return ".".join([backcompat_name, enum_value])
-
-
-@whitelist_for_serdes(serializer=DagsterRunStatusSerializer)
+@whitelist_for_serdes(storage_name="PipelineRunStatus")
 class DagsterRunStatus(Enum):
     """The status of run execution."""
 
@@ -99,8 +76,6 @@ class DagsterRunStatus(Enum):
     # Runs that have been canceled before completion.
     CANCELED = "CANCELED"
 
-
-register_serdes_enum_fallbacks({"PipelineRunStatus": DagsterRunStatus})
 
 # These statuses that indicate a run may be using compute resources
 IN_PROGRESS_RUN_STATUSES = [
@@ -170,69 +145,7 @@ class PipelineRunStatsSnapshot(
         )
 
 
-class DagsterRunSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict,
-        klass,
-        args_for_class,
-        whitelist_map,
-        descent_path,
-    ):
-        # unpack all stored fields
-        unpacked_dict = {
-            key: unpack_value(
-                value, whitelist_map=whitelist_map, descent_path=f"{descent_path}.{key}"
-            )
-            for key, value in storage_dict.items()
-        }
-        # called by the serdes layer, delegates to helper method with expanded kwargs
-        return dagster_run_from_storage(**unpacked_dict)
-
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
-        # persist using legacy name PipelineRun
-        storage["__class__"] = "PipelineRun"
-        return storage
-
-
-def dagster_run_from_storage(
-    pipeline_name=None,
-    run_id=None,
-    run_config=None,
-    mode=None,
-    asset_selection=None,
-    solid_selection=None,
-    solids_to_execute=None,
-    step_keys_to_execute=None,
-    status=None,
-    tags=None,
-    root_run_id=None,
-    parent_run_id=None,
-    pipeline_snapshot_id=None,
-    execution_plan_snapshot_id=None,
-    # backcompat
-    environment_dict=None,
-    previous_run_id=None,
-    selector=None,
-    solid_subset=None,
-    reexecution_config=None,  # pylint: disable=unused-argument
-    external_pipeline_origin=None,
-    pipeline_code_origin=None,
-    has_repository_load_data=None,
-    **kwargs,
-):
+class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     # serdes log
     # * removed reexecution_config - serdes logic expected to strip unknown keys so no need to preserve
     # * added pipeline_snapshot_id
@@ -244,77 +157,71 @@ def dagster_run_from_storage(
     # * renamed environment_dict -> run_config
     # * added asset_selection
     # * added has_repository_load_data
+    def before_unpack(self, **unpacked: Any) -> Dict[str, Any]:
+        # back compat for environment dict => run_config
+        if "environment_dict" in unpacked:
+            check.invariant(
+                unpacked.get("run_config") is None,
+                "Cannot set both run_config and environment_dict. Use run_config parameter.",
+            )
+            unpacked["run_config"] = unpacked["environment_dict"]
+            del unpacked["environment_dict"]
 
-    # back compat for environment dict => run_config
-    if environment_dict:
-        check.invariant(
-            not run_config,
-            "Cannot set both run_config and environment_dict. Use run_config parameter.",
-        )
-        run_config = environment_dict
+        # back compat for previous_run_id => parent_run_id, root_run_id
+        if "previous_run_id" in unpacked and not (
+            "parent_run_id" in unpacked and "root_run_id" in unpacked
+        ):
+            unpacked["parent_run_id"] = unpacked["previous_run_id"]
+            unpacked["root_run_id"] = unpacked["previous_run_id"]
+            del unpacked["previous_run_id"]
 
-    # back compat for previous_run_id => parent_run_id, root_run_id
-    if previous_run_id and not (parent_run_id and root_run_id):
-        parent_run_id = previous_run_id
-        root_run_id = previous_run_id
+        # back compat for selector => pipeline_name, solids_to_execute
+        if "selector" in unpacked:
+            selector = unpacked["selector"]
 
-    # back compat for selector => pipeline_name, solids_to_execute
-    selector = check.opt_inst_param(selector, "selector", ExecutionSelector)
-    if selector:
-        check.invariant(
-            pipeline_name is None or selector.name == pipeline_name,
-            "Conflicting pipeline name {pipeline_name} in arguments to PipelineRun: "
-            "selector was passed with pipeline {selector_pipeline}".format(
-                pipeline_name=pipeline_name, selector_pipeline=selector.name
-            ),
-        )
-        if pipeline_name is None:
-            pipeline_name = selector.name
+            pipeline_name = unpacked.get("pipeline_name")
+            check.invariant(
+                pipeline_name is None or selector.get("name") == pipeline_name,
+                (
+                    f"Conflicting pipeline name {pipeline_name} in arguments to PipelineRun: "
+                    f"selector was passed with pipeline {selector.get('name')}"
+                ),
+            )
+            if pipeline_name is None:
+                unpacked["pipeline_name"] = selector.get("name")
 
-        check.invariant(
-            solids_to_execute is None or set(selector.solid_subset) == solids_to_execute,
-            "Conflicting solids_to_execute {solids_to_execute} in arguments to PipelineRun: "
-            "selector was passed with subset {selector_subset}".format(
-                solids_to_execute=solids_to_execute, selector_subset=selector.solid_subset
-            ),
-        )
-        # for old runs that only have selector but no solids_to_execute
-        if solids_to_execute is None:
-            solids_to_execute = frozenset(selector.solid_subset) if selector.solid_subset else None
+            solids_to_execute = unpacked.get("solids_to_execute")
+            check.invariant(
+                solids_to_execute is None or set(selector.get("solid_subset")) == solids_to_execute,
+                (
+                    f"Conflicting solids_to_execute {solids_to_execute} in arguments to"
+                    f" PipelineRun: selector was passed with subset {selector.get('solid_subset')}"
+                ),
+            )
+            # for old runs that only have selector but no solids_to_execute
+            if solids_to_execute is None:
+                solids_to_execute = (
+                    copy_packed_set(selector["solid_subset"], "__frozenset__")
+                    if selector.get("solid_subset")
+                    else None
+                )
 
-    # back compat for solid_subset => solids_to_execute
-    check.opt_list_param(solid_subset, "solid_subset", of_type=str)
-    if solid_subset:
-        solids_to_execute = frozenset(solid_subset)
+        # back compat for solid_subset => solids_to_execute
+        if "solid_subset" in unpacked:
+            unpacked["solids_to_execute"] = copy_packed_set(
+                unpacked["solid_subset"], "__frozenset__"
+            )
+            del unpacked["solid_subset"]
 
-    # warn about unused arguments
-    if len(kwargs):
-        warnings.warn(
-            "Found unhandled arguments from stored PipelineRun: {args}".format(args=kwargs.keys())
-        )
-
-    return DagsterRun(  # pylint: disable=redundant-keyword-arg
-        pipeline_name=pipeline_name,
-        run_id=run_id,
-        run_config=run_config,
-        mode=mode,
-        asset_selection=asset_selection,
-        solid_selection=solid_selection,
-        solids_to_execute=solids_to_execute,
-        step_keys_to_execute=step_keys_to_execute,
-        status=status,
-        tags=tags,
-        root_run_id=root_run_id,
-        parent_run_id=parent_run_id,
-        pipeline_snapshot_id=pipeline_snapshot_id,
-        execution_plan_snapshot_id=execution_plan_snapshot_id,
-        external_pipeline_origin=external_pipeline_origin,
-        pipeline_code_origin=pipeline_code_origin,
-        has_repository_load_data=has_repository_load_data,
-    )
+        return unpacked
 
 
-@whitelist_for_serdes(serializer=DagsterRunSerializer)
+@whitelist_for_serdes(
+    serializer=DagsterRunSerializer,
+    # DagsterRun is serialized as PipelineRun so that it can be read by older (pre 0.13.x) version
+    # of Dagster, but is read back in as a DagsterRun.
+    storage_name="PipelineRun",
+)
 class DagsterRun(
     NamedTuple(
         "_DagsterRun",
@@ -534,47 +441,22 @@ class DagsterRun(
         return tags
 
 
-# DagsterRun is serialized as PipelineRun so that it can be read by older (pre 0.13.x) version of
-# Dagster, but is read back in as a DagsterRun.
-register_serdes_tuple_fallbacks({"PipelineRun": DagsterRun})
-
-
-class RunsFilterSerializer(DefaultNamedTupleSerializer):
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: NamedTuple,
-        whitelist_map: WhitelistMap,
-        descent_path: str,
+class RunsFilterSerializer(NamedTupleSerializer["RunsFilter"]):
+    def before_unpack(
+        self,
+        **unpacked_dict: Any,
     ) -> Dict[str, Any]:
-        storage = super().value_to_storage_dict(
-            value,
-            whitelist_map,
-            descent_path,
-        )
-        # For backcompat, we store:
-        # job_name as pipeline_name
-        return replace_storage_keys(storage, {"job_name": "pipeline_name"})
-
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict: Dict[str, Any],
-        klass: Type,
-        args_for_class: Mapping[str, Parameter],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> NamedTuple:
         # We store empty run ids as [] but only accept None
-        if "run_ids" in storage_dict and storage_dict["run_ids"] == []:
-            storage_dict["run_ids"] = None
-
-        return super().value_from_storage_dict(
-            storage_dict, klass, args_for_class, whitelist_map, descent_path
-        )
+        if "run_ids" in unpacked_dict and unpacked_dict["run_ids"] == []:
+            unpacked_dict["run_ids"] = None
+        return unpacked_dict
 
 
-@whitelist_for_serdes(serializer=RunsFilterSerializer)
+@whitelist_for_serdes(
+    serializer=RunsFilterSerializer,
+    old_storage_names={"PipelineRunsFilter"},
+    storage_field_names={"job_name": "pipeline_name"},
+)
 class RunsFilter(
     NamedTuple(
         "_RunsFilter",
@@ -668,9 +550,6 @@ class RunsFilter(
     @staticmethod
     def for_backfill(backfill_id: str) -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_id))
-
-
-register_serdes_tuple_fallbacks({"PipelineRunsFilter": RunsFilter})
 
 
 class JobBucket(NamedTuple):

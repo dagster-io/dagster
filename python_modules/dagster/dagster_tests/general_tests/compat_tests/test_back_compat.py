@@ -37,7 +37,7 @@ from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, Run
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._legacy import execute_pipeline, pipeline
-from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
+from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
     WhitelistMap,
     _whitelist_for_serdes,
@@ -643,12 +643,7 @@ def test_external_job_origin_instigator_origin():
             def get_id(self):
                 return create_snapshot_id(self)
 
-        class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
-            @classmethod
-            def skip_when_empty(cls):
-                return {"use_ssl"}
-
-        @_whitelist_for_serdes(whitelist_map=legacy_env, serializer=GrpcServerOriginSerializer)
+        @_whitelist_for_serdes(whitelist_map=legacy_env, skip_when_empty_fields={"use_ssl"})
         class GrpcServerRepositoryLocationOrigin(
             namedtuple(
                 "_GrpcServerRepositoryLocationOrigin",

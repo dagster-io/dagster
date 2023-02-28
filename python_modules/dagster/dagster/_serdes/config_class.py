@@ -9,22 +9,18 @@ from dagster._config.config_schema import UserConfigSchema
 from dagster._utils import convert_dagster_submodule_name
 from dagster._utils.yaml_utils import load_run_config_yaml
 
-from .serdes import DefaultNamedTupleSerializer, WhitelistMap, whitelist_for_serdes
+from .serdes import (
+    NamedTupleSerializer,
+    whitelist_for_serdes,
+)
 
 T_ConfigurableClass = TypeVar("T_ConfigurableClass")
 
 
-class ConfigurableClassDataSerializer(DefaultNamedTupleSerializer["ConfigurableClassData"]):
-    @classmethod
-    def value_to_storage_dict(
-        cls,
-        value: "ConfigurableClassData",
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> Dict[str, Any]:
-        dct = super().value_to_storage_dict(value, whitelist_map, descent_path)
-        dct["module_name"] = convert_dagster_submodule_name(value.module_name, "public")
-        return dct
+class ConfigurableClassDataSerializer(NamedTupleSerializer["ConfigurableClassData"]):
+    def after_pack(self, **packed: Any) -> Dict[str, Any]:
+        packed["module_name"] = convert_dagster_submodule_name(packed["module_name"], "public")
+        return packed
 
 
 @whitelist_for_serdes(serializer=ConfigurableClassDataSerializer)
