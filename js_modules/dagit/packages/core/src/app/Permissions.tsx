@@ -11,6 +11,7 @@ export const EXPECTED_PERMISSIONS = {
   start_schedule: true,
   stop_running_schedule: true,
   edit_sensor: true,
+  update_sensor_cursor: true,
   terminate_pipeline_execution: true,
   delete_pipeline_run: true,
   reload_repository_location: true,
@@ -31,6 +32,7 @@ export type PermissionsFromJSON = {
   start_schedule?: PermissionResult;
   stop_running_schedule?: PermissionResult;
   edit_sensor?: PermissionResult;
+  update_sensor_cursor?: PermissionResult
   terminate_pipeline_execution?: PermissionResult;
   delete_pipeline_run?: PermissionResult;
   reload_repository_location?: PermissionResult;
