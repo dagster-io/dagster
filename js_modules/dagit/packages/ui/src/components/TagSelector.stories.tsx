@@ -46,6 +46,7 @@ export const Styled = () => {
         return (
           <label>
             <MenuItem
+              tagName="div"
               text={
                 <Box flex={{alignItems: 'center', gap: 12}}>
                   <Checkbox
@@ -80,6 +81,7 @@ export const Styled = () => {
               <MenuDivider />
               <label>
                 <MenuItem
+                  tagName="div"
                   text={
                     <Box flex={{alignItems: 'center', gap: 8}}>
                       <Checkbox checked={isAllSelected} onChange={toggleAll} />

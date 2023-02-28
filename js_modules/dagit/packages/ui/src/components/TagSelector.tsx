@@ -8,9 +8,10 @@ import {Icon} from './Icon';
 import {MenuItem, Menu} from './Menu';
 import {Popover} from './Popover';
 import {Tag} from './Tag';
+import {TextInputStyles} from './TextInput';
 
 type TagProps = {
-  close: (ev: React.SyntheticEvent<HTMLDivElement>) => void;
+  remove: (ev: React.SyntheticEvent<HTMLDivElement>) => void;
 };
 type DropdownItemProps = {
   toggle: () => void;
@@ -33,7 +34,7 @@ const defaultRenderTag = (tag: string, tagProps: TagProps) => {
     <Tag>
       <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between', alignItems: 'center'}}>
         <span>{tag}</span>
-        <Box style={{cursor: 'pointer'}} onClick={tagProps.close}>
+        <Box style={{cursor: 'pointer'}} onClick={tagProps.remove}>
           <Icon name="close" />
         </Box>
       </Box>
@@ -51,6 +52,7 @@ const defaultRenderDropdownItem = (tag: string, dropdownItemProps: DropdownItemP
             <span>{tag}</span>
           </Box>
         }
+        tagName="div"
       />
     </label>
   );
@@ -105,7 +107,7 @@ export const TagSelector = ({
     }
     const tags = selectedTags.map((tag) =>
       (renderTag || defaultRenderTag)(tag, {
-        close: (ev) => {
+        remove: (ev) => {
           setSelectedTags((tags) => tags.filter((t) => t !== tag));
           ev.stopPropagation();
         },
@@ -119,7 +121,7 @@ export const TagSelector = ({
 
   return (
     <Popover
-      placement="bottom"
+      placement="bottom-start"
       isOpen={isDropdownOpen}
       onInteraction={(nextOpenState, e) => {
         const target = e?.target;
@@ -133,10 +135,7 @@ export const TagSelector = ({
       content={<div ref={dropdownContainer}>{dropdown}</div>}
       targetTagName="div"
     >
-      <Box
-        as={Container}
-        padding={{vertical: 4, horizontal: 6 as any}}
-        flex={{gap: 6, alignItems: 'center'}}
+      <Container
         onClick={() => {
           setIsDropdownOpen((isOpen) => !isOpen);
         }}
@@ -145,14 +144,17 @@ export const TagSelector = ({
         <div style={{cursor: 'pointer'}}>
           <Icon name={isDropdownOpen ? 'expand_less' : 'expand_more'} />
         </div>
-      </Box>
+      </Container>
     </Popover>
   );
 };
 
 const Container = styled.div`
-  border: 1px solid ${Colors.Gray300};
-  border-radius: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  ${TextInputStyles}
 `;
 
 const Placeholder = styled.div`
