@@ -10,7 +10,7 @@ from dagster._core.storage.db_io_manager import (
     TablePartitionDimension,
     TableSlice,
 )
-from snowflake.connector import ProgrammingError
+from sqlalchemy.exc import ProgrammingError
 
 from .resources import SnowflakeConnection
 
