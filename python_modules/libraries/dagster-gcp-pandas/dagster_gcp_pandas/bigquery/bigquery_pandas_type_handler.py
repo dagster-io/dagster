@@ -42,6 +42,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             with_uppercase_cols,
             destination_table=f"{table_slice.schema}.{table_slice.table}",
             project_id=table_slice.database,
+            location=context.resource_config["location"] if context.resource_config else None,
             if_exists="append",
         )
 
@@ -62,7 +63,9 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def load_input(self, context: InputContext, table_slice: TableSlice, _) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
         result = pandas_gbq.read_gbq(
-            BigQueryClient.get_select_statement(table_slice), project_id=table_slice.database
+            BigQueryClient.get_select_statement(table_slice),
+            project_id=table_slice.database,
+            location=context.resource_config["location"] if context.resource_config else None,
         )
         result.columns = map(str.lower, result.columns)
         return result
