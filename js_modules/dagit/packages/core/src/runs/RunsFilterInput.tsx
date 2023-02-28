@@ -217,7 +217,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
       ? tagKeyData.runTagKeysOrError.keys
       : [],
     selectedTagKey,
-    tagValueData?.runTags,
+    tagValueData?.runTagsOrError?.__typename === 'RunTags' ? tagValueData.runTagsOrError.tags : [],
     enabledFilters,
   );
 
@@ -287,9 +287,13 @@ const RUN_TAG_KEYS_QUERY = gql`
 
 const RUN_TAG_VALUES_QUERY = gql`
   query RunTagValuesQuery($tagKeys: [String!]!) {
-    runTags(tagKeys: $tagKeys) {
-      key
-      values
+    runTagsOrError(tagKeys: $tagKeys) {
+      ... on RunTags {
+        tags {
+          key
+          values
+        }
+      }
     }
   }
 `;

@@ -18,5 +18,11 @@ export type RunTagValuesQueryVariables = Types.Exact<{
 
 export type RunTagValuesQuery = {
   __typename: 'DagitQuery';
-  runTags: Array<{__typename: 'PipelineTagAndValues'; key: string; values: Array<string>}>;
+  runTagsOrError:
+    | {__typename: 'PythonError'}
+    | {
+        __typename: 'RunTags';
+        tags: Array<{__typename: 'PipelineTagAndValues'; key: string; values: Array<string>}>;
+      }
+    | null;
 };

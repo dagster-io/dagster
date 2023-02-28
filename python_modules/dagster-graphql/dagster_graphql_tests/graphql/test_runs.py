@@ -80,10 +80,12 @@ mutation DeleteRun($runId: String!) {
 
 ALL_TAGS_QUERY = """
 {
-  runTags {
-    ... on PipelineTagAndValues {
-      key
-      values
+  runTagsOrError {
+    ... on RunTags {
+      tags {
+        key
+        values
+      }
     }
   }
 }
@@ -106,9 +108,13 @@ ALL_TAG_KEYS_QUERY = """
 
 FILTERED_TAGS_QUERY = """
 query FilteredRunTagsQuery($tagKeys: [String!]!) {
-  runTags(tagKeys: $tagKeys) {
-    key
-    values
+  runTagsOrError(tagKeys: $tagKeys) {
+    ... on RunTags {
+      tags {
+        key
+        values
+      }
+    }
   }
 }
 """
@@ -344,7 +350,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         assert "veggie" in tag_keys
 
         all_tags_result = execute_dagster_graphql(read_context, ALL_TAGS_QUERY)
-        tags = all_tags_result.data["runTags"]
+        tags = all_tags_result.data["runTagsOrError"]["tags"]
         tags_dict = {item["key"]: item["values"] for item in tags}
         assert tags_dict["fruit"] == ["apple"]
         assert tags_dict["veggie"] == ["carrot"]
@@ -352,7 +358,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         filtered_tags_result = execute_dagster_graphql(
             read_context, FILTERED_TAGS_QUERY, variables={"tagKeys": ["fruit"]}
         )
-        tags = filtered_tags_result.data["runTags"]
+        tags = filtered_tags_result.data["runTagsOrError"]["tags"]
         tags_dict = {item["key"]: item["values"] for item in tags}
         assert len(tags_dict) == 1
         assert tags_dict["fruit"] == ["apple"]

@@ -123,11 +123,11 @@ from ..runs import (
     GrapheneRuns,
     GrapheneRunsOrError,
     GrapheneRunTagKeysOrError,
+    GrapheneRunTagsOrError,
     parse_run_config_input,
 )
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
-from ..tags import GraphenePipelineTagAndValues
 from ..test import GrapheneTestFields
 from ..util import ResolveInfo, get_compute_log_manager, non_null_list
 from .assets import GrapheneAssetOrError, GrapheneAssetsOrError
@@ -295,8 +295,8 @@ class GrapheneDagitQuery(graphene.ObjectType):
     runTagKeysOrError = graphene.Field(
         GrapheneRunTagKeysOrError, description="Retrieve the distinct tag keys from all runs."
     )
-    runTags = graphene.Field(
-        non_null_list(GraphenePipelineTagAndValues),
+    runTagsOrError = graphene.Field(
+        GrapheneRunTagsOrError,
         tagKeys=graphene.Argument(graphene.List(graphene.NonNull(graphene.String))),
         valuePrefix=graphene.String(),
         limit=graphene.Int(),

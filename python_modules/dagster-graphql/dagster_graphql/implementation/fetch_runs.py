@@ -29,8 +29,6 @@ from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import capture_error
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.tags import GraphenePipelineTagAndValues
-
     from ..schema.asset_graph import GrapheneAssetLatestInfo, GrapheneAssetNode
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.execution import GrapheneExecutionPlan
@@ -38,7 +36,7 @@ if TYPE_CHECKING:
     from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
     from ..schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
     from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
-    from ..schema.runs import GrapheneRunGroup
+    from ..schema.runs import GrapheneRunGroup, GrapheneRunTagKeys, GrapheneRunTags
     from ..schema.util import ResolveInfo
 
 
@@ -57,7 +55,7 @@ def get_run_by_id(
 
 
 @capture_error
-def get_run_tag_keys(graphene_info: "ResolveInfo") -> List[str]:
+def get_run_tag_keys(graphene_info: "ResolveInfo") -> "GrapheneRunTagKeys":
     from ..schema.runs import GrapheneRunTagKeys
 
     return GrapheneRunTagKeys(
@@ -69,22 +67,26 @@ def get_run_tag_keys(graphene_info: "ResolveInfo") -> List[str]:
     )
 
 
+@capture_error
 def get_run_tags(
     graphene_info: "ResolveInfo",
     tag_keys: Optional[List[str]] = None,
     value_prefix: Optional[str] = None,
     limit: Optional[int] = None,
-) -> List["GraphenePipelineTagAndValues"]:
+) -> "GrapheneRunTags":
+    from ..schema.runs import GrapheneRunTags
     from ..schema.tags import GraphenePipelineTagAndValues
 
     instance = graphene_info.context.instance
-    return [
-        GraphenePipelineTagAndValues(key=key, values=values)
-        for key, values in instance.get_run_tags(
-            tag_keys=tag_keys, value_prefix=value_prefix, limit=limit
-        )
-        if get_tag_type(key) != TagType.HIDDEN
-    ]
+    return GrapheneRunTags(
+        tags=[
+            GraphenePipelineTagAndValues(key=key, values=values)
+            for key, values in instance.get_run_tags(
+                tag_keys=tag_keys, value_prefix=value_prefix, limit=limit
+            )
+            if get_tag_type(key) != TagType.HIDDEN
+        ]
+    )
 
 
 @capture_error

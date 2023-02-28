@@ -605,7 +605,7 @@ export type DagitQuery = {
   runGroupsOrError: RunGroupsOrError;
   runOrError: RunOrError;
   runTagKeysOrError: Maybe<RunTagKeysOrError>;
-  runTags: Array<PipelineTagAndValues>;
+  runTagsOrError: Maybe<RunTagsOrError>;
   runsOrError: RunsOrError;
   scheduleOrError: ScheduleOrError;
   scheduler: SchedulerOrError;
@@ -755,7 +755,7 @@ export type DagitQueryRunOrErrorArgs = {
   runId: Scalars['ID'];
 };
 
-export type DagitQueryRunTagsArgs = {
+export type DagitQueryRunTagsOrErrorArgs = {
   limit?: InputMaybe<Scalars['Int']>;
   tagKeys?: InputMaybe<Array<Scalars['String']>>;
   valuePrefix?: InputMaybe<Scalars['String']>;
@@ -3175,6 +3175,13 @@ export type RunTagKeys = {
 };
 
 export type RunTagKeysOrError = PythonError | RunTagKeys;
+
+export type RunTags = {
+  __typename: 'RunTags';
+  tags: Array<PipelineTagAndValues>;
+};
+
+export type RunTagsOrError = PythonError | RunTags;
 
 export type Runs = PipelineRuns & {
   __typename: 'Runs';

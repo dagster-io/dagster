@@ -2740,7 +2740,7 @@ type DagitQuery {
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
   runTagKeysOrError: RunTagKeysOrError
-  runTags(tagKeys: [String!], valuePrefix: String, limit: Int): [PipelineTagAndValues!]!
+  runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runGroupOrError(runId: ID!): RunGroupOrError!
   runGroupsOrError(filter: RunsFilter, cursor: String, limit: Int): RunGroupsOrError!
   isPipelineConfigValid(
@@ -2832,6 +2832,12 @@ union RunTagKeysOrError = PythonError | RunTagKeys
 
 type RunTagKeys {
   keys: [String!]!
+}
+
+union RunTagsOrError = PythonError | RunTags
+
+type RunTags {
+  tags: [PipelineTagAndValues!]!
 }
 
 input AssetGroupSelector {
