@@ -10,49 +10,7 @@ In this guide, we'll walk you through adding, removing, and assigning user roles
 
 ---
 
-## Adding and removing users
 
-<Note>
-  <strong>Organization Admin</strong> or <strong>Admin</strong> permissions are
-  required to add or remove users in Dagster Cloud.
-</Note>
-
-- [Adding a user](#adding-a-user)
-- [Removing a user](#removing-a-user)
-
-### Adding a user
-
-Before you start, note that:
-
-- **Users are managed on a per-deployment basis**. **Organization Admins** are the exception and have access to the entire organization.
-
-  For example, if you have two full deployments (`prod` and `dev`), users who aren't **Organization Admins** must be added to each deployment to have access.
-
-- **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
-
-- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/developing-testing/deployment-settings-reference#sso-default-role).
-
-To add a new user to a deployment:
-
-1. Sign in to your Dagster Cloud account.
-
-2. Click the **user menu (your icon) > Cloud Settings**.
-
-3. Fill in the following:
-
-   - **Email** - Enter the user's email address
-   - **Role** - Select the [user role](#understanding-user-permissions) for the user. **Note**: With the exception of the **Organization Admin** role, this role will only apply to the full deployment you're adding the user to.
-
-   For example:
-
-   <Image
-   alt="Cloud Settings Interface for Permissions"
-   src="/images/dagster-cloud/user-token-management/cloud_settings_permissions.png"
-   width={842}
-   height={346}
-   />
-
-4. Click **+ Add**.
 
 
 ---
@@ -430,6 +388,40 @@ Dagster Cloud currently includes support for five levels of role-based access co
     </tr>
   </tbody>
 </table>
+
+---
+
+## Adding users
+
+<Note>
+  <strong>Organization Admin</strong> or <strong>Admin</strong> permissions are
+  required to add users in Dagster Cloud.
+</Note>
+
+Before you start, note that:
+
+- **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
+
+- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. By default, users will be granted Viewer permissions on each deployment. The default role can be adjusted by modifying the [`sso_default_role` deployment setting](/dagster-cloud/developing-testing/deployment-settings-reference#sso-default-role).
+
+1. Sign in to your Dagster Cloud account.
+2. Click the **user menu (your icon) > Cloud Settings**.
+3. In the **Enter an email...** field, enter the user's email address.
+4. Click **Add user**. The user will be added to the list of users.
+5. In the window that displays, select the appropriate [user role](#understanding-user-roles) for each deployment:
+   1. Next to a deployment, click **Edit user role**.
+   2. Select the user role for the deployment. This [user role](#understanding-user-roles) will be used as the default for all code locations in the deployment.
+   3. Click **Save**.
+   4. **Enterprise only**: To set permissions for individual code locations in a deployment:
+      1. Click the toggle next to the deployment.
+      2. Click **Edit user role**.
+      3. Select the user role for the code location.
+      4. Click **Save**.
+6. Repeat step 5 for each deployment.
+7. Click **Done**.
+
+---
+
 ## Removing users
 
 <Note>
