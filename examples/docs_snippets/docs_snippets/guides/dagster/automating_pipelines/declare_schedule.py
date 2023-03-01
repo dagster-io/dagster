@@ -17,7 +17,9 @@ def transactions():
     pass
 
 
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *"))
+@asset(
+    freshness_policy=FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")
+)
 def sales(transactions):
     pass
 
