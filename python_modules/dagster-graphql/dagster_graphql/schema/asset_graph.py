@@ -428,7 +428,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         # in the future, we can share this same CachingInstanceQueryer across all
         # GrapheneMaterializationEvent which share an external repository for improved performance
         data_time_queryer = CachingInstanceQueryer(
-            instance=graphene_info.context.instance, use_known_used_data=True
+            instance=graphene_info.context.instance, cache_known_used_data=True
         )
         event_records = instance.get_event_records(
             EventRecordsFilter(
