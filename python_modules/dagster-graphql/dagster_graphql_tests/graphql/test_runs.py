@@ -1,4 +1,5 @@
 import copy
+from unittest import mock
 
 import yaml
 from dagster import AssetMaterialization, Output, job, op, repository
@@ -388,6 +389,15 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
             read_context, DELETE_RUN_MUTATION, variables={"runId": run_id_two}
         )
         assert result.data["deletePipelineRun"]["__typename"] == "RunNotFoundError"
+
+    def test_tag_key_error(self, graphql_context):
+        with mock.patch(
+            "dagster._core.storage.runs.sql_run_storage.SqlRunStorage.get_run_tag_keys",
+        ) as get_run_tag_keys_mock:
+            with instance_for_test():
+                get_run_tag_keys_mock.side_effect = Exception("wah wah")
+                all_tag_keys_result = execute_dagster_graphql(graphql_context, ALL_TAG_KEYS_QUERY)
+                all_tag_keys_result.data["runTagKeysOrError"]["__typename"] == "PythonError"
 
     def test_run_config(self, graphql_context):
         # This include needs to be here because its inclusion screws up
