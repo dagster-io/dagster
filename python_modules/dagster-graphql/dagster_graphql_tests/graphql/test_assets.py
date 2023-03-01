@@ -1,7 +1,7 @@
 import datetime
 import os
 import time
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from dagster import (
     AssetKey,
@@ -348,6 +348,7 @@ GET_PARTITION_STATS = """
             partitionStats {
                 numMaterialized
                 numPartitions
+                numFailed
             }
         }
     }
@@ -534,6 +535,7 @@ def _create_partitioned_run(
     job_name: str,
     partition_key: str,
     asset_selection: Optional[List[AssetKey]] = None,
+    tags: Optional[Dict[str, str]] = None,
 ) -> str:
     if isinstance(partition_key, MultiPartitionKey):
         partition_tags = [
@@ -553,6 +555,7 @@ def _create_partitioned_run(
         tags=[
             *partition_tags,
             {"key": "dagster/partition_set", "value": "multipartitions_job_partition_set"},
+            *[{"key": k, "value": v} for k, v in (tags or {}).items()],
         ]
         + (
             [
@@ -973,6 +976,63 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         unmaterialized_partitions = asset_node["materializedPartitions"]["unmaterializedPartitions"]
         assert len(unmaterialized_partitions) == 2
         assert set(unmaterialized_partitions) == {"b", "d"}
+
+    def test_partition_stats(self, graphql_context):
+        _create_partitioned_run(
+            graphql_context, "fail_partition_materialization_job", partition_key="b"
+        )
+        selector = infer_pipeline_selector(graphql_context, "fail_partition_materialization_job")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_STATS,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert result.data["assetNodes"]
+        assert len(result.data["assetNodes"]) == 1
+        assert result.data["assetNodes"][0]["partitionStats"]["numPartitions"] == 4
+        assert result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 1
+        assert result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 0
+
+        _create_partitioned_run(
+            graphql_context,
+            "fail_partition_materialization_job",
+            partition_key="a",
+            tags={"fail": "true"},
+        )
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_STATS,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert result.data["assetNodes"]
+        assert len(result.data["assetNodes"]) == 1
+        assert result.data["assetNodes"][0]["partitionStats"]["numPartitions"] == 4
+        assert result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 1
+        assert result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 1
+
+        # failing a partition that already materialized removes it from the numMaterialized count
+        _create_partitioned_run(
+            graphql_context,
+            "fail_partition_materialization_job",
+            partition_key="b",
+            tags={"fail": "true"},
+        )
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_STATS,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert result.data["assetNodes"]
+        assert len(result.data["assetNodes"]) == 1
+        assert result.data["assetNodes"][0]["partitionStats"]["numPartitions"] == 4
+        assert result.data["assetNodes"][0]["partitionStats"]["numMaterialized"] == 0
+        assert result.data["assetNodes"][0]["partitionStats"]["numFailed"] == 2
 
     def test_dynamic_partitions(self, graphql_context):
         traced_counter.set(Counter())

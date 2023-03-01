@@ -148,6 +148,7 @@ class GrapheneMaterializedPartitions(graphene.Union):
 class GraphenePartitionStats(graphene.ObjectType):
     numMaterialized = graphene.NonNull(graphene.Int)
     numPartitions = graphene.NonNull(graphene.Int)
+    numFailed = graphene.NonNull(graphene.Int)
 
     class Meta:
         name = "PartitionStats"
