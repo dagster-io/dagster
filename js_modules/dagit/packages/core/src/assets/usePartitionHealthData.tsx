@@ -1,4 +1,4 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
+import {gql, useApolloClient} from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 
