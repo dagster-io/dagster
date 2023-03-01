@@ -712,6 +712,10 @@
         "path": "/guides/best-practices",
         "children": [
           {
+            "title": "Automating your data pipelines",
+            "path": "/guides/dagster/automated_pipelines"
+          },
+          {
             "title": "Using environment variables and secrets",
             "path": "/guides/dagster/using-environment-variables-and-secrets"
           },
