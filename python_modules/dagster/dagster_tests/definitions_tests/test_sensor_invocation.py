@@ -1,4 +1,5 @@
-from typing import Optional
+from contextlib import contextmanager
+from typing import Iterator, Optional, cast
 from unittest import mock
 
 import pytest
@@ -35,11 +36,15 @@ from dagster import (
     multi_asset_sensor,
     op,
     repository,
+    resource,
     run_failure_sensor,
     run_status_sensor,
     sensor,
 )
+from dagster._check import CheckError
+from dagster._config.structured_config import ConfigurableResource
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.resource_output import Resource
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 
@@ -103,6 +108,49 @@ def test_sensor_invocation_args():
         basic_sensor_with_context(  # pylint: disable=redundant-keyword-arg
             context, _arbitrary_context=None
         )
+
+
+def test_sensor_invocation_resources() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    # Test no arg invocation
+    @sensor(job_name="foo_pipeline")
+    def basic_sensor_resource_req(my_resource: MyResource):
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    with pytest.raises(CheckError, match="Sensor missing required resources: my_resource"):
+        basic_sensor_resource_req()
+
+    # Just need to pass context, which splats out into resource parameters
+    assert cast(
+        RunRequest,
+        basic_sensor_resource_req(
+            build_sensor_context(resource_defs={"my_resource": MyResource(a_str="foo")})
+        ),
+    ).run_config == {"foo": "foo"}
+
+
+def test_sensor_invocation_resources_context_manager() -> None:
+    @sensor(job_name="foo_pipeline")
+    def basic_sensor_str_resource_req(my_resource: Resource[str]):
+        return RunRequest(run_key=None, run_config={"foo": my_resource}, tags={})
+
+    @resource
+    @contextmanager
+    def my_cm_resource(_) -> Iterator[str]:
+        yield "foo"
+
+    # Fails bc resource is a contextmanager and sensor context is not entered
+    with pytest.raises(
+        DagsterInvariantViolationError, match="At least one provided resource is a generator"
+    ):
+        basic_sensor_str_resource_req(
+            build_sensor_context(resource_defs={"my_resource": my_cm_resource})
+        )
+
+    with build_sensor_context(resource_defs={"my_resource": my_cm_resource}) as context:
+        assert cast(RunRequest, basic_sensor_str_resource_req(context)).run_config == {"foo": "foo"}
 
 
 def test_instance_access_built_sensor():

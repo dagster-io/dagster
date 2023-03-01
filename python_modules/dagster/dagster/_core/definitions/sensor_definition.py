@@ -4,6 +4,7 @@ from contextlib import ExitStack
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Iterator,
     List,
@@ -166,7 +167,7 @@ class SensorEvaluationContext:
             raise DagsterInvariantViolationError(
                 "At least one provided resource is a generator, but attempting to access "
                 "resources outside of context manager scope. You can use the following syntax to "
-                "open a context manager: `with build_solid_context(...) as context:`"
+                "open a context manager: `with build_sensor_context(...) as context:`"
             )
         return self._resources
 
@@ -395,18 +396,22 @@ class SensorDefinition:
             or resource_arg_names
         )
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
         context_param_name = get_context_param_name(self._raw_fn)
+
+        if len(args) + len(kwargs) > 1:
+            raise DagsterInvalidInvocationError(
+                "Sensor invocation received multiple arguments. Only a first "
+                "positional context parameter should be provided when invoking."
+            )
+
+        context_param: Mapping[str, Any] = {}
+
         if context_param_name:
             if len(args) + len(kwargs) == 0:
                 raise DagsterInvalidInvocationError(
                     "Sensor evaluation function expected context argument, but no context argument "
                     "was provided when invoking."
-                )
-            if len(args) + len(kwargs) > 1:
-                raise DagsterInvalidInvocationError(
-                    "Sensor invocation received multiple arguments. Only a first "
-                    "positional context parameter should be provided when invoking."
                 )
 
             if args:
@@ -421,17 +426,29 @@ class SensorDefinition:
                 )
 
             context = context if context else build_sensor_context()
-
-            return self._raw_fn(context)
+            context_param = {context_param_name: context}
 
         else:
-            if len(args) + len(kwargs) > 0:
-                raise DagsterInvalidInvocationError(
-                    "Sensor decorated function has no arguments, but arguments were provided to "
-                    "invocation."
+            # We still take a context arg even if the underlying function doesn't require it
+            # this is so that we can pass resources if the sensor needs any
+            context: Optional[SensorEvaluationContext] = None
+            if args:
+                context = check.opt_inst_param(args[0], "context", SensorEvaluationContext)
+            elif kwargs:
+                context = check.opt_inst_param(
+                    list(kwargs.values())[0], "context", SensorEvaluationContext
                 )
+            context = context if context else build_sensor_context()
 
-            return self._raw_fn()
+        check.invariant(
+            all((hasattr(context.resources, k) for k in self._required_resource_keys)),
+            "Sensor missing required resources: {}".format(
+                ", ".join(self._required_resource_keys - set(context.resources.__dict__.keys()))
+            ),
+        )
+        resources = {k: getattr(context.resources, k) for k in self._required_resource_keys}
+
+        return self._raw_fn(**context_param, **resources)
 
     @public
     @property
