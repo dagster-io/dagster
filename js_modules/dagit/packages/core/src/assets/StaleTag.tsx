@@ -62,7 +62,8 @@ const StaleCausesSummary: React.FC<{causes: LiveDataForNode['staleStatusCauses']
     <ul style={{margin: 0, padding: '4px 12px'}}>
       {causes.slice(0, MAX_DISPLAYED_REASONS).map((cause, idx) => (
         <li key={idx}>
-          {cause.reason} {cause.dependency ? `(${displayNameForAssetKey(cause.dependency)})` : ''}
+          [{displayNameForAssetKey(cause.key)}] {cause.reason}{' '}
+          {cause.dependency ? `(${displayNameForAssetKey(cause.dependency)})` : ''}
         </li>
       ))}
       {causes.length > MAX_DISPLAYED_REASONS ? (

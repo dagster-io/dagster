@@ -3,8 +3,6 @@ import {RunStatus, StaleStatus, StaleStatusCause} from '../graphql/types';
 import {LiveDataForNode} from './Utils';
 import {AssetNodeFragment} from './types/AssetNode.types';
 
-const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
-
 export const MockStaleReason: StaleStatusCause = {
   __typename: 'StaleStatusCause',
   key: {
