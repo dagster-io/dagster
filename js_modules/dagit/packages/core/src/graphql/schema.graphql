@@ -1793,6 +1793,12 @@ type SensorNotFoundError implements Error {
   sensorName: String!
 }
 
+type DuplicateDynamicPartitionError implements Error {
+  message: String!
+  partitionsDefName: String!
+  partitionName: String!
+}
+
 type ExecutionPlan {
   steps: [ExecutionStep!]!
   artifactsPersisted: Boolean!
@@ -2908,6 +2914,11 @@ type DagitMutation {
     metadata: String!
   ): LogTelemetryMutationResult!
   setNuxSeen: Boolean!
+  addDynamicPartition(
+    partitionKey: String!
+    partitionsDefName: String!
+    repositorySelector: RepositorySelector!
+  ): AddDynamicPartitionResult!
 }
 
 input ReexecutionParams {
@@ -2950,6 +2961,17 @@ union LogTelemetryMutationResult = LogTelemetrySuccess | PythonError
 
 type LogTelemetrySuccess {
   action: String!
+}
+
+union AddDynamicPartitionResult =
+    AddDynamicPartitionSuccess
+  | UnauthorizedError
+  | PythonError
+  | DuplicateDynamicPartitionError
+
+type AddDynamicPartitionSuccess {
+  partitionsDefName: String!
+  partitionKey: String!
 }
 
 type DagitSubscription {
