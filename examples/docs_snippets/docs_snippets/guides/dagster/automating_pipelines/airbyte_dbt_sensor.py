@@ -1,3 +1,5 @@
+# isort: skip_file
+
 from dagster import (
     asset,
     build_asset_reconciliation_sensor,
