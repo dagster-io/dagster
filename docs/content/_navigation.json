@@ -600,6 +600,20 @@
         "path": "/integrations/great-expectations"
       },
       {
+        "title": "Google BigQuery",
+        "path": "/integrations/bigquery",
+        "children": [
+          {
+            "title": "Google BigQuery + Dagster tutorial",
+            "path": "/integrations/bigquery/using-bigquery-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/bigquery/reference"
+          }
+        ]
+      },
+      {
         "title": "Jupyter / Papermill",
         "path": "/integrations/dagstermill",
         "children": [
@@ -630,7 +644,7 @@
         "path": "/integrations/snowflake",
         "children": [
           {
-            "title": "Snowflake+ Dagster tutorial",
+            "title": "Snowflake + Dagster tutorial",
             "path": "/integrations/snowflake/using-snowflake-with-dagster"
           },
           {
