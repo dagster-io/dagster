@@ -18,6 +18,7 @@ As your experience with Dagster grows, you may find certain aspects of this guid
 We're constantly learning -- If you have anything you'd like to add about project layouts, we invite you to join this [GitHub Discussion](https://github.com/dagster-io/dagster/discussions/8972) to share how you organize your Dagster code.
 
 ---
+
 ## Example file tree
 
 To walk through our recommendations, this guide uses [fully featured project](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured) which is a large-size project that simulates real-world use cases and showcases a wide range of Dagster features. You can read more about this project together with best practices of using Dagster concepts in [this guide](/guides/dagster/example_project).
@@ -67,12 +68,15 @@ project_fully_featured
 ├── setup.py
 └── tox.ini
 ```
+
 ---
+
 ## For Python projects
 
 This project was scaffolded by the `dagster project` CLI. This tool generates files and folder structures that enable you to quickly get started with everything set up, especially the Python setup. Refer to the [Create a new project guide](/getting-started/create-new-project#option-1-starting-with-the-default-project-skeleton) to learn more about the default project skeleton.
 
 ---
+
 ## For assets
 
 Keep all assets together in an `assets/` directory. As your business logic and complexity grows, grouping assets by business domains in multiple directories inside `assets/` helps to organize assets further.
@@ -101,6 +105,7 @@ In this example, we keep all assets together in the [`project_fully_featured/ass
 ```
 
 ---
+
 ## For schedules and sensors
 
 In this example, we put sensors and schedules a folder [`sensors`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/sensors). When we build sensors, they are considered as policies for when to trigger a particular job. So, keeping all the policies together helps us understand what can later be used when created the jobs.py file.
@@ -108,28 +113,30 @@ In this example, we put sensors and schedules a folder [`sensors`](https://githu
 - Note: Certain sensors like [run status sensors](/concepts/partitions-schedules-sensors/sensors#run-status-sensor) can listen to multiple jobs and do not trigger a job. We recommend keeping these sensors in the definition as they are often for alerting and monitoring at the code location level.
 
 ---
+
 ## For resources
 
 Make resources reusable and share them across jobs or asset groups.
 
-In this example, resources (e.g., database connections, Spark sessions, API clients, and I/O managers) are grouped in the [`resources`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/) folder, where they are bound to configuration sets which vary based on environment. 
+In this example, resources (e.g., database connections, Spark sessions, API clients, and I/O managers) are grouped in the [`resources`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/) folder, where they are bound to configuration sets which vary based on environment.
 
 In complex projects, we find it helpful to make resources reusable and configured with pre-defined values via <PyObject object="configured" />. This allows your teammates to use a pre-defined resource set or make changes to shared resources, thus enabling more efficient project development.
 
-This pattern also helps you to easily execute jobs in different environments without code changes. In this example, we dynamically define a code location based on the deployment in [`__init__.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/__init__.py) and are able to keep all code the same across testing, local development, staging, and production. Read more about our recommendations in [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production)
+This pattern also helps you to easily execute jobs in different environments without code changes. In this example, we dynamically define a code location based on the deployment in [`__init__.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/\__init\_\_.py) and are able to keep all code the same across testing, local development, staging, and production. Read more about our recommendations in [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production)
 
 ---
-## For jobs 
+
+## For jobs
 
 When using assets based data pipelines, we recommend having a jobs.py file which imports the assets, partitions, sensors, etc. to build each of the jobs.
 
-### When using ops and graphs 
+### When using ops and graphs
 
-This project does not include ops or graphs, if it did, this would be the recommendation on how to structure it. 
+This project does not include ops or graphs, if it did, this would be the recommendation on how to structure it.
 
 In these situations, we recommend having a jobs folder rather than a jobs.py file. Depending on the types of jobs you have, you can create a seperate file for each types of jobs.
 
-The ops and graphs would be defined in the job file with the job definition which utlizes the ops/graph in the file too.  
+The ops and graphs would be defined in the job file with the job definition which utlizes the ops/graph in the file too.
 
 ```shell
 ├──project_with_ops
@@ -142,23 +149,27 @@ The ops and graphs would be defined in the job file with the job definition whic
 ```
 
 ---
-## For multiple code locations 
+
+## For multiple code locations
 
 So far, we've discussed our recommendations for structuring a large project which contains only one code location. Dagster also allows you to structure a project with multiple definitions. We don't recommend over-abstracting too early, and in most cases, code location should be sufficient. The pattern we found useful is to use multiple code location is to keep conflicting dependencies separate, where each definition can keep their own package requirements (e.g., `setup.py`) and deployment specs (e.g., `Dockerfile`).
 
 ---
+
 ## For tests
 
-We recommend setting up a separate test folder structure that mirrors the main project, (e.g. having a folder for test assets with any applicable subfolders) which contains the unit tests for each of the components of the data pipeline. 
+We recommend setting up a separate test folder structure that mirrors the main project, (e.g. having a folder for test assets with any applicable subfolders) which contains the unit tests for each of the components of the data pipeline.
+
 - Each of the components in Dagster such as assets, sensors and resources can all be tested separately. See more on [Testing in Dagster](https://docs.dagster.io/concepts/testing)
-- For details on [Unit Tests with stubs and mocks](/guides/dagster/transitioning-data-pipelines-from-development-to-production#advanced-unit-tests-with-stubs-and-mocks) 
+- For details on [Unit Tests with stubs and mocks](/guides/dagster/transitioning-data-pipelines-from-development-to-production#advanced-unit-tests-with-stubs-and-mocks)
 
 ---
+
 ## For other projects outside Dagster
 
-As your data platform evolves, Dagster will enable you to orchestrate other data tools, such as [dbt projects](/integrations/dbt) or [Jupyter notebooks](/integrations/dagstermill/using-notebooks-with-dagster#using-jupyter-notebooks-with-papermill-and-dagster). 
+As your data platform evolves, Dagster will enable you to orchestrate other data tools, such as [dbt projects](/integrations/dbt) or [Jupyter notebooks](/integrations/dagstermill/using-notebooks-with-dagster#using-jupyter-notebooks-with-papermill-and-dagster).
 
-To learn more about Dagster's intergrations, [visit this page](/integrations) for guidance and integration libraries. 
+To learn more about Dagster's intergrations, [visit this page](/integrations) for guidance and integration libraries.
 
 ```shell
 project_fully_featured
