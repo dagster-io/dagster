@@ -1,6 +1,6 @@
 from dagster import DagsterInstance, load_assets_from_modules, materialize_to_memory
-from dagster_test.toys import dynamic_asset_partitions
-from dagster_test.toys.dynamic_asset_partitions import (
+from dagster_test.toys.partitioned_assets import dynamic_asset_partitions
+from dagster_test.toys.partitioned_assets.dynamic_asset_partitions import (
     customers_partitions_def,
     defs,
 )
