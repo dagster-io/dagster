@@ -199,7 +199,8 @@ def test_get_cleanup_statement_multi_partitioned():
                 ],
             )
         )
-        == "DELETE FROM `db.schema1.table1` WHERE\nmy_fruit_col in ('apple') AND\nmy_timestamp_col >="
+        == "DELETE FROM `db.schema1.table1` WHERE\nmy_fruit_col in ('apple')"
+        " AND\nmy_timestamp_col >="
         " '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03 00:00:00'"
     )
 
