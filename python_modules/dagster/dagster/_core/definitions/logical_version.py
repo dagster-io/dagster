@@ -236,6 +236,14 @@ class StaleStatusCause(NamedTuple):
     children: Optional[Sequence["StaleStatusCause"]] = None
 
 
+# Root reasons for staleness. Thes differ from `StaleStatusCause`in that there is no status
+# associated with them-- rather they are causes for the staleness of some downstream node.
+class StaleStatusRootCause(NamedTuple):
+    key: AssetKey
+    reason: str
+    dependency: Optional[AssetKey] = None
+
+
 class CachingStaleStatusResolver:
     """
     Used to resolve logical version information. Avoids redundant database
@@ -268,17 +276,11 @@ class CachingStaleStatusResolver:
     def get_status_causes(self, key: AssetKey) -> Sequence[StaleStatusCause]:
         return self._get_status_causes(key=key)
 
-    def get_status_root_causes(self, key: AssetKey) -> Sequence[StaleStatusCause]:
+    def get_status_root_causes(self, key: AssetKey) -> Sequence[StaleStatusRootCause]:
         return self._get_status_root_causes(key=key)
 
     def get_current_logical_version(self, key: AssetKey) -> LogicalVersion:
         return self._get_current_logical_version(key=key)
-
-    def get_projected_logical_version(self, key: AssetKey) -> LogicalVersion:
-        return self._get_projected_logical_version(key=key)
-
-    def is_partitioned_or_downstream(self, key: AssetKey) -> bool:
-        return self._is_partitioned_or_downstream(key=key)
 
     @cached_method
     def _get_status(self, key: AssetKey) -> StaleStatus:
@@ -315,7 +317,7 @@ class CachingStaleStatusResolver:
                 yield StaleStatusCause(
                     StaleStatus.STALE,
                     key,
-                    "removed input",
+                    "removed dependency",
                     dep_key,
                 )
 
@@ -324,15 +326,7 @@ class CachingStaleStatusResolver:
                 yield StaleStatusCause(
                     StaleStatus.STALE,
                     key,
-                    "stale input",
-                    dep_key,
-                    self._get_status_causes(key=dep_key),
-                )
-            elif self._get_status(key=dep_key) == StaleStatus.MISSING:
-                yield StaleStatusCause(
-                    StaleStatus.STALE,
-                    key,
-                    "missing input",
+                    "stale dependency",
                     dep_key,
                     self._get_status_causes(key=dep_key),
                 )
@@ -341,7 +335,7 @@ class CachingStaleStatusResolver:
                     yield StaleStatusCause(
                         StaleStatus.STALE,
                         key,
-                        "new input",
+                        "new dependency",
                         dep_key,
                     )
                 elif provenance.input_logical_versions[
@@ -350,7 +344,7 @@ class CachingStaleStatusResolver:
                     yield StaleStatusCause(
                         StaleStatus.STALE,
                         key,
-                        "updated input",
+                        "updated dependency logical version",
                         dep_key,
                     )
             # if no provenance, then use materialization timestamps instead of versions
@@ -364,21 +358,21 @@ class CachingStaleStatusResolver:
                     yield StaleStatusCause(
                         StaleStatus.STALE,
                         key,
-                        "updated input",
+                        "updated dependency timestamp",
                         dep_key,
                     )
 
     @cached_method
-    def _get_status_root_causes(self, key: AssetKey) -> Sequence[StaleStatusCause]:
+    def _get_status_root_causes(self, key: AssetKey) -> Sequence[StaleStatusRootCause]:
         causes = self._get_status_causes(key=key)
-        root_pairs = sorted([pair for cause in causes for pair in self._gather_leaves(cause)])
+        leaf_pairs = sorted([pair for cause in causes for pair in self._gather_leaves(cause)])
         # After sorting the pairs, we can drop the level and de-dup using an
         # ordered dict as an ordered set. This will give us unique root causes,
         # sorted by level.
-        roots: Dict[StaleStatusCause, None] = OrderedDict()
-        for root_cause in [root_cause for _, root_cause in root_pairs]:
-            roots[root_cause] = None
-        return list(roots.keys())
+        leaves: Dict[StaleStatusCause, None] = OrderedDict()
+        for leaf_cause in [leaf_cause for _, leaf_cause in leaf_pairs]:
+            leaves[leaf_cause] = None
+        return [self._convert_to_root_cause(leaf_cause) for leaf_cause in leaves.keys()]
 
     # The leaves of the cause tree for an asset are the root causes of its staleness.
     def _gather_leaves(
@@ -389,6 +383,22 @@ class CachingStaleStatusResolver:
         else:
             for child in cause.children:
                 yield from self._gather_leaves(child, level=level + 1)
+
+    def _convert_to_root_cause(self, cause: StaleStatusCause) -> StaleStatusRootCause:
+        if cause.reason == "updated dependency logical version":
+            assert cause.dependency, "[updated input] cause must have a dependency"
+            return StaleStatusRootCause(
+                cause.dependency,
+                "updated logical version",
+            )
+        elif cause.reason == "updated dependency timestamp":
+            assert cause.dependency, "[updated input] cause must have a dependency"
+            return StaleStatusRootCause(
+                cause.dependency,
+                "updated timestamp",
+            )
+        else:
+            return StaleStatusRootCause(cause.key, cause.reason, cause.dependency)
 
     @property
     def asset_graph(self) -> "AssetGraph":
@@ -410,39 +420,6 @@ class CachingStaleStatusResolver:
         else:
             logical_version = extract_logical_version_from_entry(event.event_log_entry)
             return logical_version or DEFAULT_LOGICAL_VERSION
-
-    @cached_method
-    def _get_projected_logical_version(self, *, key: AssetKey) -> LogicalVersion:
-        if self.asset_graph.get_partitions_def(key):
-            return UNKNOWN_LOGICAL_VERSION
-        elif self.asset_graph.is_source(key):
-            event = self._instance.get_latest_logical_version_record(key, True)
-            if event:
-                version = (
-                    extract_logical_version_from_entry(event.event_log_entry)
-                    or DEFAULT_LOGICAL_VERSION
-                )
-            else:
-                version = DEFAULT_LOGICAL_VERSION
-        elif self.asset_graph.get_code_version(key) is not None:
-            version = self._compute_projected_new_materialization_logical_version(key)
-        else:
-            materialization = self._get_latest_materialization_event(key=key)
-            if materialization is None:  # never been materialized
-                version = self._compute_projected_new_materialization_logical_version(key)
-            else:
-                current_logical_version = self._get_current_logical_version(key=key)
-                provenance = self._get_current_logical_version_provenance(key=key)
-                if (
-                    current_logical_version
-                    is None  # old materialization event before logical versions
-                    or provenance is None  # should never happen
-                    or self._is_provenance_stale(key, provenance)
-                ):
-                    version = self._compute_projected_new_materialization_logical_version(key)
-                else:
-                    version = current_logical_version
-        return version
 
     @cached_method
     def _get_latest_materialization_event(self, *, key: AssetKey) -> Optional[EventLogEntry]:
@@ -469,34 +446,3 @@ class CachingStaleStatusResolver:
                 self._is_partitioned_or_downstream(key=dep_key)
                 for dep_key in self.asset_graph.get_parents(key)
             )
-
-    # Returns true if the current logical version of at least one input asset differs from the
-    # recorded logical version for that asset in the provenance. This indicates that a new
-    # materialization with up-to-date data would produce a different logical verson.
-    def _is_provenance_stale(self, key: AssetKey, provenance: LogicalVersionProvenance) -> bool:
-        if self._has_updated_dependencies(key=key):
-            return True
-        else:
-            for k, v in provenance.input_logical_versions.items():
-                if self._get_projected_logical_version(key=k) != v:
-                    return True
-            return False
-
-    @cached_method
-    def _has_updated_dependencies(self, *, key: AssetKey) -> bool:
-        provenance = self._get_current_logical_version_provenance(key=key)
-        if provenance is None:
-            return True
-        else:
-            curr_dep_keys = self.asset_graph.get_parents(key)
-            old_dep_keys = set(provenance.input_logical_versions.keys())
-            return curr_dep_keys != old_dep_keys
-
-    def _compute_projected_new_materialization_logical_version(
-        self, key: AssetKey
-    ) -> LogicalVersion:
-        dep_keys = self.asset_graph.get_parents(key)
-        return compute_logical_version(
-            self.asset_graph.get_code_version(key) or UNKNOWN_VALUE,
-            {dep_key: self._get_projected_logical_version(key=dep_key) for dep_key in dep_keys},
-        )

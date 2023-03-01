@@ -679,7 +679,6 @@ type AssetNode {
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
-  projectedLogicalVersion: String
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
   staleStatus: StaleStatus
@@ -788,7 +787,6 @@ enum StaleStatus {
 }
 
 type StaleStatusCause {
-  status: StaleStatus!
   key: AssetKey!
   reason: String!
   dependency: AssetKey
