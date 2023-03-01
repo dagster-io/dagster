@@ -476,9 +476,7 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
 }
 
 /**
- *  Like usePartitionHealthData, but fetches queries in parallel and relies on the useQuery hook.
- *  One benefit of useQuery as opposed to useLazyQuery or calling the client directly is that this query
- *  can be targeted by refetchQueries making it easier to indirectly refetch this query.
+ *  Like usePartitionHealthData, but fetches queries in parallel and allows refetching them all in parallel
  * @returns
  */
 export function usePartitionHealthData2(assetKeys: AssetKey[], cacheKey: string) {
