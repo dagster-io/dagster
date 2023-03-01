@@ -1,17 +1,16 @@
 import {MockedProvider} from '@apollo/client/testing';
 import React from 'react';
 
-import {StorybookProvider} from '../testing/StorybookProvider';
-
-import {AssetPartitions} from './AssetPartitions';
-import {AssetViewParams} from './AssetView';
+import {StorybookProvider} from '../../testing/StorybookProvider';
+import {AssetPartitions} from '../AssetPartitions';
+import {AssetViewParams} from '../AssetView';
 import {
   MultiDimensionStaticPartitionHealthQuery,
   MultiDimensionTimeFirstPartitionHealthQuery,
   MultiDimensionTimeSecondPartitionHealthQuery,
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
-} from './__fixtures__/PartitionHealthSummary.mocks';
+} from '../__fixtures__/PartitionHealthSummary.mocks';
 
 // eslint-disable-next-line import/no-default-export
 export default {component: AssetPartitions};

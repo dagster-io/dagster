@@ -3,9 +3,8 @@ import faker from 'faker';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {TestProvider} from '../testing/TestProvider';
-
-import {AssetView} from './AssetView';
+import {TestProvider} from '../../testing/TestProvider';
+import {AssetView} from '../AssetView';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../graph/asyncGraphLayout', () => ({}));

@@ -1,7 +1,7 @@
 import {render, waitFor, screen} from '@testing-library/react';
 import React from 'react';
 
-import {usePartitionKeyInParams} from './usePartitionKeyInParams';
+import {usePartitionKeyInParams} from '../usePartitionKeyInParams';
 
 describe('usePartitionKeyInParams', () => {
   it('should parse and set a one-dimensional partition key', async () => {
