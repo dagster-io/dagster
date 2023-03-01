@@ -1,9 +1,9 @@
 ---
-title: Recommended Project Structure  | Dagster
+title: Structuring your Dagster project  | Dagster
 description: This guide talks about Dagster's recommendations on structuring larger projects
 ---
 
-# Recommended Project Structure
+# Structuring your Dagster project
 
 Dagster aims to enable teams to ship data pipelines with extraordinary velocity. In this guide, we'll talk about how we imagine structuring larger Dagster projects which help achieve that goal.
 
@@ -67,14 +67,13 @@ project_fully_featured
 ├── setup.py
 └── tox.ini
 ```
---- 
-## Recommended patterns
-
-### For Python projects
+---
+## For Python projects
 
 This project was scaffolded by the `dagster project` CLI. This tool generates files and folder structures that enable you to quickly get started with everything set up, especially the Python setup. Refer to the [Create a new project guide](/getting-started/create-new-project#option-1-starting-with-the-default-project-skeleton) to learn more about the default project skeleton.
 
-### For assets
+---
+## For assets
 
 Keep all assets together in an `assets/` directory. As your business logic and complexity grows, grouping assets by business domains in multiple directories inside `assets/` helps to organize assets further.
 
@@ -101,15 +100,15 @@ In this example, we keep all assets together in the [`project_fully_featured/ass
         ....
 ```
 
-### For schedules and sensors
+---
+## For schedules and sensors
 
-Keep all the policies for triggering jobs together, i.e., put most schedules and sensors together.
-
-In this example, we put sensors and schedules a folder [`sensors`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/sensors). When we build sensors, they are considered as policies for when to trigger a particular job. So, keeping all the policies together with jobs makes it clear when and how certain jobs are being launched.
+In this example, we put sensors and schedules a folder [`sensors`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/sensors). When we build sensors, they are considered as policies for when to trigger a particular job. So, keeping all the policies together helps us understand what can later be used when created the jobs.py file.
 
 - Note: Certain sensors like [run status sensors](/concepts/partitions-schedules-sensors/sensors#run-status-sensor) can listen to multiple jobs and do not trigger a job. We recommend keeping these sensors in the definition as they are often for alerting and monitoring at the code location level.
 
-### For resources
+---
+## For resources
 
 Make resources reusable and share them across jobs or asset groups.
 
@@ -119,34 +118,47 @@ In complex projects, we find it helpful to make resources reusable and configure
 
 This pattern also helps you to easily execute jobs in different environments without code changes. In this example, we dynamically define a code location based on the deployment in [`__init__.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/__init__.py) and are able to keep all code the same across testing, local development, staging, and production. Read more about our recommendations in [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production)
 
-### For ops and graphs
+---
+## For jobs 
 
+When using assets based data pipelines, we recommend having a jobs.py file which imports the assets, partitions, sensors, etc. to build each of the jobs.
 
-Although assets are useful in many ways, [ops](/concepts/ops-jobs-graphs/ops) and [graphs](/concepts/ops-jobs-graphs/graphs), are part of the Dagster ecosystem and can be integrated into your project structure.
+### When using ops and graphs 
 
 This project does not include ops or graphs, if it did, this would be the recommendation on how to structure it. 
 
-If you have use cases that don't meet the criteria for using assets, you may still use ops and graphs to build out these use cases. For example:
+In these situations, we recommend having a jobs folder rather than a jobs.py file. Depending on the types of jobs you have, you can create a seperate file for each types of jobs.
 
-- Sending an email or Slack message on a regular basis to users 
-- Reading a file of user IDs and change the value of a particular attribute for each user 
-- Scanning a data warehouse for tables that haven't been used in months and delete them
+The ops and graphs would be defined in the job file with the job definition which utlizes the ops/graph in the file too.  
 
-In these cases, we recommend keeping all ops together in an 'ops_graphs/' directory. Similarly to assets, a structure under 'ops_graphs/' can be used to group jobs and their respective graphs into distinct business domains.  
+```shell
+├──project_with_ops
+    ...
+│   ├── jobs
+│   │   ├── jobs_using_assets.py
+│   │   ├── jobs_using_ops_assets.py
+│   │   ├── jobs_using_ops.py
+│   │   ├── jobs_using_ops_graphs.py
+```
 
-### For multiple code locations 
+---
+## For multiple code locations 
 
 So far, we've discussed our recommendations for structuring a large project which contains only one code location. Dagster also allows you to structure a project with multiple definitions. We don't recommend over-abstracting too early, and in most cases, code location should be sufficient. The pattern we found useful is to use multiple code location is to keep conflicting dependencies separate, where each definition can keep their own package requirements (e.g., `setup.py`) and deployment specs (e.g., `Dockerfile`).
 
-### For other folders
+---
+## For tests
 
-#### For tests
-
-Dagster believes that testing is a fundamental part of building a maintainable data application and have integrated CI/CD processes. We recommend setting up a separate folder structure that mirrors the main project, (e.g. having a folder for test assets with any applicable subfolders) which contains the unit tests for each of the components of the data pipeline. 
+We recommend setting up a separate test folder structure that mirrors the main project, (e.g. having a folder for test assets with any applicable subfolders) which contains the unit tests for each of the components of the data pipeline. 
 - Each of the components in Dagster such as assets, sensors and resources can all be tested separately. See more on [Testing in Dagster](https://docs.dagster.io/concepts/testing)
 - For details on [Unit Tests with stubs and mocks](/guides/dagster/transitioning-data-pipelines-from-development-to-production#advanced-unit-tests-with-stubs-and-mocks) 
 
-#### For other projects outside Dagster
+---
+## For other projects outside Dagster
+
+As your data platform evolves, Dagster will enable you to orchestrate other data tools, such as [dbt projects](/integrations/dbt) or [Jupyter notebooks](/integrations/dagstermill/using-notebooks-with-dagster#using-jupyter-notebooks-with-papermill-and-dagster). 
+
+To learn more about Dagster's intergrations, [visit this page](/integrations) for guidance and integration libraries. 
 
 ```shell
 project_fully_featured
@@ -176,11 +188,3 @@ project_fully_featured
 ├── project_fully_featured
 │ ...
 ```
----
-## Other recommendations 
-
-As your data platform evolves, Dagster will enable you to orchestrate other data tools, such as [dbt projects](/integrations/dbt) or [Jupyter notebooks](/integrations/dagstermill/using-notebooks-with-dagster#using-jupyter-notebooks-with-papermill-and-dagster). 
-
-We recommend using Dagster code to integrate across various tools and projects and using a project structure to help:
-  - Teammates who are not familar with Dagster but want to leverage existing code and integrations. e.g. an analytics engineer working on a dbt project leveraging dagster for testing and orchestrating their dbt models.
-  - Dagster can help keep code in sync across so teams can work on the latest versions
