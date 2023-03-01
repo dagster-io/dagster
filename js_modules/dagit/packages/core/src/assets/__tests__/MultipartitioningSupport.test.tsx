@@ -1,7 +1,6 @@
-import {PartitionState} from '../partitions/PartitionStatus';
-
-import {mergedRanges, mergedStates} from './MultipartitioningSupport';
-import {Range} from './usePartitionHealthData';
+import {PartitionState} from '../../partitions/PartitionStatus';
+import {mergedRanges, mergedStates} from '../MultipartitioningSupport';
+import {Range} from '../usePartitionHealthData';
 
 describe('multipartitioning support', () => {
   describe('mergedStates', () => {

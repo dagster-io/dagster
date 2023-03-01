@@ -4,20 +4,19 @@ import userEvent, {specialChars} from '@testing-library/user-event';
 import React from 'react';
 import {MemoryRouter, Route} from 'react-router-dom';
 
-import {AssetKeyInput} from '../graphql/types';
-
-import {AssetPartitionListProps} from './AssetPartitionList';
-import {AssetPartitions} from './AssetPartitions';
-import {AssetViewParams} from './AssetView';
+import {AssetKeyInput} from '../../graphql/types';
+import {AssetPartitionListProps} from '../AssetPartitionList';
+import {AssetPartitions} from '../AssetPartitions';
+import {AssetViewParams} from '../AssetView';
 import {
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
-} from './PartitionHealthSummary.mocks';
+} from '../__fixtures__/PartitionHealthSummary.mocks';
 
 // This file must be mocked because useVirtualizer tries to create a ResizeObserver,
 // and the component tree fails to mount. We still want to test whether certain partitions
 // are shown, so we print the keys in a simple "list".
-jest.mock('./AssetPartitionList', () => ({
+jest.mock('../AssetPartitionList', () => ({
   AssetPartitionList: (props: AssetPartitionListProps) => (
     <div>
       <div data-testid="focused-partition">{props.focusedDimensionKey}</div>

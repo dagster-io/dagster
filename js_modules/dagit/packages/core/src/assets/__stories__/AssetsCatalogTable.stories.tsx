@@ -1,9 +1,8 @@
 import {MockedProvider} from '@apollo/client/testing';
 import React from 'react';
 
-import {StorybookProvider} from '../testing/StorybookProvider';
-
-import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {StorybookProvider} from '../../testing/StorybookProvider';
+import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableMock,
   AssetCatalogTableMock,
@@ -11,7 +10,7 @@ import {
   SingleAssetQueryMaterializedStaleAndLate,
   SingleAssetQueryMaterializedWithLatestRun,
   SingleAssetQueryTrafficDashboard,
-} from './AssetsCatalogTable.mocks';
+} from '../__fixtures__/AssetsCatalogTable.mocks';
 
 // eslint-disable-next-line import/no-default-export
 export default {component: AssetsCatalogTable};

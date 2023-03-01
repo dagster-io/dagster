@@ -1,14 +1,13 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {RunStatus} from '../graphql/types';
-import {SINGLE_ASSET_QUERY} from '../workspace/VirtualizedAssetRow';
-import {SingleAssetQuery} from '../workspace/types/VirtualizedAssetRow.types';
-
-import {ASSET_CATALOG_GROUP_TABLE_QUERY, ASSET_CATALOG_TABLE_QUERY} from './AssetsCatalogTable';
+import {RunStatus} from '../../graphql/types';
+import {SINGLE_ASSET_QUERY} from '../../workspace/VirtualizedAssetRow';
+import {SingleAssetQuery} from '../../workspace/types/VirtualizedAssetRow.types';
+import {ASSET_CATALOG_GROUP_TABLE_QUERY, ASSET_CATALOG_TABLE_QUERY} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableQuery,
   AssetCatalogTableQuery,
-} from './types/AssetsCatalogTable.types';
+} from '../types/AssetsCatalogTable.types';
 
 export const AssetCatalogGroupTableMock: MockedResponse<AssetCatalogGroupTableQuery> = {
   request: {

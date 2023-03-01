@@ -2,15 +2,14 @@ import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
 import React from 'react';
 
-import {CustomAlertProvider} from '../app/CustomAlertProvider';
-import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
-import {LaunchPartitionBackfillMutation} from '../instance/types/BackfillUtils.types';
-import {TestProvider} from '../testing/TestProvider';
-
+import {CustomAlertProvider} from '../../app/CustomAlertProvider';
+import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../../instance/BackfillUtils';
+import {LaunchPartitionBackfillMutation} from '../../instance/types/BackfillUtils.types';
+import {TestProvider} from '../../testing/TestProvider';
 import {
   ERROR_INVALID_ASSET_SELECTION,
   LaunchAssetExecutionButton,
-} from './LaunchAssetExecutionButton';
+} from '../LaunchAssetExecutionButton';
 import {
   ASSET_DAILY,
   ASSET_DAILY_PARTITION_KEYS,
@@ -22,10 +21,10 @@ import {
   PartitionHealthAssetDailyMock,
   PartitionHealthAssetWeeklyMock,
   PartitionHealthAssetWeeklyRootMock,
-} from './LaunchAssetExecutionButton.mocks';
+} from '../__fixtures__/LaunchAssetExecutionButton.mocks';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
-jest.mock('../graph/asyncGraphLayout', () => ({}));
+jest.mock('../../graph/asyncGraphLayout', () => ({}));
 
 describe('LaunchAssetExecutionButton', () => {
   it('should show the partition dialog with an anchor asset', async () => {
