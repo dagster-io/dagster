@@ -1,9 +1,9 @@
 ---
-title: "Using Dagster with BigQuery | Dagster Docs"
+title: "Using Dagster with Google BigQuery | Dagster Docs"
 description: Store your Dagster assets in BigQuery
 ---
 
-# Using Dagster with BigQuery
+# Using Dagster with Google BigQuery
 
 This tutorial focuses on how to store and load Dagster's [software-defined assets (SDAs)](/concepts/assets/software-defined-assets) in BigQuery.
 
@@ -28,11 +28,13 @@ To complete this tutorial, you'll need:
   pip install dagster-gcp dagster-gcp-pandas
   ```
 
-- **To gather the following information**, which is required to use the BigQuery I/O manager:
+- **To gather the following information**:
 
-  - **Google Cloud Project (GCP) project name**: You can find this by logging into GCP and choosing one of the project names listed in the dropdown in the top left corner:
+  - **Google Cloud Project (GCP) project name**: You can find this by logging into GCP and choosing one of the project names listed in the dropdown in the top left corner.
 
-  - **GCP credentials**: You can authenticate with GCP two ways: by following GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or by providing credentials directly to the BigQuery I/O manager. In this guide, we assume that you have run one of the `gcloud auth` commands or have set `GOOGLE_APPLICATION_CREDENTIALS` as specified in the linked instructions. For more information on providing credentials directly to the BigQuery I/O manager, see [Providing credentials as configuration](/integrations/bigquery/reference#providing-credentials-as-configuration) in the BigQuery reference guide.
+  - **GCP credentials**: You can authenticate with GCP two ways: by following GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or by providing credentials directly to the BigQuery I/O manager.
+
+    In this guide, we assume that you have run one of the `gcloud auth` commands or have set `GOOGLE_APPLICATION_CREDENTIALS` as specified in the linked instructions. For more information on providing credentials directly to the BigQuery I/O manager, see [Providing credentials as configuration](/integrations/bigquery/reference#providing-credentials-as-configuration) in the BigQuery reference guide.
 
 ---
 
@@ -79,7 +81,7 @@ The BigQuery I/O manager can create and update tables for your Dagster defined a
 
 ### Store a Dagster asset as a table in BigQuery
 
-To store data in BigQuery using the BigQuery I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the BigQuery I/O Manager, like in [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), and Dagster will handle storing and loading your assets in BigQuery.
+To store data in BigQuery using the BigQuery I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the BigQuery I/O manager, like in [Step 1: Configure the BigQuery I/O manager](#step-1-configure-the-bigquery-io-manager), and Dagster will handle storing and loading your assets in BigQuery.
 
 ```python file=/integrations/bigquery/basic_example.py
 import pandas as pd
@@ -130,7 +132,7 @@ Since we supply the project and dataset in the I/O manager configuration in [Ste
 
 ## Step 3: Load BigQuery tables in downstream assets
 
-Once you have created an asset or source asset that represents a table in BigQuery, you will likely want to create additional assets that work with the data. Dagster and the BigQuery I/O manager allow you to load the data stored in BigQuery tables into downstream assets
+Once you have created an asset or source asset that represents a table in BigQuery, you will likely want to create additional assets that work with the data. Dagster and the BigQuery I/O manager allow you to load the data stored in BigQuery tables into downstream assets.
 
 ```python file=/integrations/bigquery/load_downstream.py startafter=start_example endbefore=end_example
 import pandas as pd

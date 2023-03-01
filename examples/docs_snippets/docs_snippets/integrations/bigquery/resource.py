@@ -16,7 +16,7 @@ def small_petals(context):
 defs = Definitions(
     assets=[small_petals],
     resources={
-        "snowflake": bigquery_resource.configured(
+        "bigquery": bigquery_resource.configured(
             {
                 "project": "my-gcp-project",
                 "location": "us-east5",

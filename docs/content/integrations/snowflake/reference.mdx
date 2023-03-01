@@ -269,7 +269,7 @@ When materializing the above assets, a partition must be selected, as described 
 
 ```sql
 SELECT *
- WHERE SPECIES = 'Iris-setosa'
+ WHERE SPECIES in ('Iris-setosa')
    AND TO_TIMESTAMP(time::INT) >= '2023-01-02 00:00:00'
    AND TO_TIMESTAMP(time::INT) < '2023-01-03 00:00:00'`
 ```
