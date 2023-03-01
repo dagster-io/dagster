@@ -162,7 +162,7 @@ from dagster import DailyPartitionsDefinition, asset
 
 @asset(
     partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
-    metadata={"partition_expr": "TIMESTAMP_SECONDS(TIME::INT)"},
+    metadata={"partition_expr": "TIMESTAMP_SECONDS(TIME)"},
 )
 def iris_data_per_day(context) -> pd.DataFrame:
     partition = context.asset_partition_key_for_output()
@@ -192,8 +192,8 @@ When materializing the above assets, a partition must be selected, as described 
 
 ```sql
 SELECT *
- WHERE TIMESTAMP_SECONDS(TIME::INT) >= '2023-01-02 00:00:00'
-   AND TIMESTAMP_SECONDS(TIME::INT) < '2023-01-03 00:00:00'
+ WHERE TIMESTAMP_SECONDS(TIME) >= '2023-01-02 00:00:00'
+   AND TIMESTAMP_SECONDS(TIME) < '2023-01-03 00:00:00'
 ```
 
 In this example, the data in the `TIME` column are integers, so the `partition_expr` metadata includes a SQL statement to convert integers to timestamps. A full list of BigQuery functions can be found [here](https://cloud.google.com/bigquery/docs/reference/standard-sql/functions-and-operators).
@@ -211,7 +211,7 @@ import pandas as pd
 from dagster import (
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
-    StaticPartitionDefinition,
+    StaticPartitionsDefinition,
     asset,
 )
 
@@ -220,12 +220,12 @@ from dagster import (
     partitions_def=MultiPartitionsDefinition(
         {
             "date": DailyPartitionsDefinition(start_date="2023-01-01"),
-            "species": StaticPartitionDefinition(
+            "species": StaticPartitionsDefinition(
                 ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
             ),
         }
     ),
-    metadata={"partition_expr": {"date": "TIMESTAMP_SECONDS(TIME::INT)", "species": "SPECIES"}},
+    metadata={"partition_expr": {"date": "TIMESTAMP_SECONDS(TIME)", "species": "SPECIES"}},
 )
 def iris_data_partitioned(context) -> pd.DataFrame:
     partition = partition = context.partition_key.keys_by_dimension
@@ -252,8 +252,8 @@ When materializing the above assets, a partition must be selected, as described 
 ```sql
 SELECT *
  WHERE SPECIES in ('Iris-setosa')
-   AND TIMESTAMP_SECONDS(TIME::INT) >= '2023-01-02 00:00:00'
-   AND TIMESTAMP_SECONDS(TIME::INT) < '2023-01-03 00:00:00'`
+   AND TIMESTAMP_SECONDS(TIME) >= '2023-01-02 00:00:00'
+   AND TIMESTAMP_SECONDS(TIME) < '2023-01-03 00:00:00'`
 ```
 
 </TabItem>
