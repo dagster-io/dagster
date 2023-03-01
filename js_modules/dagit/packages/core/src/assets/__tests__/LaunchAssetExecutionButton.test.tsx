@@ -24,7 +24,7 @@ import {
 } from '../__fixtures__/LaunchAssetExecutionButton.mocks';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
-jest.mock('../graph/asyncGraphLayout', () => ({}));
+jest.mock('../../graph/asyncGraphLayout', () => ({}));
 
 describe('LaunchAssetExecutionButton', () => {
   it('should show the partition dialog with an anchor asset', async () => {
