@@ -145,9 +145,27 @@ def get_toys_sensors():
         for i in range(3):
             yield RunRequest(
                 run_key=str(i),
-                run_config={"ops": {"the_op": {"config": {"foo": "bar"}}}},
+                run_config={"ops": {"requires_config": {"config": {"num": i}}}},
                 tags={"fee": "fifofum"},
             )
+
+    @sensor(jobs=[simple_config_job, log_s3_job])
+    def multi_job_math_sensor(context):
+        return RunRequest(
+            job_name="simple_config_job",
+            run_key=str(1),
+            run_config={"ops": {"requires_config": {"config": {"num": 1}}}},
+            tags={"fee": "fifofum"},
+        )
+
+    @sensor()
+    def all_jobs_math_sensor(context):
+        return RunRequest(
+            job_name="simple_config_job",
+            run_key=str(1),
+            run_config={"ops": {"requires_config": {"config": {"num": 1}}}},
+            tags={"fee": "fifofum"},
+        )
 
     return [
         toy_file_sensor,
@@ -156,4 +174,6 @@ def get_toys_sensors():
         custom_slack_on_job_failure,
         built_in_slack_on_run_failure_sensor,
         math_sensor,
+        multi_job_math_sensor,
+        all_jobs_math_sensor,
     ]

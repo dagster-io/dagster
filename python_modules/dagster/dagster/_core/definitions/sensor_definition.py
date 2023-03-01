@@ -465,7 +465,7 @@ class SensorDefinition:
                 else:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
-        self.check_valid_run_requests(run_requests)
+        self.check_valid_run_requests(run_requests, context)
 
         if self._asset_selection:
             run_requests = [
@@ -495,17 +495,11 @@ class SensorDefinition:
                 targets.append(target.load())
         return targets
 
-    def check_valid_run_requests(self, run_requests: Sequence[RunRequest]):
+    def check_valid_run_requests(
+        self, run_requests: Sequence[RunRequest], context: SensorEvaluationContext
+    ):
         has_multiple_targets = len(self._targets) > 1
         target_names = [target.pipeline_name for target in self._targets]
-
-        if run_requests and not self._targets and not self._asset_selection:
-            raise Exception(
-                f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
-                "for a sensor lacking a specified target (job_name, job, or jobs). Targets "
-                "can be specified by providing job, jobs, or job_name to the @sensor "
-                "decorator."
-            )
 
         for run_request in run_requests:
             if run_request.job_name is None and has_multiple_targets:
@@ -513,10 +507,27 @@ class SensorDefinition:
                     f"Error in sensor {self._name}: Sensor returned a RunRequest that did not "
                     f"specify job_name for the requested run. Expected one of: {target_names}"
                 )
-            elif run_request.job_name and run_request.job_name not in target_names:
+            elif run_request.job_name and target_names and run_request.job_name not in target_names:
                 raise Exception(
                     f"Error in sensor {self._name}: Sensor returned a RunRequest with job_name "
                     f"{run_request.job_name}. Expected one of: {target_names}"
+                )
+            elif (
+                run_request.job_name
+                and context.repository_def
+                and not context.repository_def.has_job(run_request.job_name)
+                and not context.repository_def.has_pipeline(run_request.job_name)
+            ):
+                raise Exception(
+                    f"Error in sensor {self._name}: Sensor returned a RunRequest with job_name "
+                    f"{run_request.job_name} that could not be located."
+                )
+            elif not run_request.job_name and not target_names and not self._asset_selection:
+                raise Exception(
+                    f"Error in sensor {self._name}: Sensor evaluation function returned a"
+                    " RunRequest without a job_name for a sensor without a specified target"
+                    " (job_name, job, or jobs). Targets can be specified by providing job, jobs,"
+                    " or job_name to the @sensor decorator."
                 )
 
     @property

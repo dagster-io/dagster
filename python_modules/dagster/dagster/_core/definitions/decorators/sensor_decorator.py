@@ -48,6 +48,12 @@ def sensor(
 
     Takes a :py:class:`~dagster.SensorEvaluationContext`.
 
+    Sensors can target one or more jobs with either the `job` or `jobs` arguments. A sensor and any
+    jobs that it targets will be linked together in the Dagster UI. If a sensor does not target a
+    single job, any `RunRequest` objects that it returns must have a `job_name` set to identify
+    which that should be launched. If neither the `job` or `jobs` arguments are set, the sensor's
+    `RunRequest`s can launch a run for any job in the same repository as the sensor.
+
     Args:
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.

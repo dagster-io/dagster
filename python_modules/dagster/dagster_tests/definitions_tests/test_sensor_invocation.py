@@ -121,27 +121,6 @@ def test_instance_access_with_mock():
     assert build_sensor_context(instance=mock_instance).instance == mock_instance
 
 
-def test_sensor_w_no_job():
-    @sensor()
-    def no_job_sensor():
-        pass
-
-    with pytest.raises(
-        Exception,
-        match=r".* Sensor evaluation function returned a RunRequest for a sensor lacking a "
-        r"specified target .*",
-    ):
-        no_job_sensor.check_valid_run_requests(
-            [
-                RunRequest(
-                    run_key=None,
-                    run_config=None,
-                    tags=None,
-                )
-            ]
-        )
-
-
 def test_run_status_sensor():
     @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
     def status_sensor(context):

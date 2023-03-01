@@ -449,8 +449,18 @@ def two_job_sensor(context):
 
 
 @sensor()
-def bad_request_untargeted(_ctx):
-    yield RunRequest(run_key=None, job_name="should_fail")
+def untargeted_sensor(_ctx):
+    yield RunRequest(run_key=None, job_name="the_pipeline")
+
+
+@sensor()
+def bad_request_not_in_repo(_ctx):
+    yield RunRequest(run_key=None, job_name="not_in_repo")
+
+
+@sensor()
+def untargeted_sensor_no_job(_ctx):
+    yield RunRequest(run_key=None)
 
 
 @sensor(job=the_job)
@@ -548,7 +558,9 @@ def the_repo():
         failure_job,
         hanging_pipeline,
         two_job_sensor,
-        bad_request_untargeted,
+        untargeted_sensor,
+        untargeted_sensor_no_job,
+        bad_request_not_in_repo,
         bad_request_mismatch,
         bad_request_unspecified,
         request_list_sensor,
@@ -2419,19 +2431,47 @@ def test_multi_job_sensor(executor, instance, workspace_context, external_repo):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_bad_run_request_untargeted(executor, instance, workspace_context, external_repo):
+def test_run_request_untargeted(executor, instance, workspace_context, external_repo):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
         "US/Central",
     )
     with pendulum.test(freeze_datetime):
-        job_sensor = external_repo.get_external_sensor("bad_request_untargeted")
+        job_sensor = external_repo.get_external_sensor("untargeted_sensor")
+        instance.start_sensor(job_sensor)
+
+        evaluate_sensors(workspace_context, executor)
+
+        wait_for_all_runs_to_start(instance)
+
+        run = instance.get_runs()[0]
+        validate_run_started(run)
+
+        ticks = instance.get_ticks(job_sensor.get_external_origin_id(), job_sensor.selector_id)
+
+        validate_tick(
+            ticks[0],
+            job_sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id],
+        )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_run_request_untargeted_no_job(executor, instance, workspace_context, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        job_sensor = external_repo.get_external_sensor("untargeted_sensor_no_job")
         instance.start_sensor(job_sensor)
 
         evaluate_sensors(workspace_context, executor)
 
         ticks = instance.get_ticks(job_sensor.get_external_origin_id(), job_sensor.selector_id)
-        assert len(ticks) == 1
+
         validate_tick(
             ticks[0],
             job_sensor,
@@ -2439,9 +2479,35 @@ def test_bad_run_request_untargeted(executor, instance, workspace_context, exter
             TickStatus.FAILURE,
             None,
             (
-                "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
-                "RunRequest for a sensor lacking a specified target (job_name, job, or "
-                "jobs)."
+                "Error in sensor untargeted_sensor_no_job: Sensor evaluation function returned a"
+                " RunRequest without a job_name for a sensor without a specified target"
+            ),
+        )
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_run_request_untargeted_not_in_repo(executor, instance, workspace_context, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        job_sensor = external_repo.get_external_sensor("bad_request_not_in_repo")
+        instance.start_sensor(job_sensor)
+
+        evaluate_sensors(workspace_context, executor)
+
+        ticks = instance.get_ticks(job_sensor.get_external_origin_id(), job_sensor.selector_id)
+
+        validate_tick(
+            ticks[0],
+            job_sensor,
+            freeze_datetime,
+            TickStatus.FAILURE,
+            None,
+            (
+                "Error in sensor bad_request_not_in_repo: Sensor returned a "
+                "RunRequest with job_name not_in_repo that could not be located."
             ),
         )
 

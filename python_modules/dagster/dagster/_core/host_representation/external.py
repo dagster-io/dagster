@@ -20,6 +20,7 @@ import dagster._check as check
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster._core.definitions.mode import DEFAULT_MODE_NAME
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import (
@@ -735,11 +736,25 @@ class ExternalSensor:
         else:
             return None
 
-    def get_target_data(self, pipeline_name: Optional[str] = None) -> Optional[ExternalTargetData]:
-        if pipeline_name:
-            return self._external_sensor_data.target_dict[pipeline_name]
+    def get_target_data(self, job_name: Optional[str] = None) -> ExternalTargetData:
+        if job_name:
+            if not self._external_sensor_data.target_dict:
+                # Sensor didn't specify a target, so it can target any job in the repository
+                return ExternalTargetData(
+                    pipeline_name=job_name,
+                    mode=DEFAULT_MODE_NAME,
+                    solid_selection=None,
+                )
+            if job_name not in self._external_sensor_data.target_dict:
+                raise Exception(f"Job {job_name} is not in the list of targets for the sensor")
+            return self._external_sensor_data.target_dict[job_name]
         else:
-            return self._get_single_target()
+            if len(self._external_sensor_data.target_dict) != 1:
+                raise Exception(
+                    "Sensor must either target a single job or a job name must be provided"
+                )
+
+            return check.not_none(self._get_single_target())
 
     def get_external_targets(self) -> Sequence[ExternalTargetData]:
         return list(self._external_sensor_data.target_dict.values())
