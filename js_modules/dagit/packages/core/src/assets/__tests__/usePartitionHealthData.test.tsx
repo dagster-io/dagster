@@ -1,6 +1,5 @@
-import {PartitionState} from '../partitions/PartitionStatus';
-
-import {PartitionHealthQuery} from './types/usePartitionHealthData.types';
+import {PartitionState} from '../../partitions/PartitionStatus';
+import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {
   Range,
   buildPartitionHealthData,
@@ -14,7 +13,7 @@ import {
   PartitionDimensionSelection,
   keyCountInRanges,
   keyCountInSelection,
-} from './usePartitionHealthData';
+} from '../usePartitionHealthData';
 
 const {SUCCESS, MISSING} = PartitionState;
 

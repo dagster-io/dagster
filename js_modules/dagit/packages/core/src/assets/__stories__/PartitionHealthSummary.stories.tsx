@@ -2,16 +2,16 @@ import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui';
 import React from 'react';
 
-import {PartitionHealthSummary} from './PartitionHealthSummary';
+import {PartitionHealthSummary} from '../PartitionHealthSummary';
 import {
   MultiDimensionStaticPartitionHealthQuery,
   MultiDimensionTimeFirstPartitionHealthQuery,
   MultiDimensionTimeSecondPartitionHealthQuery,
   SingleDimensionStaticPartitionHealthQuery,
   SingleDimensionTimePartitionHealthQuery,
-} from './__fixtures__/PartitionHealthSummary.mocks';
-import {AssetKey} from './types';
-import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
+} from '../__fixtures__/PartitionHealthSummary.mocks';
+import {AssetKey} from '../types';
+import {PartitionDimensionSelection, usePartitionHealthData} from '../usePartitionHealthData';
 
 // eslint-disable-next-line import/no-default-export
 export default {
