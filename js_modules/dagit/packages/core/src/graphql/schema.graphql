@@ -744,6 +744,7 @@ type TimePartitionRange {
 type PartitionStats {
   numMaterialized: Int!
   numPartitions: Int!
+  numFailed: Int!
 }
 
 type PartitionDefinition {

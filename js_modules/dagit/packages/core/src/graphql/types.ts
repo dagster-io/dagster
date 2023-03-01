@@ -2293,6 +2293,7 @@ export type PartitionSetsOrError = PartitionSets | PipelineNotFoundError | Pytho
 
 export type PartitionStats = {
   __typename: 'PartitionStats';
+  numFailed: Scalars['Int'];
   numMaterialized: Scalars['Int'];
   numPartitions: Scalars['Int'];
 };
