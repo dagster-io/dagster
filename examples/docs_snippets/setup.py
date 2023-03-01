@@ -32,6 +32,7 @@ setup(
         "dagster-postgres",
         "dagster-slack",
         "dagster-gcp-pandas",
+        "dagster-gcp-pyspark",
     ],
     extras_require={
         "full": [
