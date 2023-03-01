@@ -72,7 +72,6 @@ import {PartitionDefinitionForLaunchAssetFragment} from './types/LaunchAssetExec
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {
   PartitionDimensionSelection,
-  PartitionHealthData,
   usePartitionHealthData,
   usePartitionHealthData2,
 } from './usePartitionHealthData';
@@ -384,11 +383,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                   selections.length === 2 ? selections[1 - idx].selectedRanges : undefined,
                 ),
               }}
-              isDynamic={assets.some(
-                (asset) =>
-                  asset.partitionDefinition?.type === PartitionDefinitionType.DYNAMIC ||
-                  !asset.partitionDefinition,
-              )}
+              isDynamic={displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC}
               selected={range.selectedKeys}
               setSelected={(selectedKeys) =>
                 setSelections(
@@ -397,9 +392,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                   ),
                 )
               }
-              partitionDefinitionName={
-                assets.find((asset) => asset.partitionDefinition?.name)?.partitionDefinition?.name
-              }
+              partitionDefinitionName={displayedPartitionDefinition?.name}
               repoAddress={repoAddress}
               refetch={refetch}
             />

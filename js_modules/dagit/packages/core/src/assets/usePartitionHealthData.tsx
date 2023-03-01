@@ -442,16 +442,18 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
 
   const assetKeyJSONs = assetKeys.map((k) => JSON.stringify(k));
   const assetKeyJSON = JSON.stringify(assetKeyJSONs);
-  const missingKey = assetKeys.find(
+  const missingKeyJSON = assetKeyJSONs.find(
     (k) =>
-      !result.some((r) => r.assetKey.path === k.path && r.fetchedAt === assetLastMaterializedAt),
+      !result.some(
+        (r) => JSON.stringify(r.assetKey) === k && r.fetchedAt === assetLastMaterializedAt,
+      ),
   );
 
   React.useMemo(() => {
-    if (!missingKey) {
+    if (!missingKeyJSON) {
       return;
     }
-    const loadKey: AssetKey = missingKey;
+    const loadKey: AssetKey = JSON.parse(missingKeyJSON);
     const run = async () => {
       const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
         query: PARTITION_HEALTH_QUERY,
@@ -467,7 +469,7 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
       ]);
     };
     run();
-  }, [client, missingKey, assetLastMaterializedAt]);
+  }, [client, missingKeyJSON, assetLastMaterializedAt]);
 
   return React.useMemo(() => {
     const assetKeyJSONs = JSON.parse(assetKeyJSON);
