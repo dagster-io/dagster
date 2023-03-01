@@ -36,6 +36,11 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
         return s
 
 
+def _add_missing_timezone(s: pd.Series) -> pd.Series:
+    if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):
+        pass
+
+
 class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     """Plugin for the Snowflake I/O Manager that can store and load Pandas DataFrames as Snowflake tables.
 
