@@ -52,6 +52,7 @@ export type InstanceBackfillsQuery = {
           numPartitions: number | null;
           timestamp: number;
           partitionSetName: string | null;
+          hasCancelPermission: boolean;
           numCancelable: number;
           partitionNames: Array<string> | null;
           partitionSet: {

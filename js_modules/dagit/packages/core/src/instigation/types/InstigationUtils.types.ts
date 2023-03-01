@@ -16,6 +16,8 @@ export type InstigationStateFragment = {
   name: string;
   instigationType: Types.InstigationType;
   status: Types.InstigationStatus;
+  hasStartPermission: boolean;
+  hasStopPermission: boolean;
   repositoryName: string;
   repositoryLocationName: string;
   runningCount: number;

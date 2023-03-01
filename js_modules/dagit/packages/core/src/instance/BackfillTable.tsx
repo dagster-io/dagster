@@ -4,7 +4,6 @@ import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 
@@ -36,16 +35,17 @@ export const BackfillTable = ({
   const [resumeBackfill] = useMutation<ResumeBackfillMutation, ResumeBackfillMutationVariables>(
     RESUME_BACKFILL_MUTATION,
   );
-  const {canCancelPartitionBackfill} = usePermissionsDEPRECATED();
 
   const candidateId = terminationBackfill?.backfillId;
 
   React.useEffect(() => {
-    if (canCancelPartitionBackfill.enabled && candidateId) {
-      const [backfill] = backfills.filter((backfill) => backfill.backfillId === candidateId);
+    if (candidateId) {
+      const [backfill] = backfills.filter(
+        (backfill) => backfill.backfillId === candidateId && backfill.hasCancelPermission,
+      );
       setTerminationBackfill(backfill);
     }
-  }, [backfills, candidateId, canCancelPartitionBackfill]);
+  }, [backfills, candidateId]);
 
   const resume = async (backfill: BackfillTableFragment) => {
     const {data} = await resumeBackfill({variables: {backfillId: backfill.backfillId}});
@@ -130,6 +130,7 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
   fragment BackfillTableFragment on PartitionBackfill {
     backfillId
     status
+    hasCancelPermission
     numCancelable
     partitionNames
     isValidSerialization

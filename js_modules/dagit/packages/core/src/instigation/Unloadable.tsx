@@ -3,7 +3,7 @@ import {Alert, Box, Checkbox, Colors, Group, Table, Subheading, Tooltip} from '@
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
-import {usePermissionsDEPRECATED} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {InstigationStatus, InstigationType} from '../graphql/types';
 import {
   displayScheduleMutationErrors,
@@ -128,8 +128,7 @@ const UnloadableScheduleInfo = () => (
 );
 
 const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) => {
-  const {id, selectorId, name, status, ticks} = sensorState;
-  const {canStopSensor} = usePermissionsDEPRECATED();
+  const {id, selectorId, name, status, ticks, hasStopPermission} = sensorState;
 
   const [stopSensor, {loading: toggleOffInFlight}] = useMutation<
     StopRunningSensorMutation,
@@ -152,7 +151,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
     }
   };
 
-  const lacksPermission = status === InstigationStatus.RUNNING && !canStopSensor.enabled;
+  const lacksPermission = status === InstigationStatus.RUNNING && !hasStopPermission;
   const latestTick = ticks.length ? ticks[0] : null;
 
   const checkbox = () => {
@@ -164,8 +163,9 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
         onChange={onChangeSwitch}
       />
     );
+
     return lacksPermission ? (
-      <Tooltip content={canStopSensor.disabledReason}>{element}</Tooltip>
+      <Tooltip content={DEFAULT_DISABLED_REASON}>{element}</Tooltip>
     ) : (
       element
     );
@@ -199,7 +199,6 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
 const ScheduleStateRow: React.FC<{
   scheduleState: InstigationStateFragment;
 }> = ({scheduleState}) => {
-  const {canStopRunningSchedule} = usePermissionsDEPRECATED();
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
     StopScheduleMutation,
     StopScheduleMutationVariables
@@ -226,7 +225,7 @@ const ScheduleStateRow: React.FC<{
     }
   };
 
-  const lacksPermission = status === InstigationStatus.RUNNING && !canStopRunningSchedule.enabled;
+  const lacksPermission = status === InstigationStatus.RUNNING && !scheduleState.hasStopPermission;
   const checkbox = () => {
     const element = (
       <Checkbox
@@ -238,7 +237,7 @@ const ScheduleStateRow: React.FC<{
     );
 
     return lacksPermission ? (
-      <Tooltip content={canStopRunningSchedule.disabledReason}>{element}</Tooltip>
+      <Tooltip content={DEFAULT_DISABLED_REASON}>{element}</Tooltip>
     ) : (
       element
     );

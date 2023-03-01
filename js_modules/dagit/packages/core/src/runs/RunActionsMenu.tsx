@@ -17,7 +17,7 @@ import {useHistory} from 'react-router-dom';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissionsDEPRECATED} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
@@ -55,11 +55,6 @@ export const RunActionsMenu: React.FC<{
   >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
-  const {
-    canTerminatePipelineExecution,
-    canDeletePipelineRun,
-    canLaunchPipelineReexecution,
-  } = usePermissionsDEPRECATED();
   const history = useHistory();
 
   const copyConfig = useCopyToClipboard();
@@ -130,18 +125,18 @@ export const RunActionsMenu: React.FC<{
               </Tooltip>
               <Tooltip
                 content={
-                  !canLaunchPipelineReexecution.enabled
-                    ? canLaunchPipelineReexecution.disabledReason
+                  !run.hasReExecutePermission
+                    ? DEFAULT_DISABLED_REASON
                     : 'Re-execute is unavailable because the pipeline is not present in the current workspace.'
                 }
                 position="bottom"
-                disabled={infoReady && !!repoMatch && canLaunchPipelineReexecution.enabled}
+                disabled={infoReady && !!repoMatch && run.hasReExecutePermission}
                 targetTagName="div"
               >
                 <MenuItem
                   tagName="button"
                   text="Re-execute"
-                  disabled={!infoReady || !repoMatch || !canLaunchPipelineReexecution.enabled}
+                  disabled={!infoReady || !repoMatch || !run.hasReExecutePermission}
                   icon="refresh"
                   onClick={async () => {
                     if (repoMatch && runConfigYaml) {
@@ -165,7 +160,7 @@ export const RunActionsMenu: React.FC<{
                   }}
                 />
               </Tooltip>
-              {isFinished || !canTerminatePipelineExecution.enabled ? null : (
+              {isFinished || !run.hasTerminatePermission ? null : (
                 <MenuItem
                   tagName="button"
                   icon="cancel"
@@ -181,7 +176,7 @@ export const RunActionsMenu: React.FC<{
               download
               href={`${rootServerURI}/download_debug/${run.runId}`}
             />
-            {canDeletePipelineRun.enabled ? (
+            {run.hasDeletePermission ? (
               <MenuItem
                 tagName="button"
                 icon="delete"
@@ -201,7 +196,7 @@ export const RunActionsMenu: React.FC<{
       >
         <Button icon={<Icon name="expand_more" />} />
       </Popover>
-      {canTerminatePipelineExecution.enabled ? (
+      {run.hasTerminatePermission ? (
         <TerminationDialog
           isOpen={visibleDialog === 'terminate'}
           onClose={closeDialogs}
@@ -209,7 +204,7 @@ export const RunActionsMenu: React.FC<{
           selectedRuns={{[run.id]: run.canTerminate}}
         />
       ) : null}
-      {canDeletePipelineRun.enabled ? (
+      {run.hasDeletePermission ? (
         <DeletionDialog
           isOpen={visibleDialog === 'delete'}
           onClose={closeDialogs}
@@ -257,33 +252,48 @@ export const RunBulkActionsMenu: React.FC<{
   clearSelection: () => void;
 }> = React.memo(({selected, clearSelection}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const {
-    canTerminatePipelineExecution,
-    canDeletePipelineRun,
-    canLaunchPipelineReexecution,
-  } = usePermissionsDEPRECATED();
+
   const [visibleDialog, setVisibleDialog] = React.useState<
     'none' | 'terminate' | 'delete' | 'reexecute-from-failure' | 'reexecute'
   >('none');
 
-  if (!canTerminatePipelineExecution.enabled && !canDeletePipelineRun.enabled) {
-    return null;
-  }
+  const canTerminateAny = React.useMemo(() => {
+    return selected.some((run) => run.hasTerminatePermission);
+  }, [selected]);
 
-  const unfinishedRuns = selected.filter((r) => !doneStatuses.has(r?.status));
-  const unfinishedIDs = unfinishedRuns.map((r) => r.id);
-  const unfinishedMap = unfinishedRuns.reduce(
+  const canDeleteAny = React.useMemo(() => {
+    return selected.some((run) => run.hasTerminatePermission);
+  }, [selected]);
+
+  const canReexecuteAny = React.useMemo(() => {
+    return selected.some((run) => run.hasReExecutePermission);
+  }, [selected]);
+
+  const disabled = !canTerminateAny && !canDeleteAny;
+
+  const terminatableRuns = selected.filter(
+    (r) => !doneStatuses.has(r?.status) && r.hasTerminatePermission,
+  );
+  const terminateableIDs = terminatableRuns.map((r) => r.id);
+  const terminateableMap = terminatableRuns.reduce(
     (accum, run) => ({...accum, [run.id]: run.canTerminate}),
     {},
   );
 
-  const selectedIDs = selected.map((run) => run.runId);
+  const deleteableIDs = selected.map((run) => run.runId);
   const deletionMap = selected.reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {});
 
-  const failedRuns = selected.filter((r) => failedStatuses.has(r?.status));
-  const failedMap = failedRuns.reduce((accum, run) => ({...accum, [run.id]: run.id}), {});
+  const reexecuteFromFailureRuns = selected.filter(
+    (r) => failedStatuses.has(r?.status) && r.hasReExecutePermission,
+  );
+  const reexecuteFromFailureMap = reexecuteFromFailureRuns.reduce(
+    (accum, run) => ({...accum, [run.id]: run.id}),
+    {},
+  );
 
-  const reexecutableRuns = selected.filter((r) => doneStatuses.has(r?.status));
+  const reexecutableRuns = selected.filter(
+    (r) => doneStatuses.has(r?.status) && r.hasReExecutePermission,
+  );
   const reexecutableMap = reexecutableRuns.reduce(
     (accum, run) => ({...accum, [run.id]: run.id}),
     {},
@@ -303,30 +313,32 @@ export const RunBulkActionsMenu: React.FC<{
       <Popover
         content={
           <Menu>
-            {canTerminatePipelineExecution.enabled ? (
+            {canTerminateAny ? (
               <MenuItem
                 icon="cancel"
-                text={`Terminate ${unfinishedIDs.length} ${
-                  unfinishedIDs.length === 1 ? 'run' : 'runs'
+                text={`Terminate ${terminateableIDs.length} ${
+                  terminateableIDs.length === 1 ? 'run' : 'runs'
                 }`}
-                disabled={unfinishedIDs.length === 0}
+                disabled={terminateableIDs.length === 0}
                 onClick={() => {
                   setVisibleDialog('terminate');
                 }}
               />
             ) : null}
-            {canDeletePipelineRun.enabled ? (
+            {canDeleteAny ? (
               <MenuItem
                 icon="delete"
                 intent="danger"
-                text={`Delete ${selectedIDs.length} ${selectedIDs.length === 1 ? 'run' : 'runs'}`}
-                disabled={selectedIDs.length === 0}
+                text={`Delete ${deleteableIDs.length} ${
+                  deleteableIDs.length === 1 ? 'run' : 'runs'
+                }`}
+                disabled={deleteableIDs.length === 0}
                 onClick={() => {
                   setVisibleDialog('delete');
                 }}
               />
             ) : null}
-            {canLaunchPipelineReexecution.enabled ? (
+            {canReexecuteAny ? (
               <>
                 <MenuItem
                   icon="refresh"
@@ -340,10 +352,10 @@ export const RunBulkActionsMenu: React.FC<{
                 />
                 <MenuItem
                   icon="refresh"
-                  text={`Re-execute ${failedRuns.length} ${
-                    failedRuns.length === 1 ? 'run' : 'runs'
+                  text={`Re-execute ${reexecuteFromFailureRuns.length} ${
+                    reexecuteFromFailureRuns.length === 1 ? 'run' : 'runs'
                   } from failure`}
-                  disabled={failedRuns.length === 0}
+                  disabled={reexecuteFromFailureRuns.length === 0}
                   onClick={() => {
                     setVisibleDialog('reexecute-from-failure');
                   }}
@@ -354,7 +366,10 @@ export const RunBulkActionsMenu: React.FC<{
         }
         position="bottom-right"
       >
-        <Button disabled={selected.length === 0} rightIcon={<Icon name="expand_more" />}>
+        <Button
+          disabled={disabled || selected.length === 0}
+          rightIcon={<Icon name="expand_more" />}
+        >
           Actions
         </Button>
       </Popover>
@@ -362,7 +377,7 @@ export const RunBulkActionsMenu: React.FC<{
         isOpen={visibleDialog === 'terminate'}
         onClose={closeDialogs}
         onComplete={onComplete}
-        selectedRuns={unfinishedMap}
+        selectedRuns={terminateableMap}
       />
       <DeletionDialog
         isOpen={visibleDialog === 'delete'}
@@ -375,7 +390,7 @@ export const RunBulkActionsMenu: React.FC<{
         isOpen={visibleDialog === 'reexecute-from-failure'}
         onClose={closeDialogs}
         onComplete={onComplete}
-        selectedRuns={failedMap}
+        selectedRuns={reexecuteFromFailureMap}
         reexecutionStrategy={ReexecutionStrategy.FROM_FAILURE}
       />
       <ReexecutionDialog

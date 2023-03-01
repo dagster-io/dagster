@@ -184,7 +184,7 @@ const BackfillMenu = ({
   onShowStepStatus: (backfill: BackfillTableFragment) => void;
 }) => {
   const history = useHistory();
-  const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissionsDEPRECATED();
+  const {canLaunchPartitionBackfill} = usePermissionsDEPRECATED();
   const runsUrl = runsPathWithFilters([
     {
       token: 'tag',
@@ -196,7 +196,7 @@ const BackfillMenu = ({
     <Popover
       content={
         <Menu>
-          {canCancelPartitionBackfill.enabled ? (
+          {backfill.hasCancelPermission ? (
             <>
               {backfill.numCancelable > 0 ? (
                 <MenuItem
