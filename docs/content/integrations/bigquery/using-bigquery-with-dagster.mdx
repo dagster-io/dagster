@@ -40,7 +40,9 @@ To complete this tutorial, you'll need:
 
 ## Step 1: Configure the BigQuery I/O manager
 
-The BigQuery I/O manager requires some configuration to connect to your Bigquery instance. The `project` is required to connect with BigQuery. Additionally, one method of authentication is required. You can follow the GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or see \[Providing credentials as configuration]\(TODO LINK) in the BigQuery reference guide.
+The BigQuery I/O manager requires some configuration to connect to your Bigquery instance:
+    - A `project`
+    - One method of authentication. You can follow the GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or see [Providing credentials as configuration](/integrations/bigquery/reference#providing-credentials-as-configuration) in the BigQuery reference guide.
 
 You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables.
 
