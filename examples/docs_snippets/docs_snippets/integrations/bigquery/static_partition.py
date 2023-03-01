@@ -2,11 +2,13 @@
 
 import pandas as pd
 
-from dagster import StaticPartitionDefinition, asset
+from dagster import StaticPartitionsDefinition, asset
 
 
 @asset(
-    partitions_def=StaticPartitionDefinition(["Iris-setosa", "Iris-virginica", "Iris-versicolor"]),
+    partitions_def=StaticPartitionsDefinition(
+        ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
+    ),
     metadata={"partition_expr": "SPECIES"},
 )
 def iris_data_partitioned(context) -> pd.DataFrame:

@@ -102,11 +102,13 @@ In order to store static partitioned assets in BigQuery, you must specify `parti
 ```python file=/integrations/bigquery/static_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
-from dagster import StaticPartitionDefinition, asset
+from dagster import StaticPartitionsDefinition, asset
 
 
 @asset(
-    partitions_def=StaticPartitionDefinition(["Iris-setosa", "Iris-virginica", "Iris-versicolor"]),
+    partitions_def=StaticPartitionsDefinition(
+        ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
+    ),
     metadata={"partition_expr": "SPECIES"},
 )
 def iris_data_partitioned(context) -> pd.DataFrame:
@@ -225,7 +227,9 @@ from dagster import (
             ),
         }
     ),
-    metadata={"partition_expr": {"date": "TIMESTAMP_SECONDS(TIME)", "species": "SPECIES"}},
+    metadata={
+        "partition_expr": {"date": "TIMESTAMP_SECONDS(TIME)", "species": "SPECIES"}
+    },
 )
 def iris_data_partitioned(context) -> pd.DataFrame:
     partition = partition = context.partition_key.keys_by_dimension
@@ -561,7 +565,10 @@ from dagster import Definitions, asset
 @asset(required_resource_keys={"bigquery"})
 def small_petals(context):
     return context.resources.bigquery.query(
-        'SELECT * FROM IRIS.IRIS_DATA WHERE "Petal length (cm)" < 1 AND "Petal width (cm)" < 1',
+        (
+            'SELECT * FROM IRIS.IRIS_DATA WHERE "Petal length (cm)" < 1 AND "Petal'
+            ' width (cm)" < 1'
+        ),
     ).result()
 
 
