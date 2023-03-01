@@ -1,6 +1,6 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
-import {RunStatus, StaleStatus} from '../graphql/types';
+import {Maybe, RunStatus, StaleStatus} from '../graphql/types';
 
 import {
   AssetNodeKeyFragment,
@@ -135,6 +135,7 @@ export interface LiveDataForNode {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
   staleStatus: StaleStatus | null;
+  staleStatusCauses: {dependency: Maybe<AssetKey>; key: AssetKey; reason: string}[];
   partitionStats: {numMaterialized: number; numPartitions: number} | null;
 }
 
@@ -149,6 +150,7 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   lastObservation: null,
   partitionStats: null,
   staleStatus: null,
+  staleStatusCauses: [],
   stepKey: '',
 };
 
@@ -203,6 +205,7 @@ export const buildLiveDataForNode = (
         : null,
     lastObservation,
     staleStatus: assetNode.staleStatus,
+    staleStatusCauses: assetNode.staleStatusCauses,
     stepKey: assetNode.opNames[0],
     freshnessInfo: assetNode.freshnessInfo,
     freshnessPolicy: assetNode.freshnessPolicy,

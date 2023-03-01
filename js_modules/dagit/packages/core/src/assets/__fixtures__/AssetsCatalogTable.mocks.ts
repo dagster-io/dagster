@@ -1,13 +1,15 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {StaleStatus, RunStatus} from '../../graphql/types';
-import {SINGLE_ASSET_QUERY} from '../../workspace/VirtualizedAssetRow';
-import {SingleAssetQuery} from '../../workspace/types/VirtualizedAssetRow.types';
-import {ASSET_CATALOG_GROUP_TABLE_QUERY, ASSET_CATALOG_TABLE_QUERY} from '../AssetsCatalogTable';
+import {MockStaleReason} from '../asset-graph/AssetNode.mocks';
+import {RunStatus, StaleStatus} from '../graphql/types';
 import {
   AssetCatalogGroupTableQuery,
   AssetCatalogTableQuery,
 } from '../types/AssetsCatalogTable.types';
+import {SINGLE_ASSET_QUERY} from '../workspace/VirtualizedAssetRow';
+import {SingleAssetQuery} from '../workspace/types/VirtualizedAssetRow.types';
+
+import {ASSET_CATALOG_GROUP_TABLE_QUERY, ASSET_CATALOG_TABLE_QUERY} from './AssetsCatalogTable';
 
 export const AssetCatalogGroupTableMock: MockedResponse<AssetCatalogGroupTableQuery> = {
   request: {
@@ -97,6 +99,7 @@ export const SingleAssetQueryMaterializedWithLatestRun: MockedResponse<SingleAss
             },
           ],
           staleStatus: StaleStatus.FRESH,
+          staleStatusCauses: [],
           __typename: 'AssetNode',
           groupName: 'GROUP2',
           isSource: false,
@@ -186,6 +189,7 @@ export const SingleAssetQueryMaterializedStaleAndLate: MockedResponse<SingleAsse
           },
           assetObservations: [],
           staleStatus: StaleStatus.STALE,
+          staleStatusCauses: [MockStaleReason],
           __typename: 'AssetNode',
           groupName: 'GROUP2',
           isSource: false,
@@ -270,6 +274,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<SingleAssetQuery> = {
           freshnessInfo: null,
           assetObservations: [],
           staleStatus: StaleStatus.MISSING,
+          staleStatusCauses: [],
           __typename: 'AssetNode',
           groupName: 'default',
           isSource: false,

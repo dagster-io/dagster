@@ -1,9 +1,23 @@
-import {RunStatus, StaleStatus} from '../graphql/types';
+import {RunStatus, StaleStatus, StaleStatusCause} from '../graphql/types';
 
 import {LiveDataForNode} from './Utils';
 import {AssetNodeFragment} from './types/AssetNode.types';
 
 const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
+
+export const MockStaleReason: StaleStatusCause = {
+  __typename: 'StaleStatusCause',
+  key: {
+    path: ['asset1'],
+    __typename: 'AssetKey',
+  },
+  reason: 'stale input',
+  status: StaleStatus.STALE,
+  dependency: {
+    path: ['asset0'],
+    __typename: 'AssetKey',
+  },
+};
 
 export const AssetNodeFragmentBasic: AssetNodeFragment = {
   __typename: 'AssetNode',
@@ -48,6 +62,7 @@ export const LiveDataForNodeRunStartedNotMaterializing: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: null,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -62,6 +77,7 @@ export const LiveDataForNodeRunStartedMaterializing: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: null,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -81,6 +97,7 @@ export const LiveDataForNodeRunFailed: LiveDataForNode = {
     endTime: 1673301346,
   },
   staleStatus: null,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -95,6 +112,7 @@ export const LiveDataForNodeNeverMaterialized: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.MISSING,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -113,6 +131,7 @@ export const LiveDataForNodeMaterialized: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -131,6 +150,7 @@ export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
+  staleStatusCauses: [MockStaleReason],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -149,6 +169,7 @@ export const LiveDataForNodeMaterializedAndStaleAndLate: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
+  staleStatusCauses: [MockStaleReason],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
@@ -175,6 +196,7 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
+  staleStatusCauses: [MockStaleReason],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
@@ -201,6 +223,7 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
+  staleStatusCauses: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
@@ -227,6 +250,7 @@ export const LiveDataForNodeMaterializedAndLate: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
+  staleStatusCauses: [],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
@@ -249,6 +273,7 @@ export const LiveDataForNodeSourceNeverObserved: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.MISSING,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -263,6 +288,7 @@ export const LiveDataForNodeSourceObservationRunning: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.MISSING,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -281,6 +307,7 @@ export const LiveDataForNodeSourceObservedStale: LiveDataForNode = {
   },
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
+  staleStatusCauses: [MockStaleReason],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -299,6 +326,7 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
   },
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: null,
@@ -317,6 +345,7 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
@@ -338,6 +367,7 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.FRESH,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
@@ -355,6 +385,7 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.MISSING,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
@@ -376,6 +407,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
+  staleStatusCauses: [MockStaleReason],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
@@ -397,6 +429,7 @@ export const LiveDataForNodePartitionedStaleAndLate: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
+  staleStatusCauses: [MockStaleReason],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 12,
@@ -426,6 +459,7 @@ export const LiveDataForNodePartitionedStaleAndFresh: LiveDataForNode = {
   lastObservation: null,
   runWhichFailedToMaterialize: null,
   staleStatus: StaleStatus.STALE,
+  staleStatusCauses: [MockStaleReason],
   freshnessInfo: {
     __typename: 'AssetFreshnessInfo',
     currentMinutesLate: 0,
@@ -456,6 +490,7 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
     endTime: 1673301346,
   },
   staleStatus: null,
+  staleStatusCauses: [],
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {

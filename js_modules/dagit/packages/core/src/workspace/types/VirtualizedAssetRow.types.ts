@@ -53,6 +53,12 @@ export type SingleAssetQuery = {
             timestamp: string;
             runId: string;
           }>;
+          staleStatusCauses: Array<{
+            __typename: 'StaleStatusCause';
+            reason: string;
+            key: {__typename: 'AssetKey'; path: Array<string>};
+            dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
+          }>;
           partitionStats: {
             __typename: 'PartitionStats';
             numMaterialized: number;
