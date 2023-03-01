@@ -151,15 +151,6 @@ def build_bigquery_io_manager(
                     " queries (loading and reading from tables)."
                 ),
             ),
-            "retries": Field(
-                Noneable(int),
-                is_required=False,
-                default_value=None,
-                description=(
-                    "When using Pandas DataFrames, optionally specify a number of retries when"
-                    " loading data into BigQuery."
-                ),
-            ),
         }
     )
     def bigquery_io_manager(init_context):
