@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Optional, Sequence, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 import graphene
@@ -49,6 +49,7 @@ from ...implementation.fetch_runs import (
     get_run_by_id,
     get_run_group,
     get_run_groups,
+    get_run_tag_keys,
     get_run_tags,
     validate_pipeline_config,
 )
@@ -121,11 +122,12 @@ from ..runs import (
     GrapheneRunGroupsOrError,
     GrapheneRuns,
     GrapheneRunsOrError,
+    GrapheneRunTagKeysOrError,
+    GrapheneRunTagsOrError,
     parse_run_config_input,
 )
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
-from ..tags import GraphenePipelineTagAndValues
 from ..test import GrapheneTestFields
 from ..util import ResolveInfo, get_compute_log_manager, non_null_list
 from .assets import GrapheneAssetOrError, GrapheneAssetsOrError
@@ -290,8 +292,14 @@ class GrapheneDagitQuery(graphene.ObjectType):
         runId=graphene.NonNull(graphene.ID),
         description="Retrieve a run by its run id.",
     )
-    pipelineRunTags = graphene.Field(
-        non_null_list(GraphenePipelineTagAndValues),
+    runTagKeysOrError = graphene.Field(
+        GrapheneRunTagKeysOrError, description="Retrieve the distinct tag keys from all runs."
+    )
+    runTagsOrError = graphene.Field(
+        GrapheneRunTagsOrError,
+        tagKeys=graphene.Argument(graphene.List(graphene.NonNull(graphene.String))),
+        valuePrefix=graphene.String(),
+        limit=graphene.Int(),
         description="Retrieve all the distinct key-value tags from all runs.",
     )
 
@@ -629,8 +637,17 @@ class GrapheneDagitQuery(graphene.ObjectType):
             partitionSetName,  # type: ignore
         )
 
-    def resolve_pipelineRunTags(self, graphene_info: ResolveInfo):
-        return get_run_tags(graphene_info)
+    def resolve_runTagKeysOrError(self, graphene_info: ResolveInfo):
+        return get_run_tag_keys(graphene_info)
+
+    def resolve_runTagsOrError(
+        self,
+        graphene_info: ResolveInfo,
+        tagKeys: Optional[List[str]] = None,
+        valuePrefix: Optional[str] = None,
+        limit: Optional[int] = None,
+    ):
+        return get_run_tags(graphene_info, tagKeys, valuePrefix, limit)
 
     def resolve_runGroupOrError(self, graphene_info: ResolveInfo, runId):
         return get_run_group(graphene_info, runId)

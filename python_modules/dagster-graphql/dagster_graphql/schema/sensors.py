@@ -152,11 +152,11 @@ class GrapheneStartSensorMutation(graphene.Mutation):
         name = "StartSensorMutation"
 
     @capture_error
-    @require_permission_check(Permissions.EDIT_SENSOR)
+    @require_permission_check(Permissions.UPDATE_SENSOR_CURSOR)
     def mutate(self, graphene_info: ResolveInfo, sensor_selector):
         selector = SensorSelector.from_graphql_input(sensor_selector)
         assert_permission_for_location(
-            graphene_info, Permissions.EDIT_SENSOR, selector.location_name
+            graphene_info, Permissions.UPDATE_SENSOR_CURSOR, selector.location_name
         )
         return start_sensor(graphene_info, selector)
 
@@ -217,7 +217,7 @@ class GrapheneSetSensorCursorMutation(graphene.Mutation):
     def mutate(self, graphene_info: ResolveInfo, sensor_selector, cursor=None):
         selector = SensorSelector.from_graphql_input(sensor_selector)
         assert_permission_for_location(
-            graphene_info, Permissions.EDIT_SENSOR, selector.location_name
+            graphene_info, Permissions.UPDATE_SENSOR_CURSOR, selector.location_name
         )
         return set_sensor_cursor(graphene_info, selector, cursor)
 

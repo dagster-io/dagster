@@ -49,11 +49,12 @@ export type InstanceBackfillsQuery = {
           backfillId: string;
           status: Types.BulkActionStatus;
           isValidSerialization: boolean;
-          numPartitions: number;
+          numPartitions: number | null;
           timestamp: number;
           partitionSetName: string | null;
+          hasCancelPermission: boolean;
           numCancelable: number;
-          partitionNames: Array<string>;
+          partitionNames: Array<string> | null;
           partitionSet: {
             __typename: 'PartitionSet';
             id: string;

@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
 import {humanizedLateString, isAssetLate} from '../assets/CurrentMinutesLateTag';
-import {isAssetStale} from '../assets/StaleTag';
+import {isAssetStale, StaleCausesInfoDot} from '../assets/StaleTag';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetComputeKindTag} from '../graph/OpTags';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -279,7 +279,10 @@ export function buildAssetNodeStatusRow({
       border: Colors.Yellow500,
       content: (
         <>
-          <Caption color={Colors.Yellow700}>Stale</Caption>
+          <Box flex={{gap: 4, alignItems: 'center'}}>
+            <Caption color={Colors.Yellow700}>Stale</Caption>
+            <StaleCausesInfoDot causes={liveData.staleStatusCauses} />
+          </Box>
           {lastMaterializationLink}
         </>
       ),
@@ -350,8 +353,16 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     assetObservations(limit: 1) {
       ...AssetNodeLiveObservation
     }
-    currentLogicalVersion
-    projectedLogicalVersion
+    staleStatus
+    staleStatusCauses {
+      key {
+        path
+      }
+      reason
+      dependency {
+        path
+      }
+    }
     partitionStats {
       numMaterialized
       numPartitions

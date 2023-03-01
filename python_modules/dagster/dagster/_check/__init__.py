@@ -1043,7 +1043,7 @@ def opt_nullable_mapping_param(
     additional_message: Optional[str] = None,
 ) -> Optional[Mapping[T, U]]:
     if obj is None:
-        return dict()
+        return None
     else:
         return mapping_param(obj, param_name, key_type, value_type, additional_message)
 

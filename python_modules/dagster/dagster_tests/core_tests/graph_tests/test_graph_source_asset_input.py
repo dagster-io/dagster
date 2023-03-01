@@ -94,6 +94,34 @@ def test_partitioned_source_asset_input_value():
     assert io_manager.loaded_input
 
 
+def test_non_partitioned_job_partitioned_source_asset():
+    partitions_def = StaticPartitionsDefinition(["foo", "bar"])
+    asset1 = SourceAsset("asset1", partitions_def=partitions_def)
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            ...
+
+        def load_input(self, context):
+            self.loaded_input = True
+            assert context.asset_key == asset1.key
+            assert set(context.asset_partition_keys) == {"foo", "bar"}
+            return 5
+
+    @op
+    def op1(input1):
+        assert input1 == 5
+
+    io_manager = MyIOManager()
+
+    @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(io_manager)})
+    def job1():
+        op1(asset1)
+
+    assert job1.execute_in_process().success
+    assert io_manager.loaded_input
+
+
 def test_multiple_source_asset_inputs():
     asset1 = SourceAsset("asset1", io_manager_key="iomanager1")
     asset2 = SourceAsset("asset2", io_manager_key="iomanager2")

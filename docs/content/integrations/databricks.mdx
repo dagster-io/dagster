@@ -1,0 +1,178 @@
+---
+title: "Using Dagster with Databricks | Dagster Docs"
+description: Dagster can orchestrate Databricks jobs alongside other technologies.
+---
+
+# Using Databricks with Dagster
+
+Dagster can orchestrate your Databricks jobs, making it easy to chain together multiple Databricks jobs, as well as orchestrate Databricks alongside your other technologies.
+
+---
+
+## Prerequisites
+
+To get started, you will need to install the `dagster` and `dagster-databricks` Python packages:
+
+```bash
+pip install dagster dagster-databricks
+```
+
+You'll also want to have a Databricks workspace with an existing project that is deployed with a Databricks job. If you don't have one already, you can [follow the Databricks quickstart](https://docs.databricks.com/workflows/jobs/jobs-quickstart.html) to set one up.
+
+To manage your Databricks job from Dagster, you'll need three values, which can be set as [environment variables in Dagster](/guides/dagster/using-environment-variables-and-secrets):
+
+1. A `host` for connecting with your Databricks workspace, stored in an environment variable `DATABRICKS_HOST`,
+2. A `token` corresponding to a personal access token for your Databricks workspace, stored in an environment variable `DATABRICKS_TOKEN`, and
+3. A `DATABRICKS_JOB_ID` for the Databricks job you want to run.
+
+You can follow the [Databricks API authentication instructions](https://docs.databricks.com/dev-tools/python-api.html#step-1-set-up-authentication) to retrieve these values.
+
+---
+
+## Step 1: Connecting to Databricks
+
+The first step in using Databricks with Dagster is to tell Dagster how to connect to your Databricks workspace using a Databricks [resource](/concepts/resources). This resource contains information on where your Databricks workspace is located and any credentials sourced from environment variables that are needed to access it.
+
+For more information about the Databricks resource, see the [API reference](/\_apidocs/libraries/dagster-databricks).
+
+```python startafter=start_define_databricks_client_instance endbefore=end_define_databricks_client_instance file=/integrations/databricks/databricks.py dedent=4
+from dagster_databricks import databricks_client
+
+databricks_client_instance = databricks_client.configured(
+    {
+        "host": {"env": "DATABRICKS_HOST"},
+        "token": {"env": "DATABRICKS_TOKEN"},
+    }
+)
+```
+
+---
+
+## Step 2: Create an op/asset from a Databricks job
+
+In this step, we show several ways to model a Databricks job as either a Dagster [op](/concepts/ops-jobs-graphs/ops), or as the computation backing a [software-defined asset](/concepts/assets/software-defined-assets). You can either:
+
+- Use the `dagster-databricks` op factories, which create ops that invoke the Databricks Jobs' [Run Now](https://docs.databricks.com/api-explorer/workspace/jobs/runnow) ([`create_databricks_run_now_op`](/\_apidocs/libraries/dagster-databricks)) or [Submit Run](https://docs.databricks.com/api-explorer/workspace/jobs/submit) ([`create_databricks_submit_run_op`](/\_apidocs/libraries/dagster-databricks)) APIs, or
+- Manually create a Dagster op or asset that runs a Databricks job using the configured Databricks resource.
+
+Afterwards, we create a Dagster [job](/concepts/ops-jobs-graphs/jobs) that either invokes the op or selects the asset in order to run the Databricks job.
+
+For more information on how to decide whether to use an op or asset, see our [guide](/guides/dagster/how-assets-relate-to-ops-and-graphs) to understand how they relate.
+
+<TabGroup>
+
+<TabItem name="Using the op factories">
+
+```python startafter=start_define_databricks_op_factories endbefore=end_define_databricks_op_factories file=/integrations/databricks/databricks.py dedent=4
+from dagster_databricks import (
+    create_databricks_run_now_op,
+    create_databricks_submit_run_op,
+)
+
+my_databricks_run_now_op = create_databricks_run_now_op(
+    databricks_job_id=DATABRICKS_JOB_ID,
+)
+
+my_databricks_submit_run_op = create_databricks_submit_run_op(
+    databricks_job_configuration={
+        "new_cluster": {
+            "spark_version": "2.1.0-db3-scala2.11",
+            "num_workers": 2,
+        },
+        "notebook_task": {
+            "notebook_path": "/Users/dagster@example.com/PrepareData",
+        },
+    },
+)
+
+@job
+def my_databricks_job():
+    my_databricks_run_now_op()
+    my_databricks_submit_run_op()
+```
+
+</TabItem>
+
+<TabItem name="Manually using resources">
+
+```python startafter=start_define_databricks_custom_ops_and_assets endbefore=end_define_databricks_custom_ops_and_assets file=/integrations/databricks/databricks.py dedent=4
+from databricks_cli.sdk import JobsService
+
+from dagster import (
+    AssetSelection,
+    OpExecutionContext,
+    asset,
+    define_asset_job,
+    job,
+    op,
+)
+
+@asset(required_resource_keys={"databricks"})
+def my_databricks_table(context: OpExecutionContext) -> None:
+    databricks_api_client = context.resources.databricks.api_client
+    jobs_service = JobsService(databricks_api_client)
+
+    jobs_service.run_now(job_id=DATABRICKS_JOB_ID)
+
+materialize_databricks_table = define_asset_job(
+    name="materialize_databricks_table",
+    selection=AssetSelection.keys("my_databricks_table"),
+)
+
+@op(required_resource_keys={"databricks"})
+def my_databricks_op(context: OpExecutionContext) -> None:
+    databricks_api_client = context.resources.databricks.api_client
+    jobs_service = JobsService(databricks_api_client)
+
+    jobs_service.run_now(job_id=DATABRICKS_JOB_ID)
+
+@job
+def my_databricks_job():
+    my_databricks_op()
+```
+
+</TabItem>
+</TabGroup>
+
+---
+
+## Step 3: Schedule a Databricks job
+
+Now that your Databricks job is modeled within Dagster, you can [schedule](/concepts/partitions-schedules-sensors/schedules) it to run on a regular cadence.
+
+In the example below, we schedule the `materialize_databricks_table` job to run daily, which materiali, and the `my_databricks_job` job to run daily.
+
+```python startafter=start_schedule_databricks endbefore=end_schedule_databricks file=/integrations/databricks/databricks.py dedent=4
+from dagster import (
+    AssetSelection,
+    Definitions,
+    ScheduleDefinition,
+)
+
+defs = Definitions(
+    assets=[my_databricks_table],
+    schedules=[
+        ScheduleDefinition(
+            job=materialize_databricks_table,
+            cron_schedule="@daily",
+        ),
+        ScheduleDefinition(
+            job=my_databricks_job,
+            cron_schedule="@daily",
+        ),
+    ],
+    jobs=[my_databricks_job],
+    resources={"databricks": databricks_client_instance},
+)
+```
+
+---
+
+## What's next?
+
+By now, you should have a working Databricks and Dagster integration, as well as a materialized Dagster asset!
+
+What's next? From here, you can:
+
+- Learn more about [software-defined assets](/concepts/assets/software-defined-assets)
+- Check out the [`dagster-databricks` API docs](/\_apidocs/libraries/dagster-databricks)

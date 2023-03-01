@@ -20,6 +20,8 @@ export type ScheduleFragment = {
     name: string;
     instigationType: Types.InstigationType;
     status: Types.InstigationStatus;
+    hasStartPermission: boolean;
+    hasStopPermission: boolean;
     repositoryName: string;
     repositoryLocationName: string;
     runningCount: number;
@@ -86,6 +88,8 @@ export type RepositorySchedulesFragment = {
       name: string;
       instigationType: Types.InstigationType;
       status: Types.InstigationStatus;
+      hasStartPermission: boolean;
+      hasStopPermission: boolean;
       repositoryName: string;
       repositoryLocationName: string;
       runningCount: number;
@@ -172,6 +176,8 @@ export type SchedulesRootQuery = {
             name: string;
             instigationType: Types.InstigationType;
             status: Types.InstigationStatus;
+            hasStartPermission: boolean;
+            hasStopPermission: boolean;
             repositoryName: string;
             repositoryLocationName: string;
             runningCount: number;
@@ -227,6 +233,8 @@ export type SchedulesRootQuery = {
           name: string;
           instigationType: Types.InstigationType;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
           repositoryName: string;
           repositoryLocationName: string;
           runningCount: number;

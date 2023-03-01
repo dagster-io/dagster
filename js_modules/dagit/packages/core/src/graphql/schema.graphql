@@ -679,9 +679,10 @@ type AssetNode {
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
-  projectedLogicalVersion: String
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
+  staleStatus: StaleStatus
+  staleStatusCauses: [StaleStatusCause!]!
   type: DagsterType
 }
 
@@ -750,6 +751,7 @@ type PartitionDefinition {
   type: PartitionDefinitionType!
   dimensionTypes: [DimensionDefinitionType!]!
   timeWindowMetadata: TimePartitionsDefinitionMetadata
+  name: String
 }
 
 enum PartitionDefinitionType {
@@ -776,6 +778,18 @@ type TimePartitionsDefinitionMetadata {
 type DimensionPartitionKeys {
   name: String!
   partitionKeys: [String!]!
+}
+
+enum StaleStatus {
+  MISSING
+  STALE
+  FRESH
+}
+
+type StaleStatusCause {
+  key: AssetKey!
+  reason: String!
+  dependency: AssetKey
 }
 
 enum EvaluationErrorReason {
@@ -1203,6 +1217,9 @@ type Run implements PipelineRun {
   startTime: Float
   endTime: Float
   updateTime: Float
+  hasReExecutePermission: Boolean!
+  hasTerminatePermission: Boolean!
+  hasDeletePermission: Boolean!
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
@@ -1774,6 +1791,12 @@ type SensorNotFoundError implements Error {
   sensorName: String!
 }
 
+type DuplicateDynamicPartitionError implements Error {
+  message: String!
+  partitionsDefName: String!
+  partitionName: String!
+}
+
 type ExecutionPlan {
   steps: [ExecutionStep!]!
   artifactsPersisted: Boolean!
@@ -2103,6 +2126,8 @@ type InstigationState {
   ): [InstigationTick!]!
   nextTick: DryRunInstigationTick
   runningCount: Int!
+  hasStartPermission: Boolean!
+  hasStopPermission: Boolean!
 }
 
 enum InstigationType {
@@ -2313,9 +2338,9 @@ type PartitionRun {
 type PartitionBackfill {
   backfillId: String!
   status: BulkActionStatus!
-  partitionNames: [String!]!
+  partitionNames: [String!]
   isValidSerialization: Boolean!
-  numPartitions: Int!
+  numPartitions: Int
   numCancelable: Int!
   fromFailure: Boolean!
   reexecutionSteps: [String!]
@@ -2328,6 +2353,7 @@ type PartitionBackfill {
   error: PythonError
   partitionStatuses: PartitionStatuses!
   partitionStatusCounts: [PartitionStatusCounts!]!
+  hasCancelPermission: Boolean!
 }
 
 enum BulkActionStatus {
@@ -2711,7 +2737,8 @@ type DagitQuery {
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   runOrError(runId: ID!): RunOrError!
-  pipelineRunTags: [PipelineTagAndValues!]!
+  runTagKeysOrError: RunTagKeysOrError
+  runTagsOrError(tagKeys: [String!], valuePrefix: String, limit: Int): RunTagsOrError
   runGroupOrError(runId: ID!): RunGroupOrError!
   runGroupsOrError(filter: RunsFilter, cursor: String, limit: Int): RunGroupsOrError!
   isPipelineConfigValid(
@@ -2797,6 +2824,18 @@ union ResourcesOrError = ResourceDetailsList | RepositoryNotFoundError | PythonE
 
 type ResourceDetailsList {
   results: [ResourceDetails!]!
+}
+
+union RunTagKeysOrError = PythonError | RunTagKeys
+
+type RunTagKeys {
+  keys: [String!]!
+}
+
+union RunTagsOrError = PythonError | RunTags
+
+type RunTags {
+  tags: [PipelineTagAndValues!]!
 }
 
 input AssetGroupSelector {
@@ -2885,6 +2924,11 @@ type DagitMutation {
     metadata: String!
   ): LogTelemetryMutationResult!
   setNuxSeen: Boolean!
+  addDynamicPartition(
+    partitionKey: String!
+    partitionsDefName: String!
+    repositorySelector: RepositorySelector!
+  ): AddDynamicPartitionResult!
 }
 
 input ReexecutionParams {
@@ -2927,6 +2971,17 @@ union LogTelemetryMutationResult = LogTelemetrySuccess | PythonError
 
 type LogTelemetrySuccess {
   action: String!
+}
+
+union AddDynamicPartitionResult =
+    AddDynamicPartitionSuccess
+  | UnauthorizedError
+  | PythonError
+  | DuplicateDynamicPartitionError
+
+type AddDynamicPartitionSuccess {
+  partitionsDefName: String!
+  partitionKey: String!
 }
 
 type DagitSubscription {

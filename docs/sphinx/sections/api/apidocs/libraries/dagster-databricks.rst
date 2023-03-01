@@ -19,6 +19,10 @@ APIs
 
 .. autofunction:: dagster_databricks.create_databricks_job_op
 
+.. autofunction:: dagster_databricks.create_databricks_run_now_op
+
+.. autofunction:: dagster_databricks.create_databricks_submit_run_op
+
 .. autoconfigurable:: dagster_databricks.databricks_pyspark_step_launcher
   :annotation: ResourceDefinition
 

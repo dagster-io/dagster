@@ -1,8 +1,7 @@
 import {act, render, screen} from '@testing-library/react';
 import faker from 'faker';
 import * as React from 'react';
-
-import {TestProvider} from '../testing/TestProvider';
+import {MemoryRouter} from 'react-router-dom';
 
 import {AssetKeyTagCollection} from './AssetKeyTagCollection';
 
@@ -16,9 +15,9 @@ describe('AssetKeyTagCollection', () => {
   it('renders individual tags if <= 3', async () => {
     await act(async () => {
       render(
-        <TestProvider>
+        <MemoryRouter>
           <AssetKeyTagCollection assetKeys={makeKeys(3)} clickableTags />
-        </TestProvider>,
+        </MemoryRouter>,
       );
     });
 
@@ -31,9 +30,9 @@ describe('AssetKeyTagCollection', () => {
   it('renders single tag if > 3', async () => {
     await act(async () => {
       render(
-        <TestProvider>
+        <MemoryRouter>
           <AssetKeyTagCollection assetKeys={makeKeys(5)} clickableTags />
-        </TestProvider>,
+        </MemoryRouter>,
       );
     });
 

@@ -20,10 +20,11 @@ export type JobBackfillsQuery = {
           __typename: 'PartitionBackfill';
           backfillId: string;
           status: Types.BulkActionStatus;
+          hasCancelPermission: boolean;
           numCancelable: number;
-          partitionNames: Array<string>;
+          partitionNames: Array<string> | null;
           isValidSerialization: boolean;
-          numPartitions: number;
+          numPartitions: number | null;
           timestamp: number;
           partitionSetName: string | null;
           partitionSet: {

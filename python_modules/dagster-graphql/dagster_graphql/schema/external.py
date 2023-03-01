@@ -143,11 +143,8 @@ class GrapheneWorkspaceLocationStatusEntry(graphene.ObjectType):
     class Meta:
         name = "WorkspaceLocationStatusEntry"
 
-    def __init__(self, name, load_status, update_timestamp):
-        super().__init__(name=name, loadStatus=load_status, updateTimestamp=update_timestamp)
-
-    def resolve_id(self, _):
-        return f"location_status:{self.name}"
+    def __init__(self, id, name, load_status, update_timestamp):
+        super().__init__(id=id, name=name, loadStatus=load_status, updateTimestamp=update_timestamp)
 
 
 class GrapheneWorkspaceLocationStatusEntries(graphene.ObjectType):

@@ -22,7 +22,6 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
-from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
@@ -37,7 +36,7 @@ T = TypeVar("T")
 
 class TablePartitionDimension(NamedTuple):
     partition_expr: str
-    partition: Union[TimeWindow, str]
+    partitions: Union[TimeWindow, Sequence[str]]
 
 
 class TableSlice(NamedTuple):
@@ -168,15 +167,6 @@ class DbIOManager(IOManager):
         with self._db_client.connect(context, table_slice) as conn:
             return self._handlers_by_type[load_type].load_input(context, table_slice, conn)
 
-    def _get_partition_value(
-        self, partition_def: PartitionsDefinition, partition_key: str
-    ) -> Union[TimeWindow, str]:
-        if isinstance(partition_def, TimeWindowPartitionsDefinition):
-            return partition_def.time_window_for_partition_key(partition_key)
-        else:
-            # partition is static
-            return partition_key
-
     def _get_table_slice(
         self, context: Union[OutputContext, InputContext], output_context: OutputContext
     ) -> TableSlice:
@@ -184,7 +174,6 @@ class DbIOManager(IOManager):
 
         schema: str
         table: str
-        partition_value: Optional[Union[TimeWindow, str]] = None
         partition_dimensions: List[TablePartitionDimension] = []
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
@@ -218,9 +207,12 @@ class DbIOManager(IOManager):
                     ).keys_by_dimension
                     for part in context.asset_partitions_def.partitions_defs:
                         partition_key = multi_partition_key_mapping[part.name]
-                        partition_value = self._get_partition_value(
-                            part.partitions_def, partition_key
-                        )
+                        if isinstance(part.partitions_def, TimeWindowPartitionsDefinition):
+                            partitions = part.partitions_def.time_window_for_partition_key(
+                                partition_key
+                            )
+                        else:
+                            partitions = [partition_key]
 
                         partition_expr_str = cast(Mapping[str, str], partition_expr).get(part.name)
                         if partition_expr is None:
@@ -233,20 +225,21 @@ class DbIOManager(IOManager):
                             )
                         partition_dimensions.append(
                             TablePartitionDimension(
-                                partition_expr=cast(str, partition_expr_str),
-                                partition=partition_value,
+                                partition_expr=cast(str, partition_expr_str), partitions=partitions
                             )
                         )
-                else:
-                    partition_expr_str = cast(str, partition_expr)
-                    partition_key = context.asset_partition_key
-                    partition_value = self._get_partition_value(
-                        context.asset_partitions_def, partition_key
-                    )
-
+                elif isinstance(context.asset_partitions_def, TimeWindowPartitionsDefinition):
                     partition_dimensions.append(
                         TablePartitionDimension(
-                            partition_expr=partition_expr_str, partition=partition_value
+                            partition_expr=cast(str, partition_expr),
+                            partitions=context.asset_partitions_time_window,
+                        )
+                    )
+                else:
+                    partition_dimensions.append(
+                        TablePartitionDimension(
+                            partition_expr=cast(str, partition_expr),
+                            partitions=context.asset_partition_keys,
                         )
                     )
         else:

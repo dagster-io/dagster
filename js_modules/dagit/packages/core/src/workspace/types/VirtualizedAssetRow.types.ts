@@ -22,8 +22,7 @@ export type SingleAssetQuery = {
           id: string;
           computeKind: string | null;
           opNames: Array<string>;
-          currentLogicalVersion: string | null;
-          projectedLogicalVersion: string | null;
+          staleStatus: Types.StaleStatus | null;
           groupName: string | null;
           isSource: boolean;
           description: string | null;
@@ -53,6 +52,12 @@ export type SingleAssetQuery = {
             __typename: 'ObservationEvent';
             timestamp: string;
             runId: string;
+          }>;
+          staleStatusCauses: Array<{
+            __typename: 'StaleStatusCause';
+            reason: string;
+            key: {__typename: 'AssetKey'; path: Array<string>};
+            dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
           }>;
           partitionStats: {
             __typename: 'PartitionStats';

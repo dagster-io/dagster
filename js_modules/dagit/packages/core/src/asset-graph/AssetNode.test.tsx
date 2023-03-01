@@ -1,7 +1,6 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
-
-import {TestProvider} from '../testing/TestProvider';
+import {MemoryRouter} from 'react-router-dom';
 
 import {AssetNode} from './AssetNode';
 import {
@@ -9,7 +8,6 @@ import {
   AssetNodeScenariosPartitioned,
   AssetNodeScenariosSource,
 } from './AssetNode.mocks';
-import {displayNameForAssetKey} from './Utils';
 
 const Scenarios = [
   ...AssetNodeScenariosBase,
@@ -21,17 +19,18 @@ describe('AssetNode', () => {
   Scenarios.forEach((scenario) =>
     it(`renders ${scenario.expectedText.join(',')} when ${scenario.title}`, async () => {
       render(
-        <TestProvider>
+        <MemoryRouter>
           <AssetNode
             definition={scenario.definition}
             liveData={scenario.liveData}
             selected={false}
           />
-        </TestProvider>,
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
-        const displayName = displayNameForAssetKey(scenario.definition.assetKey);
+        const assetKey = scenario.definition.assetKey;
+        const displayName = assetKey.path[assetKey.path.length - 1];
         expect(screen.getByText(displayName)).toBeVisible();
         for (const text of scenario.expectedText) {
           expect(screen.getByText(new RegExp(text))).toBeVisible();

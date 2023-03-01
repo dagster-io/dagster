@@ -1,16 +1,16 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
+import {MemoryRouter} from 'react-router-dom';
 
-import {TestProvider} from '../testing/TestProvider';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {PipelineReference, Props as PipelineReferenceProps} from './PipelineReference';
 
 describe('PipelineReference', () => {
   const Test = (props: PipelineReferenceProps) => (
-    <TestProvider>
+    <MemoryRouter>
       <PipelineReference {...props} />
-    </TestProvider>
+    </MemoryRouter>
   );
 
   describe('Job name truncation', () => {

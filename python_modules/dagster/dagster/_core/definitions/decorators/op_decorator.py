@@ -416,10 +416,10 @@ def resolve_checked_solid_fn_inputs(
     if not has_kwargs and undeclared_inputs:
         undeclared_inputs_printed = ", '".join(undeclared_inputs)
         raise DagsterInvalidDefinitionError(
-            f"{decorator_name} '{fn_name}' decorated function does not have parameter(s) "
-            f"'{undeclared_inputs_printed}', which are in provided input_defs. {decorator_name} "
-            "decorated functions should only have keyword arguments that match input names and, if "
-            "system information is required, a first positional parameter named 'context'."
+            f"{decorator_name} '{fn_name}' decorated function does not have argument(s)"
+            f" '{undeclared_inputs_printed}'. {decorator_name}-decorated functions should have a"
+            " keyword argument for each of their Ins, except for Ins that have the Nothing"
+            " dagster_type. Alternatively, they can accept **kwargs."
         )
 
     inferred_props = {

@@ -1,11 +1,59 @@
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
+import {MemoryRouter} from 'react-router-dom';
 
 import {ReexecutionStrategy} from '../graphql/types';
-import {TestProvider} from '../testing/TestProvider';
 
 import {ReexecutionDialog} from './ReexecutionDialog';
+import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
+import {LaunchPipelineReexecutionMutation} from './types/RunUtils.types';
+
+const buildLaunchPipelineReexecutionSuccessMock = (
+  parentRunId: string,
+): MockedResponse<LaunchPipelineReexecutionMutation> => ({
+  request: {
+    query: LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+    variables: {reexecutionParams: {parentRunId, strategy: 'FROM_FAILURE'}},
+  },
+  result: {
+    data: {
+      __typename: 'DagitMutation',
+      launchPipelineReexecution: {
+        __typename: 'LaunchRunSuccess',
+        run: {
+          id: '1234',
+          runId: '1234',
+          pipelineName: '1234',
+          rootRunId: null,
+          parentRunId,
+          __typename: 'Run',
+        },
+      },
+    },
+  },
+});
+
+const buildLaunchPipelineReexecutionErrorMock = (
+  parentRunId: string,
+): MockedResponse<LaunchPipelineReexecutionMutation> => ({
+  request: {
+    query: LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+    variables: {reexecutionParams: {parentRunId, strategy: 'FROM_FAILURE'}},
+  },
+  result: {
+    data: {
+      __typename: 'DagitMutation',
+      launchPipelineReexecution: {
+        __typename: 'PythonError',
+        errorChain: [],
+        message: 'A wild python error appeared!',
+        stack: [],
+      },
+    },
+  },
+});
 
 describe('ReexecutionDialog', () => {
   const selectedMap = {
@@ -14,22 +62,22 @@ describe('ReexecutionDialog', () => {
     'ijkl-9012': 'ijkl-9012',
   };
 
-  const Test = (props: {strategy: ReexecutionStrategy}) => (
-    <ReexecutionDialog
-      isOpen
-      onClose={jest.fn()}
-      onComplete={jest.fn()}
-      selectedRuns={selectedMap}
-      reexecutionStrategy={props.strategy}
-    />
+  const Test = (props: {strategy: ReexecutionStrategy; mocks?: MockedResponse[]}) => (
+    <MockedProvider mocks={props.mocks}>
+      <MemoryRouter>
+        <ReexecutionDialog
+          isOpen
+          onClose={jest.fn()}
+          onComplete={jest.fn()}
+          selectedRuns={selectedMap}
+          reexecutionStrategy={props.strategy}
+        />
+      </MemoryRouter>
+    </MockedProvider>
   );
 
   it('prompts the user with the number of runs to re-execute', async () => {
-    render(
-      <TestProvider>
-        <Test strategy={ReexecutionStrategy.FROM_FAILURE} />
-      </TestProvider>,
-    );
+    render(<Test strategy={ReexecutionStrategy.FROM_FAILURE} />);
 
     await waitFor(() => {
       const message = screen.getByText(/3 runs will be re\-executed \. do you wish to continue\?/i);
@@ -40,9 +88,12 @@ describe('ReexecutionDialog', () => {
 
   it('moves into loading state upon re-execution', async () => {
     render(
-      <TestProvider>
-        <Test strategy={ReexecutionStrategy.FROM_FAILURE} />
-      </TestProvider>,
+      <Test
+        strategy={ReexecutionStrategy.FROM_FAILURE}
+        mocks={Object.keys(selectedMap).map((parentRunId) =>
+          buildLaunchPipelineReexecutionSuccessMock(parentRunId),
+        )}
+      />,
     );
 
     await waitFor(() => {
@@ -63,16 +114,13 @@ describe('ReexecutionDialog', () => {
   });
 
   it('displays success message if mutations are successful', async () => {
-    const mocks = {
-      LaunchRunReexecutionResult: () => ({
-        __typename: 'LaunchRunSuccess',
-      }),
-    };
-
     render(
-      <TestProvider apolloProps={{mocks: [mocks]}}>
-        <Test strategy={ReexecutionStrategy.FROM_FAILURE} />
-      </TestProvider>,
+      <Test
+        strategy={ReexecutionStrategy.FROM_FAILURE}
+        mocks={Object.keys(selectedMap).map((parentRunId) =>
+          buildLaunchPipelineReexecutionSuccessMock(parentRunId),
+        )}
+      />,
     );
 
     await waitFor(() => {
@@ -86,16 +134,15 @@ describe('ReexecutionDialog', () => {
   });
 
   it('displays python errors', async () => {
-    const mocks = {
-      LaunchRunReexecutionResult: () => ({
-        __typename: 'PythonError',
-      }),
-    };
-
     render(
-      <TestProvider apolloProps={{mocks: [mocks]}}>
-        <Test strategy={ReexecutionStrategy.FROM_FAILURE} />
-      </TestProvider>,
+      <Test
+        strategy={ReexecutionStrategy.FROM_FAILURE}
+        mocks={[
+          buildLaunchPipelineReexecutionErrorMock('abcd-1234'),
+          buildLaunchPipelineReexecutionSuccessMock('efgh-5678'),
+          buildLaunchPipelineReexecutionErrorMock('ijkl-9012'),
+        ]}
+      />,
     );
 
     await waitFor(() => {
@@ -104,7 +151,8 @@ describe('ReexecutionDialog', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getAllByText(/A wild python error appeared!/i)).toHaveLength(3);
+      expect(screen.getByText(/Successfully requested re-execution for 1 run./i)).toBeVisible();
+      expect(screen.getAllByText(/A wild python error appeared!/i)).toHaveLength(2);
     });
   });
 });

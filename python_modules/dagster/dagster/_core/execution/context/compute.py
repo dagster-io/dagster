@@ -4,7 +4,7 @@ from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Se
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetKey,
@@ -15,6 +15,10 @@ from dagster._core.definitions.events import (
     UserEvent,
 )
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.logical_version import (
+    LogicalVersionProvenance,
+    extract_logical_version_provenance_from_entry,
+)
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -594,6 +598,28 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
         """
         return self._step_execution_context.step.get_mapping_key()
+
+    @public
+    @experimental
+    def get_asset_provenance(self, asset_key: AssetKey) -> Optional[LogicalVersionProvenance]:
+        """
+        Return the provenance information for the most recent materialization of an asset.
+
+        Args:
+            asset_key (AssetKey): Key of the asset for which to retrieve provenance.
+
+        Returns:
+            Optional[LogicalVersionProvenance]: Provenance information for the most recent
+                materialization of the asset. Returns `None` if the asset was never materialized or
+                the materialization record is too old to contain provenance information.
+        """
+        record = self.instance.get_latest_logical_version_record(asset_key)
+
+        return (
+            None
+            if record is None
+            else extract_logical_version_provenance_from_entry(record.event_log_entry)
+        )
 
 
 SourceAssetObserveContext: TypeAlias = OpExecutionContext

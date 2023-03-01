@@ -80,6 +80,11 @@ spec:
                   key: postgresql-password
             - name: DAGSTER_DAEMON_HEARTBEAT_TOLERANCE
               value: "{{ .Values.dagsterDaemon.heartbeatTolerance }}"
+            # This is a list by default, but for backcompat it can be a map. As a map it's written to the daemon-env
+            # configmap.
+            {{- if and (.Values.dagsterDaemon.env) (kindIs "slice" .Values.dagsterDaemon.env) }}
+            {{- toYaml .Values.dagsterDaemon.env | nindent 12 }}
+            {{- end}}
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" $ }}-daemon-env

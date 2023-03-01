@@ -21,7 +21,6 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {SharedToaster} from '../app/DomUtils';
-import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {RunStatus} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -133,7 +132,6 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
 
   const {rootServerURI} = React.useContext(AppContext);
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissionsDEPRECATED();
 
   const copy = useCopyToClipboard();
   const history = useHistory();
@@ -175,7 +173,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.runId}`)}
                 />
               </Tooltip>
-              {canDeletePipelineRun.enabled ? (
+              {run.hasDeletePermission ? (
                 <MenuItem
                   icon="delete"
                   text="Delete"
@@ -236,7 +234,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
           </DialogFooter>
         </Box>
       </Dialog>
-      {canDeletePipelineRun.enabled ? (
+      {run.hasDeletePermission ? (
         <DeletionDialog
           isOpen={visibleDialog === 'delete'}
           onClose={() => setVisibleDialog(null)}
@@ -259,7 +257,7 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
           selectedRuns={{[run.id]: run.canTerminate}}
         />
       ) : null}
-      {canTerminatePipelineExecution.enabled ? (
+      {run.hasTerminatePermission ? (
         <TerminationDialog
           isOpen={visibleDialog === 'terminate'}
           onClose={() => setVisibleDialog(null)}

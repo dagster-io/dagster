@@ -151,7 +151,12 @@ GET_ASSET_LOGICAL_VERSIONS = """
               path
             }
             currentLogicalVersion
-            projectedLogicalVersion
+            staleStatus
+            staleStatusCauses {
+                key { path }
+                reason
+                dependency { path }
+            }
             assetMaterializations {
                 tags {
                     key
@@ -294,6 +299,7 @@ GET_1D_MATERIALIZED_PARTITIONS = """
                 partitionKeys
             }
             partitionDefinition {
+                name
                 timeWindowMetadata {
                     startTime
                     startKey
@@ -916,6 +922,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             len(result.data["assetNodes"][0]["materializedPartitions"]["unmaterializedPartitions"])
             == 4
         )
+        assert result.data["assetNodes"][0]["partitionDefinition"]["name"] is None
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -1010,6 +1017,8 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         materialized_partitions = result.data["assetNodes"][0]["materializedPartitions"][
             "materializedPartitions"
         ]
+        assert result.data["assetNodes"][0]["partitionDefinition"]["name"] == "foo"
+        assert result.data["assetNodes"][1]["partitionDefinition"]["name"] == "foo"
         assert len(materialized_partitions) == 0
         assert (
             len(result.data["assetNodes"][0]["materializedPartitions"]["unmaterializedPartitions"])

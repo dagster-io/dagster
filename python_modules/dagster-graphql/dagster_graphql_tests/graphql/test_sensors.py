@@ -137,6 +137,8 @@ query SensorStateQuery($sensorSelector: SensorSelector!) {
         id
         status
         selectorId
+        hasStartPermission
+        hasStopPermission
       }
     }
   }
@@ -540,6 +542,10 @@ class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
             GET_SENSOR_STATUS_QUERY,
             variables={"sensorSelector": sensor_selector},
         )
+
+        assert result.data["sensorOrError"]["sensorState"]["hasStartPermission"] is False
+        assert result.data["sensorOrError"]["sensorState"]["hasStopPermission"] is False
+
         sensor_origin_id = result.data["sensorOrError"]["sensorState"]["id"]
         sensor_selector_id = result.data["sensorOrError"]["sensorState"]["selectorId"]
 
@@ -651,6 +657,9 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert result.data["sensorOrError"]["sensorState"]["status"] == "RUNNING"
         sensor_origin_id = result.data["sensorOrError"]["sensorState"]["id"]
         sensor_selector_id = result.data["sensorOrError"]["sensorState"]["selectorId"]
+
+        assert result.data["sensorOrError"]["sensorState"]["hasStartPermission"] is True
+        assert result.data["sensorOrError"]["sensorState"]["hasStopPermission"] is True
 
         start_result = execute_dagster_graphql(
             graphql_context,

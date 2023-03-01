@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
-import {usePermissionsDEPRECATED} from '../app/Permissions';
+import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
 import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -106,7 +106,6 @@ export const canRunFromFailure = (run: RunFragment) =>
 export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const {metadata, graph, onLaunch, run} = props;
   const artifactsPersisted = run?.executionPlan?.artifactsPersisted;
-  const {canLaunchPipelineReexecution} = usePermissionsDEPRECATED();
   const pipelineError = usePipelineAvailabilityErrorForRun(run);
 
   const selection = stepSelectionWithState(props.selection, metadata);
@@ -221,9 +220,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
     if (pipelineError?.tooltip) {
       return pipelineError?.tooltip;
     }
-    return canLaunchPipelineReexecution.enabled
-      ? undefined
-      : canLaunchPipelineReexecution.disabledReason;
+    return run.hasReExecutePermission ? undefined : DEFAULT_DISABLED_REASON;
   };
 
   return (
@@ -242,7 +239,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
           }
           tooltip={tooltip()}
           icon={pipelineError?.icon}
-          disabled={pipelineError?.disabled || !canLaunchPipelineReexecution.enabled}
+          disabled={pipelineError?.disabled || !run.hasReExecutePermission}
         />
       </Box>
       {!doneStatuses.has(run.status) ? <CancelRunButton run={run} /> : null}

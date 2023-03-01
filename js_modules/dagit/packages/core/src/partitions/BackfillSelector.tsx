@@ -41,7 +41,7 @@ import {
   USING_DEFAULT_LAUNCH_ERALERT_INSTANCE_FRAGMENT,
 } from './BackfillMessaging';
 import {DimensionRangeWizard} from './DimensionRangeWizard';
-import {PartitionStateCheckboxes} from './PartitionStateCheckboxes';
+import {countsByState, PartitionStateCheckboxes} from './PartitionStateCheckboxes';
 import {PartitionState} from './PartitionStatus';
 import {
   BackfillSelectorQuery,
@@ -166,6 +166,13 @@ export const BackfillPartitionSelector: React.FC<{
     }
   };
 
+  const counts = countsByState(
+    range.map((key) => ({
+      partitionKey: key,
+      state: partitionData[key],
+    })),
+  );
+
   return (
     <>
       <DialogBody>
@@ -178,16 +185,13 @@ export const BackfillPartitionSelector: React.FC<{
             <DimensionRangeWizard
               selected={range}
               setSelected={setRange}
-              partitionStateForKey={(name) => partitionData[name]}
+              health={{partitionStateForKey: (key) => partitionData[key]}}
               partitionKeys={partitionNames}
             />
 
             <PartitionStateCheckboxes
               value={stateFilters}
-              partitionKeysForCounts={range.map((key) => ({
-                partitionKey: key,
-                state: partitionData[key],
-              }))}
+              counts={counts}
               allowed={
                 options.fromFailure
                   ? [PartitionState.FAILURE]

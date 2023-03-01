@@ -1,9 +1,11 @@
 import operator
+from datetime import datetime
 from functools import reduce
 from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import AssetKey
+from dagster._core.definitions.run_config import convert_config_input
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.instance import DagsterInstance
 from dagster._core.selector.subset_selector import parse_clause
@@ -31,7 +33,10 @@ class UnresolvedAssetJobDefinition(
         [
             ("name", str),
             ("selection", "AssetSelection"),
-            ("config", Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]]),
+            (
+                "config",
+                Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]],
+            ),
             ("description", Optional[str]),
             ("tags", Optional[Mapping[str, Any]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
@@ -59,7 +64,7 @@ class UnresolvedAssetJobDefinition(
             cls,
             name=check.str_param(name, "name"),
             selection=check.inst_param(selection, "selection", AssetSelection),
-            config=config,
+            config=convert_config_input(config),
             description=check.opt_str_param(description, "description"),
             tags=check.opt_mapping_param(tags, "tags"),
             partitions_def=check.opt_inst_param(
@@ -104,6 +109,7 @@ class UnresolvedAssetJobDefinition(
         asset_selection: Optional[Sequence[AssetKey]] = None,
         run_config: Optional[Mapping[str, Any]] = None,
         instance: Optional[DagsterInstance] = None,
+        current_time: Optional[datetime] = None,
     ) -> RunRequest:
         """
         Creates a RunRequest object for a run that processes the given partition.
@@ -119,6 +125,8 @@ class UnresolvedAssetJobDefinition(
             run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
                 a :py:class:`PartitionedConfig`, this value will override replace the config
                 provided by it.
+            current_time (Optional[datetime): Used to determine which time-partitions exist.
+                Defaults to now.
 
         Returns:
             RunRequest: an object that requests a run to process the given partition.
@@ -138,7 +146,9 @@ class UnresolvedAssetJobDefinition(
                     "dynamic partition set"
                 )
 
-        partition = partition_set.get_partition(partition_key, instance)
+        partition = partition_set.get_partition(
+            partition_key, dynamic_partitions_store=instance, current_time=current_time
+        )
         run_request_tags = (
             {**tags, **partition_set.tags_for_partition(partition)}
             if tags

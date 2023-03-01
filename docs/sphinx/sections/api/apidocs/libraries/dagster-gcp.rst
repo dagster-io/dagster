@@ -6,6 +6,11 @@ GCP (dagster-gcp)
 BigQuery
 --------
 
+Related Guides:
+
+* `Using Dagster with BigQuery </integrations/bigquery>`_
+* `BigQuery I/O manager reference </integrations/bigquery/reference>`_
+
 .. autoclass:: BigQueryError
 
 .. autoconfigurable:: bigquery_resource

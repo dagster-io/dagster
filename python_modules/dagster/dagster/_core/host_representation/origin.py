@@ -103,7 +103,9 @@ class RepositoryLocationOrigin(ABC, tuple):
         pass
 
     def get_id(self) -> str:
-        return create_snapshot_id(self)
+        # Type-ignored because `create_snapshot` takes a `NamedTuple`, and all descendants of this
+        # class are `NamedTuple`, but we can't specify `NamedTuple` in the signature here.
+        return create_snapshot_id(self)  # type: ignore
 
     @property
     @abstractmethod

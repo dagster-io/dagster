@@ -17,6 +17,18 @@ export type Scalars = {
   RunConfigData: any;
 };
 
+export type AddDynamicPartitionResult =
+  | AddDynamicPartitionSuccess
+  | DuplicateDynamicPartitionError
+  | PythonError
+  | UnauthorizedError;
+
+export type AddDynamicPartitionSuccess = {
+  __typename: 'AddDynamicPartitionSuccess';
+  partitionKey: Scalars['String'];
+  partitionsDefName: Scalars['String'];
+};
+
 export type AlertFailureEvent = MessageEvent &
   RunEvent & {
     __typename: 'AlertFailureEvent';
@@ -203,9 +215,10 @@ export type AssetNode = {
   partitionKeys: Array<Scalars['String']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
   partitionStats: Maybe<PartitionStats>;
-  projectedLogicalVersion: Maybe<Scalars['String']>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
+  staleStatus: Maybe<StaleStatus>;
+  staleStatusCauses: Array<StaleStatusCause>;
   type: Maybe<DagsterType>;
 };
 
@@ -424,6 +437,7 @@ export type DaemonStatus = {
 
 export type DagitMutation = {
   __typename: 'DagitMutation';
+  addDynamicPartition: AddDynamicPartitionResult;
   cancelPartitionBackfill: CancelBackfillResult;
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
@@ -448,6 +462,12 @@ export type DagitMutation = {
   terminatePipelineExecution: TerminateRunResult;
   terminateRun: TerminateRunResult;
   wipeAssets: AssetWipeMutationResult;
+};
+
+export type DagitMutationAddDynamicPartitionArgs = {
+  partitionKey: Scalars['String'];
+  partitionsDefName: Scalars['String'];
+  repositorySelector: RepositorySelector;
 };
 
 export type DagitMutationCancelPartitionBackfillArgs = {
@@ -575,7 +595,6 @@ export type DagitQuery = {
   permissions: Array<Permission>;
   pipelineOrError: PipelineOrError;
   pipelineRunOrError: RunOrError;
-  pipelineRunTags: Array<PipelineTagAndValues>;
   pipelineRunsOrError: RunsOrError;
   pipelineSnapshotOrError: PipelineSnapshotOrError;
   repositoriesOrError: RepositoriesOrError;
@@ -584,6 +603,8 @@ export type DagitQuery = {
   runGroupOrError: RunGroupOrError;
   runGroupsOrError: RunGroupsOrError;
   runOrError: RunOrError;
+  runTagKeysOrError: Maybe<RunTagKeysOrError>;
+  runTagsOrError: Maybe<RunTagsOrError>;
   runsOrError: RunsOrError;
   scheduleOrError: ScheduleOrError;
   scheduler: SchedulerOrError;
@@ -731,6 +752,12 @@ export type DagitQueryRunGroupsOrErrorArgs = {
 
 export type DagitQueryRunOrErrorArgs = {
   runId: Scalars['ID'];
+};
+
+export type DagitQueryRunTagsOrErrorArgs = {
+  limit?: InputMaybe<Scalars['Int']>;
+  tagKeys?: InputMaybe<Array<Scalars['String']>>;
+  valuePrefix?: InputMaybe<Scalars['String']>;
 };
 
 export type DagitQueryRunsOrErrorArgs = {
@@ -960,6 +987,13 @@ export type DryRunInstigationTicks = {
   __typename: 'DryRunInstigationTicks';
   cursor: Scalars['Float'];
   results: Array<DryRunInstigationTick>;
+};
+
+export type DuplicateDynamicPartitionError = Error & {
+  __typename: 'DuplicateDynamicPartitionError';
+  message: Scalars['String'];
+  partitionName: Scalars['String'];
+  partitionsDefName: Scalars['String'];
 };
 
 export type EngineEvent = DisplayableEvent &
@@ -1487,6 +1521,8 @@ export type InstigationSelector = {
 
 export type InstigationState = {
   __typename: 'InstigationState';
+  hasStartPermission: Scalars['Boolean'];
+  hasStopPermission: Scalars['Boolean'];
   id: Scalars['ID'];
   instigationType: InstigationType;
   name: Scalars['String'];
@@ -2142,10 +2178,11 @@ export type PartitionBackfill = {
   backfillId: Scalars['String'];
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
+  hasCancelPermission: Scalars['Boolean'];
   isValidSerialization: Scalars['Boolean'];
   numCancelable: Scalars['Int'];
-  numPartitions: Scalars['Int'];
-  partitionNames: Array<Scalars['String']>;
+  numPartitions: Maybe<Scalars['Int']>;
+  partitionNames: Maybe<Array<Scalars['String']>>;
   partitionSet: Maybe<PartitionSet>;
   partitionSetName: Maybe<Scalars['String']>;
   partitionStatusCounts: Array<PartitionStatusCounts>;
@@ -2178,6 +2215,7 @@ export type PartitionDefinition = {
   __typename: 'PartitionDefinition';
   description: Scalars['String'];
   dimensionTypes: Array<DimensionDefinitionType>;
+  name: Maybe<Scalars['String']>;
   timeWindowMetadata: Maybe<TimePartitionsDefinitionMetadata>;
   type: PartitionDefinitionType;
 };
@@ -2859,6 +2897,9 @@ export type Run = PipelineRun & {
   endTime: Maybe<Scalars['Float']>;
   eventConnection: EventConnection;
   executionPlan: Maybe<ExecutionPlan>;
+  hasDeletePermission: Scalars['Boolean'];
+  hasReExecutePermission: Scalars['Boolean'];
+  hasTerminatePermission: Scalars['Boolean'];
   id: Scalars['ID'];
   jobName: Scalars['String'];
   mode: Scalars['String'];
@@ -3126,6 +3167,20 @@ export type RunSuccessEvent = MessageEvent &
     stepKey: Maybe<Scalars['String']>;
     timestamp: Scalars['String'];
   };
+
+export type RunTagKeys = {
+  __typename: 'RunTagKeys';
+  keys: Array<Scalars['String']>;
+};
+
+export type RunTagKeysOrError = PythonError | RunTagKeys;
+
+export type RunTags = {
+  __typename: 'RunTags';
+  tags: Array<PipelineTagAndValues>;
+};
+
+export type RunTagsOrError = PythonError | RunTags;
 
 export type Runs = PipelineRuns & {
   __typename: 'Runs';
@@ -3424,6 +3479,19 @@ export type SolidStepStatsOrError = SolidStepStatsConnection | SolidStepStatusUn
 export type SolidStepStatusUnavailableError = Error & {
   __typename: 'SolidStepStatusUnavailableError';
   message: Scalars['String'];
+};
+
+export enum StaleStatus {
+  FRESH = 'FRESH',
+  MISSING = 'MISSING',
+  STALE = 'STALE',
+}
+
+export type StaleStatusCause = {
+  __typename: 'StaleStatusCause';
+  dependency: Maybe<AssetKey>;
+  key: AssetKey;
+  reason: Scalars['String'];
 };
 
 export type StartScheduleMutation = {

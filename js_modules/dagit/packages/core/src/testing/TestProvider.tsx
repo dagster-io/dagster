@@ -24,6 +24,7 @@ export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
   start_schedule: DEFAULT_PERMISSIONS,
   stop_running_schedule: DEFAULT_PERMISSIONS,
   edit_sensor: DEFAULT_PERMISSIONS,
+  update_sensor_cursor: DEFAULT_PERMISSIONS,
   terminate_pipeline_execution: DEFAULT_PERMISSIONS,
   delete_pipeline_run: DEFAULT_PERMISSIONS,
   reload_repository_location: DEFAULT_PERMISSIONS,

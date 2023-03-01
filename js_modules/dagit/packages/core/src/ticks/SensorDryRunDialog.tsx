@@ -33,7 +33,10 @@ import {testId} from '../testing/testId';
 import {RepoAddress} from '../workspace/types';
 
 import {RunRequestTable} from './DryRunRequestTable';
-import {SensorDryRunMutation, SensorDryRunMutationVariables} from './types/SensorDryRun.types';
+import {
+  SensorDryRunMutation,
+  SensorDryRunMutationVariables,
+} from './types/SensorDryRunDialog.types';
 
 type DryRunInstigationTick = Extract<
   SensorDryRunMutation['sensorDryRun'],

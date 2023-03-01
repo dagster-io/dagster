@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union, cast
 
 import graphene
 from dagster import (
@@ -8,6 +8,7 @@ from dagster import (
 from dagster._core.definitions.external_asset_graph import ExternalAssetGraph
 from dagster._core.definitions.logical_version import (
     NULL_LOGICAL_VERSION,
+    StaleStatus,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventRecordsFilter
@@ -78,6 +79,17 @@ from .util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
     from .external import GrapheneRepository
+
+GrapheneAssetStaleStatus = graphene.Enum.from_enum(StaleStatus, name="StaleStatus")
+
+
+class GrapheneAssetStaleStatusCause(graphene.ObjectType):
+    key = graphene.NonNull(GrapheneAssetKey)
+    reason = graphene.NonNull(graphene.String)
+    dependency = graphene.Field(GrapheneAssetKey)
+
+    class Meta:
+        name = "StaleStatusCause"
 
 
 class GrapheneAssetDependency(graphene.ObjectType):
@@ -216,9 +228,10 @@ class GrapheneAssetNode(graphene.ObjectType):
         startIdx=graphene.Int(),
         endIdx=graphene.Int(),
     )
-    projectedLogicalVersion = graphene.String()
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
+    staleStatus = graphene.Field(GrapheneAssetStaleStatus)
+    staleStatusCauses = non_null_list(GrapheneAssetStaleStatusCause)
     type = graphene.Field(GrapheneDagsterType)
 
     class Meta:
@@ -427,7 +440,9 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         # in the future, we can share this same CachingInstanceQueryer across all
         # GrapheneMaterializationEvent which share an external repository for improved performance
-        data_time_queryer = CachingInstanceQueryer(instance=graphene_info.context.instance)
+        data_time_queryer = CachingInstanceQueryer(
+            instance=graphene_info.context.instance, cache_known_used_data=True
+        )
         event_records = instance.get_event_records(
             EventRecordsFilter(
                 event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -542,23 +557,29 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_computeKind(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._external_asset_node.compute_kind
 
-    def resolve_currentLogicalVersion(self, _graphene_info: ResolveInfo) -> Optional[str]:
+    def resolve_staleStatus(self, graphene_info: ResolveInfo) -> Any:  # (GrapheneAssetStaleStatus)
+        return self.stale_status_loader.get_status(self._external_asset_node.asset_key)
+
+    def resolve_staleStatusCauses(
+        self, graphene_info: ResolveInfo
+    ) -> Sequence[GrapheneAssetStaleStatusCause]:
+        causes = self.stale_status_loader.get_status_root_causes(
+            self._external_asset_node.asset_key
+        )
+        return [
+            GrapheneAssetStaleStatusCause(
+                GrapheneAssetKey(path=cause.key.path),
+                cause.reason,
+                GrapheneAssetKey(path=cause.dependency.path) if cause.dependency else None,
+            )
+            for cause in causes
+        ]
+
+    def resolve_currentLogicalVersion(self, graphene_info: ResolveInfo) -> Optional[str]:
         version = self.stale_status_loader.get_current_logical_version(
             self._external_asset_node.asset_key
         )
         return None if version == NULL_LOGICAL_VERSION else version.value
-
-    def resolve_projectedLogicalVersion(self, _graphene_info: ResolveInfo) -> Optional[str]:
-        if (
-            self.external_asset_node.is_source
-            or self.external_asset_node.partitions_def_data is not None
-        ):
-            return None
-        else:
-            version = self.stale_status_loader.get_projected_logical_version(
-                self.external_asset_node.asset_key
-            )
-            return version.value
 
     def resolve_dependedBy(self, graphene_info: ResolveInfo) -> List[GrapheneAssetDependency]:
         # CrossRepoAssetDependedByLoader class loads cross-repo asset dependencies workspace-wide.

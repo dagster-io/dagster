@@ -31,7 +31,6 @@ from dagster_databricks import databricks_step_main
 from dagster_databricks.databricks import (
     DEFAULT_RUN_MAX_WAIT_TIME_SEC,
     DatabricksJobRunner,
-    poll_run_state,
 )
 
 from .configs import (
@@ -302,7 +301,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         """
         check.int_param(databricks_run_id, "databricks_run_id")
         processed_events = 0
-        start = time.time()
+        start_poll_time = time.time()
         done = False
         step_context.log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
         while not done:
@@ -313,12 +312,11 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                     )
                 time.sleep(self.databricks_runner.poll_interval_sec)
                 try:
-                    done = poll_run_state(
-                        self.databricks_runner.client,
-                        step_context.log,
-                        start,
-                        databricks_run_id,
-                        self.databricks_runner.max_wait_time_sec,
+                    done = self.databricks_runner.client.poll_run_state(
+                        logger=step_context.log,
+                        start_poll_time=start_poll_time,
+                        databricks_run_id=databricks_run_id,
+                        max_wait_time_sec=self.databricks_runner.max_wait_time_sec,
                         verbose_logs=self.verbose_logs,
                     )
                 finally:

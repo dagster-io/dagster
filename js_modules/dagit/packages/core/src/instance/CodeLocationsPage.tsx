@@ -43,10 +43,10 @@ export const CodeLocationsPage = () => {
       <Box
         padding={{vertical: 16, horizontal: 24}}
         flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-        style={{height: '64px'}} // Preserve height whether "Reload all" is present or not
+        style={{height: '64px'}}
       >
         <Subheading id="repository-locations">{subheadingText()}</Subheading>
-        {entryCount > 1 ? <ReloadAllButton /> : null}
+        <ReloadAllButton />
       </Box>
       <RepositoryLocationsList />
     </>

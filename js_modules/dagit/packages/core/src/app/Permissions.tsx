@@ -11,6 +11,7 @@ export const EXPECTED_PERMISSIONS = {
   start_schedule: true,
   stop_running_schedule: true,
   edit_sensor: true,
+  update_sensor_cursor: true,
   terminate_pipeline_execution: true,
   delete_pipeline_run: true,
   reload_repository_location: true,
@@ -18,6 +19,7 @@ export const EXPECTED_PERMISSIONS = {
   wipe_assets: true,
   launch_partition_backfill: true,
   cancel_partition_backfill: true,
+  edit_dynamic_partitions: true,
 };
 
 export type PermissionResult = {
@@ -31,6 +33,7 @@ export type PermissionsFromJSON = {
   start_schedule?: PermissionResult;
   stop_running_schedule?: PermissionResult;
   edit_sensor?: PermissionResult;
+  update_sensor_cursor?: PermissionResult;
   terminate_pipeline_execution?: PermissionResult;
   delete_pipeline_run?: PermissionResult;
   reload_repository_location?: PermissionResult;
@@ -40,9 +43,11 @@ export type PermissionsFromJSON = {
   cancel_partition_backfill?: PermissionResult;
 };
 
+export const DEFAULT_DISABLED_REASON = 'Disabled by your administrator';
+
 const DEFAULT_PERMISSIONS = {
   enabled: false,
-  disabledReason: 'Disabled by your administrator',
+  disabledReason: DEFAULT_DISABLED_REASON,
 };
 
 export const extractPermissions = (

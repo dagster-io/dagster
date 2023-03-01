@@ -25,6 +25,7 @@ paths = [
     "../../python_modules/libraries/dagster-azure",
     "../../python_modules/libraries/dagster-celery",
     "../../python_modules/libraries/dagster-celery-docker",
+    "../../python_modules/libraries/dagster-census",
     "../../python_modules/libraries/dagster-dask",
     "../../python_modules/libraries/dagster-datadog",
     "../../python_modules/libraries/dagster-datahub",
@@ -55,10 +56,12 @@ paths = [
     "../../python_modules/libraries/dagster-ge",
     "../../python_modules/libraries/dagster-gcp",
     "../../python_modules/libraries/dagster-gcp-pandas",
+    "../../python_modules/libraries/dagster-gcp-pyspark",
     "../../python_modules/libraries/dagster-pyspark",
     "../../python_modules/libraries/dagster-databricks",
     "../../python_modules/libraries/dagster-duckdb",
     "../../python_modules/libraries/dagster-duckdb-pandas",
+    "../../python_modules/libraries/dagster-duckdb-polars",
     "../../python_modules/libraries/dagster-duckdb-pyspark",
     "../../python_modules/libraries/dagster-wandb",
     ### autodoc_dagster extension
@@ -152,6 +155,7 @@ autodoc_mock_imports = [
     "sshtunnel",
     "toposort",
     "twilio",
+    "polars",
     "wandb",
     "pandas_gbq",
 ]

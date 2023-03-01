@@ -139,7 +139,7 @@ class AssetGroup:
     def build_job(
         self,
         name: str,
-        selection: Optional[Union[str, Sequence[str]]] = None,
+        selection: Optional[Union[str, Sequence[str]]] = "*",
         executor_def: Optional[ExecutorDefinition] = None,
         tags: Optional[Mapping[str, Any]] = None,
         description: Optional[str] = None,
@@ -351,7 +351,7 @@ class AssetGroup:
 
     def materialize(
         self,
-        selection: Optional[Union[str, Sequence[str]]] = None,
+        selection: Optional[Union[str, Sequence[str]]] = "*",
         run_config: Optional[Any] = None,
     ) -> "ExecuteInProcessResult":
         """

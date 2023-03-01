@@ -2,6 +2,7 @@ import {Icon, TextInput} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {testId} from '../testing/testId';
 import {ClearButton} from '../ui/ClearButton';
 
 import {partitionsToText, spanTextToSelections} from './SpanRepresentation';
@@ -43,6 +44,7 @@ export const DimensionRangeInput: React.FC<{
 
   return (
     <TextInput
+      data-testid={testId('dimension-range-input')}
       placeholder={placeholder}
       value={valueString}
       style={{display: 'flex', width: '100%', flex: 1, flexGrow: 1}}

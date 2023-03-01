@@ -47,10 +47,19 @@ USED_DATA_TAG = ".dagster/used_data"
 class CachingInstanceQueryer(DynamicPartitionsStore):
     """Provides utility functions for querying for asset-materialization related data from the
     instance which will attempt to limit redundant expensive calls.
+
+    Args:
+        instance (DagsterInstance): The instance to query.
+        cache_known_used_data (bool): If True, will attempt to read a cached value for the used
+            data for a given record, rather than calculating it from scratch. If cached information
+            is not available, then the used data will be calculated and then cached. If this queryer
+            will be used to query for used data for a large number of records, it is recommended to
+            keep this set to False, as it will result in a large number of queries to the instance.
     """
 
-    def __init__(self, instance: "DagsterInstance"):
+    def __init__(self, instance: "DagsterInstance", cache_known_used_data: bool = False):
         self._instance = instance
+        self._cache_known_used_data = cache_known_used_data
 
         self._latest_materialization_record_cache: Dict[AssetKeyPartitionKey, EventLogRecord] = {}
         # if we try to fetch the latest materialization record after a given cursor and don't find
@@ -562,7 +571,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             return {asset_key: (record_id, record_timestamp)}
 
         # grab the existing upstream data times already calculated for this record (if any)
-        if asset_graph.freshness_policies_by_key.get(asset_key) is not None:
+        if (
+            self._cache_known_used_data
+            and asset_graph.freshness_policies_by_key.get(asset_key) is not None
+        ):
             known_data = self.get_known_used_data(asset_key, record_id)
             if known_data:
                 return known_data
@@ -672,9 +684,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             record_timestamp=record.event_log_entry.timestamp,
             record_tags=frozendict(record.asset_materialization.tags or {}),
         )
-        if asset_graph.freshness_policies_by_key.get(
-            record.asset_key
-        ) is not None and not asset_graph.is_partitioned(record.asset_key):
+        if (
+            self._cache_known_used_data
+            and asset_graph.freshness_policies_by_key.get(record.asset_key) is not None
+            and not asset_graph.is_partitioned(record.asset_key)
+        ):
             self.set_known_used_data(record, new_known_data=data)
 
         return {

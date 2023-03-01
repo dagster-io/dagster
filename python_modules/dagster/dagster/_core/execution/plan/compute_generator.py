@@ -251,16 +251,16 @@ def validate_and_coerce_op_result_to_iterator(
                         f" output '{output_def.name}' which does not have an Output annotation."
                         f" Annotation has type {annotation}."
                     )
-                output = cast(Output, element)
-                _check_output_object_name(output, output_def, position)
+                _check_output_object_name(element, output_def, position)
 
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore", category=DeprecationWarning)
 
                     yield Output(
                         output_name=output_def.name,
-                        value=output.value,
-                        metadata_entries=output.metadata_entries,
+                        value=element.value,
+                        metadata_entries=element.metadata_entries,
+                        logical_version=element.logical_version,
                     )
             else:
                 # If annotation indicates a generic output annotation, and an
