@@ -552,6 +552,10 @@
         ]
       },
       {
+        "title": "Databricks",
+        "path": "/integrations/databricks"
+      },
+      {
         "title": "dbt",
         "path": "/integrations/dbt",
         "children": [
