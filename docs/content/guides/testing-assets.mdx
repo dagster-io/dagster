@@ -1,5 +1,5 @@
 ---
-title: Testing Assets | Dagster
+title: Testing Assets | Dagster Docs
 description: Dagster enables you to unit-test individual assets and graphs of assets
 ---
 
@@ -7,14 +7,17 @@ description: Dagster enables you to unit-test individual assets and graphs of as
 
 Creating testable and verifiable data pipelines is one of the focuses of Dagster. We believe ensuring data quality is critical for managing the complexity of data systems. Here, we'll cover how to write unit tests for individual assets, as well as for graphs of assets together.
 
-Let's go back to the assets we defined in the [tutorial](/tutorial) and ensure that they work as expected by writing some unit tests.
+---
+
+## Prerequisites
+
+This guide builds off of the project written in the [tutorial](/tutorial). If you haven't already, you should complete the tutorial before continuing.
 
 ---
 
 ## Testing an individual asset
 
 We'll start by writing a test for the `topstories_word_cloud` asset definition, which is an image of a word cloud of the titles of top stories on Hacker News. To run the function that derives an asset from its upstream dependencies, we can invoke it directly, as if it's a regular Python function.
-
 
 Add the following code to the `test_assets.py` file in your `tutorial_tests` directory:
 
@@ -35,7 +38,7 @@ def test_topstories_word_cloud():
 
 ## Testing a graph of assets
 
-We'll also write a test for all the assets together. To do that, we can put them in a list and then pass it to the <PyObject object="materialize" /> function. That returns an <PyObject object="ExecuteInProcessResult" />, whose methods let us investigate, in detail, the success or failure of execution, the values produced by the computation, and other events associated with execution.
+We'll also write a test for all the assets together. To do that, we can put them in a list and then pass it to the <PyObject object="materialize" /> function. That returns an <PyObject object="ExecuteInProcessResult" /> object, whose methods let us investigate, in detail, the success or failure of execution, the values produced by the computation, and other events associated with execution.
 
 Update the `test_assets.py` file to include the following code:
 
