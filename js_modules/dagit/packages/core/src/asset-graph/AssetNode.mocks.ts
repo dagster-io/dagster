@@ -19,6 +19,8 @@ export const MockStaleReason: StaleStatusCause = {
   },
 };
 
+const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
+
 export const AssetNodeFragmentBasic: AssetNodeFragment = {
   __typename: 'AssetNode',
   assetKey: {__typename: 'AssetKey', path: ['asset1']},
