@@ -3444,12 +3444,13 @@ export type SolidStepStatusUnavailableError = Error & {
 
 export enum StaleStatus {
   FRESH = 'FRESH',
+  MISSING = 'MISSING',
   STALE = 'STALE',
-  UNKNOWN = 'UNKNOWN',
 }
 
 export type StaleStatusCause = {
   __typename: 'StaleStatusCause';
+  dependency: Maybe<AssetKey>;
   key: AssetKey;
   reason: Scalars['String'];
   status: StaleStatus;

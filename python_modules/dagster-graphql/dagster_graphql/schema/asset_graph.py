@@ -87,6 +87,7 @@ class GrapheneAssetStaleStatusCause(graphene.ObjectType):
     status = graphene.NonNull(GrapheneAssetStaleStatus)
     key = graphene.NonNull(GrapheneAssetKey)
     reason = graphene.NonNull(graphene.String)
+    dependency = graphene.Field(GrapheneAssetKey)
 
     class Meta:
         name = "StaleStatusCause"
@@ -568,6 +569,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 cause.status,
                 GrapheneAssetKey(path=cause.key.path),
                 cause.reason,
+                GrapheneAssetKey(path=cause.dependency.path) if cause.dependency else None,
             )
             for cause in causes
         ]
