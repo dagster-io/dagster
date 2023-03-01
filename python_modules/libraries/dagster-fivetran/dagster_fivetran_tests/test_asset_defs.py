@@ -56,7 +56,7 @@ def test_fivetran_group_label(group_name, expected_group_name):
         (["schema1.tracked", "does.not_exist"], True, False),
     ],
 )
-@pytest.mark.parameterize("op_tags", [None, {"key1": "value1"}])
+@pytest.mark.parametrize("op_tags", [None, {"key1": "value1"}])
 def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_prefix, op_tags):
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
@@ -78,7 +78,7 @@ def test_fivetran_asset_run(tables, infer_missing_tables, should_error, schema_p
     assert fivetran_assets[0].keys == {AssetKey(table.split(".")) for table in tables}
     assert len(fivetran_assets[0].op.output_defs) == len(tables)
 
-    assert fivetran_assets[0].op.tags == {**{"kind": "fivetran"}, **op_tags}
+    assert fivetran_assets[0].op.tags == {**{"kind": "fivetran"}, **(op_tags or {})}
 
     fivetran_assets_job = build_assets_job(
         name="fivetran_assets_job",
