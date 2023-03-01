@@ -76,8 +76,8 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             "dataframe_columns": MetadataValue.table_schema(
                 TableSchema(
                     columns=[
-                        TableColumn(name=name, type=str(dtype))
-                        for name, dtype in obj.dtypes.iteritems()
+                        TableColumn(name=str(name), type=str(dtype))
+                        for name, dtype in obj.dtypes.items()
                     ]
                 )
             ),
