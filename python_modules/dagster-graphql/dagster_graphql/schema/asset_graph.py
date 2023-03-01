@@ -563,7 +563,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_staleStatusCauses(
         self, graphene_info: ResolveInfo
     ) -> Sequence[GrapheneAssetStaleStatusCause]:
-        causes = self.stale_status_loader.get_status_causes(self._external_asset_node.asset_key)
+        causes = self.stale_status_loader.get_status_root_causes(
+            self._external_asset_node.asset_key
+        )
         return [
             GrapheneAssetStaleStatusCause(
                 cause.status,

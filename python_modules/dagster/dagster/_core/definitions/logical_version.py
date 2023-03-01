@@ -1,8 +1,20 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from enum import Enum
 from hashlib import sha256
-from typing import TYPE_CHECKING, Callable, Iterator, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    Iterator,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from typing_extensions import Final
 
@@ -221,6 +233,7 @@ class StaleStatusCause(NamedTuple):
     key: AssetKey
     reason: str
     dependency: Optional[AssetKey] = None
+    children: Optional[Sequence["StaleStatusCause"]] = None
 
 
 class CachingStaleStatusResolver:
@@ -255,6 +268,9 @@ class CachingStaleStatusResolver:
     def get_status_causes(self, key: AssetKey) -> Sequence[StaleStatusCause]:
         return self._get_status_causes(key=key)
 
+    def get_status_root_causes(self, key: AssetKey) -> Sequence[StaleStatusCause]:
+        return self._get_status_root_causes(key=key)
+
     def get_current_logical_version(self, key: AssetKey) -> LogicalVersion:
         return self._get_current_logical_version(key=key)
 
@@ -284,45 +300,62 @@ class CachingStaleStatusResolver:
     def _get_stale_status_causes_materialized(self, key: AssetKey) -> Iterator[StaleStatusCause]:
         code_version = self.asset_graph.get_code_version(key)
         provenance = self._get_current_logical_version_provenance(key=key)
-        proj_dep_keys = self.asset_graph.get_parents(key)
+        dependency_keys = self.asset_graph.get_parents(key)
+
+        # only used if no provenance available
+        materialization = check.not_none(self._get_latest_materialization_event(key=key))
+        materialization_time = materialization.timestamp
 
         if provenance:
-            prov_versions = provenance.input_logical_versions
-            all_dep_keys = sorted(set(proj_dep_keys).union(prov_versions.keys()))
-            for dep_key in all_dep_keys:
-                if dep_key not in prov_versions:
-                    yield StaleStatusCause(StaleStatus.STALE, key, "new input", dep_key)
-                elif dep_key not in proj_dep_keys:
+            if code_version and code_version != provenance.code_version:
+                yield StaleStatusCause(StaleStatus.STALE, key, "updated code version")
+
+            removed_deps = set(provenance.input_logical_versions.keys()) - set(dependency_keys)
+            for dep_key in removed_deps:
+                yield StaleStatusCause(
+                    StaleStatus.STALE,
+                    key,
+                    "removed input",
+                    dep_key,
+                )
+
+        for dep_key in sorted(dependency_keys):
+            if self._get_status(key=dep_key) == StaleStatus.STALE:
+                yield StaleStatusCause(
+                    StaleStatus.STALE,
+                    key,
+                    "stale input",
+                    dep_key,
+                    self._get_status_causes(key=dep_key),
+                )
+            elif self._get_status(key=dep_key) == StaleStatus.MISSING:
+                yield StaleStatusCause(
+                    StaleStatus.STALE,
+                    key,
+                    "missing input",
+                    dep_key,
+                    self._get_status_causes(key=dep_key),
+                )
+            elif provenance:
+                if dep_key not in provenance.input_logical_versions:
                     yield StaleStatusCause(
                         StaleStatus.STALE,
                         key,
-                        "removed input",
+                        "new input",
                         dep_key,
                     )
-                elif prov_versions[dep_key] != self._get_current_logical_version(key=dep_key):
+                elif provenance.input_logical_versions[
+                    dep_key
+                ] != self._get_current_logical_version(key=dep_key):
                     yield StaleStatusCause(
                         StaleStatus.STALE,
                         key,
                         "updated input",
                         dep_key,
                     )
-                elif self._get_status(key=dep_key) == StaleStatus.STALE:
-                    yield StaleStatusCause(
-                        StaleStatus.STALE,
-                        key,
-                        "stale input",
-                        dep_key,
-                    )
-            if code_version is not None and code_version != provenance.code_version:
-                yield StaleStatusCause(StaleStatus.STALE, key, "updated code version")
-
-        # if no provenance, then use materialization timestamps instead of versions
-        # this should be removable eventually since provenance is on all newer materializations
-        else:
-            materialization = check.not_none(self._get_latest_materialization_event(key=key))
-            materialization_time = materialization.timestamp
-            all_dep_keys = sorted(proj_dep_keys)
-            for dep_key in all_dep_keys:
+            # if no provenance, then use materialization timestamps instead of versions
+            # this should be removable eventually since provenance is on all newer materializations
+            else:
                 dep_materialization = self._get_latest_materialization_event(key=dep_key)
                 if dep_materialization is None:
                     # The input must be new if it has no materialization
@@ -335,8 +368,27 @@ class CachingStaleStatusResolver:
                         dep_key,
                     )
 
-        for dep_key in proj_dep_keys:
-            yield from self._get_status_causes(key=dep_key)
+    @cached_method
+    def _get_status_root_causes(self, key: AssetKey) -> Sequence[StaleStatusCause]:
+        causes = self._get_status_causes(key=key)
+        root_pairs = sorted([pair for cause in causes for pair in self._gather_leaves(cause)])
+        # After sorting the pairs, we can drop the level and de-dup using an
+        # ordered dict as an ordered set. This will give us unique root causes,
+        # sorted by level.
+        roots: Dict[StaleStatusCause, None] = OrderedDict()
+        for root_cause in [root_cause for _, root_cause in root_pairs]:
+            roots[root_cause] = None
+        return list(roots.keys())
+
+    # The leaves of the cause tree for an asset are the root causes of its staleness.
+    def _gather_leaves(
+        self, cause: StaleStatusCause, level: int = 0
+    ) -> Iterator[Tuple[int, StaleStatusCause]]:
+        if cause.children is None:
+            yield (level, cause)
+        else:
+            for child in cause.children:
+                yield from self._gather_leaves(child, level=level + 1)
 
     @property
     def asset_graph(self) -> "AssetGraph":

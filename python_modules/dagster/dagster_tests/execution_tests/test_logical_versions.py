@@ -469,8 +469,15 @@ def test_stale_status_general() -> None:
         ]
         assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
         assert status_resolver.get_status_causes(asset2.key) == [
-            StaleStatusCause(StaleStatus.STALE, asset2.key, "stale input", asset1.key),
-            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated input", source1.key),
+            StaleStatusCause(
+                StaleStatus.STALE,
+                asset2.key,
+                "stale input",
+                asset1.key,
+                [
+                    StaleStatusCause(StaleStatus.STALE, asset1.key, "updated input", source1.key),
+                ],
+            )
         ]
         materialize_assets(all_assets, instance)
 
@@ -488,8 +495,15 @@ def test_stale_status_general() -> None:
         ]
         assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
         assert status_resolver.get_status_causes(asset2.key) == [
-            StaleStatusCause(StaleStatus.STALE, asset2.key, "stale input", asset1.key),
-            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated code version"),
+            StaleStatusCause(
+                StaleStatus.STALE,
+                asset2.key,
+                "stale input",
+                asset1.key,
+                [
+                    StaleStatusCause(StaleStatus.STALE, asset1.key, "updated code version"),
+                ],
+            ),
         ]
 
         @asset
@@ -506,8 +520,15 @@ def test_stale_status_general() -> None:
         assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
         assert status_resolver.get_status_causes(asset2.key) == [
             StaleStatusCause(StaleStatus.STALE, asset2.key, "removed input", asset1.key),
-            StaleStatusCause(StaleStatus.STALE, asset2.key, "new input", asset3.key),
-            StaleStatusCause(StaleStatus.MISSING, asset3.key, "never materialized"),
+            StaleStatusCause(
+                StaleStatus.STALE,
+                asset2.key,
+                "missing input",
+                asset3.key,
+                [
+                    StaleStatusCause(StaleStatus.MISSING, asset3.key, "never materialized"),
+                ],
+            ),
         ]
 
 
@@ -662,6 +683,91 @@ def test_stale_status_manually_versioned() -> None:
         status_resolver = get_stale_status_resolver(instance, all_assets)
         assert status_resolver.get_status(asset1.key) == StaleStatus.FRESH
         assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
+
+
+def test_stale_status_root_causes() -> None:
+    x = 0
+
+    @observable_source_asset
+    def source1(_context):
+        nonlocal x
+        x = x + 1
+        return LogicalVersion(str(x))
+
+    @asset(code_version="1")
+    def asset1(source1):
+        ...
+
+    @asset(code_version="1")
+    def asset2(asset1):
+        ...
+
+    @asset(code_version="1")
+    def asset3(asset2):
+        ...
+
+    with instance_for_test() as instance:
+        all_assets = [source1, asset1, asset2, asset3]
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        assert status_resolver.get_status_root_causes(asset1.key) == [
+            StaleStatusCause(StaleStatus.MISSING, asset1.key, "never materialized")
+        ]
+        assert status_resolver.get_status_root_causes(asset2.key) == [
+            StaleStatusCause(StaleStatus.MISSING, asset2.key, "never materialized")
+        ]
+
+        materialize_assets(all_assets, instance)
+
+        # Simulate updating an asset with a new code version
+        @asset(name="asset1", code_version="2")
+        def asset1_v2(source1):
+            ...
+
+        all_assets = [source1, asset1_v2, asset2, asset3]
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
+        assert status_resolver.get_status_root_causes(asset1.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated code version")
+        ]
+        assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
+        assert status_resolver.get_status_root_causes(asset2.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated code version")
+        ]
+        assert status_resolver.get_status(asset3.key) == StaleStatus.STALE
+        assert status_resolver.get_status_root_causes(asset3.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated code version")
+        ]
+
+        observe([source1], instance=instance)
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
+        assert status_resolver.get_status_root_causes(asset1.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated code version"),
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated input", source1.key),
+        ]
+        assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
+        assert status_resolver.get_status_root_causes(asset2.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated code version"),
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated input", source1.key),
+        ]
+        assert status_resolver.get_status(asset3.key) == StaleStatus.STALE
+        assert status_resolver.get_status_root_causes(asset3.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated code version"),
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated input", source1.key),
+        ]
+
+        # Simulate updating an asset with a new code version
+        @asset(name="asset3", code_version="2")
+        def asset3_v2(asset2):
+            ...
+
+        all_assets = [source1, asset1_v2, asset2, asset3_v2]
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        assert status_resolver.get_status_root_causes(asset3.key) == [
+            StaleStatusCause(StaleStatus.STALE, asset3.key, "updated code version"),
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated code version"),
+            StaleStatusCause(StaleStatus.STALE, asset1.key, "updated input", source1.key),
+        ]
 
 
 def test_get_logical_version_provenance_inside_op():
