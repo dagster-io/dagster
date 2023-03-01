@@ -24,7 +24,7 @@ import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, itemWithAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
-import {LaunchBackfillParams} from '../graphql/types';
+import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
@@ -83,14 +83,16 @@ interface Props {
     partitionDefinition: PartitionDefinitionForLaunchAssetFragment | null;
   }[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
+  refetch?: () => Promise<void>;
 }
 
 export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
-  const title = `Launch runs to materialize ${
+  const displayName =
     props.assets.length > 1
       ? `${props.assets.length} assets`
-      : displayNameForAssetKey(props.assets[0].assetKey)
-  }`;
+      : displayNameForAssetKey(props.assets[0].assetKey);
+
+  const title = `Launch runs to materialize ${displayName}`;
 
   return (
     <Dialog
@@ -119,6 +121,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   repoAddress,
   target,
   upstreamAssetKeys,
+  refetch: _refetch,
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
@@ -130,7 +133,19 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const [previewCount, setPreviewCount] = React.useState(0);
   const morePreviewsCount = partitionedAssets.length - previewCount;
 
-  const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
+  const [lastRefresh, setLastRefresh] = React.useState(Date.now());
+
+  const refetch = async () => {
+    await _refetch?.();
+    setLastRefresh(Date.now());
+  };
+
+  const assetHealth = usePartitionHealthData(
+    partitionedAssets.map((a) => a.assetKey),
+    lastRefresh.toString(),
+    'immediate',
+  );
+
   const assetHealthLoading = assetHealth.length === 0;
 
   const displayedHealth = React.useMemo(() => {
@@ -147,6 +162,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
   const [missingOnly, setMissingOnly] = React.useState(true);
+
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: knownDimensions.map((d) => d.name),
     modifyQueryString: false,
@@ -364,6 +380,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                   selections.length === 2 ? selections[1 - idx].selectedRanges : undefined,
                 ),
               }}
+              isDynamic={displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC}
               selected={range.selectedKeys}
               setSelected={(selectedKeys) =>
                 setSelections(
@@ -372,6 +389,9 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                   ),
                 )
               }
+              partitionDefinitionName={displayedPartitionDefinition?.name}
+              repoAddress={repoAddress}
+              refetch={refetch}
             />
           ))}
 

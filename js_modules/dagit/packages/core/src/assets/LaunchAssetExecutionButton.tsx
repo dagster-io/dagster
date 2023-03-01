@@ -317,6 +317,26 @@ export const useMaterializationAction = (preferredJobName?: string) => {
           target={state.target}
           open={true}
           setOpen={() => setState({type: 'none'})}
+          refetch={async () => {
+            const result = await client.query<
+              LaunchAssetLoaderQuery,
+              LaunchAssetLoaderQueryVariables
+            >({
+              query: LAUNCH_ASSET_LOADER_QUERY,
+              variables: {assetKeys: state.assets.map(({assetKey}) => ({path: assetKey.path}))},
+            });
+            const assets = result.data.assetNodes;
+            const next = await stateForLaunchingAssets(client, assets, false, preferredJobName);
+            if (next.type === 'error') {
+              showCustomAlert({
+                title: 'Unable to Materialize',
+                body: next.error,
+              });
+              setState({type: 'none'});
+              return;
+            }
+            setState(next);
+          }}
         />
       );
     }
