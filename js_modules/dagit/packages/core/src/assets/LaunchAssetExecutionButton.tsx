@@ -327,6 +327,14 @@ export const useMaterializationAction = (preferredJobName?: string) => {
             });
             const assets = result.data.assetNodes;
             const next = await stateForLaunchingAssets(client, assets, false, preferredJobName);
+            if (next.type === 'error') {
+              showCustomAlert({
+                title: 'Unable to Materialize',
+                body: next.error,
+              });
+              setState({type: 'none'});
+              return;
+            }
             setState(next);
           }}
         />

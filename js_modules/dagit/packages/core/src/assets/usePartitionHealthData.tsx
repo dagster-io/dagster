@@ -439,7 +439,7 @@ function rangesCoverAll(ranges: Range[], keyCount: number) {
 export function usePartitionHealthData(
   assetKeys: AssetKey[],
   cacheKey = '',
-  cacheClearStrategy: 'immediate' | 'background',
+  cacheClearStrategy: 'immediate' | 'background' = 'background',
 ) {
   const [result, setResult] = React.useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
   const client = useApolloClient();
@@ -480,39 +480,6 @@ export function usePartitionHealthData(
         (r.fetchedAt === cacheKey || cacheClearStrategy === 'background'),
     );
   }, [assetKeyJSON, result, cacheKey, cacheClearStrategy]);
-}
-
-/**
- *  Like usePartitionHealthData, but fetches queries in parallel and allows refetching them all in parallel
- * @returns
- */
-export function usePartitionHealthData2(assetKeys: AssetKey[], cacheKey: string) {
-  const [healthData, setHealthData] = React.useState<PartitionHealthData[]>([]);
-  const client = useApolloClient();
-
-  React.useEffect(() => {
-    const data: PartitionHealthData[] = [];
-
-    async function fetchHealthData(key: AssetKey) {
-      return client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
-        query: PARTITION_HEALTH_QUERY,
-        fetchPolicy: 'network-only',
-        variables: {
-          assetKey: {path: key.path},
-        },
-      });
-    }
-
-    const promises = assetKeys.map((key) => fetchHealthData(key));
-    Promise.all(promises).then((results) => {
-      results.forEach((result, idx) => {
-        data.push(buildPartitionHealthData(result.data, assetKeys[idx]));
-      });
-      setHealthData(data);
-    });
-  }, [assetKeys, cacheKey, client]);
-
-  return healthData;
 }
 
 export const PARTITION_HEALTH_QUERY = gql`

@@ -70,11 +70,7 @@ import {
 } from './types/LaunchAssetChoosePartitionsDialog.types';
 import {PartitionDefinitionForLaunchAssetFragment} from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
-import {
-  PartitionDimensionSelection,
-  usePartitionHealthData,
-  usePartitionHealthData2,
-} from './usePartitionHealthData';
+import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
 
 interface Props {
   open: boolean;
@@ -144,9 +140,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     setLastRefresh(Date.now());
   };
 
-  const assetHealth = usePartitionHealthData2(
+  const assetHealth = usePartitionHealthData(
     partitionedAssets.map((a) => a.assetKey),
     lastRefresh.toString(),
+    'immediate',
   );
 
   const assetHealthLoading = assetHealth.length === 0;
