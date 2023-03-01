@@ -739,9 +739,9 @@ class _GraphBackedAsset:
             if asset_in.partition_mapping
         }
 
-        op_graph = graph(
-            name="__".join(out_asset_key.path).replace("-", "_"), description=self.description
-        )(fn)
+        op_graph = graph(name=out_asset_key.to_python_identifier(), description=self.description)(
+            fn
+        )
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
