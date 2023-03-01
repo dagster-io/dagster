@@ -26,9 +26,6 @@ def configurable_job():
 ##sets the schedule to be updated everyday at 9:00 AM
 @schedule(job=configurable_job, cron_schedule="0 9 * * *")
 def configurable_job_schedule(context: ScheduleEvaluationContext):
-    context = build_schedule_context(
-        scheduled_execution_time=datetime.datetime(2020, 1, 1)
-    )
     if context.scheduled_execution_time.weekday() < 5:
         activity_selection = "grind"
     else:
