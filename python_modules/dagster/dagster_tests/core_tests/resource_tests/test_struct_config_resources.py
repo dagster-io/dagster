@@ -24,6 +24,7 @@ from dagster._config.field import Field
 from dagster._config.field_utils import EnvVar
 from dagster._config.structured_config import (
     Config,
+    ConfigurableIOManager,
     ConfigurableIOManagerFactory,
     ConfigurableLegacyIOManagerAdapter,
     ConfigurableLegacyResourceAdapter,
@@ -1608,3 +1609,71 @@ def test_bind_resource_to_instigator_by_name() -> None:
     assert out_txt == ["msg: hello, world!"]
 
     out_txt.clear()
+
+
+def test_bind_io_manager_default() -> None:
+    outputs = []
+
+    class MyIOManager(ConfigurableIOManager):
+        def load_input(self, _) -> None:
+            pass
+
+        def handle_output(self, _, obj) -> None:
+            outputs.append(obj)
+
+    @op
+    def hello_world_op() -> str:
+        return "foo"
+
+    @job
+    def hello_world_job() -> None:
+        hello_world_op()
+
+    # Bind the I/O manager to the job at definition time and validate that it works
+    defs = Definitions(
+        jobs=[hello_world_job],
+        resources={
+            "io_manager": MyIOManager(),
+        },
+    )
+
+    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert outputs == ["foo"]
+
+
+def test_bind_io_manager_override() -> None:
+    outputs = []
+
+    class MyIOManager(ConfigurableIOManager):
+        def load_input(self, _) -> None:
+            pass
+
+        def handle_output(self, _, obj) -> None:
+            outputs.append(obj)
+
+    class MyOtherIOManager(ConfigurableIOManager):
+        def load_input(self, _) -> None:
+            pass
+
+        def handle_output(self, _, obj) -> None:
+            pass
+
+    @op
+    def hello_world_op() -> str:
+        return "foo"
+
+    @job(resource_defs={"io_manager": MyIOManager()})
+    def hello_world_job() -> None:
+        hello_world_op()
+
+    # Bind the I/O manager to the job at definition time and validate that it does
+    # not take precedence over the one defined on the job
+    defs = Definitions(
+        jobs=[hello_world_job],
+        resources={
+            "io_manager": MyOtherIOManager(),
+        },
+    )
+
+    assert defs.get_job_def("hello_world_job").execute_in_process().success
+    assert outputs == ["foo"]

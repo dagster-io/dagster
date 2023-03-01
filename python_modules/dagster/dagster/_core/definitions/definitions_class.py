@@ -27,7 +27,7 @@ from dagster._utils.cached_method import cached_method
 from .assets import AssetsDefinition, SourceAsset
 from .cacheable_assets import CacheableAssetsDefinition
 from .decorators import repository
-from .job_definition import JobDefinition
+from .job_definition import JobDefinition, default_job_io_manager
 from .partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from .repository_definition import (
     SINGLETON_REPOSITORY_NAME,
@@ -101,6 +101,17 @@ class _AttachedObjects(NamedTuple):
     sensors: Iterable[SensorDefinition]
 
 
+def _io_manager_needs_replacement(job: JobDefinition, resource_defs: Mapping[str, Any]) -> bool:
+    """
+    Explicitly replace the default IO manager in jobs that don't specify one, if a top-level
+    I/O manager is provided to Definitions.
+    """
+    return (
+        job.resource_defs.get("io_manager") == default_job_io_manager
+        and "io_manager" in resource_defs
+    )
+
+
 def _attach_resources_to_jobs_and_instigators(
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
     schedules: Optional[
@@ -121,7 +132,10 @@ def _attach_resources_to_jobs_and_instigators(
     unsatisfied_jobs = [
         job
         for job in jobs
-        if isinstance(job, JobDefinition) and job.is_missing_required_resources()
+        if isinstance(job, JobDefinition)
+        and (
+            job.is_missing_required_resources() or _io_manager_needs_replacement(job, resource_defs)
+        )
     ]
 
     # Create a mapping of job id to a version of the job with the resource defs bound

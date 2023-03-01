@@ -692,13 +692,26 @@ class JobDefinition(PipelineDefinition):
         """Apply a set of resources to all op instances within the job."""
         resource_defs = check.dict_param(resource_defs, "resource_defs", key_type=str)
 
+        merged_resource_defs = {
+            **resource_defs,
+            **self.resource_defs,
+        }
+
+        # If we are using the default io_manager, we want to replace it with the one
+        # provided at the top level
+        if (
+            "io_manager" in resource_defs
+            and self.resource_defs.get("io_manager") == default_job_io_manager
+        ):
+            merged_resource_defs["io_manager"] = resource_defs["io_manager"]
+
+        print("MERGING")
+        print(merged_resource_defs.keys())
+
         job_def = JobDefinition(
             name=self._name,
             graph_def=self._graph_def,
-            resource_defs={
-                **resource_defs,
-                **self.resource_defs,
-            },
+            resource_defs=merged_resource_defs,
             logger_defs=dict(self.loggers),
             executor_def=self.executor_def,
             config=self.partitioned_config or self.config_mapping,
