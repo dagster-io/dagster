@@ -210,7 +210,7 @@ class SourceAsset(ResourceAddable):
         if self._node_def is None:
             self._node_def = OpDefinition(
                 compute_fn=self._get_op_def_compute_fn(self.observe_fn),
-                name="__".join(self.key.path).replace("-", "_"),
+                name=self.key.to_python_identifier(),
                 description=self.description,
             )
         return self._node_def
