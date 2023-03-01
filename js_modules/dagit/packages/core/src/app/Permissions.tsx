@@ -33,7 +33,7 @@ export type PermissionsFromJSON = {
   start_schedule?: PermissionResult;
   stop_running_schedule?: PermissionResult;
   edit_sensor?: PermissionResult;
-  update_sensor_cursor?: PermissionResult
+  update_sensor_cursor?: PermissionResult;
   terminate_pipeline_execution?: PermissionResult;
   delete_pipeline_run?: PermissionResult;
   reload_repository_location?: PermissionResult;

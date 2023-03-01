@@ -3,6 +3,8 @@ import {RunStatus} from '../graphql/types';
 import {LiveDataForNode} from './Utils';
 import {AssetNodeFragment} from './types/AssetNode.types';
 
+const TIMESTAMP = `${new Date('2023-02-12 00:00:00').getTime()}`;
+
 export const AssetNodeFragmentBasic: AssetNodeFragment = {
   __typename: 'AssetNode',
   assetKey: {__typename: 'AssetKey', path: ['asset1']},
@@ -109,7 +111,7 @@ export const LiveDataForNodeMaterialized: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -128,7 +130,7 @@ export const LiveDataForNodeMaterializedAndStale: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -147,7 +149,7 @@ export const LiveDataForNodeMaterializedAndStaleAndLate: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -174,7 +176,7 @@ export const LiveDataForNodeMaterializedAndStaleAndFresh: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -201,7 +203,7 @@ export const LiveDataForNodeMaterializedAndFresh: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -228,7 +230,7 @@ export const LiveDataForNodeMaterializedAndLate: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -287,7 +289,7 @@ export const LiveDataForNodeSourceObservedStale: LiveDataForNode = {
   lastObservation: {
     __typename: 'ObservationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   runWhichFailedToMaterialize: null,
   currentLogicalVersion: 'INITIAL',
@@ -306,7 +308,7 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNode = {
   lastObservation: {
     __typename: 'ObservationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   runWhichFailedToMaterialize: null,
   currentLogicalVersion: 'DIFFERENT',
@@ -323,7 +325,7 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -345,7 +347,7 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -385,7 +387,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -407,7 +409,7 @@ export const LiveDataForNodePartitionedStaleAndLate: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
@@ -437,7 +439,7 @@ export const LiveDataForNodePartitionedStaleAndFresh: LiveDataForNode = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
-    timestamp: `${Date.now()}`,
+    timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
   lastObservation: null,
