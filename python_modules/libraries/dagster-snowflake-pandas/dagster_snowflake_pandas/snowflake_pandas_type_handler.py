@@ -38,7 +38,8 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
 
 def _add_missing_timezone(s: pd.Series) -> pd.Series:
     if pd_core_dtypes_common.is_datetime_or_timedelta_dtype(s):
-        pass
+        return s.dt.tz_localize("UTC")
+    return s
 
 
 class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -78,7 +79,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
         connector.paramstyle = "pyformat"
         with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
-        with_uppercase_cols = with_uppercase_cols.apply(_convert_timestamp_to_string, axis="index")
+        with_uppercase_cols = with_uppercase_cols.apply(_add_missing_timezone, axis="index")
         with_uppercase_cols.to_sql(
             table_slice.table,
             con=connection.engine,
@@ -107,7 +108,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         result = pd.read_sql(
             sql=SnowflakeDbClient.get_select_statement(table_slice), con=connection
         )
-        result = result.apply(_convert_string_to_timestamp, axis="index")
+        # result = result.apply(_convert_string_to_timestamp, axis="index")
         result.columns = map(str.lower, result.columns)  # type: ignore  # (bad stubs)
         return result
 
