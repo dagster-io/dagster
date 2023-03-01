@@ -308,7 +308,6 @@ def get_external_sensor_execution(
     sensor_def = repo_def.get_sensor_def(sensor_name)
 
     with ExitStack() as stack:
-
         resources_to_build = {
             k: v
             for k, v in repo_def.get_top_level_resources().items()

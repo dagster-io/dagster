@@ -711,7 +711,6 @@ def build_sensor_context(
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
 
-
     required_resource_keys = None
     if repository_def and sensor_name:
         sensor_def = repository_def.get_sensor_def(sensor_name)

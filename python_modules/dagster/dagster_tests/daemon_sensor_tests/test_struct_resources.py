@@ -1,5 +1,6 @@
 import os
 import sys
+from contextlib import contextmanager
 from typing import Iterator, Optional
 
 import pendulum
@@ -8,6 +9,7 @@ from dagster import (
     SensorEvaluationContext,
     job,
     op,
+    resource,
     sensor,
 )
 from dagster._check import ParameterCheckError
@@ -16,6 +18,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
+from dagster._core.definitions.resource_output import Resource
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
@@ -28,10 +31,6 @@ from dagster._core.workspace.load_target import ModuleTarget
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_sensor_run import evaluate_sensors, validate_tick, wait_for_all_runs_to_start
-
-from dagster import resource
-from contextlib import contextmanager
-from dagster._core.definitions.resource_output import Resource
 
 
 @op
