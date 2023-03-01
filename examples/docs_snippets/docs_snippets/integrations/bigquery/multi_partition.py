@@ -9,7 +9,7 @@ import pandas as pd
 from dagster import (
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
-    StaticPartitionDefinition,
+    StaticPartitionsDefinition,
     asset,
 )
 
@@ -18,7 +18,7 @@ from dagster import (
     partitions_def=MultiPartitionsDefinition(
         {
             "date": DailyPartitionsDefinition(start_date="2023-01-01"),
-            "species": StaticPartitionDefinition(
+            "species": StaticPartitionsDefinition(
                 ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
             ),
         }
