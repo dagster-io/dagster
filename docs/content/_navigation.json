@@ -552,20 +552,6 @@
         ]
       },
       {
-        "title": "BigQuery",
-        "path": "/integrations/bigquery",
-        "children": [
-          {
-            "title": "BigQuery + Dagster tutorial",
-            "path": "/integrations/bigquery/using-bigquery-with-dagster"
-          },
-          {
-            "title": "Reference",
-            "path": "/integrations/bigquery/reference"
-          }
-        ]
-      },
-      {
         "title": "Databricks",
         "path": "/integrations/databricks"
       },
@@ -612,6 +598,20 @@
       {
         "title": "Great Expectations",
         "path": "/integrations/great-expectations"
+      },
+      {
+        "title": "Google BigQuery",
+        "path": "/integrations/bigquery",
+        "children": [
+          {
+            "title": "Google BigQuery + Dagster tutorial",
+            "path": "/integrations/bigquery/using-bigquery-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/bigquery/reference"
+          }
+        ]
       },
       {
         "title": "Jupyter / Papermill",
