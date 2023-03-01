@@ -670,6 +670,7 @@ type AssetNode {
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
   materializedPartitions: MaterializedPartitions!
+  assetPartitions: AssetPartitions!
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
@@ -713,6 +714,7 @@ union MaterializedPartitions = DefaultPartitions | MultiPartitions | TimePartiti
 
 type DefaultPartitions {
   materializedPartitions: [String!]!
+  failedPartitions: [String!]!
   unmaterializedPartitions: [String!]!
 }
 
@@ -736,11 +738,19 @@ type TimePartitions {
 }
 
 type TimePartitionRange {
+  status: PartitionRangeStatus!
   startTime: Float!
   endTime: Float!
   startKey: String!
   endKey: String!
 }
+
+enum PartitionRangeStatus {
+  MATERIALIZED
+  FAILED
+}
+
+union AssetPartitions = DefaultPartitions | MultiPartitions | TimePartitions
 
 type PartitionStats {
   numMaterialized: Int!

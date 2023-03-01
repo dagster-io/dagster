@@ -186,6 +186,7 @@ export type AssetNode = {
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
+  assetPartitions: AssetPartitions;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
   currentLogicalVersion: Maybe<Scalars['String']>;
@@ -262,6 +263,8 @@ export type AssetNotFoundError = Error & {
 };
 
 export type AssetOrError = Asset | AssetNotFoundError;
+
+export type AssetPartitions = DefaultPartitions | MultiPartitions | TimePartitions;
 
 export type AssetWipeMutationResult =
   | AssetNotFoundError
@@ -938,6 +941,7 @@ export type DagsterTypeOrError =
 
 export type DefaultPartitions = {
   __typename: 'DefaultPartitions';
+  failedPartitions: Array<Scalars['String']>;
   materializedPartitions: Array<Scalars['String']>;
   unmaterializedPartitions: Array<Scalars['String']>;
 };
@@ -2227,6 +2231,11 @@ export enum PartitionDefinitionType {
   MULTIPARTITIONED = 'MULTIPARTITIONED',
   STATIC = 'STATIC',
   TIME_WINDOW = 'TIME_WINDOW',
+}
+
+export enum PartitionRangeStatus {
+  FAILED = 'FAILED',
+  MATERIALIZED = 'MATERIALIZED',
 }
 
 export type PartitionRun = {
@@ -3718,6 +3727,7 @@ export type TimePartitionRange = {
   endTime: Scalars['Float'];
   startKey: Scalars['String'];
   startTime: Scalars['Float'];
+  status: PartitionRangeStatus;
 };
 
 export type TimePartitions = {
