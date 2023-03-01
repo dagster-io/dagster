@@ -1,7 +1,10 @@
+import re
+
 import pytest
 from dagster import (
     AssetKey,
     AssetsDefinition,
+    DagsterInvalidDefinitionError,
     Definitions,
     OpExecutionContext,
     ResourceDefinition,
@@ -11,7 +14,10 @@ from dagster import (
     build_schedule_from_partitioned_job,
     create_repository_using_definitions_args,
     define_asset_job,
+    graph,
+    in_process_executor,
     materialize,
+    mem_io_manager,
     op,
     repository,
     sensor,
@@ -567,3 +573,145 @@ def test_bare_executor():
 
     # ignore typecheck because we know our implementation doesn't use the context
     assert job.executor_def.executor_creation_fn(None) is executor_inst
+
+
+def test_assets_with_io_manager():
+    @asset
+    def single_asset():
+        pass
+
+    defs = Definitions(assets=[single_asset], resources={"io_manager": mem_io_manager})
+
+    asset_group_underlying_job = defs.get_all_job_defs()[0]
+    assert (  # pylint: disable=comparison-with-callable
+        asset_group_underlying_job.resource_defs["io_manager"] == mem_io_manager
+    )
+
+
+def test_asset_missing_resources():
+    @asset(required_resource_keys={"foo"})
+    def asset_foo(context):
+        return context.resources.foo
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by op 'asset_foo' was not provided.",
+    ):
+        Definitions(assets=[asset_foo])
+
+    source_asset_io_req = SourceAsset(key=AssetKey("foo"), io_manager_key="foo")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape(
+            "SourceAsset with asset key AssetKey(['foo']) requires IO manager with key 'foo', but"
+            " none was provided."
+        ),
+    ):
+        Definitions(assets=[source_asset_io_req])
+
+
+def test_assets_with_executor():
+    @asset
+    def the_asset():
+        pass
+
+    defs = Definitions(assets=[the_asset], executor=in_process_executor)
+
+    asset_group_underlying_job = defs.get_all_job_defs()[0]
+    assert (
+        asset_group_underlying_job.executor_def  # pylint: disable=comparison-with-callable
+        == in_process_executor
+    )
+
+
+def test_asset_missing_io_manager():
+    @asset(io_manager_key="blah")
+    def asset_foo():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "io manager with key 'blah' required by output 'result' of op 'asset_foo'' was not"
+            " provided."
+        ),
+    ):
+        Definitions(assets=[asset_foo])
+
+
+def test_resource_defs_on_asset():
+    the_resource = ResourceDefinition.hardcoded_resource("blah")
+
+    @asset(required_resource_keys={"bar"}, resource_defs={"foo": the_resource})
+    def the_asset():
+        pass
+
+    @asset(resource_defs={"foo": the_resource})
+    def other_asset():
+        pass
+
+    defs = Definitions([the_asset, other_asset], resources={"bar": the_resource})
+    the_job = defs.get_all_job_defs()[0]
+    assert the_job.execute_in_process().success
+
+
+def test_conflicting_asset_resource_defs():
+    the_resource = ResourceDefinition.hardcoded_resource("blah")
+    other_resource = ResourceDefinition.hardcoded_resource("baz")
+
+    @asset(resource_defs={"foo": the_resource})
+    def the_asset():
+        pass
+
+    @asset(resource_defs={"foo": other_resource})
+    def other_asset():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Conflicting versions of resource with key 'foo' were provided to "
+            "different assets. When constructing a job, all resource definitions "
+            "provided to assets must match by reference equality for a given key."
+        ),
+    ):
+        Definitions([the_asset, other_asset])
+
+
+def test_graph_backed_asset_resources():
+    @op(required_resource_keys={"foo"})
+    def the_op():
+        pass
+
+    @graph
+    def basic():
+        return the_op()
+
+    the_resource = ResourceDefinition.hardcoded_resource("blah")
+    other_resource = ResourceDefinition.hardcoded_resource("baz")
+
+    the_asset = AssetsDefinition.from_graph(
+        graph_def=basic,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("the_asset")},
+        resource_defs={"foo": the_resource},
+    )
+    Definitions([the_asset])
+
+    other_asset = AssetsDefinition.from_graph(
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("other_asset")},
+        graph_def=basic,
+        resource_defs={"foo": other_resource},
+    )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Conflicting versions of resource with key 'foo' were provided to different assets."
+            " When constructing a job, all resource definitions provided to assets must match by"
+            " reference equality for a given key."
+        ),
+    ):
+        Definitions([the_asset, other_asset])
