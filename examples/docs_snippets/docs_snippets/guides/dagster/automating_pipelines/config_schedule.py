@@ -35,6 +35,4 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
             "ops": {"configurable_op": {"config": {"activity": activity_selection}}}
         }
     )
-
-
 # config_schedule_end
