@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional
+from typing import Iterator, Optional
 
 import pendulum
 import pytest
@@ -29,6 +29,10 @@ from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_sensor_run import evaluate_sensors, validate_tick, wait_for_all_runs_to_start
 
+from dagster import resource
+from contextlib import contextmanager
+from dagster._core.definitions.resource_output import Resource
+
 
 @op
 def the_op(_):
@@ -40,18 +44,36 @@ def the_job():
     the_op()
 
 
+class MyResource(ConfigurableResource):
+    a_str: str
+
+
 @sensor(job_name="the_job", required_resource_keys={"my_resource"})
 def sensor_from_context(context: SensorEvaluationContext):
     return RunRequest(context.resources.my_resource.a_str, run_config={}, tags={})
 
 
-class MyResource(ConfigurableResource):
-    a_str: str
-
-
 @sensor(job_name="the_job")
 def sensor_from_fn_arg(context: SensorEvaluationContext, my_resource: MyResource):
     return RunRequest(my_resource.a_str, run_config={}, tags={})
+
+
+is_in_cm = False
+
+
+@resource
+@contextmanager
+def my_cm_resource(_) -> Iterator[str]:
+    global is_in_cm
+    is_in_cm = True
+    yield "foo"
+    is_in_cm = False
+
+
+@sensor(job_name="the_job")
+def sensor_with_cm(context: SensorEvaluationContext, my_cm_resource: Resource[str]):
+    assert is_in_cm
+    return RunRequest(my_cm_resource, run_config={}, tags={})
 
 
 @sensor(job_name="the_job", required_resource_keys={"my_resource"})
@@ -78,11 +100,15 @@ the_repo = Definitions(
     sensors=[
         sensor_from_context,
         sensor_from_fn_arg,
+        sensor_with_cm,
         sensor_from_context_weird_name,
         sensor_from_fn_arg_no_context,
         sensor_context_arg_not_first_and_weird_name,
     ],
-    resources={"my_resource": MyResource(a_str="foo")},
+    resources={
+        "my_resource": MyResource(a_str="foo"),
+        "my_cm_resource": my_cm_resource,
+    },
 )
 
 
@@ -141,6 +167,7 @@ def test_cant_use_required_resource_keys_and_params_both() -> None:
     [
         "sensor_from_context",
         "sensor_from_fn_arg",
+        "sensor_with_cm",
         "sensor_from_context_weird_name",
         "sensor_from_fn_arg_no_context",
         "sensor_context_arg_not_first_and_weird_name",
