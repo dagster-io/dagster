@@ -1,3 +1,5 @@
+# isort: skip_file
+
 from docs_snippets.guides.dagster.automating_pipelines.airbyte_dbt_sensor import (
     defs as airbtye_dbt_defs,
 )

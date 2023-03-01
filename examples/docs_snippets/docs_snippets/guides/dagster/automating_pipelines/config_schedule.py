@@ -1,3 +1,5 @@
+# isort: skip_file
+
 from dagster import (
     schedule,
     ScheduleEvaluationContext,
@@ -12,7 +14,7 @@ import datetime
 
 @op(config_schema={"activity_selection": str})
 def configurable_op(context):
-    return activity_selection
+    pass
 
 
 @job
