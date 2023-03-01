@@ -668,7 +668,10 @@ def test_get_first_partition_window():
     )
 
     assert (
-        DailyPartitionsDefinition(start_date="2023-02-15", end_offset=1).get_first_partition_window(current_time=datetime.strptime("2023-02-14", "%Y-%m-%d")) is None
+        DailyPartitionsDefinition(start_date="2023-02-15", end_offset=1).get_first_partition_window(
+            current_time=datetime.strptime("2023-02-14", "%Y-%m-%d")
+        )
+        is None
     )
 
     assert DailyPartitionsDefinition(
@@ -688,7 +691,10 @@ def test_get_first_partition_window():
     )
 
     assert (
-        DailyPartitionsDefinition(start_date="2023-01-15", end_offset=-1).get_first_partition_window(current_time=datetime.strptime("2023-01-16", "%Y-%m-%d")) is None
+        DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=-1
+        ).get_first_partition_window(current_time=datetime.strptime("2023-01-16", "%Y-%m-%d"))
+        is None
     )
 
     assert DailyPartitionsDefinition(
@@ -700,7 +706,10 @@ def test_get_first_partition_window():
     )
 
     assert (
-        DailyPartitionsDefinition(start_date="2023-01-15", end_offset=-2).get_first_partition_window(current_time=datetime.strptime("2023-01-17", "%Y-%m-%d")) is None
+        DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=-2
+        ).get_first_partition_window(current_time=datetime.strptime("2023-01-17", "%Y-%m-%d"))
+        is None
     )
 
     assert DailyPartitionsDefinition(
@@ -712,11 +721,54 @@ def test_get_first_partition_window():
     )
 
     assert (
-        MonthlyPartitionsDefinition(start_date="2023-01-01", end_offset=-1).get_first_partition_window(current_time=datetime.strptime("2023-01-15", "%Y-%m-%d")) is None
+        MonthlyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=-1
+        ).get_first_partition_window(current_time=datetime.strptime("2023-01-15", "%Y-%m-%d"))
+        is None
     )
 
     assert (
-        MonthlyPartitionsDefinition(start_date="2023-01-01", end_offset=-1).get_first_partition_window(current_time=datetime.strptime("2023-02-01", "%Y-%m-%d")) is None
+        DailyPartitionsDefinition(start_date="2023-01-15", end_offset=1).get_first_partition_window(
+            current_time=datetime.strptime("2023-01-14", "%Y-%m-%d")
+        )
+        is None
+    )
+
+    assert DailyPartitionsDefinition(
+        start_date="2023-01-15", end_offset=1
+    ).get_first_partition_window(
+        current_time=datetime(year=2023, month=1, day=15, hour=12, minute=0, second=0)
+    ) == time_window(
+        "2023-01-15", "2023-01-16"
+    )
+
+    assert DailyPartitionsDefinition(
+        start_date="2023-01-15", end_offset=1
+    ).get_first_partition_window(
+        current_time=datetime(year=2023, month=1, day=14, hour=12, minute=0, second=0)
+    ) == time_window(
+        "2023-01-15", "2023-01-16"
+    )
+
+    assert (
+        DailyPartitionsDefinition(start_date="2023-01-15", end_offset=1).get_first_partition_window(
+            current_time=datetime(year=2023, month=1, day=13, hour=12, minute=0, second=0)
+        )
+        is None
+    )
+
+    assert (
+        MonthlyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=-1
+        ).get_first_partition_window(current_time=datetime.strptime("2023-01-15", "%Y-%m-%d"))
+        is None
+    )
+
+    assert (
+        MonthlyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=-1
+        ).get_first_partition_window(current_time=datetime.strptime("2023-02-01", "%Y-%m-%d"))
+        is None
     )
 
     assert MonthlyPartitionsDefinition(

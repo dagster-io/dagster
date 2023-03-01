@@ -382,29 +382,30 @@ class TimeWindowPartitionsDefinition(
 
         if self.end_offset == 0:
             return time_window if time_window.end.timestamp() <= current_timestamp else None
-        else:
-            if self.end_offset > 0:
-                iterator = iter(self._iterate_time_windows(current_time))
-                # first returned time window is time window of current time
+        elif self.end_offset > 0:
+            iterator = iter(self._iterate_time_windows(current_time))
+            # first returned time window is time window of current time
+            curr_window_plus_offset = next(iterator)
+            for _ in range(self.end_offset):
                 curr_window_plus_offset = next(iterator)
-                for _ in range(self.end_offset):
-                    curr_window_plus_offset = next(iterator)
-                return (
-                    time_window
-                    if time_window.end.timestamp() <= curr_window_plus_offset.start.timestamp()
-                    else None
-                )
-            else:
-                # end offset < 0
-                iterator = iter(self._reverse_iterate_time_windows(current_time))
-                for _ in range(abs(self.end_offset)):
-                    end_window = next(iterator)
+            return (
+                time_window
+                if time_window.end.timestamp() <= curr_window_plus_offset.start.timestamp()
+                else None
+            )
+        else:
+            # end offset < 0
+            end_window = None
+            iterator = iter(self._reverse_iterate_time_windows(current_time))
+            for _ in range(abs(self.end_offset)):
+                end_window = next(iterator)
 
-                return (
-                    time_window
-                    if time_window.end.timestamp() <= end_window.start.timestamp()
-                    else None
-                )
+            if end_window is None:
+                check.failed("end_window should not be None")
+
+            return (
+                time_window if time_window.end.timestamp() <= end_window.start.timestamp() else None
+            )
 
     def get_last_partition_window(
         self, current_time: Optional[datetime] = None
