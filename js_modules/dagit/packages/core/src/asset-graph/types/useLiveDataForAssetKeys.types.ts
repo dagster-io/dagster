@@ -34,11 +34,6 @@ export type AssetGraphLiveQuery = {
     opNames: Array<string>;
     currentLogicalVersion: string | null;
     projectedLogicalVersion: string | null;
-    type:
-      | {__typename: 'ListDagsterType'; name: string | null}
-      | {__typename: 'NullableDagsterType'; name: string | null}
-      | {__typename: 'RegularDagsterType'; name: string | null}
-      | null;
     repository: {__typename: 'Repository'; id: string};
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     assetMaterializations: Array<{
