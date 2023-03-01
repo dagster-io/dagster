@@ -30,12 +30,15 @@ Dagster Cloud currently includes support for five levels of role-based access co
 <table>
   <thead>
     <tr>
-      <th>&nbsp;</th>
-      <th>Viewer</th>
-      <th>Launcher</th>
-      <th>Editor</th>
-      <th>Admin</th>
-      <th>Organization Admin</th>
+      <th width="50%; fixed">&nbsp;</th>
+      <th width="10%; fixed">Viewer</th>
+      <th width="10%; fixed">Launcher</th>
+      <th width="10%; fixed">Editor</th>
+      <th width="10%; fixed">Admin</th>
+      <th width="10%; fixed">
+        Organization <br />
+        Admin
+      </th>
     </tr>
   </thead>
   <tbody>
@@ -46,51 +49,51 @@ Dagster Cloud currently includes support for five levels of role-based access co
     </tr>
     <tr>
       <td>View runs of jobs</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Launch, re-execute, terminate, and delete runs of jobs</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Start and stop schedules</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Start and stop sensors</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Wipe assets</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Launch and cancel backfills</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -104,24 +107,11 @@ Dagster Cloud currently includes support for five levels of role-based access co
           deployments
         </a>
       </td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-    </tr>
-    <tr>
-      <td>
-        Create and delete{" "}
-        <a href="/dagster-cloud/developing-testing/managing-deployments">
-          deployments
-        </a>
-      </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
@@ -131,11 +121,11 @@ Dagster Cloud currently includes support for five levels of role-based access co
         </a>{" "}
         settings
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
@@ -144,11 +134,11 @@ Dagster Cloud currently includes support for five levels of role-based access co
           environment variables
         </a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
@@ -158,11 +148,11 @@ Dagster Cloud currently includes support for five levels of role-based access co
         </a>{" "}
         values
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
@@ -171,11 +161,24 @@ Dagster Cloud currently includes support for five levels of role-based access co
           environment variables
         </a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+    </tr>
+    <tr>
+      <td>
+        Create and delete{" "}
+        <a href="/dagster-cloud/developing-testing/managing-deployments">
+          deployments
+        </a>
+      </td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -189,11 +192,11 @@ Dagster Cloud currently includes support for five levels of role-based access co
           code locations
         </a>
       </td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
@@ -202,11 +205,11 @@ Dagster Cloud currently includes support for five levels of role-based access co
           code locations
         </a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
@@ -216,11 +219,11 @@ Dagster Cloud currently includes support for five levels of role-based access co
         </a>{" "}
         and workspaces
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -234,35 +237,35 @@ Dagster Cloud currently includes support for five levels of role-based access co
           agent tokens
         </a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Create agent tokens</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Edit agent tokens</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Revoke agent tokens</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -276,27 +279,27 @@ Dagster Cloud currently includes support for five levels of role-based access co
           user tokens
         </a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>List all user tokens</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Revoke all user tokens</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -307,35 +310,35 @@ Dagster Cloud currently includes support for five levels of role-based access co
       <td>
         <a href="/dagster-cloud/account/managing-users">View users</a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Create users</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Edit users</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Remove users</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td colspan="5">
@@ -346,45 +349,45 @@ Dagster Cloud currently includes support for five levels of role-based access co
       <td>
         Manage <a href="/dagster-cloud/account/setting-up-alerts">alerts</a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Edit workspace</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>
         <a href="/dagster-cloud/account/authentication">Administer SAML</a>
       </td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>View usage</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
     </tr>
     <tr>
       <td>Manage billing</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-red-50">N</td>
-      <td className="bg-green-50">Y</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-red-50">❌</td>
+      <td className="bg-green-50">✅</td>
     </tr>
   </tbody>
 </table>
