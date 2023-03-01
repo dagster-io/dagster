@@ -7,7 +7,7 @@ import {TestProvider} from '../../testing/TestProvider';
 import {AssetView} from '../AssetView';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
-jest.mock('../graph/asyncGraphLayout', () => ({}));
+jest.mock('../../graph/asyncGraphLayout', () => ({}));
 
 // This file must be mocked because useVirtualizer tries to create a ResizeObserver,
 // and the component tree fails to mount.

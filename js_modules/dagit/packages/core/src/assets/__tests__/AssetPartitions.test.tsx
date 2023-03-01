@@ -16,7 +16,7 @@ import {
 // This file must be mocked because useVirtualizer tries to create a ResizeObserver,
 // and the component tree fails to mount. We still want to test whether certain partitions
 // are shown, so we print the keys in a simple "list".
-jest.mock('./AssetPartitionList', () => ({
+jest.mock('../AssetPartitionList', () => ({
   AssetPartitionList: (props: AssetPartitionListProps) => (
     <div>
       <div data-testid="focused-partition">{props.focusedDimensionKey}</div>
