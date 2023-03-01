@@ -1,7 +1,7 @@
 import sys
 import warnings
 from contextlib import closing, contextmanager
-from typing import Any, Dict, Iterator, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from cryptography.hazmat.backends import default_backend
@@ -201,9 +201,10 @@ class SnowflakeConnection:
             sql (str): the query to be executed
             parameters (Optional[Union[Sequence[Any], Mapping[Any, Any]]]): Parameters to be passed to the query. See
                 https://docs.snowflake.com/en/user-guide/python-connector-example.html#binding-data
-            fetch_results (bool): If True, will return the result of the query. Defaults to False
+            fetch_results (bool): If True, will return the result of the query. Defaults to False. If True
+                and use_pandas_result is also True, results will be returned as a Pandas DataFrame.
             use_pandas_result (bool): If True, will return the result of the query as a Pandas DataFrame.
-                Defaults to False
+                Defaults to False.
 
         Returns:
             The result of the query if fetch_results or use_pandas_result is True, otherwise returns None
@@ -229,10 +230,10 @@ class SnowflakeConnection:
                 self.log.info("Executing query: " + sql)
                 parameters = dict(parameters) if isinstance(parameters, Mapping) else parameters
                 cursor.execute(sql, parameters)
-                if fetch_results:
-                    return cursor.fetchall()
                 if use_pandas_result:
                     return cursor.fetch_pandas_all()
+                if fetch_results:
+                    return cursor.fetchall()
 
     @public
     def execute_queries(
@@ -241,16 +242,17 @@ class SnowflakeConnection:
         parameters: Optional[Union[Sequence[Any], Mapping[Any, Any]]] = None,
         fetch_results: bool = False,
         use_pandas_result: bool = False,
-    ):
+    ) -> Optional[Sequence[Any]]:
         """Execute multiple queries in Snowflake.
 
         Args:
             sql_queries (str): List of queries to be executed in series
             parameters (Optional[Union[Sequence[Any], Mapping[Any, Any]]]): Parameters to be passed to every query. See
                 https://docs.snowflake.com/en/user-guide/python-connector-example.html#binding-data
-            fetch_results (bool): If True, will return the results of the queries as a list. Defaults to False
+            fetch_results (bool): If True, will return the results of the queries as a list. Defaults to False. If True
+                and use_pandas_result is also True, results will be returned as Pandas DataFrames.
             use_pandas_result (bool): If True, will return the results of the queries as a list of a Pandas DataFrames.
-                Defaults to False
+                Defaults to False.
 
         Returns:
             The results of the queries as a list if fetch_results or use_pandas_result is True,
@@ -263,7 +265,7 @@ class SnowflakeConnection:
                 def create_fresh_database(context):
                     queries = ["DROP DATABASE IF EXISTS MY_DATABASE", "CREATE DATABASE MY_DATABASE"]
                     context.resources.snowflake.execute_queries(
-                        sql=queries
+                        sql_queries=queries
                     )
 
         """
@@ -271,12 +273,7 @@ class SnowflakeConnection:
         check.opt_inst_param(parameters, "parameters", (list, dict))
         check.bool_param(fetch_results, "fetch_results")
 
-        if use_pandas_result:
-            import pandas as pd
-
-            results = pd.DataFrame()
-        else:
-            results = []
+        results: List[Any] = []
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
                 for sql in sql_queries:
@@ -285,13 +282,12 @@ class SnowflakeConnection:
                     self.log.info("Executing query: " + sql)
                     parameters = dict(parameters) if isinstance(parameters, Mapping) else parameters
                     cursor.execute(sql, parameters)
-                    if fetch_results:
-                        if use_pandas_result:
-                            results = results.append(cursor.fetch_pandas_all())  # type: ignore
-                        else:
-                            results.append(cursor.fetchall())  # type: ignore
+                    if use_pandas_result:
+                        results = results.append(cursor.fetch_pandas_all())  # type: ignore
+                    elif fetch_results:
+                        results.append(cursor.fetchall())  # type: ignore
 
-        return results if fetch_results else None
+        return results if len(results) > 0 else None
 
     @public
     def load_table_from_local_parquet(self, src: str, table: str):
