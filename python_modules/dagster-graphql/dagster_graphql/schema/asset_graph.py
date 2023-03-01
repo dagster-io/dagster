@@ -84,7 +84,6 @@ GrapheneAssetStaleStatus = graphene.Enum.from_enum(StaleStatus, name="StaleStatu
 
 
 class GrapheneAssetStaleStatusCause(graphene.ObjectType):
-    status = graphene.NonNull(GrapheneAssetStaleStatus)
     key = graphene.NonNull(GrapheneAssetKey)
     reason = graphene.NonNull(graphene.String)
     dependency = graphene.Field(GrapheneAssetKey)
@@ -229,7 +228,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         startIdx=graphene.Int(),
         endIdx=graphene.Int(),
     )
-    projectedLogicalVersion = graphene.String()
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
     staleStatus = graphene.Field(GrapheneAssetStaleStatus)
@@ -570,7 +568,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         return [
             GrapheneAssetStaleStatusCause(
-                cause.status,
                 GrapheneAssetKey(path=cause.key.path),
                 cause.reason,
                 GrapheneAssetKey(path=cause.dependency.path) if cause.dependency else None,
@@ -583,20 +580,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             self._external_asset_node.asset_key
         )
         return None if version == NULL_LOGICAL_VERSION else version.value
-
-    def resolve_projectedLogicalVersion(self, _graphene_info: ResolveInfo) -> Optional[str]:
-        if (
-            self.external_asset_node.is_source
-            or self.stale_status_loader.is_partitioned_or_downstream(
-                self.external_asset_node.asset_key
-            )
-        ):
-            return None
-        else:
-            version = self.stale_status_loader.get_projected_logical_version(
-                self.external_asset_node.asset_key
-            )
-            return version.value
 
     def resolve_dependedBy(self, graphene_info: ResolveInfo) -> List[GrapheneAssetDependency]:
         # CrossRepoAssetDependedByLoader class loads cross-repo asset dependencies workspace-wide.

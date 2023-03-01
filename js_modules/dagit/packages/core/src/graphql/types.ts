@@ -215,7 +215,6 @@ export type AssetNode = {
   partitionKeys: Array<Scalars['String']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
   partitionStats: Maybe<PartitionStats>;
-  projectedLogicalVersion: Maybe<Scalars['String']>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
   staleStatus: Maybe<StaleStatus>;
@@ -3493,7 +3492,6 @@ export type StaleStatusCause = {
   dependency: Maybe<AssetKey>;
   key: AssetKey;
   reason: Scalars['String'];
-  status: StaleStatus;
 };
 
 export type StartScheduleMutation = {

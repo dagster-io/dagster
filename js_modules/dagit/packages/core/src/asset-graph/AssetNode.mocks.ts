@@ -10,7 +10,6 @@ export const MockStaleReason: StaleStatusCause = {
     __typename: 'AssetKey',
   },
   reason: 'stale input',
-  status: StaleStatus.STALE,
   dependency: {
     path: ['asset0'],
     __typename: 'AssetKey',
