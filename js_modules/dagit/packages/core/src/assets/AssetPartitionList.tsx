@@ -106,7 +106,7 @@ export const AssetPartitionList: React.FC<AssetPartitionListProps> = ({
   );
 };
 
-const StateDot = ({state}: {state: PartitionState}) => (
+export const StateDot = ({state}: {state: PartitionState}) => (
   <div
     key={state}
     style={{

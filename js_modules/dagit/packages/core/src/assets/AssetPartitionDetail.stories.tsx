@@ -8,7 +8,7 @@ import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 import {
   AssetPartitionDetailMock,
   MaterializationUpstreamDataFullMock,
-} from './AssetEventDetail.mocks';
+} from './__fixtures__/AssetEventDetail.mocks';
 import {
   AssetPartitionDetail,
   AssetPartitionDetailEmpty,

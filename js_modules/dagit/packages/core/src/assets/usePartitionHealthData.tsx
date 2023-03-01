@@ -1,4 +1,4 @@
-import {gql, useApolloClient} from '@apollo/client';
+import {gql, useApolloClient, useQuery} from '@apollo/client';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 
@@ -442,18 +442,16 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
 
   const assetKeyJSONs = assetKeys.map((k) => JSON.stringify(k));
   const assetKeyJSON = JSON.stringify(assetKeyJSONs);
-  const missingKeyJSON = assetKeyJSONs.find(
+  const missingKey = assetKeys.find(
     (k) =>
-      !result.some(
-        (r) => JSON.stringify(r.assetKey) === k && r.fetchedAt === assetLastMaterializedAt,
-      ),
+      !result.some((r) => r.assetKey.path === k.path && r.fetchedAt === assetLastMaterializedAt),
   );
 
   React.useMemo(() => {
-    if (!missingKeyJSON) {
+    if (!missingKey) {
       return;
     }
-    const loadKey: AssetKey = JSON.parse(missingKeyJSON);
+    const loadKey: AssetKey = missingKey;
     const run = async () => {
       const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
         query: PARTITION_HEALTH_QUERY,
@@ -469,12 +467,47 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
       ]);
     };
     run();
-  }, [client, missingKeyJSON, assetLastMaterializedAt]);
+  }, [client, missingKey, assetLastMaterializedAt]);
 
   return React.useMemo(() => {
     const assetKeyJSONs = JSON.parse(assetKeyJSON);
     return result.filter((r) => assetKeyJSONs.includes(JSON.stringify(r.assetKey)));
   }, [assetKeyJSON, result]);
+}
+
+/**
+ *  Like usePartitionHealthData, but fetches queries in parallel and relies on the useQuery hook.
+ *  One benefit of useQuery as opposed to useLazyQuery or calling the client directly is that this query
+ *  can be targeted by refetchQueries making it easier to indirectly refetch this query.
+ * @returns
+ */
+export function usePartitionHealthData2(assetKeys: AssetKey[], cacheKey: string) {
+  const [healthData, setHealthData] = React.useState<PartitionHealthData[]>([]);
+  const client = useApolloClient();
+
+  React.useEffect(() => {
+    const data: PartitionHealthData[] = [];
+
+    async function fetchHealthData(key: AssetKey) {
+      return client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
+        query: PARTITION_HEALTH_QUERY,
+        fetchPolicy: 'network-only',
+        variables: {
+          assetKey: {path: key.path},
+        },
+      });
+    }
+
+    const promises = assetKeys.map((key) => fetchHealthData(key));
+    Promise.all(promises).then((results) => {
+      results.forEach((result, idx) => {
+        data.push(buildPartitionHealthData(result.data, assetKeys[idx]));
+      });
+      setHealthData(data);
+    });
+  }, [assetKeys, cacheKey, client]);
+
+  return healthData;
 }
 
 export const PARTITION_HEALTH_QUERY = gql`

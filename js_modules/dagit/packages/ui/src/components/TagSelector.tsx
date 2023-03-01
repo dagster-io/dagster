@@ -9,6 +9,7 @@ import {MenuItem, Menu} from './Menu';
 import {Popover} from './Popover';
 import {Tag} from './Tag';
 import {TextInputStyles} from './TextInput';
+import {useViewport} from './useViewport';
 
 type TagProps = {
   remove: (ev: React.SyntheticEvent<HTMLDivElement>) => void;
@@ -17,21 +18,24 @@ type DropdownItemProps = {
   toggle: () => void;
   selected: boolean;
 };
+type DropdownProps = {
+  width: string;
+};
 type Props = {
   placeholder?: React.ReactNode;
   allTags: string[];
   selectedTags: string[];
-  setSelectedTags: (tags: React.SetStateAction<string[]>) => void;
+  setSelectedTags: (tags: string[]) => void;
   renderTag?: (tag: string, tagProps: TagProps) => React.ReactNode;
   renderTagList?: (tags: React.ReactNode[]) => React.ReactNode;
-  renderDropdown?: (dropdown: React.ReactNode) => React.ReactNode;
+  renderDropdown?: (dropdown: React.ReactNode, dropdownProps: DropdownProps) => React.ReactNode;
   renderDropdownItem?: (tag: string, dropdownItemProps: DropdownItemProps) => React.ReactNode;
   dropdownStyles?: React.CSSProperties;
 };
 
 const defaultRenderTag = (tag: string, tagProps: TagProps) => {
   return (
-    <Tag>
+    <Tag key={tag}>
       <Box flex={{direction: 'row', gap: 4, justifyContent: 'space-between', alignItems: 'center'}}>
         <span>{tag}</span>
         <Box style={{cursor: 'pointer'}} onClick={tagProps.remove}>
@@ -70,6 +74,7 @@ export const TagSelector = ({
   renderTagList,
 }: Props) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  const {viewport, containerProps} = useViewport();
   const dropdown = React.useMemo(() => {
     const dropdownContent = (
       <Box
@@ -94,10 +99,18 @@ export const TagSelector = ({
       </Box>
     );
     if (renderDropdown) {
-      return renderDropdown(dropdownContent);
+      return renderDropdown(dropdownContent, {width: viewport.width + 'px'});
     }
-    return <Menu>{dropdownContent}</Menu>;
-  }, [allTags, dropdownStyles, renderDropdown, renderDropdownItem, selectedTags, setSelectedTags]);
+    return <Menu style={{width: viewport.width + 'px'}}>{dropdownContent}</Menu>;
+  }, [
+    allTags,
+    dropdownStyles,
+    renderDropdown,
+    renderDropdownItem,
+    selectedTags,
+    setSelectedTags,
+    viewport.width,
+  ]);
 
   const dropdownContainer = React.useRef<HTMLDivElement>(null);
 
@@ -108,7 +121,7 @@ export const TagSelector = ({
     const tags = selectedTags.map((tag) =>
       (renderTag || defaultRenderTag)(tag, {
         remove: (ev) => {
-          setSelectedTags((tags) => tags.filter((t) => t !== tag));
+          setSelectedTags(selectedTags.filter((t) => t !== tag));
           ev.stopPropagation();
         },
       }),
@@ -117,7 +130,7 @@ export const TagSelector = ({
       return renderTagList(tags);
     }
     return tags;
-  }, [placeholder, selectedTags, renderTag, renderTagList]);
+  }, [selectedTags, renderTagList, placeholder, renderTag, setSelectedTags]);
 
   return (
     <Popover
@@ -139,6 +152,7 @@ export const TagSelector = ({
         onClick={() => {
           setIsDropdownOpen((isOpen) => !isOpen);
         }}
+        {...containerProps}
       >
         <TagsContainer flex={{grow: 1, gap: 6}}>{tagsContent}</TagsContainer>
         <div style={{cursor: 'pointer'}}>

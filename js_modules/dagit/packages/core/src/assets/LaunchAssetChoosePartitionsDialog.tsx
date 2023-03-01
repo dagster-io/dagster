@@ -24,7 +24,7 @@ import {usePermissionsForLocation} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey, itemWithAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
-import {LaunchBackfillParams} from '../graphql/types';
+import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
@@ -70,7 +70,12 @@ import {
 } from './types/LaunchAssetChoosePartitionsDialog.types';
 import {PartitionDefinitionForLaunchAssetFragment} from './types/LaunchAssetExecutionButton.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
-import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitionHealthData';
+import {
+  PartitionDimensionSelection,
+  PartitionHealthData,
+  usePartitionHealthData,
+  usePartitionHealthData2,
+} from './usePartitionHealthData';
 
 interface Props {
   open: boolean;
@@ -83,14 +88,16 @@ interface Props {
     partitionDefinition: PartitionDefinitionForLaunchAssetFragment | null;
   }[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
+  refetch?: () => Promise<void>;
 }
 
 export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
-  const title = `Launch runs to materialize ${
+  const displayName =
     props.assets.length > 1
       ? `${props.assets.length} assets`
-      : displayNameForAssetKey(props.assets[0].assetKey)
-  }`;
+      : displayNameForAssetKey(props.assets[0].assetKey);
+
+  const title = `Launch runs to materialize ${displayName}`;
 
   return (
     <Dialog
@@ -119,6 +126,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   repoAddress,
   target,
   upstreamAssetKeys,
+  refetch: _refetch,
 }) => {
   const partitionedAssets = assets.filter((a) => !!a.partitionDefinition);
 
@@ -130,7 +138,18 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
   const [previewCount, setPreviewCount] = React.useState(0);
   const morePreviewsCount = partitionedAssets.length - previewCount;
 
-  const assetHealth = usePartitionHealthData(partitionedAssets.map((a) => a.assetKey));
+  const [lastRefresh, setLastRefresh] = React.useState(Date.now());
+
+  const refetch = async () => {
+    await _refetch?.();
+    setLastRefresh(Date.now());
+  };
+
+  const assetHealth = usePartitionHealthData2(
+    partitionedAssets.map((a) => a.assetKey),
+    lastRefresh.toString(),
+  );
+
   const assetHealthLoading = assetHealth.length === 0;
 
   const displayedHealth = React.useMemo(() => {
@@ -147,6 +166,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
   const knownDimensions = partitionedAssets[0].partitionDefinition?.dimensionTypes || [];
   const [missingOnly, setMissingOnly] = React.useState(true);
+
   const [selections, setSelections] = usePartitionDimensionSelections({
     knownDimensionNames: knownDimensions.map((d) => d.name),
     modifyQueryString: false,
@@ -364,6 +384,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                   selections.length === 2 ? selections[1 - idx].selectedRanges : undefined,
                 ),
               }}
+              isDynamic={assets.some(
+                (asset) =>
+                  asset.partitionDefinition?.type === PartitionDefinitionType.DYNAMIC ||
+                  !asset.partitionDefinition,
+              )}
               selected={range.selectedKeys}
               setSelected={(selectedKeys) =>
                 setSelections(
@@ -372,6 +397,11 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                   ),
                 )
               }
+              partitionDefinitionName={
+                assets.find((asset) => asset.partitionDefinition?.name)?.partitionDefinition?.name
+              }
+              repoAddress={repoAddress}
+              refetch={refetch}
             />
           ))}
 

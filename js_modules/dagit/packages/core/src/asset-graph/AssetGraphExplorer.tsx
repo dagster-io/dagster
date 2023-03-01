@@ -275,7 +275,7 @@ export const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
       firstInitialPercent={70}
       firstMinSize={400}
       first={
-        <ErrorBoundary region="graph">
+        <>
           {graphQueryItems.length === 0 ? (
             <EmptyDAGNotice nodeType="asset" isGraph />
           ) : applyingEmptyDefault ? (
@@ -437,7 +437,7 @@ export const AssetGraphExplorerWithData: React.FC<WithDataProps> = ({
               popoverPosition="bottom-left"
             />
           </QueryOverlay>
-        </ErrorBoundary>
+        </>
       }
       second={
         selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (

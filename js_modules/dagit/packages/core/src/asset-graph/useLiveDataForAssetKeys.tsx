@@ -187,6 +187,9 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
   query AssetGraphLiveQuery($assetKeys: [AssetKeyInput!]!) {
     assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
       id
+      type {
+        name
+      }
       ...AssetNodeLiveFragment
     }
     assetsLatestInfo(assetKeys: $assetKeys) {
