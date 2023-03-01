@@ -45,7 +45,7 @@ The BigQuery I/O manager requires some configuration to connect to your Bigquery
 - A `project`
 - One method of authentication. You can follow the GCP authentication instructions [here](https://cloud.google.com/docs/authentication/provide-credentials-adc), or see [Providing credentials as configuration](/integrations/bigquery/reference#providing-credentials-as-configuration) in the BigQuery reference guide.
 
-You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables.
+You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables. You can also set a `timeout` and number of `retries` when working with Pandas DataFrames.
 
 ```python file=/integrations/bigquery/configuration.py startafter=start_example endbefore=end_example
 from dagster_gcp_pandas import bigquery_pandas_io_manager
@@ -60,6 +60,8 @@ defs = Definitions(
                 "project": "my-gcp-project",  # required
                 "location": "us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
                 "dataset": "IRIS",  # optional, defaults to PUBLIC
+                "timeout": 15.0,  # optional, defaults to None
+                "retries": 2,  # optional, defaults to BigQuery default
             }
         )
     },

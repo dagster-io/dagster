@@ -142,6 +142,24 @@ def build_bigquery_io_manager(
                     " store data. If not provided, data will be directly written to BigQuery."
                 ),
             ),
+            "timeout": Field(
+                Noneable(float),
+                is_required=False,
+                default_value=None,
+                description=(
+                    "When using Pandas DataFrames, optionally specify a timeout for the BigQuery"
+                    " queries (loading and reading from tables)."
+                ),
+            ),
+            "retries": Field(
+                Noneable(int),
+                is_required=False,
+                default_value=None,
+                description=(
+                    "When using Pandas DataFrames, optionally specify a number of retries when"
+                    " loading data into BigQuery."
+                ),
+            ),
         }
     )
     def bigquery_io_manager(init_context):

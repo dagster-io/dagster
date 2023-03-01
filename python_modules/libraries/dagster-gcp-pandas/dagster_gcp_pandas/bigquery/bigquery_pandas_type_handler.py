@@ -39,11 +39,19 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         """Stores the pandas DataFrame in BigQuery."""
         with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
 
+        kwargs = {}
+        if context.resource_config and context.resource_config["retries"] is not None:
+            # set the num_retries as kwargs so that we can default to the BigQuery default if
+            # retries=None
+            kwargs["num_retries"] = context.resource_config["retries"]
+
         job = connection.load_table_from_dataframe(
             dataframe=with_uppercase_cols,
             destination=f"{table_slice.schema}.{table_slice.table}",
             project=table_slice.database,
             location=context.resource_config["location"] if context.resource_config else None,
+            timeout=context.resource_config["timeout"] if context.resource_config else None,
+            **kwargs,
         )
         job.result()
 
@@ -69,6 +77,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             query=BigQueryClient.get_select_statement(table_slice),
             project=table_slice.database,
             location=context.resource_config["location"] if context.resource_config else None,
+            timeout=context.resource_config["timeout"] if context.resource_config else None,
         ).to_dataframe()
 
         result.columns = map(str.lower, result.columns)
