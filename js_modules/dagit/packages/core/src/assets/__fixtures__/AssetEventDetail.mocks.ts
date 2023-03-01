@@ -1,15 +1,14 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {RunStatus} from '../graphql/types';
-
-import {ASSET_MATERIALIZATION_UPSTREAM_QUERY} from './AssetMaterializationUpstreamData';
-import {ASSET_PARTITION_DETAIL_QUERY} from './AssetPartitionDetail';
-import {AssetMaterializationUpstreamQuery} from './types/AssetMaterializationUpstreamData.types';
-import {AssetPartitionDetailQuery} from './types/AssetPartitionDetail.types';
+import {RunStatus} from '../../graphql/types';
+import {ASSET_MATERIALIZATION_UPSTREAM_QUERY} from '../AssetMaterializationUpstreamData';
+import {ASSET_PARTITION_DETAIL_QUERY} from '../AssetPartitionDetail';
+import {AssetMaterializationUpstreamQuery} from '../types/AssetMaterializationUpstreamData.types';
+import {AssetPartitionDetailQuery} from '../types/AssetPartitionDetail.types';
 import {
   AssetMaterializationFragment,
   AssetObservationFragment,
-} from './types/useRecentAssetEvents.types';
+} from '../types/useRecentAssetEvents.types';
 
 export const Partition = '2022-02-02';
 export const MaterializationTimestamp = 1673996425523;

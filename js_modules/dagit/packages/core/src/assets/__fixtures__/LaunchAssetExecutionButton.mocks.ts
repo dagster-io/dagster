@@ -1,15 +1,15 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
-import {PartitionDefinitionType} from '../graphql/types';
+import {AssetNodeForGraphQueryFragment} from '../../asset-graph/types/useAssetGraphData.types';
+import {PartitionDefinitionType} from '../../graphql/types';
+import {LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY} from '../LaunchAssetChoosePartitionsDialog';
+import {LAUNCH_ASSET_LOADER_QUERY} from '../LaunchAssetExecutionButton';
+import {LaunchAssetChoosePartitionsQuery} from '../types/LaunchAssetChoosePartitionsDialog.types';
+import {LaunchAssetLoaderQuery} from '../types/LaunchAssetExecutionButton.types';
+import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
+import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 
-import {LAUNCH_ASSET_CHOOSE_PARTITIONS_QUERY} from './LaunchAssetChoosePartitionsDialog';
-import {LAUNCH_ASSET_LOADER_QUERY} from './LaunchAssetExecutionButton';
 import {generateDailyTimePartitions} from './PartitionHealthSummary.mocks';
-import {LaunchAssetChoosePartitionsQuery} from './types/LaunchAssetChoosePartitionsDialog.types';
-import {LaunchAssetLoaderQuery} from './types/LaunchAssetExecutionButton.types';
-import {PartitionHealthQuery} from './types/usePartitionHealthData.types';
-import {PARTITION_HEALTH_QUERY} from './usePartitionHealthData';
 
 export const ASSET_DAILY_PARTITION_KEYS = generateDailyTimePartitions(
   new Date('2020-01-01'),
