@@ -44,12 +44,15 @@ You can also use the <PyObject object="schedule" decorator /> decorator if you w
 ##sets the schedule to be updated everyday at 9:00 AM
 @schedule(job=configurable_job, cron_schedule="0 9 * * *")
 def configurable_job_schedule(context: ScheduleEvaluationContext):
-  if context.scheduled_execution_time.weekday()<5:
-    activity_selection='grind'
-  else:
-    activity_selection= 'party'
-  return RunRequest(
-    run_config={"ops": {"configurable_op": {"config": {"activity": activity_selection}}}})
+    if context.scheduled_execution_time.weekday() < 5:
+        activity_selection = "grind"
+    else:
+        activity_selection = "party"
+    return RunRequest(
+        run_config={
+            "ops": {"configurable_op": {"config": {"activity": activity_selection}}}
+        }
+    )
 ```
 
 ### I want my data to be updated at different cadences
@@ -74,13 +77,18 @@ We also have an asset for the expenses, which also depends on the transactions a
 def transactions():
     pass
 
-@asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *"))
+
+@asset(
+    freshness_policy=FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")
+)
 def sales(transactions):
     pass
+
 
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=120))
 def expenses(transactions):
     pass
+
 
 update_sensor = build_asset_reconciliation_sensor(
     name="update_sensor", asset_selection=AssetSelection.all()
@@ -99,6 +107,7 @@ Let’s say you have sales pipeline data that you want updated every time a cust
 
 ```python file=/guides/dagster/automating_pipelines/s3_sensor.py startafter=s3_sensor_start endbefore=s3_sensor_end
 from dagster_aws.s3.sensor import get_s3_keys
+
 
 @sensor(job=log_file_job)
 def my_s3_sensor(context):
@@ -125,7 +134,7 @@ defs = Definitions(
     assets=[airbyte_asset1, airbyte_asset2, dbt_asset1, dbt_asset2],
     sensors=[
         build_asset_reconciliation_sensor(
-            asset_selection=AssetSelection.keys('dbt_asset1', 'dbt_asset2'),
+            asset_selection=AssetSelection.assets(dbt_asset1, dbt_asset2),
             name="asset_reconciliation_sensor",
         ),
     ],
