@@ -10,6 +10,7 @@ from dagster import (
     op,
     sensor,
 )
+from dagster._check import ParameterCheckError
 from dagster._config.structured_config import ConfigurableResource
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.valid_definitions import (
@@ -63,7 +64,7 @@ def sensor_from_fn_arg_no_context(my_resource: MyResource):
     return RunRequest(my_resource.a_str, run_config={}, tags={})
 
 
-@sensor(job_name="the_job", required_resource_keys={"my_resource"})
+@sensor(job_name="the_job")
 def sensor_context_arg_not_first_and_weird_name(
     my_resource: MyResource, not_called_context: SensorEvaluationContext
 ):
@@ -123,6 +124,16 @@ def loadable_target_origin() -> LoadableTargetOrigin:
         working_directory=os.getcwd(),
         attribute=None,
     )
+
+
+def test_cant_use_required_resource_keys_and_params_both() -> None:
+    with pytest.raises(ParameterCheckError):
+
+        @sensor(job_name="the_job", required_resource_keys={"my_other_resource"})
+        def sensor_from_context_and_params(
+            context: SensorEvaluationContext, my_resource: MyResource
+        ):
+            return RunRequest(my_resource.a_str, run_config={}, tags={})
 
 
 @pytest.mark.parametrize(

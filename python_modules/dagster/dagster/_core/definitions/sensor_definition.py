@@ -7,6 +7,7 @@ from typing import (
     Callable,
     Iterator,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -25,7 +26,6 @@ from dagster._core.definitions.resource_definition import (
     Resources,
 )
 from dagster._core.definitions.resource_output import get_resource_args
-from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -49,6 +49,7 @@ from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
+    from dagster import ResourceDefinition
     from dagster._core.definitions.repository_definition import RepositoryDefinition
 
 
@@ -110,8 +111,13 @@ class SensorEvaluationContext:
         repository_def: Optional["RepositoryDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
         sensor_name: Optional[str] = None,
-        resources: Optional[Resources] = None,
+        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
     ):
+        from dagster._core.definitions.scoped_resources_builder import (
+            IContainsGenerator,
+        )
+        from dagster._core.execution.build_resources import build_resources
+
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
         self._last_completion_time = check.opt_float_param(
@@ -123,7 +129,13 @@ class SensorEvaluationContext:
         self._repository_def = repository_def
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         self._sensor_name = sensor_name
-        self._resources = resources or ScopedResourcesBuilder().build(None)
+
+        self._resources_cm = build_resources(resource_defs or {})
+
+        self._resources = self._resources_cm.__enter__()
+        self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
+        self._cm_scope_entered = False
+
         self._log_key = (
             [
                 repository_name,
@@ -135,16 +147,27 @@ class SensorEvaluationContext:
         )
         self._logger: Optional[InstigationLogger] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "SensorEvaluationContext":
+        self._cm_scope_entered = True
         return self
 
-    def __exit__(self, _exception_type, _exception_value, _traceback):
+    def __exit__(self, *exc) -> None:
+        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
         self._exit_stack.close()
         self._logger = None
 
-    @public
+    def __del__(self) -> None:
+        if self._resources_contain_cm and not self._cm_scope_entered:
+            self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
+
     @property
     def resources(self) -> Resources:
+        if self._resources_contain_cm and not self._cm_scope_entered:
+            raise DagsterInvariantViolationError(
+                "At least one provided resource is a generator, but attempting to access "
+                "resources outside of context manager scope. You can use the following syntax to "
+                "open a context manager: `with build_solid_context(...) as context:`"
+            )
         return self._resources
 
     @public
@@ -360,9 +383,16 @@ class SensorDefinition:
         )
         resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(self._raw_fn)}
 
+        check.param_invariant(
+            len(required_resource_keys or []) == 0 or len(resource_arg_names) == 0,
+            (
+                "Cannot specify resource requirements in both @sensor decorator and as arguments to"
+                " the decorated function"
+            ),
+        )
         self._required_resource_keys = (
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
-            | resource_arg_names
+            or resource_arg_names
         )
 
     def __call__(self, *args, **kwargs):
@@ -656,6 +686,7 @@ def build_sensor_context(
     repository_name: Optional[str] = None,
     repository_def: Optional["RepositoryDefinition"] = None,
     sensor_name: Optional[str] = None,
+    resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
 ) -> SensorEvaluationContext:
     """Builds sensor execution context using the provided parameters.
 
@@ -680,7 +711,6 @@ def build_sensor_context(
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
 
-    from dagster._core.execution.build_resources import build_resources
 
     required_resource_keys = None
     if repository_def and sensor_name:
@@ -688,23 +718,24 @@ def build_sensor_context(
         required_resource_keys = sensor_def.required_resource_keys
 
     top_level_resources = repository_def.get_top_level_resources() if repository_def else {}
+    all_resources = {**top_level_resources, **(resource_defs or {})}
+
     resources_to_build = (
-        {k: v for k, v in top_level_resources.items() if k in required_resource_keys}
+        {k: v for k, v in all_resources.items() if k in required_resource_keys}
         if required_resource_keys
-        else top_level_resources
+        else all_resources
     )
-    with build_resources(resources_to_build) as resources:
-        return SensorEvaluationContext(
-            instance_ref=None,
-            last_completion_time=None,
-            last_run_key=None,
-            cursor=cursor,
-            repository_name=repository_name,
-            instance=instance,
-            repository_def=repository_def,
-            sensor_name=sensor_name,
-            resources=resources,
-        )
+    return SensorEvaluationContext(
+        instance_ref=None,
+        last_completion_time=None,
+        last_run_key=None,
+        cursor=cursor,
+        repository_name=repository_name,
+        instance=instance,
+        repository_def=repository_def,
+        sensor_name=sensor_name,
+        resource_defs=(resources_to_build),
+    )
 
 
 def _run_requests_with_base_asset_jobs(
