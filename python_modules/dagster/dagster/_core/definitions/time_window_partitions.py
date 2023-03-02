@@ -1522,179 +1522,114 @@ class TimeWindowPartitionsSubset(PartitionsSubset):
         return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges()})"
 
 
-class PartitionRangeStatus(str, Enum):
-    MATERIALIZED = "Materialized"
-    FAILED = "Failed"
-
-
-PARTITION_RANGE_STATUS_PRIORITY = [
-    PartitionRangeStatus.FAILED,
-    PartitionRangeStatus.MATERIALIZED,
-]  # ordered from highest priority to lowest priority
+class PartitionRangeStatus(Enum):
+    MATERIALIZED = "MATERIALIZED"
+    FAILED = "FAILED"
 
 
 class PartitionTimeWindowStatus:
-    def __init__(self, time_window: TimeWindow, status: str):
+    def __init__(self, time_window: TimeWindow, status: PartitionRangeStatus):
         self.time_window = time_window
         self.status = status
 
-    def __str__(self):
-        return f"({self.time_window.start} - {self.time_window.end}): {self.status}"
+    def __repr__(self):
+        return f"({self.time_window.start} - {self.time_window.end}): {self.status.value}"
 
     def __eq__(self, other):
         return (
             isinstance(other, PartitionTimeWindowStatus)
-            and self.time_window.start == other.time_window.start
-            and self.time_window.end == other.time_window.end
+            and self.time_window == other.time_window
             and self.status == other.status
         )
 
 
-def _intersections(a: Sequence[TimeWindow], b: Sequence[TimeWindow]) -> Sequence[TimeWindow]:
-    """Returns the intersecting TimeWindows of two lists of TimeWindows."""
-    ranges = []
-    new_b_windows = []
-    i = j = 0
-    while i < len(a) and j < len(b):
-        a_left, a_right = a[i].start, a[i].end
-        b_left, b_right = b[j].start, b[j].end
-
-        if a_right < b_right:
-            i += 1
-        else:
-            new_b_windows.append(b[j])
-            j += 1
-
-        if a_right >= b_left and b_right >= a_left:
-            end_pts = sorted([a_left, a_right, b_left, b_right])
-            middle = TimeWindow(end_pts[1], end_pts[2])
-            ranges.append(middle)
-
-    return ranges
-
-
-def _exclude_overlap_from_time_windows(
-    curr_time_windows: List[TimeWindow], time_windows_to_remove: Sequence[TimeWindow]
-) -> Sequence[TimeWindow]:
-    """
-    Accepts a list of time windows that are part of the current partition subset.
-    Returns a new partitions subset with the given time windows removed.
-    """
-    sorted_time_windows_to_remove = sorted(time_windows_to_remove, key=lambda tw: tw.start)
-
-    if len(sorted_time_windows_to_remove) == 0 or len(curr_time_windows) == 0:
-        return []
-
-    window_to_remove_i = 0
-
-    new_time_windows = []
-    curr_time_window_i = 0
-
-    while curr_time_window_i < len(curr_time_windows):
-        if window_to_remove_i >= len(sorted_time_windows_to_remove):
-            new_time_windows.append(curr_time_windows[curr_time_window_i])
-            curr_time_window_i += 1
-        else:
-            if (
-                sorted_time_windows_to_remove[window_to_remove_i].start
-                >= curr_time_windows[curr_time_window_i].start
-                and sorted_time_windows_to_remove[window_to_remove_i].end
-                <= curr_time_windows[curr_time_window_i].end
-            ):
-                # the time window to remove is contained within the current time window
-                if (
-                    sorted_time_windows_to_remove[window_to_remove_i].start
-                    == curr_time_windows[curr_time_window_i].start
-                    and sorted_time_windows_to_remove[window_to_remove_i].end
-                    == curr_time_windows[curr_time_window_i].end
-                ):
-                    # the time window to remove is the same as the current time window
-                    curr_time_window_i += 1
-                elif (
-                    sorted_time_windows_to_remove[window_to_remove_i].start
-                    == curr_time_windows[curr_time_window_i].start
-                ):
-                    # the time window to remove starts at the same time as the current time window
-                    # but ends before the current time window ends
-                    curr_time_windows[curr_time_window_i] = TimeWindow(
-                        sorted_time_windows_to_remove[window_to_remove_i].end,
-                        curr_time_windows[curr_time_window_i].end,
-                    )
-                elif (
-                    sorted_time_windows_to_remove[window_to_remove_i].end
-                    == curr_time_windows[curr_time_window_i].end
-                ):
-                    # the time window to remove ends at the same time as the current time window
-                    # but starts after the current time window starts
-                    new_time_windows.append(
-                        TimeWindow(
-                            curr_time_windows[curr_time_window_i].start,
-                            sorted_time_windows_to_remove[window_to_remove_i].start,
-                        )
-                    )
-
-                    curr_time_window_i += 1
-
-                else:
-                    # the time window to remove is contained within the current time window
-                    # but does not start at the same time and does not end at the same time
-                    new_time_windows.append(
-                        TimeWindow(
-                            curr_time_windows[curr_time_window_i].start,
-                            sorted_time_windows_to_remove[window_to_remove_i].start,
-                        )
-                    )
-
-                    curr_time_windows[curr_time_window_i] = TimeWindow(
-                        sorted_time_windows_to_remove[window_to_remove_i].end,
-                        curr_time_windows[curr_time_window_i].end,
-                    )
-
-                window_to_remove_i += 1
-            else:
-                new_time_windows.append(curr_time_windows[curr_time_window_i])
-                curr_time_window_i += 1
-
-    return new_time_windows
-
-
 def fetch_flattened_time_window_ranges(
-    subset_statuses: Sequence[Tuple[TimeWindowPartitionsSubset, PartitionRangeStatus]],
+    materialized_subset: TimeWindowPartitionsSubset, failed_subset: TimeWindowPartitionsSubset
 ) -> Sequence[PartitionTimeWindowStatus]:
     """
-    Given a list of TimeWindowPartitionsSubsets and their statuses, return a list of
-    PartitionTimeWindowStatuses that flattens all the subsets.
-
-    This function assumes that the provided subsets contain valid partitions.
+    Given a materialized subset and a failed subset, flatten to a list of timewindows where the
+    failed subsets are as they were, and the materialized subset is filtered to not overlap with
+    failed.
     """
-    if len(subset_statuses) != 2:
-        check.failed("Only two subset statuses are supported")
+    materialized_time_windows = sorted(
+        materialized_subset.included_time_windows, key=lambda t: t.start
+    )
+    failed_time_windows = sorted(failed_subset.included_time_windows, key=lambda t: t.start)
 
-    range_order = [
-        PARTITION_RANGE_STATUS_PRIORITY.index(subset_status[1]) for subset_status in subset_statuses
+    materilized_idx = 0
+    failed_idx = 0
+
+    filtered_materialized_time_windows = []
+
+    # slice and dice the materialized time windows so there's no overlap with failed
+    while True:
+        if materilized_idx >= len(materialized_time_windows):
+            # reached end of materialized
+            break
+        if failed_idx >= len(failed_time_windows):
+            # reached end of failed, add all remaining materialized bc there's no overlap
+            filtered_materialized_time_windows.extend(
+                [
+                    PartitionTimeWindowStatus(w, PartitionRangeStatus.MATERIALIZED)
+                    for w in materialized_time_windows[materilized_idx:]
+                ]
+            )
+            break
+
+        materialized_tw = materialized_time_windows[materilized_idx]
+        failed_tw = failed_time_windows[failed_idx]
+
+        if materialized_tw.start < failed_tw.start:
+            if materialized_tw.end <= failed_tw.start:
+                # materialized is entirely before failed
+                filtered_materialized_time_windows.append(
+                    PartitionTimeWindowStatus(materialized_tw, PartitionRangeStatus.MATERIALIZED)
+                )
+                materilized_idx += 1
+            else:
+                # failed cuts the materialized short
+                filtered_materialized_time_windows.append(
+                    PartitionTimeWindowStatus(
+                        TimeWindow(
+                            materialized_tw.start,
+                            failed_tw.start,
+                        ),
+                        PartitionRangeStatus.MATERIALIZED,
+                    )
+                )
+
+                if materialized_tw.end > failed_tw.end:
+                    # the materialized time window will continue on the other end of the failed
+                    # and get split in two. Modify materialized_time_windows[materilized_idx] to be
+                    # the second half of the materialized time window. It will be added in the next iteration.
+                    # (don't add it now, because we need to check if it overlaps with the next failed)
+                    materialized_time_windows[materilized_idx] = TimeWindow(
+                        failed_tw.end, materialized_tw.end
+                    )
+                    failed_idx += 1
+                else:
+                    # the rest of the materialized time window is inside the failed time window
+                    materilized_idx += 1
+        else:
+            if materialized_tw.start >= failed_tw.end:
+                # failed is entirely before materialized. The next failed may overlap
+                failed_idx += 1
+            elif materialized_tw.end <= failed_tw.end:
+                # materialized is entirely within failed, skip it
+                materilized_idx += 1
+            else:
+                # failed cuts out the start of the materialized. It will continue on the other end.
+                # Modify materialized_time_windows[materilized_idx] to shorten the start. It will be added
+                # in the next iteration. (don't add it now, because we need to check if it overlaps with the next failed)
+                materialized_time_windows[materilized_idx] = TimeWindow(
+                    failed_tw.end, materialized_tw.end
+                )
+                failed_idx += 1
+
+    # combine the failed windwos with the filtered materialized windows
+    flattened_time_windows = [
+        PartitionTimeWindowStatus(w, PartitionRangeStatus.FAILED) for w in failed_time_windows
     ]
-    subsets = [subset_status[0] for subset_status in subset_statuses]
-
-    # sort the subset by priority, and then return the ranges in that order
-    # sorted from high to low priority
-    _, subsets_in_order_of_priority = zip(*sorted(zip(range_order, subsets)))
-
-    subset_time_windows = [
-        cast(List, cast(TimeWindowPartitionsSubset, subset).included_time_windows)
-        for subset in subsets_in_order_of_priority
-    ]
-
-    overlaps = _intersections(subset_time_windows[0], subset_time_windows[1])
-
-    failed_time_windows = [
-        PartitionTimeWindowStatus(time_window, PartitionRangeStatus.FAILED)
-        for time_window in subset_time_windows[0]
-    ]
-
-    # Materialized time windows, excluding overlaps from failed time windows
-    new_materialized_tws = [
-        PartitionTimeWindowStatus(time_window, PartitionRangeStatus.MATERIALIZED)
-        for time_window in _exclude_overlap_from_time_windows(subset_time_windows[1], overlaps)
-    ]
-
-    return sorted(failed_time_windows + new_materialized_tws, key=lambda tw: tw.time_window.start)
+    flattened_time_windows.extend(filtered_materialized_time_windows)
+    flattened_time_windows.sort(key=lambda t: t.time_window.start)
+    return flattened_time_windows
