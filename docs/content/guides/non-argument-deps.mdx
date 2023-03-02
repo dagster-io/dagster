@@ -69,7 +69,7 @@ However, in this case, we don't want a Python object for the upstream asset, we 
 
 ### Combining assets with and without I/O
 
-Finally, let's define an asset that joins the cereal ratings data from `stopwords` with the cereals in our `topstories_word_cloud` asset:
+Finally, let's modify the `topstories_word_cloud` asset to read from the `stopwords_csv` asset instead of the hardcoded stopwords:
 
 ```python
 import csv

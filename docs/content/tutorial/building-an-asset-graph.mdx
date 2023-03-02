@@ -33,7 +33,7 @@ import pandas as pd # Add new imports to the top of `assets.py`
 def topstories(topstory_ids): #this asset is dependent on topstory_ids
     results = []
     for item_id in topstory_ids:
-        item = requests.get(f"<https://hacker-news.firebaseio.com/v0/item/{item_id}.json>").json()
+        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
         results.append(item)
 
         if len(results) % 20 == 0:
@@ -71,7 +71,7 @@ def topstories(topstory_ids):
 
     results = []
     for item_id in topstory_ids:
-        item = requests.get(f"<https://hacker-news.firebaseio.com/v0/item/{item_id}.json>").json()
+        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
         results.append(item)
 
         if len(results) % 20 == 0:
@@ -143,7 +143,7 @@ from dagster import asset, get_dagster_logger, Output, MetadataValue
 def topstories(context, topstory_ids):
     results = []
     for item_id in topstory_ids:
-        item = requests.get(f"<https://hacker-news.firebaseio.com/v0/item/{item_id}.json>").json()
+        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
         results.append(item)
 
         if len(results) % 20 == 0:

@@ -33,7 +33,7 @@ def topstories(topstory_ids):
     results = []
     for item_id in topstory_ids:
         item = requests.get(
-            f"<https://hacker-news.firebaseio.com/v0/item/{item_id}.json>"
+            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         ).json()
         results.append(item)
 

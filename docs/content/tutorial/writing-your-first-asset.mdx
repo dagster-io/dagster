@@ -33,7 +33,7 @@ To get started, you will fetch data from the Hacker News API. Copy and paste the
 ```python
 import requests
 
-newstories_url = "<https://hacker-news.firebaseio.com/v0/topstories.json>"
+newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
 top_new_story_ids = requests.get(newstories_url).json()[:100]
 ```
 
@@ -45,7 +45,7 @@ Next, you will work towards making this code into a software-defined asset. The 
 import requests
 
 def topstory_ids(): # turn it into a function
-    newstories_url = "<https://hacker-news.firebaseio.com/v0/topstories.json>"
+    newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
     top_new_story_ids = requests.get(newstories_url).json()[:100]
     return top_new_story_ids # return the data
 ```
@@ -58,7 +58,7 @@ from dagster import asset # import the `dagster` library
 
 @asset # add the asset decorator to tell Dagster this is an asset
 def topstory_ids():
-    newstories_url = "<https://hacker-news.firebaseio.com/v0/topstories.json>"
+    newstories_url = "https://hacker-news.firebaseio.com/v0/topstories.json"
     top_new_story_ids = requests.get(newstories_url).json()[:100]
     return top_new_story_ids
 ```
