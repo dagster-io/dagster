@@ -14,6 +14,9 @@ export type RunActionButtonsTestQuery = {
         runConfigYaml: string;
         runId: string;
         canTerminate: boolean;
+        hasReExecutePermission: boolean;
+        hasTerminatePermission: boolean;
+        hasDeletePermission: boolean;
         status: Types.RunStatus;
         mode: string;
         rootRunId: string | null;

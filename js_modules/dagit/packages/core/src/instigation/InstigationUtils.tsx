@@ -44,6 +44,8 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
     name
     instigationType
     status
+    hasStartPermission
+    hasStopPermission
     repositoryName
     repositoryLocationName
     typeSpecificData {

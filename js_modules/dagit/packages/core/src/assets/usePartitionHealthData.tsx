@@ -436,17 +436,18 @@ function rangesCoverAll(ranges: Range[], keyCount: number) {
 // a sign that we should invalidate and reload previously loaded health stats. We don't
 // clear them immediately to avoid an empty state.
 //
-export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMaterializedAt = '') {
+export function usePartitionHealthData(
+  assetKeys: AssetKey[],
+  cacheKey = '',
+  cacheClearStrategy: 'immediate' | 'background' = 'background',
+) {
   const [result, setResult] = React.useState<(PartitionHealthData & {fetchedAt: string})[]>([]);
   const client = useApolloClient();
 
   const assetKeyJSONs = assetKeys.map((k) => JSON.stringify(k));
   const assetKeyJSON = JSON.stringify(assetKeyJSONs);
   const missingKeyJSON = assetKeyJSONs.find(
-    (k) =>
-      !result.some(
-        (r) => JSON.stringify(r.assetKey) === k && r.fetchedAt === assetLastMaterializedAt,
-      ),
+    (k) => !result.some((r) => JSON.stringify(r.assetKey) === k && r.fetchedAt === cacheKey),
   );
 
   React.useMemo(() => {
@@ -465,16 +466,20 @@ export function usePartitionHealthData(assetKeys: AssetKey[], assetLastMateriali
       const loaded = buildPartitionHealthData(data, loadKey);
       setResult((result) => [
         ...result.filter((r) => !isEqual(r.assetKey, loadKey)),
-        {...loaded, fetchedAt: assetLastMaterializedAt},
+        {...loaded, fetchedAt: cacheKey},
       ]);
     };
     run();
-  }, [client, missingKeyJSON, assetLastMaterializedAt]);
+  }, [client, missingKeyJSON, cacheKey]);
 
   return React.useMemo(() => {
     const assetKeyJSONs = JSON.parse(assetKeyJSON);
-    return result.filter((r) => assetKeyJSONs.includes(JSON.stringify(r.assetKey)));
-  }, [assetKeyJSON, result]);
+    return result.filter(
+      (r) =>
+        assetKeyJSONs.includes(JSON.stringify(r.assetKey)) &&
+        (r.fetchedAt === cacheKey || cacheClearStrategy === 'background'),
+    );
+  }, [assetKeyJSON, result, cacheKey, cacheClearStrategy]);
 }
 
 export const PARTITION_HEALTH_QUERY = gql`

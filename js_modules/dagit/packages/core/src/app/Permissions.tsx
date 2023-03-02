@@ -33,7 +33,7 @@ export type PermissionsFromJSON = {
   start_schedule?: PermissionResult;
   stop_running_schedule?: PermissionResult;
   edit_sensor?: PermissionResult;
-  update_sensor_cursor?: PermissionResult
+  update_sensor_cursor?: PermissionResult;
   terminate_pipeline_execution?: PermissionResult;
   delete_pipeline_run?: PermissionResult;
   reload_repository_location?: PermissionResult;
@@ -43,9 +43,11 @@ export type PermissionsFromJSON = {
   cancel_partition_backfill?: PermissionResult;
 };
 
+export const DEFAULT_DISABLED_REASON = 'Disabled by your administrator';
+
 const DEFAULT_PERMISSIONS = {
   enabled: false,
-  disabledReason: 'Disabled by your administrator',
+  disabledReason: DEFAULT_DISABLED_REASON,
 };
 
 export const extractPermissions = (

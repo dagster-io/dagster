@@ -1,8 +1,8 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {AssetLineageElements} from './AssetLineageElements';
-import {AssetLineageFragment} from './types/AssetLineageElements.types';
+import {AssetLineageElements} from '../AssetLineageElements';
+import {AssetLineageFragment} from '../types/AssetLineageElements.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {

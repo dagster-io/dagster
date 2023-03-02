@@ -6,8 +6,7 @@ export type AssetNodeLiveFragment = {
   __typename: 'AssetNode';
   id: string;
   opNames: Array<string>;
-  currentLogicalVersion: string | null;
-  projectedLogicalVersion: string | null;
+  staleStatus: Types.StaleStatus | null;
   repository: {__typename: 'Repository'; id: string};
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   assetMaterializations: Array<{
@@ -23,6 +22,12 @@ export type AssetNodeLiveFragment = {
   } | null;
   freshnessInfo: {__typename: 'AssetFreshnessInfo'; currentMinutesLate: number | null} | null;
   assetObservations: Array<{__typename: 'ObservationEvent'; timestamp: string; runId: string}>;
+  staleStatusCauses: Array<{
+    __typename: 'StaleStatusCause';
+    reason: string;
+    key: {__typename: 'AssetKey'; path: Array<string>};
+    dependency: {__typename: 'AssetKey'; path: Array<string>} | null;
+  }>;
   partitionStats: {
     __typename: 'PartitionStats';
     numMaterialized: number;

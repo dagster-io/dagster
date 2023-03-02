@@ -37,6 +37,8 @@ export type ScheduleRootQuery = {
           name: string;
           instigationType: Types.InstigationType;
           status: Types.InstigationStatus;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
           repositoryName: string;
           repositoryLocationName: string;
           runningCount: number;
@@ -128,6 +130,9 @@ export type PreviousRunsForScheduleQuery = {
           status: Types.RunStatus;
           stepKeysToExecute: Array<string> | null;
           canTerminate: boolean;
+          hasReExecutePermission: boolean;
+          hasTerminatePermission: boolean;
+          hasDeletePermission: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;

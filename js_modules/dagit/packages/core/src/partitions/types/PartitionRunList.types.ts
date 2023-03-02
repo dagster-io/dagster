@@ -29,6 +29,9 @@ export type PartitionRunListQuery = {
           status: Types.RunStatus;
           stepKeysToExecute: Array<string> | null;
           canTerminate: boolean;
+          hasReExecutePermission: boolean;
+          hasTerminatePermission: boolean;
+          hasDeletePermission: boolean;
           mode: string;
           rootRunId: string | null;
           parentRunId: string | null;

@@ -2,18 +2,17 @@ import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui';
 import React from 'react';
 
-import {createAppCache} from '../app/AppCache';
-import {StorybookProvider} from '../testing/StorybookProvider';
-import {WorkspaceProvider} from '../workspace/WorkspaceContext';
-
-import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
+import {createAppCache} from '../../app/AppCache';
+import {StorybookProvider} from '../../testing/StorybookProvider';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {AssetEventDetail, AssetEventDetailEmpty} from '../AssetEventDetail';
 import {
   BasicObservationEvent,
   MaterializationEventFull,
   MaterializationEventMinimal,
   MaterializationUpstreamDataEmptyMock,
   MaterializationUpstreamDataFullMock,
-} from './AssetEventDetail.mocks';
+} from '../__fixtures__/AssetEventDetail.mocks';
 
 // eslint-disable-next-line import/no-default-export
 export default {component: AssetEventDetail};

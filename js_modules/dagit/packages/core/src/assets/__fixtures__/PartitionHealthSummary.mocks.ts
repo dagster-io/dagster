@@ -1,7 +1,7 @@
 import {MockedResponse} from '@apollo/client/testing';
 
-import {PartitionHealthQuery} from './types/usePartitionHealthData.types';
-import {PARTITION_HEALTH_QUERY} from './usePartitionHealthData';
+import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
+import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 
 // Generates hourly partitions in the format 2022-08-31-00:00
 function generateHourlyTimePartitions(startDate: Date, endDate: Date) {

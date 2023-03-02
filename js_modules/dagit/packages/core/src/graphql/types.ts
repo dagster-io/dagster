@@ -215,7 +215,6 @@ export type AssetNode = {
   partitionKeys: Array<Scalars['String']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
   partitionStats: Maybe<PartitionStats>;
-  projectedLogicalVersion: Maybe<Scalars['String']>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
   staleStatus: Maybe<StaleStatus>;
@@ -604,8 +603,8 @@ export type DagitQuery = {
   runGroupOrError: RunGroupOrError;
   runGroupsOrError: RunGroupsOrError;
   runOrError: RunOrError;
-  runTagKeys: Array<Scalars['String']>;
-  runTags: Array<PipelineTagAndValues>;
+  runTagKeysOrError: Maybe<RunTagKeysOrError>;
+  runTagsOrError: Maybe<RunTagsOrError>;
   runsOrError: RunsOrError;
   scheduleOrError: ScheduleOrError;
   scheduler: SchedulerOrError;
@@ -755,7 +754,7 @@ export type DagitQueryRunOrErrorArgs = {
   runId: Scalars['ID'];
 };
 
-export type DagitQueryRunTagsArgs = {
+export type DagitQueryRunTagsOrErrorArgs = {
   limit?: InputMaybe<Scalars['Int']>;
   tagKeys?: InputMaybe<Array<Scalars['String']>>;
   valuePrefix?: InputMaybe<Scalars['String']>;
@@ -2294,6 +2293,7 @@ export type PartitionSetsOrError = PartitionSets | PipelineNotFoundError | Pytho
 
 export type PartitionStats = {
   __typename: 'PartitionStats';
+  numFailed: Scalars['Int'];
   numMaterialized: Scalars['Int'];
   numPartitions: Scalars['Int'];
 };
@@ -3169,6 +3169,20 @@ export type RunSuccessEvent = MessageEvent &
     timestamp: Scalars['String'];
   };
 
+export type RunTagKeys = {
+  __typename: 'RunTagKeys';
+  keys: Array<Scalars['String']>;
+};
+
+export type RunTagKeysOrError = PythonError | RunTagKeys;
+
+export type RunTags = {
+  __typename: 'RunTags';
+  tags: Array<PipelineTagAndValues>;
+};
+
+export type RunTagsOrError = PythonError | RunTags;
+
 export type Runs = PipelineRuns & {
   __typename: 'Runs';
   count: Maybe<Scalars['Int']>;
@@ -3479,7 +3493,6 @@ export type StaleStatusCause = {
   dependency: Maybe<AssetKey>;
   key: AssetKey;
   reason: Scalars['String'];
-  status: StaleStatus;
 };
 
 export type StartScheduleMutation = {
