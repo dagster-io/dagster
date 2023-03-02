@@ -1,12 +1,56 @@
-from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
+from typing import Any, Iterable, List, Optional
 
-from dagster_airbyte.resources import DEFAULT_POLL_INTERVAL_SECONDS
+from dagster import In, Nothing, Out, Output, op
+from dagster._config.structured_config import Config
+from pydantic import Field
+
 from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import _get_attempt, generate_materializations
 
+from .resources import DEFAULT_POLL_INTERVAL_SECONDS, AirbyteResource
+
+
+class AirbyteSyncConfig(Config):
+    connection_id: str = Field(
+        ...,
+        description=(
+            "Parsed json dictionary representing the details of the Airbyte connector after the"
+            " sync successfully completes. See the [Airbyte API"
+            " Docs](https://airbyte-public-api-docs.s3.us-east-2.amazonaws.com/rapidoc-api-docs.html#overview)"
+            " to see detailed information on this response."
+        ),
+    )
+    poll_interval: float = Field(
+        DEFAULT_POLL_INTERVAL_SECONDS,
+        description=(
+            "The maximum time that will waited before this operation is timed out. By "
+            "default, this will never time out."
+        ),
+    )
+    poll_timeout: Optional[float] = Field(
+        None,
+        description=(
+            "The maximum time that will waited before this operation is timed out. By "
+            "default, this will never time out."
+        ),
+    )
+    yield_materializations: bool = Field(
+        True,
+        description=(
+            "If True, materializations corresponding to the results of the Airbyte sync will "
+            "be yielded when the op executes."
+        ),
+    )
+    asset_key_prefix: List[str] = Field(
+        ["airbyte"],
+        description=(
+            "If provided and yield_materializations is True, these components will be used to "
+            "prefix the generated asset keys."
+        ),
+    )
+
 
 @op(
-    required_resource_keys={"airbyte"},
     ins={"start_after": In(Nothing)},
     out=Out(
         AirbyteOutput,
@@ -17,49 +61,11 @@ from dagster_airbyte.utils import _get_attempt, generate_materializations
             " to see detailed information on this response."
         ),
     ),
-    config_schema={
-        "connection_id": Field(
-            str,
-            is_required=True,
-            description=(
-                "The Airbyte Connection ID that this op will sync. You can retrieve this "
-                'value from the "Connections" tab of a given connector in the Airbyte UI.'
-            ),
-        ),
-        "poll_interval": Field(
-            float,
-            default_value=DEFAULT_POLL_INTERVAL_SECONDS,
-            description="The time (in seconds) that will be waited between successive polls.",
-        ),
-        "poll_timeout": Field(
-            Noneable(float),
-            default_value=None,
-            description=(
-                "The maximum time that will waited before this operation is timed out. By "
-                "default, this will never time out."
-            ),
-        ),
-        "yield_materializations": Field(
-            config=Bool,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the Airbyte sync will "
-                "be yielded when the op executes."
-            ),
-        ),
-        "asset_key_prefix": Field(
-            config=Array(str),
-            default_value=["airbyte"],
-            description=(
-                "If provided and yield_materializations is True, these components will be used to "
-                "prefix the generated asset keys."
-            ),
-        ),
-    },
     tags={"kind": "airbyte"},
 )
-def airbyte_sync_op(context):
-    """Executes a Airbyte job sync for a given ``connection_id``, and polls until that sync
+def airbyte_sync_op(context, config: AirbyteSyncConfig, airbyte: AirbyteResource) -> Iterable[Any]:
+    """
+    Executes a Airbyte job sync for a given ``connection_id``, and polls until that sync
     completes, raising an error if it is unsuccessful. It outputs a AirbyteOutput which contains
     the job details for a given ``connection_id``.
 
@@ -90,14 +96,14 @@ def airbyte_sync_op(context):
                 final_foobar_state = sync_foobar(start_after=some_op())
                 other_op(final_foobar_state)
     """
-    airbyte_output = context.resources.airbyte.sync_and_poll(
-        connection_id=context.op_config["connection_id"],
-        poll_interval=context.op_config["poll_interval"],
-        poll_timeout=context.op_config["poll_timeout"],
+    airbyte_output = airbyte.sync_and_poll(
+        connection_id=config.connection_id,
+        poll_interval=config.poll_interval,
+        poll_timeout=config.poll_timeout,
     )
-    if context.op_config["yield_materializations"]:
+    if config.yield_materializations:
         yield from generate_materializations(
-            airbyte_output, asset_key_prefix=context.op_config["asset_key_prefix"]
+            airbyte_output, asset_key_prefix=config.asset_key_prefix
         )
     yield Output(
         airbyte_output,
