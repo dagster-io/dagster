@@ -3,7 +3,6 @@ import {Button, Spinner, Tooltip, Icon} from '@dagster-io/ui';
 import React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {usePermissionsDEPRECATED} from '../app/Permissions';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -33,10 +32,10 @@ type ObserveAssetsState =
 
 export const LaunchAssetObservationButton: React.FC<{
   assetKeys: AssetKey[]; // Memoization not required
+  hasLaunchPermission: boolean;
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({assetKeys, preferredJobName, intent = 'none'}) => {
-  const {canLaunchPipelineExecution} = usePermissionsDEPRECATED();
+}> = ({assetKeys, hasLaunchPermission, preferredJobName, intent = 'none'}) => {
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
@@ -50,7 +49,7 @@ export const LaunchAssetObservationButton: React.FC<{
     return <span />;
   }
 
-  if (!canLaunchPipelineExecution.enabled) {
+  if (!hasLaunchPermission) {
     return (
       <Tooltip content="You do not have permission to observe source assets">
         <Button intent={intent} icon={<Icon name="observation" />} disabled>

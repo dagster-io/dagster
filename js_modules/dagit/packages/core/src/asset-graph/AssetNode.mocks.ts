@@ -24,6 +24,7 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = {
   computeKind: null,
   description: 'This is a test asset description',
   graphName: null,
+  hasMaterializePermission: true,
   id: '["asset1"]',
   isObservable: false,
   isPartitioned: false,
