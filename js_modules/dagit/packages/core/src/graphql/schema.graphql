@@ -684,6 +684,7 @@ type AssetNode {
   staleStatus: StaleStatus
   staleStatusCauses: [StaleStatusCause!]!
   type: DagsterType
+  hasMaterializePermission: Boolean!
 }
 
 type MaterializationUpstreamDataVersion {
@@ -2355,6 +2356,7 @@ type PartitionBackfill {
   partitionStatuses: PartitionStatuses!
   partitionStatusCounts: [PartitionStatusCounts!]!
   hasCancelPermission: Boolean!
+  hasResumePermission: Boolean!
 }
 
 enum BulkActionStatus {

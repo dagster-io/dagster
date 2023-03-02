@@ -172,6 +172,7 @@ GET_ASSET_NODES_FROM_KEYS = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $assetKeys: [AssetKeyInput!]) {
         assetNodes(pipeline: $pipelineSelector, assetKeys: $assetKeys) {
             id
+            hasMaterializePermission
         }
     }
 """
@@ -729,6 +730,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["assetNodes"]) == 1
         asset_node = result.data["assetNodes"][0]
         assert asset_node["id"] == 'test.test_repo.["asset_one"]'
+        assert asset_node["hasMaterializePermission"]
 
         result = execute_dagster_graphql(
             graphql_context,

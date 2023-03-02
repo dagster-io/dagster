@@ -24,6 +24,7 @@ from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
+from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -233,6 +234,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     staleStatus = graphene.Field(GrapheneAssetStaleStatus)
     staleStatusCauses = non_null_list(GrapheneAssetStaleStatusCause)
     type = graphene.Field(GrapheneDagsterType)
+    hasMaterializePermission = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "AssetNode"
@@ -425,6 +427,14 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def is_source_asset(self) -> bool:
         return self._external_asset_node.is_source
+
+    def resolve_hasMaterializePermission(
+        self,
+        graphene_info: ResolveInfo,
+    ):
+        return graphene_info.context.has_permission_for_location(
+            Permissions.LAUNCH_PIPELINE_EXECUTION, self._repository_location.name
+        )
 
     def resolve_assetMaterializationUsedData(
         self,
