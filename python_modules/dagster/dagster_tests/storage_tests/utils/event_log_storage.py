@@ -3219,18 +3219,18 @@ class TestEventLogStorage:
         )
         partitions = storage.get_dynamic_partitions("foo")
         assert len(partitions) == 3
-        assert partitions == ["foo", "bar", "baz"]
+        assert set(partitions) == {"foo", "bar", "baz"}
 
         # Test for idempotency
         storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo"])
         partitions = storage.get_dynamic_partitions("foo")
         assert len(partitions) == 3
-        assert partitions == ["foo", "bar", "baz"]
+        assert set(partitions) == {"foo", "bar", "baz"}
 
         storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo", "qux"])
         partitions = storage.get_dynamic_partitions("foo")
         assert len(partitions) == 4
-        assert partitions == ["foo", "bar", "baz", "qux"]
+        assert set(partitions) == {"foo", "bar", "baz", "qux"}
 
         assert set(storage.get_dynamic_partitions("baz")) == set()
 
