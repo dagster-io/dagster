@@ -22,8 +22,8 @@ from dagster._config.structured_config import (
 )
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.resource_output import Resource
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.compute import OpExecutionContext

@@ -25,7 +25,7 @@ from dagster._core.decorator_utils import (
     positional_arg_name_list,
 )
 from dagster._core.definitions.inference import infer_input_props
-from dagster._core.definitions.resource_output import get_resource_args
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._utils.backcompat import canonicalize_backcompat_args

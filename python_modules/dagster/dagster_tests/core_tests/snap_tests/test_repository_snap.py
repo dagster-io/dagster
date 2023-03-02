@@ -4,8 +4,8 @@ from dagster._core.definitions.repository_definition import (
     PendingRepositoryDefinition,
     RepositoryDefinition,
 )
+from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.resource_output import Resource
 from dagster._core.host_representation import (
     ExternalPipelineData,
     external_repository_data_from_def,
