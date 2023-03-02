@@ -1,3 +1,4 @@
+import logging
 import multiprocessing
 import os
 import sys
@@ -67,37 +68,40 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
 
     def execute(self) -> Iterator[DagsterEvent]:
         pipeline = self.recon_pipeline
-        with DagsterInstance.from_ref(self.instance_ref) as instance:
-            start_termination_thread(self.term_event)
-            execution_plan = create_execution_plan(
-                pipeline=pipeline,
-                run_config=self.run_config,
-                mode=self.pipeline_run.mode,
-                step_keys_to_execute=[self.step_key],
-                known_state=self.known_state,
-                repository_load_data=self.repository_load_data,
-            )
+        try:
+            with DagsterInstance.from_ref(self.instance_ref) as instance:
+                start_termination_thread(self.term_event)
+                execution_plan = create_execution_plan(
+                    pipeline=pipeline,
+                    run_config=self.run_config,
+                    mode=self.pipeline_run.mode,
+                    step_keys_to_execute=[self.step_key],
+                    known_state=self.known_state,
+                    repository_load_data=self.repository_load_data,
+                )
 
-            log_manager = create_context_free_log_manager(instance, self.pipeline_run)
+                log_manager = create_context_free_log_manager(instance, self.pipeline_run)
 
-            yield DagsterEvent.step_worker_started(
-                log_manager,
-                self.pipeline_run.pipeline_name,
-                message='Executing step "{}" in subprocess.'.format(self.step_key),
-                metadata_entries=[
-                    MetadataEntry("pid", value=str(os.getpid())),
-                ],
-                step_key=self.step_key,
-            )
+                yield DagsterEvent.step_worker_started(
+                    log_manager,
+                    self.pipeline_run.pipeline_name,
+                    message='Executing step "{}" in subprocess.'.format(self.step_key),
+                    metadata_entries=[
+                        MetadataEntry("pid", value=str(os.getpid())),
+                    ],
+                    step_key=self.step_key,
+                )
 
-            yield from execute_plan_iterator(
-                execution_plan,
-                pipeline,
-                self.pipeline_run,
-                run_config=self.run_config,
-                retry_mode=self.retry_mode.for_inner_plan(),
-                instance=instance,
-            )
+                yield from execute_plan_iterator(
+                    execution_plan,
+                    pipeline,
+                    self.pipeline_run,
+                    run_config=self.run_config,
+                    retry_mode=self.retry_mode.for_inner_plan(),
+                    instance=instance,
+                )
+        except:
+            logging.shutdown()
 
 
 class MultiprocessExecutor(Executor):

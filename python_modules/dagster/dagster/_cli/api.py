@@ -60,28 +60,33 @@ def execute_run_command(input_json):
     with capture_interrupts():
         args = deserialize_as(input_json, ExecuteRunArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
-            buffer = []
+        return_code = 0
 
-            def send_to_buffer(event):
-                buffer.append(serialize_dagster_namedtuple(event))
+        try:
+            with (
+                DagsterInstance.from_ref(args.instance_ref)
+                if args.instance_ref
+                else DagsterInstance.get()
+            ) as instance:
+                buffer = []
 
-            return_code = _execute_run_command_body(
-                args.pipeline_run_id,
-                instance,
-                send_to_buffer,
-                set_exit_code_on_failure=args.set_exit_code_on_failure or False,
-            )
+                def send_to_buffer(event):
+                    buffer.append(serialize_dagster_namedtuple(event))
 
-            for line in buffer:
-                click.echo(line)
+                return_code = _execute_run_command_body(
+                    args.pipeline_run_id,
+                    instance,
+                    send_to_buffer,
+                    set_exit_code_on_failure=args.set_exit_code_on_failure or False,
+                )
 
-            if return_code != 0:
-                sys.exit(return_code)
+                for line in buffer:
+                    click.echo(line)
+        finally:
+            logging.shutdown()
+
+        if return_code != 0:
+            sys.exit(return_code)
 
 
 def _execute_run_command_body(
@@ -167,28 +172,32 @@ def resume_run_command(input_json):
     with capture_interrupts():
         args = deserialize_as(input_json, ResumeRunArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
-            buffer = []
+        return_code = 0
+        try:
+            with (
+                DagsterInstance.from_ref(args.instance_ref)
+                if args.instance_ref
+                else DagsterInstance.get()
+            ) as instance:
+                buffer = []
 
-            def send_to_buffer(event):
-                buffer.append(serialize_dagster_namedtuple(event))
+                def send_to_buffer(event):
+                    buffer.append(serialize_dagster_namedtuple(event))
 
-            return_code = _resume_run_command_body(
-                args.pipeline_run_id,
-                instance,
-                send_to_buffer,
-                set_exit_code_on_failure=args.set_exit_code_on_failure or False,
-            )
+                return_code = _resume_run_command_body(
+                    args.pipeline_run_id,
+                    instance,
+                    send_to_buffer,
+                    set_exit_code_on_failure=args.set_exit_code_on_failure or False,
+                )
 
-            for line in buffer:
-                click.echo(line)
+                for line in buffer:
+                    click.echo(line)
+        finally:
+            logging.shutdown()
 
-            if return_code != 0:
-                sys.exit(return_code)
+        if return_code != 0:
+            sys.exit(return_code)
 
 
 def _resume_run_command_body(
@@ -345,24 +354,27 @@ def execute_step_command(input_json, compressed_input_json):
 
         args = deserialize_as(input_json, ExecuteStepArgs)
 
-        with (
-            DagsterInstance.from_ref(args.instance_ref)
-            if args.instance_ref
-            else DagsterInstance.get()
-        ) as instance:
-            pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
+        try:
+            with (
+                DagsterInstance.from_ref(args.instance_ref)
+                if args.instance_ref
+                else DagsterInstance.get()
+            ) as instance:
+                pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
 
-            buff = []
+                buff = []
 
-            for event in _execute_step_command_body(
-                args,
-                instance,
-                pipeline_run,
-            ):
-                buff.append(serialize_dagster_namedtuple(event))
+                for event in _execute_step_command_body(
+                    args,
+                    instance,
+                    pipeline_run,
+                ):
+                    buff.append(serialize_dagster_namedtuple(event))
 
-            for line in buff:
-                click.echo(line)
+                for line in buff:
+                    click.echo(line)
+        finally:
+            logging.shutdown()
 
 
 def _execute_step_command_body(
