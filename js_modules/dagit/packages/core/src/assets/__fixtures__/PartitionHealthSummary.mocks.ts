@@ -50,7 +50,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
             __typename: 'DimensionPartitionKeys',
           },
         ],
-        materializedPartitions: {
+        assetPartitionStatuses: {
           ranges: [
             {
               startTime: 1661904000,
@@ -1401,7 +1401,7 @@ export const SingleDimensionStaticPartitionHealthQuery: MockedResponse<Partition
             __typename: 'DimensionPartitionKeys',
           },
         ],
-        materializedPartitions: {
+        assetPartitionStatuses: {
           materializedPartitions: ['IL', 'VA', 'SC', 'WV', 'OH', 'GA', 'PA', 'NC'],
           __typename: 'DefaultPartitions',
         },
@@ -1433,7 +1433,7 @@ export const MultiDimensionStaticPartitionHealthQuery: MockedResponse<PartitionH
             __typename: 'DimensionPartitionKeys',
           },
         ],
-        materializedPartitions: {
+        assetPartitionStatuses: {
           primaryDimensionName: 'month',
           ranges: [
             {
@@ -1504,7 +1504,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
             __typename: 'DimensionPartitionKeys',
           },
         ],
-        materializedPartitions: {
+        assetPartitionStatuses: {
           primaryDimensionName: 'date',
           ranges: [
             {
@@ -1678,7 +1678,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
             __typename: 'DimensionPartitionKeys',
           },
         ],
-        materializedPartitions: {
+        assetPartitionStatuses: {
           primaryDimensionName: 'date',
           ranges: [
             {

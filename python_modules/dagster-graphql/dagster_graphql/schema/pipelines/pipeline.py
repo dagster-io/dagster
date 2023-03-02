@@ -145,16 +145,10 @@ class GrapheneMultiPartitions(graphene.ObjectType):
         name = "MultiPartitions"
 
 
-class GrapheneMaterializedPartitions(graphene.Union):
+class GrapheneAssetPartitionStatuses(graphene.Union):
     class Meta:
         types = (GrapheneDefaultPartitions, GrapheneMultiPartitions, GrapheneTimePartitions)
-        name = "MaterializedPartitions"
-
-
-class GrapheneAssetPartitions(graphene.Union):
-    class Meta:
-        types = (GrapheneDefaultPartitions, GrapheneMultiPartitions, GrapheneTimePartitions)
-        name = "AssetPartitions"
+        name = "AssetPartitionStatuses"
 
 
 class GraphenePartitionStats(graphene.ObjectType):

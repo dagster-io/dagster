@@ -186,7 +186,7 @@ export type AssetNode = {
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
-  assetPartitions: AssetPartitions;
+  assetPartitionStatuses: AssetPartitionStatuses;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
   currentLogicalVersion: Maybe<Scalars['String']>;
@@ -207,7 +207,6 @@ export type AssetNode = {
   jobNames: Array<Scalars['String']>;
   jobs: Array<Pipeline>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
-  materializedPartitions: MaterializedPartitions;
   metadataEntries: Array<MetadataEntry>;
   op: Maybe<SolidDefinition>;
   opName: Maybe<Scalars['String']>;
@@ -264,7 +263,7 @@ export type AssetNotFoundError = Error & {
 
 export type AssetOrError = Asset | AssetNotFoundError;
 
-export type AssetPartitions = DefaultPartitions | MultiPartitions | TimePartitions;
+export type AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimePartitions;
 
 export type AssetWipeMutationResult =
   | AssetNotFoundError
@@ -1965,8 +1964,6 @@ export type MaterializedPartitionRange2D = {
   primaryDimStartTime: Maybe<Scalars['Float']>;
   secondaryDim: PartitionStatus1D;
 };
-
-export type MaterializedPartitions = DefaultPartitions | MultiPartitions | TimePartitions;
 
 export type MessageEvent = {
   eventType: Maybe<DagsterEventType>;

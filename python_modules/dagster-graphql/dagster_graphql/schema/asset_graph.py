@@ -45,7 +45,6 @@ from dagster_graphql.schema.solids import (
 )
 
 from ..implementation.fetch_assets import (
-    build_materialized_partitions,
     build_partition_statuses,
     get_freshness_info,
     get_materialized_and_failed_partition_subsets,
@@ -69,14 +68,10 @@ from .errors import GrapheneAssetNotFoundError
 from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
 from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
 from .pipelines.pipeline import (
-    GrapheneAssetPartitions,
-    GrapheneDefaultPartitions,
-    GrapheneMaterializedPartitions,
-    GrapheneMultiPartitions,
+    GrapheneAssetPartitionStatuses,
     GraphenePartitionStats,
     GraphenePipeline,
     GrapheneRun,
-    GrapheneTimePartitions,
 )
 from .util import ResolveInfo, non_null_list
 
@@ -217,8 +212,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneMaterializationEvent)),
         partitions=graphene.List(graphene.String),
     )
-    materializedPartitions = graphene.NonNull(GrapheneMaterializedPartitions)
-    assetPartitions = graphene.NonNull(GrapheneAssetPartitions)
+    assetPartitionStatuses = graphene.NonNull(GrapheneAssetPartitionStatuses)
     partitionStats = graphene.Field(GraphenePartitionStats)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     op = graphene.Field(GrapheneSolidDefinition)
@@ -753,29 +747,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             for event in ordered_materializations
         ]
 
-    def resolve_materializedPartitions(
-        self, graphene_info: ResolveInfo
-    ) -> Union[GrapheneDefaultPartitions, GrapheneTimePartitions, GrapheneMultiPartitions]:
-        asset_key = self._external_asset_node.asset_key
-
-        if not self._dynamic_partitions_loader:
-            check.failed("dynamic_partitions_loader must be provided to get partition keys")
-
-        materialized_partition_subset = get_materialized_and_failed_partition_subsets(
-            graphene_info.context.instance,
-            asset_key,
-            self._dynamic_partitions_loader,
-            self._external_asset_node.partitions_def_data.get_partitions_definition()
-            if self._external_asset_node.partitions_def_data
-            else None,
-        )[0]
-
-        return build_materialized_partitions(
-            self._dynamic_partitions_loader,
-            materialized_partition_subset,
-        )
-
-    def resolve_assetPartitions(self, graphene_info: ResolveInfo):
+    def resolve_assetPartitionStatuses(self, graphene_info: ResolveInfo):
         asset_key = self._external_asset_node.asset_key
 
         if not self._dynamic_partitions_loader:
