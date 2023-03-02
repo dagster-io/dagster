@@ -198,6 +198,7 @@ export type AssetNode = {
   freshnessPolicy: Maybe<FreshnessPolicy>;
   graphName: Maybe<Scalars['String']>;
   groupName: Maybe<Scalars['String']>;
+  hasMaterializePermission: Scalars['Boolean'];
   id: Scalars['ID'];
   isObservable: Scalars['Boolean'];
   isPartitioned: Scalars['Boolean'];
@@ -2179,6 +2180,7 @@ export type PartitionBackfill = {
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean'];
   hasCancelPermission: Scalars['Boolean'];
+  hasResumePermission: Scalars['Boolean'];
   isValidSerialization: Scalars['Boolean'];
   numCancelable: Scalars['Int'];
   numPartitions: Maybe<Scalars['Int']>;
