@@ -367,7 +367,10 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           )}
 
           <Box>
-            Select partitions to materialize. Click and drag to select a range on the timeline.
+            Select partitions to materialize.{' '}
+            {displayedPartitionDefinition?.type === PartitionDefinitionType.TIME_WINDOW
+              ? 'Click and drag to select a range on the timeline.'
+              : null}
           </Box>
 
           {selections.map((range, idx) => (
