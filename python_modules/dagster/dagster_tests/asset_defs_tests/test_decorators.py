@@ -843,6 +843,22 @@ def test_graph_asset_with_args():
         maximum_lag_minutes=5
     )
 
+def test_graph_asset_with_metadata():
+    @op
+    def my_op1(x):
+        return x
+
+    @op
+    def my_op2(y):
+        return y
+
+    @graph_asset(group_name="group1", metadata={"my_metadata": "some_metadata"})
+    def my_asset(x):
+        return my_op2(my_op1(x))
+
+    assert my_asset.group_names_by_key[AssetKey("my_asset")] == "group1"
+    assert my_asset.metadata_by_key[AssetKey("my_asset")] == {"my_metadata": "some_metadata"}
+
 
 def test_graph_asset_partitioned():
     @op
