@@ -9,8 +9,13 @@ metadata:
     release: {{ $.Release.Name }}
     heritage: {{ $.Release.Service }}
 data:
+  # If this is a map (default), we write it to this configmap. If it's a list, we include it
+  # directly on the container (can use more k8s spec like valueFrom). Once we
+  # include this in the k8sContainerContext, we can default it to a list
+  {{- if and ($deployment.env) (kindIs "map" $deployment.env) }}
   {{- range $name, $value := $deployment.env }}
   {{ $name }}: {{ $value | quote }}
+  {{- end }}
   {{- end }}
 ---
 {{ end }}

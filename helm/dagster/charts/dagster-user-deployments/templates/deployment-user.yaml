@@ -58,6 +58,11 @@ spec:
             - name: DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT
               value: {{ include "dagsterUserDeployments.k8sContainerContext" (list $ $deployment) | fromYaml | toJson | quote }}
             {{- end }}
+            # If this is a map (default), we write it to a configmap. If it's a list, we include it here (can use more k8s spec like valueFrom). Once we
+            # include this in the k8sContainerContext, we can default it to a list.
+            {{- if and ($deployment.env) (kindIs "slice" $deployment.env) }}
+            {{- toYaml $deployment.env | nindent 12 }}
+            {{- end}}
           envFrom:
             - configMapRef:
                 name: {{ include "dagster.fullname" $ }}-user-deployments-shared-env
