@@ -752,6 +752,7 @@ class _GraphBackedAsset:
             freshness_policies_by_output_name={"result": self.freshness_policy}
             if self.freshness_policy
             else None,
+            descriptions_by_output_name={"result": self.description} if self.description else None,
         )
 
 
@@ -807,6 +808,13 @@ def graph_multi_asset(
             if isinstance(out, AssetOut) and out.freshness_policy is not None
         }
 
+        # source descriptions from the AssetOuts (if any)
+        descriptions_by_output_name = {
+            output_name: out.description
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.description is not None
+        }
+
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
@@ -818,6 +826,7 @@ def graph_multi_asset(
             group_name=group_name,
             can_subset=can_subset,
             freshness_policies_by_output_name=freshness_policies_by_output_name,
+            descriptions_by_output_name=descriptions_by_output_name,
         )
 
     return inner
