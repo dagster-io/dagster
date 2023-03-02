@@ -159,10 +159,10 @@ Partitions can be used with both schedules and sensors. You can use schedules to
 
 Use this table as a quick reference when building out your data pipelines!
 
-| Name                         | Good for automating data pipelines that need to be refreshed: | Asset Support | Op/Graph Support |
-| ---------------------------- | ------------------------------------------------------------- | ------------- | ---------------- |
-| Basic and Cron scheduling    | by kicking off updates at a predictable time interval         | ✅             | ✅                |
-| Sensors                      | when a specific event occurs                                  | ✅             | ✅                |
-| Asset sensors                | after an asset or set of assets materialize                   | ✅             |                  |
-| Asset reconciliation sensors | when assets are out of date with other assets                 | ✅             |                  |
-| Freshness policy sensors     | when assets are beyond an acceptable lag time                 | ✅             |                  |
+| Name                                             | Good for automating data pipelines that need to be refreshed: | Asset Support | Op/Graph Support |
+| ------------------------------------------------ | ------------------------------------------------------------- | ------------- | ---------------- |
+| Basic (cron) scheduling                          | by kicking off updates at a predictable time interval         | ✅             | ✅                |
+| Sensors                                          | when a specific event occurs                                  | ✅             | ✅                |
+| Asset sensors                                    | after an asset or set of assets materialize                   | ✅             |                  |
+| Asset reconciliation sensors                     | when assets are out of date with other assets                 | ✅             |                  |
+| Asset reconciliation sensors w/freshness polices | when assets are beyond an acceptable lag time                 | ✅             |                  |
