@@ -9,14 +9,13 @@ from typing import Any, Dict, List, Mapping, Optional, cast
 import requests
 from dagster import (
     Failure,
-    Field,
-    StringSource,
     _check as check,
     get_dagster_logger,
     resource,
 )
-from dagster._config.field_utils import Permissive
+from dagster._config.structured_config import ConfigurableResource, infer_schema_from_config_class
 from dagster._utils.merger import deep_merge_dicts
+from pydantic import Field as PyField
 from requests.exceptions import RequestException
 
 from dagster_airbyte.types import AirbyteOutput
@@ -34,49 +33,77 @@ class AirbyteState:
     INCOMPLETE = "incomplete"
 
 
-class AirbyteResource:
-    """This class exposes methods on top of the Airbyte REST API."""
+class AirbyteResource(ConfigurableResource):
+    """
+    This class exposes methods on top of the Airbyte REST API.
+    """
+
+    _log: logging.Logger
+
+    host: str = PyField(..., description="The Airbyte server address.")
+    port: str = PyField(..., description="Port used for the Airbyte server.")
+    username: Optional[str] = PyField(None, description="Username if using basic auth.")
+    password: Optional[str] = PyField(None, description="Password if using basic auth.")
+    use_https: bool = PyField(
+        False, description="Whether to use HTTPS to connect to the Airbyte server."
+    )
+    request_max_retries: int = PyField(
+        3,
+        description=(
+            "The maximum number of times requests to the Airbyte API should be retried "
+            "before failing."
+        ),
+    )
+    request_retry_delay: float = PyField(
+        0.25,
+        description="Time (in seconds) to wait between each request retry.",
+    )
+    request_timeout: int = PyField(
+        15,
+        description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
+    )
+    request_additional_params: Mapping[str, Any] = PyField(
+        dict(),
+        description=(
+            "Any additional kwargs to pass to the requests library when making requests to Airbyte."
+        ),
+    )
+    forward_logs: bool = PyField(
+        True,
+        description=(
+            "Whether to forward Airbyte logs to the compute log, can be expensive for"
+            " long-running syncs."
+        ),
+    )
+    cancel_sync_on_run_termination: bool = PyField(
+        True,
+        description=(
+            "Whether to cancel a sync in Airbyte if the Dagster runner is terminated. This may"
+            " be useful to disable if using Airbyte sources that cannot be cancelled and"
+            " resumed easily, or if your Dagster deployment may experience runner interruptions"
+            " that do not impact your Airbyte deployment."
+        ),
+    )
 
     def __init__(
         self,
-        host: str,
-        port: str,
-        use_https: bool,
-        request_max_retries: int = 3,
-        request_retry_delay: float = 0.25,
-        request_timeout: int = 15,
-        request_additional_params: Optional[Mapping[str, Any]] = None,
-        log: logging.Logger = get_dagster_logger(),
-        forward_logs: bool = True,
-        cancel_sync_on_run_termination: bool = True,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-    ):
-        self._host = host
-        self._port = port
-        self._use_https = use_https
-        self._request_max_retries = request_max_retries
-        self._request_retry_delay = request_retry_delay
-        self._request_timeout = request_timeout
-        self._additional_request_params = request_additional_params or dict()
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, **kwargs)
 
-        self._log = log
+        # self._log = log
+        self._log = get_dagster_logger()
 
-        self._forward_logs = forward_logs
         self._request_cache: Dict[str, Optional[Mapping[str, object]]] = {}
         # Int in case we nest contexts
         self._cache_enabled = 0
 
-        self._username = username
-        self._password = password
-
-        self._cancel_sync_on_run_termination = cancel_sync_on_run_termination
-
     @property
     def api_base_url(self) -> str:
         return (
-            ("https://" if self._use_https else "http://")
-            + (f"{self._host}:{self._port}" if self._port else self._host)
+            ("https://" if self.use_https else "http://")
+            + (f"{self.host}:{self.port}" if self.port else self.host)
             + "/api/v1"
         )
 
@@ -134,12 +161,12 @@ class AirbyteResource:
                             url=url,
                             headers=headers,
                             json=data,
-                            timeout=self._request_timeout,
-                            auth=(self._username, self._password)
-                            if self._username and self._password
+                            timeout=self.request_timeout,
+                            auth=(self.username, self.password)
+                            if self.username and self.password
                             else None,
                         ),
-                        self._additional_request_params,
+                        self.request_additional_params,
                     ),
                 )
                 response.raise_for_status()
@@ -148,12 +175,12 @@ class AirbyteResource:
                 return response.json()
             except RequestException as e:
                 self._log.error("Request to Airbyte API failed: %s", e)
-                if num_retries == self._request_max_retries:
+                if num_retries == self.request_max_retries:
                     break
                 num_retries += 1
-                time.sleep(self._request_retry_delay)
+                time.sleep(self.request_retry_delay)
 
-        raise Failure(f"Max retries ({self._request_max_retries}) exceeded with url: {url}.")
+        raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
 
     def cancel_job(self, job_id: int):
         self.make_request(endpoint="/jobs/cancel", data={"id": job_id})
@@ -231,7 +258,7 @@ class AirbyteResource:
         ).get("supportsNormalization", False)
 
     def get_job_status(self, connection_id: str, job_id: int) -> Mapping[str, object]:
-        if self._forward_logs:
+        if self.forward_logs:
             return check.not_none(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
         else:
             # the "list all jobs" endpoint doesn't return logs, which actually makes it much more
@@ -304,7 +331,7 @@ class AirbyteResource:
                 cur_attempt = len(attempts)
                 # spit out the available Airbyte log info
                 if cur_attempt:
-                    if self._forward_logs:
+                    if self.forward_logs:
                         log_lines = attempts[logged_attempts].get("logs", {}).get("logLines", [])
 
                         for line in log_lines[logged_lines:]:
@@ -335,88 +362,14 @@ class AirbyteResource:
             # the python process
             if (
                 state not in (AirbyteState.SUCCEEDED, AirbyteState.ERROR, AirbyteState.CANCELLED)
-                and self._cancel_sync_on_run_termination
+                and self.cancel_sync_on_run_termination
             ):
                 self.cancel_job(job_id)
 
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
 
 
-@resource(
-    config_schema={
-        "host": Field(
-            StringSource,
-            is_required=True,
-            description="The Airbyte Server Address.",
-        ),
-        "port": Field(
-            StringSource,
-            is_required=True,
-            description="Port for the Airbyte Server.",
-        ),
-        "username": Field(
-            StringSource,
-            description="Username if using basic auth.",
-            is_required=False,
-        ),
-        "password": Field(
-            StringSource,
-            description="Password if using basic auth.",
-            is_required=False,
-        ),
-        "use_https": Field(
-            bool,
-            default_value=False,
-            description="Use https to connect in Airbyte Server.",
-        ),
-        "request_max_retries": Field(
-            int,
-            default_value=3,
-            description=(
-                "The maximum number of times requests to the Airbyte API should be retried "
-                "before failing."
-            ),
-        ),
-        "request_retry_delay": Field(
-            float,
-            default_value=0.25,
-            description="Time (in seconds) to wait between each request retry.",
-        ),
-        "request_timeout": Field(
-            int,
-            default_value=15,
-            description=(
-                "Time (in seconds) after which the requests to Airbyte are declared timed out."
-            ),
-        ),
-        "request_additional_params": Field(
-            Permissive(),
-            description=(
-                "Any additional kwargs to pass to the requests library when making requests to"
-                " Airbyte."
-            ),
-        ),
-        "forward_logs": Field(
-            bool,
-            default_value=True,
-            description=(
-                "Whether to forward Airbyte logs to the compute log, can be expensive for"
-                " long-running syncs."
-            ),
-        ),
-        "cancel_sync_on_run_termination": Field(
-            bool,
-            default_value=True,
-            description=(
-                "Whether to cancel a sync in Airbyte if the Dagster runner is terminated. This may"
-                " be useful to disable if using Airbyte sources that cannot be cancelled and"
-                " resumed easily, or if your Dagster deployment may experience runner interruptions"
-                " that do not impact your Airbyte deployment."
-            ),
-        ),
-    },
-    description="This resource helps manage Airbyte connectors",
-)
+@resource(config_schema=infer_schema_from_config_class(AirbyteResource))
 def airbyte_resource(context) -> AirbyteResource:
     """This resource allows users to programatically interface with the Airbyte REST API to launch
     syncs and monitor their progress. This currently implements only a subset of the functionality
@@ -450,17 +403,4 @@ def airbyte_resource(context) -> AirbyteResource:
             ...
 
     """
-    return AirbyteResource(
-        host=context.resource_config["host"],
-        port=context.resource_config["port"],
-        use_https=context.resource_config["use_https"],
-        request_max_retries=context.resource_config["request_max_retries"],
-        request_retry_delay=context.resource_config["request_retry_delay"],
-        request_timeout=context.resource_config["request_timeout"],
-        request_additional_params=context.resource_config["request_additional_params"],
-        log=context.log,
-        forward_logs=context.resource_config["forward_logs"],
-        cancel_sync_on_run_termination=context.resource_config["cancel_sync_on_run_termination"],
-        username=context.resource_config.get("username"),
-        password=context.resource_config.get("password"),
-    )
+    return AirbyteResource(**context.resource_config).resource_fn(context)  # type: ignore
