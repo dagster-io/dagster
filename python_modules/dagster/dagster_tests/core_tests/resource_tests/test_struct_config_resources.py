@@ -1229,3 +1229,29 @@ def test_env_var_nested_config() -> None:
     ):
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
+
+
+def test_resource_defs_on_asset() -> None:
+    executed = {}
+
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    @asset(resource_defs={"my_resource": MyResource(a_str="foo")})
+    def an_asset(my_resource: MyResource):
+        assert my_resource.a_str == "foo"
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[an_asset],
+    )
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    assert executed["yes"]
+
+    # Cannot specify both required_resource_keys and resources as args
+    with pytest.raises(Exception):
+
+        @asset(required_resource_keys={"my_other_resource"})
+        def an_other_asset(my_resource: MyResource):
+            pass
