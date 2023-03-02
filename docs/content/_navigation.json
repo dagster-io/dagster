@@ -660,11 +660,11 @@
           },
           {
             "title": "Testing assets",
-            "path": "/guides/testing-assets"
+            "path": "/guides/dagster/testing-assets"
           },
           {
             "title": "Assets without I/O",
-            "path": "/guides/non-argument-deps"
+            "path": "/guides/dagster/non-argument-deps"
           },
           {
             "title": "Software-defined assets with Pandas & PySpark",

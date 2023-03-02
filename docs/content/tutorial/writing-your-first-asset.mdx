@@ -11,10 +11,10 @@ In this tutorial, you'll analyze activity on a popular news aggregation website 
 
 By the end of this section, you will:
 
-- Ingest data from the Hacker News API
-- Turn that ingestion into an asset
-- Explore the Dagster UI
-- Launch your first Dagster run manually
+1. Ingest data from the Hacker News API
+2. Turn that ingestion into an asset
+3. Explore the Dagster UI
+4. Launch your first Dagster run manually
 
 ---
 
@@ -96,8 +96,6 @@ Observe that Dagster has detected your `topstory_ids` asset, but it says that th
 
 To **materialize** a Software-defined asset means to create or update it. Dagster materializes assets by executing the asset's function or triggering an integration. These assets are stored in places like databases or cloud storage. Many destinations are supported out of the box through another Dagster feature: [I/O managers](/concepts/io-management/io-managers). If an asset doesn't have an I/O manager configured, the asset is saved in your local file system.
 
-### The Dagster UI
-
 To manually materialize an asset in the UI, click the **Materialize** button in the upper right corner of the screen. This will create a Dagster run that will materialize your assets.
 
 To follow the progress of the materialization and monitor the logs, each run has a dedicated page. To find the page:
@@ -106,12 +104,12 @@ To follow the progress of the materialization and monitor the logs, each run has
 - Click the value in the **Run ID** column on the table of the Runs page
 - The top section displays the progress, and the bottom section live updates with the logs
 
-<Image
-alt="the materialization run's status page"
-src="/images/tutorial/run-status-page.png"
-width={1152}
-height={669}
-/>
+    <Image
+        alt="the materialization run's status page"
+        src="/images/tutorial/run-status-page.png"
+        width={1152}
+        height={669}
+    />
 
 ---
 

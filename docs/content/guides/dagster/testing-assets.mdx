@@ -1,5 +1,5 @@
 ---
-title: Testing Assets | Dagster
+title: Testing Assets | Dagster Docs
 description: Dagster enables you to unit-test individual assets and graphs of assets
 ---
 
@@ -9,46 +9,70 @@ Creating testable and verifiable data pipelines is one of the focuses of Dagster
 
 ---
 
-## Testing the cereal asset definitions
+## Prerequisites
 
-Let's look at a Dagster project with assets about cereals and ensure that they work as expected by writing some unit tests.
+This guide builds off of the project written in the [tutorial](/tutorial). If you haven't already, you should complete the tutorial before continuing.
 
-We'll start by writing a test for the `nabisco_cereals` asset definition, which filters the larger list of cereals down to the those that were manufactured by Nabisco. To run the function that derives an asset from its upstream dependencies, we can invoke it directly, as if it's a regular Python function:
+It also assumes that you have installed a test runner like [pytest](https://docs.pytest.org/en/stable/).
 
-```python file=/guides/dagster/asset_tutorial/complex_asset_graph_tests.py startafter=start_asset_test endbefore=end_asset_test
-def test_nabisco_cereals():
-    cereals = [
-        {"name": "cereal1", "mfr": "N"},
-        {"name": "cereal2", "mfr": "K"},
-    ]
-    result = nabisco_cereals(cereals)
-    assert len(result) == 1
-    assert result == [{"name": "cereal1", "mfr": "N"}]
+---
+
+## Testing an individual asset
+
+We'll start by writing a test for the `topstories_word_cloud` asset definition, which is an image of a word cloud of the titles of top stories on Hacker News. To run the function that derives an asset from its upstream dependencies, we can invoke it directly, as if it's a regular Python function.
+
+Add the following code to the `test_assets.py` file in your `tutorial_project_tests` directory:
+
+```python
+import pandas as pd
+from tutorial_project.assets import topstories_word_cloud
+
+def test_topstories_word_cloud():
+    df = pd.DataFrame(
+        [
+            {"title": "Wow, Dagster is such an awesome and amazing product. I can't wait to use it!"},
+            {"title": "Pied Piper launches new product"},
+        ]
+    )
+    results = topstories_word_cloud(df)
+    assert results is not None # It returned something
 ```
 
-We'll also write a test for all the assets together. To do that, we can put them in a list and then pass it to the <PyObject object="materialize" /> function. That returns an <PyObject object="ExecuteInProcessResult" />, whose methods let us investigate, in detail, the success or failure of execution, the values produced by the computation, and other events associated with execution.
+---
 
-```python file=/guides/dagster/asset_tutorial/complex_asset_graph_tests.py startafter=start_all_assets_test endbefore=end_all_assets_test
+## Testing a graph of assets
+
+We'll also write a test for all the assets together. To do that, we can put them in a list and then pass it to the <PyObject object="materialize" /> function. That returns an <PyObject object="ExecuteInProcessResult" /> object, whose methods let us investigate, in detail, the success or failure of execution, the values produced by the computation, and other events associated with execution.
+
+Update the `test_assets.py` file to include the following code:
+
+```python
 from dagster import materialize
+from tutorial_project.assets import (
+    topstory_ids,
+    topstories,
+    topstories_word_cloud
+) # Instead of importing one asset, import them all
 
-
-def test_cereal_assets():
-    assets = [
-        nabisco_cereals,
-        cereals,
-        cereal_protein_fractions,
-        highest_protein_nabisco_cereal,
-    ]
-
+def test_hackernews_assets():
+    assets = [topstory_ids, topstories, topstories_word_cloud]
     result = materialize(assets)
     assert result.success
-    assert result.output_for_node("highest_protein_nabisco_cereal") == "100% Bran"
+    df = result.output_for_node("topstories")
+    assert len(df) == 100
 ```
 
-Now you can use pytest, or your test runner of choice, to run the unit tests.
+## Running the tests
+
+Use pytest, or your test runner of choice, to run the unit tests. Navigate to the top-level `tutorial_project` directory (the one that contains the `tutorial_project_tests` directory) and run:
 
 ```bash
-pytest test_complex_asset_graph.py
+pytest tutorial_project_tests
 ```
 
+Wait a few seconds for the tests to run and observe the output in your terminal.
+
+---
+
+## Related
 Dagster is written to make testing easy in a domain where it has historically been very difficult. Refer to the [Testing](/concepts/testing) documentation to learn more.

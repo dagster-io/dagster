@@ -139,15 +139,19 @@ The following code adds a row count and a preview of the `topstories` asset. It 
 from dagster import asset, get_dagster_logger, Output, MetadataValue
 # add an import to the Output and MetadataValue classes from the dagster library
 
-@asset(group_name="hackernews")
-def topstories(context, topstory_ids):
+@asset
+def topstories(topstory_ids):
+    logger = get_dagster_logger()
+
     results = []
     for item_id in topstory_ids:
-        item = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json").json()
+        item = requests.get(
+            f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        ).json()
         results.append(item)
 
         if len(results) % 20 == 0:
-            context.log.info(f"Got {len(results)} items so far.")
+            logger.info(f"Got {len(results)} items so far.")
 
     df = pd.DataFrame(results)
 
@@ -176,7 +180,7 @@ Reload the definitions and re-materialize your assets. The metadata can then be 
 
     <Image
         alt="the asset's materialization metadata"
-        src="/images/tutorial/asset-metadata.png"
+        src="/images/tutorial/asset-catalog-metadata.png"
         width={1152}
         height={667}
     />
@@ -192,7 +196,7 @@ from dagster import asset, MetadataValue, Output
 # Addition: update your imports at the top of your file with this
 
 @asset
-def topstories_word_cloud(context, topstories):
+def topstories_word_cloud(topstories):
     stopwords = set(STOPWORDS)
     stopwords.update(["Ask", "Show", "HN", "S"])
     titles_text = " ".join([str(item) for item in topstories["title"]])
@@ -216,7 +220,7 @@ def topstories_word_cloud(context, topstories):
     })
 ```
 
-Reload your definitions and rematerialize your assets. The word cloud image will be visible with the rest of your materialization metadata for the `topstories_word_cloud` asset. The `path` key in the metadata will contain a link that says **`[Show Markdown]`**. Clicking on the link will open the preview in the Dagster UI. The word cloud will change throughout the day as the top stories change. Here is a screenshot of the word cloud:
+Reload your definitions and rematerialize your assets. The word cloud image will be visible with the rest of your materialization metadata for the `topstories_word_cloud` asset. The `path` key in the metadata will contain a link that says **`[Show Markdown]`**. Clicking on the link will open the preview in the Dagster UI. The word cloud will change throughout the day as the top stories change. Here's an example of the wordcloud at the time we wrote this tutorial:
 
 <Image
     alt="the asset's materialization metadata"
