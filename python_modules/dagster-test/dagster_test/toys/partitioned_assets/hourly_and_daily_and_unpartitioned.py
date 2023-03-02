@@ -2,7 +2,6 @@
 from datetime import datetime
 
 from dagster import DailyPartitionsDefinition, HourlyPartitionsDefinition, MetadataValue, asset
-from dagster._legacy import AssetGroup
 
 daily_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
@@ -43,6 +42,3 @@ def hourly_partitioned_asset():
 )
 def unpartitioned_asset():
     pass
-
-
-partitioned_asset_group = AssetGroup.from_current_module()

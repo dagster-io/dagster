@@ -16,9 +16,12 @@ from dagster import (
     weekly_partitioned_config,
 )
 from dagster._core.definitions.time_window_partitions import (
+    PartitionRangeStatus,
+    PartitionTimeWindowStatus,
     ScheduleType,
     TimeWindow,
     TimeWindowPartitionsSubset,
+    fetch_flattened_time_window_ranges,
 )
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
@@ -652,3 +655,189 @@ def test_time_window_partition_len():
         partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)
         == partitions_def.get_partition_keys(current_time=current_time)[50:53]
     )
+
+
+def test_get_first_partition_window():
+    assert DailyPartitionsDefinition(
+        start_date="2023-01-01"
+    ).get_first_partition_window() == time_window("2023-01-01", "2023-01-02")
+
+    assert DailyPartitionsDefinition(
+        start_date="2023-01-01", end_offset=1
+    ).get_first_partition_window(
+        current_time=datetime.strptime("2023-01-01", "%Y-%m-%d")
+    ) == time_window(
+        "2023-01-01", "2023-01-02"
+    )
+
+    assert (
+        DailyPartitionsDefinition(start_date="2023-02-15", end_offset=1).get_first_partition_window(
+            current_time=datetime.strptime("2023-02-14", "%Y-%m-%d")
+        )
+        is None
+    )
+
+    assert DailyPartitionsDefinition(
+        start_date="2023-01-01", end_offset=2
+    ).get_first_partition_window(
+        current_time=datetime.strptime("2023-01-02", "%Y-%m-%d")
+    ) == time_window(
+        "2023-01-01", "2023-01-02"
+    )
+
+    assert MonthlyPartitionsDefinition(
+        start_date="2023-01-01", end_offset=1
+    ).get_first_partition_window(
+        current_time=datetime.strptime("2023-01-15", "%Y-%m-%d")
+    ) == time_window(
+        "2023-01-01", "2023-02-01"
+    )
+
+    assert (
+        DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=-1
+        ).get_first_partition_window(current_time=datetime.strptime("2023-01-16", "%Y-%m-%d"))
+        is None
+    )
+
+    assert DailyPartitionsDefinition(
+        start_date="2023-01-15", end_offset=-1
+    ).get_first_partition_window(
+        current_time=datetime.strptime("2023-01-17", "%Y-%m-%d")
+    ) == time_window(
+        "2023-01-15", "2023-01-16"
+    )
+
+    assert (
+        DailyPartitionsDefinition(
+            start_date="2023-01-15", end_offset=-2
+        ).get_first_partition_window(current_time=datetime.strptime("2023-01-17", "%Y-%m-%d"))
+        is None
+    )
+
+    assert DailyPartitionsDefinition(
+        start_date="2023-01-15", end_offset=-2
+    ).get_first_partition_window(
+        current_time=datetime.strptime("2023-01-18", "%Y-%m-%d")
+    ) == time_window(
+        "2023-01-15", "2023-01-16"
+    )
+
+    assert (
+        MonthlyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=-1
+        ).get_first_partition_window(current_time=datetime.strptime("2023-01-15", "%Y-%m-%d"))
+        is None
+    )
+
+    assert (
+        DailyPartitionsDefinition(start_date="2023-01-15", end_offset=1).get_first_partition_window(
+            current_time=datetime.strptime("2023-01-14", "%Y-%m-%d")
+        )
+        is None
+    )
+
+    assert DailyPartitionsDefinition(
+        start_date="2023-01-15", end_offset=1
+    ).get_first_partition_window(
+        current_time=datetime(year=2023, month=1, day=15, hour=12, minute=0, second=0)
+    ) == time_window(
+        "2023-01-15", "2023-01-16"
+    )
+
+    assert DailyPartitionsDefinition(
+        start_date="2023-01-15", end_offset=1
+    ).get_first_partition_window(
+        current_time=datetime(year=2023, month=1, day=14, hour=12, minute=0, second=0)
+    ) == time_window(
+        "2023-01-15", "2023-01-16"
+    )
+
+    assert (
+        DailyPartitionsDefinition(start_date="2023-01-15", end_offset=1).get_first_partition_window(
+            current_time=datetime(year=2023, month=1, day=13, hour=12, minute=0, second=0)
+        )
+        is None
+    )
+
+    assert (
+        MonthlyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=-1
+        ).get_first_partition_window(current_time=datetime.strptime("2023-01-15", "%Y-%m-%d"))
+        is None
+    )
+
+    assert (
+        MonthlyPartitionsDefinition(
+            start_date="2023-01-01", end_offset=-1
+        ).get_first_partition_window(current_time=datetime.strptime("2023-02-01", "%Y-%m-%d"))
+        is None
+    )
+
+    assert MonthlyPartitionsDefinition(
+        start_date="2023-01-01", end_offset=-1
+    ).get_first_partition_window(
+        current_time=datetime.strptime("2023-03-01", "%Y-%m-%d")
+    ) == time_window(
+        "2023-01-01", "2023-02-01"
+    )
+
+
+def test_flatten_time_window_ranges():
+    partitions_def = DailyPartitionsDefinition(start_date="2021-12-01")
+    # with partition key range methods are inclusive
+    materialized = (
+        partitions_def.empty_subset()
+        .with_partition_key_range(PartitionKeyRange("2022-01-02", "2022-01-05"))
+        .with_partition_key_range(PartitionKeyRange("2022-01-12", "2022-01-13"))
+        .with_partition_key_range(PartitionKeyRange("2022-01-15", "2022-01-17"))
+        .with_partition_key_range(PartitionKeyRange("2022-01-19", "2022-01-20"))
+        .with_partition_key_range(PartitionKeyRange("2022-01-22", "2022-01-24"))
+    )
+    failed = (
+        partitions_def.empty_subset()
+        .with_partition_key_range(
+            PartitionKeyRange("2021-12-30", "2021-12-31")
+        )  # before materialized subset
+        .with_partition_key_range(
+            PartitionKeyRange("2022-01-02", "2022-01-03")
+        )  # within materialized subset
+        .with_partition_key_range(
+            PartitionKeyRange("2022-01-05", "2022-01-06")
+        )  # directly after materialized subset
+        .with_partition_key_range(
+            PartitionKeyRange("2022-01-08", "2022-01-09")
+        )  # between materialized subsets
+        .with_partition_key_range(
+            PartitionKeyRange("2022-01-11", "2022-01-14")
+        )  # encompasses materialized subset
+        .with_partition_keys(["2022-01-20"])  # at end materialized subset
+        .with_partition_keys(
+            ["2022-01-22", "2022-01-24"]
+        )  # multiple overlaps within same materialized range
+    )
+
+    ranges = fetch_flattened_time_window_ranges(
+        [(materialized, PartitionRangeStatus.MATERIALIZED), (failed, PartitionRangeStatus.FAILED)]
+    )
+    for r in ranges:
+        print(r)
+
+    expected_result = [
+        {"start": "2021-12-30", "end": "2022-01-01", "status": PartitionRangeStatus.FAILED},
+        {"start": "2022-01-02", "end": "2022-01-04", "status": PartitionRangeStatus.FAILED},
+        {"start": "2022-01-04", "end": "2022-01-05", "status": PartitionRangeStatus.MATERIALIZED},
+        {"start": "2022-01-05", "end": "2022-01-07", "status": PartitionRangeStatus.FAILED},
+        {"start": "2022-01-08", "end": "2022-01-10", "status": PartitionRangeStatus.FAILED},
+        {"start": "2022-01-11", "end": "2022-01-15", "status": PartitionRangeStatus.FAILED},
+        {"start": "2022-01-15", "end": "2022-01-18", "status": PartitionRangeStatus.MATERIALIZED},
+        {"start": "2022-01-19", "end": "2022-01-20", "status": PartitionRangeStatus.MATERIALIZED},
+        {"start": "2022-01-20", "end": "2022-01-21", "status": PartitionRangeStatus.FAILED},
+        {"start": "2022-01-22", "end": "2022-01-23", "status": PartitionRangeStatus.FAILED},
+        {"start": "2022-01-23", "end": "2022-01-24", "status": PartitionRangeStatus.MATERIALIZED},
+        {"start": "2022-01-24", "end": "2022-01-25", "status": PartitionRangeStatus.FAILED},
+    ]
+    assert ranges == [
+        PartitionTimeWindowStatus(time_window(window["start"], window["end"]), window["status"])
+        for window in expected_result
+    ]

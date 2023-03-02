@@ -1,8 +1,20 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from enum import Enum
 from hashlib import sha256
-from typing import TYPE_CHECKING, Callable, Iterator, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    Iterator,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from typing_extensions import Final
 
@@ -221,6 +233,15 @@ class StaleStatusCause(NamedTuple):
     key: AssetKey
     reason: str
     dependency: Optional[AssetKey] = None
+    children: Optional[Sequence["StaleStatusCause"]] = None
+
+
+# Root reasons for staleness. Thes differ from `StaleStatusCause`in that there is no status
+# associated with them-- rather they are causes for the staleness of some downstream node.
+class StaleStatusRootCause(NamedTuple):
+    key: AssetKey
+    reason: str
+    dependency: Optional[AssetKey] = None
 
 
 class CachingStaleStatusResolver:
@@ -255,14 +276,11 @@ class CachingStaleStatusResolver:
     def get_status_causes(self, key: AssetKey) -> Sequence[StaleStatusCause]:
         return self._get_status_causes(key=key)
 
+    def get_status_root_causes(self, key: AssetKey) -> Sequence[StaleStatusRootCause]:
+        return self._get_status_root_causes(key=key)
+
     def get_current_logical_version(self, key: AssetKey) -> LogicalVersion:
         return self._get_current_logical_version(key=key)
-
-    def get_projected_logical_version(self, key: AssetKey) -> LogicalVersion:
-        return self._get_projected_logical_version(key=key)
-
-    def is_partitioned_or_downstream(self, key: AssetKey) -> bool:
-        return self._is_partitioned_or_downstream(key=key)
 
     @cached_method
     def _get_status(self, key: AssetKey) -> StaleStatus:
@@ -284,45 +302,54 @@ class CachingStaleStatusResolver:
     def _get_stale_status_causes_materialized(self, key: AssetKey) -> Iterator[StaleStatusCause]:
         code_version = self.asset_graph.get_code_version(key)
         provenance = self._get_current_logical_version_provenance(key=key)
-        proj_dep_keys = self.asset_graph.get_parents(key)
+        dependency_keys = self.asset_graph.get_parents(key)
+
+        # only used if no provenance available
+        materialization = check.not_none(self._get_latest_materialization_event(key=key))
+        materialization_time = materialization.timestamp
 
         if provenance:
-            prov_versions = provenance.input_logical_versions
-            all_dep_keys = sorted(set(proj_dep_keys).union(prov_versions.keys()))
-            for dep_key in all_dep_keys:
-                if dep_key not in prov_versions:
-                    yield StaleStatusCause(StaleStatus.STALE, key, "new input", dep_key)
-                elif dep_key not in proj_dep_keys:
-                    yield StaleStatusCause(
-                        StaleStatus.STALE,
-                        key,
-                        "removed input",
-                        dep_key,
-                    )
-                elif prov_versions[dep_key] != self._get_current_logical_version(key=dep_key):
-                    yield StaleStatusCause(
-                        StaleStatus.STALE,
-                        key,
-                        "updated input",
-                        dep_key,
-                    )
-                elif self._get_status(key=dep_key) == StaleStatus.STALE:
-                    yield StaleStatusCause(
-                        StaleStatus.STALE,
-                        key,
-                        "stale input",
-                        dep_key,
-                    )
-            if code_version is not None and code_version != provenance.code_version:
+            if code_version and code_version != provenance.code_version:
                 yield StaleStatusCause(StaleStatus.STALE, key, "updated code version")
 
-        # if no provenance, then use materialization timestamps instead of versions
-        # this should be removable eventually since provenance is on all newer materializations
-        else:
-            materialization = check.not_none(self._get_latest_materialization_event(key=key))
-            materialization_time = materialization.timestamp
-            all_dep_keys = sorted(proj_dep_keys)
-            for dep_key in all_dep_keys:
+            removed_deps = set(provenance.input_logical_versions.keys()) - set(dependency_keys)
+            for dep_key in removed_deps:
+                yield StaleStatusCause(
+                    StaleStatus.STALE,
+                    key,
+                    "removed dependency",
+                    dep_key,
+                )
+
+        for dep_key in sorted(dependency_keys):
+            if self._get_status(key=dep_key) == StaleStatus.STALE:
+                yield StaleStatusCause(
+                    StaleStatus.STALE,
+                    key,
+                    "stale dependency",
+                    dep_key,
+                    self._get_status_causes(key=dep_key),
+                )
+            elif provenance:
+                if dep_key not in provenance.input_logical_versions:
+                    yield StaleStatusCause(
+                        StaleStatus.STALE,
+                        key,
+                        "new dependency",
+                        dep_key,
+                    )
+                elif provenance.input_logical_versions[
+                    dep_key
+                ] != self._get_current_logical_version(key=dep_key):
+                    yield StaleStatusCause(
+                        StaleStatus.STALE,
+                        key,
+                        "updated dependency logical version",
+                        dep_key,
+                    )
+            # if no provenance, then use materialization timestamps instead of versions
+            # this should be removable eventually since provenance is on all newer materializations
+            else:
                 dep_materialization = self._get_latest_materialization_event(key=dep_key)
                 if dep_materialization is None:
                     # The input must be new if it has no materialization
@@ -331,12 +358,47 @@ class CachingStaleStatusResolver:
                     yield StaleStatusCause(
                         StaleStatus.STALE,
                         key,
-                        "updated input",
+                        "updated dependency timestamp",
                         dep_key,
                     )
 
-        for dep_key in proj_dep_keys:
-            yield from self._get_status_causes(key=dep_key)
+    @cached_method
+    def _get_status_root_causes(self, key: AssetKey) -> Sequence[StaleStatusRootCause]:
+        causes = self._get_status_causes(key=key)
+        leaf_pairs = sorted([pair for cause in causes for pair in self._gather_leaves(cause)])
+        # After sorting the pairs, we can drop the level and de-dup using an
+        # ordered dict as an ordered set. This will give us unique root causes,
+        # sorted by level.
+        leaves: Dict[StaleStatusCause, None] = OrderedDict()
+        for leaf_cause in [leaf_cause for _, leaf_cause in leaf_pairs]:
+            leaves[leaf_cause] = None
+        return [self._convert_to_root_cause(leaf_cause) for leaf_cause in leaves.keys()]
+
+    # The leaves of the cause tree for an asset are the root causes of its staleness.
+    def _gather_leaves(
+        self, cause: StaleStatusCause, level: int = 0
+    ) -> Iterator[Tuple[int, StaleStatusCause]]:
+        if cause.children is None:
+            yield (level, cause)
+        else:
+            for child in cause.children:
+                yield from self._gather_leaves(child, level=level + 1)
+
+    def _convert_to_root_cause(self, cause: StaleStatusCause) -> StaleStatusRootCause:
+        if cause.reason == "updated dependency logical version":
+            assert cause.dependency, "[updated input] cause must have a dependency"
+            return StaleStatusRootCause(
+                cause.dependency,
+                "updated logical version",
+            )
+        elif cause.reason == "updated dependency timestamp":
+            assert cause.dependency, "[updated input] cause must have a dependency"
+            return StaleStatusRootCause(
+                cause.dependency,
+                "updated timestamp",
+            )
+        else:
+            return StaleStatusRootCause(cause.key, cause.reason, cause.dependency)
 
     @property
     def asset_graph(self) -> "AssetGraph":
@@ -358,39 +420,6 @@ class CachingStaleStatusResolver:
         else:
             logical_version = extract_logical_version_from_entry(event.event_log_entry)
             return logical_version or DEFAULT_LOGICAL_VERSION
-
-    @cached_method
-    def _get_projected_logical_version(self, *, key: AssetKey) -> LogicalVersion:
-        if self.asset_graph.get_partitions_def(key):
-            return UNKNOWN_LOGICAL_VERSION
-        elif self.asset_graph.is_source(key):
-            event = self._instance.get_latest_logical_version_record(key, True)
-            if event:
-                version = (
-                    extract_logical_version_from_entry(event.event_log_entry)
-                    or DEFAULT_LOGICAL_VERSION
-                )
-            else:
-                version = DEFAULT_LOGICAL_VERSION
-        elif self.asset_graph.get_code_version(key) is not None:
-            version = self._compute_projected_new_materialization_logical_version(key)
-        else:
-            materialization = self._get_latest_materialization_event(key=key)
-            if materialization is None:  # never been materialized
-                version = self._compute_projected_new_materialization_logical_version(key)
-            else:
-                current_logical_version = self._get_current_logical_version(key=key)
-                provenance = self._get_current_logical_version_provenance(key=key)
-                if (
-                    current_logical_version
-                    is None  # old materialization event before logical versions
-                    or provenance is None  # should never happen
-                    or self._is_provenance_stale(key, provenance)
-                ):
-                    version = self._compute_projected_new_materialization_logical_version(key)
-                else:
-                    version = current_logical_version
-        return version
 
     @cached_method
     def _get_latest_materialization_event(self, *, key: AssetKey) -> Optional[EventLogEntry]:
@@ -417,34 +446,3 @@ class CachingStaleStatusResolver:
                 self._is_partitioned_or_downstream(key=dep_key)
                 for dep_key in self.asset_graph.get_parents(key)
             )
-
-    # Returns true if the current logical version of at least one input asset differs from the
-    # recorded logical version for that asset in the provenance. This indicates that a new
-    # materialization with up-to-date data would produce a different logical verson.
-    def _is_provenance_stale(self, key: AssetKey, provenance: LogicalVersionProvenance) -> bool:
-        if self._has_updated_dependencies(key=key):
-            return True
-        else:
-            for k, v in provenance.input_logical_versions.items():
-                if self._get_projected_logical_version(key=k) != v:
-                    return True
-            return False
-
-    @cached_method
-    def _has_updated_dependencies(self, *, key: AssetKey) -> bool:
-        provenance = self._get_current_logical_version_provenance(key=key)
-        if provenance is None:
-            return True
-        else:
-            curr_dep_keys = self.asset_graph.get_parents(key)
-            old_dep_keys = set(provenance.input_logical_versions.keys())
-            return curr_dep_keys != old_dep_keys
-
-    def _compute_projected_new_materialization_logical_version(
-        self, key: AssetKey
-    ) -> LogicalVersion:
-        dep_keys = self.asset_graph.get_parents(key)
-        return compute_logical_version(
-            self.asset_graph.get_code_version(key) or UNKNOWN_VALUE,
-            {dep_key: self._get_projected_logical_version(key=dep_key) for dep_key in dep_keys},
-        )

@@ -632,6 +632,7 @@ def graph_asset(
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     group_name: Optional[str] = None,
+    freshness_policy: Optional[FreshnessPolicy] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     ...
 
@@ -645,6 +646,7 @@ def graph_asset(
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     group_name: Optional[str] = None,
+    freshness_policy: Optional[FreshnessPolicy] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """
     Creates a software-defined asset that's computed using a graph of ops.
@@ -666,6 +668,8 @@ def graph_asset(
             compose the asset.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If
             not provided, the name "default" is used.
+        freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is
+            intended to be updated with respect to its root data.
 
     Examples:
         .. code-block:: python
@@ -693,6 +697,7 @@ def graph_asset(
             description=description,
             partitions_def=partitions_def,
             group_name=group_name,
+            freshness_policy=freshness_policy,
         )(fn)
 
     return inner
@@ -707,6 +712,7 @@ class _GraphBackedAsset:
         description: Optional[str] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
+        freshness_policy: Optional[FreshnessPolicy] = None,
     ):
         self.name = name
 
@@ -717,6 +723,7 @@ class _GraphBackedAsset:
         self.description = description
         self.partitions_def = partitions_def
         self.group_name = group_name
+        self.freshness_policy = freshness_policy
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -732,9 +739,9 @@ class _GraphBackedAsset:
             if asset_in.partition_mapping
         }
 
-        op_graph = graph(
-            name="__".join(out_asset_key.path).replace("-", "_"), description=self.description
-        )(fn)
+        op_graph = graph(name=out_asset_key.to_python_identifier(), description=self.description)(
+            fn
+        )
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
@@ -742,6 +749,9 @@ class _GraphBackedAsset:
             partitions_def=self.partitions_def,
             partition_mappings=partition_mappings if partition_mappings else None,
             group_name=self.group_name,
+            freshness_policies_by_output_name={"result": self.freshness_policy}
+            if self.freshness_policy
+            else None,
         )
 
 
@@ -789,6 +799,14 @@ def graph_multi_asset(
             name=name or fn.__name__,
             out={out_name: GraphOut() for out_name, _ in asset_outs.values()},
         )(fn)
+
+        # source freshness policies from the AssetOuts (if any)
+        freshness_policies_by_output_name = {
+            output_name: out.freshness_policy
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.freshness_policy is not None
+        }
+
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
@@ -799,6 +817,7 @@ def graph_multi_asset(
             partition_mappings=partition_mappings if partition_mappings else None,
             group_name=group_name,
             can_subset=can_subset,
+            freshness_policies_by_output_name=freshness_policies_by_output_name,
         )
 
     return inner

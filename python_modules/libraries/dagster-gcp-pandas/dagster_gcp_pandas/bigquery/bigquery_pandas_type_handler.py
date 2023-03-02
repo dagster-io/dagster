@@ -42,6 +42,7 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             with_uppercase_cols,
             destination_table=f"{table_slice.schema}.{table_slice.table}",
             project_id=table_slice.database,
+            location=context.resource_config["location"] if context.resource_config else None,
             if_exists="append",
         )
 
@@ -62,7 +63,9 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def load_input(self, context: InputContext, table_slice: TableSlice, _) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
         result = pandas_gbq.read_gbq(
-            BigQueryClient.get_select_statement(table_slice), project_id=table_slice.database
+            BigQueryClient.get_select_statement(table_slice),
+            project_id=table_slice.database,
+            location=context.resource_config["location"] if context.resource_config else None,
         )
         result.columns = map(str.lower, result.columns)
         return result
@@ -76,7 +79,7 @@ bigquery_pandas_io_manager = build_bigquery_io_manager(
     [BigQueryPandasTypeHandler()], default_load_type=pd.DataFrame
 )
 bigquery_pandas_io_manager.__doc__ = """
-An IO manager definition that reads inputs from and writes pandas DataFrames to BigQuery.
+An I/O manager definition that reads inputs from and writes pandas DataFrames to BigQuery.
 
 Returns:
     IOManagerDefinition
@@ -132,12 +135,12 @@ Examples:
             # my_table will just contain the data from column "a"
             ...
 
-    If you cannot upload a file to your Dagster deployment, or otherwise cannot authenticate with
-    GCP via a standard method, (see https://cloud.google.com/docs/authentication/provide-credentials-adc),
-    you can provide a service account key as the "gcp_credentials" configuration. Dagster will
-    store this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
+    If you cannot upload a file to your Dagster deployment, or otherwise cannot
+    `authenticate with GCP <https://cloud.google.com/docs/authentication/provide-credentials-adc>`_
+    via a standard method, you can provide a service account key as the "gcp_credentials" configuration.
+    Dagster will store this key in a temporary file and set GOOGLE_APPLICATION_CREDENTIALS to point to the file.
     After the run completes, the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be
     unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
-    the base64 encoded with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
+    the base64 encoded key with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
 
 """

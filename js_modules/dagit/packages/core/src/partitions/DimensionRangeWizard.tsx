@@ -132,7 +132,6 @@ const DynamicPartitionSelector: React.FC<{
   setSelectedPartitions: (tags: string[]) => void;
   health: PartitionStatusHealthSource;
   setShowCreatePartition: (show: boolean) => void;
-  setSelected:
 }> = ({
   allPartitions,
   selectedPartitions,
@@ -262,7 +261,7 @@ const CreatePartitionDialog = ({
   repoAddress,
   refetch,
   selected,
-  setSelected
+  setSelected,
 }: {
   isOpen: boolean;
   partitionDefinitionName?: string | null;

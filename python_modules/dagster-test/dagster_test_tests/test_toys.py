@@ -1,6 +1,5 @@
 import pytest
 from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
-from dagster._core.definitions.assets_job import get_base_asset_jobs
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._utils import file_relative_path
@@ -17,7 +16,6 @@ from dagster_test.toys.hammer import hammer
 from dagster_test.toys.log_spew import log_spew
 from dagster_test.toys.longitudinal import IntentionalRandomFailure, longitudinal
 from dagster_test.toys.many_events import many_events
-from dagster_test.toys.partitioned_assets import partitioned_asset_group
 from dagster_test.toys.pyspark_assets.pyspark_assets_job import dir_resources, pyspark_assets
 from dagster_test.toys.repo import toys_repository
 from dagster_test.toys.resources import lots_of_resources, resource_ops
@@ -277,16 +275,3 @@ def test_retry_job(executor_def):
 
 def test_software_defined_assets_job():
     assert software_defined_assets.build_job("all_assets").execute_in_process().success
-
-
-def test_partitioned_assets():
-    for job_def in get_base_asset_jobs(
-        assets=partitioned_asset_group.assets,
-        source_assets=[],
-        executor_def=None,
-        resource_defs=None,
-    ):
-        partition_key = job_def.mode_definitions[
-            0
-        ].partitioned_config.partitions_def.get_partition_keys()[0]
-        assert job_def.execute_in_process(partition_key=partition_key).success

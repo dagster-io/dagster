@@ -600,6 +600,20 @@
         "path": "/integrations/great-expectations"
       },
       {
+        "title": "Google BigQuery",
+        "path": "/integrations/bigquery",
+        "children": [
+          {
+            "title": "Google BigQuery + Dagster tutorial",
+            "path": "/integrations/bigquery/using-bigquery-with-dagster"
+          },
+          {
+            "title": "Reference",
+            "path": "/integrations/bigquery/reference"
+          }
+        ]
+      },
+      {
         "title": "Jupyter / Papermill",
         "path": "/integrations/dagstermill",
         "children": [
@@ -630,7 +644,7 @@
         "path": "/integrations/snowflake",
         "children": [
           {
-            "title": "Snowflake+ Dagster tutorial",
+            "title": "Snowflake + Dagster tutorial",
             "path": "/integrations/snowflake/using-snowflake-with-dagster"
           },
           {
@@ -711,6 +725,10 @@
         "title": "Best practices",
         "path": "/guides/best-practices",
         "children": [
+          {
+            "title": "Automating your data pipelines",
+            "path": "/guides/dagster/automated_pipelines"
+          },
           {
             "title": "Using environment variables and secrets",
             "path": "/guides/dagster/using-environment-variables-and-secrets"
@@ -937,6 +955,10 @@
           {
             "title": "GCP + Pandas (dagster-gcp-pandas)",
             "path": "/_apidocs/libraries/dagster-gcp-pandas"
+          },
+          {
+            "title": "GCP + PySpark (dagster-gcp-pyspark)",
+            "path": "/_apidocs/libraries/dagster-gcp-pyspark"
           },
           {
             "title": "Great Expectations (dagster-ge)",
