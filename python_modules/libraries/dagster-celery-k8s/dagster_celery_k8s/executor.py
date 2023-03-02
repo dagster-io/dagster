@@ -206,6 +206,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
         retry_mode=plan_context.executor.retries.for_inner_plan(),
         known_state=known_state,
         should_verify_step=True,
+        print_serialized_events=True,
     )
 
     job_config = plan_context.executor.job_config

@@ -241,7 +241,10 @@ def _step_handler_context(job_def, dagster_run, instance, executor):
     )
 
     execute_step_args = ExecuteStepArgs(
-        reconstructable(bar).get_python_origin(), dagster_run.run_id, ["foo"]
+        reconstructable(bar).get_python_origin(),
+        dagster_run.run_id,
+        ["foo"],
+        print_serialized_events=False,
     )
 
     return StepHandlerContext(
