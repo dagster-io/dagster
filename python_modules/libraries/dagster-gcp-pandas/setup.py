@@ -33,6 +33,6 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_gcp_pandas_tests*"]),
     include_package_data=True,
-    install_requires=[f"dagster{pin}", f"dagster-gcp{pin}", "pandas-gbq"],
+    install_requires=["dagster==1.1.21", "dagster-gcp==0.17.21", "pandas-gbq"],
     zip_safe=False,
 )
