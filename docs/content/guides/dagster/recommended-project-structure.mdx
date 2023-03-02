@@ -5,6 +5,10 @@ description: This guide talks about Dagster's recommendations on structuring lar
 
 # Structuring your Dagster project
 
+<Note>
+<strong>Got questions about our recommendations, or something to add?</strong> Join our [GitHub discussion]() to share how you organize your Dagster code.
+</Note>
+
 Dagster aims to enable teams to ship data pipelines with extraordinary velocity. In this guide, we'll talk about how we imagine structuring larger Dagster projects which help achieve that goal.
 
 At a high level, here are the aspects we'd like to optimize when structuring a complex project:
@@ -13,15 +17,13 @@ At a high level, here are the aspects we'd like to optimize when structuring a c
 - You can quickly find the relevant code regardless of your familiarity with the related business logic.
 - You can organize at your own pace when you feel things have grown too big, but not over-optimize too early.
 
-As your experience with Dagster grows, you may find certain aspects of this guide no longer apply to your use cases and you may want to change the structure to adapt to your business needs. We believe every team is unique and every team finds its own way to collaborate and be productive in the end.
-
-We're constantly learning -- If you have anything you'd like to add about project layouts, we invite you to join this [GitHub Discussion](https://github.com/dagster-io/dagster/discussions/8972) to share how you organize your Dagster code.
+As your experience with Dagster grows, certain aspects of this guide no longer apply to your use cases, and you may want to change the structure to adapt to your business needs.
 
 ---
 
 ## Example file tree
 
-To walk through our recommendations, this guide uses [fully featured project](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured) which is a large-size project that simulates real-world use cases and showcases a wide range of Dagster features. You can read more about this project together with best practices of using Dagster concepts in [this guide](/guides/dagster/example_project).
+This guide uses the [fully featured project example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured) to walk through our recommendations. This example project is a large-size project that simulates real-world use cases and showcases a wide range of Dagster features. You can read more about this project and the application of Dagster concept best practices in [the example project walkthrough guide](/guides/dagster/example_project).
 
 Below is the complete file tree of the example project.
 
@@ -71,7 +73,7 @@ project_fully_featured
 
 ---
 
-## For Python projects
+## Setting up your project
 
 This project was scaffolded by the `dagster project` CLI. This tool generates files and folder structures that enable you to quickly get started with everything set up, especially the Python setup. Refer to the [Create a new project guide](/getting-started/create-new-project) to learn more about the default project skeleton.
 
@@ -81,7 +83,7 @@ This project was scaffolded by the `dagster project` CLI. This tool generates fi
 
 Keep all assets together in an `assets/` directory. As your business logic and complexity grows, grouping assets by business domains in multiple directories inside `assets/` helps to organize assets further.
 
-In this example, we keep all assets together in the [`project_fully_featured/assets/`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured/assets) directory. It is useful because you can use <PyObject object="load_assets_from_package_module" /> or <PyObject object="load_assets_from_modules" /> to load assets into your definition, as opposed to needing to add assets to the definition every time you define one. It also helps collaboration as your teammates can quickly navigate in the right place to find the core business logic (i.e. assets) regardless of their familiarity to the codebase.
+In this example, we keep all assets together in the [`project_fully_featured/assets/`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured/assets) directory. It is useful because you can use <PyObject object="load_assets_from_package_module" /> or <PyObject object="load_assets_from_modules" /> to load assets into your definition, as opposed to needing to add assets to the definition every time you define one. It also helps collaboration as your teammates can quickly navigate to the right place to find the core business logic (i.e., assets) regardless of their familiarity with the codebase.
 
 ```shell
 ├── project_fully_featured
@@ -108,9 +110,9 @@ In this example, we keep all assets together in the [`project_fully_featured/ass
 
 ## For schedules and sensors
 
-In this example, we put sensors and schedules a folder [`sensors`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/sensors). When we build sensors, they are considered as policies for when to trigger a particular job. So, keeping all the policies together helps us understand what can later be used when created the jobs.py file.
+In this example, we put sensors and schedules together in the [`sensors`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/sensors) folder. When we build sensors, they are considered policies for when to trigger a particular job. Keeping all the policies together helps us understand what what's available when creating jobs.
 
-- Note: Certain sensors like [run status sensors](/concepts/partitions-schedules-sensors/sensors#run-status-sensors) can listen to multiple jobs and do not trigger a job. We recommend keeping these sensors in the definition as they are often for alerting and monitoring at the code location level.
+**Note:** Certain sensors, like [run status sensors](/concepts/partitions-schedules-sensors/sensors#run-status-sensors), can listen to multiple jobs and do not trigger a job. We recommend keeping these sensors in the definition as they are often for alerting and monitoring at the code location level.
 
 ---
 
@@ -118,17 +120,17 @@ In this example, we put sensors and schedules a folder [`sensors`](https://githu
 
 Make resources reusable and share them across jobs or asset groups.
 
-In this example, resources (e.g., database connections, Spark sessions, API clients, and I/O managers) are grouped in the [`resources`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/) folder, where they are bound to configuration sets which vary based on environment.
+In this example, we grouped resources (e.g., database connections, Spark sessions, API clients, and I/O managers) in the [`resources`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/) folder, where they are bound to configuration sets that vary based on the environment.
 
-In complex projects, we find it helpful to make resources reusable and configured with pre-defined values via <PyObject object="configured" />. This allows your teammates to use a pre-defined resource set or make changes to shared resources, thus enabling more efficient project development.
+In complex projects, we find it helpful to make resources reusable and configured with pre-defined values via <PyObject object="configured" />. This approach allows your teammates to use a pre-defined resource set or make changes to shared resources, thus enabling more efficient project development.
 
-This pattern also helps you to easily execute jobs in different environments without code changes. In this example, we dynamically define a code location based on the deployment in [`__init__.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/\__init\_\_.py) and are able to keep all code the same across testing, local development, staging, and production. Read more about our recommendations in [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production)
+This pattern also helps you easily execute jobs in different environments without code changes. In this example, we dynamically defined a code location based on the deployment in [`__init__.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/\__init\_\_.py) and can keep all code the same across testing, local development, staging, and production. Read more about our recommendations in the [Transitioning data pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production) guide.
 
 ---
 
 ## For jobs
 
-When using assets based data pipelines, we recommend having a jobs.py file which imports the assets, partitions, sensors, etc. to build each of the jobs.
+When using asset-based data pipelines, we recommend having a `jobs.py` file that imports the assets, partitions, sensors, etc. to build each job.
 
 ### When using ops and graphs
 

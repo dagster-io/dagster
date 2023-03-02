@@ -731,7 +731,7 @@
           },
           {
             "title": "Structuring your Dagster project",
-            "path": "/guides/dagster/recommended_project_structure"
+            "path": "/guides/dagster/recommended-project-structure"
           },
           {
             "title": "Using environment variables and secrets",
