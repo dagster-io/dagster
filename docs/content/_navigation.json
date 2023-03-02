@@ -730,6 +730,10 @@
             "path": "/guides/dagster/automated_pipelines"
           },
           {
+            "title": "Structuring your Dagster project",
+            "path": "/guides/dagster/recommended_project_structure"
+          },
+          {
             "title": "Using environment variables and secrets",
             "path": "/guides/dagster/using-environment-variables-and-secrets"
           },
