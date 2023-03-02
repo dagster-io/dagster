@@ -573,6 +573,17 @@ class DagsterK8sJobConfig(
                     is_required=False,
                     description="Raw Kubernetes configuration for launched code servers.",
                 ),
+                "env": Field(
+                    Array(
+                        Permissive(
+                            {
+                                "name": str,
+                            }
+                        )
+                    ),
+                    is_required=False,
+                    default_value=[],
+                ),
             },
         )
 

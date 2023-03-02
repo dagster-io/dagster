@@ -40,6 +40,7 @@ class K8sContainerContext(
             ("security_context", Mapping[str, Any]),
             ("server_k8s_config", Mapping[str, Any]),
             ("run_k8s_config", Mapping[str, Any]),
+            ("env", Sequence[Mapping[str, Any]]),
         ],
     )
 ):
@@ -66,6 +67,7 @@ class K8sContainerContext(
         security_context: Optional[Mapping[str, Any]] = None,
         server_k8s_config: Optional[Mapping[str, Any]] = None,
         run_k8s_config: Optional[Mapping[str, Any]] = None,
+        env: Optional[Sequence[Mapping[str, Any]]] = None,
     ):
         return super(K8sContainerContext, cls).__new__(
             cls,
@@ -94,6 +96,10 @@ class K8sContainerContext(
             run_k8s_config=UserDefinedDagsterK8sConfig(
                 **check.opt_mapping_param(run_k8s_config, "run_k8s_config")
             ).to_dict(),
+            env=[
+                k8s_snake_case_dict(kubernetes.client.V1EnvVar, e)
+                for e in check.opt_sequence_param(env, "env")
+            ],
         )
 
     def _merge_k8s_config(
@@ -133,6 +139,7 @@ class K8sContainerContext(
                 self.server_k8s_config, other.server_k8s_config
             ),
             run_k8s_config=self._merge_k8s_config(self.run_k8s_config, other.run_k8s_config),
+            env=_dedupe_list([*other.env, *self.env]),
         )
 
     def get_environment_dict(self) -> Mapping[str, str]:
@@ -232,6 +239,7 @@ class K8sContainerContext(
                 security_context=processed_context_value.get("security_context"),
                 server_k8s_config=processed_context_value.get("server_k8s_config"),
                 run_k8s_config=processed_context_value.get("run_k8s_config"),
+                env=processed_context_value.get("env"),
             )
         )
 
