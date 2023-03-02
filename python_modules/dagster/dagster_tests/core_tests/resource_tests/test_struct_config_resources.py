@@ -20,6 +20,7 @@ from dagster._config.structured_config import (
     ConfigurableResource,
     ResourceDependency,
 )
+from dagster._core.definitions import materialize
 from dagster._core.definitions.assets_job import build_assets_job
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.resource_definition import ResourceDefinition
@@ -1229,3 +1230,70 @@ def test_env_var_nested_config() -> None:
     ):
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
+
+
+def test_extending_resource_class() -> None:
+    executed = {}
+
+    class MyBaseResource(ConfigurableResource):
+        foo: str
+
+    class MyExtendingResource(MyBaseResource):
+        bar: str
+
+    @op
+    def my_op(res: MyExtendingResource):
+        assert res.foo == "foo"
+        assert res.bar == "bar"
+        executed["yes"] = True
+
+    @job(resource_defs={"res": MyExtendingResource(foo="foo", bar="bar")})
+    def my_job():
+        my_op()
+
+    assert my_job.execute_in_process().success
+    assert executed["yes"]
+
+
+def test_extending_resource_class_assets() -> None:
+    executed = {}
+
+    class MyBaseResource(ConfigurableResource):
+        foo: str
+
+    class MyExtendingResource(MyBaseResource):
+        bar: str
+
+    @asset
+    def my_asset(res: MyExtendingResource):
+        assert res.foo == "foo"
+        assert res.bar == "bar"
+        executed["yes"] = True
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={"res": MyExtendingResource(foo="foo", bar="bar")},
+    )
+    defs.get_implicit_global_asset_job_def().execute_in_process()
+
+    assert executed["yes"]
+
+    assert materialize(
+        [my_asset],
+        resources={"res": MyExtendingResource(foo="foo", bar="bar")},
+    ).success
+
+    class MyDependentResource(ConfigurableResource):
+        inner: MyBaseResource
+
+    @asset
+    def my_other_asset(res: MyDependentResource):
+        assert res.inner.foo == "foo"
+        executed["yes"] = True
+
+    executed.clear()
+
+    assert materialize(
+        [my_other_asset],
+        resources={"res": MyDependentResource(inner=MyExtendingResource(foo="foo", bar="bar"))},
+    ).success
