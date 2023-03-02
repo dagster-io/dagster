@@ -152,7 +152,7 @@ The ops and graphs would be defined in the job file with the job definition whic
 
 ## For multiple code locations
 
-So far, we've discussed our recommendations for structuring a large project which contains only one code location. Dagster also allows you to structure a project with multiple definitions. We don't recommend over-abstracting too early, and in most cases, code location should be sufficient. The pattern we found useful is to use multiple code location is to keep conflicting dependencies separate, where each definition can keep their own package requirements (e.g., `setup.py`) and deployment specs (e.g., `Dockerfile`).
+So far, we've discussed our recommendations for structuring a large project which contains only one code location. Dagster also allows you to structure a project with multiple definitions. We don't recommend over-abstracting too early; in most cases, one code location should be sufficient. A helpful pattern uses multiple code locations to separate conflicting dependencies, where each definition has its own package requirements (e.g., `setup.py`) and deployment specs (e.g., Dockerfile).
 
 ---
 
