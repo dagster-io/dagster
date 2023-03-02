@@ -4,7 +4,7 @@
 
 ### New
 
-- Further performance improvements for  `build_asset_reconciliation_sensor`.
+- Further performance improvements for `build_asset_reconciliation_sensor`.
 - Dagster now allows you to backfill asset selections that include mapped partition definitions, such as a daily asset which rolls up into a weekly asset, as long as the root assets in your selection share a partition definition.
 - Dagit now includes information about the cause of an asset’s staleness.
 - Improved the error message for non-matching cron schedules in `TimeWindowPartitionMapping`s with offsets. (Thanks Sean Han!)
@@ -14,6 +14,20 @@
 - [dagster-duckdb-polars] Added a dagster-duckdb-polars library that includes a `DuckDBPolarsTypeHandler` for use with `build_duckdb_io_manager`, which allows loading / storing Polars DataFrames from/to DuckDB. (Thanks Pezhman Zarabadi-Poor!)
 - [dagster-gcp-pyspark] New PySpark TypeHandler for the BigQuery I/O manager. Store and load your PySpark DataFrames in BigQuery using `bigquery_pyspark_io_manager`.
 - [dagster-snowflake] [dagster-duckdb] The Snowflake and DuckDB IO managers can now load multiple partitions in a single step - e.g. when a non-partitioned asset depends on a partitioned asset or a single partition of an asset depends on multiple partitions of an upstream asset. Loading occurs using a single SQL query and returns a single `DataFrame`.
+- [dagster-k8s] The Helm chart now supports the full kubernetes env var spec for user code deployments. Example:
+
+  ```yaml
+  dagster-user-deployments:
+    deployments:
+      - name: my-code
+        env:
+          - name: FOO
+            valueFrom:
+              fieldFre:
+                fieldPath: metadata.uid
+  ```
+
+  If `includeConfigInLaunchedRuns` is enabled, these env vars will also be applied to the containers for launched runs.
 
 ### Bugfixes
 
@@ -63,10 +77,10 @@
   ```yaml
   dagit:
     env:
-    - name: “FOO”
-      valueFrom:
-        fieldRef:
-          fieldPath: metadata.uid
+      - name: “FOO”
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.uid
   ```
 
 ### Bugfixes
