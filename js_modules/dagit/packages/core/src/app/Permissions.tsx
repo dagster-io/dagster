@@ -167,7 +167,7 @@ export const usePermissionsForLocation = (locationName: string | null | undefine
 // todo dish: Update callsites to either location-based perms or intentionally unscoped perms.
 export const usePermissionsDEPRECATED = useUnscopedPermissions;
 
-const PERMISSIONS_QUERY = gql`
+export const PERMISSIONS_QUERY = gql`
   query PermissionsQuery {
     unscopedPermissions: permissions {
       ...PermissionFragment
