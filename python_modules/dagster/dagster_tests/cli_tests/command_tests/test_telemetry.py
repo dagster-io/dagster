@@ -193,7 +193,9 @@ def test_log_workspace_stats(caplog):
 def test_log_dynamic_partitions_actions(caplog):
     with instance_for_test(overrides={"telemetry": {"enabled": True}}) as instance:
         instance.add_dynamic_partitions("foo", ["baz", "qux"])
-        instance.get_dynamic_partitions("foo")
+        for _ in range(5):
+            # check that only one log is emitted, should only log one in ten times
+            instance.get_dynamic_partitions("foo")
 
         assert len(caplog.records) == 2
 
