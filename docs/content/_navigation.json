@@ -727,7 +727,7 @@
         "children": [
           {
             "title": "Automating your data pipelines",
-            "path": "/guides/dagster/automated_pipelines"
+            "path": "/guides/dagster/automating-pipelines"
           },
           {
             "title": "Using environment variables and secrets",
