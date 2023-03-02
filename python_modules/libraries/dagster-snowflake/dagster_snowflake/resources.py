@@ -204,7 +204,8 @@ class SnowflakeConnection:
             fetch_results (bool): If True, will return the result of the query. Defaults to False. If True
                 and use_pandas_result is also True, results will be returned as a Pandas DataFrame.
             use_pandas_result (bool): If True, will return the result of the query as a Pandas DataFrame.
-                Defaults to False.
+                Defaults to False. If fetch_results is False and use_pandas_result is True, an error will be
+                raised.
 
         Returns:
             The result of the query if fetch_results or use_pandas_result is True, otherwise returns None
@@ -221,6 +222,8 @@ class SnowflakeConnection:
         check.str_param(sql, "sql")
         check.opt_inst_param(parameters, "parameters", (list, dict))
         check.bool_param(fetch_results, "fetch_results")
+        if not fetch_results and use_pandas_result:
+            check.failed("If use_pandas_result is True, fetch_results must also be True.")
 
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
@@ -252,7 +255,8 @@ class SnowflakeConnection:
             fetch_results (bool): If True, will return the results of the queries as a list. Defaults to False. If True
                 and use_pandas_result is also True, results will be returned as Pandas DataFrames.
             use_pandas_result (bool): If True, will return the results of the queries as a list of a Pandas DataFrames.
-                Defaults to False.
+                Defaults to False. If fetch_results is False and use_pandas_result is True, an error will be
+                raised.
 
         Returns:
             The results of the queries as a list if fetch_results or use_pandas_result is True,
@@ -272,6 +276,8 @@ class SnowflakeConnection:
         check.sequence_param(sql_queries, "sql_queries", of_type=str)
         check.opt_inst_param(parameters, "parameters", (list, dict))
         check.bool_param(fetch_results, "fetch_results")
+        if not fetch_results and use_pandas_result:
+            check.failed("If use_pandas_result is True, fetch_results must also be True.")
 
         results: List[Any] = []
         with self.get_connection() as conn:
