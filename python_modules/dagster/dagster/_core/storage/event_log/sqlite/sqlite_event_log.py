@@ -387,10 +387,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         with self.index_connection() as conn:
             conn.execute(
                 SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
-                    db.or_(
-                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
-                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
-                    )
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
                 )
             )
 
