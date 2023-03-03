@@ -286,7 +286,6 @@ def get_external_schedule_execution(
         if k in schedule_def.required_resource_keys
     }
 
-    assert len(resources_to_build) == 1
     with ScheduleEvaluationContext(
         instance_ref,
         scheduled_execution_time,
