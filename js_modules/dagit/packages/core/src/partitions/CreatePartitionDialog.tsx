@@ -32,7 +32,7 @@ import {
 // https://github.com/dagster-io/dagster/blob/b32508036370678ad0bbc0f117f138fa29b0c33d/python_modules/dagster/dagster/_core/definitions/partition.py#L92
 const INVALID_PARITION_SUBSTRINGS = [
   '...',
-  '\x07', // bell or /a on the backend.
+  '\x07', // bell or \a on the backend.
   '\b',
   '\f',
   '\n',
