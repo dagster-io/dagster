@@ -64,6 +64,7 @@ def items(context) -> Output[DataFrame]:
     io_manager_key="warehouse_io_manager",
     partitions_def=hourly_partitions,
     key_prefix=["snowflake", "core"],
+    metadata={"partition_expr": "TO_TIMESTAMP(time::INT)"},
 )
 def comments(items: SparkDF) -> SparkDF:
     return items.where(items["type"] == "comment")
@@ -73,6 +74,7 @@ def comments(items: SparkDF) -> SparkDF:
     io_manager_key="warehouse_io_manager",
     partitions_def=hourly_partitions,
     key_prefix=["snowflake", "core"],
+    metadata={"partition_expr": "TO_TIMESTAMP(time::INT)"},
 )
 def stories(items: SparkDF) -> SparkDF:
     return items.where(items["type"] == "story")

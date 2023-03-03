@@ -4,7 +4,7 @@
 
 def new_resource_testing() -> None:
     # start_new_resource_testing
-    from dagster._config.structured_config import ConfigurableResource
+    from dagster import ConfigurableResource
 
     class MyResource(ConfigurableResource):
         value: str
@@ -20,7 +20,7 @@ def new_resource_testing() -> None:
 
 def new_resource_testing_with_context() -> None:
     # start_new_resource_testing_with_context
-    from dagster._config.structured_config import ConfigurableResource
+    from dagster import ConfigurableResource
 
     class StringHolderResource(ConfigurableResource):
         value: str
@@ -45,7 +45,7 @@ def new_resources_assets_defs() -> None:
     # start_new_resources_assets_defs
 
     from dagster import asset, Definitions
-    from dagster._core.definitions.resource_output import Resource
+    from dagster import Resource
     import requests
 
     from typing import Dict, Any
@@ -65,8 +65,7 @@ def new_resources_assets_defs() -> None:
 def new_resources_ops_defs() -> None:
     # start_new_resources_ops_defs
 
-    from dagster import op, Definitions, job
-    from dagster._core.definitions.resource_output import Resource
+    from dagster import op, Definitions, job, Resource
     import requests
 
     @op
@@ -88,8 +87,7 @@ def new_resources_ops_defs() -> None:
 def new_resources_configurable_defs() -> None:
     # start_new_resources_configurable_defs
 
-    from dagster import asset, Definitions
-    from dagster._config.structured_config import ConfigurableResource
+    from dagster import asset, Definitions, ConfigurableResource
     import requests
     from requests import Response
 
@@ -119,8 +117,7 @@ def new_resources_configurable_defs() -> None:
 def new_resources_configurable_defs_ops() -> None:
     # start_new_resources_configurable_defs_ops
 
-    from dagster import Definitions, job, op
-    from dagster._config.structured_config import ConfigurableResource
+    from dagster import Definitions, job, op, ConfigurableResource
     import requests
     from requests import Response
 
@@ -153,8 +150,7 @@ def new_resources_configurable_defs_ops() -> None:
 
 def new_resource_runtime() -> None:
     # start_new_resource_runtime
-    from dagster._config.structured_config import ConfigurableResource
-    from dagster import Definitions, asset
+    from dagster import ConfigurableResource, Definitions, asset
 
     class DatabaseResource(ConfigurableResource):
         table: str
@@ -174,8 +170,7 @@ def new_resource_runtime() -> None:
     # end_new_resource_runtime
 
     # start_new_resource_runtime_launch
-    from dagster import sensor, define_asset_job, RunRequest
-    from dagster._core.definitions.run_config import RunConfig
+    from dagster import sensor, define_asset_job, RunRequest, RunConfig
 
     update_data_job = define_asset_job(
         name="update_data_job", selection=[data_from_database]
@@ -202,8 +197,7 @@ def get_filestore_client(*args, **kwargs):
 
 def new_resources_nesting() -> None:
     # start_new_resources_nesting
-    from dagster import Definitions
-    from dagster._config.structured_config import ConfigurableResource
+    from dagster import Definitions, ConfigurableResource
 
     class CredentialsResource(ConfigurableResource):
         username: str
@@ -252,9 +246,7 @@ def new_resources_nesting() -> None:
 def new_resources_env_vars() -> None:
     # start_new_resources_env_vars
 
-    from dagster._config.field_utils import EnvVar
-    from dagster import Definitions
-    from dagster._config.structured_config import ConfigurableResource
+    from dagster import EnvVar, Definitions, ConfigurableResource
 
     class CredentialsResource(ConfigurableResource):
         username: str
@@ -291,8 +283,7 @@ class GitHub:
 def raw_github_resource() -> None:
     # start_raw_github_resource
 
-    from dagster import Definitions, asset
-    from dagster._core.definitions.resource_output import Resource
+    from dagster import Definitions, asset, Resource
 
     # `Resource[GitHub]` is treated exactly like `GitHub` for type checking purposes,
     # and the runtime type of the github parameter is `GitHub`. The purpose of the
@@ -337,11 +328,7 @@ def create_engine(*args, **kwargs):
 def raw_github_resource_dep() -> None:
     # start_raw_github_resource_dep
 
-    from dagster._config.structured_config import (
-        ConfigurableResource,
-        ResourceDependency,
-    )
-    from dagster import Definitions
+    from dagster import ConfigurableResource, ResourceDependency, Definitions
 
     class DBResource(ConfigurableResource):
         engine: ResourceDependency[Engine]
@@ -362,8 +349,13 @@ def raw_github_resource_dep() -> None:
 def resource_adapter() -> None:
     # start_resource_adapter
 
-    from dagster import resource, Definitions, ResourceDefinition, asset
-    from dagster._config.structured_config import ConfigurableLegacyResourceAdapter
+    from dagster import (
+        resource,
+        Definitions,
+        ResourceDefinition,
+        asset,
+        ConfigurableLegacyResourceAdapter,
+    )
 
     # Old code, interface cannot be changed for back-compat purposes
     class Writer:
@@ -406,9 +398,9 @@ def io_adapter() -> None:
         io_manager,
         IOManager,
         InputContext,
+        ConfigurableLegacyIOManagerAdapter,
         OutputContext,
     )
-    from dagster._config.structured_config import ConfigurableLegacyIOManagerAdapter
     import os
 
     # Old code, interface cannot be changed for back-compat purposes
@@ -459,7 +451,7 @@ def io_adapter() -> None:
 def impl_details_resolve() -> None:
     # start_impl_details_resolve
 
-    from dagster._config.structured_config import ConfigurableResource
+    from dagster import ConfigurableResource
 
     class CredentialsResource(ConfigurableResource):
         username: str
@@ -504,8 +496,13 @@ def read_csv(path: str):
 def new_io_manager() -> None:
     # start_new_io_manager
 
-    from dagster import Definitions, AssetKey, OutputContext, InputContext
-    from dagster._config.structured_config import ConfigurableIOManager
+    from dagster import (
+        Definitions,
+        AssetKey,
+        OutputContext,
+        InputContext,
+        ConfigurableIOManager,
+    )
 
     class MyIOManager(ConfigurableIOManager):
         root_path: str
