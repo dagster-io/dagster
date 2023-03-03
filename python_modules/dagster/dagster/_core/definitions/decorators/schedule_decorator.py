@@ -11,6 +11,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Union,
     cast,
 )
@@ -22,6 +23,8 @@ from dagster._core.definitions.partition import (
     ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
 )
+from dagster._core.definitions.resource_output import get_resource_args
+from dagster._core.definitions.sensor_definition import get_context_param_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     ScheduleExecutionError,
@@ -71,6 +74,7 @@ def schedule(
     description: Optional[str] = None,
     job: Optional[ExecutableDefinition] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
+    required_resource_keys: Optional[Set[str]] = None,
 ) -> Callable[[RawScheduleEvaluationFunction], ScheduleDefinition]:
     """
     Creates a schedule following the provided cron schedule and requests runs for the provided job.
@@ -115,6 +119,7 @@ def schedule(
             that should execute when this schedule runs.
         default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 
     def inner(fn: RawScheduleEvaluationFunction) -> ScheduleDefinition:
@@ -133,7 +138,10 @@ def schedule(
         elif tags:
             validated_tags = validate_tags(tags, allow_reserved_tags=False)
 
-        def _wrapped_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
+        context_param_name = get_context_param_name(fn)
+        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
+
+        def _wrapped_fn(context) -> RunRequestIterator:
             if should_execute:
                 with user_code_error_boundary(
                     ScheduleExecutionError,
@@ -144,15 +152,16 @@ def schedule(
                             f"should_execute function for {schedule_name} returned false."
                         )
                         return
+            resources = {k: getattr(context.resources, k) for k in resource_arg_names}
 
             with user_code_error_boundary(
                 ScheduleExecutionError,
                 lambda: f"Error occurred during the evaluation of schedule {schedule_name}",
             ):
-                if has_at_least_one_parameter(fn):
-                    result = fn(context)
+                if context_param_name:
+                    result = fn(**{context_param_name: context}, **resources)
                 else:
-                    result = fn()  # type: ignore
+                    result = fn(**resources)
 
                 if isinstance(result, dict):
                     # this is the run-config based decorated function, wrap the evaluated run config
@@ -191,6 +200,7 @@ def schedule(
             execution_fn=evaluation_fn,
             job=job,
             default_status=default_status,
+            required_resource_keys=required_resource_keys,
         )
 
         update_wrapper(schedule_def, wrapped=fn)

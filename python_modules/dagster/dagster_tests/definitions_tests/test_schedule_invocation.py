@@ -1,12 +1,15 @@
 import datetime
+from typing import cast
 
 import pytest
 from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
+    RunRequest,
     build_schedule_context,
     schedule,
 )
+from dagster._config.structured_config import ConfigurableResource
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import daily_schedule
@@ -105,3 +108,29 @@ def test_instance_access():
 
     with instance_for_test() as instance:
         assert isinstance(build_schedule_context(instance).instance, DagsterInstance)
+
+
+def test_schedule_invocation_resources() -> None:
+    class MyResource(ConfigurableResource):
+        a_str: str
+
+    # Test no arg invocation
+    @schedule(job_name="foo_pipeline", cron_schedule="* * * * *")
+    def basic_schedule_resource_req(my_resource: MyResource):
+        return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
+
+    # with pytest.raises(CheckError, match="Schedule missing required resources: my_resource"):
+    #     basic_schedule_resource_req()
+
+    assert hasattr(
+        build_schedule_context(resource_defs={"my_resource": MyResource(a_str="foo")}).resources,
+        "my_resource",
+    )
+
+    # Just need to pass context, which splats out into resource parameters
+    assert cast(
+        RunRequest,
+        basic_schedule_resource_req(
+            build_schedule_context(resource_defs={"my_resource": MyResource(a_str="foo")})
+        ),
+    ).run_config == {"foo": "foo"}
