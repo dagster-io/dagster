@@ -27,6 +27,8 @@ from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
 )
+from pydantic import ConstrainedStr, ConstrainedFloat, ConstrainedInt
+
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.init import InitResourceContext
 
@@ -775,6 +777,14 @@ def _config_type_for_pydantic_field(pydantic_field: ModelField) -> ConfigType:
 
 
 def _config_type_for_type_on_pydantic_field(potential_dagster_type: Any) -> ConfigType:
+    # special case pydantic constrained types to their source equivalents
+    if safe_is_subclass(potential_dagster_type, ConstrainedStr):
+        return StringSource
+    elif safe_is_subclass(potential_dagster_type, ConstrainedFloat):
+        potential_dagster_type = float
+    elif safe_is_subclass(potential_dagster_type, ConstrainedInt):
+        return IntSource
+
     # special case raw python literals to their source equivalents
     if potential_dagster_type is str:
         return StringSource
