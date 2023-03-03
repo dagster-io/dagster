@@ -50,6 +50,7 @@ from ..schedule_definition import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
     has_at_least_one_parameter,
+    validate_and_get_schedule_resource_dict,
 )
 from ..target import ExecutableDefinition
 from ..utils import validate_tags
@@ -141,7 +142,7 @@ def schedule(
         context_param_name = get_context_param_name(fn)
         resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
 
-        def _wrapped_fn(context) -> RunRequestIterator:
+        def _wrapped_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
             if should_execute:
                 with user_code_error_boundary(
                     ScheduleExecutionError,
@@ -152,7 +153,9 @@ def schedule(
                             f"should_execute function for {schedule_name} returned false."
                         )
                         return
-            resources = {k: getattr(context.resources, k) for k in resource_arg_names}
+            resources = validate_and_get_schedule_resource_dict(
+                context.resources, schedule_name, resource_arg_names
+            )
 
             with user_code_error_boundary(
                 ScheduleExecutionError,

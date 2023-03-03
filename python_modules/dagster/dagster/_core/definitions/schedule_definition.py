@@ -7,6 +7,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterator,
     List,
     Mapping,
@@ -324,6 +325,22 @@ class ScheduleExecutionData(
         )
 
 
+def validate_and_get_schedule_resource_dict(
+    resources: Resources, schedule_name: str, required_resource_keys: Set[str]
+) -> Dict[str, Any]:
+    """
+    Validates that the context has all the required resources and returns a dictionary of
+    resource key to resource object.
+    """
+    for k in required_resource_keys:
+        if not hasattr(resources, k):
+            raise DagsterInvalidDefinitionError(
+                f"Resource with key '{k}' required by schedule '{schedule_name}' was not provided."
+            )
+
+    return {k: getattr(resources, k) for k in required_resource_keys}
+
+
 class ScheduleDefinition:
     """Define a schedule that targets a job.
 
@@ -522,15 +539,6 @@ class ScheduleDefinition:
             default_status, "default_status", DefaultScheduleStatus
         )
 
-        execution_fn: Callable[..., "ScheduleEvaluationFunctionReturn"]
-        if isinstance(self._execution_fn, DecoratedScheduleFunction):
-            execution_fn = self._execution_fn.wrapped_fn
-        else:
-            execution_fn = cast(
-                Callable[..., "ScheduleEvaluationFunctionReturn"],
-                self._execution_fn,
-            )
-
         resource_arg_names: Set[str] = (
             {arg.name for arg in get_resource_args(self._execution_fn.decorated_fn)}
             if isinstance(self._execution_fn, DecoratedScheduleFunction)
@@ -561,7 +569,7 @@ class ScheduleDefinition:
                 "decorators."
             )
         result = None
-        context_param_name = get_context_param_name(self._execution_fn.decorated_fn)  # type: ignore
+        context_param_name = get_context_param_name(self._execution_fn.decorated_fn)
 
         if len(args) + len(kwargs) > 1:
             raise DagsterInvalidInvocationError(
@@ -606,14 +614,9 @@ class ScheduleDefinition:
                 )
             context = context if context else build_schedule_context()
 
-        check.invariant(
-            all((hasattr(context.resources, k) for k in self._required_resource_keys)),
-            "Sensor missing required resources: {}".format(
-                ", ".join(self._required_resource_keys - set(context.resources.__dict__.keys()))
-            ),
+        resources = validate_and_get_schedule_resource_dict(
+            context.resources, self._name, self._required_resource_keys
         )
-        resources = {k: getattr(context.resources, k) for k in self._required_resource_keys}
-
         result = self._execution_fn.decorated_fn(**context_param, **resources)
 
         if isinstance(result, dict):
