@@ -27,7 +27,7 @@ function Test({mocks}: {mocks?: MockedResponse[]}) {
   );
 }
 
-describe('SensorDryRunTest', () => {
+describe('CreatePartitionDialog', () => {
   beforeEach(() => {
     onCloseMock = jest.fn();
     onSelectedMock = jest.fn();
