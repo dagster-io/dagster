@@ -16,6 +16,7 @@ from typing import (
 
 from typing_extensions import TypeAlias
 
+from dagster._annotations import experimental
 from dagster._config import (
     ALL_CONFIG_BUILTINS,
     Array,
@@ -685,6 +686,7 @@ def _convert_config_classes(configs: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+@experimental
 class RunConfig:
     def __init__(
         self,
