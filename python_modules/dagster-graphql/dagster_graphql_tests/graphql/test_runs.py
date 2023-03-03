@@ -1,4 +1,5 @@
 import copy
+from unittest import mock
 
 import yaml
 from dagster import AssetMaterialization, Output, job, op, repository
@@ -80,10 +81,12 @@ mutation DeleteRun($runId: String!) {
 
 ALL_TAGS_QUERY = """
 {
-  runTags {
-    ... on PipelineTagAndValues {
-      key
-      values
+  runTagsOrError {
+    ... on RunTags {
+      tags {
+        key
+        values
+      }
     }
   }
 }
@@ -91,15 +94,28 @@ ALL_TAGS_QUERY = """
 
 ALL_TAG_KEYS_QUERY = """
 {
-  runTagKeys
+  runTagKeysOrError {
+    __typename
+    ... on RunTagKeys {
+      keys
+    }
+    ... on PythonError {
+        message
+        stack
+    }
+  }
 }
 """
 
 FILTERED_TAGS_QUERY = """
 query FilteredRunTagsQuery($tagKeys: [String!]!) {
-  runTags(tagKeys: $tagKeys) {
-    key
-    values
+  runTagsOrError(tagKeys: $tagKeys) {
+    ... on RunTags {
+      tags {
+        key
+        values
+      }
+    }
   }
 }
 """
@@ -132,6 +148,9 @@ query PipelineRunsRootQuery($filter: RunsFilter!) {
     ... on PipelineRuns {
       results {
         runId
+        hasReExecutePermission
+        hasTerminatePermission
+        hasDeletePermission
       }
     }
   }
@@ -256,6 +275,16 @@ class TestDeleteRunReadonly(ReadonlyGraphQLContextTestMatrix):
 
         assert result.data["deletePipelineRun"]["__typename"] == "UnauthorizedError"
 
+        result = execute_dagster_graphql(
+            graphql_context,
+            FILTERED_RUN_QUERY,
+            variables={"filter": {"runIds": [run_id]}},
+        )
+        run_response = result.data["pipelineRunsOrError"]["results"][0]
+        assert run_response["hasReExecutePermission"] is False
+        assert run_response["hasTerminatePermission"] is False
+        assert run_response["hasDeletePermission"] is False
+
 
 class TestGetRuns(ExecutingGraphQLContextTestMatrix):
     def test_get_runs_over_graphql(self, graphql_context):
@@ -316,13 +345,13 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         assert len(runs) == 2
 
         all_tag_keys_result = execute_dagster_graphql(read_context, ALL_TAG_KEYS_QUERY)
-        tag_keys = set(all_tag_keys_result.data["runTagKeys"])
+        tag_keys = set(all_tag_keys_result.data["runTagKeysOrError"]["keys"])
         # check presence rather than set equality since we might have extra tags in cloud
         assert "fruit" in tag_keys
         assert "veggie" in tag_keys
 
         all_tags_result = execute_dagster_graphql(read_context, ALL_TAGS_QUERY)
-        tags = all_tags_result.data["runTags"]
+        tags = all_tags_result.data["runTagsOrError"]["tags"]
         tags_dict = {item["key"]: item["values"] for item in tags}
         assert tags_dict["fruit"] == ["apple"]
         assert tags_dict["veggie"] == ["carrot"]
@@ -330,7 +359,7 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         filtered_tags_result = execute_dagster_graphql(
             read_context, FILTERED_TAGS_QUERY, variables={"tagKeys": ["fruit"]}
         )
-        tags = filtered_tags_result.data["runTags"]
+        tags = filtered_tags_result.data["runTagsOrError"]["tags"]
         tags_dict = {item["key"]: item["values"] for item in tags}
         assert len(tags_dict) == 1
         assert tags_dict["fruit"] == ["apple"]
@@ -360,6 +389,15 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
             read_context, DELETE_RUN_MUTATION, variables={"runId": run_id_two}
         )
         assert result.data["deletePipelineRun"]["__typename"] == "RunNotFoundError"
+
+    def test_tag_key_error(self, graphql_context):
+        with mock.patch(
+            "dagster._core.storage.runs.sql_run_storage.SqlRunStorage.get_run_tag_keys",
+        ) as get_run_tag_keys_mock:
+            with instance_for_test():
+                get_run_tag_keys_mock.side_effect = Exception("wah wah")
+                all_tag_keys_result = execute_dagster_graphql(graphql_context, ALL_TAG_KEYS_QUERY)
+                all_tag_keys_result.data["runTagKeysOrError"]["__typename"] == "PythonError"
 
     def test_run_config(self, graphql_context):
         # This include needs to be here because its inclusion screws up
@@ -675,6 +713,11 @@ def test_filtered_runs():
             run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_1
+
+            run_response = result.data["pipelineRunsOrError"]["results"][0]
+            assert run_response["hasReExecutePermission"] is True
+            assert run_response["hasTerminatePermission"] is True
+            assert run_response["hasDeletePermission"] is True
 
             result = execute_dagster_graphql(
                 context,

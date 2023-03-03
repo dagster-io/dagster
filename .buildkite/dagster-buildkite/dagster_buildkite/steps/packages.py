@@ -460,6 +460,16 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         retries=2,
     ),
     PackageSpec(
+        "python_modules/libraries/dagster-gcp-pyspark",
+        env_vars=[
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "BUILDKITE_SECRETS_BUCKET",
+            "GCP_PROJECT_ID",
+        ],
+        pytest_extra_cmds=gcp_extra_cmds,
+    ),
+    PackageSpec(
         "python_modules/libraries/dagster-k8s",
         env_vars=[
             "AWS_ACCOUNT_ID",

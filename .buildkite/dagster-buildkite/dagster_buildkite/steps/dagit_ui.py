@@ -36,8 +36,6 @@ def build_dagit_ui_steps() -> List[CommandStep]:
             "curl -sL https://deb.nodesource.com/setup_16.x | bash -",
             "apt-get -yqq --no-install-recommends install nodejs",
             "tox -vv -e py39",
-            "mv packages/core/coverage/lcov.info lcov.dagit.$BUILDKITE_BUILD_ID.info",
-            "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
         )
         .on_test_image(AvailablePythonVersion.get_default())
         .with_skip(skip_if_no_dagit_changes())

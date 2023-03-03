@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import NamedTuple, Optional, Sequence, TypeVar
+from typing import Generator, NamedTuple, Optional, Sequence, TypeVar
 
 import pendulum
 
@@ -452,7 +452,7 @@ def in_process_test_workspace(instance, loadable_target_origin, container_image=
 def create_test_daemon_workspace_context(
     workspace_load_target: WorkspaceLoadTarget,
     instance: DagsterInstance,
-):
+) -> Generator[WorkspaceProcessContext, None, None]:
     """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests.
     """
     from dagster._daemon.controller import create_daemon_grpc_server_registry

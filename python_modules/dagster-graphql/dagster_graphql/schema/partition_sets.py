@@ -27,9 +27,11 @@ from dagster_graphql.implementation.fetch_runs import get_runs
 
 from .backfill import GraphenePartitionBackfill
 from .errors import (
+    GrapheneDuplicateDynamicPartitionError,
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
     GraphenePythonError,
+    GrapheneUnauthorizedError,
 )
 from .inputs import GrapheneRunsFilter
 from .pipelines.pipeline import GrapheneRun
@@ -37,6 +39,25 @@ from .pipelines.status import GrapheneRunStatus
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import ResolveInfo, non_null_list
+
+
+class GrapheneAddDynamicPartitionSuccess(graphene.ObjectType):
+    partitionsDefName = graphene.NonNull(graphene.String)
+    partitionKey = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "AddDynamicPartitionSuccess"
+
+
+class GrapheneAddDynamicPartitionResult(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneAddDynamicPartitionSuccess,
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+            GrapheneDuplicateDynamicPartitionError,
+        )
+        name = "AddDynamicPartitionResult"
 
 
 class GraphenePartitionTags(graphene.ObjectType):
@@ -361,6 +382,7 @@ class GraphenePartitionDefinition(graphene.ObjectType):
     type = graphene.NonNull(GraphenePartitionDefinitionType)
     dimensionTypes = non_null_list(GrapheneDimensionDefinitionType)
     timeWindowMetadata = graphene.Field(GrapheneTimePartitionsDefinitionMetadata)
+    name = graphene.Field(graphene.String)
 
     class Meta:
         name = "PartitionDefinition"
@@ -382,6 +404,9 @@ class GraphenePartitionDefinition(graphene.ObjectType):
         super().__init__(
             description=str(partition_def_data.get_partitions_definition()),
             type=GraphenePartitionDefinitionType.from_partition_def_data(partition_def_data),
+            name=partition_def_data.name
+            if isinstance(partition_def_data, ExternalDynamicPartitionsDefinitionData)
+            else None,
             dimensionTypes=[
                 GrapheneDimensionDefinitionType(
                     name=dim.name,

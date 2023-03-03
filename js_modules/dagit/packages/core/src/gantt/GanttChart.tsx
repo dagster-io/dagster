@@ -9,6 +9,7 @@ import {
   Spinner,
   SpinnerWrapper,
   SplitPanelContainer,
+  useViewport,
 } from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
@@ -67,7 +68,6 @@ import {GanttStatusPanel} from './GanttStatusPanel';
 import {OptionsContainer, OptionsSpacer} from './VizComponents';
 import {ZoomSlider} from './ZoomSlider';
 import {useGanttChartMode} from './useGanttChartMode';
-import {useViewport} from './useViewport';
 
 export {GanttChartMode} from './Constants';
 

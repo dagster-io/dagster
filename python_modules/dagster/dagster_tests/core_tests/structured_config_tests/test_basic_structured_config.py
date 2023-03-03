@@ -10,6 +10,7 @@ from dagster import (
     _check as check,
     asset,
     job,
+    materialize,
     multi_asset,
     op,
     validate_run_config,
@@ -20,7 +21,10 @@ from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.structured_config import Config, infer_schema_from_config_class
 from dagster._config.type_printer import print_config_type_to_string
 from dagster._core.definitions.assets_job import build_assets_job
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.run_config import RunConfig
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidConfigDefinitionError, DagsterInvalidConfigError
 from dagster._core.execution.context.invocation import build_op_context
 from dagster._legacy import pipeline
@@ -147,7 +151,13 @@ def test_with_assets():
         build_assets_job(
             "blah",
             [my_asset],
-            config={"ops": {"my_asset": {"config": {"a_string": "foo", "an_int": 2}}}},
+            config={
+                "ops": {
+                    "my_asset": {
+                        "config": {"a_string": "foo", "an_int": 2},
+                    },
+                },
+            },
         )
         .execute_in_process()
         .success
@@ -340,23 +350,33 @@ def test_validate_run_config():
         requires_config()
 
     result = validate_run_config(
-        pipeline_requires_config, {"solids": {"requires_config": {"config": {"foo": "bar"}}}}
+        pipeline_requires_config, {"ops": {"requires_config": {"config": {"foo": "bar"}}}}
     )
 
     assert result == {
-        "solids": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
+        "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
         "execution": {"in_process": {"retries": {"enabled": {}}}},
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }
 
+    result_with_runconfig = validate_run_config(
+        pipeline_requires_config, RunConfig(ops={"requires_config": {"foo": "bar"}})
+    )
+    assert result_with_runconfig == result
+
+    result_with_structured_in = validate_run_config(
+        pipeline_requires_config, RunConfig(ops={"requires_config": MyBasicOpConfig(foo="bar")})
+    )
+    assert result_with_structured_in == result
+
     result_with_storage = validate_run_config(
         pipeline_requires_config,
-        {"solids": {"requires_config": {"config": {"foo": "bar"}}}},
+        {"ops": {"requires_config": {"config": {"foo": "bar"}}}},
     )
 
     assert result_with_storage == {
-        "solids": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
+        "ops": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
         "execution": {"in_process": {"retries": {"enabled": {}}}},
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
@@ -613,3 +633,112 @@ def test_env_var():
     finally:
         del os.environ["ENV_VARIABLE_FOR_TEST"]
         del os.environ["ENV_VARIABLE_FOR_TEST_INT"]
+
+
+def test_structured_run_config_ops():
+    class ANewConfigOpConfig(Config):
+        a_string: str
+        an_int: int
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: ANewConfigOpConfig):
+        executed["yes"] = True
+        assert config.a_string == "foo"
+        assert config.an_int == 2
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    a_job.execute_in_process(
+        RunConfig(ops={"a_struct_config_op": ANewConfigOpConfig(a_string="foo", an_int=2)})
+    )
+    assert executed["yes"]
+
+
+def test_structured_run_config_multi_asset():
+    class AMultiAssetConfig(Config):
+        a_string: str
+        an_int: int
+
+    executed = {}
+
+    @multi_asset(outs={"a": AssetOut(key="asset_a"), "b": AssetOut(key="asset_b")})
+    def two_assets(config: AMultiAssetConfig):
+        assert config.a_string == "foo"
+        assert config.an_int == 2
+        executed["yes"] = True
+        return 1, 2
+
+    assert (
+        build_assets_job(
+            "blah",
+            [two_assets],
+            config=RunConfig(ops={"two_assets": AMultiAssetConfig(a_string="foo", an_int=2)}),
+        )
+        .execute_in_process()
+        .success
+    )
+
+
+def test_structured_run_config_assets():
+    class AnAssetConfig(Config):
+        a_string: str
+        an_int: int
+
+    executed = {}
+
+    @asset
+    def my_asset(config: AnAssetConfig):
+        assert config.a_string == "foo"
+        assert config.an_int == 2
+        executed["yes"] = True
+
+    # build_assets_job
+    assert (
+        build_assets_job(
+            "blah",
+            [my_asset],
+            config=RunConfig(
+                ops={
+                    "my_asset": AnAssetConfig(a_string="foo", an_int=2),
+                }
+            ),
+        )
+        .execute_in_process()
+        .success
+    )
+    assert executed["yes"]
+
+    # define_asset_job
+    del executed["yes"]
+    my_asset_job = define_asset_job(
+        "my_asset_job",
+        selection="my_asset",
+        config=RunConfig(
+            ops={
+                "my_asset": AnAssetConfig(a_string="foo", an_int=2),
+            }
+        ),
+    )
+    defs = Definitions(
+        assets=[my_asset],
+        jobs=[my_asset_job],
+    )
+    defs.get_job_def("my_asset_job").execute_in_process()
+    assert executed["yes"]
+
+    # materialize
+    del executed["yes"]
+    asset_result = materialize(
+        [my_asset],
+        run_config=RunConfig(
+            ops={
+                "my_asset": AnAssetConfig(a_string="foo", an_int=2),
+            }
+        ),
+    )
+    assert asset_result.success
+    assert executed["yes"]

@@ -1,10 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading} from '@dagster-io/ui';
+import {Box, Button, Dialog, Icon, Tooltip, Colors, Subheading, useViewport} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {useViewport} from '../gantt/useViewport';
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -134,25 +133,32 @@ const OpJobPartitionsViewContent: React.FC<{
       )
     : partitionNames;
 
-  const runDurationData: {[name: string]: number | undefined} = {};
   const stepDurationData = usePartitionDurations(partitions).stepDurationData;
 
-  // Note: This view reads "run duration" from the `partitionStatusesOrError` GraphQL API,
-  // rather than looking at the duration of the most recent run returned in `partitions` above
-  // so that the latter can be loaded when you click "Show per-step status" only.
-
-  const statusData: {[name: string]: PartitionState} = {};
-  (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
-    ? partitionSet.partitionStatusesOrError.results
-    : []
-  ).forEach((p) => {
-    statusData[p.partitionName] = runStatusToPartitionState(p.runStatus);
-    if (selectedPartitions.includes(p.partitionName)) {
-      runDurationData[p.partitionName] = p.runDuration || undefined;
-    }
-  });
-
   const onSubmit = React.useCallback(() => setBlockDialog(true), []);
+
+  const {statusData, runDurationData} = React.useMemo(() => {
+    // Note: This view reads "run duration" from the `partitionStatusesOrError` GraphQL API,
+    // rather than looking at the duration of the most recent run returned in `partitions` above
+    // so that the latter can be loaded when you click "Show per-step status" only.
+    const statusData: {[name: string]: PartitionState} = {};
+    const runDurationData: {[name: string]: number | undefined} = {};
+
+    (partitionSet.partitionStatusesOrError.__typename === 'PartitionStatuses'
+      ? partitionSet.partitionStatusesOrError.results
+      : []
+    ).forEach((p) => {
+      statusData[p.partitionName] = runStatusToPartitionState(p.runStatus);
+      if (selectedPartitions.includes(p.partitionName)) {
+        runDurationData[p.partitionName] = p.runDuration || undefined;
+      }
+    });
+    return {statusData, runDurationData};
+  }, [partitionSet, selectedPartitions]);
+
+  const health = React.useMemo(() => {
+    return {partitionStateForKey: (name: string) => statusData[name]};
+  }, [statusData]);
 
   return (
     <div>
@@ -227,7 +233,7 @@ const OpJobPartitionsViewContent: React.FC<{
         <div {...containerProps}>
           <PartitionStatus
             partitionNames={partitionNames}
-            partitionStateForKey={(name) => statusData[name]}
+            health={health}
             selected={showSteps ? selectedPartitions : undefined}
             selectionWindowSize={pageSize}
             onClick={(partitionName) => {

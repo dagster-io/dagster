@@ -1,14 +1,12 @@
-from __future__ import annotations
-
-import inspect
 from abc import abstractmethod
-from typing import Any, Dict, Union
+from typing import Any, Dict, Mapping, Optional, Union
 
 from upath import UPath
 
 from dagster import (
     InputContext,
     MetadataValue,
+    MultiPartitionKey,
     OutputContext,
     _check as check,
 )
@@ -96,16 +94,61 @@ class UPathIOManager(MemoizableIOManager):
                 "but the asset is not partitioned"
             )
 
+        def _formatted_multipartitioned_path(partition_key: MultiPartitionKey) -> str:
+            ordered_dimension_keys = [
+                key[1]
+                for key in sorted(partition_key.keys_by_dimension.items(), key=lambda x: x[0])
+            ]
+            return "/".join(ordered_dimension_keys)
+
+        formatted_partition_keys = [
+            _formatted_multipartitioned_path(pk) if isinstance(pk, MultiPartitionKey) else pk
+            for pk in context.asset_partition_keys
+        ]
+
+        asset_path = self._get_path_without_extension(context)
+        return {
+            partition_key: self._with_extension(asset_path / partition_key)
+            for partition_key in formatted_partition_keys
+        }
+
+    def _get_multipartition_backcompat_paths(
+        self, context: Union[InputContext, OutputContext]
+    ) -> UPath:
+        if not context.has_asset_partitions:
+            raise TypeError(
+                f"Detected {context.dagster_type.typing_type} input type "
+                "but the asset is not partitioned"
+            )
+
         partition_keys = context.asset_partition_keys
+
         asset_path = self._get_path_without_extension(context)
         return {
             partition_key: self._with_extension(asset_path / partition_key)
             for partition_key in partition_keys
+            if isinstance(partition_key, MultiPartitionKey)
         }
 
-    def _load_single_input(self, path: UPath, context: InputContext) -> Any:
+    def _load_single_input(
+        self, path: UPath, context: InputContext, backcompat_path: Optional[UPath] = None
+    ) -> Any:
         context.log.debug(f"Loading file from: {path}")
-        obj = self.load_from_path(context=context, path=path)
+        try:
+            obj = self.load_from_path(context=context, path=path)
+        except FileNotFoundError as e:
+            if backcompat_path is not None:
+                try:
+                    obj = self.load_from_path(context=context, path=backcompat_path)
+                    context.log.debug(
+                        f"File not found at {path}. Loaded instead from backcompat path:"
+                        f" {backcompat_path}"
+                    )
+                except FileNotFoundError:
+                    raise e
+            else:
+                raise e
+
         context.add_input_metadata({"path": MetadataValue.path(str(path))})
         return obj
 
@@ -119,6 +162,7 @@ class UPathIOManager(MemoizableIOManager):
 
         objs: Dict[str, Any] = {}
         paths = self._get_paths_for_partitions(context)
+        backcompat_paths = self._get_multipartition_backcompat_paths(context)
 
         context.log.debug(f"Loading {len(paths)} partitions...")
 
@@ -128,8 +172,14 @@ class UPathIOManager(MemoizableIOManager):
                 obj = self.load_from_path(context=context, path=path)
                 objs[partition_key] = obj
             except FileNotFoundError as e:
-                if not allow_missing_partitions:
+                backcompat_path = backcompat_paths.get(partition_key)
+                if backcompat_path is not None:
+                    obj = self.load_from_path(context=context, path=backcompat_path)
+                    objs[partition_key] = obj
+
+                if not allow_missing_partitions and objs.get(partition_key) is None:
                     raise e
+
                 context.log.debug(
                     f"Couldn't load partition {path} and skipped it "
                     "because the input metadata includes allow_missing_partitions=True"
@@ -149,67 +199,29 @@ class UPathIOManager(MemoizableIOManager):
                 path = self._get_path(context)
                 return self._load_single_input(path, context)
             else:
-                expected_type = inspect.signature(self.load_from_path).return_annotation
-
                 asset_partition_keys = context.asset_partition_keys
                 if len(asset_partition_keys) == 0:
                     return None
                 elif len(asset_partition_keys) == 1:
-                    if (
-                        hasattr(context.dagster_type.typing_type, "__origin__")
-                        and context.dagster_type.typing_type.__origin__ in (Dict, dict)
-                        and context.dagster_type.typing_type.__args__[1] == expected_type
-                    ):
-                        # the asset type annotation is accidentally a Dict[str, expected_type]
-                        # even tho no partition mappings are used
-                        return check.failed(
-                            f"Received `{context.dagster_type.typing_type}` type in input of"
-                            f" DagsterType {context.dagster_type}, but `{self.load_from_path}` has"
-                            f" {expected_type} type annotation for obj. They should match. If you"
-                            " are loading a single partition, the upstream asset type annotation"
-                            " should not be a typing.Dict, but a single partition type."
-                        )
-
-                    # we are dealing with a single partition of a non-partitioned asset
                     paths = self._get_paths_for_partitions(context)
                     check.invariant(len(paths) == 1, f"Expected 1 path, but got {len(paths)}")
                     path = list(paths.values())[0]
-                    return self._load_single_input(path, context)
-                else:
-                    # we are dealing with multiple partitions of an asset
+                    backcompat_paths = self._get_multipartition_backcompat_paths(context)
+                    backcompat_path = (
+                        None if not backcompat_paths else list(backcompat_paths.values())[0]
+                    )
 
-                    if (
-                        context.dagster_type.typing_type != Any
-                    ):  # skip type checking if the type is Any
-                        if context.dagster_type.typing_type == expected_type:
-                            # error message if the user forgot to specify a Dict type
-                            # this case is checked separately because this type of mistake can be very common
-                            return check.failed(
-                                f"Received `{context.dagster_type.typing_type}` type in input"
-                                f" DagsterType {context.dagster_type}, but the input has multiple"
-                                f" partitions. `Dict[str, {context.dagster_type.typing_type}]`"
-                                " should be used in this case."
-                            )
+                    return self._load_single_input(path, context, backcompat_path)
+                else:  # we are dealing with multiple partitions of an asset
+                    type_annotation = context.dagster_type.typing_type
+                    if type_annotation != Any and not is_dict_type(type_annotation):
+                        check.failed(
+                            "Loading an input that corresponds to multiple partitions, but the"
+                            " type annotation on the op input is not a dict, Dict, Mapping, or"
+                            f" Any: is '{type_annotation}'."
+                        )
 
-                        elif (
-                            hasattr(context.dagster_type.typing_type, "__origin__")
-                            and context.dagster_type.typing_type.__origin__ in (Dict, dict)
-                            and context.dagster_type.typing_type.__args__[1] == expected_type
-                        ):
-                            # type checking passed
-                            return self._load_multiple_inputs(context)
-                        else:
-                            # something is wrong with the types
-                            return check.failed(
-                                f"Received `{context.dagster_type.typing_type}` type in input of"
-                                f" DagsterType {context.dagster_type}, but `{self.load_from_path}`"
-                                f" has {expected_type} type annotation for obj. They should be both"
-                                " specified with type annotations and match. If you are loading"
-                                " multiple partitions, the upstream asset type annotation should"
-                                " be a typing.Dict."
-                            )
-                    else:
-                        return self._load_multiple_inputs(context)
+                    return self._load_multiple_inputs(context)
 
     def handle_output(self, context: OutputContext, obj: Any):
         if context.dagster_type.typing_type == type(None):
@@ -237,3 +249,13 @@ class UPathIOManager(MemoizableIOManager):
         metadata.update(custom_metadata)  # type: ignore
 
         context.add_output_metadata(metadata)
+
+
+def is_dict_type(type_obj) -> bool:
+    if type_obj == dict:
+        return True
+
+    if hasattr(type_obj, "__origin__") and type_obj.__origin__ in (dict, Dict, Mapping):
+        return True
+
+    return False

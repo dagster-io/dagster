@@ -71,6 +71,14 @@ def assert_user_deployment_template(
             template.spec.template.spec.containers[0].image_pull_policy
             == deployment_values.image.pullPolicy
         )
+        assert not template.spec.template.spec.containers[0].command
+        assert template.spec.template.spec.containers[0].args[:5] == [
+            "dagster",
+            "api",
+            "grpc",
+            "-h",
+            "0.0.0.0",
+        ]
 
         # Assert labels
         assert template.spec.template.metadata.labels["deployment"] == deployment_values.name
@@ -984,3 +992,82 @@ def test_scheduler_name(template: HelmTemplate):
     dagster_user_deployment = dagster_user_deployment[0]
 
     assert dagster_user_deployment.spec.template.spec.scheduler_name == "myscheduler"
+
+
+def test_env(template: HelmTemplate, user_deployment_configmap_template):
+    # new env: list. Gets written to container
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=None,
+        env=[{"name": "test_env", "value": "test_value"}],
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [cm] = user_deployment_configmap_template.render(helm_values)
+    assert not cm.data
+
+    [dagster_user_deployment] = template.render(helm_values)
+    assert len(dagster_user_deployment.spec.template.spec.containers[0].env) == 4
+    assert dagster_user_deployment.spec.template.spec.containers[0].env[3].name == "test_env"
+    assert dagster_user_deployment.spec.template.spec.containers[0].env[3].value == "test_value"
+
+
+def test_env_container_context(template: HelmTemplate, user_deployment_configmap_template):
+    # new env: list. Gets written to container
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(enabled=True),
+        env=[{"name": "test_env", "value": "test_value"}],
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [cm] = user_deployment_configmap_template.render(helm_values)
+    assert not cm.data
+
+    [dagster_user_deployment] = template.render(helm_values)
+    assert len(dagster_user_deployment.spec.template.spec.containers[0].env) == 4
+    assert dagster_user_deployment.spec.template.spec.containers[0].env[3].name == "test_env"
+    assert dagster_user_deployment.spec.template.spec.containers[0].env[3].value == "test_value"
+
+    container_context = dagster_user_deployment.spec.template.spec.containers[0].env[2]
+    assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+    assert json.loads(container_context.value) == {
+        "k8s": {
+            "image_pull_policy": "Always",
+            "env_config_maps": ["release-name-dagster-user-deployments-foo-user-env"],
+            "namespace": "default",
+            "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+            "env": [{"name": "test_env", "value": "test_value"}],
+        }
+    }
+
+
+def test_old_env(template: HelmTemplate, user_deployment_configmap_template):
+    # old style env: dict. Gets written to configmap
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=None,
+        env={"test_env": "test_value"},
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+    assert len(dagster_user_deployment.spec.template.spec.containers[0].env) == 3
+
+    [cm] = user_deployment_configmap_template.render(helm_values)
+    assert cm.data["test_env"] == "test_value"

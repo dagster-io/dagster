@@ -173,18 +173,9 @@ def new_resource_runtime() -> None:
 
     # end_new_resource_runtime
 
-    from typing import Optional
-
-    class RunConfig(Dict[str, Any]):
-        def __init__(
-            self,
-            ops: Optional[Dict[str, Any]] = None,
-            resources: Optional[Dict[str, Any]] = None,
-        ):
-            super().__init__({**(ops or {}), **(resources or {})})
-
     # start_new_resource_runtime_launch
     from dagster import sensor, define_asset_job, RunRequest
+    from dagster._core.definitions.run_config import RunConfig
 
     update_data_job = define_asset_job(
         name="update_data_job", selection=[data_from_database]

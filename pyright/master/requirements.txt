@@ -51,6 +51,8 @@
 -e python_modules/libraries/dagster-duckdb-polars/
 -e python_modules/libraries/dagster-fivetran/
 -e python_modules/libraries/dagster-gcp/
+-e python_modules/libraries/dagster-gcp-pandas[test]
+-e python_modules/libraries/dagster-gcp-pyspark/
 -e python_modules/libraries/dagster-ge/
 -e python_modules/libraries/dagster-github/
 -e python_modules/libraries/dagster-k8s/
@@ -83,6 +85,7 @@ wordcloud  # (quickstart-*)
 ### EXAMPLES
 
 # -e examples/assets_dbt_python # it includes dagster-cloud
+-e examples/assets_dynamic_partitions
 # -e examples/assets_modern_data_stack # it includes dagster-cloud
 -e examples/assets_pandas_pyspark
 # -e examples/assets_pandas_type_metadata

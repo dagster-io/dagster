@@ -1651,6 +1651,20 @@ partition_materialization_job = build_assets_job(
 )
 
 
+@asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+def fail_partition_materialization(context):
+    if context.run.tags.get("fail") == "true":
+        raise Exception("fail_partition_materialization")
+    yield Output(5)
+
+
+fail_partition_materialization_job = build_assets_job(
+    "fail_partition_materialization_job",
+    assets=[fail_partition_materialization],
+    executor_def=in_process_executor,
+)
+
+
 @asset
 def asset_yields_observation():
     yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
@@ -1840,6 +1854,13 @@ def multipartitions_2(multipartitions_1):
     return multipartitions_1
 
 
+@asset(partitions_def=multipartitions_def)
+def multipartitions_fail(context):
+    if context.run.tags.get("fail") == "true":
+        raise Exception("multipartitions_fail")
+    return 1
+
+
 no_partitions_multipartitions_def = MultiPartitionsDefinition(
     {
         "a": StaticPartitionsDefinition([]),
@@ -1926,6 +1947,7 @@ def define_pipelines():
         dynamic_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
+        fail_partition_materialization_job,
         observation_job,
         failure_assets_job,
         asset_group_job,
@@ -1957,6 +1979,12 @@ def define_asset_jobs():
             "no_multipartitions_job",
             AssetSelection.assets(no_multipartitions_1),
             partitions_def=no_partitions_multipartitions_def,
+        ),
+        multipartitions_fail,
+        define_asset_job(
+            "multipartitions_fail_job",
+            AssetSelection.assets(multipartitions_fail),
+            partitions_def=multipartitions_def,
         ),
         SourceAsset("diamond_source"),
         fresh_diamond_top,

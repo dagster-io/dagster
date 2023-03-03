@@ -12,6 +12,8 @@ from dagster import (
     StaticPartitionsDefinition,
     define_asset_job,
     graph,
+    graph_asset,
+    graph_multi_asset,
     op,
 )
 from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
@@ -37,7 +39,7 @@ from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 
 def test_single_asset_job():
-    @asset
+    @asset(description="hullo")
     def asset1():
         return 1
 
@@ -52,7 +54,7 @@ def test_single_asset_job():
             op_name="asset1",
             graph_name=None,
             op_names=["asset1"],
-            op_description=None,
+            op_description="hullo",
             node_definition_name="asset1",
             job_names=["assets_job"],
             output_name="result",
@@ -653,7 +655,7 @@ def test_used_source_asset():
     ]
 
 
-def test_graph_output_metadata():
+def test_graph_output_metadata_and_description():
     asset_metadata = {
         "int": 1,
         "string": "baz",
@@ -1006,3 +1008,46 @@ def test_external_multi_partitions_def():
     ).get_partitions_definition()
 
     assert external == partitions_def
+
+
+def test_graph_asset_description():
+    @op
+    def op1():
+        ...
+
+    @graph_asset(description="bar")
+    def foo():
+        return op1()
+
+    assets_job = build_assets_job("assets_job", [foo])
+
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    assert external_asset_nodes[0].op_description == "bar"
+
+
+def test_graph_multi_asset_description():
+    @op
+    def op1():
+        ...
+
+    @op
+    def op2():
+        ...
+
+    @graph_multi_asset(
+        outs={
+            "asset1": AssetOut(description="bar"),
+            "asset2": AssetOut(description="baz"),
+        }
+    )
+    def foo():
+        return {"asset1": op1(), "asset2": op2()}
+
+    assets_job = build_assets_job("assets_job", [foo])
+
+    external_asset_nodes = {
+        asset_node.asset_key: asset_node
+        for asset_node in external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+    }
+    assert external_asset_nodes[AssetKey("asset1")].op_description == "bar"
+    assert external_asset_nodes[AssetKey("asset2")].op_description == "baz"

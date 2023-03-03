@@ -3,6 +3,7 @@ import random
 import string
 import time
 from contextlib import ExitStack, contextmanager
+from typing import cast
 
 import pendulum
 import pytest
@@ -26,6 +27,7 @@ from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocation,
     GrpcServerRepositoryLocationOrigin,
+    RepositoryLocation,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
@@ -2349,13 +2351,16 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
         instance=instance,
     ) as full_workspace_context:
         with pendulum.test(freeze_datetime):
-            full_location = next(
-                iter(
-                    full_workspace_context.create_request_context()
-                    .get_workspace_snapshot()
-                    .values()
-                )
-            ).repository_location
+            full_location = cast(
+                RepositoryLocation,
+                next(
+                    iter(
+                        full_workspace_context.create_request_context()
+                        .get_workspace_snapshot()
+                        .values()
+                    )
+                ).repository_location,
+            )
             external_repo = full_location.get_repository("the_repo")
             other_repo = full_location.get_repository("the_other_repo")
 

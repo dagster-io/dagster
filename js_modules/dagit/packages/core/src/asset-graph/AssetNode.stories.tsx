@@ -5,6 +5,7 @@ import {KNOWN_TAGS} from '../graph/OpTags';
 
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import * as Mocks from './AssetNode.mocks';
+import {AssetNodeLink} from './ForeignNode';
 import {getAssetNodeDimensions} from './layout';
 
 // eslint-disable-next-line import/no-default-export
@@ -58,6 +59,15 @@ export const LiveStates = () => {
   return;
 };
 
+export const Links = () => {
+  return (
+    <Box flex={{direction: 'column', gap: 0, alignItems: 'flex-start'}}>
+      <AssetNodeLink assetKey={{path: ['short_name']}} />
+      <AssetNodeLink assetKey={{path: ['multicomponent', 'key', 'path']}} />
+      <AssetNodeLink assetKey={{path: ['very_long_asset_in_another_graph']}} />
+    </Box>
+  );
+};
 export const PartnerTags = () => {
   const caseWithComputeKind = (computeKind: string) => {
     const def = {...Mocks.AssetNodeFragmentBasic, computeKind};

@@ -118,6 +118,7 @@ class PackageSpec:
     timeout_in_minutes: Optional[int] = None
     queue: Optional[BuildkiteQueue] = None
     run_pytest: bool = True
+    always_run_if: Optional[Callable[[], bool]] = None
 
     def __post_init__(self):
         if not self.name:
@@ -230,6 +231,10 @@ class PackageSpec:
     def skip_reason(self) -> Optional[str]:
         # Memoize so we don't log twice
         if self._should_skip is False:
+            return None
+
+        if self.always_run_if and self.always_run_if():
+            self._should_skip = False
             return None
 
         if self._skip_reason:

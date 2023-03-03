@@ -37,6 +37,7 @@ from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.events import (
+    AssetMaterializationPlannedData,
     DagsterEvent,
     DagsterEventType,
     EngineEventData,
@@ -407,9 +408,6 @@ class TestEventLogStorage:
 
     def can_watch(self):
         # Whether the storage is allowed to watch the event log
-        return True
-
-    def can_write_to_asset_key_table(self):
         return True
 
     def test_event_log_storage_store_events_and_wipe(self, test_run_id, storage):
@@ -2000,6 +1998,197 @@ class TestEventLogStorage:
                     )
                     assert _fetch_counts(storage, after_cursor=9999999999) == {c: {}, d: {}}
 
+    def test_get_latest_asset_partition_materialization_attempts_without_materializations(
+        self, storage, instance
+    ):
+        a = AssetKey(["a"])
+        run_id_1 = make_new_run_id()
+        run_id_2 = make_new_run_id()
+        run_id_3 = make_new_run_id()
+        run_id_4 = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3, run_id_4]):
+            # no events
+            assert (
+                storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                    a
+                )
+                == {}
+            )
+
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_1,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(a, "foo"),
+                    ),
+                )
+            )
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_2,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(a, "bar"),
+                    ),
+                )
+            )
+
+            # no materializations yet
+            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                a
+            ) == {
+                "foo": run_id_1,
+                "bar": run_id_2,
+            }
+
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_1,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        "nonce",
+                        event_specific_data=StepMaterializationData(
+                            AssetMaterialization(asset_key=a, partition="foo")
+                        ),
+                    ),
+                )
+            )
+
+            # foo got materialized later in the same run
+            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                a
+            ) == {
+                "bar": run_id_2
+            }
+
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_3,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(a, "foo"),
+                    ),
+                )
+            )
+
+            # a new run has been started for foo
+            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                a
+            ) == {
+                "foo": run_id_3,
+                "bar": run_id_2,
+            }
+
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id_3,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(
+                            AssetKey(["other"]), "foo"
+                        ),
+                    ),
+                )
+            )
+
+            # other assets don't get included
+            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                a
+            ) == {
+                "foo": run_id_3,
+                "bar": run_id_2,
+            }
+
+            # other assets don't get included
+            assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                a
+            ) == {
+                "foo": run_id_3,
+                "bar": run_id_2,
+            }
+
+            # wipe asset, make sure we respect that
+            if self.can_wipe():
+                storage.wipe_asset(a)
+                assert (
+                    storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                        a
+                    )
+                    == {}
+                )
+
+                storage.store_event(
+                    EventLogEntry(
+                        error_info=None,
+                        level="debug",
+                        user_message="",
+                        run_id=run_id_4,
+                        timestamp=time.time(),
+                        dagster_event=DagsterEvent(
+                            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                            "nonce",
+                            event_specific_data=AssetMaterializationPlannedData(a, "bar"),
+                        ),
+                    )
+                )
+
+                # new materialization planned appears
+                assert storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                    a
+                ) == {
+                    "bar": run_id_4,
+                }
+
+                storage.store_event(
+                    EventLogEntry(
+                        error_info=None,
+                        level="debug",
+                        user_message="",
+                        run_id=run_id_4,
+                        timestamp=time.time(),
+                        dagster_event=DagsterEvent(
+                            DagsterEventType.ASSET_MATERIALIZATION.value,
+                            "nonce",
+                            event_specific_data=StepMaterializationData(
+                                AssetMaterialization(asset_key=a, partition="bar")
+                            ),
+                        ),
+                    )
+                )
+
+                # and goes away
+                assert (
+                    storage.get_latest_asset_partition_materialization_attempts_without_materializations(
+                        a
+                    )
+                    == {}
+                )
+
     def test_get_observation(self, storage, test_run_id):
         a = AssetKey(["key_a"])
 
@@ -2850,9 +3039,6 @@ class TestEventLogStorage:
             )
 
     def test_store_and_wipe_cached_status(self, storage, instance):
-        if not self.can_write_to_asset_key_table():
-            return
-
         asset_key = AssetKey("yay")
 
         @op
@@ -2875,6 +3061,15 @@ class TestEventLogStorage:
                 latest_storage_id=1,
                 partitions_def_id="foo",
                 serialized_materialized_partition_subset="bar",
+            )
+            storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
+
+            assert _get_cached_status_for_asset(storage, asset_key) == cache_value
+
+            cache_value = AssetStatusCacheValue(
+                latest_storage_id=1,
+                partitions_def_id=None,
+                serialized_materialized_partition_subset=None,
             )
             storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
 
@@ -2903,18 +3098,18 @@ class TestEventLogStorage:
         )
         partitions = storage.get_dynamic_partitions("foo")
         assert len(partitions) == 3
-        assert set(partitions) == {"foo", "bar", "baz"}
+        assert partitions == ["foo", "bar", "baz"]
 
         # Test for idempotency
         storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo"])
         partitions = storage.get_dynamic_partitions("foo")
         assert len(partitions) == 3
-        assert set(partitions) == {"foo", "bar", "baz"}
+        assert partitions == ["foo", "bar", "baz"]
 
         storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo", "qux"])
         partitions = storage.get_dynamic_partitions("foo")
         assert len(partitions) == 4
-        assert set(partitions) == {"foo", "bar", "baz", "qux"}
+        assert partitions == ["foo", "bar", "baz", "qux"]
 
         assert set(storage.get_dynamic_partitions("baz")) == set()
 

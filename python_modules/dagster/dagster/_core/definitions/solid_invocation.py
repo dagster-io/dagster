@@ -33,7 +33,7 @@ def op_invocation_result(
     **kwargs,
 ) -> Any:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-    from dagster._core.execution.context.invocation import build_solid_context
+    from dagster._core.execution.context.invocation import build_op_context
 
     from .composition import PendingNodeInvocation
 
@@ -45,7 +45,7 @@ def op_invocation_result(
 
     _check_invocation_requirements(op_def, context)
 
-    bound_context = (context or build_solid_context()).bind(op_def_or_invocation)
+    bound_context = (context or build_op_context()).bind(op_def_or_invocation)
 
     input_dict = _resolve_inputs(op_def, args, kwargs, bound_context)
 

@@ -1,7 +1,7 @@
 import json
 
 from dagster._core.definitions.decorators import op
-from dagster._legacy import build_solid_context
+from dagster._core.execution.context.invocation import build_op_context
 from dagster_dbt import dbt_cli_resource
 
 
@@ -17,7 +17,7 @@ def get_dbt_resource(project_dir, profiles_dir, **kwargs):
 
 
 def get_dbt_solid_context(project_dir, profiles_dir, **kwargs):
-    return build_solid_context(
+    return build_op_context(
         resources={"dbt": get_dbt_resource(project_dir, profiles_dir, **kwargs)}
     )
 
@@ -29,7 +29,7 @@ def test_unconfigured(
     def my_dbt_solid(context):
         return context.resources.dbt.run(project_dir=test_project_dir, profiles_dir=dbt_config_dir)
 
-    context = build_solid_context(resources={"dbt": dbt_cli_resource})
+    context = build_op_context(resources={"dbt": dbt_cli_resource})
     dbt_result = my_dbt_solid(context)
 
     assert len(dbt_result.result["results"]) == 4

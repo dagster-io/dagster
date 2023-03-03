@@ -43,6 +43,7 @@ def _build_fivetran_assets(
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     group_name: Optional[str] = None,
     infer_missing_tables: bool = False,
+    op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
@@ -69,6 +70,7 @@ def _build_fivetran_assets(
         compute_kind="fivetran",
         resource_defs=resource_defs,
         group_name=group_name,
+        op_tags=op_tags,
     )
     def _assets(context):
         fivetran_output = context.resources.fivetran.sync_and_poll(
@@ -118,6 +120,7 @@ def build_fivetran_assets(
     metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
     group_name: Optional[str] = None,
     infer_missing_tables: bool = False,
+    op_tags: Optional[Mapping[str, Any]] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Build a set of assets for a given Fivetran connector.
@@ -147,6 +150,10 @@ def build_fivetran_assets(
             in destination_tables even if they are not present in the Fivetran sync output. This is useful
             in cases where Fivetran does not sync any data for a table and therefore does not include it
             in the sync output API response.
+        op_tags (Optional[Dict[str, Any]]):
+             A dictionary of tags for the op that computes the asset. Frameworks may expect and
+             require certain metadata to be attached to a op. Values that are not strings will be
+             json encoded and must meet the criteria that json.loads(json.dumps(value)) == value.
 
     **Examples:**
 
@@ -193,6 +200,7 @@ def build_fivetran_assets(
         metadata_by_table_name=metadata_by_table_name,
         group_name=group_name,
         infer_missing_tables=infer_missing_tables,
+        op_tags=op_tags,
     )
 
 

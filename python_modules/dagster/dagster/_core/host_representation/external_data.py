@@ -938,6 +938,8 @@ class ExternalAssetNode(
             ("code_version", Optional[str]),
             ("node_definition_name", Optional[str]),
             ("graph_name", Optional[str]),
+            # op_description is a misleading name - this is the description for the asset, not for
+            # the op
             ("op_description", Optional[str]),
             ("job_names", Sequence[str]),
             ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
@@ -1102,6 +1104,7 @@ def external_asset_graph_from_defs(
     op_names_by_asset_key: Dict[AssetKey, Sequence[str]] = {}
     code_version_by_asset_key: Dict[AssetKey, Optional[str]] = dict()
     group_name_by_asset_key: Dict[AssetKey, str] = {}
+    descriptions_by_asset_key: Dict[AssetKey, str] = {}
     atomic_execution_unit_ids_by_asset_key: Dict[AssetKey, str] = {}
 
     for pipeline_def in pipelines:
@@ -1143,6 +1146,7 @@ def external_asset_graph_from_defs(
         for assets_def in asset_layer.assets_defs_by_key.values():
             metadata_by_asset_key.update(assets_def.metadata_by_key)
             freshness_policy_by_asset_key.update(assets_def.freshness_policies_by_key)
+            descriptions_by_asset_key.update(assets_def.descriptions_by_key)
             if len(assets_def.keys) > 1 and not assets_def.can_subset:
                 atomic_execution_unit_id = assets_def.unique_id
 
@@ -1241,7 +1245,7 @@ def external_asset_graph_from_defs(
                 graph_name=graph_name,
                 op_names=op_names_by_asset_key[asset_key],
                 code_version=code_version_by_asset_key.get(asset_key),
-                op_description=output_def.description or node_def.description,
+                op_description=descriptions_by_asset_key.get(asset_key),
                 node_definition_name=node_def.name,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,

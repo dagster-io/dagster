@@ -176,7 +176,9 @@ class K8sStepHandler(StepHandler):
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         return step_keys_to_execute[0]
 
-    def _get_container_context(self, step_handler_context: StepHandlerContext):
+    def _get_container_context(
+        self, step_handler_context: StepHandlerContext
+    ) -> K8sContainerContext:
         step_key = self._get_step_key(step_handler_context)
 
         context = K8sContainerContext.create_for_run(
@@ -249,6 +251,7 @@ class K8sStepHandler(StepHandler):
                     "value": step_handler_context.dagster_run.pipeline_name,
                 },
                 {"name": "DAGSTER_RUN_STEP_KEY", "value": step_key},
+                *container_context.env,
             ],
         )
 

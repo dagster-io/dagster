@@ -1705,6 +1705,118 @@ class SqlEventLogStorage(EventLogStorage):
 
         return materialization_count_by_partition
 
+    def get_latest_asset_partition_materialization_attempts_without_materializations(
+        self, asset_key: AssetKey
+    ) -> Mapping[str, str]:
+        """
+        Fetch the latest materialzation and materialization planned events for each partition of the given asset.
+        Return the partitions that have a materialization planned event but no matching (same run) materialization event.
+        These materializations could be in progress, or they could have failed. A separate query checking the run status
+        is required to know.
+
+        Returns a mapping of partition to run_id.
+        """
+        check.inst_param(asset_key, "asset_key", AssetKey)
+
+        latest_event_ids_subquery = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.dagster_event_type,
+                    SqlEventLogStorageTable.c.partition,
+                    db.func.max(SqlEventLogStorageTable.c.id).label("id"),
+                ]
+            )
+            .where(
+                db.and_(
+                    db.or_(
+                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
+                    ),
+                    SqlEventLogStorageTable.c.partition != None,  # noqa: E711
+                )
+            )
+            .group_by(
+                SqlEventLogStorageTable.c.dagster_event_type, SqlEventLogStorageTable.c.partition
+            )
+        )
+
+        assets_details = self._get_assets_details([asset_key])
+        latest_event_ids_subquery = self._add_assets_wipe_filter_to_query(
+            latest_event_ids_subquery, assets_details, [asset_key]
+        ).alias("latest_materialization_event_ids")
+
+        latest_events_subquery = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.dagster_event_type,
+                    SqlEventLogStorageTable.c.partition,
+                    SqlEventLogStorageTable.c.run_id,
+                ]
+            )
+            .select_from(
+                latest_event_ids_subquery.join(
+                    SqlEventLogStorageTable,
+                    SqlEventLogStorageTable.c.id == latest_event_ids_subquery.c.id,
+                ),
+            )
+            .alias("latest_materialization_events")
+        )
+
+        materialization_planned_events = (
+            db.select(
+                [
+                    latest_events_subquery.c.dagster_event_type,
+                    latest_events_subquery.c.partition,
+                    latest_events_subquery.c.run_id,
+                ]
+            )
+            .where(
+                latest_events_subquery.c.dagster_event_type
+                == DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value
+            )
+            .alias("materialization_planned_events")
+        )
+
+        materialization_events = (
+            db.select(
+                [
+                    latest_events_subquery.c.dagster_event_type,
+                    latest_events_subquery.c.partition,
+                    latest_events_subquery.c.run_id,
+                ]
+            )
+            .where(
+                latest_events_subquery.c.dagster_event_type
+                == DagsterEventType.ASSET_MATERIALIZATION.value
+            )
+            .alias("materialization_events")
+        )
+
+        query = (
+            db.select(
+                [
+                    materialization_planned_events.c.partition,
+                    materialization_planned_events.c.run_id,
+                ]
+            )
+            .select_from(
+                materialization_planned_events.join(
+                    materialization_events,
+                    db.and_(
+                        materialization_planned_events.c.partition
+                        == materialization_events.c.partition,
+                        materialization_planned_events.c.run_id == materialization_events.c.run_id,
+                    ),
+                    isouter=True,
+                )
+            )
+            .where(materialization_events.c.run_id == None)  # noqa: E711
+        )
+
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+            return {row["partition"]: row["run_id"] for row in rows}
+
     def _check_partitions_table(self) -> None:
         # Guards against cases where the user is not running the latest migration for
         # partitions storage. Should be updated when the partitions storage schema changes.
@@ -1720,8 +1832,10 @@ class SqlEventLogStorage(EventLogStorage):
             DynamicPartitionsTable.c.partitions_def_name,
             DynamicPartitionsTable.c.partition,
         ]
-        query = db.select(columns).where(
-            DynamicPartitionsTable.c.partitions_def_name == partitions_def_name
+        query = (
+            db.select(columns)
+            .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
+            .order_by(DynamicPartitionsTable.c.id)
         )
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()
@@ -1750,7 +1864,12 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
             ).fetchall()
-            new_keys = set(partition_keys) - set([row[0] for row in existing_rows])
+            existing_keys = set([row[0] for row in existing_rows])
+            new_keys = [
+                partition_key
+                for partition_key in partition_keys
+                if partition_key not in existing_keys
+            ]
 
             if new_keys:
                 conn.execute(

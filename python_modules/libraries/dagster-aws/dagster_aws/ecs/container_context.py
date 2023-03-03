@@ -110,6 +110,20 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
             " https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html. "
         ),
     ),
+    "runtime_platform": Field(
+        Shape(
+            {
+                "cpuArchitecture": Field(StringSource, is_required=False),
+                "operatingSystemFamily": Field(StringSource, is_required=False),
+            }
+        ),
+        is_required=False,
+        description=(
+            "The operating system that the task definition is running on. See"
+            " https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.register_task_definition"
+            " for the available options."
+        ),
+    ),
     **SHARED_ECS_SCHEMA,
 }
 
@@ -127,6 +141,7 @@ class EcsContainerContext(
             ("run_resources", Mapping[str, str]),
             ("task_role_arn", Optional[str]),
             ("execution_role_arn", Optional[str]),
+            ("runtime_platform", Mapping[str, Any]),
         ],
     )
 ):
@@ -143,6 +158,7 @@ class EcsContainerContext(
         run_resources: Optional[Mapping[str, str]] = None,
         task_role_arn: Optional[str] = None,
         execution_role_arn: Optional[str] = None,
+        runtime_platform: Optional[Mapping[str, Any]] = None,
     ):
         return super(EcsContainerContext, cls).__new__(
             cls,
@@ -155,6 +171,9 @@ class EcsContainerContext(
             run_resources=check.opt_mapping_param(run_resources, "run_resources"),
             task_role_arn=check.opt_str_param(task_role_arn, "task_role_arn"),
             execution_role_arn=check.opt_str_param(execution_role_arn, "execution_role_arn"),
+            runtime_platform=check.opt_mapping_param(
+                runtime_platform, "runtime_platform", key_type=str
+            ),
         )
 
     def merge(self, other: "EcsContainerContext") -> "EcsContainerContext":
@@ -168,6 +187,7 @@ class EcsContainerContext(
             run_resources={**self.run_resources, **other.run_resources},
             task_role_arn=other.task_role_arn or self.task_role_arn,
             execution_role_arn=other.execution_role_arn or self.execution_role_arn,
+            runtime_platform=other.runtime_platform or self.runtime_platform,
         )
 
     def get_secrets_dict(self, secrets_manager) -> Mapping[str, str]:
@@ -193,6 +213,7 @@ class EcsContainerContext(
                     run_resources=run_launcher.run_resources,
                     task_role_arn=run_launcher.task_role_arn,
                     execution_role_arn=run_launcher.execution_role_arn,
+                    runtime_platform=run_launcher.runtime_platform,
                 )
             )
 
@@ -247,5 +268,6 @@ class EcsContainerContext(
                 run_resources=processed_context_value.get("run_resources"),
                 task_role_arn=processed_context_value.get("task_role_arn"),
                 execution_role_arn=processed_context_value.get("execution_role_arn"),
+                runtime_platform=processed_context_value.get("runtime_platform"),
             )
         )
