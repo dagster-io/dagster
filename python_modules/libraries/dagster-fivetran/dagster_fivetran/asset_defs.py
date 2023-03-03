@@ -8,6 +8,8 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    Nothing,
+    OpExecutionContext,
     Output,
     _check as check,
     multi_asset,
@@ -19,8 +21,9 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import with_group
-from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput
 from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
@@ -63,6 +66,7 @@ def _build_fivetran_assets(
                 io_manager_key=io_manager_key,
                 key=user_facing_asset_keys[table],
                 metadata=_metadata_by_table_name.get(table),
+                dagster_type=Nothing,
             )
             for table, key in tracked_asset_keys.items()
         },
@@ -72,7 +76,7 @@ def _build_fivetran_assets(
         group_name=group_name,
         op_tags=op_tags,
     )
-    def _assets(context):
+    def _assets(context: OpExecutionContext) -> Any:
         fivetran_output = context.resources.fivetran.sync_and_poll(
             connector_id=connector_id,
             poll_interval=poll_interval,
@@ -90,7 +94,8 @@ def _build_fivetran_assets(
                     value=None,
                     output_name="_".join(materialization.asset_key.path),
                     metadata={
-                        entry.label: entry.entry_data for entry in materialization.metadata_entries
+                        cast(MetadataEntry, entry).label: cast(MetadataEntry, entry).entry_data
+                        for entry in materialization.metadata_entries
                     },
                 )
                 materialized_asset_keys.add(materialization.asset_key)
@@ -99,11 +104,24 @@ def _build_fivetran_assets(
                 yield materialization
 
         unmaterialized_asset_keys = set(tracked_asset_keys.values()) - materialized_asset_keys
-        if unmaterialized_asset_keys and infer_missing_tables:
+        if infer_missing_tables:
             for asset_key in unmaterialized_asset_keys:
                 yield Output(
                     value=None,
                     output_name="_".join(asset_key.path),
+                )
+
+        else:
+            if unmaterialized_asset_keys:
+                asset_key = list(unmaterialized_asset_keys)[0]
+                output_name = "_".join(asset_key.path)
+                raise DagsterStepOutputNotFoundError(
+                    (
+                        f"Core compute for {context.op_def.name} did not return an output for"
+                        f' non-optional output "{output_name}".'
+                    ),
+                    step_key=context.get_step_execution_context().step.key,
+                    output_name=output_name,
                 )
 
     return [_assets]
