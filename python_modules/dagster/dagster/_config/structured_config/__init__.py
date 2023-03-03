@@ -14,6 +14,7 @@ from typing import (
     cast,
 )
 
+from pydantic import ConstrainedFloat, ConstrainedInt, ConstrainedStr
 from typing_extensions import TypeAlias
 
 from dagster._annotations import experimental
@@ -27,8 +28,6 @@ from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
     DefinitionConfigSchema,
 )
-from pydantic import ConstrainedStr, ConstrainedFloat, ConstrainedInt
-
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.init import InitResourceContext
 
