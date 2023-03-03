@@ -71,6 +71,8 @@ def assert_user_deployment_template(
             template.spec.template.spec.containers[0].image_pull_policy
             == deployment_values.image.pullPolicy
         )
+        assert not template.spec.template.spec.containers[0].command
+        assert template.spec.template.spec.containers[0].args[0] == "dagster"
 
         # Assert labels
         assert template.spec.template.metadata.labels["deployment"] == deployment_values.name
