@@ -6,7 +6,7 @@ from typing_extensions import dataclass_transform, get_origin
 from .utils import safe_is_subclass
 
 if TYPE_CHECKING:
-    from dagster._config.structured_config import PartialResource
+    from dagster._config.structured_config import PartialResource, ResourceByKey
 
 
 # Since a metaclass is invoked by Resource before Resource or PartialResource is defined, we need to
@@ -25,6 +25,7 @@ class LateBoundTypesForResourceTypeChecking:
     _ResourceDep: Type = _Temp
     _Resource: Type = _Temp
     _PartialResource: Type = _Temp
+    _ResourceByKey: Type = _Temp
 
     @staticmethod
     def get_resource_rep_type() -> Type:
@@ -39,12 +40,20 @@ class LateBoundTypesForResourceTypeChecking:
         return LateBoundTypesForResourceTypeChecking._PartialResource[base]
 
     @staticmethod
+    def get_resource_by_key_type() -> Type:
+        return LateBoundTypesForResourceTypeChecking._ResourceByKey
+
+    @staticmethod
     def set_actual_types_for_type_checking(
-        resource_dep_type: Type, resource_type: Type, partial_resource_type: Type
+        resource_dep_type: Type,
+        resource_type: Type,
+        partial_resource_type: Type,
+        resource_by_key_type: Type,
     ) -> None:
         LateBoundTypesForResourceTypeChecking._ResourceDep = resource_dep_type
         LateBoundTypesForResourceTypeChecking._Resource = resource_type
         LateBoundTypesForResourceTypeChecking._PartialResource = partial_resource_type
+        LateBoundTypesForResourceTypeChecking._ResourceByKey = resource_by_key_type
 
 
 @dataclass_transform()
@@ -96,7 +105,9 @@ class BaseResourceMeta(pydantic.main.ModelMetaclass):
                     # configured resource.
                     base = annotations[field]
                     annotations[field] = Union[
-                        LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base), base
+                        LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),
+                        base,
+                        LateBoundTypesForResourceTypeChecking.get_resource_by_key_type(),
                     ]
 
         namespaces["__annotations__"] = annotations
@@ -147,7 +158,9 @@ class TypecheckAllowPartialResourceInitParams:
         return cast(Self, getattr(obj, self._assigned_name))
 
     def __set__(
-        self: "Self", obj: Optional[object], value: Union["Self", "PartialResource[Self]"]
+        self: "Self",
+        obj: Optional[object],
+        value: Union["Self", "PartialResource[Self]", "ResourceByKey"],
     ) -> None:
         # no-op implementation (only used to affect type signature)
         setattr(obj, self._assigned_name, value)

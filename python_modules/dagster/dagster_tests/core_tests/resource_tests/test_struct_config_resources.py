@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Mapping
 
 import pytest
-from dagster import IOManager, asset, job, op, resource
+from dagster import IOManager, ResourceByKey, asset, job, op, resource
 from dagster._check import CheckError
 from dagster._config.field import Field
 from dagster._config.field_utils import EnvVar
@@ -392,7 +392,7 @@ def test_runtime_config_run_config_obj():
     assert out_txt == ["greeting: hello, world!"]
 
 
-def test_nested_resources():
+def test_nested_resources() -> None:
     out_txt = []
 
     class Writer(ConfigurableResource, ABC):
@@ -1229,3 +1229,113 @@ def test_env_var_nested_config() -> None:
     ):
         assert defs.get_implicit_global_asset_job_def().execute_in_process().success
         assert executed["yes"]
+
+
+def test_resource_by_key() -> None:
+    out_txt = []
+
+    class Writer(ConfigurableResource, ABC):
+        @abstractmethod
+        def output(self, text: str) -> None:
+            pass
+
+    class WriterResource(Writer):
+        def output(self, text: str) -> None:
+            out_txt.append(text)
+
+    class PrefixedWriterResource(Writer):
+        prefix: str
+
+        def output(self, text: str) -> None:
+            out_txt.append(f"{self.prefix}{text}")
+
+    class JsonWriterResource(
+        Writer,
+    ):
+        base_writer: Writer
+        indent: int
+
+        def output(self, obj: Any) -> None:
+            self.base_writer.output(json.dumps(obj, indent=self.indent))
+
+    @asset
+    def hello_world_asset(writer: JsonWriterResource):
+        writer.output({"hello": "world"})
+
+    # Construct a resource that is needed by another resource
+    writer_resource = WriterResource()
+    json_writer_resource = JsonWriterResource(indent=2, base_writer=ResourceByKey("base_writer"))
+
+    assert (
+        Definitions(
+            assets=[hello_world_asset],
+            resources={
+                "writer": json_writer_resource,
+                "base_writer": writer_resource,
+            },
+        )
+        .get_implicit_global_asset_job_def()
+        .execute_in_process()
+        .success
+    )
+
+    assert out_txt == ['{\n  "hello": "world"\n}']
+
+    # Do it again, with a different nested resource
+    out_txt.clear()
+    prefixed_writer_resource = PrefixedWriterResource(prefix="greeting: ")
+    prefixed_json_writer_resource = JsonWriterResource(
+        indent=2, base_writer=ResourceByKey("base_writer")
+    )
+
+    assert (
+        Definitions(
+            assets=[hello_world_asset],
+            resources={
+                "writer": prefixed_json_writer_resource,
+                "base_writer": prefixed_writer_resource,
+            },
+        )
+        .get_implicit_global_asset_job_def()
+        .execute_in_process()
+        .success
+    )
+
+    assert out_txt == ['greeting: {\n  "hello": "world"\n}']
+
+
+def test_resource_by_key_function_resource() -> None:
+    out_txt = []
+
+    @resource
+    def writer_resource(context):
+        def output(text: str) -> None:
+            out_txt.append(text)
+
+        return output
+
+    class PostfixWriterResource(ConfigurableResource[Callable[[str], None]]):
+        writer: ResourceDependency[Callable[[str], None]]
+        postfix: str
+
+        def create_resource(self, context) -> Callable[[str], None]:
+            def output(text: str):
+                self.writer(f"{text}{self.postfix}")
+
+            return output
+
+    @asset
+    def my_asset(writer: PostfixWriterResource):
+        writer("foo")
+        writer("bar")
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "writer": PostfixWriterResource(writer=ResourceByKey("base_writer"), postfix="!"),
+            "base_writer": writer_resource,
+        },
+    )
+
+    assert defs.get_implicit_global_asset_job_def().execute_in_process().success
+    assert out_txt == ["foo!", "bar!"]

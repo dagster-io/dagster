@@ -106,6 +106,7 @@ from dagster._config.structured_config import (
     ConfigurableLegacyResourceAdapter as ConfigurableLegacyResourceAdapter,
     ConfigurableResource as ConfigurableResource,
     PermissiveConfig as PermissiveConfig,
+    ResourceByKey as ResourceByKey,
     ResourceDependency as ResourceDependency,
 )
 from dagster._core.definitions.asset_in import AssetIn as AssetIn

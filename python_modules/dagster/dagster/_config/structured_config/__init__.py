@@ -534,6 +534,20 @@ def _is_fully_configured(resource: ResourceDefinition) -> bool:
     return res
 
 
+class ResourceByKey(ResourceDefinition):
+    def __init__(self, resource_key: str):
+        def resource_fn(context: InitResourceContext):
+            return getattr(context.resources, resource_key)
+
+        ResourceDefinition.__init__(
+            self,
+            resource_fn=resource_fn,
+            config_schema=Any,
+            description="",
+            required_resource_keys={resource_key},
+        )
+
+
 class PartialResource(
     Generic[TResValue], ResourceDefinition, AllowDelayedDependencies, MakeConfigCacheable
 ):
@@ -567,7 +581,6 @@ class PartialResource(
         )
 
 
-ResourceOrPartial: TypeAlias = Union[ConfigurableResource[TResValue], PartialResource[TResValue]]
 ResourceOrPartialOrValue: TypeAlias = Union[
     ConfigurableResource[TResValue], PartialResource[TResValue], ResourceDefinition, TResValue
 ]
@@ -971,4 +984,5 @@ LateBoundTypesForResourceTypeChecking.set_actual_types_for_type_checking(
     resource_dep_type=ResourceDependency,
     resource_type=ConfigurableResource,
     partial_resource_type=PartialResource,
+    resource_by_key_type=ResourceByKey,
 )
