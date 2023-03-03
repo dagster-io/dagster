@@ -49,7 +49,7 @@ const INVALID_PARITION_SUBSTRINGS = [
 
 const INVALID_PARTITION_SUBSTRINGS_READABLE = [
   '...',
-  '\\x07',
+  '\\a',
   '\\b',
   '\\f',
   '\\n',
