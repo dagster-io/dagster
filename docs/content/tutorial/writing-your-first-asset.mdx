@@ -11,10 +11,10 @@ In this tutorial, you'll analyze activity on a popular news aggregation website 
 
 By the end of this section, you will:
 
-1. Ingest data from the Hacker News API
-2. Turn that ingestion into an asset
-3. Explore the Dagster UI
-4. Launch your first Dagster run manually
+- Ingest data from the Hacker News API
+- Turn that ingestion into an asset
+- Explore the Dagster UI
+- Launch your first Dagster run manually
 
 ---
 
@@ -71,13 +71,13 @@ And now you're done! Time to go into the Dagster UI and see what you've built.
 
 Using Dagster's UI, you can explore your data assets, manually launch runs, and observe what's happening during pipeline runs.
 
-To launch the UI, set your current directory to `/tutorial-project` in your terminal and run the following command:
+As a reminder, to launch the UI, set your terminal's current directory to `/tutorial-project` and run the following command:
 
 ```bash
 dagster dev
 ```
 
-If `localhost:3000` is not already being used, it will use that port. Navigate to `localhost:3000` in your browser to see the Dagster UI.
+Navigate to `localhost:3000` in your browser to see the Dagster UI.
 
 You should see a screen that looks like this:
 
@@ -100,9 +100,9 @@ To manually materialize an asset in the UI, click the **Materialize** button in 
 
 To follow the progress of the materialization and monitor the logs, each run has a dedicated page. To find the page:
 
-- Click on the **Runs** tab in the upper navigation bar
-- Click the value in the **Run ID** column on the table of the Runs page
-- The top section displays the progress, and the bottom section live updates with the logs
+1. Click on the **Runs** tab in the upper navigation bar
+2. Click the value in the **Run ID** column on the table of the Runs page
+3. The top section displays the progress, and the bottom section live updates with the logs
 
     <Image
         alt="the materialization run's status page"

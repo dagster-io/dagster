@@ -34,6 +34,7 @@ Let's start with `stopwords_zip`. We'll add this to the same `assets.py` you wro
 
 ```python
 import urllib.request # Addition: new import at the top of `assets.py`
+
 @asset
 def stopwords_zip() -> None:
     urllib.request.urlretrieve(
