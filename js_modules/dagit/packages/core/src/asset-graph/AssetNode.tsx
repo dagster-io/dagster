@@ -282,7 +282,7 @@ export function buildAssetNodeStatusRow({
         <>
           <Box flex={{gap: 4, alignItems: 'center'}}>
             <Caption color={Colors.Yellow700}>Stale</Caption>
-            <StaleCausesInfoDot causes={liveData.staleStatusCauses} />
+            <StaleCausesInfoDot causes={liveData.staleCauses} />
           </Box>
           {lastMaterializationLink}
         </>
@@ -355,7 +355,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
       ...AssetNodeLiveObservation
     }
     staleStatus
-    staleStatusCauses {
+    staleCauses {
       key {
         path
       }

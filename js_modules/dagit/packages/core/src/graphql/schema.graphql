@@ -682,7 +682,7 @@ type AssetNode {
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
   staleStatus: StaleStatus
-  staleStatusCauses: [StaleStatusCause!]!
+  staleCauses: [StaleCause!]!
   type: DagsterType
   hasMaterializePermission: Boolean!
 }
@@ -795,7 +795,7 @@ enum StaleStatus {
   FRESH
 }
 
-type StaleStatusCause {
+type StaleCause {
   key: AssetKey!
   reason: String!
   dependency: AssetKey

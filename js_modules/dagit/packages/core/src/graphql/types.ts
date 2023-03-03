@@ -218,8 +218,8 @@ export type AssetNode = {
   partitionStats: Maybe<PartitionStats>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
+  staleCauses: Array<StaleCause>;
   staleStatus: Maybe<StaleStatus>;
-  staleStatusCauses: Array<StaleStatusCause>;
   type: Maybe<DagsterType>;
 };
 
@@ -3490,18 +3490,18 @@ export type SolidStepStatusUnavailableError = Error & {
   message: Scalars['String'];
 };
 
+export type StaleCause = {
+  __typename: 'StaleCause';
+  dependency: Maybe<AssetKey>;
+  key: AssetKey;
+  reason: Scalars['String'];
+};
+
 export enum StaleStatus {
   FRESH = 'FRESH',
   MISSING = 'MISSING',
   STALE = 'STALE',
 }
-
-export type StaleStatusCause = {
-  __typename: 'StaleStatusCause';
-  dependency: Maybe<AssetKey>;
-  key: AssetKey;
-  reason: Scalars['String'];
-};
 
 export type StartScheduleMutation = {
   __typename: 'StartScheduleMutation';

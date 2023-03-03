@@ -135,7 +135,7 @@ export interface LiveDataForNode {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null;
   lastObservation: AssetNodeLiveObservationFragment | null;
   staleStatus: StaleStatus | null;
-  staleStatusCauses: {dependency: Maybe<AssetKey>; key: AssetKey; reason: string}[];
+  staleCauses: {dependency: Maybe<AssetKey>; key: AssetKey; reason: string}[];
   partitionStats: {numMaterialized: number; numPartitions: number; numFailed: number} | null;
 }
 
@@ -150,7 +150,7 @@ export const MISSING_LIVE_DATA: LiveDataForNode = {
   lastObservation: null,
   partitionStats: null,
   staleStatus: null,
-  staleStatusCauses: [],
+  staleCauses: [],
   stepKey: '',
 };
 
@@ -205,7 +205,7 @@ export const buildLiveDataForNode = (
         : null,
     lastObservation,
     staleStatus: assetNode.staleStatus,
-    staleStatusCauses: assetNode.staleStatusCauses,
+    staleCauses: assetNode.staleCauses,
     stepKey: assetNode.opNames[0],
     freshnessInfo: assetNode.freshnessInfo,
     freshnessPolicy: assetNode.freshnessPolicy,

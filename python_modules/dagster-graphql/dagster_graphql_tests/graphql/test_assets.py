@@ -152,7 +152,7 @@ GET_ASSET_LOGICAL_VERSIONS = """
             }
             currentLogicalVersion
             staleStatus
-            staleStatusCauses {
+            staleCauses {
                 key { path }
                 reason
                 dependency { path }
