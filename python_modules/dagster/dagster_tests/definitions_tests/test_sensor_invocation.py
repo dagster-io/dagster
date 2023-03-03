@@ -41,11 +41,10 @@ from dagster import (
     run_status_sensor,
     sensor,
 )
-from dagster._check import CheckError
 from dagster._config.structured_config import ConfigurableResource
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.resource_output import Resource
-from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 
 
@@ -119,7 +118,13 @@ def test_sensor_invocation_resources() -> None:
     def basic_sensor_resource_req(my_resource: MyResource):
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
-    with pytest.raises(CheckError, match="Sensor missing required resources: my_resource"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=(
+            "Resource with key 'my_resource' required by sensor 'basic_sensor_resource_req' was not"
+            " provided."
+        ),
+    ):
         basic_sensor_resource_req()
 
     # Just need to pass context, which splats out into resource parameters

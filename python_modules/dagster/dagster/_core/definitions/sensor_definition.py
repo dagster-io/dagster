@@ -6,6 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterator,
     List,
     Mapping,
@@ -130,6 +131,22 @@ class SensorEvaluationContext:
         self._repository_def = repository_def
         self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         self._sensor_name = sensor_name
+
+        """
+        This is similar to what we do in e.g. the op context - we set up a resource
+        building context manager, and immediately enter it. This is so that in cases
+        where a user is not using any context-manager based resources, they don't
+        need to enter this SensorEvaluationContext themselves.
+        
+        For example:
+        
+        my_sensor(build_sensor_context(resource_defs={"my_resource": my_non_cm_resource})
+        
+        will work ok, but for a CM resource we must do
+
+        with build_sensor_context(resource_defs={"my_resource": my_cm_resource}) as context:
+            my_sensor(context)
+        """
 
         self._resources_cm = build_resources(resource_defs or {})
 
@@ -276,11 +293,30 @@ SensorEvaluationFunction: TypeAlias = Callable[..., Iterator[Union[SkipReason, R
 
 
 def get_context_param_name(fn: Callable) -> Optional[str]:
+    """
+    Determines the sensor's context parameter name by excluding all resource parameters.
+    """
     resource_params = {param.name for param in get_resource_args(fn)}
 
     return next(
         (param.name for param in get_function_params(fn) if param.name not in resource_params), None
     )
+
+
+def _validate_and_get_resource_dict(
+    context: SensorEvaluationContext, sensor_name: str, required_resource_keys: Set[str]
+) -> Dict[str, Any]:
+    """
+    Validates that the context has all the required resources and returns a dictionary of
+    resource key to resource object.
+    """
+    for k in required_resource_keys:
+        if not hasattr(context.resources, k):
+            raise DagsterInvalidDefinitionError(
+                f"Resource with key '{k}' required by sensor '{sensor_name}' was not provided."
+            )
+
+    return {k: getattr(context.resources, k) for k in required_resource_keys}
 
 
 class SensorDefinition:
@@ -440,14 +476,9 @@ class SensorDefinition:
                 )
             context = context if context else build_sensor_context()
 
-        check.invariant(
-            all((hasattr(context.resources, k) for k in self._required_resource_keys)),
-            "Sensor missing required resources: {}".format(
-                ", ".join(self._required_resource_keys - set(context.resources.__dict__.keys()))
-            ),
+        resources = _validate_and_get_resource_dict(
+            context, self.name, self._required_resource_keys
         )
-        resources = {k: getattr(context.resources, k) for k in self._required_resource_keys}
-
         return self._raw_fn(**context_param, **resources)
 
     @public
@@ -668,10 +699,9 @@ def wrap_sensor_evaluation(
     resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(fn)}
 
     def _wrapped_fn(context: SensorEvaluationContext):
-        resource_args_populated = {
-            resource_name: getattr(context.resources, resource_name)
-            for resource_name in resource_arg_names
-        }
+        resource_args_populated = _validate_and_get_resource_dict(
+            context, sensor_name, resource_arg_names
+        )
 
         context_param_name = get_context_param_name(fn)
         if context_param_name:
@@ -728,6 +758,9 @@ def build_sensor_context(
     check.opt_str_param(cursor, "cursor")
     check.opt_str_param(repository_name, "repository_name")
 
+    # Determine the set of resources to pass by
+    # 1. Trying to pull the required resource keys from the repository, if available
+    # 2. Using the resource_defs explicitly passed in
     required_resource_keys = None
     if repository_def and sensor_name:
         sensor_def = repository_def.get_sensor_def(sensor_name)
