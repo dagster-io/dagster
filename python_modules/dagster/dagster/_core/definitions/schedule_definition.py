@@ -26,7 +26,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.instigation_logger import InstigationLogger
-from dagster._core.definitions.resource_output import get_resource_args
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import ensure_gen

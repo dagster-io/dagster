@@ -23,7 +23,7 @@ from dagster._core.definitions.partition import (
     ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
 )
-from dagster._core.definitions.resource_output import get_resource_args
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.sensor_definition import get_context_param_name
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
