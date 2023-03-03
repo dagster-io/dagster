@@ -541,9 +541,9 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
   freshnessInfo: null,
   freshnessPolicy: null,
   partitionStats: {
-    numMaterialized: 1500,
+    numMaterialized: 1495,
     numPartitions: 1500,
-    numFailed: 0,
+    numFailed: 1,
   },
 };
 

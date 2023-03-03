@@ -137,6 +137,11 @@ const StyleForPartitionState: {
   },
 };
 
+const partitionStateToString = (count: number | undefined, adjective = '') =>
+  `${count === undefined ? '-' : count.toLocaleString()} ${adjective}${adjective ? ' ' : ''}${
+    count === 1 ? 'partition' : 'partitions'
+  }`;
+
 const AssetNodePartitionCountBox: React.FC<{
   state: PartitionState;
   value: number | undefined;
@@ -151,9 +156,7 @@ const AssetNodePartitionCountBox: React.FC<{
       display="block"
       position="top"
       canShow={value !== undefined}
-      content={`${value?.toLocaleString()} ${style.adjective} ${
-        value === 1 ? 'partition' : 'partitions'
-      }`}
+      content={partitionStateToString(value, style.adjective)}
     >
       <Box
         style={{width: '100%', color: foreground, borderRadius: 6, fontSize: 12}}
@@ -310,10 +313,10 @@ export function buildAssetNodeStatusRow({
             {late
               ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
               : numFailed
-              ? `${numFailed.toLocaleString()} failed partitions`
+              ? partitionStateToString(numFailed, 'failed')
               : numMissing
-              ? `${numMissing.toLocaleString()} missing partitions`
-              : `${numPartitions.toLocaleString()} partitions`}
+              ? partitionStateToString(numMissing, 'missing')
+              : partitionStateToString(numPartitions)}
           </Link>
         </Caption>
       ),
