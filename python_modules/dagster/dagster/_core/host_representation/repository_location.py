@@ -179,7 +179,7 @@ class RepositoryLocation(AbstractContextManager):
 
     @abstractmethod
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet
+        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         pass
 
@@ -453,7 +453,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet
+        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> Union["ExternalPartitionNamesData", "ExternalPartitionExecutionErrorData"]:
         check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
@@ -461,7 +461,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         # partition set allows it
         if external_partition_set.has_partition_name_data():
             return ExternalPartitionNamesData(
-                partition_names=external_partition_set.get_partition_names()
+                partition_names=external_partition_set.get_partition_names(instance)
             )
 
         return get_partition_names(
@@ -812,7 +812,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_partition_names(
-        self, external_partition_set: ExternalPartitionSet
+        self, external_partition_set: ExternalPartitionSet, instance: DagsterInstance
     ) -> "ExternalPartitionNamesData":
         check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
@@ -820,7 +820,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         # partition set allows it
         if external_partition_set.has_partition_name_data():
             return ExternalPartitionNamesData(
-                partition_names=external_partition_set.get_partition_names()
+                partition_names=external_partition_set.get_partition_names(instance=instance)
             )
 
         return sync_get_external_partition_names_grpc(

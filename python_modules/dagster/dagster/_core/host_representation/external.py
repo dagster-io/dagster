@@ -42,6 +42,7 @@ from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
 )
+from dagster._core.instance import DagsterInstance
 from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
@@ -888,9 +889,9 @@ class ExternalPartitionSet:
         # names
         return self._external_partition_set_data.external_partitions_data is not None
 
-    def get_partition_names(self) -> Sequence[str]:
+    def get_partition_names(self, instance: DagsterInstance) -> Sequence[str]:
         check.invariant(self.has_partition_name_data())
         partitions = (
             self._external_partition_set_data.external_partitions_data.get_partitions_definition()  # type: ignore
         )
-        return partitions.get_partition_keys()
+        return partitions.get_partition_keys(dynamic_partitions_store=instance)
