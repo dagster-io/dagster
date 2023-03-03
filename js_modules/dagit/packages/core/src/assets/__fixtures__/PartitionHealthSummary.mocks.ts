@@ -1,5 +1,6 @@
 import {MockedResponse} from '@apollo/client/testing';
 
+import {PartitionRangeStatus} from '../../graphql/types';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 
@@ -53,6 +54,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
         assetPartitionStatuses: {
           ranges: [
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1661904000,
               endTime: 1663621200,
               startKey: '2022-08-31-00:00',
@@ -60,6 +62,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1663693200,
               endTime: 1663696800,
               startKey: '2022-09-20-17:00',
@@ -67,6 +70,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1663959600,
               endTime: 1663963200,
               startKey: '2022-09-23-19:00',
@@ -74,6 +78,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1664478000,
               endTime: 1664481600,
               startKey: '2022-09-29-19:00',
@@ -81,6 +86,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1664913600,
               endTime: 1664928000,
               startKey: '2022-10-04-20:00',
@@ -88,6 +94,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1665756000,
               endTime: 1665759600,
               startKey: '2022-10-14-14:00',
@@ -95,6 +102,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1666141200,
               endTime: 1666144800,
               startKey: '2022-10-19-01:00',
@@ -102,6 +110,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1666368000,
               endTime: 1666371600,
               startKey: '2022-10-21-16:00',
@@ -109,6 +118,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1666378800,
               endTime: 1666386000,
               startKey: '2022-10-21-19:00',
@@ -116,6 +126,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1666785600,
               endTime: 1666789200,
               startKey: '2022-10-26-12:00',
@@ -123,6 +134,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1667419200,
               endTime: 1667422800,
               startKey: '2022-11-02-20:00',
@@ -130,6 +142,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1667502000,
               endTime: 1667505600,
               startKey: '2022-11-03-19:00',
@@ -137,6 +150,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1668182400,
               endTime: 1668186000,
               startKey: '2022-11-11-16:00',
@@ -144,6 +158,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1668189600,
               endTime: 1668204000,
               startKey: '2022-11-11-18:00',
@@ -151,6 +166,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1668434400,
               endTime: 1668438000,
               startKey: '2022-11-14-14:00',
@@ -158,6 +174,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1668618000,
               endTime: 1668621600,
               startKey: '2022-11-16-17:00',
@@ -165,6 +182,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1669874400,
               endTime: 1669878000,
               startKey: '2022-12-01-06:00',
@@ -172,6 +190,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1669896000,
               endTime: 1669899600,
               startKey: '2022-12-01-12:00',
@@ -179,6 +198,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1669906800,
               endTime: 1669910400,
               startKey: '2022-12-01-15:00',
@@ -186,6 +206,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1669921200,
               endTime: 1669928400,
               startKey: '2022-12-01-19:00',
@@ -193,6 +214,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1669946400,
               endTime: 1669953600,
               startKey: '2022-12-02-02:00',
@@ -200,6 +222,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1669960800,
               endTime: 1669964400,
               startKey: '2022-12-02-06:00',
@@ -207,6 +230,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670032800,
               endTime: 1670036400,
               startKey: '2022-12-03-02:00',
@@ -214,6 +238,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670050800,
               endTime: 1670054400,
               startKey: '2022-12-03-07:00',
@@ -221,6 +246,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670061600,
               endTime: 1670065200,
               startKey: '2022-12-03-10:00',
@@ -228,6 +254,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670112000,
               endTime: 1670115600,
               startKey: '2022-12-04-00:00',
@@ -235,6 +262,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670148000,
               endTime: 1670151600,
               startKey: '2022-12-04-10:00',
@@ -242,6 +270,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670155200,
               endTime: 1670158800,
               startKey: '2022-12-04-12:00',
@@ -249,6 +278,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670166000,
               endTime: 1670169600,
               startKey: '2022-12-04-15:00',
@@ -256,6 +286,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670238000,
               endTime: 1670241600,
               startKey: '2022-12-05-11:00',
@@ -263,6 +294,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670252400,
               endTime: 1670256000,
               startKey: '2022-12-05-15:00',
@@ -270,6 +302,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670259600,
               endTime: 1670263200,
               startKey: '2022-12-05-17:00',
@@ -277,6 +310,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670277600,
               endTime: 1670281200,
               startKey: '2022-12-05-22:00',
@@ -284,6 +318,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670346000,
               endTime: 1670349600,
               startKey: '2022-12-06-17:00',
@@ -291,6 +326,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670356800,
               endTime: 1670360400,
               startKey: '2022-12-06-20:00',
@@ -298,6 +334,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670371200,
               endTime: 1670374800,
               startKey: '2022-12-07-00:00',
@@ -305,6 +342,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670407200,
               endTime: 1670410800,
               startKey: '2022-12-07-10:00',
@@ -312,6 +350,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670421600,
               endTime: 1670425200,
               startKey: '2022-12-07-14:00',
@@ -319,6 +358,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670428800,
               endTime: 1670432400,
               startKey: '2022-12-07-16:00',
@@ -326,6 +366,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670475600,
               endTime: 1670479200,
               startKey: '2022-12-08-05:00',
@@ -333,6 +374,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670490000,
               endTime: 1670493600,
               startKey: '2022-12-08-09:00',
@@ -340,6 +382,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670504400,
               endTime: 1670508000,
               startKey: '2022-12-08-13:00',
@@ -347,6 +390,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670515200,
               endTime: 1670522400,
               startKey: '2022-12-08-16:00',
@@ -354,6 +398,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670526000,
               endTime: 1670529600,
               startKey: '2022-12-08-19:00',
@@ -361,6 +406,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670562000,
               endTime: 1670565600,
               startKey: '2022-12-09-05:00',
@@ -368,6 +414,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670569200,
               endTime: 1670572800,
               startKey: '2022-12-09-07:00',
@@ -375,6 +422,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670576400,
               endTime: 1670580000,
               startKey: '2022-12-09-09:00',
@@ -382,6 +430,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670601600,
               endTime: 1670605200,
               startKey: '2022-12-09-16:00',
@@ -389,6 +438,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670630400,
               endTime: 1670634000,
               startKey: '2022-12-10-00:00',
@@ -396,6 +446,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670655600,
               endTime: 1670659200,
               startKey: '2022-12-10-07:00',
@@ -403,6 +454,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670691600,
               endTime: 1670698800,
               startKey: '2022-12-10-17:00',
@@ -410,6 +462,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670727600,
               endTime: 1670731200,
               startKey: '2022-12-11-03:00',
@@ -417,6 +470,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670734800,
               endTime: 1670738400,
               startKey: '2022-12-11-05:00',
@@ -424,6 +478,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670763600,
               endTime: 1670767200,
               startKey: '2022-12-11-13:00',
@@ -431,6 +486,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670796000,
               endTime: 1670799600,
               startKey: '2022-12-11-22:00',
@@ -438,6 +494,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670850000,
               endTime: 1670853600,
               startKey: '2022-12-12-13:00',
@@ -445,6 +502,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670860800,
               endTime: 1670864400,
               startKey: '2022-12-12-16:00',
@@ -452,6 +510,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670882400,
               endTime: 1670886000,
               startKey: '2022-12-12-22:00',
@@ -459,6 +518,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670900400,
               endTime: 1670904000,
               startKey: '2022-12-13-03:00',
@@ -466,6 +526,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670929200,
               endTime: 1670932800,
               startKey: '2022-12-13-11:00',
@@ -473,6 +534,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670947200,
               endTime: 1670950800,
               startKey: '2022-12-13-16:00',
@@ -480,6 +542,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670958000,
               endTime: 1670961600,
               startKey: '2022-12-13-19:00',
@@ -487,6 +550,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670972400,
               endTime: 1670979600,
               startKey: '2022-12-13-23:00',
@@ -494,6 +558,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1670994000,
               endTime: 1670997600,
               startKey: '2022-12-14-05:00',
@@ -501,6 +566,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671019200,
               endTime: 1671026400,
               startKey: '2022-12-14-12:00',
@@ -508,6 +574,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671040800,
               endTime: 1671044400,
               startKey: '2022-12-14-18:00',
@@ -515,6 +582,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671058800,
               endTime: 1671066000,
               startKey: '2022-12-14-23:00',
@@ -522,6 +590,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671076800,
               endTime: 1671080400,
               startKey: '2022-12-15-04:00',
@@ -529,6 +598,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671109200,
               endTime: 1671112800,
               startKey: '2022-12-15-13:00',
@@ -536,6 +606,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671116400,
               endTime: 1671123600,
               startKey: '2022-12-15-15:00',
@@ -543,6 +614,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671141600,
               endTime: 1671145200,
               startKey: '2022-12-15-22:00',
@@ -550,6 +622,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671224400,
               endTime: 1671228000,
               startKey: '2022-12-16-21:00',
@@ -557,6 +630,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671238800,
               endTime: 1671242400,
               startKey: '2022-12-17-01:00',
@@ -564,6 +638,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671282000,
               endTime: 1671285600,
               startKey: '2022-12-17-13:00',
@@ -571,6 +646,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671289200,
               endTime: 1671292800,
               startKey: '2022-12-17-15:00',
@@ -578,6 +654,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671368400,
               endTime: 1671372000,
               startKey: '2022-12-18-13:00',
@@ -585,6 +662,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671375600,
               endTime: 1671379200,
               startKey: '2022-12-18-15:00',
@@ -592,6 +670,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671393600,
               endTime: 1671397200,
               startKey: '2022-12-18-20:00',
@@ -599,6 +678,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671426000,
               endTime: 1671429600,
               startKey: '2022-12-19-05:00',
@@ -606,6 +686,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671447600,
               endTime: 1671451200,
               startKey: '2022-12-19-11:00',
@@ -613,6 +694,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671458400,
               endTime: 1671462000,
               startKey: '2022-12-19-14:00',
@@ -620,6 +702,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671472800,
               endTime: 1671476400,
               startKey: '2022-12-19-18:00',
@@ -627,6 +710,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671483600,
               endTime: 1671487200,
               startKey: '2022-12-19-21:00',
@@ -634,6 +718,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671490800,
               endTime: 1671494400,
               startKey: '2022-12-19-23:00',
@@ -641,6 +726,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671505200,
               endTime: 1671508800,
               startKey: '2022-12-20-03:00',
@@ -648,6 +734,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671523200,
               endTime: 1671526800,
               startKey: '2022-12-20-08:00',
@@ -655,6 +742,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671562800,
               endTime: 1671570000,
               startKey: '2022-12-20-19:00',
@@ -662,6 +750,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671577200,
               endTime: 1671580800,
               startKey: '2022-12-20-23:00',
@@ -669,6 +758,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671620400,
               endTime: 1671624000,
               startKey: '2022-12-21-11:00',
@@ -676,6 +766,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671638400,
               endTime: 1671642000,
               startKey: '2022-12-21-16:00',
@@ -683,6 +774,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671667200,
               endTime: 1671674400,
               startKey: '2022-12-22-00:00',
@@ -690,6 +782,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671696000,
               endTime: 1671699600,
               startKey: '2022-12-22-08:00',
@@ -697,6 +790,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671703200,
               endTime: 1671706800,
               startKey: '2022-12-22-10:00',
@@ -704,6 +798,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671717600,
               endTime: 1671721200,
               startKey: '2022-12-22-14:00',
@@ -711,6 +806,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671724800,
               endTime: 1671728400,
               startKey: '2022-12-22-16:00',
@@ -718,6 +814,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671735600,
               endTime: 1671739200,
               startKey: '2022-12-22-19:00',
@@ -725,6 +822,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671757200,
               endTime: 1671760800,
               startKey: '2022-12-23-01:00',
@@ -732,6 +830,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671764400,
               endTime: 1671771600,
               startKey: '2022-12-23-03:00',
@@ -739,6 +838,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671778800,
               endTime: 1671786000,
               startKey: '2022-12-23-07:00',
@@ -746,6 +846,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671793200,
               endTime: 1671796800,
               startKey: '2022-12-23-11:00',
@@ -753,6 +854,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671818400,
               endTime: 1671822000,
               startKey: '2022-12-23-18:00',
@@ -760,6 +862,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671836400,
               endTime: 1671850800,
               startKey: '2022-12-23-23:00',
@@ -767,6 +870,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671897600,
               endTime: 1671901200,
               startKey: '2022-12-24-16:00',
@@ -774,6 +878,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671958800,
               endTime: 1671962400,
               startKey: '2022-12-25-09:00',
@@ -781,6 +886,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1671994800,
               endTime: 1671998400,
               startKey: '2022-12-25-19:00',
@@ -788,6 +894,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672009200,
               endTime: 1672012800,
               startKey: '2022-12-25-23:00',
@@ -795,6 +902,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672041600,
               endTime: 1672045200,
               startKey: '2022-12-26-08:00',
@@ -802,6 +910,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672048800,
               endTime: 1672052400,
               startKey: '2022-12-26-10:00',
@@ -809,6 +918,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1672070400,
               endTime: 1672077600,
               startKey: '2022-12-26-16:00',
@@ -816,6 +926,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1672102800,
               endTime: 1672113600,
               startKey: '2022-12-27-01:00',
@@ -823,6 +934,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1672117200,
               endTime: 1672128000,
               startKey: '2022-12-27-05:00',
@@ -830,6 +942,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1672142400,
               endTime: 1672146000,
               startKey: '2022-12-27-12:00',
@@ -837,6 +950,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1672164000,
               endTime: 1672171200,
               startKey: '2022-12-27-18:00',
@@ -844,6 +958,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1672178400,
               endTime: 1672182000,
               startKey: '2022-12-27-22:00',
@@ -851,6 +966,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1672185600,
               endTime: 1672189200,
               startKey: '2022-12-28-00:00',
@@ -858,6 +974,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.FAILED,
               startTime: 1672214400,
               endTime: 1672218000,
               startKey: '2022-12-28-08:00',
@@ -865,6 +982,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672221600,
               endTime: 1672228800,
               startKey: '2022-12-28-10:00',
@@ -872,6 +990,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672250400,
               endTime: 1672257600,
               startKey: '2022-12-28-18:00',
@@ -879,6 +998,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672290000,
               endTime: 1672293600,
               startKey: '2022-12-29-05:00',
@@ -886,6 +1006,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672311600,
               endTime: 1672315200,
               startKey: '2022-12-29-11:00',
@@ -893,6 +1014,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672340400,
               endTime: 1672344000,
               startKey: '2022-12-29-19:00',
@@ -900,6 +1022,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672351200,
               endTime: 1672358400,
               startKey: '2022-12-29-22:00',
@@ -907,6 +1030,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672405200,
               endTime: 1672408800,
               startKey: '2022-12-30-13:00',
@@ -914,6 +1038,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672412400,
               endTime: 1672419600,
               startKey: '2022-12-30-15:00',
@@ -921,6 +1046,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672426800,
               endTime: 1672434000,
               startKey: '2022-12-30-19:00',
@@ -928,6 +1054,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672437600,
               endTime: 1672441200,
               startKey: '2022-12-30-22:00',
@@ -935,6 +1062,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672452000,
               endTime: 1672459200,
               startKey: '2022-12-31-02:00',
@@ -942,6 +1070,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672466400,
               endTime: 1672470000,
               startKey: '2022-12-31-06:00',
@@ -949,6 +1078,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672473600,
               endTime: 1672477200,
               startKey: '2022-12-31-08:00',
@@ -956,6 +1086,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672498800,
               endTime: 1672502400,
               startKey: '2022-12-31-15:00',
@@ -963,6 +1094,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672520400,
               endTime: 1672524000,
               startKey: '2022-12-31-21:00',
@@ -970,6 +1102,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672534800,
               endTime: 1672538400,
               startKey: '2023-01-01-01:00',
@@ -977,6 +1110,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672560000,
               endTime: 1672563600,
               startKey: '2023-01-01-08:00',
@@ -984,6 +1118,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672581600,
               endTime: 1672585200,
               startKey: '2023-01-01-14:00',
@@ -991,6 +1126,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672592400,
               endTime: 1672596000,
               startKey: '2023-01-01-17:00',
@@ -998,6 +1134,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672606800,
               endTime: 1672610400,
               startKey: '2023-01-01-21:00',
@@ -1005,6 +1142,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672617600,
               endTime: 1672621200,
               startKey: '2023-01-02-00:00',
@@ -1012,6 +1150,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672624800,
               endTime: 1672632000,
               startKey: '2023-01-02-02:00',
@@ -1019,6 +1158,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672657200,
               endTime: 1672660800,
               startKey: '2023-01-02-11:00',
@@ -1026,6 +1166,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672696800,
               endTime: 1672700400,
               startKey: '2023-01-02-22:00',
@@ -1033,6 +1174,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672754400,
               endTime: 1672758000,
               startKey: '2023-01-03-14:00',
@@ -1040,6 +1182,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672797600,
               endTime: 1672801200,
               startKey: '2023-01-04-02:00',
@@ -1047,6 +1190,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672804800,
               endTime: 1672808400,
               startKey: '2023-01-04-04:00',
@@ -1054,6 +1198,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672815600,
               endTime: 1672819200,
               startKey: '2023-01-04-07:00',
@@ -1061,6 +1206,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672840800,
               endTime: 1672848000,
               startKey: '2023-01-04-14:00',
@@ -1068,6 +1214,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672876800,
               endTime: 1672880400,
               startKey: '2023-01-05-00:00',
@@ -1075,6 +1222,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672905600,
               endTime: 1672909200,
               startKey: '2023-01-05-08:00',
@@ -1082,6 +1230,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672923600,
               endTime: 1672927200,
               startKey: '2023-01-05-13:00',
@@ -1089,6 +1238,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672934400,
               endTime: 1672938000,
               startKey: '2023-01-05-16:00',
@@ -1096,6 +1246,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672974000,
               endTime: 1672977600,
               startKey: '2023-01-06-03:00',
@@ -1103,6 +1254,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1672988400,
               endTime: 1672992000,
               startKey: '2023-01-06-07:00',
@@ -1110,6 +1262,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673020800,
               endTime: 1673024400,
               startKey: '2023-01-06-16:00',
@@ -1117,6 +1270,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673053200,
               endTime: 1673056800,
               startKey: '2023-01-07-01:00',
@@ -1124,6 +1278,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673100000,
               endTime: 1673103600,
               startKey: '2023-01-07-14:00',
@@ -1131,6 +1286,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673110800,
               endTime: 1673114400,
               startKey: '2023-01-07-17:00',
@@ -1138,6 +1294,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673121600,
               endTime: 1673125200,
               startKey: '2023-01-07-20:00',
@@ -1145,6 +1302,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673154000,
               endTime: 1673157600,
               startKey: '2023-01-08-05:00',
@@ -1152,6 +1310,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673168400,
               endTime: 1673179200,
               startKey: '2023-01-08-09:00',
@@ -1159,6 +1318,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673190000,
               endTime: 1673193600,
               startKey: '2023-01-08-15:00',
@@ -1166,6 +1326,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673197200,
               endTime: 1673204400,
               startKey: '2023-01-08-17:00',
@@ -1173,6 +1334,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673218800,
               endTime: 1673222400,
               startKey: '2023-01-08-23:00',
@@ -1180,6 +1342,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673254800,
               endTime: 1673258400,
               startKey: '2023-01-09-09:00',
@@ -1187,6 +1350,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673265600,
               endTime: 1673269200,
               startKey: '2023-01-09-12:00',
@@ -1194,6 +1358,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673276400,
               endTime: 1673280000,
               startKey: '2023-01-09-15:00',
@@ -1201,6 +1366,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673283600,
               endTime: 1673290800,
               startKey: '2023-01-09-17:00',
@@ -1208,6 +1374,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673308800,
               endTime: 1673316000,
               startKey: '2023-01-10-00:00',
@@ -1215,6 +1382,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673323200,
               endTime: 1673326800,
               startKey: '2023-01-10-04:00',
@@ -1222,6 +1390,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673352000,
               endTime: 1673355600,
               startKey: '2023-01-10-12:00',
@@ -1229,6 +1398,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673362800,
               endTime: 1673366400,
               startKey: '2023-01-10-15:00',
@@ -1236,6 +1406,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673370000,
               endTime: 1673373600,
               startKey: '2023-01-10-17:00',
@@ -1243,6 +1414,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673377200,
               endTime: 1673380800,
               startKey: '2023-01-10-19:00',
@@ -1250,6 +1422,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673391600,
               endTime: 1673395200,
               startKey: '2023-01-10-23:00',
@@ -1257,6 +1430,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673416800,
               endTime: 1673424000,
               startKey: '2023-01-11-06:00',
@@ -1264,6 +1438,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673434800,
               endTime: 1673438400,
               startKey: '2023-01-11-11:00',
@@ -1271,6 +1446,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673449200,
               endTime: 1673456400,
               startKey: '2023-01-11-15:00',
@@ -1278,6 +1454,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673463600,
               endTime: 1673467200,
               startKey: '2023-01-11-19:00',
@@ -1285,6 +1462,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673481600,
               endTime: 1673485200,
               startKey: '2023-01-12-00:00',
@@ -1292,6 +1470,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673510400,
               endTime: 1673521200,
               startKey: '2023-01-12-08:00',
@@ -1299,6 +1478,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673532000,
               endTime: 1673539200,
               startKey: '2023-01-12-14:00',
@@ -1306,6 +1486,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673564400,
               endTime: 1673571600,
               startKey: '2023-01-12-23:00',
@@ -1313,6 +1494,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673604000,
               endTime: 1673607600,
               startKey: '2023-01-13-10:00',
@@ -1320,6 +1502,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673636400,
               endTime: 1673640000,
               startKey: '2023-01-13-19:00',
@@ -1327,6 +1510,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673654400,
               endTime: 1673658000,
               startKey: '2023-01-14-00:00',
@@ -1334,6 +1518,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673672400,
               endTime: 1673676000,
               startKey: '2023-01-14-05:00',
@@ -1341,6 +1526,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673769600,
               endTime: 1673773200,
               startKey: '2023-01-15-08:00',
@@ -1348,6 +1534,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673791200,
               endTime: 1673794800,
               startKey: '2023-01-15-14:00',
@@ -1355,6 +1542,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673798400,
               endTime: 1673802000,
               startKey: '2023-01-15-16:00',
@@ -1362,6 +1550,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1673834400,
               endTime: 1673838000,
               startKey: '2023-01-16-02:00',
@@ -1369,6 +1558,7 @@ export const SingleDimensionTimePartitionHealthQuery: MockedResponse<PartitionHe
               __typename: 'TimePartitionRange',
             },
             {
+              status: PartitionRangeStatus.MATERIALIZED,
               startTime: 1674759600,
               endTime: 1674763200,
               startKey: '2023-01-26-19:00',
@@ -1402,7 +1592,8 @@ export const SingleDimensionStaticPartitionHealthQuery: MockedResponse<Partition
           },
         ],
         assetPartitionStatuses: {
-          materializedPartitions: ['IL', 'VA', 'SC', 'WV', 'OH', 'GA', 'PA', 'NC'],
+          materializedPartitions: ['IL', 'VA', 'SC', 'WV', 'OH', 'GA'],
+          failedPartitions: ['PA', 'NC'],
           __typename: 'DefaultPartitions',
         },
         __typename: 'AssetNode',
@@ -1443,6 +1634,7 @@ export const MultiDimensionStaticPartitionHealthQuery: MockedResponse<PartitionH
               primaryDimEndTime: null,
               secondaryDim: {
                 materializedPartitions: ['IL', 'VA', 'SC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1465,6 +1657,7 @@ export const MultiDimensionStaticPartitionHealthQuery: MockedResponse<PartitionH
                   'NC',
                   'KY',
                 ],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1526,6 +1719,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
                   'NC',
                   'KY',
                 ],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1537,6 +1731,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
               primaryDimEndTime: 1659139200,
               secondaryDim: {
                 materializedPartitions: ['TN', 'VA', 'GA', 'PA', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1560,6 +1755,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
                   'NC',
                   'KY',
                 ],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1571,6 +1767,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
               primaryDimEndTime: 1661731200,
               secondaryDim: {
                 materializedPartitions: ['TN', 'VA'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1581,19 +1778,8 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
               primaryDimStartTime: 1662768000,
               primaryDimEndTime: 1663286400,
               secondaryDim: {
-                materializedPartitions: [
-                  'IL',
-                  'VA',
-                  'SC',
-                  'PA',
-                  'WV',
-                  'FL',
-                  'TN',
-                  'GA',
-                  'OH',
-                  'NC',
-                  'KY',
-                ],
+                materializedPartitions: ['IL', 'VA', 'SC', 'PA', 'WV', 'FL'],
+                failedPartitions: ['TN', 'GA', 'OH', 'NC', 'KY'],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1604,18 +1790,8 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
               primaryDimStartTime: 1663286400,
               primaryDimEndTime: 1663372800,
               secondaryDim: {
-                materializedPartitions: [
-                  'IL',
-                  'VA',
-                  'SC',
-                  'PA',
-                  'FL',
-                  'TN',
-                  'GA',
-                  'OH',
-                  'NC',
-                  'KY',
-                ],
+                materializedPartitions: ['IL', 'VA', 'SC', 'PA', 'FL'],
+                failedPartitions: ['TN', 'GA', 'OH', 'NC', 'KY'],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1639,6 +1815,7 @@ export const MultiDimensionTimeFirstPartitionHealthQuery: MockedResponse<Partiti
                   'NC',
                   'KY',
                 ],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1688,6 +1865,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1626134400,
               secondaryDim: {
                 materializedPartitions: ['TN'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1699,6 +1877,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665100800,
               secondaryDim: {
                 materializedPartitions: ['TN', 'VA'],
+                failedPartitions: ['OH'],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1710,6 +1889,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665273600,
               secondaryDim: {
                 materializedPartitions: ['OH', 'FL', 'TN', 'VA', 'SC', 'PA', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1721,6 +1901,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665360000,
               secondaryDim: {
                 materializedPartitions: ['OH', 'FL', 'TN', 'VA', 'PA', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1732,6 +1913,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665532800,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'VA', 'SC', 'PA', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1743,6 +1925,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665619200,
               secondaryDim: {
                 materializedPartitions: ['OH', 'VA', 'TN', 'SC', 'PA', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1754,6 +1937,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665792000,
               secondaryDim: {
                 materializedPartitions: ['FL', 'PA', 'VA', 'TN', 'SC', 'OH', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1765,6 +1949,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665878400,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'VA', 'SC', 'PA', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1776,6 +1961,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1665964800,
               secondaryDim: {
                 materializedPartitions: ['PA', 'TN', 'VA', 'OH', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1787,6 +1973,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666051200,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'PA', 'FL', 'TN', 'GA', 'OH', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1798,6 +1985,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666137600,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'GA', 'VA', 'SC', 'PA', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1809,6 +1997,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666396800,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'PA', 'FL', 'TN', 'GA', 'OH', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1820,6 +2009,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666483200,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'GA', 'VA', 'SC', 'PA', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1831,6 +2021,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666569600,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'OH', 'FL', 'TN', 'GA', 'PA', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1842,6 +2033,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666656000,
               secondaryDim: {
                 materializedPartitions: ['VA', 'TN', 'PA', 'SC', 'OH', 'GA', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1853,6 +2045,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666828800,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'PA', 'FL', 'TN', 'GA', 'OH', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1864,6 +2057,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1666915200,
               secondaryDim: {
                 materializedPartitions: ['NC', 'VA', 'TN', 'GA', 'SC', 'OH', 'PA', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1875,6 +2069,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667260800,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'PA', 'FL', 'TN', 'GA', 'OH', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1886,6 +2081,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667347200,
               secondaryDim: {
                 materializedPartitions: ['TN', 'GA', 'VA', 'PA', 'OH', 'SC', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1897,6 +2093,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667433600,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'GA', 'VA', 'SC', 'PA', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1908,6 +2105,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667520000,
               secondaryDim: {
                 materializedPartitions: ['VA', 'SC', 'PA', 'FL', 'TN', 'GA', 'OH', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1919,6 +2117,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667606400,
               secondaryDim: {
                 materializedPartitions: ['FL', 'VA', 'TN', 'GA', 'SC', 'PA', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1930,6 +2129,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667692800,
               secondaryDim: {
                 materializedPartitions: ['NC', 'FL', 'VA', 'TN', 'GA', 'OH', 'PA', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1941,6 +2141,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1667779200,
               secondaryDim: {
                 materializedPartitions: ['FL', 'VA', 'GA', 'TN', 'SC', 'PA', 'NC', 'KY'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1952,6 +2153,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668038400,
               secondaryDim: {
                 materializedPartitions: ['OH', 'FL', 'TN', 'VA', 'SC', 'PA', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1963,6 +2165,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668124800,
               secondaryDim: {
                 materializedPartitions: ['TN', 'VA', 'PA', 'SC', 'OH', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1974,6 +2177,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668297600,
               secondaryDim: {
                 materializedPartitions: ['FL', 'TN', 'VA', 'PA', 'SC', 'OH', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1985,6 +2189,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668384000,
               secondaryDim: {
                 materializedPartitions: ['OH', 'VA', 'TN', 'SC', 'PA', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -1996,6 +2201,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668556800,
               secondaryDim: {
                 materializedPartitions: ['OH', 'FL', 'TN', 'VA', 'SC', 'PA', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2007,6 +2213,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668643200,
               secondaryDim: {
                 materializedPartitions: ['OH', 'FL', 'TN', 'VA', 'SC', 'PA'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2018,6 +2225,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668729600,
               secondaryDim: {
                 materializedPartitions: ['FL', 'PA', 'SC', 'OH', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2029,6 +2237,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668816000,
               secondaryDim: {
                 materializedPartitions: ['PA', 'NC', 'FL', 'SC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2040,6 +2249,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1668902400,
               secondaryDim: {
                 materializedPartitions: ['OH', 'PA', 'FL'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2063,6 +2273,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
                   'NC',
                   'KY',
                 ],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2074,6 +2285,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669075200,
               secondaryDim: {
                 materializedPartitions: ['OH', 'NC', 'FL'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2085,6 +2297,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669161600,
               secondaryDim: {
                 materializedPartitions: ['OH', 'NC', 'FL', 'SC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2096,6 +2309,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669248000,
               secondaryDim: {
                 materializedPartitions: ['OH', 'NC', 'PA', 'SC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2107,6 +2321,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669334400,
               secondaryDim: {
                 materializedPartitions: ['FL', 'PA', 'SC', 'OH', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2118,6 +2333,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669420800,
               secondaryDim: {
                 materializedPartitions: ['OH', 'NC', 'FL', 'SC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2129,6 +2345,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1669507200,
               secondaryDim: {
                 materializedPartitions: ['FL', 'PA', 'SC', 'OH', 'NC'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2140,6 +2357,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1673481600,
               secondaryDim: {
                 materializedPartitions: ['WV'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2151,6 +2369,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1673827200,
               secondaryDim: {
                 materializedPartitions: ['IL', 'WV'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2162,6 +2381,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1674086400,
               secondaryDim: {
                 materializedPartitions: ['IL', 'WV'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2185,6 +2405,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
                   'NC',
                   'KY',
                 ],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',
@@ -2196,6 +2417,7 @@ export const MultiDimensionTimeSecondPartitionHealthQuery: MockedResponse<Partit
               primaryDimEndTime: 1675123200,
               secondaryDim: {
                 materializedPartitions: ['WV'],
+                failedPartitions: [],
                 __typename: 'DefaultPartitions',
               },
               __typename: 'MaterializedPartitionRange2D',

@@ -148,6 +148,8 @@ export const partitionStateToStatusSquareColor = (state: PartitionState) => {
     ? 'SUCCESS'
     : state === PartitionState.SUCCESS_MISSING
     ? 'SUCCESS-MISSING'
+    : state === PartitionState.FAILURE
+    ? 'FAILURE'
     : 'MISSING';
 };
 

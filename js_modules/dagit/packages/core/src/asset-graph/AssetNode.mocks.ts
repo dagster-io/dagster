@@ -350,6 +350,7 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNode = {
   partitionStats: {
     numMaterialized: 5,
     numPartitions: 1500,
+    numFailed: 0,
   },
 };
 
@@ -372,6 +373,7 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNode = {
   partitionStats: {
     numMaterialized: 1500,
     numPartitions: 1500,
+    numFailed: 0,
   },
 };
 
@@ -390,6 +392,7 @@ export const LiveDataForNodePartitionedNeverMaterialized: LiveDataForNode = {
   partitionStats: {
     numMaterialized: 0,
     numPartitions: 1500,
+    numFailed: 0,
   },
 };
 
@@ -412,6 +415,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNode = {
   partitionStats: {
     numMaterialized: 1500,
     numPartitions: 1500,
+    numFailed: 0,
   },
 };
 
@@ -442,6 +446,7 @@ export const LiveDataForNodePartitionedStaleAndLate: LiveDataForNode = {
   partitionStats: {
     numMaterialized: 1500,
     numPartitions: 1500,
+    numFailed: 0,
   },
 };
 
@@ -472,6 +477,7 @@ export const LiveDataForNodePartitionedStaleAndFresh: LiveDataForNode = {
   partitionStats: {
     numMaterialized: 1500,
     numPartitions: 1500,
+    numFailed: 0,
   },
 };
 
@@ -495,6 +501,7 @@ export const LiveDataForNodePartitionedLatestRunFailed: LiveDataForNode = {
   partitionStats: {
     numMaterialized: 1500,
     numPartitions: 1500,
+    numFailed: 0,
   },
 };
 

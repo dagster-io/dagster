@@ -194,8 +194,9 @@ export function buildAssetNodeStatusRow({
   }
 
   if (liveData.partitionStats) {
-    const {numPartitions, numMaterialized} = liveData.partitionStats;
-    const numMissing = numPartitions - numMaterialized;
+    const {numPartitions, numMaterialized, numFailed} = liveData.partitionStats;
+    const numMissing = numPartitions - numMaterialized - numFailed;
+
     return {
       background: late ? Colors.Red50 : numMissing ? Colors.Yellow50 : Colors.Green50,
       border: late ? Colors.Red500 : numMissing ? Colors.Yellow500 : Colors.Green500,
@@ -212,7 +213,7 @@ export function buildAssetNodeStatusRow({
             >
               {late
                 ? humanizedLateString(liveData.freshnessInfo.currentMinutesLate)
-                : `${numMissing.toLocaleString()} missing`}
+                : `${numMissing.toLocaleString()} missing / ${numFailed.toLocaleString()} failed`}
             </Link>
           </Caption>
         </>
@@ -366,6 +367,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     partitionStats {
       numMaterialized
       numPartitions
+      numFailed
     }
   }
 

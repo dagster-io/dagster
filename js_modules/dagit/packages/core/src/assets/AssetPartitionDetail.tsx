@@ -133,10 +133,8 @@ export const AssetPartitionDetail: React.FC<{
             <Heading>{partition}</Heading>
             {hasLoadingState ? (
               <Spinner purpose="body-text" />
-            ) : latest ? (
-              <Tag intent="success">Materialized</Tag>
             ) : (
-              <Tag intent="none">Missing</Tag>
+              latest && <Tag intent="success">Materialized</Tag>
             )}
           </Box>
         ) : (

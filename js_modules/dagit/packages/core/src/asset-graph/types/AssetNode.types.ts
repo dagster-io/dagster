@@ -32,6 +32,7 @@ export type AssetNodeLiveFragment = {
     __typename: 'PartitionStats';
     numMaterialized: number;
     numPartitions: number;
+    numFailed: number;
   } | null;
 };
 
