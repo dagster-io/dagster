@@ -3,6 +3,7 @@ from typing import Optional, Sequence, Type, cast
 
 import duckdb
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
+from dagster._config.structured_config import ConfigurableIOManagerFactory
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -104,6 +105,26 @@ def build_duckdb_io_manager(
         )
 
     return duckdb_io_manager
+
+
+def build_configurable_duckdb_io_manager(
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+):
+    class ConfigurableDuckDBIOManager(ConfigurableIOManagerFactory):
+        database: str
+        schema_: Optional[str] = None
+
+        def create_io_manager(self, context) -> DbIOManager:
+            return DbIOManager(
+                db_client=DuckDbClient(),
+                database=self.database,
+                schema=self.schema_,
+                type_handlers=type_handlers,
+                default_load_type=default_load_type,
+                io_manager_name="DuckDBIOManager",
+            )
+
+    return ConfigurableDuckDBIOManager
 
 
 class DuckDbClient(DbClient):

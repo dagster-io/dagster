@@ -20,7 +20,8 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
-from dagster_duckdb_pandas import duckdb_pandas_io_manager
+from dagster_duckdb import build_configurable_duckdb_io_manager
+from dagster_duckdb_pandas import DuckDBPandasTypeHandler, duckdb_pandas_io_manager
 
 
 @op(out=Out(metadata={"schema": "a_df"}))
@@ -74,11 +75,16 @@ def b_plus_one(b_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def test_duckdb_io_manager_with_assets(tmp_path):
-    resource_defs = {
-        "io_manager": duckdb_pandas_io_manager.configured(
-            {"database": os.path.join(tmp_path, "unit_test.duckdb")}
-        ),
-    }
+    io_manager = build_configurable_duckdb_io_manager(
+        type_handlers=[DuckDBPandasTypeHandler()], default_load_type=pd.DataFrame
+    )
+
+    resource_defs = {"io_manager": io_manager(database=os.path.join(tmp_path, "unit_test.duckdb"))}
+    # resource_defs = {
+    #     "io_manager": duckdb_pandas_io_manager.configured(
+    #         {"database": os.path.join(tmp_path, "unit_test.duckdb")}
+    #     ),
+    # }
 
     # materialize asset twice to ensure that tables get properly deleted
     for _ in range(2):
