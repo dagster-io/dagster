@@ -44,7 +44,7 @@ interface Props {
   opName?: string | null;
 }
 
-const DISPLAYED_STATES = [PartitionState.MISSING, PartitionState.SUCCESS];
+const DISPLAYED_STATES = [PartitionState.MISSING, PartitionState.SUCCESS, PartitionState.FAILURE];
 
 export const AssetPartitions: React.FC<Props> = ({
   assetKey,
@@ -110,26 +110,38 @@ export const AssetPartitions: React.FC<Props> = ({
     const getSelectionKeys = () =>
       uniq(selectedRanges.flatMap(([start, end]) => allKeys.slice(start.idx, end.idx + 1)));
 
-    const getSuccessKeys = (opts: {includePartial: boolean}) => {
+    const getKeysWithStates = (states: PartitionState[]) => {
       const materializedInSelection = rangesClippedToSelection(
         materializedRangesByDimension[idx],
         selectedRanges,
       );
       return materializedInSelection.flatMap((r) =>
-        r.value === (PartitionState.SUCCESS || opts.includePartial)
-          ? allKeys.slice(r.start.idx, r.end.idx + 1)
-          : [],
+        states.includes(r.value) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
       );
     };
 
     if (isEqual(DISPLAYED_STATES, stateFilters)) {
-      return getSelectionKeys();
-    } else if (isEqual([PartitionState.SUCCESS], stateFilters)) {
-      return uniq(getSuccessKeys({includePartial: true}));
-    } else if (isEqual([PartitionState.MISSING], stateFilters)) {
-      return without(getSelectionKeys(), ...getSuccessKeys({includePartial: false}));
+      return getSelectionKeys(); // optimization for the default case
+    }
+
+    const states: PartitionState[] = [];
+    if (stateFilters.includes(PartitionState.SUCCESS)) {
+      states.push(PartitionState.SUCCESS, PartitionState.SUCCESS_MISSING);
+    }
+    if (stateFilters.includes(PartitionState.FAILURE)) {
+      states.push(PartitionState.FAILURE);
+    }
+    const matching = uniq(getKeysWithStates(states));
+
+    // We have to add in "missing" separately because it's the absence of a range
+    if (stateFilters.includes(PartitionState.MISSING)) {
+      const missing = without(
+        getSelectionKeys(),
+        ...getKeysWithStates([PartitionState.SUCCESS, PartitionState.FAILURE]),
+      );
+      return uniq([...matching, ...missing]);
     } else {
-      return [];
+      return matching;
     }
   };
 
@@ -182,7 +194,7 @@ export const AssetPartitions: React.FC<Props> = ({
         </div>
         <PartitionStateCheckboxes
           counts={countsByStateInSelection}
-          allowed={[PartitionState.MISSING, PartitionState.SUCCESS]}
+          allowed={[PartitionState.MISSING, PartitionState.SUCCESS, PartitionState.FAILURE]}
           value={stateFilters}
           onChange={setStateFilters}
         />

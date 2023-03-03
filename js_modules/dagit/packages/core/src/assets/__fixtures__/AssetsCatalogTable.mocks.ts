@@ -257,6 +257,7 @@ export const SingleAssetQueryLastRunFailed: MockedResponse<SingleAssetQuery> = {
             __typename: 'PartitionStats',
             numMaterialized: 8,
             numPartitions: 11,
+            numFailed: 0,
           },
           assetKey: {
             path: ['run_failing_asset'],

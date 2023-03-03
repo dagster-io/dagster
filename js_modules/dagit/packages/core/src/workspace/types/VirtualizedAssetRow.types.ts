@@ -63,6 +63,7 @@ export type SingleAssetQuery = {
             __typename: 'PartitionStats';
             numMaterialized: number;
             numPartitions: number;
+            numFailed: number;
           } | null;
           partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
         } | null;

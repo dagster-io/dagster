@@ -33,7 +33,7 @@ the asset health bar you see is a flattened representation of the health of all 
 */
 export function mergedAssetHealth(
   assetHealth: PartitionHealthData[],
-): Omit<PartitionHealthData, 'assetKey' | 'ranges'> {
+): Omit<PartitionHealthData, 'assetKey' | 'ranges' | 'isRangeDataInverted'> {
   if (!assetHealth.length) {
     return {
       dimensions: [],
@@ -78,7 +78,9 @@ export function mergedAssetHealth(
 }
 
 export function mergedStates(states: PartitionState[]): PartitionState {
-  if (states.includes(PartitionState.MISSING) && states.includes(PartitionState.SUCCESS)) {
+  if (states.includes(PartitionState.FAILURE)) {
+    return PartitionState.FAILURE;
+  } else if (states.includes(PartitionState.MISSING) && states.includes(PartitionState.SUCCESS)) {
     return PartitionState.SUCCESS_MISSING;
   } else if (states.includes(PartitionState.SUCCESS_MISSING)) {
     return PartitionState.SUCCESS_MISSING;
@@ -110,25 +112,28 @@ export function mergedRanges(allKeys: string[], rangeSets: Range[][]): Range[] {
     return rangeSets[0];
   }
 
-  const transitions: {idx: number; delta: number}[] = [];
+  const transitions: Transition[] = [];
   for (const ranges of rangeSets) {
     for (const range of ranges) {
-      const delta = range.value === PartitionState.SUCCESS ? 1 : 0.5;
-      transitions.push({idx: range.start.idx, delta});
-      transitions.push({idx: range.end.idx + 1, delta: -delta});
+      transitions.push({idx: range.start.idx, delta: 1, state: range.value});
+      transitions.push({idx: range.end.idx + 1, delta: -1, state: range.value});
     }
   }
 
   return assembleRangesFromTransitions(allKeys, transitions, rangeSets.length);
 }
 
+export type Transition = {idx: number; delta: number; state: PartitionState};
+
 export function assembleRangesFromTransitions(
   allKeys: string[],
-  transitionsUnsorted: {idx: number; delta: number}[],
+  transitionsUnsorted: Transition[],
   maxOverlap: number,
 ) {
   // sort the input array, this algorithm does not work unless the transitions are in order
-  const transitions = [...transitionsUnsorted].sort((a, b) => a.idx - b.idx);
+  const transitions = [...transitionsUnsorted].sort(
+    (a, b) => a.idx - b.idx || `${a.state}`.localeCompare(`${b.state}`),
+  );
 
   // walk the transitions array and apply the transitions to a counter, creating an array of just the changes
   // in the number of currently-overlapping ranges. (eg: how many of the assets are materialized at this time).
@@ -136,13 +141,17 @@ export function assembleRangesFromTransitions(
   // FROM: [{idx: 0, delta: 1}, {idx: 0, delta: 1}, {idx: 3, delta: 1}, {idx: 10, delta: -1}]
   //   TO: [{idx: 0, depth: 2}, {idx: 3, depth: 3}, {idx: 10, depth: 2}]
   //
-  const depths: {idx: number; depth: number}[] = [];
+  const depths: {idx: number; failure: number; success: number; success_missing: 0}[] = [];
   for (const transition of transitions) {
     const last = depths[depths.length - 1];
     if (last && last.idx === transition.idx) {
-      last.depth += transition.delta;
+      last[transition.state] = (last[transition.state] || 0) + transition.delta;
     } else {
-      depths.push({idx: transition.idx, depth: (last?.depth || 0) + transition.delta});
+      depths.push({
+        ...(last || {}),
+        idx: transition.idx,
+        [transition.state]: (last?.[transition.state] || 0) + transition.delta,
+      });
     }
   }
 
@@ -150,11 +159,13 @@ export function assembleRangesFromTransitions(
   // more time. Anytime depth == rangeSets.length - 1, all the assets were materialzied within this band.
   //
   const result: (Omit<Range, 'value'> & {value: PartitionState})[] = [];
-  for (const {idx, depth} of depths) {
+  for (const {idx, success, failure, success_missing} of depths) {
     const value =
-      depth === maxOverlap
+      success === maxOverlap
         ? PartitionState.SUCCESS
-        : depth > 0
+        : failure > 0
+        ? PartitionState.FAILURE
+        : success > 0 || success_missing > 0
         ? PartitionState.SUCCESS_MISSING
         : PartitionState.MISSING;
 

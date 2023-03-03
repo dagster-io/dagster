@@ -58,6 +58,7 @@ export type AssetGraphLiveQuery = {
       __typename: 'PartitionStats';
       numMaterialized: number;
       numPartitions: number;
+      numFailed: number;
     } | null;
   }>;
   assetsLatestInfo: Array<{

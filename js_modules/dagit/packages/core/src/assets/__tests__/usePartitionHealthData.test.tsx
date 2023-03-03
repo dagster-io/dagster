@@ -1,3 +1,4 @@
+import {PartitionRangeStatus} from '../../graphql/types';
 import {PartitionState} from '../../partitions/PartitionStatus';
 import {PartitionHealthQuery} from '../types/usePartitionHealthData.types';
 import {
@@ -15,7 +16,7 @@ import {
   keyCountInSelection,
 } from '../usePartitionHealthData';
 
-const {SUCCESS, MISSING} = PartitionState;
+const {SUCCESS, MISSING, FAILURE} = PartitionState;
 
 const DIMENSION_ONE_KEYS = [
   '2022-01-01',
@@ -37,6 +38,7 @@ const NO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
     assetPartitionStatuses: {
       __typename: 'DefaultPartitions',
       materializedPartitions: [],
+      failedPartitions: [],
     },
   },
 };
@@ -58,10 +60,19 @@ const ONE_DIMENSIONAL_ASSET: PartitionHealthQuery = {
       ranges: [
         {
           __typename: 'TimePartitionRange',
+          status: PartitionRangeStatus.MATERIALIZED,
           startKey: '2022-01-04',
           startTime: new Date('2022-01-04').getTime(),
           endKey: '2022-01-05',
           endTime: new Date('2022-01-04').getTime(),
+        },
+        {
+          __typename: 'TimePartitionRange',
+          status: PartitionRangeStatus.FAILED,
+          startKey: '2022-01-05',
+          startTime: new Date('2022-01-05').getTime(),
+          endKey: '2022-01-06',
+          endTime: new Date('2022-01-06').getTime(),
         },
       ],
     },
@@ -98,6 +109,7 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['NY', 'MN'],
+            failedPartitions: [],
           },
         },
         {
@@ -109,6 +121,7 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['MN'],
+            failedPartitions: [],
           },
         },
         {
@@ -120,6 +133,7 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['TN', 'CA', 'VA', 'NY', 'MN'],
+            failedPartitions: [],
           },
         },
         {
@@ -131,6 +145,7 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['MN'],
+            failedPartitions: ['NY', 'VA'],
           },
         },
       ],
@@ -168,6 +183,7 @@ const TWO_DIMENSIONAL_ASSET_BOTH_STATIC: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['TN', 'CA', 'VA'],
+            failedPartitions: ['MN'],
           },
         },
         {
@@ -179,6 +195,7 @@ const TWO_DIMENSIONAL_ASSET_BOTH_STATIC: PartitionHealthQuery = {
           secondaryDim: {
             __typename: 'DefaultPartitions',
             materializedPartitions: ['CA', 'MN'],
+            failedPartitions: [],
           },
         },
       ],
@@ -249,6 +266,11 @@ describe('usePartitionHealthData', () => {
           end: {idx: 4, key: '2022-01-05'},
           value: PartitionState.SUCCESS,
         },
+        {
+          start: {idx: 4, key: '2022-01-05'},
+          end: {idx: 5, key: '2022-01-06'},
+          value: PartitionState.FAILURE,
+        },
       ]);
 
       // should not crash if asked for an invalid dimension -- just return []
@@ -273,6 +295,8 @@ describe('usePartitionHealthData', () => {
       // Ask for the state of a full key (cell)
       expect(assetHealth.stateForKey(['2022-01-01', 'TN'])).toEqual(MISSING);
       expect(assetHealth.stateForKey(['2022-01-04', 'NY'])).toEqual(SUCCESS);
+      expect(assetHealth.stateForKey(['2022-01-05', 'NY'])).toEqual(FAILURE);
+      expect(assetHealth.stateForKey(['2022-01-05', 'MN'])).toEqual(SUCCESS);
 
       // Ask for the ranges of a row
       expect(assetHealth.rangesForSingleDimension(0)).toEqual([
@@ -289,7 +313,7 @@ describe('usePartitionHealthData', () => {
         {
           start: {idx: 4, key: '2022-01-05'},
           end: {idx: 5, key: '2022-01-06'},
-          value: PartitionState.SUCCESS_MISSING,
+          value: PartitionState.FAILURE,
         },
       ]);
 
@@ -336,7 +360,7 @@ describe('usePartitionHealthData', () => {
         {
           start: {idx: 4, key: '2022-01-05'},
           end: {idx: 5, key: '2022-01-06'},
-          value: PartitionState.SUCCESS_MISSING,
+          value: PartitionState.FAILURE,
         },
       ]);
 
@@ -347,8 +371,13 @@ describe('usePartitionHealthData', () => {
       expect(assetHealth.rangesForSingleDimension(1)).toEqual([
         {
           start: {idx: 0, key: 'TN'},
-          end: {idx: 3, key: 'NY'},
+          end: {idx: 1, key: 'CA'},
           value: PartitionState.SUCCESS_MISSING,
+        },
+        {
+          start: {idx: 2, key: 'VA'},
+          end: {idx: 3, key: 'NY'},
+          value: PartitionState.FAILURE,
         },
         {
           start: {idx: 4, key: 'MN'},
@@ -614,7 +643,7 @@ describe('usePartitionHealthData utilities', () => {
   describe('keyCountByStateInSelection', () => {
     it('should return nothing when passed an empty selection array (invalid use)', () => {
       const one = buildPartitionHealthData(ONE_DIMENSIONAL_ASSET, {path: ['asset']});
-      expect(keyCountByStateInSelection(one, [])).toEqual({missing: 0, success: 0});
+      expect(keyCountByStateInSelection(one, [])).toEqual({failure: 0, missing: 0, success: 0});
     });
 
     it('should return correct counts in the one dimensional case', () => {
@@ -622,11 +651,11 @@ describe('usePartitionHealthData utilities', () => {
 
       expect(
         keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0], 0, 5)]),
-      ).toEqual({missing: 4, success: 2});
+      ).toEqual({failure: 2, missing: 2, success: 2});
 
       expect(
         keyCountByStateInSelection(one, [selectionWithSlice(one.dimensions[0], 0, 2)]),
-      ).toEqual({missing: 3, success: 0});
+      ).toEqual({failure: 0, missing: 3, success: 0});
     });
 
     it('should return correct counts in the two dimensional case', () => {
@@ -637,21 +666,21 @@ describe('usePartitionHealthData utilities', () => {
           selectionWithSlice(two.dimensions[0], 0, 5),
           selectionWithSlice(two.dimensions[1], 0, 4),
         ]),
-      ).toEqual({missing: 19, success: 11});
+      ).toEqual({failure: 4, missing: 15, success: 11});
 
       expect(
         keyCountByStateInSelection(two, [
           selectionWithSlice(two.dimensions[0], 0, 3),
           selectionWithSlice(two.dimensions[1], 0, 3),
         ]),
-      ).toEqual({missing: 11, success: 5});
+      ).toEqual({failure: 0, missing: 11, success: 5});
 
       expect(
         keyCountByStateInSelection(two, [
           selectionWithSlice(two.dimensions[0], 0, 5),
           selectionWithSlice(two.dimensions[1], 4, 4),
         ]),
-      ).toEqual({missing: 0, success: 6});
+      ).toEqual({failure: 0, missing: 0, success: 6});
     });
 
     it('should return correct counts in the empty case', () => {
@@ -662,7 +691,7 @@ describe('usePartitionHealthData utilities', () => {
           selectionWithSlice(twoEmpty.dimensions[0], 0, 5),
           selectionWithSlice(twoEmpty.dimensions[1], 0, 4),
         ]),
-      ).toEqual({missing: 30, success: 0});
+      ).toEqual({failure: 0, missing: 30, success: 0});
     });
   });
 });
