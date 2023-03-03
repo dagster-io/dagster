@@ -40,7 +40,8 @@ Enterprise customers may request a quota increase by [contacting Sales](mailto:s
 ## Getting started with Serverless
 
 - [With GitHub](#with-github)
-- [Without GitHub (GitLab, BitBucket, or local development)](#without-github-gitlab-bitbucket-or-local-development)
+- [With Gitlab](#with-gitlab)
+- [Other Git providers or local development)](#other-bitbucket-or-local-development)
 - [Adding secrets](#adding-secrets)
 
 ### With GitHub
@@ -49,9 +50,15 @@ If you are a GitHub user, our GitHub integration is the fastest way to get start
 
 When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-cloud/developing-testing/branch-deployments) using the Serverless agent.
 
-### Without GitHub (GitLab, BitBucket, or local development)
+### With Gitlab
 
-If you don't want to use our GitHub integration, we offer a powerful CLI that you can use in another CI environment or on your local laptop.
+If you are a Gitlab user, our Gitlab integration is the fastest way to get started. It uses a Gitlab app to set up a repo containing skeleton code and CI/CD configuration consistent with Dagster Cloud's best practices with a single click.
+
+When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our Gitlab integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-cloud/developing-testing/branch-deployments) using the Serverless agent.
+
+### Other (BitBucket or local development)
+
+If you don't want to use our GitHub/Gitlab integrations, we offer a powerful CLI that you can use in another CI environment or on your local laptop.
 
 First, [create a new project](https://docs.dagster.io/getting-started/create-new-project#create-a-new-project) with the Dagster open-source CLI.
 
