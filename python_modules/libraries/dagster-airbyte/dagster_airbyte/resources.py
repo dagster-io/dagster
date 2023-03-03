@@ -8,12 +8,13 @@ from typing import Any, Dict, List, Mapping, Optional, cast
 
 import requests
 from dagster import (
+    ConfigurableResource,
     Failure,
     _check as check,
     get_dagster_logger,
+    infer_schema_from_config_class,
     resource,
 )
-from dagster._config.structured_config import ConfigurableResource, infer_schema_from_config_class
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field as PyField
 from requests.exceptions import RequestException
