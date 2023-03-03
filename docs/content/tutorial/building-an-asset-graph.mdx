@@ -52,7 +52,7 @@ In your browser, navigate to Dagster's UI (`localhost:3000`) and look at the ass
 
 If this syntax is too magical for you, an asset's dependencies can be explicitly defined using a parameter called `ins` in the <PyObject module="dagster" object="asset" displayText="@asset"/> decorator. To learn about this syntax, refer to the [Defining explicit dependencies section of the Assets concept page](/concepts/assets/software-defined-assets#defining-explicit-dependencies).
 
-Other times, it's impossible to contain the business logic in a function or you'll never want to load the data into memory. In situations like these, you can return no data. Dependencies can also be made without loading data in the dependent asset's function. Refer to the guide on [Assets without arguments and values](https://docs.dagster.io/tutorial/assets/non-argument-deps) for more information about these patterns.
+Other times, it's impossible to contain the business logic in a function or you'll never want to load the data into memory. In situations like these, you can return no data. Dependencies can also be made without loading data in the dependent asset's function. Refer to the guide on [Assets without I/O](/guides/dagster/non-argument-deps) for more information about these patterns.
 
 ### Logging during asset materialization
 
