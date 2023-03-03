@@ -367,12 +367,17 @@ class CachingStaleStatusResolver:
         causes = self._get_status_causes(key=key)
         leaf_pairs = sorted([pair for cause in causes for pair in self._gather_leaves(cause)])
         # After sorting the pairs, we can drop the level and de-dup using an
-        # ordered dict as an ordered set. This will give us unique root causes,
+        # ordered dict as an ordered set. This will give us unique leaf causes,
         # sorted by level.
         leaves: Dict[StaleStatusCause, None] = OrderedDict()
         for leaf_cause in [leaf_cause for _, leaf_cause in leaf_pairs]:
             leaves[leaf_cause] = None
-        return [self._convert_to_root_cause(leaf_cause) for leaf_cause in leaves.keys()]
+        # De-dup one more time when converting leaf causes to roots
+        roots: Dict[StaleStatusRootCause, None] = OrderedDict()
+        for leaf_cause in leaves.keys():
+            root_cause = self._convert_to_root_cause(leaf_cause)
+            roots[root_cause] = None
+        return list(roots.keys())
 
     # The leaves of the cause tree for an asset are the root causes of its staleness.
     def _gather_leaves(

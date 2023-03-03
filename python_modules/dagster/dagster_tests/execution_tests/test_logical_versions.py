@@ -694,7 +694,7 @@ def test_stale_status_manually_versioned() -> None:
         assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
 
 
-def test_stale_status_root_causes() -> None:
+def test_stale_status_root_causes_general() -> None:
     x = 0
 
     @observable_source_asset
@@ -776,6 +776,51 @@ def test_stale_status_root_causes() -> None:
             StaleStatusRootCause(asset3.key, "updated code version"),
             StaleStatusRootCause(asset1.key, "updated code version"),
             StaleStatusRootCause(source1.key, "updated logical version"),
+        ]
+
+
+def test_stale_status_root_causes_dedup() -> None:
+    x = 0
+
+    @asset(code_version="1")
+    def asset1():
+        nonlocal x
+        x += 1
+        return Output(x, logical_version=LogicalVersion(str(x)))
+
+    @asset
+    def asset2(asset1):
+        ...
+
+    @asset
+    def asset3(asset1):
+        ...
+
+    @asset
+    def asset4(asset2, asset3):
+        ...
+
+    with instance_for_test() as instance:
+        all_assets = [asset1, asset2, asset3, asset4]
+        materialize_assets(all_assets, instance)
+
+        # Test dedup from updated data version
+        materialize_assets([asset1], instance=instance)
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        print(status_resolver.get_status_root_causes(asset4.key))
+        assert status_resolver.get_status_root_causes(asset4.key) == [
+            StaleStatusRootCause(asset1.key, "updated logical version"),
+        ]
+
+        # Test dedup from updated code version
+        @asset(name="asset1", code_version="2")
+        def asset1_v2():
+            ...
+
+        all_assets = [asset1_v2, asset2, asset3, asset4]
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        assert status_resolver.get_status_root_causes(asset4.key) == [
+            StaleStatusRootCause(asset1.key, "updated code version"),
         ]
 
 
