@@ -14,8 +14,7 @@ def get_engine(connection_url: str) -> Engine:
 def basic_resource_config() -> None:
     # start_basic_resource_config
 
-    from dagster import op
-    from dagster._config.structured_config import ConfigurableResource
+    from dagster import op, ConfigurableResource
 
     class MyDatabaseResource(ConfigurableResource):
         connection_url: str
@@ -29,8 +28,7 @@ def basic_resource_config() -> None:
 def execute_with_config() -> None:
     # start_basic_op_config
 
-    from dagster import op
-    from dagster._config.structured_config import Config
+    from dagster import op, Config
 
     class MyOpConfig(Config):
         person_name: str
@@ -43,8 +41,7 @@ def execute_with_config() -> None:
 
     # start_basic_asset_config
 
-    from dagster import asset
-    from dagster._config.structured_config import Config
+    from dagster import asset, Config
 
     class MyAssetConfig(Config):
         person_name: str
@@ -56,9 +53,7 @@ def execute_with_config() -> None:
     # end_basic_asset_config
 
     # start_execute_with_config
-    from dagster import job, materialize, op
-
-    from dagster._core.definitions.run_config import RunConfig
+    from dagster import job, materialize, op, RunConfig
 
     @job
     def greeting_job():
@@ -78,11 +73,8 @@ def execute_with_config() -> None:
 
 def basic_data_structures_config() -> None:
     # start_basic_data_structures_config
-    from dagster._config.structured_config import Config
+    from dagster import Config, materialize, asset, RunConfig
     from typing import List, Dict
-    from dagster import materialize, asset
-
-    from dagster._core.definitions.run_config import RunConfig
 
     class MyDataStructuresConfig(Config):
         user_names: List[str]
@@ -109,9 +101,7 @@ def basic_data_structures_config() -> None:
 
 def nested_schema_config() -> None:
     # start_nested_schema_config
-    from dagster import asset, materialize
-    from dagster._config.structured_config import Config
-    from dagster._core.definitions.run_config import RunConfig
+    from dagster import asset, materialize, Config, RunConfig
     from typing import Dict
 
     class UserData(Config):
@@ -146,9 +136,7 @@ def nested_schema_config() -> None:
 def union_schema_config() -> None:
     # start_union_schema_config
 
-    from dagster import asset, materialize
-    from dagster._config.structured_config import Config
-    from dagster._core.definitions.run_config import RunConfig
+    from dagster import asset, materialize, Config, RunConfig
     from pydantic import Field
     from typing import Union
     from typing_extensions import Literal
@@ -187,7 +175,7 @@ def union_schema_config() -> None:
 
 def metadata_config() -> None:
     #  start_metadata_config
-    from dagster._config.structured_config import Config
+    from dagster import Config
     from pydantic import Field
 
     class MyMetadataConfig(Config):

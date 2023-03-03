@@ -17,7 +17,7 @@ export type PartitionHealthQuery = {
           name: string;
           partitionKeys: Array<string>;
         }>;
-        materializedPartitions:
+        assetPartitionStatuses:
           | {__typename: 'DefaultPartitions'; materializedPartitions: Array<string>}
           | {
               __typename: 'MultiPartitions';

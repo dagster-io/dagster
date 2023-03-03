@@ -24,6 +24,7 @@ from dagster._core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
+from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -44,7 +45,7 @@ from dagster_graphql.schema.solids import (
 )
 
 from ..implementation.fetch_assets import (
-    build_materialized_partitions,
+    build_partition_statuses,
     get_freshness_info,
     get_materialized_and_failed_partition_subsets,
 )
@@ -67,13 +68,10 @@ from .errors import GrapheneAssetNotFoundError
 from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
 from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
 from .pipelines.pipeline import (
-    GrapheneDefaultPartitions,
-    GrapheneMaterializedPartitions,
-    GrapheneMultiPartitions,
+    GrapheneAssetPartitionStatuses,
     GraphenePartitionStats,
     GraphenePipeline,
     GrapheneRun,
-    GrapheneTimePartitions,
 )
 from .util import ResolveInfo, non_null_list
 
@@ -214,7 +212,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneMaterializationEvent)),
         partitions=graphene.List(graphene.String),
     )
-    materializedPartitions = graphene.NonNull(GrapheneMaterializedPartitions)
+    assetPartitionStatuses = graphene.NonNull(GrapheneAssetPartitionStatuses)
     partitionStats = graphene.Field(GraphenePartitionStats)
     metadata_entries = non_null_list(GrapheneMetadataEntry)
     op = graphene.Field(GrapheneSolidDefinition)
@@ -233,6 +231,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     staleStatus = graphene.Field(GrapheneAssetStaleStatus)
     staleStatusCauses = non_null_list(GrapheneAssetStaleStatusCause)
     type = graphene.Field(GrapheneDagsterType)
+    hasMaterializePermission = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "AssetNode"
@@ -425,6 +424,14 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def is_source_asset(self) -> bool:
         return self._external_asset_node.is_source
+
+    def resolve_hasMaterializePermission(
+        self,
+        graphene_info: ResolveInfo,
+    ):
+        return graphene_info.context.has_permission_for_location(
+            Permissions.LAUNCH_PIPELINE_EXECUTION, self._repository_location.name
+        )
 
     def resolve_assetMaterializationUsedData(
         self,
@@ -740,26 +747,26 @@ class GrapheneAssetNode(graphene.ObjectType):
             for event in ordered_materializations
         ]
 
-    def resolve_materializedPartitions(
-        self, graphene_info: ResolveInfo
-    ) -> Union[GrapheneDefaultPartitions, GrapheneTimePartitions, GrapheneMultiPartitions]:
+    def resolve_assetPartitionStatuses(self, graphene_info: ResolveInfo):
         asset_key = self._external_asset_node.asset_key
 
         if not self._dynamic_partitions_loader:
             check.failed("dynamic_partitions_loader must be provided to get partition keys")
 
-        materialized_partition_subset = get_materialized_and_failed_partition_subsets(
+        (
+            materialized_partition_subset,
+            failed_partition_subset,
+        ) = get_materialized_and_failed_partition_subsets(
             graphene_info.context.instance,
             asset_key,
             self._dynamic_partitions_loader,
             self._external_asset_node.partitions_def_data.get_partitions_definition()
             if self._external_asset_node.partitions_def_data
             else None,
-        )[0]
+        )
 
-        return build_materialized_partitions(
-            self._dynamic_partitions_loader,
-            materialized_partition_subset,
+        return build_partition_statuses(
+            self._dynamic_partitions_loader, materialized_partition_subset, failed_partition_subset
         )
 
     def resolve_partitionStats(self, graphene_info) -> Optional[GraphenePartitionStats]:

@@ -7,5 +7,5 @@ def versioned_number():
 
 
 @asset(code_version="v1")
-def multipled_number(versioned_number):
+def multiplied_number(versioned_number):
     return versioned_number * 2

@@ -12,8 +12,10 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {usePermissionsForLocation} from '../app/Permissions';
-import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
+import {
+  NO_RELOAD_PERMISSION_TEXT,
+  ReloadRepositoryLocationButton,
+} from '../nav/ReloadRepositoryLocationButton';
 import {
   buildReloadFnForLocation,
   useRepositoryLocationReload,
@@ -198,31 +200,30 @@ const LocationStatus: React.FC<{
   );
 };
 
-const ReloadButton: React.FC<{
-  location: string;
-}> = (props) => {
-  const {location} = props;
-  const {canReloadRepositoryLocation} = usePermissionsForLocation(location);
-
-  if (!canReloadRepositoryLocation.enabled) {
-    return (
-      <Tooltip content={canReloadRepositoryLocation.disabledReason} useDisabledButtonTooltipFix>
-        <Button icon={<Icon name="refresh" />} disabled>
-          Reload
-        </Button>
-      </Tooltip>
-    );
-  }
-
+const ReloadButton: React.FC<{location: string}> = ({location}) => {
   return (
-    <ReloadRepositoryLocationButton location={location}>
-      {({reloading, tryReload}) => (
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-          <Button icon={<Icon name="refresh" />} loading={reloading} onClick={() => tryReload()}>
-            Reload
-          </Button>
-        </Box>
-      )}
-    </ReloadRepositoryLocationButton>
+    <ReloadRepositoryLocationButton
+      location={location}
+      ChildComponent={({reloading, tryReload, hasReloadPermission}) => {
+        return (
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+            <Tooltip
+              content={hasReloadPermission ? '' : NO_RELOAD_PERMISSION_TEXT}
+              canShow={!hasReloadPermission}
+              useDisabledButtonTooltipFix
+            >
+              <Button
+                icon={<Icon name="refresh" />}
+                disabled={!hasReloadPermission}
+                loading={reloading}
+                onClick={() => tryReload()}
+              >
+                Reload
+              </Button>
+            </Tooltip>
+          </Box>
+        );
+      }}
+    />
   );
 };
