@@ -1,5 +1,4 @@
 import pandas as pd
-import pandas_gbq
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_gcp.bigquery.io_manager import BigQueryClient, build_bigquery_io_manager
@@ -34,17 +33,19 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
 
     """
 
-    def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, _):
+    def handle_output(
+        self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, connection
+    ):
         """Stores the pandas DataFrame in BigQuery."""
         with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
 
-        pandas_gbq.to_gbq(
-            with_uppercase_cols,
-            destination_table=f"{table_slice.schema}.{table_slice.table}",
-            project_id=table_slice.database,
+        job = connection.load_table_from_dataframe(
+            dataframe=with_uppercase_cols,
+            destination=f"{table_slice.schema}.{table_slice.table}",
+            project=table_slice.database,
             location=context.resource_config["location"] if context.resource_config else None,
-            if_exists="append",
         )
+        job.result()
 
         context.add_output_metadata(
             {
@@ -60,13 +61,16 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             }
         )
 
-    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> pd.DataFrame:
+    def load_input(
+        self, context: InputContext, table_slice: TableSlice, connection
+    ) -> pd.DataFrame:
         """Loads the input as a Pandas DataFrame."""
-        result = pandas_gbq.read_gbq(
-            BigQueryClient.get_select_statement(table_slice),
-            project_id=table_slice.database,
+        result = connection.query(
+            query=BigQueryClient.get_select_statement(table_slice),
+            project=table_slice.database,
             location=context.resource_config["location"] if context.resource_config else None,
-        )
+        ).to_dataframe()
+
         result.columns = map(str.lower, result.columns)
         return result
 
