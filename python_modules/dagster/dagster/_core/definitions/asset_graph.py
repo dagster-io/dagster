@@ -202,6 +202,7 @@ class AssetGraph:
         """
         Converts a partition key from one asset to the corresponding partition keys in a downstream
         asset. Uses the existing partition mapping between the child asset and the parent asset.
+
         Args:
             parent_partition_key (Optional[str]): The partition key to convert.
             parent_asset_key (AssetKey): The asset key of the upstream asset, which the provided
@@ -274,6 +275,7 @@ class AssetGraph:
         Converts a partition key from one asset to the corresponding partition keys in one of its
         parent assets. Uses the existing partition mapping between the child asset and the parent
         asset.
+
         Args:
             partition_key (Optional[str]): The partition key to convert.
             child_asset_key (AssetKey): The asset key of the child asset, which the provided

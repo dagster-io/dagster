@@ -72,7 +72,6 @@ class OutputContext:
             output.
 
     Example:
-
     .. code-block:: python
 
         from dagster import IOManager, OutputContext

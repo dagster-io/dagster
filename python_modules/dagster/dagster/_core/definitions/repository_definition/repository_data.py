@@ -218,7 +218,7 @@ class RepositoryData(ABC):
     def get_schedule(self, schedule_name: str) -> ScheduleDefinition:
         """Get a schedule by name.
 
-        args:
+        Args:
             schedule_name (str): name of the schedule to retrieve.
 
         Returns:
@@ -661,7 +661,7 @@ class CachingRepositoryData(RepositoryData):
         if this schedule has not yet been constructed, only this schedule is constructed, and will
         be cached for future calls.
 
-        args:
+        Args:
             schedule_name (str): name of the schedule to retrieve.
 
         Returns:

@@ -36,7 +36,6 @@ def create_databricks_job_op(
         OpDefinition: An op definition.
 
     Example:
-
         .. code-block:: python
 
             from dagster import job

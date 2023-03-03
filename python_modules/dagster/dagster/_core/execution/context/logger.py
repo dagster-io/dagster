@@ -25,7 +25,6 @@ class InitLoggerContext:
         run_id (str): The ID for this run of the pipeline.
 
     Example:
-
     .. code-block:: python
 
         from dagster import logger, InitLoggerContext
