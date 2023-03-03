@@ -1,7 +1,6 @@
 from typing import Any, Iterable, List, Optional
 
-from dagster import In, Nothing, Out, Output, op
-from dagster._config.structured_config import Config
+from dagster import Config, In, Nothing, Out, Output, op
 from pydantic import Field
 
 from dagster_airbyte.types import AirbyteOutput
