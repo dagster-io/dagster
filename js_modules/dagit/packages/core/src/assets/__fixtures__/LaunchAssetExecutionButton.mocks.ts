@@ -141,7 +141,7 @@ export const PartitionHealthAssetDailyMock: MockedResponse<PartitionHealthQuery>
             partitionKeys: ASSET_DAILY_PARTITION_KEYS,
           },
         ],
-        materializedPartitions: {
+        assetPartitionStatuses: {
           ranges: [
             {
               startTime: 1662940800.0,
@@ -212,7 +212,7 @@ export const PartitionHealthAssetWeeklyMock: MockedResponse<PartitionHealthQuery
             ),
           },
         ],
-        materializedPartitions: {
+        assetPartitionStatuses: {
           ranges: [],
           __typename: 'TimePartitions',
         },
@@ -247,7 +247,7 @@ export const PartitionHealthAssetWeeklyRootMock: MockedResponse<PartitionHealthQ
             ),
           },
         ],
-        materializedPartitions: {
+        assetPartitionStatuses: {
           ranges: [],
           __typename: 'TimePartitions',
         },

@@ -186,6 +186,7 @@ export type AssetNode = {
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
+  assetPartitionStatuses: AssetPartitionStatuses;
   computeKind: Maybe<Scalars['String']>;
   configField: Maybe<ConfigTypeField>;
   currentLogicalVersion: Maybe<Scalars['String']>;
@@ -206,7 +207,6 @@ export type AssetNode = {
   jobNames: Array<Scalars['String']>;
   jobs: Array<Pipeline>;
   latestMaterializationByPartition: Array<Maybe<MaterializationEvent>>;
-  materializedPartitions: MaterializedPartitions;
   metadataEntries: Array<MetadataEntry>;
   op: Maybe<SolidDefinition>;
   opName: Maybe<Scalars['String']>;
@@ -262,6 +262,8 @@ export type AssetNotFoundError = Error & {
 };
 
 export type AssetOrError = Asset | AssetNotFoundError;
+
+export type AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimePartitions;
 
 export type AssetWipeMutationResult =
   | AssetNotFoundError
@@ -938,6 +940,7 @@ export type DagsterTypeOrError =
 
 export type DefaultPartitions = {
   __typename: 'DefaultPartitions';
+  failedPartitions: Array<Scalars['String']>;
   materializedPartitions: Array<Scalars['String']>;
   unmaterializedPartitions: Array<Scalars['String']>;
 };
@@ -1962,8 +1965,6 @@ export type MaterializedPartitionRange2D = {
   secondaryDim: PartitionStatus1D;
 };
 
-export type MaterializedPartitions = DefaultPartitions | MultiPartitions | TimePartitions;
-
 export type MessageEvent = {
   eventType: Maybe<DagsterEventType>;
   level: LogLevel;
@@ -2227,6 +2228,11 @@ export enum PartitionDefinitionType {
   MULTIPARTITIONED = 'MULTIPARTITIONED',
   STATIC = 'STATIC',
   TIME_WINDOW = 'TIME_WINDOW',
+}
+
+export enum PartitionRangeStatus {
+  FAILED = 'FAILED',
+  MATERIALIZED = 'MATERIALIZED',
 }
 
 export type PartitionRun = {
@@ -3718,6 +3724,7 @@ export type TimePartitionRange = {
   endTime: Scalars['Float'];
   startKey: Scalars['String'];
   startTime: Scalars['Float'];
+  status: PartitionRangeStatus;
 };
 
 export type TimePartitions = {

@@ -34,7 +34,7 @@ const NO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
     __typename: 'AssetNode',
     id: '1234',
     partitionKeysByDimension: [],
-    materializedPartitions: {
+    assetPartitionStatuses: {
       __typename: 'DefaultPartitions',
       materializedPartitions: [],
     },
@@ -53,7 +53,7 @@ const ONE_DIMENSIONAL_ASSET: PartitionHealthQuery = {
         partitionKeys: DIMENSION_ONE_KEYS,
       },
     ],
-    materializedPartitions: {
+    assetPartitionStatuses: {
       __typename: 'TimePartitions',
       ranges: [
         {
@@ -85,7 +85,7 @@ const TWO_DIMENSIONAL_ASSET: PartitionHealthQuery = {
         partitionKeys: DIMENSION_TWO_KEYS,
       },
     ],
-    materializedPartitions: {
+    assetPartitionStatuses: {
       __typename: 'MultiPartitions',
       primaryDimensionName: 'time',
       ranges: [
@@ -155,7 +155,7 @@ const TWO_DIMENSIONAL_ASSET_BOTH_STATIC: PartitionHealthQuery = {
         partitionKeys: DIMENSION_TWO_KEYS,
       },
     ],
-    materializedPartitions: {
+    assetPartitionStatuses: {
       __typename: 'MultiPartitions',
       primaryDimensionName: 'state1',
       ranges: [
@@ -203,7 +203,7 @@ const TWO_DIMENSIONAL_ASSET_EMPTY: PartitionHealthQuery = {
         partitionKeys: DIMENSION_TWO_KEYS,
       },
     ],
-    materializedPartitions: {
+    assetPartitionStatuses: {
       __typename: 'MultiPartitions',
       primaryDimensionName: 'time',
       ranges: [],

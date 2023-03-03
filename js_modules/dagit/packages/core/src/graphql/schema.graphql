@@ -669,7 +669,7 @@ type AssetNode {
   jobNames: [String!]!
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
-  materializedPartitions: MaterializedPartitions!
+  assetPartitionStatuses: AssetPartitionStatuses!
   partitionStats: PartitionStats
   metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
@@ -709,10 +709,11 @@ type FreshnessPolicy {
   cronScheduleTimezone: String
 }
 
-union MaterializedPartitions = DefaultPartitions | MultiPartitions | TimePartitions
+union AssetPartitionStatuses = DefaultPartitions | MultiPartitions | TimePartitions
 
 type DefaultPartitions {
   materializedPartitions: [String!]!
+  failedPartitions: [String!]!
   unmaterializedPartitions: [String!]!
 }
 
@@ -736,10 +737,16 @@ type TimePartitions {
 }
 
 type TimePartitionRange {
+  status: PartitionRangeStatus!
   startTime: Float!
   endTime: Float!
   startKey: String!
   endKey: String!
+}
+
+enum PartitionRangeStatus {
+  MATERIALIZED
+  FAILED
 }
 
 type PartitionStats {

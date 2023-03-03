@@ -15,7 +15,7 @@ import {
 type PartitionHealthMaterializedPartitions = Extract<
   PartitionHealthQuery['assetNodeOrError'],
   {__typename: 'AssetNode'}
->['materializedPartitions'];
+>['assetPartitionStatuses'];
 
 /**
  * usePartitionHealthData retrieves partitionKeysByDimension + partitionMaterializationCounts and
@@ -62,7 +62,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       : [];
 
   const materializedPartitions = (data.assetNodeOrError.__typename === 'AssetNode' &&
-    data.assetNodeOrError.materializedPartitions) || {
+    data.assetNodeOrError.assetPartitionStatuses) || {
     __typename: 'DefaultPartitions',
     unmaterializedPartitions: [],
     materializedPartitions: [],
@@ -491,7 +491,7 @@ export const PARTITION_HEALTH_QUERY = gql`
           name
           partitionKeys
         }
-        materializedPartitions {
+        assetPartitionStatuses {
           ... on TimePartitions {
             ranges {
               startTime

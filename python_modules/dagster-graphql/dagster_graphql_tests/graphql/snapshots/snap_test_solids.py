@@ -1109,6 +1109,30 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'multipartitions_fail'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': '__ASSET_JOB_1'
+                        },
+                        'solidHandle': {
+                            'handleID': 'multipartitions_fail'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'multipartitions_fail_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'multipartitions_fail'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'multiply_by_two'
                 },
                 'invocations': [
