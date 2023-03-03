@@ -671,7 +671,8 @@ def graph_asset(
             compose the asset.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If
             not provided, the name "default" is used.
-        metadata (Optional[MetadataUserInput]): Dictionary of metadata to be associated with the asset.
+        metadata (Optional[MetadataUserInput]): Dictionary of metadata to be associated with
+            the asset.
         freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is
             intended to be updated with respect to its root data.
 
