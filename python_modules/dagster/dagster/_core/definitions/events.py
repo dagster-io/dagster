@@ -41,7 +41,6 @@ if TYPE_CHECKING:
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_DELIMITER = "/"
-ASSET_KEY_LEGACY_DELIMITER = "."
 
 
 def parse_asset_key_string(s: str) -> Sequence[str]:
@@ -112,12 +111,10 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
                 return False
         return True
 
-    def to_string(self, legacy: Optional[bool] = False) -> str:
+    def to_string(self) -> str:
         """
         E.g. '["first_component", "second_component"]'.
         """
-        if legacy:
-            return ASSET_KEY_LEGACY_DELIMITER.join(self.path)
         return seven.json.dumps(self.path)
 
     def to_user_string(self) -> str:
@@ -156,10 +153,8 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         return AssetKey(path)
 
     @staticmethod
-    def get_db_prefix(path: Sequence[str], legacy: Optional[bool] = False):
+    def get_db_prefix(path: Sequence[str]):
         check.sequence_param(path, "path", of_type=str)
-        if legacy:
-            return ASSET_KEY_LEGACY_DELIMITER.join(path)
         return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod
