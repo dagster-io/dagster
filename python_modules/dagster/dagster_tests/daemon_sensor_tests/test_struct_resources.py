@@ -18,7 +18,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.definitions.resource_output import Resource
+from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus

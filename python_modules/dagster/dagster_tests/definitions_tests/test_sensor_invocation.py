@@ -43,7 +43,7 @@ from dagster import (
 )
 from dagster._config.structured_config import ConfigurableResource
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.definitions.resource_output import Resource
+from dagster._core.definitions.resource_annotation import Resource
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
 
