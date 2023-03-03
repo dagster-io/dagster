@@ -58,7 +58,7 @@
 - Added an example of how to use dynamic asset partitions - in the `examples/assets_dynamic_partitions` folder
 - New [tutorial](https://docs.dagster.io/master/integrations/bigquery/using-bigquery-with-dagster) for using the BigQuery I/O manager.
 - New [reference page](https://docs.dagster.io/master/integrations/bigquery/reference) for BigQuery I/O manager features.
-- New [automating data pipelines guide](https://docs.dagster.io/master/guides/dagster/automated_pipelines)
+- New [automating data pipelines guide](https://docs.dagster.io/1.1.21/guides/dagster/automated_pipelines)
 
 # 1.1.20 (core) / 0.17.20 (libraries)
 
