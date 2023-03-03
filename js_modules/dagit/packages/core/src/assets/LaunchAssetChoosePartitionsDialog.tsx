@@ -167,6 +167,8 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
     knownDimensionNames: knownDimensions.map((d) => d.name),
     modifyQueryString: false,
     assetHealth: displayedHealth,
+    skipPartitionKeyValidation:
+      displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC,
   });
 
   const keysInSelection = React.useMemo(

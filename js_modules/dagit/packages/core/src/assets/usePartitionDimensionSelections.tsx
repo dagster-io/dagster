@@ -36,8 +36,14 @@ export const usePartitionDimensionSelections = (opts: {
   assetHealth: Pick<PartitionHealthData, 'dimensions'>;
   modifyQueryString: boolean;
   knownDimensionNames?: string[]; // improves loading state if available
+  skipPartitionKeyValidation?: boolean;
 }) => {
-  const {assetHealth, knownDimensionNames = [], modifyQueryString} = opts;
+  const {
+    assetHealth,
+    knownDimensionNames = [],
+    modifyQueryString,
+    skipPartitionKeyValidation,
+  } = opts;
   const [query, setQuery] = useQueryPersistedState<DimensionQueryState[]>(serializer);
   const [local, setLocal] = React.useState<DimensionQueryState[]>([]);
 
@@ -58,7 +64,11 @@ export const usePartitionDimensionSelections = (opts: {
       return saved?.rangeText !== undefined
         ? {
             dimension,
-            ...spanTextToSelections(dimension.partitionKeys, saved.rangeText),
+            ...spanTextToSelections(
+              dimension.partitionKeys,
+              saved.rangeText,
+              skipPartitionKeyValidation,
+            ),
           }
         : {
             dimension,
@@ -66,12 +76,15 @@ export const usePartitionDimensionSelections = (opts: {
             selectedKeys: [...dimension.partitionKeys],
           };
     });
-  }, [query, local, assetHealth, knownDimensionNamesJSON]);
+  }, [assetHealth, knownDimensionNamesJSON, local, query, skipPartitionKeyValidation]);
 
   const setInflated = React.useCallback(
     (ranges: PartitionDimensionSelection[]) => {
       const next = ranges.map((r) => {
-        const rangeText = partitionsToText(r.selectedKeys, r.dimension.partitionKeys);
+        const rangeText = partitionsToText(
+          r.selectedKeys,
+          skipPartitionKeyValidation ? undefined : r.dimension.partitionKeys,
+        );
         return {
           name: r.dimension.name,
           rangeText: rangeText !== allPartitionsSpan(r.dimension) ? rangeText : undefined,
@@ -83,7 +96,7 @@ export const usePartitionDimensionSelections = (opts: {
         setLocal(next);
       }
     },
-    [setQuery, modifyQueryString],
+    [modifyQueryString, skipPartitionKeyValidation, setQuery],
   );
 
   return [inflated, setInflated] as const;
